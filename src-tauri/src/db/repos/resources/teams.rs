@@ -15,6 +15,7 @@ fn row_to_team(row: &Row) -> rusqlite::Result<PersonaTeam> {
     Ok(PersonaTeam {
         id: row.get("id")?,
         project_id: row.get("project_id")?,
+        parent_team_id: row.get("parent_team_id")?,
         name: row.get("name")?,
         description: row.get("description")?,
         canvas_data: row.get("canvas_data")?,
@@ -127,11 +128,12 @@ pub fn create(pool: &DbPool, input: CreateTeamInput) -> Result<PersonaTeam, AppE
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO persona_teams
-         (id, project_id, name, description, canvas_data, team_config, icon, color, enabled, created_at, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?10)",
+         (id, project_id, parent_team_id, name, description, canvas_data, team_config, icon, color, enabled, created_at, updated_at)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
         params![
             id,
             input.project_id,
+            input.parent_team_id,
             input.name,
             input.description,
             input.canvas_data,
@@ -144,6 +146,92 @@ pub fn create(pool: &DbPool, input: CreateTeamInput) -> Result<PersonaTeam, AppE
     )?;
 
     get_by_id(pool, &id)
+}
+
+/// Deep-clone a team: copies the team row, all members, all connections (with
+/// remapped member IDs), and all team memories. Returns the new team.
+pub fn clone_team(pool: &DbPool, source_team_id: &str) -> Result<PersonaTeam, AppError> {
+    let source = get_by_id(pool, source_team_id)?;
+    let members = get_members(pool, source_team_id)?;
+    let connections = get_connections(pool, source_team_id)?;
+
+    let new_team_id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let mut conn = pool.get()?;
+    let tx = conn.transaction().map_err(AppError::Database)?;
+
+    // 1. Insert cloned team with parent_team_id pointing to source
+    tx.execute(
+        "INSERT INTO persona_teams
+         (id, project_id, parent_team_id, name, description, canvas_data, team_config, icon, color, enabled, created_at, updated_at)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
+        params![
+            new_team_id,
+            source.project_id,
+            source_team_id,
+            format!("{} (fork)", source.name),
+            source.description,
+            source.canvas_data,
+            source.team_config,
+            source.icon,
+            source.color,
+            source.enabled as i32,
+            now,
+        ],
+    )?;
+
+    // 2. Clone members, building old_id -> new_id map for connection remapping
+    let mut member_id_map = std::collections::HashMap::new();
+    for m in &members {
+        let new_member_id = uuid::Uuid::new_v4().to_string();
+        let member_now = chrono::Utc::now().to_rfc3339();
+        tx.execute(
+            "INSERT INTO persona_team_members (id, team_id, persona_id, role, position_x, position_y, config, created_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+            params![
+                new_member_id,
+                new_team_id,
+                m.persona_id,
+                m.role,
+                m.position_x,
+                m.position_y,
+                m.config,
+                member_now,
+            ],
+        )?;
+        member_id_map.insert(m.id.clone(), new_member_id);
+    }
+
+    // 3. Clone connections with remapped member IDs
+    for c in &connections {
+        let new_source = member_id_map.get(&c.source_member_id);
+        let new_target = member_id_map.get(&c.target_member_id);
+        if let (Some(src), Some(tgt)) = (new_source, new_target) {
+            let new_conn_id = uuid::Uuid::new_v4().to_string();
+            let conn_now = chrono::Utc::now().to_rfc3339();
+            tx.execute(
+                "INSERT INTO persona_team_connections
+                 (id, team_id, source_member_id, target_member_id, connection_type, condition, label, created_at)
+                 VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+                params![new_conn_id, new_team_id, src, tgt, c.connection_type, c.condition, c.label, conn_now],
+            )?;
+        }
+    }
+
+    // 4. Clone team memories
+    tx.execute(
+        "INSERT INTO team_memories (id, team_id, run_id, member_id, persona_id, title, content, category, importance, tags, created_at, updated_at)
+         SELECT
+            lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)),2) || '-' || hex(randomblob(6))),
+            ?1, run_id, member_id, persona_id, title, content, category, importance, tags, ?2, ?2
+         FROM team_memories WHERE team_id = ?3",
+        params![new_team_id, now, source_team_id],
+    )?;
+
+    tx.commit().map_err(AppError::Database)?;
+
+    get_by_id(pool, &new_team_id)
 }
 
 pub fn update(pool: &DbPool, id: &str, input: UpdateTeamInput) -> Result<PersonaTeam, AppError> {
@@ -549,6 +637,7 @@ mod tests {
             CreateTeamInput {
                 name: "Alpha Squad".into(),
                 project_id: None,
+                parent_team_id: None,
                 description: Some("The first team".into()),
                 canvas_data: None,
                 team_config: None,

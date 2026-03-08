@@ -761,6 +761,28 @@
           }
         ]
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Human review for content quality and publication approval",
+        "context": "Inferred from template category — every e2e process needs a human gate"
+      },
+      {
+        "type": "user_message",
+        "label": "Email notifications for reports, digests, and alerts (periodic digests, critical alerts, error notifications)",
+        "context": "1 notification channel(s) configured: email"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Historical baselines and trend data for comparative analysis",
+        "context": "Tracks: recurring patterns, calibrated thresholds, processing checkpoints"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution failed, review requested, threshold breached",
+        "context": "4 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

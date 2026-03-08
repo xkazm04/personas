@@ -156,7 +156,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
       <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
         <Globe className="w-4 h-4 text-muted-foreground/60" />
         <span className="text-sm font-medium text-foreground/80">
-          {endpoints.length} endpoint{endpoints.length !== 1 ? 's' : ''}
+          {endpoints.length} example endpoint{endpoints.length !== 1 ? 's' : ''}
         </span>
         <div className="flex-1" />
 
@@ -239,6 +239,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
           onToggle={() => setShowLogPanel(v => !v)}
           onClear={testRunner.clear}
           lineClassName={apiTestLineClassName}
+          operation="credential_healthcheck"
           counters={testRunner.progress && (
             <TestRunCounters progress={testRunner.progress} />
           )}
@@ -276,10 +277,10 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
 
             {/* Request / Response — side by side when both present */}
             {selectedEndpoint && (
-              <div className="border-t border-primary/8 pt-4">
-                <div className={`grid gap-4 ${response || sendError ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              <div className="border-t border-primary/25 pt-4">
+                <div className={`grid gap-0 ${response || sendError ? 'grid-cols-[1fr_1px_1fr]' : 'grid-cols-1'}`}>
                   {/* Request Builder */}
-                  <div className="space-y-4 min-w-0">
+                  <div className="space-y-4 min-w-0 pr-4">
                     <div className="flex items-center gap-2">
                       <span className="text-sm uppercase tracking-wider text-blue-400/70 font-semibold">
                         Request Builder
@@ -299,9 +300,14 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
                     />
                   </div>
 
+                  {/* Vertical divider */}
+                  {(response || sendError) && (
+                    <div className="bg-primary/25" />
+                  )}
+
                   {/* Response Viewer */}
                   {(response || sendError) && (
-                    <div className="min-w-0">
+                    <div className="min-w-0 pl-4">
                       <span className="text-sm uppercase tracking-wider text-emerald-400/70 font-semibold block mb-3">
                         Response
                       </span>

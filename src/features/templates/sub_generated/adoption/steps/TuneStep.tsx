@@ -8,7 +8,6 @@ import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 
 // ── Shared styles ─────────────────────────────────────────────────────
 
-const selectClass = 'w-full px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-xl text-sm text-foreground/90 focus:outline-none focus:border-violet-500/30 transition-colors';
 const inputClass = 'w-full px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-xl text-sm text-foreground/90 placeholder-muted-foreground/30 focus:outline-none focus:border-violet-500/30 transition-colors';
 const labelClass = 'block text-sm font-medium text-foreground/80';
 const descClass = 'text-sm text-muted-foreground/50 mt-0.5';
@@ -31,6 +30,7 @@ interface SectionMeta {
   configured: number;
   total: number;
   hasMissing: boolean;
+  isRequired: boolean;
 }
 
 // ── Accordion panel ───────────────────────────────────────────────────
@@ -64,50 +64,35 @@ function AccordionSection({
   const allDone = meta.configured === meta.total && meta.total > 0;
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden transition-colors">
+    <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center gap-2 p-3.5 text-left hover:bg-secondary/30 transition-colors group"
+        className="w-full flex items-center gap-2 p-3 text-left hover:bg-secondary/30 transition-colors"
       >
         <ChevronRight
-          className={`w-3.5 h-3.5 text-muted-foreground/40 transition-transform duration-200 ${
+          className={`w-3 h-3 text-muted-foreground/40 transition-transform duration-200 ${
             isOpen ? 'rotate-90' : ''
           }`}
         />
         <span className="text-muted-foreground/60">{meta.icon}</span>
-        <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/60 flex-1">
+        <span className="text-sm font-medium text-foreground/70 flex-1">
           {meta.title}
         </span>
 
-        {/* Completion indicator */}
+        {/* Completion label */}
         {meta.total > 0 && (
-          <span className="flex items-center gap-1.5">
-            <span className="flex gap-0.5">
-              {Array.from({ length: meta.total }, (_, i) => (
-                <span
-                  key={i}
-                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                    i < meta.configured
-                      ? allDone
-                        ? 'bg-emerald-400/80'
-                        : 'bg-violet-400/70'
-                      : meta.hasMissing
-                        ? 'bg-red-400/30'
-                        : 'bg-muted-foreground/15'
-                  }`}
-                />
-              ))}
-            </span>
-            <span className={`text-sm tabular-nums ${
-              allDone
-                ? 'text-emerald-400/60'
-                : meta.hasMissing
-                  ? 'text-red-400/50'
-                  : 'text-muted-foreground/30'
-            }`}>
-              {meta.configured}/{meta.total}
-            </span>
+          <span className={`text-sm ${
+            allDone
+              ? 'text-emerald-400/60'
+              : meta.hasMissing
+                ? 'text-amber-400/60'
+                : 'text-muted-foreground/30'
+          }`}>
+            {meta.isRequired
+              ? `${meta.configured}/${meta.total} required`
+              : allDone ? 'Configured' : 'Optional'
+            }
           </span>
         )}
       </button>
@@ -159,7 +144,10 @@ export function TuneStep() {
 
   const hasVariables = adoptionRequirements.length > 0;
   const hasTriggers = selectedTriggerIndices.size > 0 && (designResult?.suggested_triggers?.length ?? 0) > 0;
-  const hasQuestions = questions !== null || questionGenerating;
+  // Only show questions section when they've actually loaded
+  const hasQuestions = questions !== null && questions.length > 0;
+  // Determine if template uses notifications / approval
+  const hasNotificationChannels = (designResult?.suggested_notification_channels?.length ?? 0) > 0;
 
   // ── Compute section completion metadata ──
 
@@ -167,12 +155,11 @@ export function TuneStep() {
     const result: SectionMeta[] = [];
 
     if (hasVariables) {
-      const total = adoptionRequirements.filter((v) => v.required).length;
-      const configured = adoptionRequirements.filter((v) => {
-        if (!v.required) return false;
+      const requiredVars = adoptionRequirements.filter((v) => v.required);
+      const total = requiredVars.length;
+      const configured = requiredVars.filter((v) => {
         const val = variableValues[v.key] ?? v.default_value ?? '';
         if (!val.trim()) return false;
-        // Also check type validation — invalid values don't count as configured
         const check = validateVariable(val, v);
         return check.valid;
       }).length;
@@ -183,25 +170,29 @@ export function TuneStep() {
         configured,
         total,
         hasMissing: configured < total,
+        isRequired: true,
       });
     }
 
-    // Notifications: 3 fields, count non-default ones
-    const notifConfigured = [
-      notificationChannels.length > 0,
-      alertChannel.trim().length > 0,
-      alertSeverity !== 'all',
-    ].filter(Boolean).length;
-    result.push({
-      id: 'notifications',
-      icon: <Bell className="w-4 h-4" />,
-      title: 'Notifications',
-      configured: notifConfigured,
-      total: 3,
-      hasMissing: false,
-    });
+    // Only show notifications if the template has notification channels
+    if (hasNotificationChannels) {
+      const notifConfigured = [
+        notificationChannels.length > 0,
+        alertChannel.trim().length > 0,
+        alertSeverity !== 'all',
+      ].filter(Boolean).length;
+      result.push({
+        id: 'notifications',
+        icon: <Bell className="w-4 h-4" />,
+        title: 'Notifications',
+        configured: notifConfigured,
+        total: 3,
+        hasMissing: false,
+        isRequired: false,
+      });
+    }
 
-    // Human Review: 3 fields, all optional with defaults
+    // Human Review — always relevant as a safety control
     const reviewConfigured = [
       requireApproval,
       autoApproveSeverity !== 'info',
@@ -214,9 +205,10 @@ export function TuneStep() {
       configured: reviewConfigured,
       total: 3,
       hasMissing: false,
+      isRequired: false,
     });
 
-    // Execution Limits: 3 fields, all optional with defaults
+    // Execution Limits
     const limitsConfigured = [
       maxConcurrent !== 1,
       timeoutMs !== 300000,
@@ -228,7 +220,8 @@ export function TuneStep() {
       title: 'Execution Limits',
       configured: limitsConfigured,
       total: 3,
-      hasMissing: false,
+      hasMissing: !!(sandboxPolicy?.budgetEnforced && maxBudgetUsd == null),
+      isRequired: !!sandboxPolicy?.budgetEnforced,
     });
 
     if (hasTriggers) {
@@ -241,32 +234,32 @@ export function TuneStep() {
         configured: Math.min(configuredCount, selectedCount),
         total: selectedCount,
         hasMissing: false,
+        isRequired: false,
       });
     }
 
     if (hasQuestions) {
-      const totalQ = questions?.length ?? 0;
-      const answeredQ = questions
-        ? questions.filter((q: { id: string }) => userAnswers[q.id]?.trim()).length
-        : 0;
+      const totalQ = questions.length;
+      const answeredQ = questions.filter((q: { id: string }) => userAnswers[q.id]?.trim()).length;
       result.push({
         id: 'questions',
         icon: <Sparkles className="w-4 h-4" />,
         title: 'AI Configuration',
         configured: answeredQ,
         total: totalQ,
-        hasMissing: questionGenerating || (totalQ > 0 && answeredQ < totalQ),
+        hasMissing: totalQ > 0 && answeredQ < totalQ,
+        isRequired: false,
       });
     }
 
     return result;
   }, [
     hasVariables, adoptionRequirements, variableValues,
-    notificationChannels, alertChannel, alertSeverity,
+    hasNotificationChannels, notificationChannels, alertChannel, alertSeverity,
     requireApproval, autoApproveSeverity, reviewTimeout,
-    maxConcurrent, timeoutMs, maxBudgetUsd,
+    maxConcurrent, timeoutMs, maxBudgetUsd, sandboxPolicy,
     hasTriggers, selectedTriggerIndices, triggerConfigs,
-    hasQuestions, questions, userAnswers, questionGenerating,
+    hasQuestions, questions, userAnswers,
   ]);
 
   // ── Accordion state: auto-expand first section with missing required fields ──
@@ -299,7 +292,6 @@ export function TuneStep() {
     wizard.updatePreference('notificationChannels', current);
   }
 
-  // Map section ID → meta for quick lookup
   const sectionMap = useMemo(
     () => new Map(sections.map((s) => [s.id, s])),
     [sections],
@@ -307,6 +299,17 @@ export function TuneStep() {
 
   return (
     <div className="space-y-2">
+      {/* Step header */}
+      <div className="mb-1">
+        <h3 className="text-base font-semibold text-foreground">Configure Persona</h3>
+        <p className="text-sm text-muted-foreground/60 mt-0.5">
+          Set template variables, notification preferences, and safety limits.
+          {sections.some((s) => s.isRequired && s.hasMissing) && (
+            <span className="text-amber-400/70 ml-1">Required fields marked below.</span>
+          )}
+        </p>
+      </div>
+
       {/* Template Variables */}
       {sectionMap.has('variables') && (
         <AccordionSection
@@ -385,7 +388,7 @@ export function TuneStep() {
           isOpen={openSections.has('notifications')}
           onToggle={() => toggleSection('notifications')}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className={fieldClass}>
               <label className={labelClass}>Notify via</label>
               <div className="flex gap-1.5 flex-wrap mt-1">
@@ -424,15 +427,15 @@ export function TuneStep() {
             <div className={fieldClass}>
               <label className={labelClass}>Severity threshold</label>
               <p className={descClass}>Minimum severity to alert</p>
-              <select
+              <ThemedSelect
                 value={alertSeverity}
                 onChange={(e) => wizard.updatePreference('alertSeverity', e.target.value)}
-                className={selectClass}
+                className="py-1.5 px-2.5"
               >
                 <option value="all">All events</option>
                 <option value="warning_critical">Warning + Critical</option>
                 <option value="critical_only">Critical only</option>
-              </select>
+              </ThemedSelect>
             </div>
           </div>
         </AccordionSection>
@@ -445,7 +448,7 @@ export function TuneStep() {
           isOpen={openSections.has('review')}
           onToggle={() => toggleSection('review')}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className={fieldClass}>
               <label className={labelClass}>
                 Require approval
@@ -456,52 +459,59 @@ export function TuneStep() {
                 )}
               </label>
               <p className={descClass}>Pause before executing actions</p>
-              <button
-                type="button"
-                onClick={() => {
-                  if (sandboxPolicy?.requireApproval) return;
-                  wizard.updatePreference('requireApproval', !requireApproval);
-                }}
-                disabled={sandboxPolicy?.requireApproval}
-                className={`mt-1 w-11 h-6 rounded-full border transition-colors flex items-center ${
+              <label
+                className={`mt-1 inline-flex w-11 h-6 rounded-full border transition-colors items-center cursor-pointer ${
                   requireApproval || sandboxPolicy?.requireApproval
                     ? 'bg-violet-500/30 border-violet-500/40 justify-end'
                     : 'bg-secondary/40 border-primary/15 justify-start'
                 } ${sandboxPolicy?.requireApproval ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
+                <input
+                  type="checkbox"
+                  role="switch"
+                  aria-checked={requireApproval || !!sandboxPolicy?.requireApproval}
+                  checked={requireApproval || !!sandboxPolicy?.requireApproval}
+                  disabled={!!sandboxPolicy?.requireApproval}
+                  onChange={() => {
+                    if (!sandboxPolicy?.requireApproval) {
+                      wizard.updatePreference('requireApproval', !requireApproval);
+                    }
+                  }}
+                  className="sr-only"
+                />
                 <div className={`w-4.5 h-4.5 rounded-full mx-0.5 transition-colors ${
                   requireApproval || sandboxPolicy?.requireApproval ? 'bg-violet-400' : 'bg-muted-foreground/30'
                 }`} />
-              </button>
+              </label>
             </div>
 
             <div className={fieldClass}>
               <label className={labelClass}>Auto-approve</label>
               <p className={descClass}>Skip review for lower severity</p>
-              <select
+              <ThemedSelect
                 value={autoApproveSeverity}
                 onChange={(e) => wizard.updatePreference('autoApproveSeverity', e.target.value)}
-                className={selectClass}
+                className="py-1.5 px-2.5"
               >
                 <option value="info">Info only</option>
                 <option value="info_warning">Info + Warning</option>
                 <option value="all">All (no review)</option>
-              </select>
+              </ThemedSelect>
             </div>
 
             <div className={fieldClass}>
               <label className={labelClass}>Review timeout</label>
               <p className={descClass}>Auto-reject after timeout</p>
-              <select
+              <ThemedSelect
                 value={reviewTimeout}
                 onChange={(e) => wizard.updatePreference('reviewTimeout', e.target.value)}
-                className={selectClass}
+                className="py-1.5 px-2.5"
               >
                 <option value="1h">1 hour</option>
                 <option value="4h">4 hours</option>
                 <option value="24h">24 hours</option>
                 <option value="none">No timeout</option>
-              </select>
+              </ThemedSelect>
             </div>
           </div>
         </AccordionSection>
@@ -514,7 +524,13 @@ export function TuneStep() {
           isOpen={openSections.has('limits')}
           onToggle={() => toggleSection('limits')}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {sandboxPolicy?.budgetEnforced && maxBudgetUsd == null && (
+            <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-amber-500/10 border border-amber-500/15">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+              <span className="text-sm text-amber-300/80">Sandbox mode requires a budget cap for safety.</span>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className={fieldClass}>
               <label className={labelClass}>
                 Max concurrent
@@ -541,17 +557,17 @@ export function TuneStep() {
             <div className={fieldClass}>
               <label className={labelClass}>Timeout per run</label>
               <p className={descClass}>Max execution time</p>
-              <select
+              <ThemedSelect
                 value={String(timeoutMs)}
                 onChange={(e) => wizard.updatePreference('timeoutMs', parseInt(e.target.value))}
-                className={selectClass}
+                className="py-1.5 px-2.5"
               >
                 <option value="300000">5 minutes</option>
                 <option value="900000">15 minutes</option>
                 <option value="1800000">30 minutes</option>
                 <option value="3600000">1 hour</option>
                 <option value="0">No limit</option>
-              </select>
+              </ThemedSelect>
             </div>
 
             <div className={fieldClass}>
@@ -563,7 +579,7 @@ export function TuneStep() {
                   </span>
                 )}
               </label>
-              <p className={descClass}>{sandboxPolicy?.budgetEnforced ? 'Budget cap required in sandbox mode' : 'Leave empty for no limit'}</p>
+              <p className={descClass}>{sandboxPolicy?.budgetEnforced ? 'Required in sandbox mode' : 'Leave empty for no limit'}</p>
               <input
                 type="number"
                 min={sandboxPolicy?.budgetEnforced ? 0.5 : 0}
@@ -601,7 +617,7 @@ export function TuneStep() {
         </AccordionSection>
       )}
 
-      {/* AI Questions */}
+      {/* AI Questions — only shown when loaded */}
       {sectionMap.has('questions') && (
         <AccordionSection
           meta={sectionMap.get('questions')!}
@@ -616,6 +632,14 @@ export function TuneStep() {
             onSkip={handleSkipQuestions}
           />
         </AccordionSection>
+      )}
+
+      {/* Loading indicator for questions generation (shown inline, not as a section) */}
+      {questionGenerating && !hasQuestions && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-500/5 border border-violet-500/10">
+          <Sparkles className="w-3.5 h-3.5 text-violet-400 animate-pulse" />
+          <span className="text-sm text-violet-300/70">Analyzing template for configuration questions...</span>
+        </div>
       )}
     </div>
   );

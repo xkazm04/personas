@@ -46,6 +46,7 @@ export interface UseRealtimeEventsReturn {
   isPaused: boolean;
   isConnected: boolean;
   selectedEvent: RealtimeEvent | null;
+  droppedCount: number;
   togglePause: () => void;
   selectEvent: (event: RealtimeEvent | null) => void;
   triggerTestFlow: () => Promise<void>;
@@ -99,6 +100,7 @@ function computeStats(events: RealtimeEvent[]): RealtimeStats {
 // ── Hook ─────────────────────────────────────────────────────────
 export function useRealtimeEvents(): UseRealtimeEventsReturn {
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
+  const [droppedCount, setDroppedCount] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<RealtimeEvent | null>(
     null
@@ -130,7 +132,11 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
 
     setEvents((prev) => {
       const next = [realtimeEvent, ...prev];
-      return next.length > 200 ? next.slice(0, 200) : next;
+      if (next.length > 200) {
+        setDroppedCount((c) => c + next.length - 200);
+        return next.slice(0, 200);
+      }
+      return next;
     });
   }, []);
   const isConnected = useEventBusListener(handleBusEvent);
@@ -188,7 +194,11 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
           };
           setEvents((prev) => {
             const next = [simEvent, ...prev];
-            return next.length > 200 ? next.slice(0, 200) : next;
+            if (next.length > 200) {
+              setDroppedCount((c) => c + next.length - 200);
+              return next.slice(0, 200);
+            }
+            return next;
           });
         }, i * 350);
         testFlowTimeoutsRef.current.push(timeoutId);
@@ -204,6 +214,7 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
     isPaused,
     isConnected,
     selectedEvent,
+    droppedCount,
     togglePause,
     selectEvent,
     triggerTestFlow,

@@ -1,17 +1,22 @@
-import { useEffect, useRef } from 'react';
-import { Check, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Check, AlertTriangle, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { FailedOperation } from '@/hooks/design/applyDesignResult';
 import { DesignPhaseAppliedDetails } from './DesignPhaseAppliedDetails';
 
 interface DesignPhaseAppliedProps {
   result: DesignAnalysisResult | null;
   warnings?: string[];
+  failedOperations?: FailedOperation[];
+  onRetryFailed?: () => void;
   onReset: () => void;
 }
 
-export function DesignPhaseApplied({ result, warnings = [], onReset }: DesignPhaseAppliedProps) {
-  const hasWarnings = warnings.length > 0;
+export function DesignPhaseApplied({ result, warnings = [], failedOperations = [], onRetryFailed, onReset }: DesignPhaseAppliedProps) {
+  const hasFailures = failedOperations.length > 0;
+  const hasWarnings = warnings.length > 0 || hasFailures;
+  const [retrying, setRetrying] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,8 +85,46 @@ export function DesignPhaseApplied({ result, warnings = [], onReset }: DesignPha
         )}
       </motion.div>
 
-      {/* Warnings */}
-      {hasWarnings && (
+      {/* Failed operations banner */}
+      {hasFailures && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.35 }}
+          className="w-full max-w-sm px-3 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20"
+        >
+          <p className="text-xs font-medium text-amber-400 mb-2">
+            {failedOperations.length} operation{failedOperations.length !== 1 ? 's' : ''} failed
+          </p>
+          <ul className="space-y-1.5 mb-3">
+            {failedOperations.map((op, i) => (
+              <li key={i} className="text-sm text-amber-400/90 flex items-start gap-1.5">
+                <span className="mt-0.5 shrink-0 text-amber-500">{op.kind === 'trigger' ? '⚡' : '📡'}</span>
+                <span>
+                  <span className="font-medium">{op.label}</span>
+                  <span className="block text-xs text-amber-400/60">{op.error}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          {onRetryFailed && (
+            <button
+              onClick={async () => {
+                setRetrying(true);
+                try { await onRetryFailed(); } finally { setRetrying(false); }
+              }}
+              disabled={retrying}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors disabled:opacity-50"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${retrying ? 'animate-spin' : ''}`} />
+              {retrying ? 'Retrying…' : `Retry ${failedOperations.length} failed`}
+            </button>
+          )}
+        </motion.div>
+      )}
+
+      {/* Generic warnings (non-structured) */}
+      {!hasFailures && warnings.length > 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

@@ -46,10 +46,10 @@ const PROVIDERS: Record<ProviderName, ProviderSpec> = {
   copilot: {
     command: 'copilot',
     baseArgs: [],
-    promptDelivery: 'stdin',
+    promptDelivery: 'flag',
     promptFlag: '-p',
-    outputFormatArgs: ['--output-format', 'stream-json'],
-    autoApproveArgs: ['--sandbox'],
+    outputFormatArgs: ['--output-format', 'json'],
+    autoApproveArgs: ['--yolo'],
     modelFlag: '--model',
   },
 };
@@ -174,7 +174,71 @@ function parseStreamLine(provider: ProviderName, line: string): StreamEvent {
       };
     }
 
-    // ── Codex/Copilot-style events ───────────────────────────────────────
+    // ── GitHub Copilot CLI events ──────────────────────────────────────
+    case 'assistant.turn_start': {
+      return {
+        ...base,
+        type: 'system_init',
+        model: json.data?.model ?? 'unknown',
+        sessionId: json.data?.interactionId ?? json.id,
+      };
+    }
+
+    case 'assistant.message_delta': {
+      const delta = json.data?.deltaContent;
+      if (delta) {
+        return { ...base, type: 'assistant_text', text: delta };
+      }
+      return base;
+    }
+
+    case 'assistant.message': {
+      const msgContent = json.data?.content;
+      if (msgContent) {
+        return { ...base, type: 'assistant_text', text: msgContent };
+      }
+      const toolReqs = json.data?.toolRequests;
+      if (Array.isArray(toolReqs) && toolReqs.length > 0) {
+        const req = toolReqs[0];
+        return {
+          ...base,
+          type: 'tool_use',
+          toolName: req.toolName ?? req.name ?? 'unknown',
+          toolInput: typeof req.input === 'string' ? req.input : JSON.stringify(req.input ?? {}),
+        };
+      }
+      return base;
+    }
+
+    case 'assistant.tool.start':
+    case 'assistant.tool_use': {
+      return {
+        ...base,
+        type: 'tool_use',
+        toolName: json.data?.toolName ?? json.data?.name ?? 'unknown',
+        toolInput: typeof json.data?.input === 'string' ? json.data.input : JSON.stringify(json.data?.input ?? {}),
+      };
+    }
+
+    case 'assistant.tool.end':
+    case 'assistant.tool_result': {
+      const toolOutput = json.data?.output ?? json.data?.result;
+      return {
+        ...base,
+        type: 'tool_result',
+        toolOutput: (typeof toolOutput === 'string' ? toolOutput : JSON.stringify(toolOutput))?.slice(0, 2000),
+      };
+    }
+
+    case 'assistant.turn_end': {
+      return {
+        ...base,
+        type: 'result',
+        outputTokens: json.data?.outputTokens,
+      };
+    }
+
+    // ── Legacy Codex-style events ────────────────────────────────────────
     case 'thread.started': {
       return {
         ...base,
@@ -232,13 +296,15 @@ export async function runCli(config: CliRunnerConfig): Promise<CliRunResult> {
   const spec = PROVIDERS[config.provider];
   const timeoutMs = config.timeoutMs ?? 120_000;
 
-  // Build arguments — all providers use stdin delivery to avoid shell escaping issues
+  // Build arguments
   const args: string[] = [...spec.baseArgs];
 
   // Claude: -p -  (read prompt from stdin)
   // Gemini: -p "." (enable headless mode, stdin appended to ".")
-  // Copilot: -p - (read prompt from stdin)
-  if (config.provider === 'gemini') {
+  // Copilot: -p "<prompt>" (prompt as flag value)
+  if (spec.promptDelivery === 'flag') {
+    args.push(spec.promptFlag, config.prompt);
+  } else if (config.provider === 'gemini') {
     args.push(spec.promptFlag, '.');
   } else {
     args.push(spec.promptFlag, '-');
@@ -255,19 +321,27 @@ export async function runCli(config: CliRunnerConfig): Promise<CliRunResult> {
   const env = { ...process.env, ...config.env };
   delete env.CLAUDECODE;
 
-  // Spawn process (shell: true on Windows for .cmd file resolution)
+  // Spawn process — on Windows, use cmd /C for .cmd shim resolution
+  // to avoid shell word-splitting of prompt arguments
   const startTime = Date.now();
-  const child = spawn(spec.command, args, {
+  let spawnCommand = spec.command;
+  let spawnArgs = args;
+  if (IS_WIN) {
+    spawnCommand = 'cmd';
+    spawnArgs = ['/C', `${spec.command}.cmd`, ...args];
+  }
+  const child = spawn(spawnCommand, spawnArgs, {
     cwd: config.cwd,
     env,
     stdio: ['pipe', 'pipe', 'pipe'],
     windowsHide: true,
-    shell: IS_WIN,
   });
 
-  // All providers: deliver prompt via stdin
-  if (child.stdin) {
+  // Stdin delivery: write prompt and close (Claude, Gemini)
+  if (spec.promptDelivery === 'stdin' && child.stdin) {
     child.stdin.write(config.prompt);
+    child.stdin.end();
+  } else if (child.stdin) {
     child.stdin.end();
   }
 
@@ -356,8 +430,8 @@ export async function runCli(config: CliRunnerConfig): Promise<CliRunResult> {
     reportedModel: resultEvent?.model ?? events.find((e) => e.model)?.model,
     sessionId,
     // Claude sends complete text blocks (join with newline).
-    // Gemini sends deltas (join without separator to reconstruct).
-    assistantText: config.provider === 'gemini'
+    // Gemini and Copilot send deltas (join without separator to reconstruct).
+    assistantText: config.provider === 'gemini' || config.provider === 'copilot'
       ? assistantTextParts.join('')
       : assistantTextParts.join('\n'),
     toolsUsed,

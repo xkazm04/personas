@@ -721,6 +721,28 @@
         "label": "Slack Message Templates",
         "content": "Use consistent Block Kit formatting across all channels:\n\n**New Signup Template:**\n```\n🆕 *{name}* ({email}) signed up for *{plan}* plan\n• Source: {signup_source}\n• Domain: {domain} {enterprise_badge}\n• Time: {timestamp}\n```\n\n**Order Update Template:**\n```\n📦 Order *#{order_id}* — {status_emoji} {status}\n• Customer: {name} ({plan} plan)\n• Total: ${total} ({items_count} items)\n• Status: {old_status} → {new_status}\n```\n\n**Anomaly Alert Template:**\n```\n🚨 *{severity} SEVERITY ANOMALY*\n• Table: {table} | Operation: {operation}\n• Detail: {anomaly_description}\n• Raw data: ```{json_snippet}```\n• Recommended action: {recommendation}\n```"
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Confirmation required for high-priority actions",
+        "context": "High-priority confirmation gate detected"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack alerts plus email digests and summaries (periodic digests, critical alerts, completion confirmations, error notifications)",
+        "context": "2 notification channel(s) configured: slack, email"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Deduplication memory tracking known items across runs",
+        "context": "Tracks: human review outcomes, recurring patterns, calibrated thresholds, known items for deduplication"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution completed, item created, threshold breached",
+        "context": "3 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

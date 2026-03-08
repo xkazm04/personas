@@ -19,6 +19,16 @@ export interface McpToolResult {
   duration_ms: number;
 }
 
+// ── MCP Connection Test ─────────────────────────────────────────────────
+
+export interface McpPingResult {
+  success: boolean;
+  message: string;
+}
+
+export const healthcheckMcpPreview = (fields: Record<string, string>) =>
+  invoke<McpPingResult>('healthcheck_mcp_preview', { fields }, undefined, 90_000);
+
 // ── MCP Tool Discovery & Execution ─────────────────────────────────────
 
 export const listMcpTools = (credentialId: string) =>

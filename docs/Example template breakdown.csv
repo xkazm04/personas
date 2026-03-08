@@ -1,0 +1,7 @@
+,Trigger options,Connector - Retrieve,Persona logic (Prompt),Connector-Store,Connector - Reaction,Events,Messages,Human Review,Memory
+Support escalation engine + Support intelligence,Webhook/Cron,Supporting tool,"Evaluation, Deduplication","Database, Wiki","Messaging, Wiki enrichment",Support ticket created,"Ticket <id> Created, Ticket <id> Analyzed",Highest prio confirmation,"Human review patterns, Type of user struggles"
+Customer feedback routing,Cron,"CRM, Socials",Evaluation,Database,"Response, Backlog item","Backlog item created, Message responded",Feedback received,"Message review, Item triage","Language tone corrected by human, Rejected items"
+Lead management,Webhook/Cron,"Form, Email","Research & Evaluate (spam, industry)",Database,--,Lead created,Lead created,Legitimicy of lead,Human review patterns
+Product Signal Detector,Cron,Analytics - Visit ratio per page/feature,"Compare with past, evaluate",Database,--,Action needed,Action needed,--,--
+Industry Intelligence Aggregator,Cron,"Email, Web Search",Impact analysis,Database,Backlog item,Backlog item created,Industry intellgience researched,Item triage,Human review patterns
+Team Decision Logger -> Comms evaluation,Cron,Messaging,Extract key info and decision,Database,Backlog item,Backlog item created,Extracted x topics,Item triage,Human review patterns

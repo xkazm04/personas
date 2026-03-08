@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plug, Sparkles, Bot, Loader2 } from 'lucide-react';
+import { Plug, Sparkles, Bot, Loader2, Import } from 'lucide-react';
 import { useState } from 'react';
 import { QUICK_SERVICE_HINTS, HINT_COLORS } from '@/features/vault/sub_design/CredentialDesignHelpers';
 import type { ConnectorDefinition } from '@/lib/types/types';
@@ -9,6 +9,7 @@ interface IdlePhaseProps {
   onInstructionChange: (value: string) => void;
   onStart: () => void;
   onAutoSetup?: () => void;
+  onImportFrom?: () => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
   showTemplates: boolean;
   onToggleTemplates: () => void;
@@ -25,6 +26,7 @@ export function IdlePhase({
   onInstructionChange,
   onStart,
   onAutoSetup,
+  onImportFrom,
   onKeyDown,
   showTemplates,
   onToggleTemplates,
@@ -56,6 +58,16 @@ export function IdlePhase({
         >
           From Catalog
         </button>
+
+        {onImportFrom && (
+          <button
+            onClick={onImportFrom}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+          >
+            <Import className="w-3.5 h-3.5" />
+            Import from...
+          </button>
+        )}
 
         {QUICK_SERVICE_HINTS.map((hint) => (
           <button

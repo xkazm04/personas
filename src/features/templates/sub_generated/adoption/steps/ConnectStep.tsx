@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2,
   Plug,
@@ -7,6 +7,7 @@ import {
   ChevronDown,
   Star,
   Box,
+  Plus,
 } from 'lucide-react';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
@@ -15,7 +16,6 @@ import { useAdoptionWizard } from '../AdoptionWizardContext';
 import type { ConnectorPipelineStep } from '@/lib/types/designTypes';
 import { InlineCredentialPanel } from './InlineCredentialPanel';
 import type { CredentialMetadata } from '@/lib/types/types';
-import { MOTION } from '@/features/templates/animationPresets';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -39,19 +39,17 @@ export interface RequiredConnector {
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
+const BUILTIN_CONNECTORS = new Set(['personas_messages', 'personas_database']);
+
+function isVirtual(name: string): boolean {
+  return BUILTIN_CONNECTORS.has(name);
+}
+
 function findMatchingCredentials(
   connectorName: string,
   allCredentials: CredentialMetadata[],
 ): CredentialMetadata[] {
   return allCredentials.filter((c) => c.service_type === connectorName);
-}
-
-function gridColsClass(count: number): string {
-  if (count <= 1) return 'grid-cols-1';
-  if (count === 2) return 'grid-cols-2';
-  if (count === 3) return 'grid-cols-3';
-  if (count === 4) return 'grid-cols-4';
-  return 'grid-cols-5';
 }
 
 // ── Connector Dropdown ─────────────────────────────────────────────────
@@ -61,15 +59,30 @@ function ConnectorDropdown({
   activeName,
   recommendedName,
   onSelect,
+  credentials,
 }: {
   members: string[];
   activeName: string;
   recommendedName: string;
   onSelect: (name: string) => void;
+  credentials: CredentialMetadata[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const activeMeta = getConnectorMeta(activeName);
+
+  // Filter to only connectors user has credentials for (+ always keep active + built-in), sorted by name
+  const adoptedMembers = useMemo(() => {
+    const credServiceTypes = new Set(credentials.map((c) => c.service_type));
+    const filtered = members.filter(
+      (m) => m === activeName || credServiceTypes.has(m) || BUILTIN_CONNECTORS.has(m),
+    );
+    return filtered.sort((a, b) => {
+      const labelA = getConnectorMeta(a).label.toLowerCase();
+      const labelB = getConnectorMeta(b).label.toLowerCase();
+      return labelA.localeCompare(labelB);
+    });
+  }, [members, activeName, credentials]);
   const isRecommended = activeName === recommendedName;
 
   useEffect(() => {
@@ -88,23 +101,22 @@ function ConnectorDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center gap-2 px-2.5 py-2 bg-background/50 border border-primary/10 rounded-xl text-sm text-foreground/80 hover:border-primary/20 transition-colors text-left"
+        className="w-full flex items-center gap-2 px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-lg text-sm text-foreground/80 hover:border-primary/20 transition-colors text-left"
       >
-        <ConnectorIcon meta={activeMeta} size="w-4 h-4" />
+        <ConnectorIcon meta={activeMeta} size="w-3.5 h-3.5" />
         <span className="flex-1 truncate">{activeMeta.label}</span>
         {isRecommended && (
-          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-sm font-medium rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/20">
+          <span className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[10px] font-medium rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/20" title="Original template connector">
             <Star className="w-2 h-2" />
-            Rec
           </span>
         )}
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3 h-3 text-muted-foreground/50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-1 z-20 bg-background border border-primary/20 rounded-xl shadow-xl overflow-hidden">
           <div className="max-h-[240px] overflow-y-auto py-1">
-            {members.map((member) => {
+            {adoptedMembers.map((member) => {
               const memberMeta = getConnectorMeta(member);
               const isActive = member === activeName;
               const isRec = member === recommendedName;
@@ -116,21 +128,18 @@ function ConnectorDropdown({
                     onSelect(member);
                     setIsOpen(false);
                   }}
-                  className={`flex items-center gap-2.5 w-full px-3 py-2.5 text-left transition-colors ${
+                  className={`flex items-center gap-2.5 w-full px-3 py-2 text-left transition-colors ${
                     isActive
                       ? 'bg-violet-500/10 text-violet-300'
                       : 'text-foreground/80 hover:bg-primary/5'
                   }`}
                 >
-                  <ConnectorIcon meta={memberMeta} size="w-4 h-4" />
+                  <ConnectorIcon meta={memberMeta} size="w-3.5 h-3.5" />
                   <span className="text-sm flex-1 truncate">{memberMeta.label}</span>
                   {isRec && (
-                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-sm font-medium rounded-full bg-violet-500/10 text-violet-400/70 border border-violet-500/15 flex-shrink-0">
-                      <Star className="w-2 h-2" />
-                      Recommended
-                    </span>
+                    <span className="text-[10px] text-violet-400/60">Original</span>
                   )}
-                  {isActive && <CheckCircle2 className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />}
+                  {isActive && <CheckCircle2 className="w-3 h-3 text-violet-400 flex-shrink-0" />}
                 </button>
               );
             })}
@@ -141,9 +150,33 @@ function ConnectorDropdown({
   );
 }
 
-// ── Component Card (for role-grouped connectors) ───────────────────────
+// ── Resolved connector (compact row) ────────────────────────────────
 
-function ComponentCard({
+function ResolvedConnectorRow({
+  connector,
+  credentialName,
+}: {
+  connector: RequiredConnector;
+  credentialName: string;
+}) {
+  const meta = getConnectorMeta(connector.activeName);
+  const builtIn = isVirtual(connector.activeName);
+
+  return (
+    <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-emerald-500/15 bg-emerald-500/5">
+      <ConnectorIcon meta={meta} size="w-4 h-4" />
+      <span className="text-sm font-medium text-foreground/80 flex-1 truncate">{meta.label}</span>
+      <span className="text-sm text-muted-foreground/50 truncate max-w-[180px]">
+        {builtIn ? 'Built-in' : credentialName}
+      </span>
+      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+    </div>
+  );
+}
+
+// ── Unresolved Component Card ───────────────────────────────────────
+
+function UnresolvedComponentCard({
   connector,
   credentials,
   selectedCredentialId,
@@ -152,7 +185,6 @@ function ComponentCard({
   onOpenInlineForm,
   onOpenDesign,
   onSwapConnector,
-  justCreated,
 }: {
   connector: RequiredConnector;
   credentials: CredentialMetadata[];
@@ -162,10 +194,9 @@ function ComponentCard({
   onOpenInlineForm: (connectorName: string) => void;
   onOpenDesign: (connectorName: string) => void;
   onSwapConnector: (originalName: string, replacementName: string) => void;
-  justCreated?: boolean;
 }) {
-  const isVirtualConnector = connector.activeName === 'personas_messages';
-  const hasCredential = isVirtualConnector || !!selectedCredentialId;
+  const builtIn = isVirtual(connector.activeName);
+  const hasCredential = builtIn || !!selectedCredentialId;
   const matchingCreds = useMemo(
     () => findMatchingCredentials(connector.activeName, credentials),
     [connector.activeName, credentials],
@@ -174,38 +205,29 @@ function ComponentCard({
   const handleCredentialChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const val = e.target.value;
-      if (val === '__create__') {
-        onOpenInlineForm(connector.activeName);
-      } else if (val === '__design__') {
-        onOpenDesign(connector.activeName);
-      } else if (val === '') {
-        onClearCredential(connector.activeName);
-      } else {
-        onSetCredential(connector.activeName, val);
-      }
+      if (val === '__create__') onOpenInlineForm(connector.activeName);
+      else if (val === '__design__') onOpenDesign(connector.activeName);
+      else if (val === '') onClearCredential(connector.activeName);
+      else onSetCredential(connector.activeName, val);
     },
     [connector.activeName, onSetCredential, onClearCredential, onOpenInlineForm, onOpenDesign],
   );
 
   const handleConnectorSelect = useCallback(
-    (selected: string) => {
-      onSwapConnector(connector.name, selected);
-    },
+    (selected: string) => onSwapConnector(connector.name, selected),
     [connector.name, onSwapConnector],
   );
 
   return (
-    <div
-      className={`rounded-xl border p-3 transition-all ${MOTION.smooth.css} ${
-        hasCredential ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-primary/10 bg-secondary/20'
-      }`}
-    >
+    <div className={`rounded-xl border p-3 ${
+      hasCredential ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-amber-500/15 bg-secondary/20'
+    }`}>
       {/* Role header */}
-      <div className="flex items-center gap-2 mb-2.5">
-        <div className="w-6 h-6 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center flex-shrink-0">
-          <Box className="w-3 h-3 text-violet-400/70" />
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-5 h-5 rounded-md bg-violet-500/10 border border-violet-500/15 flex items-center justify-center flex-shrink-0">
+          <Box className="w-2.5 h-2.5 text-violet-400/70" />
         </div>
-        <span className="text-sm font-semibold text-foreground/90 flex-1 truncate">{connector.roleLabel}</span>
+        <span className="text-sm font-semibold text-foreground/90 flex-1 truncate">{connector.roleLabel ?? getConnectorMeta(connector.activeName).label}</span>
         {hasCredential ? (
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
         ) : (
@@ -213,158 +235,52 @@ function ComponentCard({
         )}
       </div>
 
-      {/* Connector selector */}
-      <div className="mb-2.5">
-        <label className="text-sm font-medium text-muted-foreground/50 uppercase tracking-wider mb-1 block">
-          Connector
-        </label>
-        <ConnectorDropdown
-          members={connector.roleMembers!}
-          activeName={connector.activeName}
-          recommendedName={connector.name}
-          onSelect={handleConnectorSelect}
-        />
-      </div>
+      {/* Connector selector (only if there are role members) */}
+      {connector.roleMembers && connector.roleMembers.length > 1 && (
+        <div className="mb-2">
+          <ConnectorDropdown
+            members={connector.roleMembers}
+            activeName={connector.activeName}
+            recommendedName={connector.name}
+            onSelect={handleConnectorSelect}
+            credentials={credentials}
+          />
+        </div>
+      )}
 
-      {/* Credential dropdown or always-active badge */}
-      {connector.activeName === 'personas_messages' ? (
+      {/* Credential dropdown or built-in badge */}
+      {builtIn ? (
         <div className="flex items-center gap-1.5 px-2 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
           <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-          <span className="text-sm text-emerald-300/80">Always active</span>
+          <span className="text-sm text-emerald-300/80">Built-in</span>
         </div>
       ) : (
-        <div>
-          <label className="text-sm font-medium text-muted-foreground/50 uppercase tracking-wider mb-1 block">
-            Credential
-          </label>
+        <div className="space-y-1.5">
           <ThemedSelect
             value={selectedCredentialId ?? ''}
             onChange={handleCredentialChange}
-            className={`px-2.5 ${
-              justCreated
-                ? 'border-emerald-400/60 ring-2 ring-emerald-400/20'
-                : hasCredential ? 'border-emerald-500/15' : 'border-primary/10'
-            }`}
-            style={justCreated ? { transition: 'border-color 0.3s, box-shadow 0.3s' } : undefined}
+            className={`py-1.5 px-2.5 ${hasCredential ? 'border-emerald-500/15' : 'border-primary/10'}`}
           >
             <option value="">Select credential...</option>
             {matchingCreds.map((cred) => (
-              <option key={cred.id} value={cred.id}>
-                {cred.name}
-              </option>
+              <option key={cred.id} value={cred.id}>{cred.name}</option>
             ))}
             <option value="__create__">+ Create new credential</option>
             <option value="__design__">+ Design custom connector</option>
           </ThemedSelect>
+          {!hasCredential && matchingCreds.length === 0 && (
+            <button
+              type="button"
+              onClick={() => onOpenInlineForm(connector.activeName)}
+              className="flex items-center gap-1.5 px-2 py-1 text-sm text-violet-400/70 hover:text-violet-300 transition-colors"
+            >
+              <Plus className="w-3 h-3" />
+              Add credential
+            </button>
+          )}
         </div>
       )}
     </div>
-  );
-}
-
-// ── Standalone Tile (for connectors without a role) ────────────────────
-
-function StandaloneConnectorTile({
-  connector,
-  credentials,
-  selectedCredentialId,
-  onSetCredential,
-  onClearCredential,
-  onOpenInlineForm,
-  onOpenDesign,
-  justCreated,
-}: {
-  connector: RequiredConnector;
-  credentials: CredentialMetadata[];
-  selectedCredentialId: string | undefined;
-  onSetCredential: (connectorName: string, credentialId: string) => void;
-  onClearCredential: (connectorName: string) => void;
-  onOpenInlineForm: (connectorName: string) => void;
-  onOpenDesign: (connectorName: string) => void;
-  justCreated?: boolean;
-}) {
-  const meta = getConnectorMeta(connector.activeName);
-  const hasCredential = !!selectedCredentialId;
-  const matchingCreds = useMemo(
-    () => findMatchingCredentials(connector.activeName, credentials),
-    [connector.activeName, credentials],
-  );
-
-  const handleSelectChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const val = e.target.value;
-      if (val === '__create__') {
-        onOpenInlineForm(connector.activeName);
-      } else if (val === '__design__') {
-        onOpenDesign(connector.activeName);
-      } else if (val === '') {
-        onClearCredential(connector.activeName);
-      } else {
-        onSetCredential(connector.activeName, val);
-      }
-    },
-    [connector.activeName, onSetCredential, onClearCredential, onOpenInlineForm, onOpenDesign],
-  );
-
-  return (
-    <div
-      className={`rounded-xl border p-3 transition-all ${MOTION.smooth.css} ${
-        hasCredential ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-primary/10 bg-secondary/20'
-      }`}
-    >
-      <div className="flex items-center gap-2 mb-2">
-        {hasCredential ? (
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-        ) : (
-          <AlertCircle className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
-        )}
-        <ConnectorIcon meta={meta} size="w-4 h-4" />
-        <span className="text-sm font-semibold text-foreground/90 flex-1 truncate">{meta.label}</span>
-      </div>
-
-      <ThemedSelect
-        value={selectedCredentialId ?? ''}
-        onChange={handleSelectChange}
-        className={`py-1.5 px-2.5 ${
-          justCreated
-            ? 'border-emerald-400/60 ring-2 ring-emerald-400/20'
-            : hasCredential ? 'border-emerald-500/15' : 'border-primary/10'
-        }`}
-        style={justCreated ? { transition: 'border-color 0.3s, box-shadow 0.3s' } : undefined}
-      >
-        <option value="">Select credential...</option>
-        {matchingCreds.map((cred) => (
-          <option key={cred.id} value={cred.id}>
-            {cred.name}
-          </option>
-        ))}
-        <option value="__create__">+ Create new credential</option>
-        <option value="__design__">+ Design custom connector</option>
-      </ThemedSelect>
-    </div>
-  );
-}
-
-// ── Success Bridge Chip ─────────────────────────────────────────────────
-
-function SuccessBridgeChip({ credentialName, onDone }: { credentialName: string; onDone: () => void }) {
-  useEffect(() => {
-    const timer = setTimeout(onDone, 1500);
-    return () => clearTimeout(timer);
-  }, [onDone]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8, scale: 0.92 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -4, scale: 0.95 }}
-      transition={{ type: 'spring', damping: 18, stiffness: 300 }}
-      className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 shadow-lg shadow-emerald-500/10"
-    >
-      <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-      <span className="text-sm font-medium text-emerald-300 truncate max-w-[200px]">{credentialName}</span>
-      <span className="text-sm text-emerald-400/60">connected</span>
-    </motion.div>
   );
 }
 
@@ -377,18 +293,14 @@ export function ConnectStep() {
   const credentials = ctx.liveCredentials;
   const connectorCredentialMap = ctx.state.connectorCredentialMap;
   const inlineCredentialConnector = ctx.state.inlineCredentialConnector;
-  const onSetCredential = ctx.wizard.setConnectorCredential;
-  const onClearCredential = ctx.wizard.clearConnectorCredential;
+  const onSetCredential = ctx.setConnectorCredential;
+  const onClearCredential = ctx.clearConnectorCredential;
   const onSetInlineConnector = ctx.wizard.setInlineCredentialConnector;
   const onCredentialCreated = ctx.handleCredentialCreated;
   const onSwapConnector = ctx.wizard.swapConnector;
 
-  // Tracks whether the inline panel should open in design-query mode
   const [inlineStartMode, setInlineStartMode] = useState<'pick' | 'design-query'>('pick');
-
-  // Success bridge state: tracks which connector just had a credential created
-  const [justCreated, setJustCreated] = useState<{ connector: string; credName: string } | null>(null);
-  const justCreatedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showPipeline, setShowPipeline] = useState(false);
 
   const handleOpenInlineForm = useCallback((name: string) => {
     setInlineStartMode('pick');
@@ -400,45 +312,39 @@ export function ConnectStep() {
     onSetInlineConnector(name);
   }, [onSetInlineConnector]);
 
-  const handleInlineSaveSuccess = useCallback((connName: string, credName: string) => {
-    if (justCreatedTimerRef.current) clearTimeout(justCreatedTimerRef.current);
-    setJustCreated({ connector: connName, credName });
-    justCreatedTimerRef.current = setTimeout(() => setJustCreated(null), 1500);
-  }, []);
+  // Classify connectors as resolved vs unresolved
+  const { resolved, unresolved, missingNames } = useMemo(() => {
+    const res: Array<{ connector: RequiredConnector; credName: string }> = [];
+    const unres: RequiredConnector[] = [];
+    const missing: string[] = [];
 
-  useEffect(() => {
-    return () => {
-      if (justCreatedTimerRef.current) clearTimeout(justCreatedTimerRef.current);
-    };
-  }, []);
-  const configuredCount = useMemo(
-    () => requiredConnectors.filter((c) => c.activeName === 'personas_messages' || !!connectorCredentialMap[c.activeName]).length,
-    [requiredConnectors, connectorCredentialMap],
-  );
+    for (const c of requiredConnectors) {
+      const builtIn = isVirtual(c.activeName);
+      const credId = connectorCredentialMap[c.activeName];
+      if (builtIn) {
+        res.push({ connector: c, credName: 'Built-in' });
+      } else if (credId) {
+        const cred = credentials.find((cr) => cr.id === credId);
+        res.push({ connector: c, credName: cred?.name ?? 'Configured' });
+      } else {
+        unres.push(c);
+        missing.push(getConnectorMeta(c.activeName).label);
+      }
+    }
+    return { resolved: res, unresolved: unres, missingNames: missing };
+  }, [requiredConnectors, connectorCredentialMap, credentials]);
+
+  const configuredCount = resolved.length;
   const totalCount = requiredConnectors.length;
   const progressPercent = totalCount > 0 ? (configuredCount / totalCount) * 100 : 0;
 
-  // Separate into role-grouped (component cards) and standalone
-  const { componentConnectors, standaloneConnectors } = useMemo(() => {
-    const withRole: RequiredConnector[] = [];
-    const without: RequiredConnector[] = [];
-    for (const conn of requiredConnectors) {
-      if (conn.role && conn.roleLabel && conn.roleMembers) {
-        withRole.push(conn);
-      } else {
-        without.push(conn);
-      }
-    }
-    return { componentConnectors: withRole, standaloneConnectors: without };
-  }, [requiredConnectors]);
-
-  // Find the active inline connector (using activeName)
+  // Find the active inline connector
   const activeInlineConnector = useMemo(
     () => requiredConnectors.find((c) => c.activeName === inlineCredentialConnector),
     [requiredConnectors, inlineCredentialConnector],
   );
 
-  // ── Pipeline steps (reflecting connector swaps) ──
+  // Pipeline steps (reflecting connector swaps)
   const pipelineSteps = useMemo<ConnectorPipelineStep[]>(() => {
     const sf = ctx.designResult?.service_flow;
     if (!Array.isArray(sf) || sf.length === 0) return [];
@@ -451,66 +357,72 @@ export function ConnectStep() {
       });
   }, [ctx.designResult, ctx.state.connectorSwaps]);
 
-  // ── Empty state ──
+  // Empty state
   if (requiredConnectors.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Plug className="w-10 h-10 text-muted-foreground/25 mb-3" />
+        <Plug className="w-8 h-8 text-muted-foreground/25 mb-3" />
         <p className="text-sm text-muted-foreground/50">
-          No connectors needed -- you're all set!
+          No connectors needed — you're all set!
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Service flow pipeline diagram */}
+    <div className="space-y-3">
+      {/* Step header */}
+      <div>
+        <h3 className="text-base font-semibold text-foreground">Connect Services</h3>
+        <p className="text-sm text-muted-foreground/60 mt-0.5">
+          Link your credentials to the connectors this template requires.
+        </p>
+      </div>
+
+      {/* Collapsible pipeline diagram */}
       {pipelineSteps.length > 0 && (
-        <ConnectorPipeline steps={pipelineSteps} className="justify-center" />
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowPipeline(!showPipeline)}
+            className="text-sm text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors flex items-center gap-1"
+          >
+            <ChevronDown className={`w-3 h-3 transition-transform ${showPipeline ? '' : '-rotate-90'}`} />
+            Service flow
+          </button>
+          {showPipeline && (
+            <div className="mt-2">
+              <ConnectorPipeline steps={pipelineSteps} className="justify-center" />
+            </div>
+          )}
+        </div>
       )}
 
       {/* Progress rail */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground/70">
-            {configuredCount} of {totalCount} component{totalCount !== 1 ? 's' : ''} configured
+            {configuredCount} of {totalCount} configured
           </p>
-          <AnimatePresence mode="wait">
-            {justCreated ? (
-              <SuccessBridgeChip
-                key={justCreated.connector}
-                credentialName={justCreated.credName}
-                onDone={() => setJustCreated(null)}
-              />
-            ) : configuredCount < totalCount ? (
-              <motion.span
-                key="remaining"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-sm text-amber-400/70"
-              >
-                {totalCount - configuredCount} remaining
-              </motion.span>
-            ) : null}
-          </AnimatePresence>
+          {missingNames.length > 0 && (
+            <span className="text-sm text-amber-400/70">
+              Missing: {missingNames.join(', ')}
+            </span>
+          )}
         </div>
-        <div className="h-1.5 rounded-full bg-secondary/40 overflow-hidden">
-          <motion.div
-            className="h-full rounded-full bg-emerald-400"
-            initial={{ width: 0 }}
-            animate={{ width: `${progressPercent}%` }}
-            transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+        <div className="h-1 rounded-full bg-secondary/40 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-emerald-400 transition-all duration-300"
+            style={{ width: `${progressPercent}%` }}
           />
         </div>
       </div>
 
-      {/* Architecture Component Cards */}
-      {componentConnectors.length > 0 && (
-        <div className={`grid gap-3 ${gridColsClass(componentConnectors.length)}`}>
-          {componentConnectors.map((connector) => (
-            <ComponentCard
+      {/* Unresolved connectors — expanded cards */}
+      {unresolved.length > 0 && (
+        <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+          {unresolved.map((connector) => (
+            <UnresolvedComponentCard
               key={connector.name}
               connector={connector}
               credentials={credentials}
@@ -520,45 +432,30 @@ export function ConnectStep() {
               onOpenInlineForm={handleOpenInlineForm}
               onOpenDesign={handleOpenDesign}
               onSwapConnector={onSwapConnector!}
-              justCreated={justCreated?.connector === connector.activeName}
             />
           ))}
         </div>
       )}
 
-      {/* Standalone Connector Tiles (no role) */}
-      {standaloneConnectors.length > 0 && (
-        <>
-          {componentConnectors.length > 0 && (
-            <div className="flex items-center gap-2 pt-1">
-              <div className="flex-1 h-px bg-primary/8" />
-              <span className="text-sm font-medium text-muted-foreground/40 uppercase tracking-wider">
-                Additional Connectors
-              </span>
-              <div className="flex-1 h-px bg-primary/8" />
-            </div>
+      {/* Resolved connectors — compact rows */}
+      {resolved.length > 0 && (
+        <div>
+          {unresolved.length > 0 && (
+            <p className="text-sm text-muted-foreground/40 mb-1.5">Configured</p>
           )}
-          <div className={`grid gap-3 ${
-            gridColsClass(standaloneConnectors.length)
-          }`}>
-            {standaloneConnectors.map((connector) => (
-              <StandaloneConnectorTile
+          <div className="flex flex-col gap-1">
+            {resolved.map(({ connector, credName }) => (
+              <ResolvedConnectorRow
                 key={connector.name}
                 connector={connector}
-                credentials={credentials}
-                selectedCredentialId={connectorCredentialMap[connector.activeName]}
-                onSetCredential={onSetCredential}
-                onClearCredential={onClearCredential}
-                onOpenInlineForm={handleOpenInlineForm}
-                onOpenDesign={handleOpenDesign}
-                justCreated={justCreated?.connector === connector.activeName}
+                credentialName={credName}
               />
             ))}
           </div>
-        </>
+        </div>
       )}
 
-      {/* Shared inline credential panel (below grid) — Manual / Design / Auto */}
+      {/* Inline credential panel */}
       <AnimatePresence initial={false}>
         {activeInlineConnector && (
           <InlineCredentialPanel
@@ -571,7 +468,7 @@ export function ConnectStep() {
             initialMode={inlineStartMode}
             onSetCredential={onSetCredential}
             onCredentialCreated={onCredentialCreated}
-            onSaveSuccess={handleInlineSaveSuccess}
+            onSaveSuccess={() => {}}
             onClose={() => onSetInlineConnector(null)}
           />
         )}

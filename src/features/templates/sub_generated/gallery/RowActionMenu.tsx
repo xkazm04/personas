@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useClickOutside } from '@/hooks/utility/useClickOutside';
 import { MoreVertical, Eye, RefreshCw, Trash2 } from 'lucide-react';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
@@ -17,13 +18,23 @@ export function RowActionMenu({
   onRebuild,
 }: RowActionMenuProps) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
   const closeMenu = useCallback(() => setOpen(false), []);
   useClickOutside(menuRef, open, closeMenu);
 
+  useLayoutEffect(() => {
+    if (open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPos({ top: rect.top - 4, left: rect.right - 180 });
+    }
+  }, [open]);
+
   return (
-    <div ref={menuRef} className={`relative ${open ? 'z-20' : ''}`}>
+    <div className="relative">
       <button
+        ref={triggerRef}
         onClick={(e) => {
           e.stopPropagation();
           setOpen((prev) => !prev);
@@ -33,8 +44,8 @@ export function RowActionMenu({
       >
         <MoreVertical className="w-4.5 h-4.5 text-muted-foreground/90" />
       </button>
-      {open && (
-        <div className="absolute right-0 bottom-full mb-1 z-50 min-w-[180px] py-1.5 bg-background border border-primary/20 rounded-lg shadow-2xl backdrop-blur-sm">
+      {open && createPortal(
+        <div ref={menuRef} className="fixed z-[9999] min-w-[180px] py-1.5 bg-background border border-primary/20 rounded-lg shadow-2xl backdrop-blur-sm" style={{ top: pos.top, left: pos.left, transform: 'translateY(-100%)' }}>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -46,7 +57,7 @@ export function RowActionMenu({
             <Eye className="w-4 h-4" />
             View Details
           </button>
-          {import.meta.env.VITE_DEVELOPMENT === 'true' && (
+          {import.meta.env.DEV && (
             <>
               <button
                 onClick={(e) => {
@@ -72,7 +83,8 @@ export function RowActionMenu({
               </button>
             </>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

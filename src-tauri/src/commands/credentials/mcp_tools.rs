@@ -1,8 +1,9 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use tauri::State;
 
-use crate::engine::mcp_tools::{McpTool, McpToolResult};
+use crate::engine::mcp_tools::{McpTool, McpToolResult, PingResult};
 use crate::error::AppError;
 use crate::ipc_auth::require_privileged;
 use crate::AppState;
@@ -31,4 +32,13 @@ pub async fn execute_mcp_tool(
         arguments,
     )
     .await
+}
+
+#[tauri::command]
+pub async fn healthcheck_mcp_preview(
+    state: State<'_, Arc<AppState>>,
+    fields: HashMap<String, String>,
+) -> Result<PingResult, AppError> {
+    require_privileged(&state, "healthcheck_mcp_preview").await?;
+    crate::engine::mcp_tools::ping(&fields).await
 }

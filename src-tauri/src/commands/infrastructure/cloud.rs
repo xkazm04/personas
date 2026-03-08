@@ -92,7 +92,7 @@ pub async fn cloud_connect(
     let parsed = validate_cloud_url(url.trim())?;
     let normalized = parsed.as_str().trim_end_matches('/').to_string();
 
-    let client = Arc::new(CloudClient::new(normalized.clone(), api_key.clone()));
+    let client = Arc::new(CloudClient::new(normalized.clone(), api_key.clone())?);
 
     // Verify the orchestrator is actually reachable before storing credentials
     client.health().await.map_err(|e| {
@@ -133,7 +133,7 @@ pub async fn cloud_reconnect_from_keyring(
     // Validate stored URL in case it was saved before URL validation was added
     validate_cloud_url(&url)?;
 
-    let client = Arc::new(CloudClient::new(url.clone(), api_key));
+    let client = Arc::new(CloudClient::new(url.clone(), api_key)?);
 
     client.health().await.map_err(|e| {
         AppError::Cloud(format!("Cloud orchestrator is not reachable: {e}"))

@@ -7,6 +7,7 @@ import { ChartTooltip } from '@/features/overview/sub_usage/charts/ChartTooltip'
 import { MetricChart } from '@/features/overview/sub_usage/charts/MetricChart';
 import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
 import type { ChartAnnotationRecord } from '@/features/overview/sub_observability/chartAnnotations';
+import { getAnnotationColor } from '@/features/overview/sub_observability/chartAnnotations';
 
 export interface PieDataPoint {
   name: string;
@@ -20,17 +21,6 @@ export interface MetricsChartsProps {
   annotations?: ChartAnnotationRecord[];
   /** Called when a failure bar is clicked with the date string (YYYY-MM-DD). */
   onFailureBarClick?: (date: string) => void;
-}
-
-function annotationColor(type: ChartAnnotationRecord['type']): string {
-  switch (type) {
-    case 'prompt': return '#8b5cf6';
-    case 'rotation': return '#f59e0b';
-    case 'incident': return '#ef4444';
-    case 'healing':
-    default:
-      return '#06b6d4';
-  }
 }
 
 export function MetricsCharts({ chartData, pieData, annotations = [], onFailureBarClick }: MetricsChartsProps) {
@@ -53,7 +43,7 @@ export function MetricsCharts({ chartData, pieData, annotations = [], onFailureB
               <ReferenceLine
                 key={`cost-annotation-${annotation.date}-${annotation.type}-${index}`}
                 x={annotation.date}
-                stroke={annotationColor(annotation.type)}
+                stroke={getAnnotationColor(annotation.type, annotation.color)}
                 strokeDasharray="4 4"
                 strokeOpacity={0.65}
                 label={({ viewBox }) => {
@@ -61,7 +51,7 @@ export function MetricsCharts({ chartData, pieData, annotations = [], onFailureB
                   return (
                     <g>
                       <title>{`${annotation.label} • ${new Date(annotation.timestamp).toLocaleString()}`}</title>
-                      <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={annotationColor(annotation.type)} />
+                      <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={getAnnotationColor(annotation.type, annotation.color)} />
                     </g>
                   );
                 }}
@@ -122,7 +112,7 @@ export function MetricsCharts({ chartData, pieData, annotations = [], onFailureB
             <ReferenceLine
               key={`health-annotation-${annotation.date}-${annotation.type}-${index}`}
               x={annotation.date}
-              stroke={annotationColor(annotation.type)}
+              stroke={getAnnotationColor(annotation.type, annotation.color)}
               strokeDasharray="4 4"
               strokeOpacity={0.65}
               label={({ viewBox }) => {
@@ -130,7 +120,7 @@ export function MetricsCharts({ chartData, pieData, annotations = [], onFailureB
                 return (
                   <g>
                     <title>{`${annotation.label} • ${new Date(annotation.timestamp).toLocaleString()}`}</title>
-                    <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={annotationColor(annotation.type)} />
+                    <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={getAnnotationColor(annotation.type, annotation.color)} />
                   </g>
                 );
               }}

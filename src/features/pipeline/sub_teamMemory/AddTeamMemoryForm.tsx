@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput';
+import { IMPORTANCE_MIN, IMPORTANCE_MAX, IMPORTANCE_DEFAULT } from './memoryConstants';
 
 const CATEGORIES = ['observation', 'decision', 'context', 'learning'] as const;
 
@@ -14,7 +15,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<string>('observation');
-  const [importance, setImportance] = useState(5);
+  const [importance, setImportance] = useState(IMPORTANCE_DEFAULT);
 
   const handleSubmit = () => {
     if (!title.trim() || !content.trim()) return;
@@ -32,7 +33,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
     setTitle('');
     setContent('');
     setCategory('observation');
-    setImportance(5);
+    setImportance(IMPORTANCE_DEFAULT);
     setExpanded(false);
   };
 
@@ -90,8 +91,8 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
           <span className="text-sm text-muted-foreground/50">Imp:</span>
           <input
             type="range"
-            min={1}
-            max={10}
+            min={IMPORTANCE_MIN}
+            max={IMPORTANCE_MAX}
             value={importance}
             onChange={(e) => setImportance(Number(e.target.value))}
             className="w-14 h-1 accent-amber-500"

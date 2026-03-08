@@ -118,6 +118,14 @@ export const EVENT_TYPE_COLORS: Record<string, EventTypeColor> = {
   credential_event: { tailwind: 'text-amber-400', hex: '#fbbf24' },
   task_created: { tailwind: 'text-cyan-400', hex: '#22d3ee' },
   custom: { tailwind: 'text-primary', hex: '#818cf8' },
+  // Deployment lifecycle events
+  deploy_started: { tailwind: 'text-sky-400', hex: '#38bdf8' },
+  deploy_succeeded: { tailwind: 'text-green-400', hex: '#4ade80' },
+  deploy_failed: { tailwind: 'text-red-400', hex: '#f87171' },
+  deploy_paused: { tailwind: 'text-orange-400', hex: '#fb923c' },
+  deploy_resumed: { tailwind: 'text-teal-400', hex: '#2dd4bf' },
+  agent_undeployed: { tailwind: 'text-rose-400', hex: '#fb7185' },
+  credential_provisioned: { tailwind: 'text-yellow-400', hex: '#facc15' },
 };
 
 /** Format seconds into a human-readable interval like "1 hour" or "2 hours 30 minutes" */

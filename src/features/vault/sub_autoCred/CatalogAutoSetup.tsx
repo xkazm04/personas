@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plug, ArrowLeft, Sparkles } from 'lucide-react';
+import { Plug, ArrowLeft, Bot, MessageSquare } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
@@ -8,6 +8,8 @@ import { useCredentialDesign } from '@/hooks/design/useCredentialDesign';
 import { AutoCredPanel } from './AutoCredPanel';
 import { AnalyzingPhase } from '@/features/vault/sub_design/AnalyzingPhase';
 import { usePersonaStore } from '@/stores/personaStore';
+import { checkPlaywrightAvailable } from '@/api/autoCredBrowser';
+import type { AutoCredMode } from './types';
 
 type Phase = 'analyzing' | 'auto';
 
@@ -58,6 +60,15 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
   const [designResult, setDesignResult] = useState<CredentialDesignResult | null>(
     hasSetupInstructions ? buildDesignResult(connector) : null,
   );
+
+  const [mode, setMode] = useState<AutoCredMode>('playwright');
+
+  // Check Playwright availability for badge display
+  useEffect(() => {
+    checkPlaywrightAvailable()
+      .then((available) => setMode(available ? 'playwright' : 'guided'))
+      .catch(() => setMode('guided'));
+  }, []);
 
   const design = useCredentialDesign();
 
@@ -133,7 +144,17 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
             {phase === 'analyzing' ? 'Analyzing connector setup procedures...' : 'Browser automation will guide credential creation'}
           </p>
         </div>
-        <Sparkles className="w-4 h-4 text-cyan-400" />
+        {mode === 'guided' ? (
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
+            <MessageSquare className="w-3 h-3 text-violet-400" />
+            <span className="text-xs font-medium text-violet-400">Guided</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+            <Bot className="w-3 h-3 text-cyan-400" />
+            <span className="text-xs font-medium text-cyan-400">Playwright MCP</span>
+          </div>
+        )}
       </div>
 
       {/* Content */}

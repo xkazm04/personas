@@ -26,6 +26,11 @@ const STANDARD_TABS: SidebarEntry[] = [
   { key: 'custom', label: 'Custom', Icon: Layers },
 ];
 
+/** Compare two StructuredPrompt objects for equality (serialized). */
+function promptChanged(current: StructuredPrompt, baseline: StructuredPrompt): boolean {
+  return JSON.stringify(current) !== JSON.stringify(baseline);
+}
+
 export function PersonaPromptEditor() {
   const selectedPersona = usePersonaStore((state) => state.selectedPersona);
   const applyPersonaOp = usePersonaStore((state) => state.applyPersonaOp);
@@ -42,9 +47,12 @@ export function PersonaPromptEditor() {
   }, [isAnthropic]);
 
   const [sp, setSp] = useState<StructuredPrompt>(createEmptyStructuredPrompt());
-  const [promptDirty, setPromptDirty] = useState(false);
+  const [baseline, setBaseline] = useState<StructuredPrompt>(sp);
   const [showSaved, setShowSaved] = useState(false);
   const [selectedCustomIndex, setSelectedCustomIndex] = useState(0);
+
+  // Derive dirty from baseline comparison — single source of truth
+  const promptDirty = useMemo(() => promptChanged(sp, baseline), [sp, baseline]);
 
   useEffect(() => {
     if (activeTab === 'webSearch' && !isAnthropic) setActiveTab('instructions');
@@ -53,16 +61,17 @@ export function PersonaPromptEditor() {
   const personaIdRef = useRef<string | null>(null);
   const spRef = useRef(sp);
   spRef.current = sp;
-  const lastSavedJsonRef = useRef<string | null>(null);
+  const baselineRef = useRef(baseline);
+  baselineRef.current = baseline;
   const lastLoadedPromptRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!selectedPersona) {
-      setSp(createEmptyStructuredPrompt());
-      setPromptDirty(false);
+      const empty = createEmptyStructuredPrompt();
+      setSp(empty);
+      setBaseline(empty);
       personaIdRef.current = null;
       lastLoadedPromptRef.current = null;
-      lastSavedJsonRef.current = null;
       return;
     }
     const currentPromptRaw = selectedPersona.structured_prompt ?? null;
@@ -70,44 +79,41 @@ export function PersonaPromptEditor() {
     const isExternalUpdate =
       !isNewPersona &&
       currentPromptRaw !== lastLoadedPromptRef.current &&
-      currentPromptRaw !== lastSavedJsonRef.current;
+      currentPromptRaw !== JSON.stringify(baselineRef.current);
     if (!isNewPersona && !isExternalUpdate) return;
     personaIdRef.current = selectedPersona.id;
     lastLoadedPromptRef.current = currentPromptRaw;
     const parsed = parseStructuredPrompt(currentPromptRaw);
     if (parsed) {
       setSp(parsed);
-      setPromptDirty(false);
-      lastSavedJsonRef.current = JSON.stringify(parsed);
+      setBaseline(parsed);
       return;
     }
     if (selectedPersona.system_prompt) {
       const migrated = migratePromptToStructured(selectedPersona.system_prompt);
       setSp(migrated);
-      setPromptDirty(false);
-      lastSavedJsonRef.current = JSON.stringify(migrated);
+      setBaseline(migrated);
       return;
     }
     const empty = createEmptyStructuredPrompt();
     setSp(empty);
-    setPromptDirty(false);
-    lastSavedJsonRef.current = JSON.stringify(empty);
+    setBaseline(empty);
   }, [selectedPersona]);
 
   const doSave = useCallback(async () => {
     const pid = personaIdRef.current;
     if (!pid) return;
-    const jsonStr = JSON.stringify(spRef.current);
-    if (jsonStr === lastSavedJsonRef.current) return;
+    const current = spRef.current;
+    const jsonStr = JSON.stringify(current);
+    if (jsonStr === JSON.stringify(baselineRef.current)) return;
     try {
       await applyPersonaOp(pid, {
         kind: 'UpdatePrompt',
         structured_prompt: jsonStr,
-        system_prompt: spRef.current.instructions || '',
+        system_prompt: current.instructions || '',
       });
-      lastSavedJsonRef.current = jsonStr;
+      setBaseline(current);
       lastLoadedPromptRef.current = jsonStr;
-      setPromptDirty(false);
       setShowSaved(true);
       setTimeout(() => setShowSaved(false), 2000);
     } catch (error) { console.error('Failed to save structured prompt:', error); }
@@ -124,7 +130,6 @@ export function PersonaPromptEditor() {
 
   const updateField = useCallback((field: keyof Omit<StructuredPrompt, 'customSections'>, value: string) => {
     setSp((prev) => ({ ...prev, [field]: value }));
-    setPromptDirty(true);
   }, []);
 
   const addCustomSection = useCallback(() => {
@@ -132,7 +137,6 @@ export function PersonaPromptEditor() {
       setSelectedCustomIndex(prev.customSections.length);
       return { ...prev, customSections: [...prev.customSections, { title: 'New Section', content: '' }] };
     });
-    setPromptDirty(true);
     setActiveTab('custom');
   }, []);
 
@@ -141,7 +145,6 @@ export function PersonaPromptEditor() {
       ...prev,
       customSections: prev.customSections.map((s, i) => i === index ? { ...s, [field]: value } : s),
     }));
-    setPromptDirty(true);
   }, []);
 
   const removeCustomSection = useCallback((index: number) => {
@@ -152,7 +155,6 @@ export function PersonaPromptEditor() {
       );
       return { ...prev, customSections: newSections };
     });
-    setPromptDirty(true);
   }, []);
 
   const sectionFilled = useMemo(() => ({

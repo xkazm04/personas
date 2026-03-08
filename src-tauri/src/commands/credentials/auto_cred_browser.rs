@@ -159,6 +159,15 @@ impl StreamDedup {
         self.system_init_emitted = true;
         true
     }
+
+    /// Check whether a log message should be emitted (dedup by exact string within a turn).
+    /// Returns true the first time a given message is seen, false on duplicates.
+    /// Reset via `reset_turn`.
+    #[cfg(test)]
+    fn should_emit_message(&mut self, msg: &str) -> bool {
+        // Reuse assistant_delta: if the message is new content, emit it.
+        self.assistant_delta(msg).is_some()
+    }
 }
 
 /// Write a subprocess crash/error report to the crash_logs directory so it
@@ -438,14 +447,17 @@ pub async fn start_auto_cred_browser(
     // before creating a new one.
     cleanup_stale_mcp_temp_files();
 
+    // Keep the MCP config file alive for the entire function scope — dropping
+    // the NamedTempFile auto-deletes it, so it must outlive spawn_claude_and_collect.
+    let mut _mcp_config_file: Option<tempfile::NamedTempFile> = None;
+
     let (prompt, timeout) = match mode {
         AutoCredMode::Playwright => {
             // Add Playwright MCP server configuration via secure temp file.
-            // _mcp_config_file must stay alive until spawn_claude_and_collect returns —
-            // dropping it auto-deletes the temp file.
-            let _mcp_config_file = build_playwright_mcp_config()?;
+            let mcp_file = build_playwright_mcp_config()?;
             cli_args.args.push("--mcp-config".to_string());
-            cli_args.args.push(_mcp_config_file.path().to_string_lossy().to_string());
+            cli_args.args.push(mcp_file.path().to_string_lossy().to_string());
+            _mcp_config_file = Some(mcp_file);
 
             // Restrict to only Playwright tools
             cli_args.args.push("--allowedTools".to_string());
@@ -947,10 +959,9 @@ fn cleanup_stale_mcp_temp_files() {
         for entry in entries.flatten() {
             let name = entry.file_name();
             let name_str = name.to_string_lossy();
-            if name_str.starts_with("personas_mcp_") && name_str.ends_with(".json") {
-                if std::fs::remove_file(entry.path()).is_ok() {
-                    tracing::debug!(file = %name_str, "Cleaned up stale MCP temp file");
-                }
+            if name_str.starts_with("personas_mcp_") && name_str.ends_with(".json")
+                && std::fs::remove_file(entry.path()).is_ok() {
+                tracing::debug!(file = %name_str, "Cleaned up stale MCP temp file");
             }
         }
     }
@@ -967,17 +978,19 @@ fn cleanup_stale_mcp_temp_files() {
 fn cleanup_orphaned_browsers() {
     #[cfg(windows)]
     {
-        // Kill Chromium instances launched by Playwright
-        // Playwright uses --remote-debugging-pipe and a distinctive user-data-dir
+        // Kill Chromium instances launched by Playwright.
+        // Use PowerShell Get-CimInstance (works on both x64 and ARM64 Windows).
+        // WMIC is deprecated and absent on many ARM64 installs.
         #[allow(unused_imports)]
         use std::os::windows::process::CommandExt;
-        let _ = std::process::Command::new("wmic")
+        let _ = std::process::Command::new("powershell")
             .args([
-                "process", "where",
-                "commandline like '%playwright%' and commandline like '%chromium%'",
-                "call", "terminate",
+                "-NoProfile", "-NonInteractive", "-Command",
+                "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*playwright*' -and $_.CommandLine -like '*chromium*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }",
             ])
             .creation_flags(0x08000000) // CREATE_NO_WINDOW
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
             .output();
     }
     #[cfg(not(windows))]
@@ -1054,9 +1067,12 @@ pub async fn cancel_auto_cred_browser(
         tracing::info!(pid, "Killing auto-cred CLI subprocess");
         #[cfg(windows)]
         {
-            // On Windows, use taskkill to kill the process tree
+            // On Windows, use taskkill to kill the process tree (works on x64 + ARM64)
+            #[allow(unused_imports)]
+            use std::os::windows::process::CommandExt;
             let _ = std::process::Command::new("taskkill")
                 .args(["/F", "/T", "/PID", &pid.to_string()])
+                .creation_flags(0x08000000) // CREATE_NO_WINDOW
                 .stdout(std::process::Stdio::null())
                 .stderr(std::process::Stdio::null())
                 .status();

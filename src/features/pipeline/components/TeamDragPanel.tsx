@@ -1,23 +1,25 @@
 import { useCallback } from 'react';
 import { GripVertical } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { PersonaAvatar, canvasDragState } from '@/features/pipeline/sub_canvas/teamConstants';
+import { PersonaAvatar } from '@/features/pipeline/sub_canvas/teamConstants';
+import { useCanvasDragRef } from '@/features/pipeline/sub_canvas/CanvasDragContext';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 
 export default function TeamDragPanel() {
+  const canvasDragRef = useCanvasDragRef();
   const personas = usePersonaStore((s) => s.personas);
   const teamMembers = usePersonaStore((s) => s.teamMembers) as PersonaTeamMember[];
 
   const memberPersonaIds = new Set(teamMembers.map((m) => m.persona_id));
 
   const handleDragStart = useCallback((e: React.DragEvent, personaId: string) => {
-    canvasDragState.personaId = personaId;
+    canvasDragRef.current = personaId;
     e.dataTransfer.setData('application/persona-id', personaId);
     e.dataTransfer.effectAllowed = 'copy';
   }, []);
 
   const handleDragEnd = useCallback(() => {
-    canvasDragState.personaId = null;
+    canvasDragRef.current = null;
   }, []);
 
   return (

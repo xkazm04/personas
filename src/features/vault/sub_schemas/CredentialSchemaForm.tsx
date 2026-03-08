@@ -58,7 +58,7 @@ export function CredentialSchemaForm({
   const health = useCredentialHealth(config.healthKey);
 
   const activeSubType = (config.subTypes.find((st) => st.id === subTypeId) ?? config.subTypes[0])!;
-  const hasHealthcheck = !!activeSubType.healthcheck;
+  const hasHealthcheck = !!activeSubType.healthcheck || !!config.customHealthcheck;
 
   const handleSubTypeChange = useCallback((id: string) => {
     setSubTypeId(id);
@@ -66,6 +66,13 @@ export function CredentialSchemaForm({
   }, [health.invalidate]);
 
   const handleHealthcheck = useCallback(async (fieldValues: Record<string, string>) => {
+    if (config.customHealthcheck) {
+      await health.check(async () => {
+        const result = await config.customHealthcheck!(subTypeId, fieldValues, extraState);
+        return { success: result.success, message: result.message };
+      });
+      return;
+    }
     if (!activeSubType.healthcheck) return;
     const hcConfig = activeSubType.healthcheck(fieldValues);
     if (!hcConfig) return;
@@ -76,7 +83,7 @@ export function CredentialSchemaForm({
       { name: serviceType, healthcheck_config: hcConfig },
       fieldValues,
     );
-  }, [activeSubType, config.serviceTypePrefix, config.title, name, nameOverride, serviceTypeOverride, health.checkDesign]);
+  }, [activeSubType, config.customHealthcheck, config.serviceTypePrefix, config.title, subTypeId, extraState, name, nameOverride, serviceTypeOverride, health.checkDesign, health.check]);
 
   const handleSave = async (fieldValues: Record<string, string>) => {
     const effectiveName = nameOverride ?? name.trim();

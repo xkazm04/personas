@@ -65,6 +65,14 @@ pub fn list_subscriptions(
 }
 
 #[tauri::command]
+pub fn list_all_subscriptions(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<PersonaEventSubscription>, AppError> {
+    require_auth_sync(&state)?;
+    repo::get_all_subscriptions(&state.db)
+}
+
+#[tauri::command]
 pub fn create_subscription(
     state: State<'_, Arc<AppState>>,
     input: CreateEventSubscriptionInput,

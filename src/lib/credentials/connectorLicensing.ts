@@ -45,6 +45,8 @@ export const LICENSE_TIER_META: Record<LicenseTier, LicenseTierMeta> = {
  */
 const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   // ── Personal (free) ─────────────────────────────────
+  azure_devops:                    'personal',
+  kubernetes:                      'personal',
   github:                          'personal',
   github_actions:                  'personal',
   slack:                           'personal',
@@ -73,12 +75,14 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   mongodb:                         'personal',
   redis:                           'personal',
   duckdb:                          'personal',
-  asana:                           'personal',
+  asana:                           'enterprise',
   google_workspace_oauth_template: 'personal',
   linkedin:                        'personal',
   n8n:                             'personal',
 
   // ── Paid (no meaningful free tier) ──────────────────
+  leonardo_ai:                     'paid',
+  cal_com:                         'personal',
   calendly:                        'paid',
   monday:                          'paid',
   jira:                            'paid',

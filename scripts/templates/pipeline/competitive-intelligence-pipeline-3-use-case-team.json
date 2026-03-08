@@ -615,6 +615,28 @@
           }
         ]
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Human review for pipeline stage transitions and blockers",
+        "context": "Inferred from template category — every e2e process needs a human gate"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack alerts plus email digests and summaries (periodic digests, critical alerts, completion confirmations, error notifications)",
+        "context": "3 notification channel(s) configured: slack, slack, email"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Historical baselines and trend data for comparative analysis",
+        "context": "Tracks: recurring patterns"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution failed, threshold breached",
+        "context": "4 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

@@ -709,6 +709,28 @@
           }
         ]
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Escalation to human for critical or ambiguous items",
+        "context": "Escalation logic detected in instructions"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack notifications for status updates and alerts (periodic digests, critical alerts, error notifications)",
+        "context": "1 notification channel(s) configured: slack"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Deduplication memory tracking known items across runs",
+        "context": "Tracks: recurring patterns, calibrated thresholds, known items for deduplication"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: threshold breached, escalation triggered",
+        "context": "3 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

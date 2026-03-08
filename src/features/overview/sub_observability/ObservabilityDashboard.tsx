@@ -2,7 +2,6 @@ import { useEffect, useMemo, useCallback, useState } from 'react';
 import { usePersonaStore, initHealingListener } from '@/stores/personaStore';
 import { DollarSign, Zap, CheckCircle, TrendingUp, TrendingDown, ArrowRight, RefreshCw, Stethoscope, CheckCircle2, X, AlertTriangle } from 'lucide-react';
 import { getPromptVersions } from '@/api/observability';
-import { selectBudgetWarnings, selectBudgetData } from '@/stores/slices/overviewSlice';
 import { getRotationHistory } from '@/api/rotation';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import HealingIssueModal from '@/features/overview/sub_observability/HealingIssueModal';
@@ -12,9 +11,10 @@ import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import { MetricsCharts } from '@/features/overview/sub_observability/MetricsCharts';
 import type { PieDataPoint } from '@/features/overview/sub_observability/MetricsCharts';
 import { SummaryCard } from '@/features/overview/sub_observability/SpendOverview';
+import IpcPerformancePanel from '@/features/overview/sub_observability/IpcPerformancePanel';
 import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
 import type { ChartAnnotationRecord } from '@/features/overview/sub_observability/chartAnnotations';
-import { toChartDate } from '@/features/overview/sub_observability/chartAnnotations';
+import { toChartDate, useAnnotationComposer } from '@/features/overview/sub_observability/chartAnnotations';
 
 const isDefined = <T,>(value: T | null | undefined): value is T => value != null;
 const ANNOTATION_FETCH_DEBOUNCE_MS = 250;
@@ -38,6 +38,9 @@ export default function ObservabilityDashboard() {
     selectedPersonaId,
     setSelectedPersonaId,
     setFailureDrilldownDate,
+    customDateRange,
+    setCustomDateRange,
+    effectiveDays,
   } = useOverviewFilters();
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<PersonaHealingIssue | null>(null);
@@ -51,21 +54,12 @@ export default function ObservabilityDashboard() {
   const [promptAnnotations, setPromptAnnotations] = useState<ChartAnnotationRecord[]>([]);
   const [rotationAnnotations, setRotationAnnotations] = useState<ChartAnnotationRecord[]>([]);
 
-  // ── Budget state (centralized) ──
-  const monthlySpend = usePersonaStore((s) => s.monthlySpend);
-  const budgetError = usePersonaStore((s) => s.monthlySpendError);
-  const fetchMonthlySpend = usePersonaStore((s) => s.fetchMonthlySpend);
-
-  const budgetData = useMemo(() => selectBudgetData(monthlySpend), [monthlySpend]);
-  const budgetWarnings = useMemo(() => selectBudgetWarnings(monthlySpend), [monthlySpend]);
-
   const refreshAll = useCallback(() => {
     return Promise.all([
-      fetchObservabilityMetrics(days, selectedPersonaId || undefined),
+      fetchObservabilityMetrics(effectiveDays, selectedPersonaId || undefined),
       fetchHealingIssues(),
-      fetchMonthlySpend(),
     ]);
-  }, [days, selectedPersonaId, fetchObservabilityMetrics, fetchHealingIssues, fetchMonthlySpend]);
+  }, [effectiveDays, selectedPersonaId, fetchObservabilityMetrics, fetchHealingIssues]);
 
   const handleRunAnalysis = useCallback(async () => {
     setAnalysisResult(null);
@@ -91,18 +85,21 @@ export default function ObservabilityDashboard() {
   }, [fetchCredentials]);
 
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
+    const { signal } = controller;
     const timeoutId = setTimeout(() => {
       const loadPromptAnnotations = async () => {
         const personaIds = selectedPersonaId ? [selectedPersonaId] : personas.map((p) => p.id).slice(0, 8);
         if (personaIds.length === 0) {
-          if (active) setPromptAnnotations([]);
+          if (!signal.aborted) setPromptAnnotations([]);
           return;
         }
         try {
           const byPersona = await Promise.all(
             personaIds.map(async (personaId) => {
+              if (signal.aborted) return [];
               const versions = await getPromptVersions(personaId, 8);
+              if (signal.aborted) return [];
               return versions.map((version) => {
                 const date = toChartDate(version.created_at);
                 if (!date) return null;
@@ -116,32 +113,35 @@ export default function ObservabilityDashboard() {
               }).filter(isDefined);
             }),
           );
-          if (active) setPromptAnnotations(byPersona.flat());
+          if (!signal.aborted) setPromptAnnotations(byPersona.flat());
         } catch {
           // intentional: non-critical — background annotation preload
-          if (active) setPromptAnnotations([]);
+          if (!signal.aborted) setPromptAnnotations([]);
         }
       };
       void loadPromptAnnotations();
     }, ANNOTATION_FETCH_DEBOUNCE_MS);
     return () => {
-      active = false;
+      controller.abort();
       clearTimeout(timeoutId);
     };
   }, [selectedPersonaId, personas]);
 
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
+    const { signal } = controller;
     const timeoutId = setTimeout(() => {
       const loadRotationAnnotations = async () => {
         if (credentials.length === 0) {
-          if (active) setRotationAnnotations([]);
+          if (!signal.aborted) setRotationAnnotations([]);
           return;
         }
         try {
           const byCredential = await Promise.all(
             credentials.slice(0, 20).map(async (credential) => {
+              if (signal.aborted) return [];
               const history = await getRotationHistory(credential.id, 3);
+              if (signal.aborted) return [];
               return history.map((entry) => {
                 const date = toChartDate(entry.created_at);
                 if (!date) return null;
@@ -155,16 +155,16 @@ export default function ObservabilityDashboard() {
               }).filter(isDefined);
             }),
           );
-          if (active) setRotationAnnotations(byCredential.flat());
+          if (!signal.aborted) setRotationAnnotations(byCredential.flat());
         } catch {
           // intentional: non-critical — background annotation preload
-          if (active) setRotationAnnotations([]);
+          if (!signal.aborted) setRotationAnnotations([]);
         }
       };
       void loadRotationAnnotations();
     }, ANNOTATION_FETCH_DEBOUNCE_MS);
     return () => {
-      active = false;
+      controller.abort();
       clearTimeout(timeoutId);
     };
   }, [credentials]);
@@ -235,16 +235,6 @@ export default function ObservabilityDashboard() {
     };
   }, [chartData]);
 
-  // Budget subtitle for Total Cost card
-  const budgetSubtitle = useMemo(() => {
-    const withBudget = budgetData.filter((d) => d.budget && d.budget > 0);
-    if (withBudget.length === 0) return null;
-    const totalBudget = withBudget.reduce((sum, d) => sum + d.budget!, 0);
-    const totalSpend = withBudget.reduce((sum, d) => sum + d.spend, 0);
-    const ratio = totalBudget > 0 ? totalSpend / totalBudget : 0;
-    const color = ratio >= 1 ? 'text-red-400' : ratio >= 0.8 ? 'text-amber-400' : 'text-muted-foreground/80';
-    return { text: `$${totalSpend.toFixed(2)} of $${totalBudget.toFixed(2)} budget`, color };
-  }, [budgetData]);
 
   // Issue counts and filtered/sorted list (single pass)
   const { issueCounts, sortedFilteredIssues } = useMemo(() => {
@@ -268,8 +258,8 @@ export default function ObservabilityDashboard() {
     return { issueCounts: counts, sortedFilteredIssues: sorted };
   }, [healingIssues, issueFilter]);
 
-  const chartAnnotations = useMemo<ChartAnnotationRecord[]>(() => {
-    const healingAnnotations = healingIssues
+  const healingAnnotations = useMemo<ChartAnnotationRecord[]>(() =>
+    healingIssues
       .map((issue) => {
         const date = toChartDate(issue.created_at);
         if (!date) return null;
@@ -281,20 +271,13 @@ export default function ObservabilityDashboard() {
           personaId: issue.persona_id,
         };
       })
-      .filter(isDefined);
+      .filter(isDefined),
+  [healingIssues]);
 
-    const merged = [...promptAnnotations, ...rotationAnnotations, ...healingAnnotations]
-      .filter((entry) => !selectedPersonaId || !entry.personaId || entry.personaId === selectedPersonaId)
-      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-
-    const deduped = new Map<string, ChartAnnotationRecord>();
-    for (const entry of merged) {
-      const key = `${entry.date}:${entry.type}:${entry.label}`;
-      if (!deduped.has(key)) deduped.set(key, entry);
-    }
-    const values = [...deduped.values()];
-    return values.length > 24 ? values.slice(values.length - 24) : values;
-  }, [healingIssues, promptAnnotations, rotationAnnotations, selectedPersonaId]);
+  const chartAnnotations = useAnnotationComposer(
+    [promptAnnotations, rotationAnnotations, healingAnnotations],
+    { filterPersonaId: selectedPersonaId },
+  );
 
   return (
     <ContentBox>
@@ -328,7 +311,7 @@ export default function ObservabilityDashboard() {
       {/* Filter bar */}
       <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-4 flex-wrap flex-shrink-0">
         <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
-        <DayRangePicker value={days} onChange={setDays} />
+        <DayRangePicker value={days} onChange={setDays} customDateRange={customDateRange} onCustomDateRangeChange={setCustomDateRange} />
       </div>
 
       {/* Content */}
@@ -351,59 +334,9 @@ export default function ObservabilityDashboard() {
         </div>
       )}
 
-      {/* Budget Warning Banner */}
-      {budgetWarnings.length > 0 && (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-amber-300">
-                {budgetWarnings.length === 1 ? '1 persona' : `${budgetWarnings.length} personas`} approaching or exceeding budget
-              </p>
-              <div className="mt-1.5 flex flex-wrap gap-2">
-                {budgetWarnings.map((w) => (
-                    <span
-                      key={w.personaId}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm border ${
-                        w.exceeded
-                          ? 'bg-red-500/15 text-red-300 border-red-500/25'
-                          : 'bg-amber-500/15 text-amber-300 border-amber-500/25'
-                      }`}
-                    >
-                      {w.name}
-                      <span className="font-mono text-sm opacity-80">
-                        ${w.spend.toFixed(2)} / ${w.budget.toFixed(2)}
-                      </span>
-                      <span className={`font-mono text-sm font-bold ${w.exceeded ? 'text-red-400' : 'text-amber-400'}`}>
-                        {(w.ratio * 100).toFixed(0)}%
-                      </span>
-                    </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Budget Fetch Error */}
-      {budgetError && (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-amber-300">Budget data unavailable</p>
-              <p className="text-sm text-amber-400/70 mt-0.5">{budgetError}</p>
-            </div>
-            <button onClick={refreshAll} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-colors">
-              <RefreshCw className="w-3 h-3" /> Retry
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <SummaryCard icon={DollarSign} label="Total Cost" numericValue={summary?.total_cost_usd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" trend={trends.cost} sparklineData={chartData.slice(-7).map((d) => d.cost)} subtitle={budgetSubtitle?.text} subtitleColor={budgetSubtitle?.color} />
+        <SummaryCard icon={DollarSign} label="Total Cost" numericValue={summary?.total_cost_usd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" trend={trends.cost} sparklineData={chartData.slice(-7).map((d) => d.cost)} />
         <SummaryCard icon={Zap} label="Executions" numericValue={summary?.total_executions || 0} format={(n) => String(Math.round(n))} color="blue" trend={trends.executions} sparklineData={chartData.slice(-7).map((d) => d.executions)} />
         <SummaryCard icon={CheckCircle} label="Success Rate" numericValue={parseFloat(successRate)} format={(n) => `${n.toFixed(1)}%`} color="green" trend={trends.successRate} sparklineData={chartData.slice(-7).map((d) => { const total = d.success + d.failed; return total > 0 ? (d.success / total) * 100 : 0; })} />
         <SummaryCard icon={TrendingUp} label="Active Personas" numericValue={summary?.active_personas || 0} format={(n) => String(Math.round(n))} color="purple" trend={trends.personas} sparklineData={chartData.slice(-7).map((d) => d.active_personas)} />
@@ -419,6 +352,9 @@ export default function ObservabilityDashboard() {
           setOverviewTab('knowledge');
         }}
       />
+
+      {/* IPC Performance */}
+      <IpcPerformancePanel />
 
       {/* Health Issues Section */}
       <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col">

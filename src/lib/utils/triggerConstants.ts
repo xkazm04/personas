@@ -20,6 +20,107 @@ export const TRIGGER_TYPE_META: Record<string, TriggerTypeMeta> = {
 
 export const DEFAULT_TRIGGER_META: TriggerTypeMeta = { Icon: Zap, color: 'text-purple-400' };
 
+// ── Trigger category taxonomy ────────────────────────────────────────
+//
+// The 10 trigger types decompose into 3 intuitive categories:
+//  - Pull (Watch): poll on intervals (schedule, polling, clipboard, app_focus, file_watcher)
+//  - Push (Listen): receive external events (webhook, event_listener)
+//  - Compose (Combine): combine other triggers (chain, composite)
+//  Manual is a degenerate case shown separately.
+
+export type TriggerCategory = 'pull' | 'push' | 'compose' | 'manual';
+
+export interface TriggerCategoryMeta {
+  id: TriggerCategory;
+  label: string;
+  description: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  types: string[];
+}
+
+export const TRIGGER_CATEGORIES: TriggerCategoryMeta[] = [
+  {
+    id: 'pull',
+    label: 'Watch',
+    description: 'Poll for changes on an interval',
+    color: 'text-amber-400',
+    bgColor: 'bg-amber-500/10',
+    borderColor: 'border-amber-500/20',
+    types: ['schedule', 'polling', 'file_watcher', 'clipboard', 'app_focus'],
+  },
+  {
+    id: 'push',
+    label: 'Listen',
+    description: 'Receive external signals',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/20',
+    types: ['webhook', 'event_listener'],
+  },
+  {
+    id: 'compose',
+    label: 'Combine',
+    description: 'Chain or compose triggers',
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/20',
+    types: ['chain', 'composite'],
+  },
+];
+
+const _categoryByType = new Map<string, TriggerCategory>();
+for (const cat of TRIGGER_CATEGORIES) {
+  for (const t of cat.types) _categoryByType.set(t, cat.id);
+}
+_categoryByType.set('manual', 'manual');
+
+/** Get the category for a trigger type. */
+export function getTriggerCategory(triggerType: string): TriggerCategory {
+  return _categoryByType.get(triggerType) ?? 'manual';
+}
+
+/** Get the category metadata for a trigger type. */
+export function getTriggerCategoryMeta(triggerType: string): TriggerCategoryMeta | undefined {
+  const catId = getTriggerCategory(triggerType);
+  return TRIGGER_CATEGORIES.find((c) => c.id === catId);
+}
+
+/** Type option descriptor for the add form. */
+export interface TriggerTypeOption {
+  type: string;
+  label: string;
+  description: string;
+}
+
+export const TRIGGER_TYPE_OPTIONS: TriggerTypeOption[] = [
+  { type: 'manual', label: 'Manual', description: 'Run on demand' },
+  { type: 'schedule', label: 'Schedule', description: 'Run on a timer or cron' },
+  { type: 'polling', label: 'Polling', description: 'Check an endpoint' },
+  { type: 'webhook', label: 'Webhook', description: 'HTTP webhook listener' },
+  { type: 'event_listener', label: 'Event Listener', description: 'React to internal events' },
+  { type: 'file_watcher', label: 'File Watcher', description: 'React to file system changes' },
+  { type: 'clipboard', label: 'Clipboard', description: 'React to clipboard changes' },
+  { type: 'app_focus', label: 'App Focus', description: 'React to app focus changes' },
+  { type: 'chain', label: 'Chain', description: 'Trigger after another agent completes' },
+  { type: 'composite', label: 'Composite', description: 'Multiple conditions + time window' },
+];
+
+// ── Webhook URL configuration ────────────────────────────────────────
+
+/** Base URL for the webhook server. Override via VITE_WEBHOOK_BASE_URL env var for production. */
+export const WEBHOOK_BASE_URL: string =
+  (import.meta.env.VITE_WEBHOOK_BASE_URL as string | undefined) || 'http://localhost:9420';
+
+/** Whether the webhook URL is pointing at the default localhost (dev mode). */
+export const IS_WEBHOOK_LOCALHOST: boolean = WEBHOOK_BASE_URL.includes('localhost');
+
+/** Build the full webhook URL for a given trigger ID. */
+export function getWebhookUrl(triggerId: string): string {
+  return `${WEBHOOK_BASE_URL}/webhook/${triggerId}`;
+}
+
 // ── Typed trigger config discriminated union ────────────────────────────
 
 export interface ScheduleConfig {
@@ -116,6 +217,51 @@ export type TriggerConfig =
   | AppFocusConfig
   | CompositeConfig;
 
+// ── Rate Limit Configuration ─────────────────────────────────────────
+
+export interface TriggerRateLimitConfig {
+  /** Max executions allowed per window. 0 = unlimited. */
+  max_per_window: number;
+  /** Window size in seconds (60 = per minute, 3600 = per hour). */
+  window_seconds: number;
+  /** Minimum cooldown between consecutive firings (seconds). 0 = no cooldown. */
+  cooldown_seconds: number;
+  /** Max concurrent executions. 0 = unlimited. */
+  max_concurrent: number;
+}
+
+export const DEFAULT_RATE_LIMIT: TriggerRateLimitConfig = {
+  max_per_window: 0,
+  window_seconds: 60,
+  cooldown_seconds: 0,
+  max_concurrent: 0,
+};
+
+export const RATE_LIMIT_WINDOW_OPTIONS = [
+  { label: 'Per minute', value: 60 },
+  { label: 'Per 5 minutes', value: 300 },
+  { label: 'Per hour', value: 3600 },
+] as const;
+
+/** Extract rate_limit from a raw config object, falling back to defaults. */
+export function extractRateLimit(config: Record<string, unknown> | null | undefined): TriggerRateLimitConfig {
+  if (!config || typeof config.rate_limit !== 'object' || config.rate_limit === null) {
+    return { ...DEFAULT_RATE_LIMIT };
+  }
+  const rl = config.rate_limit as Record<string, unknown>;
+  return {
+    max_per_window: typeof rl.max_per_window === 'number' ? rl.max_per_window : 0,
+    window_seconds: typeof rl.window_seconds === 'number' ? rl.window_seconds : 60,
+    cooldown_seconds: typeof rl.cooldown_seconds === 'number' ? rl.cooldown_seconds : 0,
+    max_concurrent: typeof rl.max_concurrent === 'number' ? rl.max_concurrent : 0,
+  };
+}
+
+/** Check if a rate limit config has any active limits. */
+export function hasActiveRateLimit(rl: TriggerRateLimitConfig): boolean {
+  return rl.max_per_window > 0 || rl.cooldown_seconds > 0 || rl.max_concurrent > 0;
+}
+
 // ── Pre-built trigger templates ──────────────────────────────────────
 
 export interface TriggerTemplate {
@@ -211,6 +357,14 @@ export function parseTriggerConfig(
   config: string | object | null | undefined,
 ): TriggerConfig {
   const raw = parseRawConfig(config);
+
+  // Warn when the config's own type field disagrees with the trigger_type column
+  if (typeof raw.type === 'string' && raw.type !== triggerType) {
+    console.warn(
+      `[trigger] config.type "${raw.type}" does not match trigger_type "${triggerType}". ` +
+      `Using trigger_type as discriminant. This may indicate a migration bug or manual DB edit.`,
+    );
+  }
 
   switch (triggerType) {
     case 'schedule':

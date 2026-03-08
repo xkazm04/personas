@@ -62,6 +62,17 @@ export function useDesignConversation(personaId: string | null) {
   const startConversation = useCallback(async (instruction: string) => {
     if (!personaId) return null;
 
+    // Abandon existing active conversation first to prevent two active
+    // conversations for the same persona (invariant violation).
+    const current = activeConvRef.current;
+    if (current) {
+      try {
+        await updateDesignConversationStatus(current.id, 'abandoned');
+      } catch {
+        // non-critical — best-effort abandon before creating new conversation
+      }
+    }
+
     // Auto-generate title from instruction
     const title = instruction.length > 60
       ? instruction.slice(0, 57) + '...'
@@ -83,9 +94,22 @@ export function useDesignConversation(personaId: string | null) {
         JSON.stringify(initialMessages),
       );
       setActiveConversation(conv);
-      setConversations((prev) => [conv, ...prev]);
+      setConversations((prev) => {
+        const updated = current
+          ? prev.map((c) => (c.id === current.id ? { ...c, status: 'abandoned' as const } : c))
+          : prev;
+        return [conv, ...updated];
+      });
       return conv;
     } catch {
+      // Creation failed — revert the abandon so the old conversation stays active
+      if (current) {
+        try {
+          await updateDesignConversationStatus(current.id, 'active');
+        } catch {
+          // non-critical — best-effort revert
+        }
+      }
       useToastStore.getState().addToast('Failed to start design conversation', 'error');
       return null;
     }
@@ -220,13 +244,16 @@ export function useDesignConversation(personaId: string | null) {
     // into the newly resumed one.
     await appendQueueRef.current;
 
-    // Mark existing active conversation as abandoned if different
+    // Mark existing active conversation as abandoned first to avoid two active
+    // conversations for the same persona.
     const current = activeConvRef.current;
+    let didAbandon = false;
     if (current && current.id !== conversation.id) {
       try {
         await updateDesignConversationStatus(current.id, 'abandoned');
+        didAbandon = true;
       } catch {
-        // intentional: non-critical — abandoning previous conversation is best-effort
+        // non-critical — best-effort abandon
       }
     }
 
@@ -244,6 +271,14 @@ export function useDesignConversation(personaId: string | null) {
       );
       return updated;
     } catch {
+      // Activation failed — revert the abandon so the old conversation stays active
+      if (didAbandon && current) {
+        try {
+          await updateDesignConversationStatus(current.id, 'active');
+        } catch {
+          // non-critical — best-effort revert
+        }
+      }
       useToastStore.getState().addToast('Failed to resume conversation', 'error');
       return null;
     }

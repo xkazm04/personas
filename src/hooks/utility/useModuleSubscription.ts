@@ -2,6 +2,11 @@ import { useEffect, useReducer } from 'react';
 
 // ── ModuleCache: module-level shared cache with pub/sub ───────────────
 
+export interface ModuleCacheOptions {
+  /** Time-to-live in milliseconds. Entries older than this are treated as absent. */
+  ttlMs?: number;
+}
+
 export interface ModuleCache<K, V> {
   get(key: K): V | undefined;
   set(key: K, value: V): void;
@@ -14,6 +19,10 @@ export interface ModuleCache<K, V> {
   subscribe(fn: () => void): () => void;
   /** Current number of active subscribers. */
   readonly subscriberCount: number;
+  /** Invalidate a single key and notify subscribers. */
+  invalidate(key: K): void;
+  /** Invalidate all entries and notify subscribers. */
+  invalidateAll(): void;
 }
 
 /**
@@ -21,30 +30,76 @@ export interface ModuleCache<K, V> {
  * pub/sub mechanism. Components subscribe via `useModuleSubscription` and
  * re-render when `notify()` is called after mutations.
  *
+ * Optionally accepts `{ ttlMs }` to auto-expire entries after a duration.
+ *
  * This is intentionally module-scoped (not React context) so the cache
  * survives component unmount/remount cycles and is accessible from
  * non-React code.
  */
-export function createModuleCache<K, V>(): ModuleCache<K, V> {
+export function createModuleCache<K, V>(options?: ModuleCacheOptions): ModuleCache<K, V> {
   const data = new Map<K, V>();
+  const timestamps = new Map<K, number>();
   const subscribers = new Set<() => void>();
+  const ttlMs = options?.ttlMs;
 
   function notify() {
     for (const cb of subscribers) cb();
   }
 
+  function isExpired(key: K): boolean {
+    if (ttlMs == null) return false;
+    const ts = timestamps.get(key);
+    if (ts == null) return true;
+    return Date.now() - ts > ttlMs;
+  }
+
   return {
-    get: (key) => data.get(key),
-    set: (key, value) => { data.set(key, value); },
-    delete: (key) => data.delete(key),
-    has: (key) => data.has(key),
-    clear: () => { data.clear(); },
+    get: (key) => {
+      if (!data.has(key)) return undefined;
+      if (isExpired(key)) {
+        data.delete(key);
+        timestamps.delete(key);
+        return undefined;
+      }
+      return data.get(key);
+    },
+    set: (key, value) => {
+      data.set(key, value);
+      if (ttlMs != null) timestamps.set(key, Date.now());
+    },
+    delete: (key) => {
+      timestamps.delete(key);
+      return data.delete(key);
+    },
+    has: (key) => {
+      if (!data.has(key)) return false;
+      if (isExpired(key)) {
+        data.delete(key);
+        timestamps.delete(key);
+        return false;
+      }
+      return true;
+    },
+    clear: () => {
+      data.clear();
+      timestamps.clear();
+    },
     notify,
     subscribe: (fn) => {
       subscribers.add(fn);
       return () => { subscribers.delete(fn); };
     },
     get subscriberCount() { return subscribers.size; },
+    invalidate: (key) => {
+      data.delete(key);
+      timestamps.delete(key);
+      notify();
+    },
+    invalidateAll: () => {
+      data.clear();
+      timestamps.clear();
+      notify();
+    },
   };
 }
 

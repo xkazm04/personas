@@ -1,4 +1,4 @@
-export type ConnectorFamily = 'postgres' | 'mysql' | 'redis' | 'convex' | 'unsupported';
+export type ConnectorFamily = 'postgres' | 'mysql' | 'redis' | 'convex' | 'sqlite' | 'unsupported';
 
 export function getConnectorFamily(serviceType: string): ConnectorFamily {
   switch (serviceType) {
@@ -12,6 +12,8 @@ export function getConnectorFamily(serviceType: string): ConnectorFamily {
       return 'redis';
     case 'convex':
       return 'convex';
+    case 'personas_database':
+      return 'sqlite';
     default:
       return 'unsupported';
   }
@@ -24,6 +26,8 @@ export function getListTablesQuery(serviceType: string): string | null {
       return `SELECT table_name, table_type FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`;
     case 'mysql':
       return `SELECT table_name, table_type FROM information_schema.tables WHERE table_schema = DATABASE() ORDER BY table_name`;
+    case 'sqlite':
+      return `SELECT name AS table_name, type AS table_type FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%' ORDER BY name`;
     default:
       return null;
   }
@@ -37,6 +41,8 @@ export function getListColumnsQuery(serviceType: string, tableName: string): str
       return `SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '${safeName}' ORDER BY ordinal_position`;
     case 'mysql':
       return `SELECT column_name, column_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = '${safeName}' ORDER BY ordinal_position`;
+    case 'sqlite':
+      return `PRAGMA table_info('${safeName}')`;
     default:
       return null;
   }
@@ -58,6 +64,8 @@ export function getSelectAllQuery(serviceType: string, tableName: string): strin
       return `SCAN 0 MATCH ${tableName}* COUNT 100`;
     case 'convex':
       return `db.query("${tableName}").take(100)`;
+    case 'sqlite':
+      return `SELECT * FROM "${tableName}" LIMIT 100;`;
     default:
       return `SELECT * FROM ${tableName} LIMIT 100;`;
   }

@@ -398,7 +398,14 @@ pub async fn evaluate_due_rotations(pool: &DbPool) {
         };
 
         // Dispatch rotation through the connector strategy
-        let strategy = connector_strategy::registry().get(&credential.service_type, None);
+        let reg = match connector_strategy::registry() {
+            Ok(r) => r,
+            Err(e) => {
+                tracing::error!("Connector registry unavailable for rotation: {e}");
+                continue;
+            }
+        };
+        let strategy = reg.get(&credential.service_type, None);
         let result = strategy.rotate(pool, &credential).await;
 
         match result {
@@ -710,7 +717,7 @@ pub async fn rotate_now(
     let credential = cred_repo::get_by_id(pool, credential_id)?;
 
     // Dispatch rotation through the connector strategy
-    let strategy = connector_strategy::registry().get(&credential.service_type, None);
+    let strategy = connector_strategy::registry()?.get(&credential.service_type, None);
     let result = strategy.rotate(pool, &credential).await;
 
     match &result {

@@ -145,18 +145,18 @@ impl CloudClient {
     /// Create a new `CloudClient` with the given orchestrator base URL and API key.
     ///
     /// The underlying `reqwest::Client` is configured with a 30-second timeout.
-    pub fn new(base_url: String, api_key: String) -> Self {
+    pub fn new(base_url: String, api_key: String) -> Result<Self, crate::error::AppError> {
         let http = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(30))
             .build()
-            .expect("failed to build reqwest client");
+            .map_err(|e| crate::error::AppError::Internal(format!("Failed to build HTTP client: {e}")))?;
 
-        Self {
+        Ok(Self {
             http,
             base_url,
             api_key,
             user_token: tokio::sync::RwLock::new(None),
-        }
+        })
     }
 
     /// Set or clear the Supabase user JWT for per-user cloud isolation.

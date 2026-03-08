@@ -34,6 +34,7 @@ import { createOnboardingSlice } from "./slices/onboardingSlice";
 import { createCronAgentsSlice } from "./slices/cronAgentsSlice";
 import { createMiniPlayerSlice } from "./slices/miniPlayerSlice";
 import { createHealthCheckSlice } from "./slices/healthCheckSlice";
+import { createTourSlice } from "./slices/tourSlice";
 import { AUTH_LOGIN_EVENT } from "./authStore";
 
 // ── Store ──────────────────────────────────────────────────────────────
@@ -65,6 +66,7 @@ export const usePersonaStore = create<PersonaStore>()(
         ...createCronAgentsSlice(...a),
         ...createMiniPlayerSlice(...a),
         ...createHealthCheckSlice(...a),
+        ...createTourSlice(...a),
       }),
       {
         name: "persona-ui-state",
@@ -77,6 +79,8 @@ export const usePersonaStore = create<PersonaStore>()(
           cloudTab: state.cloudTab,
           settingsTab: state.settingsTab,
           onboardingCompleted: state.onboardingCompleted,
+          tourCompleted: state.tourCompleted,
+          tourDismissed: state.tourDismissed,
         }),
       },
     ),

@@ -17,6 +17,11 @@ use crate::error::AppError;
 
 pub type DbPool = Pool<SqliteConnectionManager>;
 
+/// Separate connection pool for the user-facing database (`personas_data.db`).
+/// This is completely isolated from the internal app database to prevent
+/// user queries from corrupting app state.
+pub type UserDbPool = Pool<SqliteConnectionManager>;
+
 /// Connection customizer that sets per-connection SQLite pragmas.
 #[derive(Debug)]
 struct SqlitePragmaCustomizer;
@@ -73,6 +78,67 @@ pub fn init_db(app_data_dir: &PathBuf) -> Result<DbPool, AppError> {
 
     tracing::info!("Database initialized successfully");
     Ok(pool)
+}
+
+/// Initialize the user-facing database: a separate SQLite file (`personas_data.db`)
+/// that agents and users can freely read/write without risk to the internal app database.
+pub fn init_user_db(app_data_dir: &PathBuf) -> Result<UserDbPool, AppError> {
+    let db_path = app_data_dir.join("personas_data.db");
+
+    tracing::info!(path = %db_path.display(), "Initializing user data database");
+
+    let manager = SqliteConnectionManager::file(&db_path);
+    let pool = Pool::builder()
+        .max_size(4)
+        .connection_customizer(Box::new(SqlitePragmaCustomizer))
+        .build(manager)?;
+
+    // Set WAL journal mode
+    {
+        let conn = pool.get()?;
+        conn.execute_batch("PRAGMA journal_mode = WAL;")?;
+    }
+
+    restrict_db_file_permissions(&db_path);
+
+    tracing::info!("User data database initialized successfully");
+    Ok(pool)
+}
+
+/// Seed the built-in `personas_database` credential if it doesn't already exist.
+/// This ensures a "Built-in Database" entry appears in the Databases submodule
+/// immediately on first app launch.
+pub fn seed_builtin_database_credential(conn: &rusqlite::Connection) -> Result<(), AppError> {
+    let exists: bool = conn.query_row(
+        "SELECT COUNT(*) > 0 FROM persona_credentials WHERE id = 'builtin-personas-database'",
+        [],
+        |row| row.get(0),
+    )?;
+
+    if exists {
+        return Ok(());
+    }
+
+    let now = chrono::Utc::now().to_rfc3339();
+    // The credential stores no secrets — it's a local file.
+    // We use a dummy encrypted_data/iv since the schema requires non-null values.
+    conn.execute(
+        "INSERT INTO persona_credentials
+         (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+        params![
+            "builtin-personas-database",
+            "Built-in Database",
+            "personas_database",
+            "{}",  // no encrypted data
+            "",    // no IV
+            r#"{"is_builtin":true,"description":"Local SQLite database managed by Personas. Safe for agent read/write operations."}"#,
+            now,
+        ],
+    )?;
+
+    tracing::info!("Seeded built-in database credential");
+    Ok(())
 }
 
 /// Set owner-only permissions on the database file and its WAL/SHM journal files.
@@ -235,6 +301,17 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             metadata: Some(r#"{"template_enabled":true,"summary":"Airtable spreadsheet-database for project tracking and data management.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://airtable.com/create/tokens","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
+            id: "builtin-azure-devops",
+            name: "azure_devops",
+            label: "Azure DevOps",
+            color: "#0078D7",
+            icon_url: "/icons/connectors/azure-devops.svg",
+            category: "development",
+            fields: r#"[{"key":"organization","label":"Organization","type":"text","required":true,"placeholder":"my-org","helpText":"Your Azure DevOps organization name (from dev.azure.com/{organization})"},{"key":"pat","label":"Personal Access Token","type":"password","required":true,"placeholder":"","helpText":"Generate at dev.azure.com/{org}/_usersSettings/tokens with required scopes"}]"#,
+            healthcheck_config: Some(r#"{"endpoint":"https://dev.azure.com/{{organization}}/_apis/projects?api-version=7.1","method":"GET","headers":{"Authorization":"Basic {{base64(:pat)}}"},"description":"Validates PAT via Azure DevOps projects endpoint"}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"Azure DevOps for repositories, work items, pipelines, and CI/CD.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://learn.microsoft.com/en-us/rest/api/azure/devops/","pricing_tier":"freemium","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@azure-devops/mcp","transport":"stdio","suggested_env":{"AZURE_DEVOPS_ORG":"","AZURE_DEVOPS_PAT":""}}]}"#),
+        },
+        BuiltinConnector {
             id: "builtin-asana",
             name: "asana",
             label: "Asana",
@@ -265,7 +342,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "productivity",
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"pk_...","helpText":"From ClickUp Settings → Apps → API Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.clickup.com/api/v2/user","method":"GET","headers":{"Authorization":"{{api_key}}"},"description":"Validates API key via user endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"ClickUp project management with tasks, docs, goals, and time tracking.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://clickup.com/api/developer-portal/authentication","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"ClickUp project management with tasks, docs, goals, and time tracking.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://clickup.com/api/developer-portal/authentication","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@taazkareem/clickup-mcp-server","transport":"stdio","suggested_env":{"CLICKUP_API_KEY":""}}]}"#),
         },
         BuiltinConnector {
             id: "builtin-github",
@@ -277,6 +354,17 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"ghp_...","helpText":"Generate at github.com/settings/tokens with required scopes"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.github.com/user","method":"GET","headers":{"Authorization":"Bearer {{personal_access_token}}","Accept":"application/vnd.github+json","User-Agent":"personas-desktop"},"description":"Validates PAT via GitHub user endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"GitHub for repositories, issues, pull requests, and CI/CD.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://github.com/settings/tokens","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@modelcontextprotocol/server-github","transport":"stdio","suggested_env":{"GITHUB_PERSONAL_ACCESS_TOKEN":""}}]}"#),
+        },
+        BuiltinConnector {
+            id: "builtin-cal-com",
+            name: "cal_com",
+            label: "Cal.com",
+            color: "#292929",
+            icon_url: "/icons/connectors/cal-com.svg",
+            category: "scheduling",
+            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"cal_live_...","helpText":"Generate at cal.com/settings/developer/api-keys"}]"#,
+            healthcheck_config: Some(r#"{"endpoint":"https://api.cal.com/v2/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}","cal-api-version":"2024-08-13"},"description":"Validates API key via Cal.com /v2/me endpoint"}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"Cal.com open-source scheduling platform for availability and bookings.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://cal.com/docs/api-reference/v2/introduction","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@calcom/cal-mcp","transport":"stdio","suggested_env":{"CAL_API_KEY":""}}]}"#),
         },
         BuiltinConnector {
             id: "builtin-calendly",
@@ -407,8 +495,30 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             icon_url: "/icons/connectors/buffer.svg",
             category: "social",
             fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"From Buffer → Settings → Apps → Access Token"}]"#,
-            healthcheck_config: Some(r#"{"endpoint":"https://api.bufferapp.com/1/user.json","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Buffer user endpoint"}"#),
+            healthcheck_config: Some(r#"{"endpoint":"https://api.bufferapp.com/1/user.json?access_token={{access_token}}","method":"GET","headers":{},"description":"Validates access token via Buffer user endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Buffer social media management for scheduling and publishing.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://buffer.com/developers/api","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
+            id: "builtin-leonardo-ai",
+            name: "leonardo_ai",
+            label: "Leonardo AI",
+            color: "#6C3AEF",
+            icon_url: "/icons/connectors/leonardo-ai.svg",
+            category: "ai",
+            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Generate at app.leonardo.ai/api-access"}]"#,
+            healthcheck_config: Some(r#"{"endpoint":"https://cloud.leonardo.ai/api/rest/v1/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Leonardo AI /me endpoint"}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"Leonardo AI generative image and video platform for creative content.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.leonardo.ai/docs/getting-started","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
+            id: "builtin-kubernetes",
+            name: "kubernetes",
+            label: "Kubernetes",
+            color: "#326CE5",
+            icon_url: "/icons/connectors/kubernetes.svg",
+            category: "cloud",
+            fields: r#"[{"key":"api_server","label":"API Server URL","type":"url","required":true,"placeholder":"https://my-cluster.example.com:6443","helpText":"Kubernetes API server URL (find with: kubectl cluster-info)"},{"key":"token","label":"Bearer Token","type":"password","required":true,"placeholder":"eyJhbGciOi...","helpText":"Service account token (find with: kubectl create token <sa-name>)"}]"#,
+            healthcheck_config: Some(r#"{"endpoint":"{{api_server}}/api","method":"GET","headers":{"Authorization":"Bearer {{token}}"},"description":"Validates token via Kubernetes API versions endpoint"}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"Kubernetes container orchestration for managing clusters, pods, and deployments.","auth_type":"pat","auth_type_label":"Bearer Token","docs_url":"https://kubernetes.io/docs/reference/kubernetes-api/","pricing_tier":"free","auth_methods":[{"id":"pat","label":"Bearer Token","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"mcp-server-kubernetes","transport":"stdio","suggested_env":{}}]}"#),
         },
         BuiltinConnector {
             id: "builtin-linkedin",
@@ -685,6 +795,73 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"ghp_...","helpText":"Generate at github.com/settings/tokens — needs 'repo' and 'workflow' scopes"},{"key":"default_repo","label":"Default Repository","type":"text","required":false,"placeholder":"owner/repo","helpText":"Optional: default repository for workflow dispatches"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.github.com/user","method":"GET","headers":{"Authorization":"Bearer {{personal_access_token}}","Accept":"application/vnd.github+json","User-Agent":"personas-desktop"},"description":"Validates PAT via GitHub user endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"GitHub Actions CI/CD — dispatch workflows, check run status, and manage automations from your agent.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://github.com/settings/tokens","is_platform":true,"platform_type":"github_actions","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
+        },
+        // ── Desktop App Connectors ────────────────────────────────────
+        BuiltinConnector {
+            id: "builtin-desktop-vscode",
+            name: "desktop_vscode",
+            label: "VS Code",
+            color: "#007ACC",
+            icon_url: "/icons/connectors/vscode.svg",
+            category: "desktop",
+            fields: r#"[{"key":"binary_path","label":"Binary Path","type":"text","required":false,"placeholder":"code","helpText":"Auto-detected. Override if VS Code is installed in a custom location."},{"key":"workspace_path","label":"Workspace Path","type":"text","required":false,"placeholder":"/path/to/project","helpText":"Optional: default workspace for file operations"}]"#,
+            healthcheck_config: None,
+            metadata: Some(r#"{"template_enabled":true,"summary":"VS Code desktop integration — open files, run tasks, manage extensions, and navigate code from your agent.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["process_spawn","file_read","network_local"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
+            id: "builtin-desktop-docker",
+            name: "desktop_docker",
+            label: "Docker",
+            color: "#2496ED",
+            icon_url: "/icons/connectors/docker.svg",
+            category: "desktop",
+            fields: r#"[{"key":"binary_path","label":"Binary Path","type":"text","required":false,"placeholder":"docker","helpText":"Auto-detected. Override if Docker is installed in a custom location."},{"key":"default_compose_path","label":"Docker Compose Path","type":"text","required":false,"placeholder":"./docker-compose.yml","helpText":"Optional: default compose file for stack operations"}]"#,
+            healthcheck_config: None,
+            metadata: Some(r#"{"template_enabled":true,"summary":"Docker desktop integration — manage containers, images, volumes, and compose stacks from your agent.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["process_spawn","network_local"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
+            id: "builtin-desktop-terminal",
+            name: "desktop_terminal",
+            label: "Terminal",
+            color: "#4D4D4D",
+            icon_url: "/icons/connectors/terminal.svg",
+            category: "desktop",
+            fields: r#"[{"key":"shell","label":"Shell","type":"text","required":false,"placeholder":"bash","helpText":"Auto-detected. Override to use a specific shell (bash, zsh, powershell, etc.)"},{"key":"working_directory","label":"Working Directory","type":"text","required":false,"placeholder":"/home/user/projects","helpText":"Optional: default directory for command execution"}]"#,
+            healthcheck_config: None,
+            metadata: Some(r#"{"template_enabled":true,"summary":"Terminal integration — execute shell commands, run scripts, and interact with CLI tools from your agent.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["process_spawn","file_read","file_write","env_read"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
+            id: "builtin-desktop-obsidian",
+            name: "desktop_obsidian",
+            label: "Obsidian",
+            color: "#7C3AED",
+            icon_url: "/icons/connectors/obsidian.svg",
+            category: "desktop",
+            fields: r#"[{"key":"vault_path","label":"Vault Path","type":"text","required":true,"placeholder":"/path/to/vault","helpText":"Path to your Obsidian vault directory"},{"key":"api_port","label":"Local REST API Port","type":"text","required":false,"placeholder":"27123","helpText":"Port for Obsidian Local REST API plugin (default: 27123)"},{"key":"api_key","label":"API Key","type":"password","required":false,"placeholder":"","helpText":"API key from Obsidian Local REST API plugin settings"}]"#,
+            healthcheck_config: None,
+            metadata: Some(r#"{"template_enabled":true,"summary":"Obsidian desktop integration — read, create, and search notes in your vault from your agent.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["file_read","file_write","network_local"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
+            id: "builtin-desktop-browser",
+            name: "desktop_browser",
+            label: "Browser (Chrome/Edge)",
+            color: "#4285F4",
+            icon_url: "/icons/connectors/chrome.svg",
+            category: "desktop",
+            fields: r#"[{"key":"binary_path","label":"Browser Path","type":"text","required":false,"placeholder":"chrome","helpText":"Auto-detected. Path to Chrome or Edge binary."},{"key":"cdp_port","label":"DevTools Port","type":"text","required":false,"placeholder":"9222","helpText":"Chrome DevTools Protocol port (default: 9222)"}]"#,
+            healthcheck_config: None,
+            metadata: Some(r#"{"template_enabled":true,"summary":"Browser automation via Chrome DevTools Protocol — navigate pages, extract data, and automate web tasks.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["process_spawn","network_local"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
+            id: "builtin-personas-database",
+            name: "personas_database",
+            label: "Built-in Database",
+            color: "#06B6D4",
+            icon_url: "",
+            category: "database",
+            fields: "[]",
+            healthcheck_config: None,
+            metadata: Some(r#"{"template_enabled":true,"is_builtin":true,"always_active":true,"summary":"Local SQLite database managed by Personas. Available on first launch — agents can create tables, store data, and run SQL queries without any external service.","auth_type":"builtin","auth_type_label":"Built-in","auth_methods":[{"id":"builtin","label":"Built-in","type":"credential","is_default":true}]}"#),
         },
     ];
 

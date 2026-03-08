@@ -43,7 +43,7 @@ pub async fn gitlab_connect(
     let client = Arc::new(GitLabClient::new(
         "https://gitlab.com".to_string(),
         token.trim().to_string(),
-    ));
+    )?);
 
     let user = client.validate_token().await.map_err(|e| {
         AppError::GitLab(format!("Failed to validate GitLab token: {e}"))

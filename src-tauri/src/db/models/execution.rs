@@ -40,6 +40,43 @@ pub struct PersonaExecution {
     pub created_at: String,
 }
 
+/// Execution row with persona metadata included via SQL JOIN.
+/// Eliminates N+1 queries when listing executions across all personas.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct GlobalExecutionRow {
+    pub id: String,
+    pub persona_id: String,
+    pub trigger_id: Option<String>,
+    pub use_case_id: Option<String>,
+    pub status: String,
+    pub input_data: Option<String>,
+    pub output_data: Option<String>,
+    pub claude_session_id: Option<String>,
+    pub log_file_path: Option<String>,
+    pub execution_flows: Option<String>,
+    pub model_used: Option<String>,
+    #[ts(type = "number")]
+    pub input_tokens: i64,
+    #[ts(type = "number")]
+    pub output_tokens: i64,
+    pub cost_usd: f64,
+    pub error_message: Option<String>,
+    #[ts(type = "number | null")]
+    pub duration_ms: Option<i64>,
+    pub tool_steps: Option<String>,
+    pub retry_of_execution_id: Option<String>,
+    #[ts(type = "number")]
+    pub retry_count: i64,
+    pub started_at: Option<String>,
+    pub completed_at: Option<String>,
+    pub created_at: String,
+    // Persona metadata from JOIN
+    pub persona_name: Option<String>,
+    pub persona_icon: Option<String>,
+    pub persona_color: Option<String>,
+}
+
 impl PersonaExecution {
     /// Parse the status string into the canonical ExecutionState enum.
     pub fn state(&self) -> ExecutionState {

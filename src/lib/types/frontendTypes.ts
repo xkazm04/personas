@@ -20,13 +20,17 @@ export interface UngroupedNode {
 
 export type SidebarNode = GroupNode | UngroupedNode;
 
-export type SidebarDragType = 'persona' | 'group';
+// ── Drag Payloads (discriminated union) ───────────────────────────────
 
-export interface SidebarDragData {
-  type: SidebarDragType;
-  personaId?: string;
-  groupId?: string;
-}
+export type DragPayload =
+  | { type: 'persona'; personaId: string }
+  | { type: 'group-reorder'; groupId: string };
+
+export type DropPayload =
+  | { type: 'group'; groupId: string }
+  | { type: 'group-reorder'; groupId: string }
+  | { type: 'persona'; personaId: string }
+  | { type: 'ungrouped' };
 
 /** Build a tree of sidebar nodes from flat groups + personas arrays. */
 export function buildSidebarTree(
@@ -177,6 +181,16 @@ export interface DesignFilesSection {
  */
 export type DesignContext = DesignFilesSection;
 
+/** A saved test input set for a use case (like Postman collections). */
+export interface TestFixture {
+  id: string;
+  name: string;
+  description?: string;
+  inputs: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
 /** A single use-case extracted from design results. */
 export interface DesignUseCase {
   id: string;
@@ -191,6 +205,7 @@ export interface DesignUseCase {
   model_override?: ModelProfile;
   notification_channels?: NotificationChannel[];
   event_subscriptions?: UseCaseEventSubscription[];
+  test_fixtures?: TestFixture[];
 }
 
 export interface UseCaseTimeFilter {

@@ -1,62 +1,12 @@
-import { useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { FlaskConical, Play, Square, Loader2, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { UseCaseItem } from '@/features/shared/components/UseCasesList';
-import type { ModelProfile } from '@/lib/types/frontendTypes';
-import type { ModelTestConfig } from '@/api/tests';
-import {
-  OLLAMA_CLOUD_BASE_URL,
-  OLLAMA_CLOUD_PRESETS,
-} from '@/features/agents/sub_model_config/OllamaCloudPresets';
-
-function profileToModelConfig(mp: ModelProfile): ModelTestConfig | null {
-  if (!mp.model && !mp.provider) return null;
-
-  // Anthropic shorthand models
-  if (!mp.provider || mp.provider === 'anthropic') {
-    return {
-      id: mp.model || 'sonnet',
-      provider: 'anthropic',
-      model: mp.model,
-    };
-  }
-
-  // Ollama cloud
-  if (mp.provider === 'ollama') {
-    const preset = OLLAMA_CLOUD_PRESETS.find((p) => p.modelId === mp.model);
-    return {
-      id: preset?.value || mp.model || 'ollama',
-      provider: 'ollama',
-      model: mp.model,
-      base_url: mp.base_url || OLLAMA_CLOUD_BASE_URL,
-      auth_token: mp.auth_token,
-    };
-  }
-
-  // Custom / LiteLLM
-  return {
-    id: mp.model || 'custom',
-    provider: mp.provider,
-    model: mp.model,
-    base_url: mp.base_url,
-    auth_token: mp.auth_token,
-  };
-}
-
-function modelLabel(mp: ModelProfile | undefined): string {
-  if (!mp) return 'Persona default';
-  if (!mp.provider || mp.provider === 'anthropic') {
-    if (mp.model === 'haiku') return 'Haiku';
-    if (mp.model === 'sonnet') return 'Sonnet';
-    if (mp.model === 'opus') return 'Opus';
-  }
-  if (mp.provider === 'ollama') {
-    const preset = OLLAMA_CLOUD_PRESETS.find((p) => p.modelId === mp.model);
-    return preset?.label.split(' (')[0] ?? mp.model ?? 'Ollama';
-  }
-  return mp.model || 'Custom';
-}
+import type { TestFixture } from '@/lib/types/frontendTypes';
+import { resolveEffectiveModel } from './useCaseDetailHelpers';
+import { mutateSingleUseCase } from '@/hooks/design/useDesignContextMutator';
+import { UseCaseFixtureDropdown } from './UseCaseFixtureDropdown';
 
 interface UseCaseTestRunnerProps {
   useCaseId: string;
@@ -72,24 +22,24 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
   const cancelTest = usePersonaStore((s) => s.cancelTest);
   const setEditorTab = usePersonaStore((s) => s.setEditorTab);
 
-  // Determine which model to use
-  const resolvedProfile = useMemo<ModelProfile>(() => {
-    if (useCase.model_override) return useCase.model_override;
-    if (!defaultModelProfile) return { model: 'sonnet', provider: 'anthropic' };
-    try {
-      return JSON.parse(defaultModelProfile) as ModelProfile;
-    } catch {
-      // intentional: non-critical — JSON parse fallback
-      return { model: 'sonnet', provider: 'anthropic' };
-    }
-  }, [useCase.model_override, defaultModelProfile]);
+  const [selectedFixtureId, setSelectedFixtureId] = useState<string | null>(null);
 
-  const modelConfig = useMemo(() => profileToModelConfig(resolvedProfile), [resolvedProfile]);
+  const fixtures = useMemo(() => useCase.test_fixtures ?? [], [useCase.test_fixtures]);
+  const selectedFixture = useMemo(
+    () => fixtures.find((f) => f.id === selectedFixtureId) ?? null,
+    [fixtures, selectedFixtureId],
+  );
+
+  const resolved = useMemo(
+    () => resolveEffectiveModel(useCase.model_override, defaultModelProfile),
+    [useCase.model_override, defaultModelProfile],
+  );
 
   const handleRun = useCallback(async () => {
-    if (!selectedPersona || !modelConfig) return;
-    await startTest(selectedPersona.id, [modelConfig], useCaseId);
-  }, [selectedPersona, modelConfig, useCaseId, startTest]);
+    if (!selectedPersona || !resolved.config) return;
+    // Pass fixture inputs as the suite context if a fixture is selected
+    await startTest(selectedPersona.id, [resolved.config], useCaseId);
+  }, [selectedPersona, resolved.config, useCaseId, startTest]);
 
   const handleCancel = useCallback(async () => {
     if (testRunProgress?.runId) {
@@ -97,8 +47,52 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
     }
   }, [testRunProgress, cancelTest]);
 
-  const canCancel = !!testRunProgress?.runId;
+  const handleSaveFixture = useCallback(
+    (name: string, description: string, inputs: Record<string, unknown>) => {
+      if (!selectedPersona) return;
+      const now = new Date().toISOString();
+      const fixture: TestFixture = {
+        id: `fixture-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        name,
+        description: description || undefined,
+        inputs: Object.keys(inputs).length > 0 ? inputs : (useCase.sample_input ?? {}),
+        created_at: now,
+        updated_at: now,
+      };
+      mutateSingleUseCase(selectedPersona.id, useCaseId, (uc) => ({
+        ...uc,
+        test_fixtures: [...(uc.test_fixtures ?? []), fixture],
+      }));
+      setSelectedFixtureId(fixture.id);
+    },
+    [selectedPersona, useCaseId, useCase.sample_input],
+  );
 
+  const handleDeleteFixture = useCallback(
+    (fixtureId: string) => {
+      if (!selectedPersona) return;
+      mutateSingleUseCase(selectedPersona.id, useCaseId, (uc) => ({
+        ...uc,
+        test_fixtures: (uc.test_fixtures ?? []).filter((f) => f.id !== fixtureId),
+      }));
+    },
+    [selectedPersona, useCaseId],
+  );
+
+  const handleUpdateFixture = useCallback(
+    (fixtureId: string, inputs: Record<string, unknown>) => {
+      if (!selectedPersona) return;
+      mutateSingleUseCase(selectedPersona.id, useCaseId, (uc) => ({
+        ...uc,
+        test_fixtures: (uc.test_fixtures ?? []).map((f) =>
+          f.id === fixtureId ? { ...f, inputs, updated_at: new Date().toISOString() } : f,
+        ),
+      }));
+    },
+    [selectedPersona, useCaseId],
+  );
+
+  const canCancel = !!testRunProgress?.runId;
   const hasPrompt = !!selectedPersona?.structured_prompt || !!selectedPersona?.system_prompt;
 
   return (
@@ -109,9 +103,30 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
       </h5>
 
       <div className="bg-secondary/30 border border-primary/10 rounded-xl p-3 space-y-3">
-        <p className="text-sm text-muted-foreground/70">
-          Run a test for this use case using <span className="text-foreground/80 font-medium">{modelLabel(resolvedProfile)}</span>
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm text-muted-foreground/70 min-w-0">
+            Run with <span className="text-foreground/80 font-medium">{resolved.label}</span>
+          </p>
+          <UseCaseFixtureDropdown
+            fixtures={fixtures}
+            selectedFixtureId={selectedFixtureId}
+            onSelect={setSelectedFixtureId}
+            onSave={handleSaveFixture}
+            onDelete={handleDeleteFixture}
+            onUpdate={handleUpdateFixture}
+            currentInputs={selectedFixture?.inputs ?? useCase.sample_input ?? undefined}
+          />
+        </div>
+
+        {/* Show active fixture inputs preview */}
+        {selectedFixture && Object.keys(selectedFixture.inputs).length > 0 && (
+          <div className="px-2.5 py-2 rounded-lg bg-amber-500/5 border border-amber-500/15 text-xs">
+            <span className="text-amber-400/70 font-medium">Fixture inputs:</span>
+            <pre className="mt-1 text-muted-foreground/70 whitespace-pre-wrap break-all max-h-20 overflow-y-auto">
+              {JSON.stringify(selectedFixture.inputs, null, 2)}
+            </pre>
+          </div>
+        )}
 
         {isTestRunning ? (
           <>
@@ -159,7 +174,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
         ) : (
           <button
             onClick={handleRun}
-            disabled={!hasPrompt || !modelConfig}
+            disabled={!hasPrompt || !resolved.config}
             className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Play className="w-3.5 h-3.5" /> Test Use Case

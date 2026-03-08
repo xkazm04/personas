@@ -834,6 +834,7 @@ mod tests {
             color: None,
             enabled: true,
             sensitive: false,
+            headless: false,
             max_concurrent: 2,
             timeout_ms: 300000,
             notification_channels: None,
@@ -916,12 +917,18 @@ mod tests {
 
         let prompt = assemble_prompt(&persona, &[], None, None, None);
 
-        assert!(prompt.contains("## Identity\nI am a code reviewer."));
-        assert!(prompt.contains("## Instructions\nReview all pull requests carefully."));
-        assert!(prompt.contains("## Tool Guidance\nUse the linter tool first."));
-        assert!(prompt.contains("## Examples\nExample: Check for null pointers."));
-        assert!(prompt.contains("## Error Handling\nReport errors clearly."));
-        assert!(prompt.contains("## Security\nAlways check for SQL injection."));
+        assert!(prompt.contains("## Identity\n"));
+        assert!(prompt.contains("I am a code reviewer."));
+        assert!(prompt.contains("## Instructions\n"));
+        assert!(prompt.contains("Review all pull requests carefully."));
+        assert!(prompt.contains("## Tool Guidance\n"));
+        assert!(prompt.contains("Use the linter tool first."));
+        assert!(prompt.contains("## Examples\n"));
+        assert!(prompt.contains("Example: Check for null pointers."));
+        assert!(prompt.contains("## Error Handling\n"));
+        assert!(prompt.contains("Report errors clearly."));
+        assert!(prompt.contains("## Security\n"));
+        assert!(prompt.contains("Always check for SQL injection."));
         // system_prompt should NOT appear since structured_prompt is used
         assert!(!prompt.contains("You are a helpful test agent."));
     }

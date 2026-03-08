@@ -6,6 +6,7 @@ import {
 } from '@/api/negotiator';
 import { useAiArtifactFlow, defaultGetLine, buildResolveStatus } from './useAiArtifactFlow';
 import { useStepProgress } from '@/hooks/useStepProgress';
+import { lookupPlaybook, savePlaybook, markPlaybookUsed } from './playbookCache';
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -43,7 +44,10 @@ interface NegotiationInput {
 export function useCredentialNegotiator() {
   const [stepHelp, setStepHelp] = useState<{ answer: string; stepIndex: number } | null>(null);
   const [isLoadingHelp, setIsLoadingHelp] = useState(false);
+  const [fromPlaybook, setFromPlaybook] = useState(false);
   const serviceNameRef = useRef('');
+  const startedAtRef = useRef(0);
+  const helpedStepsRef = useRef<Set<number>>(new Set());
 
   const flow = useAiArtifactFlow<NegotiationInput, NegotiationPlan>({
     stream: {
@@ -69,11 +73,25 @@ export function useCredentialNegotiator() {
     fieldKeys: string[],
   ) => {
     serviceNameRef.current = serviceName;
+    startedAtRef.current = Date.now();
+    helpedStepsRef.current = new Set();
     sp.reset();
     setStepHelp(null);
+    setFromPlaybook(false);
+
+    // Lookup-before-generate: check if a successful playbook exists for this service
+    const cached = lookupPlaybook(serviceName);
+    if (cached) {
+      markPlaybookUsed(serviceName);
+      setFromPlaybook(true);
+      // Inject the cached plan directly, skipping AI generation
+      flow.setResult(cached.plan);
+      flow.setPhase('guiding');
+      return;
+    }
 
     await flow.start({ serviceName, connector, fieldKeys });
-  }, [flow.start, sp.reset]);
+  }, [flow.start, flow.setResult, flow.setPhase, sp.reset]);
 
   const cancel = useCallback(() => {
     flow.cancel(() => cancelCredentialNegotiation());
@@ -89,9 +107,21 @@ export function useCredentialNegotiator() {
       const willBeComplete = sp.completedSteps.size + (sp.completedSteps.has(stepIndex) ? 0 : 1);
       if (willBeComplete >= flow.result.steps.length) {
         flow.setPhase('done');
+
+        // Record successful playbook for future reuse
+        savePlaybook({
+          serviceName: serviceNameRef.current,
+          plan: flow.result,
+          outcome: 'success',
+          durationMs: Date.now() - startedAtRef.current,
+          stepsNeedingHelp: [...helpedStepsRef.current],
+          capturedFieldCount: Object.keys(sp.capturedValues).length,
+          usedAt: new Date().toISOString(),
+          usageCount: 0,
+        });
       }
     }
-  }, [flow.result, flow.setPhase, sp.completeStep, sp.completedSteps]);
+  }, [flow.result, flow.setPhase, sp.completeStep, sp.completedSteps, sp.capturedValues]);
 
   const goToStep = useCallback((stepIndex: number) => {
     sp.goToStep(stepIndex);
@@ -104,6 +134,7 @@ export function useCredentialNegotiator() {
     const step = flow.result.steps[stepIndex];
     if (!step) return;
 
+    helpedStepsRef.current.add(stepIndex);
     setIsLoadingHelp(true);
     setStepHelp(null);
 
@@ -141,6 +172,7 @@ export function useCredentialNegotiator() {
     capturedValues: sp.capturedValues,
     stepHelp,
     isLoadingHelp,
+    fromPlaybook,
     start,
     cancel,
     completeStep,

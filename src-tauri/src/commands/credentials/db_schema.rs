@@ -141,7 +141,7 @@ pub async fn introspect_db_tables(
     credential_id: String,
 ) -> Result<QueryResult, AppError> {
     require_privileged(&state, "introspect_db_tables").await?;
-    crate::engine::db_query::introspect_tables(&state.db, &credential_id).await
+    crate::engine::db_query::introspect_tables(&state.db, &credential_id, Some(&state.user_db)).await
 }
 
 #[tauri::command]
@@ -151,7 +151,7 @@ pub async fn introspect_db_columns(
     table_name: String,
 ) -> Result<QueryResult, AppError> {
     require_privileged(&state, "introspect_db_columns").await?;
-    crate::engine::db_query::introspect_columns(&state.db, &credential_id, &table_name).await
+    crate::engine::db_query::introspect_columns(&state.db, &credential_id, &table_name, Some(&state.user_db)).await
 }
 
 // ============================================================================
@@ -165,7 +165,7 @@ pub async fn execute_db_query(
     query_text: String,
 ) -> Result<QueryResult, AppError> {
     require_privileged(&state, "execute_db_query").await?;
-    let result = crate::engine::db_query::execute_query(&state.db, &credential_id, &query_text).await?;
+    let result = crate::engine::db_query::execute_query(&state.db, &credential_id, &query_text, Some(&state.user_db)).await?;
 
     // Update last_run stats if we can find a matching saved query
     // (fire-and-forget — don't fail the execution if this errors)

@@ -1,17 +1,7 @@
 import { useMemo } from 'react';
-import { AlertTriangle, GitFork, Plug, Radio, Wrench } from 'lucide-react';
 import { SelectionCheckbox } from '../review/SelectionCheckbox';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
 import type { FlowNode, UseCaseFlow } from '@/lib/types/frontendTypes';
-import { MOTION } from '@/features/templates/animationPresets';
-
-const NODE_TYPE_PILLS: Record<string, { Icon: typeof Wrench; color: string; label: string }> = {
-  action: { Icon: Wrench, color: 'text-blue-400 bg-blue-500/10 border-blue-500/15', label: 'action' },
-  decision: { Icon: GitFork, color: 'text-amber-400 bg-amber-500/10 border-amber-500/15', label: 'decision' },
-  connector: { Icon: Plug, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/15', label: 'connector' },
-  event: { Icon: Radio, color: 'text-violet-400 bg-violet-500/10 border-violet-500/15', label: 'event' },
-  error: { Icon: AlertTriangle, color: 'text-rose-400 bg-rose-500/10 border-rose-500/15', label: 'error' },
-};
 
 function countNodeTypes(nodes: FlowNode[]): Record<string, number> {
   const counts: Record<string, number> = {};
@@ -30,35 +20,59 @@ export function uniqueConnectors(nodes: FlowNode[]): string[] {
   return Array.from(seen);
 }
 
-function buildTypeSummary(nodeCounts: Record<string, number>): string {
-  return Object.entries(nodeCounts)
-    .map(([type, count]) => {
-      const label = NODE_TYPE_PILLS[type]?.label ?? type;
-      return `${count} ${label}${count !== 1 ? 's' : ''}`;
-    })
-    .join(', ');
+function buildHumanSummary(nodeCounts: Record<string, number>): string {
+  const parts: string[] = [];
+  const steps = (nodeCounts['action'] ?? 0) + (nodeCounts['decision'] ?? 0);
+  const connectors = nodeCounts['connector'] ?? 0;
+  if (steps > 0) parts.push(`${steps} step${steps !== 1 ? 's' : ''}`);
+  if (connectors > 0) parts.push(`${connectors} connector${connectors !== 1 ? 's' : ''}`);
+  return parts.join(', ');
 }
 
 interface UseCaseRowProps {
   flow: UseCaseFlow;
   checked: boolean;
   onToggle: () => void;
-  onHover: (flowId: string | null) => void;
-  highlightedConnectors: Set<string>;
-  isDepHighlighted: boolean;
+  connectorFlowIndex: Map<string, Set<string>>;
+  selectedIds: Set<string>;
 }
 
 export function UseCaseRow({
   flow,
   checked,
   onToggle,
-  onHover,
-  highlightedConnectors,
-  isDepHighlighted,
+  connectorFlowIndex,
+  selectedIds,
 }: UseCaseRowProps) {
   const nodeCounts = useMemo(() => countNodeTypes(flow.nodes), [flow.nodes]);
   const connectors = useMemo(() => uniqueConnectors(flow.nodes), [flow.nodes]);
-  const typeSummary = useMemo(() => buildTypeSummary(nodeCounts), [nodeCounts]);
+  const humanSummary = useMemo(() => buildHumanSummary(nodeCounts), [nodeCounts]);
+
+  // Derive shared connector highlighting from the index
+  const sharedConnectors = useMemo(() => {
+    const shared = new Set<string>();
+    for (const conn of connectors) {
+      const users = connectorFlowIndex.get(conn);
+      if (users && users.size > 1) shared.add(conn);
+    }
+    return shared;
+  }, [connectors, connectorFlowIndex]);
+
+  // Derive which OTHER flows share connectors with this one
+  const hasDepHighlight = useMemo(() => {
+    if (sharedConnectors.size === 0) return false;
+    for (const conn of sharedConnectors) {
+      const users = connectorFlowIndex.get(conn);
+      if (users) {
+        for (const id of users) {
+          if (id !== flow.id && selectedIds.has(id)) return true;
+        }
+      }
+    }
+    return false;
+  }, [sharedConnectors, connectorFlowIndex, flow.id, selectedIds]);
+
+  const description = (flow as UseCaseFlow & { description?: string }).description;
 
   return (
     <div
@@ -66,40 +80,45 @@ export function UseCaseRow({
       aria-checked={checked}
       tabIndex={0}
       onClick={onToggle}
-      onMouseEnter={() => onHover(flow.id)}
-      onMouseLeave={() => onHover(null)}
-      onFocus={() => onHover(flow.id)}
-      onBlur={() => onHover(null)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onToggle();
         }
       }}
-      title={typeSummary}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border cursor-pointer transition-all focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:outline-none ${MOTION.snappy.css} ${
+      className={`flex items-center gap-3 px-3 py-2 rounded-xl border cursor-pointer focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:outline-none group ${
         checked
           ? 'border-violet-500/25 bg-violet-500/5'
           : 'border-primary/10 bg-secondary/15 opacity-60'
-      } ${isDepHighlighted ? 'ring-1 ring-emerald-500/30 bg-emerald-500/[0.03]' : ''}`}
+      } ${hasDepHighlight ? 'ring-1 ring-emerald-500/30 bg-emerald-500/[0.03]' : ''}`}
     >
       <SelectionCheckbox checked={checked} onChange={onToggle} />
-      <span className="text-sm font-medium text-foreground flex-1 truncate">
-        {flow.name}
-      </span>
 
+      {/* Name + optional description */}
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-medium text-foreground block truncate">
+          {flow.name}
+        </span>
+        {description && (
+          <span className="text-sm text-muted-foreground/50 block truncate">
+            {description}
+          </span>
+        )}
+      </div>
+
+      {/* Connector icons */}
       {connectors.length > 0 && (
         <div className="flex items-center gap-1 flex-shrink-0">
           {connectors.map((name) => {
             const meta = getConnectorMeta(name);
-            const isShared = highlightedConnectors.has(name);
+            const isShared = sharedConnectors.has(name);
             return (
               <span
                 key={name}
                 title={meta.label}
-                className={`inline-flex items-center rounded-[4px] p-0.5 border transition-all ${MOTION.snappy.css} ${
+                className={`inline-flex items-center rounded-[4px] p-0.5 border ${
                   isShared
-                    ? 'animate-pulse border-emerald-500/30 bg-emerald-500/10'
+                    ? 'border-emerald-500/30 bg-emerald-500/10'
                     : 'border-transparent'
                 }`}
               >
@@ -110,23 +129,12 @@ export function UseCaseRow({
         </div>
       )}
 
-      <div className="flex items-center gap-1 flex-shrink-0">
-        {Object.entries(nodeCounts).map(([type, count]) => {
-          const pill = NODE_TYPE_PILLS[type];
-          if (!pill) return null;
-          const { Icon, color, label } = pill;
-          return (
-            <span
-              key={type}
-              title={`${count} ${label}${count !== 1 ? 's' : ''}`}
-              className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 text-sm font-mono rounded border ${color}`}
-            >
-              <Icon className="w-2.5 h-2.5" />
-              {count}
-            </span>
-          );
-        })}
-      </div>
+      {/* Human-readable summary */}
+      {humanSummary && (
+        <span className="text-sm text-muted-foreground/40 flex-shrink-0 hidden sm:inline">
+          {humanSummary}
+        </span>
+      )}
     </div>
   );
 }

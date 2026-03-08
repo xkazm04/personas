@@ -1,0 +1,42 @@
+{
+  "id": "builtin-cal-com",
+  "name": "cal_com",
+  "label": "Cal.com",
+  "color": "#292929",
+  "icon_url": "/icons/connectors/cal-com.svg",
+  "category": "scheduling",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "cal_live_...",
+      "helpText": "Generate at cal.com/settings/developer/api-keys"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.cal.com/v2/me",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}",
+      "cal-api-version": "2024-08-13"
+    },
+    "description": "Validates API key via Cal.com /v2/me endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Cal.com open-source scheduling platform for availability and bookings.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://cal.com/docs/api-reference/v2/introduction",
+    "setup_guide": "1. Go to cal.com and sign in to your account\n2. Navigate to Settings → Developer → API Keys\n3. Click 'Create new API key'\n4. Copy the generated key (starts with cal_live_)",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true},
+      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@calcom/cal-mcp", "transport": "stdio", "suggested_env": {"CAL_API_KEY": ""}}
+    ]
+  }
+}

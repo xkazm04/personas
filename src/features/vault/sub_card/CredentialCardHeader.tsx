@@ -75,7 +75,7 @@ export function CredentialCardHeader({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 min-w-0">
-              <h4 className="font-medium text-foreground text-sm truncate max-w-[220px] sm:max-w-[320px]">
+              <h4 className="font-medium text-foreground text-sm truncate max-w-[140px] sm:max-w-[180px]">
                 {credential.name}
               </h4>
               <CompositeHealthDot
@@ -91,9 +91,15 @@ export function CredentialCardHeader({
             </div>
 
             <div className="mt-1 text-sm text-muted-foreground/90">
-              Created {formatTimestamp(credential.created_at, 'Never')} · Last used {formatTimestamp(credential.last_used_at, 'Never')}
+              Last used {formatTimestamp(credential.last_used_at, 'Never')}
               {credential.healthcheck_last_tested_at && (
-                <> · Last tested {formatTimestamp(credential.healthcheck_last_tested_at, 'Never')}</>
+                <>
+                  {' · Last tested '}
+                  {formatTimestamp(credential.healthcheck_last_tested_at, 'Never')}
+                  {effectiveHealthcheckResult?.isStale && (
+                    <span className="text-muted-foreground/50 italic" title="Result from a previous session — re-test for a fresh check"> (cached)</span>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -132,10 +138,12 @@ function CompositeHealthDot({
   );
   const style = getTierStyle(composite.tier);
 
+  const staleNote = healthResult?.isStale ? ' (from previous session)' : '';
+
   return (
     <span
-      className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dotColor}`}
-      title={`${style.label} (${composite.score}/100) — ${composite.reason}`}
+      className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dotColor} ${healthResult?.isStale ? 'opacity-60' : ''}`}
+      title={`${style.label} (${composite.score}/100) — ${composite.reason}${staleNote}`}
     />
   );
 }

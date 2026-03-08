@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
-import { Search, Key, X, RotateCw, Loader2, CheckCircle2, HeartPulse, Sparkles } from 'lucide-react';
+import { Search, Key, X, RotateCw, Loader2, CheckCircle2, Network } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { VaultErrorBanner } from '@/features/vault/sub_card/VaultErrorBanner';
@@ -15,8 +15,12 @@ import { CredentialDeleteDialog } from '@/features/vault/sub_card/CredentialDele
 import { VaultStatusBadge } from '@/features/vault/sub_card/VaultStatusBadge';
 import { CatalogAutoSetup } from '@/features/vault/sub_autoCred/CatalogAutoSetup';
 import { ForagingPanel } from '@/features/vault/sub_foraging/ForagingPanel';
+import { DesktopDiscoveryPanel } from '@/features/vault/sub_desktop/DesktopDiscoveryPanel';
 import { DatabaseListView } from '@/features/vault/sub_databases/DatabaseListView';
-import { BulkHealthcheckSummary } from '@/features/vault/sub_manager/BulkHealthcheckSummary';
+import { CredentialRelationshipGraph } from '@/features/vault/sub_graph/CredentialRelationshipGraph';
+import { HealthStatusBar } from '@/features/vault/sub_manager/HealthStatusBar';
+import { ProvisioningWizard } from '@/features/vault/sub_wizard/ProvisioningWizard';
+import { WorkspaceConnectPanel } from '@/features/vault/sub_workspace/WorkspaceConnectPanel';
 import { useCredentialOAuth } from '@/features/vault/hooks/useCredentialOAuth';
 import { useUniversalOAuth } from '@/hooks/design/useUniversalOAuth';
 import { useUndoDelete } from '@/features/vault/hooks/useUndoDelete';
@@ -25,9 +29,10 @@ import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth'
 import { useBulkHealthcheck } from '@/features/vault/hooks/useBulkHealthcheck';
 import { isUniversalOAuthConnector, getOAuthProviderId, getOAuthScopes } from '@/lib/utils/connectors';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { getAuthMethods } from '@/lib/types/types';
 import * as api from '@/api/tauriApi';
 import type { VaultStatus } from '@/api/tauriApi';
-import { getRotationStatus, rotateCredentialNow } from '@/api/rotation';
+import { rotateCredentialNow } from '@/api/rotation';
 
 export function CredentialManager() {
   const credentials = usePersonaStore((s) => s.credentials);
@@ -38,7 +43,6 @@ export function CredentialManager() {
   const deleteCredential = usePersonaStore((s) => s.deleteCredential);
   const globalError = usePersonaStore((s) => s.error);
   const setGlobalError = usePersonaStore((s) => s.setError);
-  const openWizard = useProvisioningWizardStore((s) => s.open);
 
   const [loading, setLoading] = useState(true);
   const [vault, setVault] = useState<VaultStatus | null>(null);
@@ -50,12 +54,29 @@ export function CredentialManager() {
 
   // Rotate All state
   const [isRotatingAll, setIsRotatingAll] = useState(false);
-  const [rotateAllResult, setRotateAllResult] = useState<{ rotated: number; failed: number } | null>(null);
+  const [rotateAllResult, setRotateAllResult] = useState<{ rotated: number; failed: number; skipped: number } | null>(null);
+  const [showGraph, setShowGraph] = useState(false);
 
   // Bulk Healthcheck
   const bulk = useBulkHealthcheck();
+  const [isDailyRun, setIsDailyRun] = useState(false);
 
   const { state: viewState, dispatch, filteredConnectors, catalogFormData } = useCredentialViewFSM(connectorDefinitions);
+
+  // Sync between provisioning wizard store and FSM view
+  const wizardPhase = useProvisioningWizardStore((s) => s.phase);
+  useEffect(() => {
+    if (wizardPhase !== 'closed' && viewState.view !== 'add-wizard') {
+      dispatch({ type: 'GO_ADD_WIZARD' });
+    }
+  }, [wizardPhase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Close wizard store when navigating away from wizard view
+  useEffect(() => {
+    if (viewState.view !== 'add-wizard' && wizardPhase !== 'closed') {
+      useProvisioningWizardStore.getState().close();
+    }
+  }, [viewState.view]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync unified search to FSM when in catalog view
   useEffect(() => {
@@ -159,6 +180,25 @@ export function CredentialManager() {
     init();
   }, [fetchCredentials, fetchConnectorDefinitions]);
 
+  // Daily auto-test: run healthchecks if not run today
+  useEffect(() => {
+    if (loading || credentials.length === 0 || bulk.isRunning) return;
+    const lastRun = bulk.summary?.completedAt;
+    const today = new Date().toDateString();
+    const alreadyRanToday = lastRun && new Date(lastRun).toDateString() === today;
+    if (alreadyRanToday) return;
+    const timer = setTimeout(() => {
+      setIsDailyRun(true);
+      bulk.run(credentials);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [loading, credentials.length]);
+
+  // Clear daily-run flag when bulk finishes
+  useEffect(() => {
+    if (!bulk.isRunning && isDailyRun) setIsDailyRun(false);
+  }, [bulk.isRunning, isDailyRun]);
+
   const handleCreateCredential = async (values: Record<string, string>) => {
     if (!catalogFormData) return;
 
@@ -214,44 +254,43 @@ export function CredentialManager() {
     dispatch({ type: 'GO_AUTO_SETUP', connector: catalogFormData.connector });
   }, [catalogFormData, dispatch]);
 
+  // Determine which credentials support real rotation (OAuth with refresh tokens)
+  const isCredentialRotatable = useCallback((serviceType: string): boolean => {
+    const connector = connectorDefinitions.find((c) => c.name === serviceType);
+    if (!connector) return false;
+    const methods = getAuthMethods(connector);
+    return methods.some((m) => m.type === 'oauth');
+  }, [connectorDefinitions]);
+
+  const rotatableCount = useMemo(
+    () => credentials.filter((c) => isCredentialRotatable(c.service_type)).length,
+    [credentials, isCredentialRotatable],
+  );
+
   const handleRotateAll = useCallback(async () => {
     setIsRotatingAll(true);
     setRotateAllResult(null);
     let rotated = 0;
     let failed = 0;
 
-    // Check rotation status for each credential and rotate those with active policies
-    const rotatable: string[] = [];
-    await Promise.all(
-      credentials.map(async (cred) => {
-        try {
-          const status = await getRotationStatus(cred.id);
-          if (status.has_policy && status.policy_enabled) {
-            rotatable.push(cred.id);
-          }
-        } catch {
-          // intentional: non-critical — skip credentials without rotation support
-        }
-      }),
-    );
+    // Only rotate credentials with OAuth auth methods (real token refresh)
+    const rotatable = credentials.filter((c) => isCredentialRotatable(c.service_type));
+    const skipped = credentials.length - rotatable.length;
 
-    // Rotate all eligible credentials
-    for (const credId of rotatable) {
+    for (const cred of rotatable) {
       try {
-        await rotateCredentialNow(credId);
+        await rotateCredentialNow(cred.id);
         rotated++;
       } catch {
         failed++;
       }
     }
 
-    setRotateAllResult({ rotated, failed });
+    setRotateAllResult({ rotated, failed, skipped });
     setIsRotatingAll(false);
-    // Refresh credentials to pick up new rotation status
     void fetchCredentials();
-    // Clear result after 4s
-    setTimeout(() => setRotateAllResult(null), 4000);
-  }, [credentials, fetchCredentials]);
+    setTimeout(() => setRotateAllResult(null), 6000);
+  }, [credentials, isCredentialRotatable, fetchCredentials]);
 
   if (loading) {
     return (
@@ -271,54 +310,31 @@ export function CredentialManager() {
         actions={
           <div className="flex items-center gap-2">
             <button
-              onClick={() => openWizard()}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium border border-violet-500/25 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors"
-              title="AI-guided credential setup wizard"
+              onClick={() => setShowGraph((p) => !p)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium border transition-colors ${
+                showGraph
+                  ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/25'
+                  : 'border-primary/15 text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+              }`}
+              title="View credential dependency graph"
             >
-              <Sparkles className="w-3 h-3" />
-              AI Setup
+              <Network className="w-3 h-3" />
+              {showGraph ? 'Graph' : 'Graph'}
             </button>
             {credentials.length > 0 && (
               <button
-                onClick={bulk.isRunning ? bulk.cancel : () => bulk.run(credentials)}
-                disabled={false}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium border transition-colors ${
-                  bulk.isRunning
-                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                    : bulk.summary
-                      ? bulk.summary.failed > 0
-                        ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      : 'border-violet-500/20 text-violet-400/80 hover:bg-violet-500/10 hover:text-violet-400'
-                }`}
-                title={bulk.isRunning ? 'Cancel healthcheck' : 'Test all credentials'}
-              >
-                {bulk.isRunning ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : bulk.summary ? (
-                  <CheckCircle2 className="w-3 h-3" />
-                ) : (
-                  <HeartPulse className="w-3 h-3" />
-                )}
-                {bulk.isRunning
-                  ? `Testing ${bulk.progress.done}/${bulk.progress.total}...`
-                  : bulk.summary
-                    ? `${bulk.summary.passed} passed${bulk.summary.failed > 0 ? `, ${bulk.summary.failed} failed` : ''}`
-                    : 'Test All'}
-              </button>
-            )}
-            {credentials.length > 0 && (
-              <button
                 onClick={handleRotateAll}
-                disabled={isRotatingAll}
+                disabled={isRotatingAll || rotatableCount === 0}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium border transition-colors ${
-                  rotateAllResult
-                    ? rotateAllResult.failed > 0
-                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                    : 'border-cyan-500/20 text-cyan-400/80 hover:bg-cyan-500/10 hover:text-cyan-400'
+                  rotatableCount === 0
+                    ? 'border-primary/10 text-muted-foreground/30 cursor-not-allowed'
+                    : rotateAllResult
+                      ? rotateAllResult.failed > 0
+                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      : 'border-cyan-500/20 text-cyan-400/80 hover:bg-cyan-500/10 hover:text-cyan-400'
                 }`}
-                title="Rotate all credentials with active rotation policies"
+                title={rotatableCount === 0 ? 'No credentials support automatic rotation' : `Refresh ${rotatableCount} OAuth credential${rotatableCount !== 1 ? 's' : ''}`}
               >
                 {isRotatingAll ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -328,10 +344,12 @@ export function CredentialManager() {
                   <RotateCw className="w-3 h-3" />
                 )}
                 {isRotatingAll
-                  ? 'Rotating...'
+                  ? 'Refreshing...'
                   : rotateAllResult
-                    ? `${rotateAllResult.rotated} rotated${rotateAllResult.failed > 0 ? `, ${rotateAllResult.failed} failed` : ''}`
-                    : 'Rotate All'}
+                    ? `${rotateAllResult.rotated} refreshed${rotateAllResult.failed > 0 ? `, ${rotateAllResult.failed} failed` : ''}${rotateAllResult.skipped > 0 ? ` · ${rotateAllResult.skipped} skipped` : ''}`
+                    : rotatableCount > 0
+                      ? `Rotate (${rotatableCount})`
+                      : 'Rotate'}
               </button>
             )}
             {vault && <VaultStatusBadge vault={vault} onVaultRefresh={setVault} />}
@@ -369,6 +387,10 @@ export function CredentialManager() {
         )}
       </ContentHeader>
 
+      {credentials.length > 0 && (
+        <HealthStatusBar credentials={credentials} bulk={bulk} isDailyRun={isDailyRun} />
+      )}
+
       <ContentBody>
 
       {bannerError && (
@@ -382,7 +404,11 @@ export function CredentialManager() {
         />
       )}
 
-      <BulkHealthcheckSummary summary={bulk.summary} onDismiss={bulk.dismiss} />
+      {showGraph && viewState.view === 'list' && (
+        <div className="mb-3">
+          <CredentialRelationshipGraph />
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
         {viewState.view === 'catalog-browse' && (
@@ -463,6 +489,7 @@ export function CredentialManager() {
             onDelete={handleDeleteRequest}
             onGoToCatalog={() => dispatch({ type: 'GO_CATALOG' })}
             onGoToAddNew={() => dispatch({ type: 'GO_ADD_NEW' })}
+            onWorkspaceConnect={() => dispatch({ type: 'GO_WORKSPACE_CONNECT' })}
             onQuickStart={(connector) => handlePickType(connector)}
           />
         )}
@@ -473,9 +500,30 @@ export function CredentialManager() {
             onSelectMcp={() => dispatch({ type: 'GO_ADD_MCP' })}
             onSelectCustom={() => dispatch({ type: 'GO_ADD_CUSTOM' })}
             onSelectDatabase={() => dispatch({ type: 'GO_ADD_DATABASE' })}
+            onSelectDesktop={() => dispatch({ type: 'GO_ADD_DESKTOP' })}
+            onSelectWizard={() => dispatch({ type: 'GO_ADD_WIZARD' })}
+            onWorkspaceConnect={() => dispatch({ type: 'GO_WORKSPACE_CONNECT' })}
             onForage={() => dispatch({ type: 'GO_FORAGING' })}
             onBack={() => dispatch({ type: 'GO_LIST' })}
           />
+        )}
+
+        {viewState.view === 'add-desktop' && (
+          <DesktopDiscoveryPanel
+            onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
+            onCredentialCreated={() => {
+              void fetchCredentials();
+              fetchConnectorDefinitions();
+            }}
+          />
+        )}
+
+        {viewState.view === 'add-wizard' && (
+          <ProvisioningWizard onClose={() => {
+            void fetchCredentials();
+            fetchConnectorDefinitions();
+            dispatch({ type: 'GO_LIST' });
+          }} />
         )}
 
         {viewState.view === 'foraging' && (
@@ -486,6 +534,18 @@ export function CredentialManager() {
               dispatch({ type: 'GO_LIST' });
             }}
             onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
+          />
+        )}
+
+        {viewState.view === 'workspace-connect' && (
+          <WorkspaceConnectPanel
+            onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
+            onComplete={() => {
+              void fetchCredentials();
+              fetchConnectorDefinitions();
+              dispatch({ type: 'GO_LIST' });
+              setCredentialSearch('');
+            }}
           />
         )}
 

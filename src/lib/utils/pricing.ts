@@ -73,5 +73,18 @@ export function estimateCost(
   }
 
   // Unknown model — zero cost to avoid false budget alerts
+  console.warn(
+    `[pricing] Unknown model "${model}" — cost defaulting to $0. Budget totals may undercount actual spend.`,
+  );
   return { inputCost: 0, outputCost: 0, totalCost: 0, estimated: true };
+}
+
+/** Returns true when the model string matches a known pricing entry or a free-model prefix. */
+export function isModelRecognized(model: string | null | undefined): boolean {
+  if (!model) return true; // no model configured — nothing to warn about
+  if (MODEL_PRICING[model]) return true;
+  if (Object.keys(MODEL_PRICING).some((key) => model.startsWith(key))) return true;
+  const lower = model.toLowerCase();
+  if (FREE_MODEL_PREFIXES.some((p) => lower.startsWith(p))) return true;
+  return false;
 }

@@ -88,16 +88,14 @@ export function EventSubscriptionsPanel() {
 
   const fetchAll = useCallback(async () => {
     try {
-      const results = await Promise.all(
-        personas.map((p) => eventsApi.listSubscriptions(p.id)),
-      );
-      setSubscriptions(results.flat());
+      const subs = await eventsApi.listAllSubscriptions();
+      setSubscriptions(subs);
     } catch (err) {
       console.error('Failed to fetch subscriptions:', err);
     } finally {
       setLoading(false);
     }
-  }, [personas]);
+  }, []);
 
   useEffect(() => {
     if (personas.length > 0) {

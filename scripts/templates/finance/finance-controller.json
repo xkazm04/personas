@@ -791,6 +791,28 @@
         "label": "Email Reminder Templates",
         "content": "**Friendly (1-7 days)**: Professional, warm tone. Acknowledges the invoice may have been overlooked. Includes invoice number, amount, original due date, and payment instructions.\n\n**Firm (8-30 days)**: Direct but respectful. Notes the specific number of days overdue. Requests prompt attention. Includes the same invoice details plus a note about potential service impact.\n\n**Manual Review Escalation**: Not emailed — flagged internally with full context: customer name, invoice history, total outstanding balance, and recommended next steps."
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Human review for edge cases and low-confidence decisions",
+        "context": "Keyword match in prompt instructions"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack alerts plus email digests and summaries (periodic digests, critical alerts, completion confirmations, error notifications)",
+        "context": "2 notification channel(s) configured: slack, email"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Deduplication memory tracking known items across runs",
+        "context": "Tracks: recurring patterns, calibrated thresholds, known items for deduplication"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: review requested, item created, threshold breached",
+        "context": "3 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

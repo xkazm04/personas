@@ -31,6 +31,9 @@ export const updateTeam = (id: string, input: UpdateTeamInput) =>
 export const deleteTeam = (id: string) =>
   invoke<boolean>("delete_team", { id });
 
+export const cloneTeam = (sourceTeamId: string) =>
+  invoke<PersonaTeam>("clone_team", { sourceTeamId });
+
 export const listTeamMembers = (teamId: string) =>
   invoke<PersonaTeamMember[]>("list_team_members", { teamId });
 

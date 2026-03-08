@@ -40,7 +40,7 @@ pub async fn invoke_tool_direct(
 
     // Resolve credential env vars using the existing runner infrastructure
     let (env_vars, _hints, cred_failures) =
-        super::runner::resolve_credential_env_vars(pool, &[tool.clone()], persona_id, persona_name)
+        super::runner::resolve_credential_env_vars(pool, std::slice::from_ref(tool), persona_id, persona_name)
             .await;
 
     if !cred_failures.is_empty() {
@@ -271,8 +271,7 @@ fn resolve_placeholders(
 ///   expansion (e.g. user providing `${API_KEY}` won't match env var substitution)
 fn sanitize_input_value(value: &str) -> String {
     value
-        .replace('\0', "")
-        .replace('\r', "")
+        .replace(['\0', '\r'], "")
         .replace('\n', " ")
         .replace('$', "\\$")
 }

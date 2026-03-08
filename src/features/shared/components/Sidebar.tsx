@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Radio, Brain, DollarSign, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, Sparkles, HardDriveDownload, Shield, Workflow, Gauge, type LucideIcon } from 'lucide-react';
+import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, Sparkles, HardDriveDownload, Shield, type LucideIcon } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -11,15 +11,15 @@ import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 import OnboardingProgressBar from '@/features/onboarding/components/OnboardingProgressBar';
 
-const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string }> = [
+const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string; devOnly?: boolean }> = [
   { id: 'home', icon: Home, label: 'Home' },
   { id: 'overview', icon: BarChart3, label: 'Overview' },
   { id: 'personas', icon: Bot, label: 'Agents' },
   { id: 'events', icon: Zap, label: 'Events' },
   { id: 'credentials', icon: Key, label: 'Keys' },
   { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
-  { id: 'team', icon: Users, label: 'Teams' },
-  { id: 'cloud', icon: Cloud, label: 'Cloud' },
+  { id: 'team', icon: Users, label: 'Teams', devOnly: true },
+  { id: 'cloud', icon: Cloud, label: 'Cloud', devOnly: true },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -31,6 +31,7 @@ interface SubNavItem {
   id: string;
   icon: LucideIcon;
   label: string;
+  devOnly?: boolean;
 }
 
 interface SubNavBadge {
@@ -45,6 +46,7 @@ function SidebarSubNav({
   onSelect,
   badges = {},
   variant = 'compact',
+  devItems,
   children,
 }: {
   items: SubNavItem[];
@@ -52,6 +54,7 @@ function SidebarSubNav({
   onSelect: (id: string) => void;
   badges?: Record<string, SubNavBadge>;
   variant?: 'overview' | 'compact';
+  devItems?: Set<string>;
   children?: ReactNode;
 }) {
   const isOverview = variant === 'overview';
@@ -64,6 +67,7 @@ function SidebarSubNav({
         const Icon = item.icon;
         const isActive = activeId === item.id;
         const badge = badges[item.id];
+        const isDevItem = devItems?.has(item.id);
 
         return (
           <button
@@ -71,10 +75,14 @@ function SidebarSubNav({
             onClick={() => onSelect(item.id)}
             className={`w-full flex items-center ${isOverview ? 'gap-3 px-3 py-2.5' : 'gap-2.5 p-2.5'} mb-1 rounded-xl border transition-all text-left ${
               isActive
-                ? 'bg-primary/10 border-primary/20'
-                : isOverview
-                  ? 'hover:bg-secondary/50 border-transparent'
-                  : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
+                ? isDevItem
+                  ? 'bg-amber-500/8 border-amber-500/35'
+                  : 'bg-primary/10 border-primary/20'
+                : isDevItem
+                  ? 'bg-amber-500/5 border-amber-500/25 hover:bg-amber-500/10'
+                  : isOverview
+                    ? 'hover:bg-secondary/50 border-transparent'
+                    : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
             }`}
           >
             <div className={`${boxSize} rounded-lg flex items-center justify-center border transition-colors ${
@@ -128,11 +136,14 @@ export default function Sidebar() {
   const templateTestActive = usePersonaStore((s) => s.templateTestActive);
   const isLabRunning = usePersonaStore((s) => s.isLabRunning);
   const connectorTestActive = usePersonaStore((s) => s.connectorTestActive);
+  const templateGalleryTotal = usePersonaStore((s) => s.templateGalleryTotal);
   const selectedTeamId = usePersonaStore((s) => s.selectedTeamId);
   const cloudTab = usePersonaStore((s) => s.cloudTab);
   const setCloudTab = usePersonaStore((s) => s.setCloudTab);
   const settingsTab = usePersonaStore((s) => s.settingsTab);
   const setSettingsTab = usePersonaStore((s) => s.setSettingsTab);
+
+  const isDev = import.meta.env.DEV;
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const disabledSections = useMemo(() => {
@@ -140,6 +151,21 @@ export default function Sidebar() {
     if (!isAuthenticated) disabled.add('cloud');
     return disabled;
   }, [isAuthenticated]);
+
+  // Redirect away from dev-only sections/tabs when not in dev mode
+  useEffect(() => {
+    if (isDev) return;
+    if (sidebarSection === 'team' || sidebarSection === 'cloud') {
+      setSidebarSection('home');
+    }
+  }, [isDev, sidebarSection, setSidebarSection]);
+
+  useEffect(() => {
+    if (isDev) return;
+    if (settingsTab === 'engine' || settingsTab === 'byom') {
+      setSettingsTab('account');
+    }
+  }, [isDev, settingsTab, setSettingsTab]);
 
   const templateCount = connectorDefinitions.filter((conn) => {
     const metadata = conn.metadata as Record<string, unknown> | null;
@@ -180,14 +206,8 @@ export default function Sidebar() {
     { id: 'manual-review', icon: ClipboardCheck, label: 'Manual Review' },
     { id: 'messages', icon: MessageSquare, label: 'Messages' },
     { id: 'events', icon: Zap, label: 'Events' },
-    { id: 'analytics', icon: BarChart3, label: 'Analytics' },
-    { id: 'realtime', icon: Radio, label: 'Realtime' },
-    { id: 'memories', icon: Brain, label: 'Memories' },
-    { id: 'knowledge', icon: Network, label: 'Knowledge' },
-    { id: 'budget', icon: DollarSign, label: 'Budget' },
+    { id: 'knowledge', icon: Brain, label: 'Knowledge' },
     { id: 'sla', icon: Shield, label: 'SLA' },
-    { id: 'workflows', icon: Workflow, label: 'Workflows' },
-    { id: 'tier', icon: Gauge, label: 'Tier Usage' },
     { id: 'cron-agents', icon: Cpu, label: 'Cron Agents' },
   ];
 
@@ -221,6 +241,7 @@ export default function Sidebar() {
   ];
 
   const cloudItems: SubNavItem[] = [
+    { id: 'unified', label: 'All Deployments', icon: LayoutDashboard },
     { id: 'cloud', label: 'Cloud Execution', icon: Cloud },
     { id: 'gitlab', label: 'GitLab', icon: GitBranch },
   ];
@@ -229,10 +250,11 @@ export default function Sidebar() {
     { id: 'account', label: 'Account', icon: Chrome },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'engine', label: 'Engine', icon: Cpu },
-    { id: 'byom', label: 'BYOM', icon: Network },
+    { id: 'engine', label: 'Engine', icon: Cpu, devOnly: true },
+    { id: 'byom', label: 'BYOM', icon: Network, devOnly: true },
     { id: 'portability', label: 'Data', icon: HardDriveDownload },
-  ];
+    { id: 'admin', label: 'Admin', icon: Shield, devOnly: true },
+  ].filter((item) => !item.devOnly || isDev);
 
   const renderLevel2 = () => {
     switch (sidebarSection) {
@@ -303,6 +325,9 @@ export default function Sidebar() {
             items={templateItems}
             activeId={templateTab}
             onSelect={(id) => setTemplateTab(id as TemplateTab)}
+            badges={templateGalleryTotal > 0 ? {
+              generated: { count: templateGalleryTotal, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' },
+            } : undefined}
           />
         );
 
@@ -335,6 +360,7 @@ export default function Sidebar() {
             items={settingsItems}
             activeId={settingsTab}
             onSelect={(id) => setSettingsTab(id as SettingsTab)}
+            devItems={isDev ? new Set(['engine', 'byom']) : undefined}
           />
         );
 
@@ -348,10 +374,13 @@ export default function Sidebar() {
 
       {/* Level 1: Section icons */}
       <div className="w-[60px] bg-secondary/40 border-r border-primary/15 flex flex-col items-center py-4 gap-1.5">
-        {sections.map((section) => {
+        {sections
+          .filter((s) => !s.devOnly || isDev)
+          .map((section) => {
           const Icon = section.icon;
           const isActive = sidebarSection === section.id;
           const isDisabled = disabledSections.has(section.id);
+          const isDevSection = section.devOnly;
 
           return (
             <button
@@ -360,7 +389,7 @@ export default function Sidebar() {
               disabled={isDisabled}
               className={`relative w-11 h-11 rounded-xl flex items-center justify-center transition-all group ${
                 isDisabled ? 'cursor-not-allowed opacity-40' : ''
-              }`}
+              } ${isDevSection ? 'ring-1 ring-amber-500/40' : ''}`}
               title={isDisabled ? `${section.label} (${section.id === 'cloud' ? 'Sign in to unlock cloud features' : 'Coming soon'})` : section.label}
             >
               {isActive && !isDisabled && (

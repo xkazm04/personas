@@ -1,0 +1,49 @@
+{
+  "id": "builtin-kubernetes",
+  "name": "kubernetes",
+  "label": "Kubernetes",
+  "color": "#326CE5",
+  "icon_url": "/icons/connectors/kubernetes.svg",
+  "category": "cloud",
+  "fields": [
+    {
+      "key": "api_server",
+      "label": "API Server URL",
+      "type": "url",
+      "required": true,
+      "placeholder": "https://my-cluster.example.com:6443",
+      "helpText": "Kubernetes API server URL (find with: kubectl cluster-info)"
+    },
+    {
+      "key": "token",
+      "label": "Bearer Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "eyJhbGciOi...",
+      "helpText": "Service account token (find with: kubectl create token <sa-name>)"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{api_server}}/api",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{token}}"
+    },
+    "description": "Validates token via Kubernetes API versions endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Kubernetes container orchestration for managing clusters, pods, and deployments.",
+    "auth_type": "pat",
+    "auth_type_label": "Bearer Token",
+    "docs_url": "https://kubernetes.io/docs/reference/kubernetes-api/",
+    "setup_guide": "1. Run: kubectl cluster-info (to get the API server URL)\n2. Create a service account: kubectl create serviceaccount personas-sa\n3. Bind a role: kubectl create clusterrolebinding personas-binding --clusterrole=view --serviceaccount=default:personas-sa\n4. Generate a token: kubectl create token personas-sa\n5. Paste the API server URL and token",
+    "pricing_tier": "free",
+    "auth_methods": [
+      {"id": "pat", "label": "Bearer Token", "type": "credential", "is_default": true},
+      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "mcp-server-kubernetes", "transport": "stdio", "suggested_env": {}}
+    ]
+  }
+}

@@ -1,6 +1,18 @@
 import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../storeTypes";
 import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab } from "@/lib/types/types";
+import type { AdoptWizardStep } from "@/features/templates/sub_generated/adoption/useAdoptReducer";
+
+/** Snapshot of adoption wizard state saved when the user closes mid-adoption. */
+export interface AdoptionDraft {
+  reviewId: string;
+  templateName: string;
+  step: AdoptWizardStep;
+  connectorSwaps: Record<string, string>;
+  connectorCredentialMap: Record<string, string>;
+  variableValues: Record<string, string>;
+  savedAt: number;
+}
 
 export interface UiSlice {
   // State
@@ -22,6 +34,8 @@ export interface UiSlice {
   rebuildActive: boolean;
   templateTestActive: boolean;
   connectorTestActive: boolean;
+  templateGalleryTotal: number;
+  adoptionDraft: AdoptionDraft | null;
 
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
@@ -41,6 +55,8 @@ export interface UiSlice {
   setRebuildActive: (active: boolean) => void;
   setTemplateTestActive: (active: boolean) => void;
   setConnectorTestActive: (active: boolean) => void;
+  setTemplateGalleryTotal: (total: number) => void;
+  setAdoptionDraft: (draft: AdoptionDraft | null) => void;
 }
 
 export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) => ({
@@ -48,7 +64,7 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   homeTab: "welcome" as HomeTab,
   templateTab: "generated" as TemplateTab,
   editorTab: "use-cases" as EditorTab,
-  cloudTab: "cloud" as CloudTab,
+  cloudTab: "unified" as CloudTab,
   settingsTab: "account" as SettingsTab,
   rerunInputData: null,
   isLoading: false,
@@ -62,6 +78,8 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   rebuildActive: false,
   templateTestActive: false,
   connectorTestActive: false,
+  templateGalleryTotal: 0,
+  adoptionDraft: null,
 
   setSidebarSection: (section) => set({ sidebarSection: section }),
   setHomeTab: (tab) => set({ homeTab: tab }),
@@ -80,4 +98,6 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   setRebuildActive: (active) => set({ rebuildActive: active }),
   setTemplateTestActive: (active) => set({ templateTestActive: active }),
   setConnectorTestActive: (active) => set({ connectorTestActive: active }),
+  setTemplateGalleryTotal: (total) => set({ templateGalleryTotal: total }),
+  setAdoptionDraft: (draft) => set({ adoptionDraft: draft }),
 });

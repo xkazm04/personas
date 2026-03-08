@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useCallback } from 'react';
 import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line,
+  AreaChart, Area, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, ReferenceLine,
+  ResponsiveContainer, ReferenceLine, ComposedChart,
 } from 'recharts';
 import {
   DollarSign, Zap, CheckCircle, Clock,
   TrendingUp, AlertTriangle, ArrowUpRight,
-  Loader2, X,
+  Loader2, X, Timer,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
@@ -15,18 +15,15 @@ import { CHART_COLORS, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/s
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/charts/ChartErrorBoundary';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import { DayRangePicker, CompareToggle } from '@/features/overview/sub_usage/DashboardFilters';
+import { mergePreviousPeriod } from '@/features/overview/sub_usage/charts/periodComparison';
+import { resolveTimeRange, type TimeRange } from '@/lib/types/timeRange';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type TimeWindow = 1 | 7 | 30;
-
-const TIME_WINDOWS: Array<{ value: TimeWindow; label: string }> = [
-  { value: 1, label: '24h' },
-  { value: 7, label: '7d' },
-  { value: 30, label: '30d' },
-];
+type TimeWindow = 1 | 7 | 30 | 90;
 
 // ---------------------------------------------------------------------------
 // Formatters
@@ -146,15 +143,24 @@ interface ExecutionMetricsDashboardProps {
 }
 
 export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboardProps) {
-  const { dayRange, setDayRange } = useOverviewFilters();
+  const { dayRange, setDayRange, customDateRange, setCustomDateRange, effectiveDays, compareEnabled, setCompareEnabled, previousPeriodDays } = useOverviewFilters();
   const data = usePersonaStore((s) => s.executionDashboard);
   const loading = usePersonaStore((s) => s.executionDashboardLoading);
   const error = usePersonaStore((s) => s.executionDashboardError);
   const fetchExecutionDashboard = usePersonaStore((s) => s.fetchExecutionDashboard);
 
-  const days: TimeWindow = dayRange === 90 ? 30 : dayRange;
+  const days: TimeWindow = dayRange;
+  const fetchDays = compareEnabled ? previousPeriodDays : effectiveDays;
 
-  const load = useCallback(() => fetchExecutionDashboard(days), [fetchExecutionDashboard, days]);
+  const activeRange = useMemo((): TimeRange => {
+    if (customDateRange) {
+      return { kind: 'custom', startDate: customDateRange[0], endDate: customDateRange[1] };
+    }
+    return { kind: 'rolling-days', days: effectiveDays };
+  }, [customDateRange, effectiveDays]);
+  const activeRangeLabel = useMemo(() => resolveTimeRange(activeRange).label, [activeRange]);
+
+  const load = useCallback(() => fetchExecutionDashboard(fetchDays), [fetchExecutionDashboard, fetchDays]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -215,6 +221,12 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
     return { chartData: chartRows, personaCostData: personaCostRows, personaNames: names };
   }, [data]);
 
+  // Merge previous-period ghost data when compare is enabled
+  const comparedChartData = useMemo(() => {
+    if (!compareEnabled || chartData.length === 0) return chartData;
+    return mergePreviousPeriod(chartData, effectiveDays, ['cost', 'completed', 'failed', 'successRate', 'p50', 'p95', 'p99']);
+  }, [compareEnabled, chartData, effectiveDays]);
+
   // Anomaly dates for reference lines
   const anomalyDates = useMemo(
     () => new Set(data?.cost_anomalies.map((a) => fmtDate(a.date)) ?? []),
@@ -267,21 +279,12 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
         <div className="flex items-center gap-3">
           <TrendingUp className="w-4 h-4 text-blue-400" />
           <h3 className="text-sm font-semibold text-foreground/90">Execution Metrics</h3>
-          <div className="flex items-center gap-1 p-0.5 bg-secondary/50 rounded-lg border border-primary/15">
-            {TIME_WINDOWS.map((tw) => (
-              <button
-                key={tw.value}
-                onClick={() => setDayRange(tw.value)}
-                className={`px-2.5 py-1 rounded-xl text-sm font-medium transition-all ${
-                  days === tw.value
-                    ? 'bg-background text-foreground shadow-sm border border-primary/20'
-                    : 'text-muted-foreground/70 hover:text-muted-foreground'
-                }`}
-              >
-                {tw.label}
-              </button>
-            ))}
-          </div>
+          <DayRangePicker value={days} onChange={setDayRange} customDateRange={customDateRange} onCustomDateRangeChange={setCustomDateRange} />
+          <CompareToggle enabled={compareEnabled} onChange={setCompareEnabled} />
+          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/8 border border-blue-500/15 text-[11px] text-blue-400/70">
+            <Timer className="w-3 h-3" />
+            {activeRangeLabel}
+          </span>
         </div>
         {onClose && (
           <button
@@ -352,7 +355,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
         <div className="h-40 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
+              <ComposedChart data={comparedChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
                 <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
                 <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
@@ -360,7 +363,13 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
                 <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
                 <Bar dataKey="completed" name="Completed" stackId="status" fill="#10b981" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="failed" name="Failed" stackId="status" fill="#ef4444" radius={[2, 2, 0, 0]} />
-              </BarChart>
+                {compareEnabled && (
+                  <Line type="monotone" dataKey="prev_completed" name="Prev Completed" stroke="#10b981" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />
+                )}
+                {compareEnabled && (
+                  <Line type="monotone" dataKey="prev_failed" name="Prev Failed" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />
+                )}
+              </ComposedChart>
             </ResponsiveContainer>
           </ChartErrorBoundary>
         </div>
@@ -372,11 +381,14 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
         <div className="h-40 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
+              <LineChart data={comparedChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
                 <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
                 <YAxis domain={[0, 100]} tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} />
                 <Tooltip content={<ChartTooltipContent />} />
+                {compareEnabled && (
+                  <Line type="monotone" dataKey="prev_successRate" name="Prev Success %" stroke="#10b981" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />
+                )}
                 <Line type="monotone" dataKey="successRate" name="Success %" stroke="#10b981" strokeWidth={2} dot={false} />
                 <ReferenceLine y={90} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.3} label={{ value: '90%', fill: AXIS_TICK_FILL, fontSize: 9 }} />
               </LineChart>
@@ -391,12 +403,18 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
         <div className="h-40 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
+              <LineChart data={comparedChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
                 <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
                 <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} tickFormatter={(v: number) => fmtMs(v)} />
                 <Tooltip content={<ChartTooltipContent />} />
                 <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
+                {compareEnabled && (
+                  <Line type="monotone" dataKey="prev_p50" name="Prev p50" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />
+                )}
+                {compareEnabled && (
+                  <Line type="monotone" dataKey="prev_p95" name="Prev p95" stroke="#f59e0b" strokeWidth={1} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />
+                )}
                 <Line type="monotone" dataKey="p50" name="p50" stroke="#3b82f6" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="p95" name="p95" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
                 <Line type="monotone" dataKey="p99" name="p99" stroke="#ef4444" strokeWidth={1} dot={false} strokeDasharray="2 2" />

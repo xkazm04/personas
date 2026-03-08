@@ -23,6 +23,7 @@ export interface CredentialDesignOrchestrator {
   outputLines: string[];
   error: string | null;
   savedCredentialId: string | null;
+  registeredConnectorName: string | null;
 
   // Instruction / name
   instruction: string;
@@ -75,15 +76,21 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     if (design.result) lastResultRef.current = design.result;
   }, [design.result]);
 
-  // ── Sync OAuth messages → healthcheck result ───────────────────────
+  // ── Derive OAuth status message (separated from healthcheck results) ──
+  // Previously OAuth messages were piped into health.setResult(), conflating
+  // OAuth status with healthcheck results. Now tracked independently so a
+  // failed OAuth doesn't display as a healthcheck failure and vice-versa.
+  // When both oauth and universalOAuth fire, prefer the most recent one.
 
-  useEffect(() => {
-    if (oauth.message) health.setResult(oauth.message);
-  }, [oauth.message, health.setResult]);
-
-  useEffect(() => {
-    if (universalOAuth.message) health.setResult(universalOAuth.message);
-  }, [universalOAuth.message, health.setResult]);
+  const oauthStatusMessage = useMemo(() => {
+    const oMsg = oauth.message;
+    const uMsg = universalOAuth.message;
+    if (!oMsg && !uMsg) return null;
+    if (!oMsg) return uMsg;
+    if (!uMsg) return oMsg;
+    // Both present — prefer universalOAuth (provider-specific) over legacy
+    return uMsg;
+  }, [oauth.message, universalOAuth.message]);
 
   // ── Auto-set credential name when preview arrives ──────────────────
 
@@ -320,6 +327,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
         oauthConsentCompletedAt: oauth.completedAt || universalOAuth.completedAt,
         isHealthchecking: health.isHealthchecking,
         healthcheckResult: health.result,
+        oauthStatusMessage,
         canSaveCredential,
         lastSuccessfulTestAt: health.result?.lastSuccessfulTestAt ?? null,
         isSaving: design.isSaving,
@@ -340,6 +348,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     outputLines: design.outputLines,
     error: design.error,
     savedCredentialId: design.savedCredentialId,
+    registeredConnectorName: design.registeredConnectorName,
     instruction,
     setInstruction,
     credentialName,

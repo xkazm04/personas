@@ -1,17 +1,10 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  listDesignReviewsPaginated,
-  listReviewConnectors,
-  listReviewCategories,
-  getTrendingTemplates,
-  getDesignReview,
-  backfillReviewCategories,
-  type PaginatedReviewsResult,
-  type ConnectorWithCount,
-  type CategoryWithCount,
-} from '@/api/reviews';
-import { smartSearchTemplates } from '@/api/smartSearch';
+import { useCallback, useRef } from 'react';
+import type { ConnectorWithCount, CategoryWithCount } from '@/api/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import { useGalleryQuery, type UseGalleryQueryReturn } from './useGalleryQuery';
+import { useAiSearch } from './useAiSearch';
+
+export type { ConnectorWithCount, CategoryWithCount };
 
 export interface UseTemplateGalleryReturn {
   allItems: PersonaDesignReview[];
@@ -35,6 +28,7 @@ export interface UseTemplateGalleryReturn {
   availableCategories: CategoryWithCount[];
   trendingTemplates: PersonaDesignReview[];
   readyTemplates: PersonaDesignReview[];
+  recommendedTemplates: PersonaDesignReview[];
   coverageFilter: string;
   setCoverageFilter: (f: string) => void;
   // AI search
@@ -48,243 +42,62 @@ export interface UseTemplateGalleryReturn {
   aiCliLog: string[];
 }
 
-const PER_PAGE = 50;
-const DEBOUNCE_MS = 150;
-
 export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplateGalleryReturn {
-  const [allItems, setAllItems] = useState<PersonaDesignReview[]>([]);
-  const [total, setTotal] = useState(0);
-  const [search, setSearchRaw] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [connectorFilter, setConnectorFilter] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState('created_at');
-  const [sortDir, setSortDir] = useState('desc');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
-  const [availableConnectors, setAvailableConnectors] = useState<ConnectorWithCount[]>([]);
-  const [availableCategories, setAvailableCategories] = useState<CategoryWithCount[]>([]);
-  const [trendingTemplates, setTrendingTemplates] = useState<PersonaDesignReview[]>([]);
-  const [readyTemplates, setReadyTemplates] = useState<PersonaDesignReview[]>([]);
-  const [coverageFilter, setCoverageFilter] = useState('all');
+  // Ref to break the circular dependency: AI search needs to write into query state,
+  // but query needs aiSearchActive from AI search.
+  const queryRef = useRef<UseGalleryQueryReturn>(null!);
 
-  // AI search state
-  const [aiSearchMode, setAiSearchMode] = useState(false);
-  const [aiSearchLoading, setAiSearchLoading] = useState(false);
-  const [aiSearchRationale, setAiSearchRationale] = useState('');
-  const [aiSearchActive, setAiSearchActive] = useState(false);
-  const [aiCliLog, setAiCliLog] = useState<string[]>([]);
+  const handleAiResults = useCallback((items: PersonaDesignReview[], total: number) => {
+    queryRef.current.setItems(items);
+    queryRef.current.setTotal(total);
+  }, []);
 
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const aiSearchIdRef = useRef(0);
-  const fetchIdRef = useRef(0);
-  const currentPageRef = useRef(0);
+  const ai = useAiSearch(handleAiResults);
 
-  // In AI mode: no debounce. In keyword mode: debounce as before.
+  const query = useGalleryQuery(coverageServiceTypes, ai.aiSearchActive);
+  queryRef.current = query;
+
+  // Compose search setter: in AI mode clear AI state on empty input
   const setSearch = useCallback((value: string) => {
-    setSearchRaw(value);
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-
-    if (aiSearchMode) {
-      if (!value.trim()) {
-        setAiSearchActive(false);
-        setAiSearchRationale('');
-        setDebouncedSearch('');
-      }
-      return;
+    queryRef.current.setSearch(value);
+    if (ai.aiSearchMode && !value.trim()) {
+      ai.clearAiSearch();
     }
-
-    debounceTimer.current = setTimeout(() => {
-      setDebouncedSearch(value);
-    }, DEBOUNCE_MS);
-  }, [aiSearchMode]);
-
-  // Fetch a specific page, optionally appending to existing items
-  const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
-    const id = ++fetchIdRef.current;
-    if (pageNum === 0) setIsLoading(true);
-    else setIsFetchingMore(true);
-
-    try {
-      const result: PaginatedReviewsResult = await listDesignReviewsPaginated({
-        search: debouncedSearch || undefined,
-        connectorFilter: connectorFilter.length > 0 ? connectorFilter : undefined,
-        categoryFilter: categoryFilter.length > 0 ? categoryFilter : undefined,
-        sortBy,
-        sortDir,
-        page: pageNum,
-        perPage: PER_PAGE,
-        coverageFilter: coverageFilter !== 'all' ? coverageFilter : undefined,
-        coverageServiceTypes: coverageFilter !== 'all' && coverageServiceTypes ? coverageServiceTypes : undefined,
-      });
-      if (id !== fetchIdRef.current) return;
-      setTotal(result.total);
-      setAllItems(prev => append ? [...prev, ...result.items] : result.items);
-    } catch (err) {
-      console.error('Failed to fetch paginated reviews:', err);
-    } finally {
-      if (id === fetchIdRef.current) {
-        setIsLoading(false);
-        setIsFetchingMore(false);
-      }
-    }
-  }, [debouncedSearch, connectorFilter, categoryFilter, sortBy, sortDir, coverageFilter, coverageServiceTypes]);
-
-  // Reset and fetch page 0 when filters/search/sort change (only when AI not active)
-  useEffect(() => {
-    if (!aiSearchActive) {
-      currentPageRef.current = 0;
-      fetchPage(0, false);
-    }
-  }, [fetchPage, aiSearchActive]);
-
-  // Fetch more: load the next page and append
-  const fetchMore = useCallback(() => {
-    if (isFetchingMore || isLoading || aiSearchActive) return;
-    if (allItems.length >= total) return;
-    const nextPage = currentPageRef.current + 1;
-    currentPageRef.current = nextPage;
-    fetchPage(nextPage, true);
-  }, [isFetchingMore, isLoading, aiSearchActive, allItems.length, total, fetchPage]);
-
-  const hasMore = allItems.length < total;
-
-  // Fetch available connectors, categories, and trending templates once.
-  useEffect(() => {
-    backfillReviewCategories().catch(() => {});
-    listReviewConnectors()
-      .then(setAvailableConnectors)
-      .catch(() => {});
-    listReviewCategories()
-      .then(setAvailableCategories)
-      .catch(() => {});
-    getTrendingTemplates(8)
-      .then(setTrendingTemplates)
-      .catch(() => {});
-    // Fetch "ready to deploy" templates (top 6 with full coverage)
-    if (coverageServiceTypes && coverageServiceTypes.length > 0) {
-      listDesignReviewsPaginated({
-        sortBy: 'trending',
-        sortDir: 'desc',
-        page: 0,
-        perPage: 6,
-        coverageFilter: 'full',
-        coverageServiceTypes,
-      })
-        .then((r) => setReadyTemplates(r.items))
-        .catch(() => {});
-    }
-  }, []);
-
-  // AI search: fire-and-forget background call
-  const triggerAiSearch = useCallback((query: string) => {
-    if (!query.trim() || query.trim().length < 5) return;
-
-    const searchId = ++aiSearchIdRef.current;
-    setAiSearchLoading(true);
-    setAiSearchRationale('');
-    setAiCliLog([]);
-
-    (async () => {
-      try {
-        const result = await smartSearchTemplates(query.trim());
-        if (searchId !== aiSearchIdRef.current) return;
-
-        if (result.cliLog?.length) {
-          setAiCliLog(result.cliLog);
-        }
-
-        if (result.rankedIds.length === 0) {
-          setAiSearchRationale(result.rationale || 'No matching templates found.');
-          setAllItems([]);
-          setTotal(0);
-          setAiSearchActive(true);
-          setAiSearchLoading(false);
-          return;
-        }
-
-        const reviews = await Promise.all(
-          result.rankedIds.map((id) =>
-            getDesignReview(id).catch(() => null),
-          ),
-        );
-
-        if (searchId !== aiSearchIdRef.current) return;
-
-        const ordered = reviews.filter((r): r is PersonaDesignReview => r !== null);
-        setAllItems(ordered);
-        setTotal(ordered.length);
-        setAiSearchActive(true);
-        setAiSearchRationale(result.rationale);
-      } catch (err: unknown) {
-        if (searchId !== aiSearchIdRef.current) return;
-        console.warn('AI search failed, falling back to keyword search:', err);
-        const errMsg = err instanceof Error ? err.message : String(err);
-        setAiSearchRationale(`AI search failed: ${errMsg}`);
-        setAiSearchActive(false);
-      } finally {
-        if (searchId === aiSearchIdRef.current) {
-          setAiSearchLoading(false);
-        }
-      }
-    })();
-  }, []);
-
-  const clearAiSearch = useCallback(() => {
-    aiSearchIdRef.current++;
-    setAiSearchActive(false);
-    setAiSearchRationale('');
-    setAiSearchLoading(false);
-    setAiCliLog([]);
-  }, []);
-
-  const refresh = useCallback(() => {
-    if (aiSearchActive) return;
-    currentPageRef.current = 0;
-    fetchPage(0, false);
-    listReviewConnectors()
-      .then(setAvailableConnectors)
-      .catch(() => {});
-    listReviewCategories()
-      .then(setAvailableCategories)
-      .catch(() => {});
-    getTrendingTemplates(8)
-      .then(setTrendingTemplates)
-      .catch(() => {});
-  }, [fetchPage, aiSearchActive]);
+  }, [ai.aiSearchMode, ai.clearAiSearch]);
 
   return {
-    allItems,
-    total,
-    hasMore,
-    isFetchingMore,
-    fetchMore,
-    search,
+    allItems: query.items,
+    total: query.total,
+    hasMore: query.hasMore,
+    isFetchingMore: query.isFetchingMore,
+    fetchMore: query.fetchMore,
+    search: query.search,
     setSearch,
-    connectorFilter,
-    setConnectorFilter,
-    categoryFilter,
-    setCategoryFilter,
-    sortBy,
-    setSortBy,
-    sortDir,
-    setSortDir,
-    isLoading,
-    refresh,
-    availableConnectors,
-    availableCategories,
-    trendingTemplates,
-    readyTemplates,
-    coverageFilter,
-    setCoverageFilter,
+    connectorFilter: query.connectorFilter,
+    setConnectorFilter: query.setConnectorFilter,
+    categoryFilter: query.categoryFilter,
+    setCategoryFilter: query.setCategoryFilter,
+    sortBy: query.sortBy,
+    setSortBy: query.setSortBy,
+    sortDir: query.sortDir,
+    setSortDir: query.setSortDir,
+    isLoading: query.isLoading,
+    refresh: query.refresh,
+    availableConnectors: query.availableConnectors,
+    availableCategories: query.availableCategories,
+    trendingTemplates: query.trendingTemplates,
+    readyTemplates: query.readyTemplates,
+    recommendedTemplates: query.recommendedTemplates,
+    coverageFilter: query.coverageFilter,
+    setCoverageFilter: query.setCoverageFilter,
     // AI search
-    aiSearchMode,
-    setAiSearchMode,
-    aiSearchLoading,
-    aiSearchRationale,
-    aiSearchActive,
-    triggerAiSearch,
-    clearAiSearch,
-    aiCliLog,
+    aiSearchMode: ai.aiSearchMode,
+    setAiSearchMode: ai.setAiSearchMode,
+    aiSearchLoading: ai.aiSearchLoading,
+    aiSearchRationale: ai.aiSearchRationale,
+    aiSearchActive: ai.aiSearchActive,
+    triggerAiSearch: ai.triggerAiSearch,
+    clearAiSearch: ai.clearAiSearch,
+    aiCliLog: ai.aiCliLog,
   };
 }

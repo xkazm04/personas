@@ -124,8 +124,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
       }
 
       await api.updateCredentialField(id, key, value, isSensitive, session_encrypted_value);
-      // No need to fetch all credentials if we just updated one field, 
-      // but might be needed to refresh metadata if it's used somewhere.
+      await get().fetchCredentials();
       set({ error: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to update credential field") });

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plug, CheckCircle, Shield, ListChecks, KeyRound, CircleHelp, Bot, PenLine } from 'lucide-react';
+import { Plug, CheckCircle, Shield, ListChecks, KeyRound, CircleHelp, Bot, PenLine, PackagePlus } from 'lucide-react';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { NegotiatorPanel } from '@/features/vault/sub_negotiator/NegotiatorPanel';
 import { VaultErrorBanner } from '@/features/vault/sub_card/VaultErrorBanner';
@@ -36,6 +36,7 @@ export function PreviewPhase() {
     oauthConsentCompletedAt,
     isHealthchecking,
     healthcheckResult,
+    oauthStatusMessage,
     canSaveCredential,
     isSaving,
     lastSuccessfulTestAt,
@@ -75,6 +76,24 @@ export function PreviewPhase() {
             <span className={INFO_STATUS.color}>{result.match_existing}</span>
             <p className="text-foreground/70 text-sm mt-1">
               Your credential will be linked to the existing connector definition.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* New connector discovery banner */}
+      {!result.match_existing && (
+        <div className={`flex items-start gap-3 px-4 py-3 border rounded-xl ${AI_STATUS.bgColor} ${AI_STATUS.borderColor}`}>
+          <PackagePlus className={`w-4 h-4 mt-0.5 shrink-0 ${AI_STATUS.color}`} />
+          <div className="text-sm">
+            <span className={`${AI_STATUS.color} font-medium`}>New connector discovered </span>
+            <span className="text-foreground/80">
+              — no existing <span className="font-mono text-foreground/90">{result.connector.name}</span> connector was found in your catalog.
+            </span>
+            <p className="text-foreground/70 text-sm mt-1">
+              When you save this credential, the AI-generated connector definition will be
+              automatically registered in your connector catalog — making it reusable for
+              other personas and template adoption.
             </p>
           </div>
         </div>
@@ -195,6 +214,12 @@ export function PreviewPhase() {
           Credentials are stored securely in the app vault and are available for agent tool execution.
         </p>
       </div>
+
+      {oauthStatusMessage && !oauthStatusMessage.success && (
+        <div className="text-sm px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
+          {oauthStatusMessage.message}
+        </div>
+      )}
 
       <CredentialEditForm
         initialValues={oauthInitialValues}

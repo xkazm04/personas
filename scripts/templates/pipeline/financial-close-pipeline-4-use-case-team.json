@@ -827,6 +827,28 @@
         "label": "Configurable Parameters",
         "content": "| Parameter | Default | Description |\n|-----------|---------|-------------|\n| `close_day` | 2 | Day of month to run the close pipeline |\n| `close_hour_utc` | 6 | Hour (UTC) to trigger the pipeline |\n| `recon_threshold_items` | 5 | Max discrepancies before pausing |\n| `recon_threshold_amount` | 500.00 | Max discrepancy $ value before pausing |\n| `date_match_tolerance_days` | 2 | Days of tolerance for transaction date matching |\n| `auto_classify_confidence` | 0.85 | Minimum confidence for auto-classification |\n| `review_confidence_floor` | 0.60 | Below this → escalate; above → flag for review |\n| `history_retention_days` | 90 | Days of classification history to retain |\n| `distribution_list` | (configured) | Email recipients for close package |\n| `slack_channel` | #finance-close | Slack channel for updates and alerts |\n| `accounting_method` | Accrual | Accrual or Cash for QuickBooks reports |"
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Escalation to human for critical or ambiguous items",
+        "context": "Escalation logic detected in instructions"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack alerts plus email digests and summaries (periodic digests, critical alerts, completion confirmations, error notifications)",
+        "context": "3 notification channel(s) configured: slack, email, slack"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Historical baselines and trend data for comparative analysis",
+        "context": "Tracks: human review outcomes, recurring patterns, calibrated thresholds"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution failed, item created, threshold breached, escalation triggered",
+        "context": "5 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

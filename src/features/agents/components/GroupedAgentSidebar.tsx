@@ -10,7 +10,7 @@ import { UngroupedZone } from '@/features/agents/components/sub_sidebar/Ungroupe
 import { PersonaContextMenu, type ContextMenuState } from '@/features/agents/components/sub_sidebar/PersonaContextMenu';
 import { SearchFilterBar } from '@/features/agents/components/sub_sidebar/SearchFilterBar';
 import { usePersonaFilters } from '@/features/agents/components/sub_sidebar/usePersonaFilters';
-import { buildSidebarTree, type SidebarDragData } from '@/lib/types/frontendTypes';
+import { buildSidebarTree, type DragPayload, type DropPayload } from '@/lib/types/frontendTypes';
 import type { DbPersona } from '@/lib/types/types';
 
 // ── Color palette for groups ──────────────────────────────────────
@@ -19,24 +19,28 @@ const GROUP_COLORS = [
   '#F59E0B', '#10B981', '#06B6D4', '#6366F1', '#F97316',
 ];
 
-// ── Drag ID helpers ───────────────────────────────────────────────
+// ── Drag payload helpers ─────────────────────────────────────────
 
-/** Parse a dnd-kit active.id into typed drag data. */
-function parseDragId(raw: string): SidebarDragData {
-  if (raw.startsWith('group-drag:')) {
-    return { type: 'group', groupId: raw.replace('group-drag:', '') };
-  }
-  return { type: 'persona', personaId: raw };
+function getDragPayload(event: { active: { data: { current?: Record<string, unknown> } } }): DragPayload | null {
+  return (event.active.data.current as DragPayload) ?? null;
 }
 
-/** Resolve a drop target ID to a group ID (or null for ungrouped). */
-function parseDropTargetGroupId(overId: string, personas: DbPersona[]): string | null {
-  if (overId === 'ungrouped') return null;
-  if (overId.startsWith('group:')) return overId.replace('group:', '');
-  if (overId.startsWith('group-drag:')) return overId.replace('group-drag:', '');
-  // Dropped on a persona — use that persona's group
-  const target = personas.find(p => p.id === overId);
-  return target?.group_id || null;
+function getDropPayload(event: { over: { data: { current?: Record<string, unknown> } } | null }): DropPayload | null {
+  if (!event.over) return null;
+  return (event.over.data.current as DropPayload) ?? null;
+}
+
+/** Resolve a drop payload to a target group ID (or null for ungrouped). */
+function resolveDropGroupId(drop: DropPayload, personas: DbPersona[]): string | null {
+  switch (drop.type) {
+    case 'group': return drop.groupId;
+    case 'group-reorder': return drop.groupId;
+    case 'ungrouped': return null;
+    case 'persona': {
+      const target = personas.find(p => p.id === drop.personaId);
+      return target?.group_id || null;
+    }
+  }
 }
 
 // ── Main GroupedAgentSidebar ─────────────────────────────────────
@@ -61,15 +65,11 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
   const {
     filters,
     setSearch,
-    setStatus,
-    setModel,
-    setHealth,
-    setRecency,
-    setTag,
+    toggleTag,
     clearFilters,
     hasActiveFilters,
     filteredIds,
-    allTags,
+    allAutoTags,
   } = usePersonaFilters(personas, personaHealthMap, personaLastRun);
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -84,6 +84,7 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
   const [showNewGroup, setShowNewGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const newGroupInputRef = useRef<HTMLInputElement>(null);
+  const dragStartGroupIdsRef = useRef<string[]>([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -116,37 +117,39 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
   }, [groups]);
 
   // Resolve active drag overlay
-  const activeDrag = activeId ? parseDragId(activeId) : null;
+  const activeDragRef = useRef<DragPayload | null>(null);
+  const activeDrag = activeDragRef.current;
   const activePersona = activeDrag?.type === 'persona'
     ? personas.find(p => p.id === activeDrag.personaId)
     : null;
-  const activeGroup = activeDrag?.type === 'group'
+  const activeGroup = activeDrag?.type === 'group-reorder'
     ? sortedGroups.find(g => g.id === activeDrag.groupId)
     : null;
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
+    dragStartGroupIdsRef.current = sortedGroups.map(g => g.id);
+    const payload = getDragPayload(event);
+    activeDragRef.current = payload;
     setActiveId(String(event.active.id));
-  }, []);
+  }, [sortedGroups]);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
+    activeDragRef.current = null;
     setActiveId(null);
-    const { active, over } = event;
-    if (!over) return;
 
-    const drag = parseDragId(String(active.id));
-    const overId = String(over.id);
+    const drag = getDragPayload(event);
+    const drop = getDropPayload(event);
+    if (!drag || !drop) return;
 
     // ── Group reordering ──
-    if (drag.type === 'group') {
-      const draggedGroupId = drag.groupId!;
-      const targetGroupId = overId.startsWith('group-drag:')
-        ? overId.replace('group-drag:', '')
-        : overId.startsWith('group:')
-          ? overId.replace('group:', '')
-          : null;
+    if (drag.type === 'group-reorder') {
+      const draggedGroupId = drag.groupId;
+      const targetGroupId = (drop.type === 'group' || drop.type === 'group-reorder')
+        ? drop.groupId
+        : null;
 
       if (targetGroupId && draggedGroupId !== targetGroupId) {
-        const ids = sortedGroups.map(g => g.id);
+        const ids = [...dragStartGroupIdsRef.current];
         const fromIdx = ids.indexOf(draggedGroupId);
         const toIdx = ids.indexOf(targetGroupId);
         if (fromIdx !== -1 && toIdx !== -1) {
@@ -159,14 +162,14 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
     }
 
     // ── Persona reordering ──
-    const personaId = drag.personaId!;
-    const targetGroupId = parseDropTargetGroupId(overId, personas);
+    const personaId = drag.personaId;
+    const targetGroupId = resolveDropGroupId(drop, personas);
 
     const currentPersona = personas.find(p => p.id === personaId);
     if (currentPersona && (currentPersona.group_id || null) !== targetGroupId) {
       movePersonaToGroup(personaId, targetGroupId);
     }
-  }, [personas, sortedGroups, movePersonaToGroup, reorderGroups]);
+  }, [personas, movePersonaToGroup, reorderGroups]);
 
   const handleCreateGroup = async () => {
     if (!newGroupName.trim()) return;
@@ -208,13 +211,9 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
         hasActiveFilters={hasActiveFilters}
         matchCount={filteredIds.size}
         totalCount={personas.length}
-        allTags={allTags}
+        allAutoTags={allAutoTags}
         onSearchChange={setSearch}
-        onStatusChange={setStatus}
-        onModelChange={setModel}
-        onHealthChange={setHealth}
-        onRecencyChange={setRecency}
-        onTagChange={setTag}
+        onToggleTag={toggleTag}
         onClear={clearFilters}
       />
 

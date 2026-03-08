@@ -81,7 +81,7 @@ pub async fn save_api_definition(
     let endpoints = crate::engine::api_definition::parse_openapi_spec(&raw_spec)?;
 
     let dir = api_definitions_dir(&app)?;
-    std::fs::create_dir_all(&dir)
+    tokio::fs::create_dir_all(&dir).await
         .map_err(|e| AppError::Internal(format!("Failed to create api_definitions dir: {e}")))?;
 
     let path = dir.join(format!("{}.json.enc", credential_id));
@@ -100,13 +100,13 @@ pub async fn save_api_definition(
     file_contents.push(ENC_SEPARATOR);
     file_contents.extend_from_slice(ciphertext_b64.as_bytes());
 
-    std::fs::write(&path, file_contents)
+    tokio::fs::write(&path, file_contents).await
         .map_err(|e| AppError::Internal(format!("Failed to write API definition: {e}")))?;
 
     // Remove legacy plaintext file if it exists
     let legacy_path = dir.join(format!("{}.json", credential_id));
     verify_path_containment(&legacy_path, &dir)?;
-    let _ = std::fs::remove_file(legacy_path);
+    let _ = tokio::fs::remove_file(legacy_path).await;
 
     Ok(())
 }

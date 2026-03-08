@@ -580,6 +580,7 @@ mod tests {
             color: None,
             enabled: true,
             sensitive: false,
+            headless: false,
             max_concurrent: 1,
             timeout_ms: 300000,
             notification_channels: None,

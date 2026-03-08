@@ -80,6 +80,11 @@ export function useOAuthPolling<
   const abortRef = useRef<AbortController | null>(null);
   const startTimeoutRef = useRef<number | null>(null);
 
+  // Generation counter: incremented on every sessionId change. Poll callbacks
+  // capture the current generation and discard results if it has since changed,
+  // guarding against stale microtasks that survive AbortController.abort().
+  const generationRef = useRef(0);
+
   const clearStartTimeout = useCallback(() => {
     if (startTimeoutRef.current !== null) {
       window.clearTimeout(startTimeoutRef.current);
@@ -96,14 +101,17 @@ export function useOAuthPolling<
     const controller = new AbortController();
     abortRef.current = controller;
 
+    // Capture generation so stale microtasks from a previous session are discarded
+    const gen = ++generationRef.current;
+
     let timer: number | null = null;
 
     const poll = async () => {
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted || gen !== generationRef.current) return;
 
       try {
         const result = await configRef.current.pollFn(sessionId);
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || gen !== generationRef.current) return;
 
         if (result.status === 'pending') {
           timer = window.setTimeout(poll, 1500);
@@ -130,7 +138,7 @@ export function useOAuthPolling<
           message: result.error || `${configRef.current.label} authorization failed. Please try again.`,
         });
       } catch (err) {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || gen !== generationRef.current) return;
         setSessionId(null);
         setIsAuthorizing(false);
         isAuthorizingRef.current = false;
@@ -157,8 +165,9 @@ export function useOAuthPolling<
 
     const { startFn, label, startTimeoutMs = 12000 } = configRef.current;
 
-    // Abort any existing poll from a previous session
+    // Abort any existing poll from a previous session and invalidate its generation
     abortRef.current?.abort();
+    generationRef.current += 1;
 
     setIsAuthorizing(true);
     setCompletedAt(null);
@@ -221,6 +230,7 @@ export function useOAuthPolling<
   const reset = useCallback(() => {
     clearStartTimeout();
     abortRef.current?.abort();
+    generationRef.current += 1;
     isAuthorizingRef.current = false;
     valuesRef.current = {};
     setValuesVersion((v) => v + 1);

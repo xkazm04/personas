@@ -1,4 +1,4 @@
-import { useState, useReducer, useCallback, useEffect, useRef } from 'react';
+import { useState, useReducer, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Blocks, MessageCircle } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -24,17 +24,6 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
   const [entryMode, setEntryMode] = useState<EntryMode>('build');
   const [builderState, dispatch] = useReducer(builderReducer, INITIAL_BUILDER_STATE);
   const [draftPersonaId, setDraftPersonaId] = useState<string | null>(null);
-  const cleanupDraftOnUnmountRef = useRef(true);
-  const latestDraftPersonaIdRef = useRef<string | null>(null);
-  const latestStepRef = useRef<WizardStep>('entry');
-
-  useEffect(() => {
-    latestDraftPersonaIdRef.current = draftPersonaId;
-  }, [draftPersonaId]);
-
-  useEffect(() => {
-    latestStepRef.current = step;
-  }, [step]);
 
   const handleCancel = useCallback(async () => {
     if (draftPersonaId) {
@@ -47,15 +36,6 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
     }
     setIsCreatingPersona(false);
   }, [deletePersona, draftPersonaId, setIsCreatingPersona]);
-
-  useEffect(() => {
-    return () => {
-      if (!cleanupDraftOnUnmountRef.current) return;
-      const currentDraftId = latestDraftPersonaIdRef.current;
-      if (!currentDraftId || latestStepRef.current !== 'entry') return;
-      void deletePersona(currentDraftId).catch(() => {});
-    };
-  }, [deletePersona]);
 
   const handleContinue = () => {
     setStep('identity');
@@ -144,7 +124,8 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                   >
                     <ChatCreator
                       onCancel={canCancel ? () => { void handleCancel(); } : undefined}
-                      onDraftPersonaIdChange={(id) => setDraftPersonaId(id)}
+                      onCreated={(id) => setDraftPersonaId(id)}
+                      onActivated={() => setIsCreatingPersona(false)}
                     />
                   </motion.div>
                 ) : (

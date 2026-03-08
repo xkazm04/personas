@@ -17,7 +17,7 @@ use serde_json::Value;
 
 use crate::db::models::QueryResult;
 use crate::db::repos::resources::credentials as cred_repo;
-use crate::db::DbPool;
+use crate::db::{DbPool, UserDbPool};
 use crate::error::AppError;
 
 /// Maximum rows returned per query to prevent memory exhaustion.
@@ -80,16 +80,33 @@ fn sanitize_error(msg: &str, fields: &HashMap<String, String>) -> String {
 }
 
 /// Execute a query against the database credential's service.
+///
+/// `user_db` is required for `personas_database` (built-in SQLite) queries.
+/// Pass `None` when the caller does not have access to the user database pool
+/// (legacy call sites) — `personas_database` queries will return an error.
 pub async fn execute_query(
     pool: &DbPool,
     credential_id: &str,
     query_text: &str,
+    user_db: Option<&UserDbPool>,
 ) -> Result<QueryResult, AppError> {
     let credential = cred_repo::get_by_id(pool, credential_id)?;
-    let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
 
     let start = Instant::now();
     let service = credential.service_type.as_str();
+
+    // Built-in local database — no external credentials needed
+    if service == "personas_database" {
+        let udb = user_db.ok_or_else(|| {
+            AppError::Internal("User database pool not available".to_string())
+        })?;
+        let mut qr = execute_local_sqlite(udb, query_text)?;
+        qr.duration_ms = start.elapsed().as_millis() as u64;
+        qr.row_count = qr.rows.len();
+        return Ok(qr);
+    }
+
+    let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
 
     let result = match service {
         "supabase" => execute_supabase(&fields, query_text).await,
@@ -123,8 +140,21 @@ pub async fn execute_query(
 pub async fn introspect_tables(
     pool: &DbPool,
     credential_id: &str,
+    user_db: Option<&UserDbPool>,
 ) -> Result<QueryResult, AppError> {
     let credential = cred_repo::get_by_id(pool, credential_id)?;
+
+    if credential.service_type == "personas_database" {
+        let udb = user_db.ok_or_else(|| {
+            AppError::Internal("User database pool not available".to_string())
+        })?;
+        let start = Instant::now();
+        let mut qr = introspect_local_sqlite_tables(udb)?;
+        qr.duration_ms = start.elapsed().as_millis() as u64;
+        qr.row_count = qr.rows.len();
+        return Ok(qr);
+    }
+
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
     let start = Instant::now();
 
@@ -160,8 +190,21 @@ pub async fn introspect_columns(
     pool: &DbPool,
     credential_id: &str,
     table_name: &str,
+    user_db: Option<&UserDbPool>,
 ) -> Result<QueryResult, AppError> {
     let credential = cred_repo::get_by_id(pool, credential_id)?;
+
+    if credential.service_type == "personas_database" {
+        let udb = user_db.ok_or_else(|| {
+            AppError::Internal("User database pool not available".to_string())
+        })?;
+        let start = Instant::now();
+        let mut qr = introspect_local_sqlite_columns(udb, table_name)?;
+        qr.duration_ms = start.elapsed().as_millis() as u64;
+        qr.row_count = qr.rows.len();
+        return Ok(qr);
+    }
+
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
     let start = Instant::now();
     let safe_name = table_name.replace(|c: char| !c.is_alphanumeric() && c != '_', "");
@@ -1620,6 +1663,118 @@ fn convex_value_to_query_result(value: &Value) -> Result<QueryResult, AppError> 
             })
         }
     }
+}
+
+// ============================================================================
+// Local SQLite (Built-in Database)
+// ============================================================================
+
+/// Execute a SQL query against the local user-facing SQLite database.
+/// This is completely isolated from the internal app database.
+pub fn execute_local_sqlite(
+    user_db: &UserDbPool,
+    query_text: &str,
+) -> Result<QueryResult, AppError> {
+    let conn = user_db.get().map_err(|e| {
+        AppError::Internal(format!("Failed to connect to user database: {e}"))
+    })?;
+
+    let trimmed = query_text.trim();
+
+    // Detect if this is a SELECT/PRAGMA/EXPLAIN (returns rows) or a write statement
+    let upper = trimmed.to_uppercase();
+    let is_read = upper.starts_with("SELECT")
+        || upper.starts_with("PRAGMA")
+        || upper.starts_with("EXPLAIN")
+        || upper.starts_with("WITH");
+
+    if is_read {
+        let mut stmt = conn.prepare(trimmed).map_err(|e| {
+            AppError::Internal(format!("SQL prepare error: {e}"))
+        })?;
+
+        let col_count = stmt.column_count();
+        let columns: Vec<String> = (0..col_count)
+            .map(|i| stmt.column_name(i).unwrap_or("?").to_string())
+            .collect();
+
+        let mut rows_out: Vec<Vec<Value>> = Vec::new();
+        let mut rows_iter = stmt.query([]).map_err(|e| {
+            AppError::Internal(format!("SQL query error: {e}"))
+        })?;
+
+        while let Some(row) = rows_iter.next().map_err(|e| {
+            AppError::Internal(format!("Row fetch error: {e}"))
+        })? {
+            if rows_out.len() >= MAX_ROWS {
+                break;
+            }
+            let mut row_vals: Vec<Value> = Vec::with_capacity(col_count);
+            for i in 0..col_count {
+                let val: Value = match row.get_ref(i) {
+                    Ok(rusqlite::types::ValueRef::Null) => Value::Null,
+                    Ok(rusqlite::types::ValueRef::Integer(n)) => Value::Number(n.into()),
+                    Ok(rusqlite::types::ValueRef::Real(f)) => {
+                        serde_json::Number::from_f64(f)
+                            .map(Value::Number)
+                            .unwrap_or(Value::Null)
+                    }
+                    Ok(rusqlite::types::ValueRef::Text(t)) => {
+                        Value::String(String::from_utf8_lossy(t).to_string())
+                    }
+                    Ok(rusqlite::types::ValueRef::Blob(b)) => {
+                        Value::String(format!("<blob {} bytes>", b.len()))
+                    }
+                    Err(_) => Value::Null,
+                };
+                row_vals.push(val);
+            }
+            rows_out.push(row_vals);
+        }
+
+        Ok(QueryResult {
+            columns,
+            rows: rows_out,
+            row_count: 0, // set by caller
+            duration_ms: 0,
+            truncated: false,
+        })
+    } else {
+        // Write statement (CREATE TABLE, INSERT, UPDATE, DELETE, etc.)
+        let affected = conn.execute(trimmed, []).map_err(|e| {
+            AppError::Internal(format!("SQL execute error: {e}"))
+        })?;
+
+        Ok(QueryResult {
+            columns: vec!["affected_rows".to_string()],
+            rows: vec![vec![Value::Number(affected.into())]],
+            row_count: affected,
+            duration_ms: 0,
+            truncated: false,
+        })
+    }
+}
+
+/// Introspect tables in the local user database.
+pub fn introspect_local_sqlite_tables(
+    user_db: &UserDbPool,
+) -> Result<QueryResult, AppError> {
+    execute_local_sqlite(
+        user_db,
+        "SELECT name AS table_name, type AS table_type FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%' ORDER BY name",
+    )
+}
+
+/// Introspect columns of a specific table in the local user database.
+pub fn introspect_local_sqlite_columns(
+    user_db: &UserDbPool,
+    table_name: &str,
+) -> Result<QueryResult, AppError> {
+    let safe_name = table_name.replace(|c: char| !c.is_alphanumeric() && c != '_', "");
+    execute_local_sqlite(
+        user_db,
+        &format!("PRAGMA table_info('{}')", safe_name),
+    )
 }
 
 // ============================================================================

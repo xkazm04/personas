@@ -15,21 +15,37 @@ type Subscriber = (event: PersonaEvent) => void;
 const subscribers = new Set<Subscriber>();
 let singletonUnlisten: UnlistenFn | null = null;
 let setupPromise: Promise<void> | null = null;
+let setupInFlight = false;
 
 function ensureListener() {
   if (setupPromise) return;
+  setupInFlight = true;
   setupPromise = (async () => {
-    singletonUnlisten = await listen<PersonaEvent>('event-bus', (tauriEvent) => {
+    const unlisten = await listen<PersonaEvent>('event-bus', (tauriEvent) => {
       const payload = tauriEvent.payload;
       for (const cb of subscribers) {
         cb(payload);
       }
     });
+    setupInFlight = false;
+
+    // If all subscribers left while setup was in-flight, tear down immediately
+    if (subscribers.size === 0) {
+      unlisten();
+      singletonUnlisten = null;
+      setupPromise = null;
+    } else {
+      singletonUnlisten = unlisten;
+    }
   })();
 }
 
 function teardownIfEmpty() {
-  if (subscribers.size === 0 && singletonUnlisten) {
+  if (subscribers.size > 0) return;
+  // Don't tear down while setup is still in-flight — the setup completion
+  // handler above will clean up when it resolves and finds zero subscribers.
+  if (setupInFlight) return;
+  if (singletonUnlisten) {
     singletonUnlisten();
     singletonUnlisten = null;
     setupPromise = null;

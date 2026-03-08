@@ -1,4 +1,5 @@
 import { invoke, type InvokeArgs, type InvokeOptions } from "@tauri-apps/api/core";
+import { recordIpcCall } from "./ipcMetrics";
 
 /** Default timeout for Tauri IPC calls (30 seconds). */
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -15,6 +16,8 @@ export class InvokeTimeoutError extends Error {
  * `Promise.race`. If the backend doesn't respond within `timeoutMs` the
  * returned promise rejects with an `InvokeTimeoutError`.
  *
+ * Every call is recorded into the IPC metrics ring buffer for observability.
+ *
  * @param cmd      The Tauri command name.
  * @param args     Optional arguments forwarded to `invoke`.
  * @param options  Optional InvokeOptions forwarded to `invoke`.
@@ -26,6 +29,7 @@ export function invokeWithTimeout<T>(
   options?: InvokeOptions,
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): Promise<T> {
+  const start = performance.now();
   const invocation = invoke<T>(cmd, args, options);
 
   const timeout = new Promise<never>((_resolve, reject) => {
@@ -39,5 +43,14 @@ export function invokeWithTimeout<T>(
     void invocation.finally(() => clearTimeout(id));
   });
 
-  return Promise.race([invocation, timeout]);
+  return Promise.race([invocation, timeout]).then(
+    (result) => {
+      recordIpcCall({ command: cmd, durationMs: performance.now() - start, ok: true, timestamp: Date.now() });
+      return result;
+    },
+    (err) => {
+      recordIpcCall({ command: cmd, durationMs: performance.now() - start, ok: false, timestamp: Date.now() });
+      throw err;
+    },
+  );
 }

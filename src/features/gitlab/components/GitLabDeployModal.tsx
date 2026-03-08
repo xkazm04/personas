@@ -12,6 +12,7 @@ interface GitLabDeployModalProps {
   onSelectProject: (id: number) => void;
   onFetchProjects: () => Promise<void>;
   onDeploy: (personaId: string, projectId: number, provisionCredentials: boolean) => Promise<GitLabDeployResult>;
+  onDeploySuccess?: () => void;
   onCreateFromTemplate?: (template: CiCdTemplate) => Promise<string>;
   gitlabTier?: GitLabTierId;
 }
@@ -23,6 +24,7 @@ export function GitLabDeployModal({
   onSelectProject,
   onFetchProjects,
   onDeploy,
+  onDeploySuccess,
   onCreateFromTemplate,
   gitlabTier = 'free',
 }: GitLabDeployModalProps) {
@@ -59,6 +61,7 @@ export function GitLabDeployModal({
     try {
       const res = await onDeploy(selectedPersonaId, selectedProjectId, provisionCredentials);
       setResult(res);
+      onDeploySuccess?.();
     } catch {
       // intentional: error state handled locally via store + ErrorBanner
     } finally {

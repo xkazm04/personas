@@ -7,12 +7,13 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   AreaChart, Area, LineChart, Line, PieChart, Pie, Cell,
+  ComposedChart,
 } from 'recharts';
-import { selectBudgetWarnings } from '@/stores/slices/overviewSlice';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import HealingIssueModal from '@/features/overview/sub_observability/HealingIssueModal';
-import { DayRangePicker, PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
+import { DayRangePicker, PersonaSelect, CompareToggle } from '@/features/overview/sub_usage/DashboardFilters';
 import { MetricChart } from '@/features/overview/sub_usage/charts/MetricChart';
+import { mergePreviousPeriod } from '@/features/overview/sub_usage/charts/periodComparison';
 import { ChartTooltip } from '@/features/overview/sub_usage/charts/ChartTooltip';
 import { CHART_COLORS, CHART_COLORS_PURPLE, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
 import { pivotToolUsageOverTime } from '@/features/overview/sub_usage/charts/pivotToolUsage';
@@ -66,6 +67,12 @@ export default function AnalyticsDashboard() {
     selectedPersonaId,
     setSelectedPersonaId,
     setFailureDrilldownDate,
+    customDateRange,
+    setCustomDateRange,
+    effectiveDays,
+    compareEnabled,
+    setCompareEnabled,
+    previousPeriodDays,
   } = useOverviewFilters();
   const [autoRefresh, setAutoRefresh] = useState(false);
 
@@ -81,22 +88,17 @@ export default function AnalyticsDashboard() {
   const refreshInFlightRef = useRef<Promise<void> | null>(null);
   const refreshQueuedRef = useRef(false);
 
-  // ── Budget state (centralized) ──
-  const monthlySpend = usePersonaStore((s) => s.monthlySpend);
-  const fetchMonthlySpend = usePersonaStore((s) => s.fetchMonthlySpend);
-
-  const budgetWarnings = useMemo(() => selectBudgetWarnings(monthlySpend), [monthlySpend]);
 
   // ── Data fetching ──
+  const fetchDays = compareEnabled ? previousPeriodDays : effectiveDays;
   const refreshAll = useCallback(() => {
     return Promise.all([
-      fetchObservabilityMetrics(days, selectedPersonaId || undefined),
-      fetchExecutionDashboard(days),
-      fetchToolUsage(days, selectedPersonaId || undefined),
+      fetchObservabilityMetrics(fetchDays, selectedPersonaId || undefined),
+      fetchExecutionDashboard(fetchDays),
+      fetchToolUsage(effectiveDays, selectedPersonaId || undefined),
       fetchHealingIssues(),
-      fetchMonthlySpend(),
     ]);
-  }, [days, selectedPersonaId, fetchObservabilityMetrics, fetchExecutionDashboard, fetchToolUsage, fetchHealingIssues, fetchMonthlySpend]);
+  }, [fetchDays, effectiveDays, selectedPersonaId, fetchObservabilityMetrics, fetchExecutionDashboard, fetchToolUsage, fetchHealingIssues]);
 
   const refreshAllSafe = useCallback(async () => {
     if (refreshInFlightRef.current) {
@@ -135,7 +137,13 @@ export default function AnalyticsDashboard() {
   // ── Observability metrics ──
   const summary = observabilityMetrics?.summary;
   const backendChartData = observabilityMetrics?.chartData;
-  const chartData = backendChartData?.chart_points ?? [];
+  const rawChartData = backendChartData?.chart_points ?? [];
+
+  // When compare mode is on, split the 2x data into current + previous ghost
+  const chartData = useMemo(() => {
+    if (!compareEnabled || rawChartData.length === 0) return rawChartData;
+    return mergePreviousPeriod(rawChartData, effectiveDays, ['cost', 'executions', 'success', 'failed']);
+  }, [compareEnabled, rawChartData, effectiveDays]);
 
   const pieData: PieDataPoint[] = useMemo(() =>
     (backendChartData?.persona_breakdown ?? []).map((b) => ({
@@ -272,7 +280,8 @@ export default function AnalyticsDashboard() {
       {/* Filter bar */}
       <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-4 flex-wrap flex-shrink-0">
         <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
-        <DayRangePicker value={days} onChange={setDays} />
+        <DayRangePicker value={days} onChange={setDays} customDateRange={customDateRange} onCustomDateRangeChange={setCustomDateRange} />
+        <CompareToggle enabled={compareEnabled} onChange={setCompareEnabled} />
       </div>
 
       <ContentBody>
@@ -290,29 +299,6 @@ export default function AnalyticsDashboard() {
                 <button onClick={() => { void refreshAllSafe(); }} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
                   <RefreshCw className="w-3 h-3" /> Retry
                 </button>
-              </div>
-            </div>
-          )}
-
-          {/* Budget warnings */}
-          {budgetWarnings.length > 0 && (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-amber-300">
-                    {budgetWarnings.length === 1 ? '1 persona' : `${budgetWarnings.length} personas`} approaching or exceeding budget
-                  </p>
-                  <div className="mt-1.5 flex flex-wrap gap-2">
-                    {budgetWarnings.map((w) => (
-                        <span key={w.personaId} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm border ${w.exceeded ? 'bg-red-500/15 text-red-300 border-red-500/25' : 'bg-amber-500/15 text-amber-300 border-amber-500/25'}`}>
-                          {w.name}
-                          <span className="font-mono text-sm opacity-80">${w.spend.toFixed(2)} / ${w.budget.toFixed(2)}</span>
-                          <span className={`font-mono text-sm font-bold ${w.exceeded ? 'text-red-400' : 'text-amber-400'}`}>{(w.ratio * 100).toFixed(0)}%</span>
-                        </span>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
           )}
@@ -349,6 +335,9 @@ export default function AnalyticsDashboard() {
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
                 <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => `$${v}`} />
                 <Tooltip content={<ChartTooltip />} />
+                {compareEnabled && (
+                  <Area type="monotone" dataKey="prev_cost" name="Prev Cost" stroke="#6366f1" fill="none" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />
+                )}
                 <Area type="monotone" dataKey="cost" stroke="#6366f1" fill="url(#analyticsCostGrad)" strokeWidth={2} />
                 <defs>
                   <linearGradient id="analyticsCostGrad" x1="0" y1="0" x2="0" y2="1">
@@ -361,7 +350,7 @@ export default function AnalyticsDashboard() {
 
             {/* Execution Health */}
             <MetricChart title="Execution Health" height={180}>
-              <BarChart data={chartData}>
+              <ComposedChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
                 <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
@@ -378,7 +367,13 @@ export default function AnalyticsDashboard() {
                     if (data.payload) handleFailureBarClick(data.payload);
                   }}
                 />
-              </BarChart>
+                {compareEnabled && (
+                  <Line type="monotone" dataKey="prev_success" name="Prev Successful" stroke="#22c55e" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />
+                )}
+                {compareEnabled && (
+                  <Line type="monotone" dataKey="prev_failed" name="Prev Failed" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />
+                )}
+              </ComposedChart>
             </MetricChart>
 
             {/* Tool Usage Over Time */}

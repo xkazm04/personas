@@ -47,6 +47,43 @@ pub struct McpToolResult {
     pub duration_ms: u64,
 }
 
+/// Ping an MCP server using raw field values (no stored credential required).
+///
+/// Performs the full MCP handshake (`initialize` → `notifications/initialized`
+/// → `tools/list`) and returns a healthcheck-style result.
+pub async fn ping(fields: &HashMap<String, String>) -> Result<PingResult, AppError> {
+    let connection_type = fields
+        .get("connection_type")
+        .map(|s| s.as_str())
+        .unwrap_or("stdio");
+
+    let result = match connection_type {
+        "stdio" => list_tools_stdio(fields).await,
+        "sse" => list_tools_sse(fields).await,
+        other => Err(AppError::Validation(format!(
+            "Unsupported MCP connection type: '{other}'"
+        ))),
+    };
+
+    match result {
+        Ok(tools) => Ok(PingResult {
+            success: true,
+            message: format!("Connected — {} tool{} available", tools.len(), if tools.len() == 1 { "" } else { "s" }),
+        }),
+        Err(e) => Ok(PingResult {
+            success: false,
+            message: format!("{e}"),
+        }),
+    }
+}
+
+/// Result of an MCP server ping / connection test.
+#[derive(Debug, serde::Serialize)]
+pub struct PingResult {
+    pub success: bool,
+    pub message: String,
+}
+
 /// List available tools from an MCP server.
 pub async fn list_tools(
     pool: &DbPool,
@@ -481,18 +518,34 @@ fn spawn_mcp_process(
     working_directory: Option<&String>,
     env_vars: &HashMap<String, String>,
 ) -> Result<tokio::process::Child, AppError> {
-    let parts: Vec<&str> = command.split_whitespace().collect();
-    if parts.is_empty() {
+    let trimmed = command.trim();
+    if trimmed.is_empty() {
         return Err(AppError::Validation("MCP command is empty".into()));
     }
 
-    let mut cmd = tokio::process::Command::new(parts[0]);
-    if parts.len() > 1 {
-        cmd.args(&parts[1..]);
-    }
+    // On Windows, commands like `npx` are actually `.cmd` wrappers that
+    // require shell dispatch. Use `cmd /C` so PATHEXT resolution works.
+    #[cfg(windows)]
+    let mut cmd = {
+        let mut c = tokio::process::Command::new("cmd");
+        c.args(["/C", trimmed]);
+        c
+    };
+
+    #[cfg(not(windows))]
+    let mut cmd = {
+        let parts: Vec<&str> = trimmed.split_whitespace().collect();
+        let mut c = tokio::process::Command::new(parts[0]);
+        if parts.len() > 1 {
+            c.args(&parts[1..]);
+        }
+        c
+    };
 
     if let Some(wd) = working_directory {
-        cmd.current_dir(wd);
+        if !wd.trim().is_empty() {
+            cmd.current_dir(wd);
+        }
     }
 
     for (k, v) in env_vars {
@@ -503,6 +556,14 @@ fn spawn_mcp_process(
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::null())
         .kill_on_drop(true);
+
+    // Prevent a visible console window flash on Windows.
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
 
     cmd.spawn()
         .map_err(|e| AppError::Internal(format!("Failed to spawn MCP process: {e}")))
@@ -553,7 +614,7 @@ async fn read_jsonrpc(
     // Read headers with a total timeout (prevents slowloris-style attacks
     // where the server sends headers one byte at a time).
     let content_length: usize = tokio::time::timeout(
-        std::time::Duration::from_secs(30),
+        std::time::Duration::from_secs(60),
         async {
             let mut cl: usize = 0;
             loop {
@@ -600,7 +661,7 @@ async fn read_jsonrpc(
     let mut body = vec![0u8; content_length];
     use tokio::io::AsyncReadExt;
     tokio::time::timeout(
-        std::time::Duration::from_secs(30),
+        std::time::Duration::from_secs(60),
         reader.read_exact(&mut body),
     )
     .await

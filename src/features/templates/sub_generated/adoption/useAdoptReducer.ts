@@ -253,6 +253,10 @@ export function useAdoptReducer() {
     update({ selectedUseCaseIds: new Set(ids) });
   }, [update]);
 
+  const clearAllUseCases = useCallback(() => {
+    update({ selectedUseCaseIds: new Set() });
+  }, [update]);
+
   const toggleTool = useCallback((index: number) => {
     update({ selectedToolIndices: toggleInSet(state.selectedToolIndices, index) });
   }, [update, state.selectedToolIndices]);
@@ -414,6 +418,7 @@ export function useAdoptReducer() {
     // Entity selection
     toggleUseCaseId,
     selectAllUseCases,
+    clearAllUseCases,
     toggleTool,
     toggleTrigger,
     toggleConnector,

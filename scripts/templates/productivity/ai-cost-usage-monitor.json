@@ -675,6 +675,28 @@
         "label": "Notion Database Schema",
         "content": "Required properties for the tracking database:\n| Property | Type | Description |\n|----------|------|-------------|\n| Date | Date | The usage date |\n| Total Cost | Number (USD) | Total spend for the day |\n| Total Tokens | Number | Combined input + output tokens |\n| Model Breakdown | Rich Text | Per-model cost and token summary |\n| Daily Budget % | Number | Percentage of daily budget consumed |\n| 7-Day Average | Number (USD) | Rolling 7-day average cost |\n| Projected Monthly | Number (USD) | Projected monthly spend |\n| Status | Select | Normal / Warning / Critical / Exceeded |\n| Type | Select | Daily / Monthly Summary |"
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Escalation to human for critical or ambiguous items",
+        "context": "Escalation logic detected in instructions"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack notifications for status updates and alerts (periodic digests, critical alerts, error notifications)",
+        "context": "1 notification channel(s) configured: slack"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Historical baselines and trend data for comparative analysis",
+        "context": "Tracks: recurring patterns, calibrated thresholds"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: threshold breached, escalation triggered",
+        "context": "2 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

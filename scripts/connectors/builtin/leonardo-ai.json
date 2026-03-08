@@ -1,0 +1,40 @@
+{
+  "id": "builtin-leonardo-ai",
+  "name": "leonardo_ai",
+  "label": "Leonardo AI",
+  "color": "#6C3AEF",
+  "icon_url": "/icons/connectors/leonardo-ai.svg",
+  "category": "ai",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Generate at app.leonardo.ai/api-access"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://cloud.leonardo.ai/api/rest/v1/me",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
+    "description": "Validates API key via Leonardo AI /me endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Leonardo AI generative image and video platform for creative content.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://docs.leonardo.ai/docs/getting-started",
+    "setup_guide": "1. Go to app.leonardo.ai and sign in\n2. Click API Access in the left sidebar\n3. Click 'Create New Key' and name it\n4. Copy the generated API key",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}
+    ]
+  }
+}

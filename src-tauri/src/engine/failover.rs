@@ -86,7 +86,7 @@ struct CircuitState {
 }
 
 /// Global failure tracking state.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct GlobalState {
     /// Timestamps of recent failures across all providers, used as a rolling window.
     failure_times: Vec<Instant>,
@@ -94,14 +94,6 @@ struct GlobalState {
     paused_at: Option<Instant>,
 }
 
-impl Default for GlobalState {
-    fn default() -> Self {
-        Self {
-            failure_times: Vec::new(),
-            paused_at: None,
-        }
-    }
-}
 
 /// Per-provider + global circuit breaker.
 ///
@@ -171,6 +163,7 @@ impl ProviderCircuitBreaker {
     /// Check if a provider is available (delegates to try_acquire).
     ///
     /// Kept for backward compatibility with callers that only need a read check.
+    #[allow(dead_code)]
     pub fn is_available(&self, kind: EngineKind) -> bool {
         self.try_acquire(kind)
     }

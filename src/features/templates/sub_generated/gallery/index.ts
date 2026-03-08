@@ -14,6 +14,7 @@ export { ExpandedRowContent } from './ExpandedRowContent';
 export { BackgroundBanners } from './BackgroundBanners';
 export { TrendingCarousel } from './TrendingCarousel';
 export { EmptyState } from './EmptyState';
+export { RecommendedModal } from './RecommendedModal';
 export { ConnectorFilterDropdown } from './ConnectorFilterDropdown';
 export { SortDropdown } from './SortDropdown';
 export { AdminToolsDropdown } from './AdminToolsDropdown';

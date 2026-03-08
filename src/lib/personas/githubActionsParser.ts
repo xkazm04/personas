@@ -1,13 +1,10 @@
 /**
  * Parser for GitHub Actions workflow YAML files.
  * Converts GitHub Actions workflow definitions into DesignAnalysisResult.
- *
- * GitHub Actions workflows have:
- * - `on` key defining triggers (push, pull_request, schedule, workflow_dispatch, etc.)
- * - `jobs` object with job definitions containing `steps` arrays
  */
 
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import { runExtractionPipeline, type NormalizedNode } from './workflowPipeline';
 
 interface GHAStep {
   name?: string;
@@ -58,7 +55,6 @@ function extractServiceFromUses(uses: string | undefined): string {
   for (const [pattern, service] of Object.entries(GHA_SERVICE_MAP)) {
     if (lower.includes(pattern.toLowerCase())) return service;
   }
-  // Extract org/repo from "org/repo@version"
   const match = uses.match(/^([^@/]+\/[^@/]+)/);
   if (match) {
     const repo = match[1]?.split('/')[1];
@@ -78,16 +74,8 @@ function parseTriggers(onConfig: unknown): Array<{
     description: string;
   }> = [];
 
-  if (!onConfig) {
-    triggers.push({
-      trigger_type: 'manual',
-      config: {},
-      description: 'Manual trigger (no trigger defined)',
-    });
-    return triggers;
-  }
+  if (!onConfig) return triggers;
 
-  // `on` can be a string, array of strings, or object
   const triggerTypes: string[] = [];
   let triggerConfigs: Record<string, Record<string, unknown>> = {};
 
@@ -143,14 +131,6 @@ function parseTriggers(onConfig: unknown): Array<{
     triggers.push({ trigger_type: triggerType, config, description });
   }
 
-  if (triggers.length === 0) {
-    triggers.push({
-      trigger_type: 'manual',
-      config: {},
-      description: 'Manual trigger (no trigger detected)',
-    });
-  }
-
   return triggers;
 }
 
@@ -160,8 +140,6 @@ export function parseGithubActionsWorkflow(json: unknown): DesignAnalysisResult 
   }
 
   const workflow = json as GHAWorkflow;
-
-  // Handle YAML parsing quirk where `on:` becomes `true:` key
   const record = json as Record<string, unknown>;
   const onConfig = workflow.on ?? record['true'] ?? record.on;
   const jobsObj = workflow.jobs;
@@ -170,67 +148,62 @@ export function parseGithubActionsWorkflow(json: unknown): DesignAnalysisResult 
     throw new Error('Invalid GitHub Actions workflow: no jobs found');
   }
 
-  // Extract triggers from `on` configuration
-  const triggers = parseTriggers(onConfig);
+  // Extract triggers from `on` configuration (GHA-specific logic)
+  const ghaTriggers = parseTriggers(onConfig);
 
-  // Extract steps from all jobs
-  const services = new Set<string>();
-  const allSteps: Array<GHAStep & { jobName: string }> = [];
-
+  // Extract steps from all jobs as normalized nodes
+  const nodes: NormalizedNode[] = [];
   for (const [jobId, job] of Object.entries(jobsObj)) {
     if (!job || typeof job !== 'object') continue;
     const jobName = job.name || jobId;
     for (const step of job.steps || []) {
-      allSteps.push({ ...step, jobName });
+      const service = step.uses ? extractServiceFromUses(step.uses) : 'shell';
+      nodes.push({
+        label: step.name || step.id || step.uses || 'run command',
+        service,
+        isTrigger: false,
+        config: (step.with || {}) as Record<string, unknown>,
+        sourceDescription: `${jobName}/${step.uses || 'run'}`,
+        rawType: step.uses || 'shell',
+      });
     }
   }
 
-  const toolNames = allSteps.map((step) => {
-    const service = step.uses ? extractServiceFromUses(step.uses) : 'shell';
-    services.add(service);
-    const label = (step.name || step.id || step.uses || 'run').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-    return `${service}_${label}`;
+  // GHA has custom identity/instructions, so we override the pipeline output
+  const result = runExtractionPipeline({
+    platformLabel: 'GitHub Actions',
+    platformNoun: 'workflow',
+    elementNoun: 'steps',
+    workflowName: workflow.name || 'Imported GitHub Actions Workflow',
+    nodes,
+    excludedServices: ['shell', 'action', 'cache', 'artifacts'],
+    // Pass pre-computed triggers instead of fallback (GHA handles its own trigger parsing)
+    fallbackTriggers: ghaTriggers.length > 0 ? undefined : [{
+      trigger_type: 'manual',
+      config: {},
+      description: 'Manual trigger (no trigger detected)',
+    }],
   });
 
-  const connectors = Array.from(services)
-    .filter((s) => !['shell', 'action', 'cache', 'artifacts'].includes(s))
-    .map((service) => ({
-      name: service,
-      credential_fields: [] as Array<{
-        key: string;
-        label: string;
-        type: 'text' | 'password' | 'url';
-        placeholder?: string;
-        helpText?: string;
-        required?: boolean;
-      }>,
-      related_tools: toolNames.filter((t) => t.startsWith(service)),
-      related_triggers: [] as number[],
-    }));
+  // Replace triggers with GHA-specific ones (pipeline would produce none since all nodes are non-trigger)
+  if (ghaTriggers.length > 0) {
+    result.suggested_triggers = ghaTriggers;
+  }
 
-  const workflowName = workflow.name || 'Imported GitHub Actions Workflow';
-  const jobNames = Object.entries(jobsObj).map(([id, j]) => (j as GHAJob).name || id);
-  const jobSequence = jobNames.join(' \u2192 ');
+  // Override identity and instructions with GHA-specific versions
+  const jobEntries = Object.entries(jobsObj);
+  result.structured_prompt.identity = `You are an AI agent that orchestrates the "${workflow.name || 'Imported GitHub Actions Workflow'}" CI/CD pipeline, originally defined as a GitHub Actions workflow.`;
+  result.structured_prompt.instructions = `Execute the following jobs in order:\n${jobEntries.map(([id, j], i) => {
+    const job = j as GHAJob;
+    const stepCount = job.steps?.length ?? 0;
+    return `${i + 1}. ${job.name || id} (${stepCount} steps, runs on ${job['runs-on'] || 'unknown'})`;
+  }).join('\n')}\n\nRespect job dependencies and pass artifacts between jobs as needed.`;
+  result.structured_prompt.errorHandling = 'If any step fails, check the job\'s continue-on-error setting. By default, stop the job on failure and report the error. For independent jobs, continue execution.';
 
-  return {
-    structured_prompt: {
-      identity: `You are an AI agent that orchestrates the "${workflowName}" CI/CD pipeline, originally defined as a GitHub Actions workflow.`,
-      instructions: `Execute the following jobs in order:\n${Object.entries(jobsObj).map(([id, j], i) => {
-        const job = j as GHAJob;
-        const stepCount = job.steps?.length ?? 0;
-        return `${i + 1}. ${job.name || id} (${stepCount} steps, runs on ${job['runs-on'] || 'unknown'})`;
-      }).join('\n')}\n\nRespect job dependencies and pass artifacts between jobs as needed.`,
-      toolGuidance: allSteps.length > 0
-        ? `Execute the following steps: ${allSteps.map((s) => s.name || s.uses || 'run command').join(', ')}.`
-        : 'No specific tools required.',
-      examples: '',
-      errorHandling: 'If any step fails, check the job\'s continue-on-error setting. By default, stop the job on failure and report the error. For independent jobs, continue execution.',
-      customSections: [],
-    },
-    suggested_tools: toolNames,
-    suggested_triggers: triggers,
-    full_prompt_markdown: `# ${workflowName}\n\nJobs: ${jobSequence}\n\nThis persona was imported from a GitHub Actions workflow with ${Object.keys(jobsObj).length} jobs and ${allSteps.length} total steps.`,
-    summary: `Imported from GitHub Actions workflow "${workflowName}" with ${Object.keys(jobsObj).length} jobs and ${allSteps.length} steps.`,
-    suggested_connectors: connectors,
-  };
+  // Override summary/markdown with job-level detail
+  const jobNames = jobEntries.map(([id, j]) => (j as GHAJob).name || id);
+  result.full_prompt_markdown = `# ${workflow.name || 'Imported GitHub Actions Workflow'}\n\nJobs: ${jobNames.join(' \u2192 ')}\n\nThis persona was imported from a GitHub Actions workflow with ${jobEntries.length} jobs and ${nodes.length} total steps.`;
+  result.summary = `Imported from GitHub Actions workflow "${workflow.name || 'Imported GitHub Actions Workflow'}" with ${jobEntries.length} jobs and ${nodes.length} steps.`;
+
+  return result;
 }

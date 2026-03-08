@@ -662,6 +662,28 @@
           }
         ]
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Confirmation required for high-priority actions",
+        "context": "High-priority confirmation gate detected"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack notifications for status updates and alerts (periodic digests, critical alerts, error notifications)",
+        "context": "1 notification channel(s) configured: slack"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Historical baselines and trend data for comparative analysis",
+        "context": "Tracks: calibrated thresholds"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution failed, credential status change, threshold breached",
+        "context": "2 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

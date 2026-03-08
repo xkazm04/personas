@@ -21,6 +21,9 @@ export const listEventsInRange = (since: string, until: string) =>
 export const listSubscriptions = (personaId: string) =>
   invoke<PersonaEventSubscription[]>("list_subscriptions", { personaId });
 
+export const listAllSubscriptions = () =>
+  invoke<PersonaEventSubscription[]>("list_all_subscriptions");
+
 export const createSubscription = (input: CreateEventSubscriptionInput) =>
   invoke<PersonaEventSubscription>("create_subscription", { input });
 

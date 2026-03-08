@@ -32,6 +32,10 @@
     "auth_type_label": "PAT",
     "docs_url": "https://clickup.com/api/developer-portal/authentication",
     "setup_guide": "1. Go to app.clickup.com and sign in\n2. Click your avatar → Settings → Apps\n3. Under 'API Token', click 'Generate' or copy existing token\n4. Paste the pk_... token value here",
-    "pricing_tier": "free"
+    "pricing_tier": "free",
+    "auth_methods": [
+      {"id": "pat", "label": "PAT", "type": "credential", "is_default": true},
+      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@taazkareem/clickup-mcp-server", "transport": "stdio", "suggested_env": {"CLICKUP_API_KEY": ""}}
+    ]
   }
 }

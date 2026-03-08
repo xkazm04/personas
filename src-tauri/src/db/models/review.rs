@@ -44,6 +44,30 @@ pub struct UpdateManualReviewInput {
 }
 
 // ============================================================================
+// Review Messages (conversational thread per review)
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ReviewMessage {
+    pub id: String,
+    pub review_id: String,
+    pub role: String,
+    pub content: String,
+    pub metadata: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct CreateReviewMessageInput {
+    pub review_id: String,
+    pub role: String,
+    pub content: String,
+    pub metadata: Option<String>,
+}
+
+// ============================================================================
 // Connector Counts
 // ============================================================================
 

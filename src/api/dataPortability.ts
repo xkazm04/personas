@@ -50,3 +50,18 @@ export const importPortabilityBundle = () =>
 
 export const previewCompetitiveImport = () =>
   invoke<CompetitiveImportPreview[] | null>("preview_competitive_import");
+
+// ============================================================================
+// Encrypted credential export / import
+// ============================================================================
+
+export interface CredentialImportResult {
+  created: number;
+  warnings: string[];
+}
+
+export const exportCredentials = (passphrase: string) =>
+  invoke<boolean>("export_credentials", { passphrase });
+
+export const importCredentials = (passphrase: string) =>
+  invoke<CredentialImportResult | null>("import_credentials", { passphrase });

@@ -173,6 +173,97 @@ const FIXTURES: Record<FixtureTemplate, Record<string, string>> = {
     ]),
   },
 
+  'persona-design': {
+    'persona_brief.md': [
+      '# Customer Support Agent',
+      '',
+      '## Role',
+      'You are a customer support agent for a SaaS company.',
+      '',
+      '## Tone',
+      'Empathetic, professional, solution-oriented.',
+      '',
+      '## Capabilities',
+      '- Answer product questions from the knowledge base',
+      '- Escalate billing issues to the finance team',
+      '- Log bug reports in the issue tracker',
+      '',
+      '## Constraints',
+      '- Never share internal pricing formulas',
+      '- Always verify customer identity before account changes',
+      '- Response time target: under 2 minutes',
+    ].join('\n'),
+  },
+
+  'credential-design': {
+    'connector_spec.json': JSON.stringify(
+      {
+        name: 'stripe',
+        label: 'Stripe',
+        auth_type: 'api_key',
+        fields: [
+          { key: 'secret_key', label: 'Secret Key', required: true, pattern: '^sk_(test|live)_' },
+          { key: 'publishable_key', label: 'Publishable Key', required: false, pattern: '^pk_(test|live)_' },
+        ],
+        test_endpoint: 'https://api.stripe.com/v1/balance',
+        docs_url: 'https://dashboard.stripe.com/apikeys',
+      },
+      null,
+      2,
+    ),
+  },
+
+  'n8n-workflow': {
+    'workflow.json': JSON.stringify(
+      {
+        name: 'Email to Slack Notification',
+        nodes: [
+          { type: 'n8n-nodes-base.emailTrigger', name: 'Email Trigger', parameters: { mailbox: 'inbox' } },
+          {
+            type: 'n8n-nodes-base.function',
+            name: 'Extract Subject',
+            parameters: { functionCode: 'return [{json: {subject: $input.first().json.subject}}]' },
+          },
+          {
+            type: 'n8n-nodes-base.slack',
+            name: 'Send Slack',
+            parameters: { channel: '#notifications', text: '={{$json.subject}}' },
+          },
+        ],
+        connections: {
+          'Email Trigger': { main: [[{ node: 'Extract Subject', type: 'main', index: 0 }]] },
+          'Extract Subject': { main: [[{ node: 'Send Slack', type: 'main', index: 0 }]] },
+        },
+      },
+      null,
+      2,
+    ),
+  },
+
+  'healing-diagnosis': {
+    'error_log.txt': [
+      '[2026-03-07 10:15:23] ERROR connector.stripe: API call failed - 401 Unauthorized',
+      '[2026-03-07 10:15:23] DEBUG connector.stripe: Headers: {Authorization: Bearer sk_test_****expired}',
+      '[2026-03-07 10:15:24] WARN connector.stripe: Retry 1/3 failed',
+      '[2026-03-07 10:15:25] WARN connector.stripe: Retry 2/3 failed',
+      '[2026-03-07 10:15:26] ERROR connector.stripe: All retries exhausted',
+      '[2026-03-07 10:15:26] INFO system: Marking connector stripe as unhealthy',
+      '[2026-03-07 10:16:00] ERROR execution.pipeline_42: Step 3 failed - dependency connector.stripe unavailable',
+      '[2026-03-07 10:16:00] INFO execution.pipeline_42: Pipeline halted at step 3 of 5',
+    ].join('\n'),
+    'connector_config.json': JSON.stringify(
+      {
+        name: 'stripe',
+        status: 'unhealthy',
+        last_success: '2026-03-06T22:00:00Z',
+        error_count: 5,
+        credentials: { secret_key: 'sk_test_****expired', last_rotated: '2025-12-01' },
+      },
+      null,
+      2,
+    ),
+  },
+
   'large-input': {
     'large_data.txt': Array.from(
       { length: 1000 },

@@ -239,9 +239,12 @@ function CrashLogsSection() {
 
   return (
     <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary/30 transition-colors"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
+        className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary/30 transition-colors cursor-pointer"
       >
         <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-red-500/10">
           <FileWarning className="w-3.5 h-3.5 text-red-300" />
@@ -270,7 +273,7 @@ function CrashLogsSection() {
           )}
           {expanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80" />}
         </div>
-      </button>
+      </div>
 
       <AnimatePresence>
         {expanded && (
@@ -447,6 +450,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
     if (!loading && !ipcError) {
       runChecks();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   useEffect(() => {

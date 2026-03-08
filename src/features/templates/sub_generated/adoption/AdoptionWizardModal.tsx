@@ -52,11 +52,11 @@ interface AdoptionWizardModalProps {
 // ── Sidebar step config ────────────────────────────────────────────────
 
 const SIDEBAR_STEPS: WizardSidebarStep[] = [
-  { key: 'choose',  label: 'Choose',  Icon: ListChecks },
-  { key: 'connect', label: 'Connect', Icon: Plug },
-  { key: 'tune',    label: 'Tune',    Icon: Sliders },
-  { key: 'build',   label: 'Build',   Icon: Hammer },
-  { key: 'create',  label: 'Create',  Icon: CirclePlus },
+  { key: 'choose',  label: 'Use Cases', Icon: ListChecks },
+  { key: 'connect', label: 'Connect',   Icon: Plug },
+  { key: 'tune',    label: 'Configure', Icon: Sliders },
+  { key: 'build',   label: 'Build',     Icon: Hammer },
+  { key: 'create',  label: 'Review',    Icon: CirclePlus },
 ];
 
 // ── Step content map ───────────────────────────────────────────────────
@@ -116,6 +116,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
     safetyScan,
     handleNext,
     cleanupAll,
+    saveDraftToStore,
   } = useAdoptionWizard();
 
   // ── Close handler ──
@@ -123,12 +124,17 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
   const handleClose = useCallback(() => {
     if (state.confirming) return;
 
+    // Save progress as draft before closing (unless already created)
+    if (!state.created) {
+      saveDraftToStore();
+    }
+
     if (state.created || !state.transforming) {
       void cleanupAll();
       wizard.reset();
     }
     onClose();
-  }, [state.confirming, state.created, state.transforming, cleanupAll, wizard, onClose]);
+  }, [state.confirming, state.created, state.transforming, cleanupAll, wizard, onClose, saveDraftToStore]);
 
   // ── Sidebar step click ──
 
@@ -151,10 +157,10 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
   } | null => {
     switch (state.step) {
       case 'choose':
-        return { label: 'Connect', icon: ArrowRight, disabled: false, variant: 'violet' };
+        return { label: 'Next: Connect', icon: ArrowRight, disabled: false, variant: 'violet' };
       case 'connect': {
         const unconfigured = requiredConnectors.filter(
-          (c) => c.activeName !== 'personas_messages' && !state.connectorCredentialMap[c.activeName],
+          (c) => c.activeName !== 'personas_messages' && c.activeName !== 'personas_database' && !state.connectorCredentialMap[c.activeName],
         ).length;
         return {
           label: unconfigured > 0 ? `Configure (${unconfigured} remaining)` : 'Configure',
@@ -198,7 +204,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
 
   const getBackLabel = () => {
     if (state.step === 'choose') return 'Cancel';
-    if (state.step === 'build' && state.transforming) return 'Cancel';
+    if (state.step === 'build' && state.transforming) return 'Cancel Generation';
     return 'Back';
   };
 
@@ -295,7 +301,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={MOTION.snappy.framer}
-                    className={state.step === 'build' ? 'space-y-4' : undefined}
+                    className={undefined}
                   >
                     <StepComponent />
                   </motion.div>

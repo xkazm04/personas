@@ -21,6 +21,9 @@ use tauri::Manager;
 /// Shared application state accessible from all Tauri commands.
 pub struct AppState {
     pub db: DbPool,
+    /// Separate user-facing database (`personas_data.db`).
+    /// Agents and users can freely read/write here without affecting app internals.
+    pub user_db: db::UserDbPool,
     pub engine: Arc<engine::ExecutionEngine>,
     pub scheduler: Arc<engine::background::SchedulerState>,
     /// Tracks the currently active design analysis ID.
@@ -73,6 +76,10 @@ pub struct AppState {
     pub session_key: Arc<engine::crypto::SessionKeyPair>,
     /// Current tier configuration (rate limits, queue depth).
     pub tier_config: Arc<Mutex<engine::tier::TierConfig>>,
+    /// Desktop connector capability approvals.
+    pub desktop_approvals: Arc<engine::desktop_security::DesktopApprovalStore>,
+    /// Local agent runtime for cross-app desktop plan execution.
+    pub desktop_runtime: Arc<engine::desktop_runtime::DesktopRuntime>,
 }
 
 /// Hello world IPC command — verifies the Rust ↔ React bridge works.
@@ -110,10 +117,21 @@ pub fn run() {
             let app_data_dir = app
                 .path()
                 .app_data_dir()
-                .expect("Failed to resolve app data directory");
+                .map_err(|e| format!("Failed to resolve app data directory: {e}"))?;
 
             let pool = db::init_db(&app_data_dir)?;
             tracing::info!("Database pool ready (max_size=8)");
+
+            let user_db_pool = db::init_user_db(&app_data_dir)?;
+            tracing::info!("User data database pool ready (max_size=4)");
+
+            // Seed the built-in database credential so it appears in the Databases UI
+            {
+                let conn = pool.get().map_err(|e| format!("Failed to get DB connection for credential seed: {e}"))?;
+                if let Err(e) = db::seed_builtin_database_credential(&conn) {
+                    tracing::warn!("Failed to seed built-in database credential: {}", e);
+                }
+            }
 
             // Encrypt any legacy plaintext credentials
             match engine::crypto::migrate_plaintext_credentials(&pool) {
@@ -178,23 +196,24 @@ pub fn run() {
 
             // Restore cloud client from keyring if previously connected
             let cloud_client_opt = cloud::config::load_cloud_config()
-                .map(|(url, key)| Arc::new(cloud::client::CloudClient::new(url, key)));
+                .and_then(|(url, key)| cloud::client::CloudClient::new(url, key).ok().map(Arc::new));
             if cloud_client_opt.is_some() {
                 tracing::info!("Cloud orchestrator config restored from keyring");
             }
 
             // Restore GitLab client from keyring if previously connected
             let gitlab_client_opt = gitlab::config::load_gitlab_config()
-                .map(|token| Arc::new(gitlab::client::GitLabClient::new(
+                .and_then(|token| gitlab::client::GitLabClient::new(
                     "https://gitlab.com".to_string(),
                     token,
-                )));
+                ).ok().map(Arc::new));
             if gitlab_client_opt.is_some() {
                 tracing::info!("GitLab config restored from keyring");
             }
 
             let state_arc = Arc::new(AppState {
                 db: pool.clone(),
+                user_db: user_db_pool,
                 engine: engine.clone(),
                 scheduler: scheduler.clone(),
                 active_design_id: Arc::new(Mutex::new(None)),
@@ -218,8 +237,15 @@ pub fn run() {
                 rate_limiter: Arc::new(engine::rate_limiter::RateLimiter::new()),
                 session_key: Arc::new(engine::crypto::SessionKeyPair::generate()?),
                 tier_config: Arc::new(Mutex::new(engine::tier::TierConfig::default())),
+                desktop_approvals: Arc::new(engine::desktop_security::DesktopApprovalStore::new()),
+                desktop_runtime: Arc::new(engine::desktop_runtime::DesktopRuntime::new()),
             });
             app.manage(state_arc.clone());
+
+            // Load desktop connector approvals from database
+            if let Err(e) = state_arc.desktop_approvals.load_from_db(&state_arc.db) {
+                tracing::warn!("Failed to load desktop connector approvals: {}", e);
+            }
 
             // System tray
             if let Err(e) = tray::setup_tray(app.handle()) {
@@ -319,8 +345,11 @@ pub fn run() {
             commands::core::data_portability::export_selective,
             commands::core::data_portability::import_portability_bundle,
             commands::core::data_portability::preview_competitive_import,
+            commands::core::data_portability::export_credentials,
+            commands::core::data_portability::import_credentials,
             // Execution — Executions
             commands::execution::executions::list_executions,
+            commands::execution::executions::list_all_executions,
             commands::execution::executions::get_execution,
             commands::execution::executions::create_execution,
             commands::execution::executions::execute_persona,
@@ -453,6 +482,9 @@ pub fn run() {
             commands::design::reviews::list_manual_reviews,
             commands::design::reviews::update_manual_review_status,
             commands::design::reviews::get_pending_review_count,
+            commands::design::reviews::list_review_messages,
+            commands::design::reviews::add_review_message,
+            commands::design::reviews::seed_mock_manual_review,
             // Design — Smart Search
             commands::design::smart_search::smart_search_templates,
             // Credentials — CRUD
@@ -506,6 +538,8 @@ pub fn run() {
             commands::credentials::auto_cred_browser::get_playwright_procedure,
             commands::credentials::auto_cred_browser::check_auto_cred_playwright_available,
             commands::credentials::auto_cred_browser::cancel_auto_cred_browser,
+            // Credentials — Auth Detection
+            commands::credentials::auth_detect::detect_authenticated_services,
             // Credentials — Foraging
             commands::credentials::foraging::scan_credential_sources,
             commands::credentials::foraging::import_foraged_credential,
@@ -540,6 +574,21 @@ pub fn run() {
             // Credentials — MCP Tools
             commands::credentials::mcp_tools::list_mcp_tools,
             commands::credentials::mcp_tools::execute_mcp_tool,
+            commands::credentials::mcp_tools::healthcheck_mcp_preview,
+            // Credentials — Desktop Discovery & Security
+            commands::credentials::desktop::discover_desktop_apps,
+            commands::credentials::desktop::import_claude_mcp_servers,
+            commands::credentials::desktop::get_desktop_connector_manifest,
+            commands::credentials::desktop::get_pending_desktop_capabilities,
+            commands::credentials::desktop::approve_desktop_capabilities,
+            commands::credentials::desktop::revoke_desktop_approvals,
+            commands::credentials::desktop::is_desktop_connector_approved,
+            commands::credentials::desktop::register_imported_mcp_server,
+            // Credentials — Desktop Bridges & Runtime
+            commands::credentials::desktop_bridges::execute_desktop_bridge,
+            commands::credentials::desktop_bridges::execute_desktop_plan,
+            commands::credentials::desktop_bridges::get_desktop_runtime_status,
+            commands::credentials::desktop_bridges::get_desktop_plan_result,
             // Recipes — CRUD & Linking
             commands::recipes::crud::list_recipes,
             commands::recipes::crud::get_recipe,
@@ -567,6 +616,7 @@ pub fn run() {
             commands::communication::events::list_events_in_range,
             commands::communication::events::publish_event,
             commands::communication::events::list_subscriptions,
+            commands::communication::events::list_all_subscriptions,
             commands::communication::events::create_subscription,
             commands::communication::events::update_subscription,
             commands::communication::events::delete_subscription,
@@ -603,6 +653,7 @@ pub fn run() {
             commands::teams::teams::create_team,
             commands::teams::teams::update_team,
             commands::teams::teams::delete_team,
+            commands::teams::teams::clone_team,
             commands::teams::teams::list_team_members,
             commands::teams::teams::add_team_member,
             commands::teams::teams::update_team_member,
@@ -622,6 +673,7 @@ pub fn run() {
             commands::teams::team_memories::list_team_memories,
             commands::teams::team_memories::create_team_memory,
             commands::teams::team_memories::delete_team_memory,
+            commands::teams::team_memories::update_team_memory,
             commands::teams::team_memories::update_team_memory_importance,
             commands::teams::team_memories::batch_delete_team_memories,
             commands::teams::team_memories::get_team_memory_count,
@@ -745,5 +797,8 @@ pub fn run() {
             notifications::test_notification_channel,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .unwrap_or_else(|e| {
+            eprintln!("Fatal: Tauri application failed to start: {e}");
+            std::process::exit(1);
+        });
 }

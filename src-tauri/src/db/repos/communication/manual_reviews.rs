@@ -1,6 +1,6 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{CreateManualReviewInput, PersonaManualReview};
+use crate::db::models::{CreateManualReviewInput, CreateReviewMessageInput, PersonaManualReview, ReviewMessage};
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -185,6 +185,52 @@ pub fn get_pending_count(
         )?;
         Ok(count)
     }
+}
+
+// ── Review Messages ─────────────────────────────────────────────
+
+fn row_to_message(row: &Row) -> rusqlite::Result<ReviewMessage> {
+    Ok(ReviewMessage {
+        id: row.get("id")?,
+        review_id: row.get("review_id")?,
+        role: row.get("role")?,
+        content: row.get("content")?,
+        metadata: row.get("metadata")?,
+        created_at: row.get("created_at")?,
+    })
+}
+
+pub fn create_message(
+    pool: &DbPool,
+    input: CreateReviewMessageInput,
+) -> Result<ReviewMessage, AppError> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    conn.execute(
+        "INSERT INTO review_messages (id, review_id, role, content, metadata, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![id, input.review_id, input.role, input.content, input.metadata, now],
+    )?;
+
+    conn.query_row(
+        "SELECT * FROM review_messages WHERE id = ?1",
+        params![id],
+        row_to_message,
+    )
+    .map_err(AppError::Database)
+}
+
+pub fn list_messages(
+    pool: &DbPool,
+    review_id: &str,
+) -> Result<Vec<ReviewMessage>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM review_messages WHERE review_id = ?1 ORDER BY created_at ASC",
+    )?;
+    let rows = stmt.query_map(params![review_id], row_to_message)?;
+    Ok(collect_rows(rows, "review_messages::list"))
 }
 
 #[cfg(test)]

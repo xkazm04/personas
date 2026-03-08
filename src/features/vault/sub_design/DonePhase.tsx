@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, ArrowRight, RefreshCw } from 'lucide-react';
+import { CheckCircle, ArrowRight, RefreshCw, PackagePlus } from 'lucide-react';
 
 interface DonePhaseProps {
   connectorLabel?: string;
+  registeredConnectorName?: string | null;
   refinementCount?: number;
   onClose: () => void;
   onViewCredential?: () => void;
@@ -12,6 +13,7 @@ interface DonePhaseProps {
 
 export function DonePhase({
   connectorLabel,
+  registeredConnectorName,
   refinementCount = 0,
   onClose,
   onViewCredential,
@@ -45,6 +47,21 @@ export function DonePhase({
           )}
         </p>
       </div>
+      {registeredConnectorName && (
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20 max-w-md"
+        >
+          <PackagePlus className="w-4 h-4 shrink-0 text-violet-400" />
+          <p className="text-sm text-foreground/80">
+            <span className="text-violet-400 font-medium">{registeredConnectorName}</span>
+            {' '}connector added to your catalog — now available for other personas and template adoption.
+          </p>
+        </motion.div>
+      )}
+
       <div className="flex items-center gap-2 mt-2">
         <button
           onClick={onClose}

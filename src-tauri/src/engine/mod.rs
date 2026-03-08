@@ -53,6 +53,10 @@ pub mod api_definition;
 pub mod mcp_tools;
 pub mod automation_runner;
 pub mod platforms;
+pub mod desktop_bridges;
+pub mod desktop_discovery;
+pub mod desktop_runtime;
+pub mod desktop_security;
 
 use std::collections::HashMap;
 use std::path::PathBuf;

@@ -88,6 +88,9 @@ export function ConnectorCredentialModal({
   const label = connectorDefinition?.label || connector.name;
   const category = connectorDefinition?.category;
 
+  // Connectors without a healthcheck endpoint should not block save.
+  const hasHealthcheck = connectorDefinition ? connectorDefinition.healthcheck_config != null : true;
+
   const handleHealthcheck = useCallback(async (values: Record<string, string>) => {
     await health.checkDesign(
       `Test connection for ${label} connector`,
@@ -204,8 +207,8 @@ export function ConnectorCredentialModal({
             isHealthchecking={health.isHealthchecking}
             healthcheckResult={health.result}
             onValuesChanged={() => health.invalidate()}
-            saveDisabled={!health.result?.success}
-            saveDisabledReason="Run a successful connection test before saving."
+            saveDisabled={hasHealthcheck ? !health.result?.success : false}
+            saveDisabledReason={hasHealthcheck ? "Run a successful connection test before saving." : undefined}
           />
         ) : (
           <div className="text-center py-6">

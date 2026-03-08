@@ -50,7 +50,7 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
   const roleDef = ROLE_COLORS[role] ?? defaultRole;
 
   // Dry-run status takes priority when active
-  const effectiveStatus = dryRunStatus || pipelineStatus;
+  const effectiveStatus = dryRunStatus ?? pipelineStatus;
   const borderStyles = getPipelineStyles(effectiveStatus, selected);
 
   const handleGlowAnimation = showHandleGlow

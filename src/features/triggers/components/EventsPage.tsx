@@ -3,10 +3,12 @@ import { Link, List, Radio, Zap } from "lucide-react";
 import { ContentBox, ContentHeader } from '@/features/shared/components/ContentLayout';
 import { usePersonaStore } from '@/stores/personaStore';
 import { listAllTriggers, getTriggerHealthMap, listTriggerChains } from '@/api/triggers';
-import { listSubscriptions } from '@/api/events';
+import { listAllSubscriptions } from '@/api/events';
+import type { PersonaTrigger } from '@/lib/types/types';
 import { TriggerList } from "./TriggerList";
 import { TriggerFlowBuilder } from "./TriggerFlowBuilder";
 import { EventSubscriptionsPanel } from "./EventSubscriptionsPanel";
+import { RateLimitDashboard } from "./RateLimitDashboard";
 
 type EventTab = "triggers" | "chains" | "subscriptions";
 type TabHealth = "healthy" | "degraded" | "failing" | null;
@@ -44,6 +46,7 @@ export function EventsPage() {
   const personas = usePersonaStore((s) => s.personas);
 
   const [triggerCount, setTriggerCount] = useState<number | null>(null);
+  const [allTriggers, setAllTriggers] = useState<PersonaTrigger[]>([]);
   const [chainCount, setChainCount] = useState<number | null>(null);
   const [subCount, setSubCount] = useState<number | null>(null);
   const [triggerHealth, setTriggerHealth] = useState<TabHealth>(null);
@@ -60,6 +63,7 @@ export function EventsPage() {
         ]);
         if (stale) return;
 
+        setAllTriggers(triggers);
         setTriggerCount(triggers.length);
         setChainCount(chains.length);
 
@@ -76,13 +80,10 @@ export function EventsPage() {
         // intentional: non-critical — badge counts are decorative
       }
 
-      // Subscriptions require per-persona fetches
       try {
-        const results = await Promise.all(
-          personas.map((p) => listSubscriptions(p.id)),
-        );
+        const subs = await listAllSubscriptions();
         if (stale) return;
-        setSubCount(results.flat().length);
+        setSubCount(subs.length);
       } catch {
         // intentional: non-critical — subscription count is decorative
       }
@@ -141,6 +142,9 @@ export function EventsPage() {
           </button>
         </div>
       </ContentHeader>
+
+      {/* Rate Limit Dashboard — shows when any triggers have rate limits */}
+      {tab === "triggers" && <RateLimitDashboard triggers={allTriggers} />}
 
       {/* Content */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

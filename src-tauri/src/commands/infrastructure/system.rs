@@ -80,160 +80,13 @@ pub async fn system_health_check(
     let mut sections = Vec::new();
 
     // -- Section 1: Local Environment --
-    let mut local_items = Vec::new();
-
-    // Determine the active engine
     let active_engine = crate::db::repos::core::settings::get(&state.db, settings_keys::CLI_ENGINE)
         .ok()
         .flatten()
         .unwrap_or_else(|| "claude_code".to_string());
 
-    // Probe all three CLI engines
-    struct EngineProbe {
-        id: &'static str,
-        label: &'static str,
-        setting_key: &'static str,
-        candidates: &'static [&'static str],
-    }
-
-    let engines = [
-        EngineProbe {
-            id: "claude_cli",
-            label: "Claude Code CLI",
-            setting_key: "claude_code",
-            candidates: if cfg!(target_os = "windows") {
-                &["claude", "claude.cmd", "claude.exe", "claude-code"]
-            } else {
-                &["claude", "claude-code"]
-            },
-        },
-        EngineProbe {
-            id: "codex_cli",
-            label: "Codex CLI",
-            setting_key: "codex_cli",
-            candidates: if cfg!(target_os = "windows") {
-                &["codex", "codex.cmd"]
-            } else {
-                &["codex"]
-            },
-        },
-        EngineProbe {
-            id: "gemini_cli",
-            label: "Gemini CLI",
-            setting_key: "gemini_cli",
-            candidates: if cfg!(target_os = "windows") {
-                &["gemini", "gemini.cmd"]
-            } else {
-                &["gemini"]
-            },
-        },
-    ];
-
-    for engine in &engines {
-        let is_active = active_engine == engine.setting_key;
-        let suffix = if is_active { " (active)" } else { "" };
-
-        let mut errors = Vec::new();
-        let mut detected_in_path = false;
-        let mut version_result: Option<(String, String)> = None;
-
-        for candidate in engine.candidates {
-            if command_exists_in_path(candidate) {
-                detected_in_path = true;
-            }
-            match command_version(candidate) {
-                Ok(version) => {
-                    version_result = Some(((*candidate).to_string(), version));
-                    break;
-                }
-                Err(err) => {
-                    errors.push(format!("{candidate}: {err}"));
-                }
-            }
-        }
-
-        if let Some((command_name, version)) = version_result {
-            local_items.push(HealthCheckItem {
-                id: engine.id.into(),
-                label: format!("{}{}", engine.label, suffix),
-                status: "ok".into(),
-                detail: Some(format!("{version} ({command_name})")),
-                installable: false,
-            });
-        } else if detected_in_path {
-            local_items.push(HealthCheckItem {
-                id: engine.id.into(),
-                label: format!("{}{}", engine.label, suffix),
-                status: if is_active { "warn" } else { "inactive" }.into(),
-                detail: Some(
-                    "CLI executable detected in PATH, but version probe failed. Try opening a new terminal session or reinstalling.".into(),
-                ),
-                installable: true,
-            });
-        } else {
-            local_items.push(HealthCheckItem {
-                id: engine.id.into(),
-                label: format!("{}{}", engine.label, suffix),
-                status: if is_active { "error" } else { "inactive" }.into(),
-                detail: Some(if is_active {
-                    "Not found. Click Install to set up, or select a different engine in Settings.".into()
-                } else {
-                    "Not installed (optional)".into()
-                }),
-                installable: true,
-            });
-        }
-    }
-
-    let node_candidates = ["node", "nodejs"];
-    let mut node_ok = None;
-
-    for candidate in node_candidates {
-        if let Ok(version) = command_version(candidate) {
-            node_ok = Some((candidate.to_string(), version));
-            break;
-        }
-    }
-
-    if let Some((command_name, version)) = node_ok {
-        local_items.push(HealthCheckItem {
-            id: "node".into(),
-            label: "Node.js".into(),
-            status: "ok".into(),
-            detail: Some(format!("{version} ({command_name})")),
-            installable: false,
-        });
-    } else {
-        local_items.push(HealthCheckItem {
-            id: "node".into(),
-            label: "Node.js".into(),
-            status: "warn".into(),
-            detail: Some(
-                "Not found — required for Claude CLI. Click Install to set up automatically."
-                    .into(),
-            ),
-            installable: true,
-        });
-    }
-
-    let sched_running = state.scheduler.is_running();
-    local_items.push(HealthCheckItem {
-        id: "scheduler".into(),
-        label: "Event Bus".into(),
-        status: if sched_running { "ok" } else { "warn" }.into(),
-        detail: Some(if sched_running {
-            "Running — processing events and triggers".into()
-        } else {
-            "Not started yet".into()
-        }),
-        installable: false,
-    });
-
-    sections.push(HealthCheckSection {
-        id: "local".into(),
-        label: "Local Environment".into(),
-        items: local_items,
-    });
+    let local_section = build_local_section(&active_engine, state.scheduler.is_running());
+    sections.push(local_section);
 
     // -- Section 2: Agents --
     let mut agent_items = Vec::new();
@@ -377,23 +230,17 @@ pub async fn system_health_check(
 
 // ── Per-section health checks (cascade loading) ────────────────────────────
 
-#[tauri::command]
-pub async fn health_check_local(
-    state: State<'_, Arc<AppState>>,
-) -> Result<HealthCheckSection, AppError> {
+// ── Shared local-section builder (used by both full and cascade endpoints) ──
+
+struct EngineProbe {
+    id: &'static str,
+    label: &'static str,
+    setting_key: &'static str,
+    candidates: &'static [&'static str],
+}
+
+fn build_local_section(active_engine: &str, sched_running: bool) -> HealthCheckSection {
     let mut local_items = Vec::new();
-
-    let active_engine = crate::db::repos::core::settings::get(&state.db, settings_keys::CLI_ENGINE)
-        .ok()
-        .flatten()
-        .unwrap_or_else(|| "claude_code".to_string());
-
-    struct EngineProbe {
-        id: &'static str,
-        label: &'static str,
-        setting_key: &'static str,
-        candidates: &'static [&'static str],
-    }
 
     let engines = [
         EngineProbe {
@@ -407,13 +254,13 @@ pub async fn health_check_local(
             },
         },
         EngineProbe {
-            id: "codex_cli",
-            label: "Codex CLI",
-            setting_key: "codex_cli",
+            id: "copilot_cli",
+            label: "Copilot CLI",
+            setting_key: "copilot_cli",
             candidates: if cfg!(target_os = "windows") {
-                &["codex", "codex.cmd"]
+                &["copilot", "copilot.cmd"]
             } else {
-                &["codex"]
+                &["copilot"]
             },
         },
         EngineProbe {
@@ -432,7 +279,6 @@ pub async fn health_check_local(
         let is_active = active_engine == engine.setting_key;
         let suffix = if is_active { " (active)" } else { "" };
 
-        let mut errors = Vec::new();
         let mut detected_in_path = false;
         let mut version_result: Option<(String, String)> = None;
 
@@ -440,14 +286,9 @@ pub async fn health_check_local(
             if command_exists_in_path(candidate) {
                 detected_in_path = true;
             }
-            match command_version(candidate) {
-                Ok(version) => {
-                    version_result = Some(((*candidate).to_string(), version));
-                    break;
-                }
-                Err(err) => {
-                    errors.push(format!("{candidate}: {err}"));
-                }
+            if let Ok(version) = command_version(candidate) {
+                version_result = Some(((*candidate).to_string(), version));
+                break;
             }
         }
 
@@ -515,7 +356,6 @@ pub async fn health_check_local(
         });
     }
 
-    let sched_running = state.scheduler.is_running();
     local_items.push(HealthCheckItem {
         id: "scheduler".into(),
         label: "Event Bus".into(),
@@ -528,11 +368,23 @@ pub async fn health_check_local(
         installable: false,
     });
 
-    Ok(HealthCheckSection {
+    HealthCheckSection {
         id: "local".into(),
         label: "Local Environment".into(),
         items: local_items,
-    })
+    }
+}
+
+#[tauri::command]
+pub async fn health_check_local(
+    state: State<'_, Arc<AppState>>,
+) -> Result<HealthCheckSection, AppError> {
+    let active_engine = crate::db::repos::core::settings::get(&state.db, settings_keys::CLI_ENGINE)
+        .ok()
+        .flatten()
+        .unwrap_or_else(|| "claude_code".to_string());
+
+    Ok(build_local_section(&active_engine, state.scheduler.is_running()))
 }
 
 #[tauri::command]

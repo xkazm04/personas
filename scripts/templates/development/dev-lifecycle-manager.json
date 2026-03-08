@@ -756,6 +756,28 @@
           }
         ]
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Approval workflow for high-impact actions",
+        "context": "Approval workflow detected in instructions"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack alerts plus email digests and summaries (periodic digests, critical alerts, completion confirmations, error notifications)",
+        "context": "2 notification channel(s) configured: slack, slack"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Deduplication memory tracking known items across runs",
+        "context": "Tracks: human review outcomes, recurring patterns, calibrated thresholds, known items for deduplication"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: review requested, threshold breached",
+        "context": "6 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

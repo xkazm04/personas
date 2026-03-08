@@ -134,6 +134,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
               isExpanded={terminalExpanded}
               onToggle={() => setTerminalExpanded((p) => !p)}
               expandedMaxHeight="max-h-48"
+              operation="recipe_execution"
             />
           </div>
         )}

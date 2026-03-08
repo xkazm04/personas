@@ -670,6 +670,28 @@
         "label": "Matching Algorithm",
         "content": "The reconciliation engine uses a three-factor matching approach:\n1. **Amount**: Must be an exact match (to the cent). No tolerance for amount differences.\n2. **Date**: ±2 business days tolerance to account for bank clearing delays, weekends, and processing time.\n3. **Description**: Fuzzy string matching on transaction reference and description fields. Uses normalized comparison (lowercase, stripped whitespace, common abbreviation expansion).\n\nConfidence scoring for partial matches: Amount match = 50 points, Date within ±1 day = 30 points (±2 days = 15 points), Description similarity > 80% = 20 points. Total score normalized to 0-100%."
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Approval workflow for high-impact actions",
+        "context": "Approval workflow detected in instructions"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack alerts plus email digests and summaries (periodic digests, critical alerts, completion confirmations, error notifications)",
+        "context": "2 notification channel(s) configured: slack, email"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Historical baselines and trend data for comparative analysis",
+        "context": "Tracks: recurring patterns, calibrated thresholds"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution failed, threshold breached, escalation triggered",
+        "context": "3 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

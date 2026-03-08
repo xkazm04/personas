@@ -728,6 +728,28 @@
         "label": "Alert Deduplication Strategy",
         "content": "PagerDuty dedup_key format: {threat_type}_{zone_id}_{time_window_hour}. This ensures the same type of attack within the same hour doesn't create duplicate incidents, while allowing new incidents for recurring attacks in different time windows. Slack deduplication uses active_incidents.json — if an incident of the same type and zone is already open, new detections post as thread replies to the original alert rather than creating new top-level messages."
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Escalation to human for critical or ambiguous items",
+        "context": "Escalation logic detected in instructions"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack notifications for status updates and alerts (periodic digests, critical alerts, error notifications)",
+        "context": "2 notification channel(s) configured: slack, slack"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Deduplication memory tracking known items across runs",
+        "context": "Tracks: recurring patterns, calibrated thresholds, known items for deduplication"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: threshold breached, escalation triggered",
+        "context": "2 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

@@ -17,8 +17,8 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   { role: 'sms',                 label: 'SMS',                  members: ['twilio_sms', 'twilio'] },
 
   // ── Development ───────────────────────────────────────────────
-  { role: 'source_control',      label: 'Source Control',       members: ['github', 'gitlab'] },
-  { role: 'ci_cd',               label: 'CI/CD',                members: ['circleci', 'gitlab'] },
+  { role: 'source_control',      label: 'Source Control',       members: ['github', 'gitlab', 'azure_devops'] },
+  { role: 'ci_cd',               label: 'CI/CD',                members: ['circleci', 'gitlab', 'azure_devops'] },
   { role: 'project_tracking',    label: 'Project Tracking',     members: ['jira', 'linear', 'clickup', 'monday_com', 'asana', 'trello', 'todoist'] },
   { role: 'knowledge_base',      label: 'Knowledge Base',       members: ['confluence', 'airtable', 'coda'] },
   { role: 'design',              label: 'Design',               members: ['figma'] },
@@ -26,8 +26,8 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
 
   // ── Infrastructure ────────────────────────────────────────────
   { role: 'hosting',             label: 'Hosting & Deploy',     members: ['vercel', 'netlify', 'cloudflare'] },
-  { role: 'cloud_infra',         label: 'Cloud Infrastructure', members: ['aws', 'firebase'] },
-  { role: 'database',            label: 'Database',             members: ['supabase', 'neon', 'convex', 'planetscale', 'upstash', 'postgres_proxy', 'postgres', 'mongodb', 'redis', 'duckdb', 'notion'] },
+  { role: 'cloud_infra',         label: 'Cloud Infrastructure', members: ['aws', 'firebase', 'kubernetes'] },
+  { role: 'database',            label: 'Database',             members: ['personas_database', 'supabase', 'neon', 'convex', 'planetscale', 'upstash', 'postgres_proxy', 'postgres', 'mongodb', 'redis', 'duckdb', 'notion'] },
   { role: 'cloud_storage',       label: 'Cloud Storage',        members: ['dropbox'] },
 
   // ── Monitoring & Security ─────────────────────────────────────
@@ -57,15 +57,22 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   { role: 'e_commerce',          label: 'E-Commerce',           members: ['shopify', 'shipstation'] },
 
   // ── Scheduling & Forms ────────────────────────────────────────
-  { role: 'scheduling',          label: 'Scheduling',           members: ['calendly'] },
+  { role: 'scheduling',          label: 'Scheduling',           members: ['calendly', 'cal_com'] },
   { role: 'form_survey',         label: 'Forms & Surveys',      members: ['typeform'] },
 
   // ── Specialty ─────────────────────────────────────────────────
   { role: 'auth_identity',       label: 'Auth & Identity',      members: ['clerk'] },
-  { role: 'ai_platform',         label: 'AI Platform',          members: ['openai'] },
+  { role: 'ai_platform',         label: 'AI Platform',          members: ['openai', 'leonardo_ai'] },
   { role: 'advertising',         label: 'Advertising',          members: ['google_ads'] },
   { role: 'e_signature',         label: 'E-Signature',          members: ['docusign'] },
   { role: 'hr_recruiting',       label: 'HR & Recruiting',      members: ['greenhouse'] },
+
+  // ── Desktop Apps ────────────────────────────────────────────
+  { role: 'code_editor',         label: 'Code Editor',          members: ['desktop_vscode'] },
+  { role: 'container_runtime',   label: 'Container Runtime',    members: ['desktop_docker'] },
+  { role: 'shell',               label: 'Shell / Terminal',     members: ['desktop_terminal'] },
+  { role: 'note_taking',         label: 'Note Taking',          members: ['desktop_obsidian'] },
+  { role: 'browser_automation',  label: 'Browser Automation',   members: ['desktop_browser'] },
 ];
 
 // ── Purpose groups: architectural-level categorisation of roles ────────
@@ -88,6 +95,7 @@ export const PURPOSE_GROUPS: PurposeGroup[] = [
   { purpose: 'finance_commerce',     label: 'Finance & Commerce',   roles: ['payment_processing', 'accounting', 'banking_fintech', 'e_commerce'] },
   { purpose: 'scheduling_forms',     label: 'Scheduling & Forms',   roles: ['scheduling', 'form_survey'] },
   { purpose: 'specialty',            label: 'Specialty',            roles: ['auth_identity', 'ai_platform', 'advertising', 'e_signature', 'hr_recruiting'] },
+  { purpose: 'desktop',             label: 'Desktop Apps',         roles: ['code_editor', 'container_runtime', 'shell', 'note_taking', 'browser_automation'] },
 ];
 
 // Pre-computed lookup: connector name → purpose key

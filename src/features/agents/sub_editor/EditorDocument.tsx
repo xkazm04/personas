@@ -8,6 +8,16 @@ import { createContext, useContext, useCallback, useEffect, useRef, useSyncExter
  * and `saveAll` to persist all pending changes in one call.
  */
 
+/** Error thrown by saveAll when one or more tabs fail to save. */
+export class TabSaveError extends Error {
+  readonly failedTabs: string[];
+  constructor(failedTabs: string[]) {
+    super(`Failed to save: ${failedTabs.join(', ')}`);
+    this.name = 'TabSaveError';
+    this.failedTabs = failedTabs;
+  }
+}
+
 type Listener = () => void;
 
 interface DirtyStore {
@@ -84,7 +94,7 @@ function createDirtyStore(): DirtyStore {
         }
       }
       if (failedTabs.length > 0) {
-        throw new Error(`Failed to save: ${failedTabs.join(', ')}`);
+        throw new TabSaveError(failedTabs);
       }
     },
     cancelAll() {

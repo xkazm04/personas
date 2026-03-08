@@ -6,10 +6,14 @@ import { useToggleSet } from '@/hooks/utility/useToggleSet';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { DesignFilesSection } from '@/lib/types/frontendTypes';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
-import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/UseCasesList';
-import { applyDesignContextMutation } from '@/features/agents/sub_use_cases/useCaseHelpers';
+import { parseDesignContext } from '@/features/shared/components/UseCasesList';
+import { mutateDesignFiles } from '@/hooks/design/useDesignContextMutator';
 import { parseConversationMessages } from '@/lib/types/designTypes';
 import { allIndices, buildChangeSummary } from './DesignTabHelpers';
+import type { ExamplePair } from './ExamplePairCollector';
+import { formatExamplePairsAsIntent } from './ExamplePairCollector';
+
+export type DesignInputMode = 'design' | 'intent' | 'example';
 
 export function useDesignTabState() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
@@ -19,6 +23,8 @@ export function useDesignTabState() {
   const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
   const autoStartDesignInstruction = usePersonaStore((s) => s.autoStartDesignInstruction);
   const setAutoStartDesignInstruction = usePersonaStore((s) => s.setAutoStartDesignInstruction);
+  const allDriftEvents = usePersonaStore((s) => s.designDriftEvents);
+  const dismissDriftEvent = usePersonaStore((s) => s.dismissDriftEvent);
 
   useEffect(() => {
     if (connectorDefinitions.length === 0) fetchConnectorDefinitions();
@@ -30,6 +36,7 @@ export function useDesignTabState() {
     result,
     error,
     applyWarnings,
+    failedOperations,
     question,
     compile,
     compileIntent,
@@ -37,6 +44,7 @@ export function useDesignTabState() {
     recompile,
     answerAndContinue,
     applyCompilation,
+    retryFailed,
     reset,
     setConversationId,
   } = usePersonaCompiler();
@@ -59,13 +67,22 @@ export function useDesignTabState() {
 
   const prevPhaseRef = useRef(phase);
   const [instruction, setInstruction] = useState('');
-  const [intentMode, setIntentMode] = useState(false);
+  const [inputMode, setInputMode] = useState<DesignInputMode>('design');
+  const intentMode = inputMode === 'intent';
+  const [examplePairs, setExamplePairs] = useState<ExamplePair[]>([]);
   const [designContext, setDesignContext] = useState<DesignFilesSection>({ files: [], references: [] });
   const [refinementMessage, setRefinementMessage] = useState('');
   const [selectedTools, handleToolToggle, setSelectedTools] = useToggleSet<string>();
   const [selectedTriggerIndices, handleTriggerToggle, setSelectedTriggerIndices] = useToggleSet<number>();
   const [selectedChannelIndices, handleChannelToggle, setSelectedChannelIndices] = useToggleSet<number>();
   const [selectedSubscriptionIndices, handleSubscriptionToggle, setSelectedSubscriptionIndices] = useToggleSet<number>();
+
+  const clearSelections = useCallback(() => {
+    setSelectedTools(new Set());
+    setSelectedTriggerIndices(new Set());
+    setSelectedChannelIndices(new Set());
+    setSelectedSubscriptionIndices(new Set());
+  }, [setSelectedTools, setSelectedTriggerIndices, setSelectedChannelIndices, setSelectedSubscriptionIndices]);
 
   useEffect(() => {
     const prev = prevPhaseRef.current;
@@ -77,7 +94,7 @@ export function useDesignTabState() {
     if (phase === 'preview' && result && prev !== 'preview') {
       addResultMessage(result);
     }
-    if (error && (phase === 'idle' || phase === 'preview') && (prev === 'analyzing' || prev === 'refining')) {
+    if (error && (phase === 'idle' || phase === 'preview' || phase === 'error') && (prev === 'analyzing' || prev === 'refining')) {
       addErrorMessage(error);
     }
   }, [phase, question, result, error, addQuestionMessage, addResultMessage, addErrorMessage]);
@@ -98,10 +115,7 @@ export function useDesignTabState() {
 
       const hasContext = designContext.files.length > 0 || designContext.references.length > 0;
       if (hasContext) {
-        await applyDesignContextMutation(selectedPersona.id, (ctx) => {
-          const existing = parseDesignContext(ctx);
-          return serializeDesignContext({ ...existing, designFiles: designContext });
-        });
+        await mutateDesignFiles(selectedPersona.id, () => designContext);
       }
 
       const conv = await startConversation(instructionText);
@@ -152,8 +166,10 @@ export function useDesignTabState() {
     if (prevPersonaIdRef.current !== currentPersonaId) {
       reset();
       clearActive();
+      clearSelections();
       setInstruction('');
-      setIntentMode(false);
+      setInputMode('design');
+      setExamplePairs([]);
       setRefinementMessage('');
     }
     prevPersonaIdRef.current = currentPersonaId;
@@ -183,23 +199,31 @@ export function useDesignTabState() {
   );
 
   const handleStartAnalysis = useCallback(async () => {
-    if (!selectedPersona || !instruction.trim()) return;
+    if (!selectedPersona) return;
+
+    // Example mode: format pairs into structured intent
+    if (inputMode === 'example') {
+      const validPairs = examplePairs.filter((p) => p.input.trim() || p.output.trim());
+      if (validPairs.length === 0) return;
+      const intent = formatExamplePairsAsIntent(examplePairs, instruction.trim() || undefined);
+      compileIntent(selectedPersona.id, intent);
+      return;
+    }
+
+    if (!instruction.trim()) return;
     if (intentMode) {
       compileIntent(selectedPersona.id, instruction.trim());
       return;
     }
     const hasContext = designContext.files.length > 0 || designContext.references.length > 0;
     if (hasContext) {
-      await applyDesignContextMutation(selectedPersona.id, (ctx) => {
-        const existing = parseDesignContext(ctx);
-        return serializeDesignContext({ ...existing, designFiles: designContext });
-      });
+      await mutateDesignFiles(selectedPersona.id, () => designContext);
     }
     const conv = await startConversation(instruction.trim());
     const convId = conv?.id ?? null;
     setConversationId(convId);
     compile(selectedPersona.id, instruction.trim(), convId);
-  }, [selectedPersona, instruction, intentMode, designContext, compileIntent, startConversation, setConversationId, compile]);
+  }, [selectedPersona, instruction, inputMode, intentMode, examplePairs, designContext, compileIntent, startConversation, setConversationId, compile]);
 
   const handleApply = useCallback(async () => {
     if (!selectedPersona || !result) return;
@@ -207,7 +231,7 @@ export function useDesignTabState() {
     await completeConversation();
   }, [selectedPersona, result, applyCompilation, selectedTools, selectedTriggerIndices, selectedChannelIndices, selectedSubscriptionIndices, completeConversation]);
 
-  const handleRefine = useCallback(() => { reset(); }, [reset]);
+  const handleRefine = useCallback(() => { reset(); clearSelections(); }, [reset, clearSelections]);
 
   const handleSendRefinement = useCallback(() => {
     if (!selectedPersona || !refinementMessage.trim()) return;
@@ -217,15 +241,17 @@ export function useDesignTabState() {
   }, [selectedPersona, refinementMessage, addUserMessage, recompile]);
 
   const handleDiscard = useCallback(() => {
-    reset(); clearActive(); setInstruction('');
-    setIntentMode(false);
+    reset(); clearActive(); clearSelections(); setInstruction('');
+    setInputMode('design');
+    setExamplePairs([]);
     setDesignContext({ files: [], references: [] });
-  }, [reset, clearActive]);
+  }, [reset, clearActive, clearSelections]);
 
   const handleReset = useCallback(() => {
-    reset(); clearActive(); setInstruction('');
-    setIntentMode(false);
-  }, [reset, clearActive]);
+    reset(); clearActive(); clearSelections(); setInstruction('');
+    setInputMode('design');
+    setExamplePairs([]);
+  }, [reset, clearActive, clearSelections]);
 
   const handleAnswerQuestion = useCallback((answer: string) => {
     addUserMessage(answer, 'answer');
@@ -241,16 +267,24 @@ export function useDesignTabState() {
     setConversationId(updated.id);
   }, [resumeConversation, selectedPersona, setConversationId]);
 
+  // Filter drift events for the current persona
+  const driftEvents = useMemo(
+    () => allDriftEvents.filter((e) => e.personaId === selectedPersona?.id),
+    [allDriftEvents, selectedPersona?.id],
+  );
+
   return {
     selectedPersona, toolDefinitions, credentials, connectorDefinitions,
-    phase, outputLines, result, error, applyWarnings, question,
+    phase, outputLines, result, error, applyWarnings, failedOperations, question, retryFailed,
     cancelAnalysis, conversations, activeConversationId, removeConversation,
-    instruction, setInstruction, intentMode, setIntentMode,
+    instruction, setInstruction, intentMode,
+    inputMode, setInputMode, examplePairs, setExamplePairs,
     designContext, setDesignContext, refinementMessage, setRefinementMessage,
     selectedTools, handleToolToggle, selectedTriggerIndices, handleTriggerToggle,
     selectedChannelIndices, handleChannelToggle, selectedSubscriptionIndices, handleSubscriptionToggle,
     savedDesignResult, currentToolNames, changeSummary,
     handleStartAnalysis, handleApply, handleRefine, handleSendRefinement,
     handleDiscard, handleReset, handleAnswerQuestion, handleResumeConversation,
+    driftEvents, dismissDriftEvent,
   };
 }

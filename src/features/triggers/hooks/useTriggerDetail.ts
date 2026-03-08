@@ -2,6 +2,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { DryRunResult } from '@/api/triggers';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { useTriggerOperations } from './useTriggerOperations';
+import { getWebhookUrl } from '@/lib/utils/triggerConstants';
+import { useToastStore } from '@/stores/toastStore';
 
 /**
  * Manages all async/interaction state for a single trigger's detail drawer:
@@ -22,6 +24,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
   const [activityOpen, setActivityOpen] = useState(false);
   const [activityLog, setActivityLog] = useState<PersonaExecution[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
+  const [activityError, setActivityError] = useState(false);
 
   // -- Delete confirmation --
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -89,16 +92,33 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
     }
     setActivityOpen(true);
     setActivityLoading(true);
+    setActivityError(false);
     try {
       const result = await ops.fetchActivity(triggerId);
       setActivityLog(result.ok && result.data ? result.data : []);
     } catch {
-      // intentional: non-critical — activity log fetch failed, show empty list
       setActivityLog([]);
+      setActivityError(true);
+      useToastStore.getState().addToast('Failed to load activity log', 'error');
     } finally {
       setActivityLoading(false);
     }
   }, [activityOpen, triggerId, ops]);
+
+  const retryActivityLog = useCallback(async () => {
+    setActivityLoading(true);
+    setActivityError(false);
+    try {
+      const result = await ops.fetchActivity(triggerId);
+      setActivityLog(result.ok && result.data ? result.data : []);
+    } catch {
+      setActivityLog([]);
+      setActivityError(true);
+      useToastStore.getState().addToast('Failed to load activity log', 'error');
+    } finally {
+      setActivityLoading(false);
+    }
+  }, [triggerId, ops]);
 
   // ── Delete confirmation ────────────────────────────────────────────────
 
@@ -124,7 +144,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
   const copyWebhookUrl = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(`http://localhost:9420/webhook/${triggerId}`);
+      await navigator.clipboard.writeText(getWebhookUrl(triggerId));
       setCopiedUrl(true);
       setTimeout(() => setCopiedUrl(false), 2000);
     } catch { /* intentional: non-critical — clipboard write best-effort */ }
@@ -132,7 +152,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
 
   const copyCurlCommand = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `http://localhost:9420/webhook/${triggerId}`;
+    const url = getWebhookUrl(triggerId);
     const cmd = `curl -X POST ${url} \\\n  -H "Content-Type: application/json" \\\n  -d '{"test": true}'`;
     try {
       await navigator.clipboard.writeText(cmd);
@@ -149,7 +169,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
     // Dry run
     dryRunning, dryRunResult, handleDryRun, clearDryRunResult,
     // Activity
-    activityOpen, activityLog, activityLoading, toggleActivityLog,
+    activityOpen, activityLog, activityLoading, activityError, toggleActivityLog, retryActivityLog,
     // Delete
     confirmingDelete, startDeleteConfirm, confirmDelete, cancelDelete,
     // Clipboard

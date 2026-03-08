@@ -646,6 +646,28 @@
           }
         ]
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Human triage for unclassifiable or ambiguous items",
+        "context": "Triage workflow detected in instructions"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack alerts plus email digests and summaries (periodic digests, critical alerts, completion confirmations, error notifications)",
+        "context": "1 notification channel(s) configured: slack"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Deduplication memory tracking known items across runs",
+        "context": "Tracks: recurring patterns, known items for deduplication, processing checkpoints"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution failed, credential status change, review requested, item created, threshold breached",
+        "context": "3 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

@@ -15,6 +15,7 @@ interface PersonaInfo {
 interface Props {
   events: RealtimeEvent[];
   personas: PersonaInfo[];
+  droppedCount?: number;
   onSelectEvent: (event: RealtimeEvent | null) => void;
 }
 
@@ -25,6 +26,8 @@ interface SwarmNode {
   color: string;
   x: number;
   y: number;
+  /** Relative size factor 0-1 based on event volume. */
+  sizeFactor?: number;
 }
 
 interface ProcessingInfo {
@@ -43,12 +46,22 @@ interface ReturnFlow {
   startedAt: number;
 }
 
+/** Tracked source discovered from real event traffic. */
+export interface DiscoveredSource {
+  id: string;
+  label: string;
+  count: number;
+  lastSeen: number;
+}
+
 // ── Layout (viewBox 0–100) ───────────────────────────────────────
 
 const CX = 50;
 const CY = 50;
 const TOOL_RING_R = 42;
 const PERSONA_RING_R = 24;
+const TOOL_NODE_R_MIN = 2.5;
+const TOOL_NODE_R_MAX = 4.5;
 const TOOL_NODE_R = 3.5;
 const PERSONA_NODE_R = 4;
 const CORE_OUTER_R = 13;
@@ -58,9 +71,41 @@ const PROGRESS_CIRC = 2 * Math.PI * PROGRESS_R;
 
 const RETURN_FLOW_MS = 1800;
 
-// ── Default nodes ────────────────────────────────────────────────
+/** Sources fade to ghost opacity after this many ms without traffic. */
+const FADE_AFTER_MS = 30_000;
 
-const DEFAULT_TOOLS = [
+// ── Known source colors ──────────────────────────────────────────
+
+const SOURCE_COLORS: Record<string, string> = {
+  gmail: '#ea4335', slack: '#611f69', github: '#8b5cf6', calendar: '#06b6d4',
+  jira: '#0052cc', drive: '#34a853', stripe: '#635bff', figma: '#f24e1e',
+  notion: '#e0e0e0', discord: '#5865F2', sentry: '#8456a6', vercel: '#c8c8c8',
+  datadog: '#632CA6', aws: '#FF9900', linear: '#5E6AD2', hubspot: '#FF7A59',
+  webhook: '#06b6d4', system: '#8b5cf6', trigger: '#f59e0b', test: '#10b981',
+  cloud: '#38bdf8', gitlab: '#FC6D26', deployment: '#38bdf8',
+};
+
+function colorForSource(id: string): string {
+  const lower = id.toLowerCase();
+  for (const [key, color] of Object.entries(SOURCE_COLORS)) {
+    if (lower.includes(key)) return color;
+  }
+  // Deterministic hash color for unknown sources
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = ((hash % 360) + 360) % 360;
+  return `hsl(${hue}, 60%, 55%)`;
+}
+
+function labelForSource(id: string): string {
+  // Capitalize first letter, replace underscores/hyphens
+  const cleaned = id.replace(/[_-]/g, ' ');
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+// ── Default nodes (fallback when no real traffic yet) ────────────
+
+const DEFAULT_TOOLS: Array<{ id: string; label: string; icon: null; color: string }> = [
   { id: 'def:gmail',     label: 'Gmail',     icon: null, color: '#ea4335' },
   { id: 'def:slack',     label: 'Slack',     icon: null, color: '#611f69' },
   { id: 'def:github',    label: 'GitHub',    icon: null, color: '#8b5cf6' },
@@ -68,15 +113,9 @@ const DEFAULT_TOOLS = [
   { id: 'def:jira',      label: 'Jira',      icon: null, color: '#0052cc' },
   { id: 'def:drive',     label: 'Drive',     icon: null, color: '#34a853' },
   { id: 'def:stripe',    label: 'Stripe',    icon: null, color: '#635bff' },
-  { id: 'def:figma',     label: 'Figma',     icon: null, color: '#f24e1e' },
   { id: 'def:notion',    label: 'Notion',    icon: null, color: '#e0e0e0' },
-  { id: 'def:discord',   label: 'Discord',   icon: null, color: '#5865F2' },
-  { id: 'def:sentry',    label: 'Sentry',    icon: null, color: '#8456a6' },
-  { id: 'def:vercel',    label: 'Vercel',    icon: null, color: '#c8c8c8' },
-  { id: 'def:datadog',   label: 'Datadog',   icon: null, color: '#632CA6' },
-  { id: 'def:aws',       label: 'AWS',       icon: null, color: '#FF9900' },
-  { id: 'def:linear',    label: 'Linear',    icon: null, color: '#5E6AD2' },
-  { id: 'def:hubspot',   label: 'HubSpot',   icon: null, color: '#FF7A59' },
+  { id: 'def:cloud',     label: 'Cloud',     icon: null, color: '#38bdf8' },
+  { id: 'def:gitlab',    label: 'GitLab',    icon: null, color: '#FC6D26' },
 ];
 
 const DEFAULT_PERSONAS = [
@@ -96,12 +135,19 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
   task_created: 'Task',
   test_event: 'Test',
   custom: 'Custom',
+  deploy_started: 'Deploy',
+  deploy_succeeded: 'Deployed',
+  deploy_failed: 'Deploy Fail',
+  deploy_paused: 'Paused',
+  deploy_resumed: 'Resumed',
+  agent_undeployed: 'Undeployed',
+  credential_provisioned: 'Cred Prov.',
 };
 
 // ── Helpers ──────────────────────────────────────────────────────
 
 function distributeOnRing(
-  raw: { id: string; label: string; icon: string | null; color: string }[],
+  raw: { id: string; label: string; icon: string | null; color: string; sizeFactor?: number }[],
   radius: number,
   angleOffset = 0,
 ): SwarmNode[] {
@@ -109,7 +155,7 @@ function distributeOnRing(
   if (count === 0) return [];
   return raw.map((n, i) => {
     const angle = angleOffset + (i * 2 * Math.PI) / count;
-    return { ...n, x: CX + radius * Math.cos(angle), y: CY + radius * Math.sin(angle) };
+    return { ...n, x: CX + radius * Math.cos(angle), y: CY + radius * Math.sin(angle), sizeFactor: n.sizeFactor };
   });
 }
 
@@ -124,11 +170,62 @@ function clampLabel(label: string, max: number): string {
 
 // ── Component ────────────────────────────────────────────────────
 
-export default function EventBusVisualization({ events, personas, onSelectEvent }: Props) {
+export default function EventBusVisualization({ events, personas, droppedCount = 0, onSelectEvent }: Props) {
   const uid = useId();
 
-  // ── Two rings ──────────────────────────────────────────────────
-  const toolNodes = useMemo(() => distributeOnRing(DEFAULT_TOOLS, TOOL_RING_R), []);
+  // ── Discovered source topology ─────────────────────────────────
+  const discoveredSourcesRef = useRef(new Map<string, DiscoveredSource>());
+
+  // Track sources from incoming events
+  useEffect(() => {
+    const map = discoveredSourcesRef.current;
+    for (const evt of events) {
+      const key = evt.source_id || evt.source_type || 'unknown';
+      if (!key || key === 'unknown') continue;
+      const existing = map.get(key);
+      if (existing) {
+        existing.count++;
+        existing.lastSeen = Date.now();
+      } else {
+        map.set(key, {
+          id: key,
+          label: labelForSource(key),
+          count: 1,
+          lastSeen: Date.now(),
+        });
+      }
+    }
+  }, [events]);
+
+  // Build tool ring from discovered sources (or fallback to defaults)
+  const toolNodes = useMemo(() => {
+    const discovered = discoveredSourcesRef.current;
+    if (discovered.size === 0) {
+      return distributeOnRing(DEFAULT_TOOLS, TOOL_RING_R);
+    }
+
+    const now = Date.now();
+    const sources = Array.from(discovered.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 16); // Cap at 16 nodes
+
+    const maxCount = Math.max(1, ...sources.map(s => s.count));
+
+    const raw = sources.map(s => {
+      const age = now - s.lastSeen;
+      const sizeFactor = 0.3 + 0.7 * (s.count / maxCount);
+      return {
+        id: s.id,
+        label: s.label,
+        icon: null,
+        color: colorForSource(s.id),
+        sizeFactor: age > FADE_AFTER_MS ? sizeFactor * 0.5 : sizeFactor,
+      };
+    });
+
+    return distributeOnRing(raw, TOOL_RING_R);
+    // Re-derive when event count changes (batch updates)
+  }, [events.length]);
 
   const personaNodes = useMemo(() => {
     const raw =
@@ -171,8 +268,9 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
   // ── Source / target helpers ────────────────────────────────────
   const getSourcePos = useCallback(
     (evt: RealtimeEvent) => {
-      if (evt.source_id) {
-        const p = toolPositionMap.get(evt.source_id) ?? toolPositionMap.get(`def:${evt.source_id}`);
+      const sourceKey = evt.source_id || evt.source_type;
+      if (sourceKey) {
+        const p = toolPositionMap.get(sourceKey) ?? toolPositionMap.get(`def:${sourceKey}`);
         if (p) return p;
       }
       const h = (evt.id.charCodeAt(0) + (evt.id.charCodeAt(1) || 0)) * 137.5;
@@ -316,21 +414,30 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
           BUS
         </text>
 
-        {/* ═══ Outer Ring — Tool Nodes (static, quiet) ═══ */}
-        {toolNodes.map((node) => (
-          <g key={node.id} opacity={0.65}>
-            {/* Connection line */}
-            <line x1={node.x} y1={node.y} x2={CX} y2={CY} stroke="rgba(255,255,255,0.03)" strokeWidth="0.15" strokeDasharray="0.8 1.5" />
-            {/* Node */}
-            <circle cx={node.x} cy={node.y} r={TOOL_NODE_R} fill={`${node.color}18`} stroke={node.color} strokeWidth="0.2" />
-            <text x={node.x} y={node.y + 0.5} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.7)" fontSize="2.4" fontFamily="monospace">
-              {iconChar(node)}
-            </text>
-            <text x={node.x} y={node.y + TOOL_NODE_R + 2.2} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="1.5" fontFamily="monospace">
-              {clampLabel(node.label, 9)}
-            </text>
-          </g>
-        ))}
+        {/* ═══ Outer Ring — Tool/Source Nodes (dynamic topology) ═══ */}
+        {toolNodes.map((node) => {
+          const sf = node.sizeFactor ?? 1;
+          const isDiscovered = !node.id.startsWith('def:');
+          const nodeR = isDiscovered
+            ? TOOL_NODE_R_MIN + sf * (TOOL_NODE_R_MAX - TOOL_NODE_R_MIN)
+            : TOOL_NODE_R;
+          const nodeOpacity = isDiscovered ? 0.4 + sf * 0.5 : 0.45;
+          const lineWidth = isDiscovered ? 0.1 + sf * 0.25 : 0.15;
+          return (
+            <g key={node.id} opacity={nodeOpacity}>
+              {/* Connection line — thickness proportional to volume */}
+              <line x1={node.x} y1={node.y} x2={CX} y2={CY} stroke={isDiscovered ? `${node.color}15` : 'rgba(255,255,255,0.03)'} strokeWidth={lineWidth} strokeDasharray="0.8 1.5" />
+              {/* Node */}
+              <circle cx={node.x} cy={node.y} r={nodeR} fill={`${node.color}18`} stroke={node.color} strokeWidth={isDiscovered ? 0.3 : 0.2} />
+              <text x={node.x} y={node.y + 0.5} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.7)" fontSize={isDiscovered ? Math.max(1.8, 2.4 * sf) : 2.4} fontFamily="monospace">
+                {iconChar(node)}
+              </text>
+              <text x={node.x} y={node.y + nodeR + 2.2} textAnchor="middle" fill={isDiscovered ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.35)'} fontSize="1.5" fontFamily="monospace">
+                {clampLabel(node.label, 9)}
+              </text>
+            </g>
+          );
+        })}
 
         {/* ═══ Middle Ring — Persona Nodes (static + breathing) ═══ */}
         {personaNodes.map((node, i) => {
@@ -481,6 +588,16 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
           {inFlightCount} in-flight
         </text>
 
+        {/* Source count (center) */}
+        {discoveredSourcesRef.current.size > 0 && (
+          <>
+            <rect x={38} y={91} width={24} height={5} rx={2.5} fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.15)" strokeWidth="0.3" />
+            <text x={50} y={93.8} textAnchor="middle" dominantBaseline="middle" fill="rgba(245,158,11,0.6)" fontSize="2.2" fontFamily="monospace" letterSpacing="0.06em">
+              {discoveredSourcesRef.current.size} sources
+            </text>
+          </>
+        )}
+
         {/* Agent count (left) */}
         <rect x={4} y={91} width={24} height={5} rx={2.5} fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.15)" strokeWidth="0.3" />
         <text x={16} y={93.8} textAnchor="middle" dominantBaseline="middle" fill="rgba(168,85,247,0.6)" fontSize="2.2" fontFamily="monospace" letterSpacing="0.06em">
@@ -506,6 +623,18 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
               </motion.div>
             ))}
           </AnimatePresence>
+        </div>
+      )}
+
+      {/* ── Dropped events indicator ── */}
+      {droppedCount > 0 && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
+          <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400/70 flex-shrink-0" />
+            <span className="text-xs font-mono text-amber-300/80">
+              {droppedCount.toLocaleString()} earlier event{droppedCount !== 1 ? 's' : ''} not shown
+            </span>
+          </div>
         </div>
       )}
 

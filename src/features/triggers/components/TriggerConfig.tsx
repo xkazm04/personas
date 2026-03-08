@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import type { DbPersonaTrigger } from '@/lib/types/types';
 import { TriggerAddForm } from '@/features/triggers/components/TriggerAddForm';
@@ -11,6 +11,8 @@ export function TriggerConfig() {
   const selectedPersona = usePersonaStore((state) => state.selectedPersona);
   const credentialEvents = usePersonaStore((s) => s.credentialEvents);
   const fetchCredentialEvents = usePersonaStore((s) => s.fetchCredentialEvents);
+  const triggerError = usePersonaStore((s) => s.triggerError);
+  const clearTriggerError = usePersonaStore((s) => s.clearTriggerError);
 
   const personaId = selectedPersona?.id || '';
   const triggers = selectedPersona?.triggers || [];
@@ -69,6 +71,16 @@ export function TriggerConfig() {
           />
         )}
       </AnimatePresence>
+
+      {/* Trigger Error */}
+      {triggerError?.kind === 'crud' && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+          <span className="flex-1">{triggerError.message}</span>
+          <button onClick={clearTriggerError} className="shrink-0 hover:text-red-300 transition-colors">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Trigger List */}
       <div className="space-y-2">

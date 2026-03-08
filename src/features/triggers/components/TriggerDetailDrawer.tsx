@@ -1,9 +1,11 @@
-import { Trash2, Zap, X, Check, Copy, CheckCircle2, Play, Loader2, Terminal, ChevronDown, ChevronRight, History, FlaskConical, ArrowRight, Radio } from 'lucide-react';
+import { Trash2, Zap, X, Check, Copy, CheckCircle2, Play, Loader2, Terminal, ChevronDown, ChevronRight, History, FlaskConical, ArrowRight, Radio, AlertTriangle, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DbPersonaTrigger } from '@/lib/types/types';
-import { parseTriggerConfig } from '@/lib/utils/triggerConstants';
+import { parseTriggerConfig, getWebhookUrl, IS_WEBHOOK_LOCALHOST, type TriggerRateLimitConfig } from '@/lib/utils/triggerConstants';
 import { formatInterval, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
+import type { TriggerRateLimitState } from '@/stores/slices/triggerSlice';
+import { RateLimitControls } from './RateLimitControls';
 import { TRANSITION_NORMAL } from '@/features/templates/animationPresets';
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -13,12 +15,9 @@ interface TriggerDetailDrawerProps {
   credentialEventsList: { id: string; name: string }[];
   detail: ReturnType<typeof useTriggerDetail>;
   onDelete: (triggerId: string) => void;
-}
-
-// ─── Helpers ────────────────────────────────────────────────────────────
-
-function getWebhookUrl(triggerId: string) {
-  return `http://localhost:9420/webhook/${triggerId}`;
+  rateLimit: TriggerRateLimitConfig;
+  rateLimitState?: TriggerRateLimitState | null;
+  onRateLimitChange: (updated: TriggerRateLimitConfig) => void;
 }
 
 // ─── Config Section ─────────────────────────────────────────────────────
@@ -77,6 +76,12 @@ function ConfigSection({ trigger, credentialEventsList, detail }: Pick<TriggerDe
           {config.webhook_secret && (
             <div className="text-sm text-muted-foreground/80">
               HMAC: {'--------'}{config.webhook_secret.slice(-4)}
+            </div>
+          )}
+          {IS_WEBHOOK_LOCALHOST && (
+            <div className="flex items-center gap-1.5 text-sm text-amber-400/80 mt-1">
+              <AlertTriangle className="w-3 h-3 shrink-0" />
+              Dev mode — this URL is only reachable locally
             </div>
           )}
         </div>
@@ -274,6 +279,18 @@ function ActivitySection({ detail }: { detail: ReturnType<typeof useTriggerDetai
                   <Loader2 className="w-3 h-3 animate-spin" />
                   Loading...
                 </div>
+              ) : detail.activityError ? (
+                <div className="flex items-center gap-2 py-2 text-sm text-amber-400/90">
+                  <AlertTriangle className="w-3 h-3 shrink-0" />
+                  Could not load activity
+                  <button
+                    onClick={detail.retryActivityLog}
+                    className="ml-auto flex items-center gap-1 text-sm text-muted-foreground/80 hover:text-foreground transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Retry
+                  </button>
+                </div>
               ) : detail.activityLog.length === 0 ? (
                 <div className="py-2 text-sm text-muted-foreground/80">
                   No runs recorded for this trigger yet
@@ -304,7 +321,7 @@ function ActivitySection({ detail }: { detail: ReturnType<typeof useTriggerDetai
 // ─── Main Drawer ────────────────────────────────────────────────────────
 
 /** Expanded detail panel with config, testing actions, dry-run results, and activity log. */
-export function TriggerDetailDrawer({ trigger, credentialEventsList, detail, onDelete }: TriggerDetailDrawerProps) {
+export function TriggerDetailDrawer({ trigger, credentialEventsList, detail, onDelete, rateLimit, rateLimitState, onRateLimitChange }: TriggerDetailDrawerProps) {
   return (
     <motion.div
       initial={{ height: 0, opacity: 0 }}
@@ -319,6 +336,13 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, detail, onD
 
         {/* Config details */}
         <ConfigSection trigger={trigger} credentialEventsList={credentialEventsList} detail={detail} />
+
+        {/* Rate Limiting */}
+        <RateLimitControls
+          rateLimit={rateLimit}
+          runtimeState={rateLimitState}
+          onChange={onRateLimitChange}
+        />
 
         {/* Test Result */}
         {detail.testResult && (

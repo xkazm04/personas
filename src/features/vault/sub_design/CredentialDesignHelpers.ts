@@ -43,23 +43,31 @@ export type CredentialFlow =
   | { kind: 'provider_oauth'; providerId: string; providerLabel: string }
   | { kind: 'api_key' };
 
-/** Derive the credential flow variant from connector metadata and fields. */
+/** Derive the credential flow variant from connector metadata and fields.
+ *
+ * Priority: explicit `oauthType` metadata > field-name heuristic > api_key fallback.
+ * The field heuristic (client_id + client_secret + refresh_token) is only used
+ * when `oauthType` is absent, to avoid false-positive Google matches for
+ * non-Google OAuth providers that use the same standard field names.
+ */
 export function deriveCredentialFlow(
   oauthType: string | null | undefined,
   fieldKeys: Set<string>,
 ): CredentialFlow {
-  if (
-    oauthType === 'google'
-    || (fieldKeys.has('client_id') && fieldKeys.has('client_secret') && fieldKeys.has('refresh_token'))
-  ) {
+  // 1. Explicit oauthType takes priority
+  if (oauthType === 'google') {
     return { kind: 'google_oauth', providerLabel: 'Google' };
   }
-  if (oauthType && oauthType !== 'google') {
+  if (oauthType) {
     return {
       kind: 'provider_oauth',
       providerId: oauthType,
       providerLabel: oauthType.charAt(0).toUpperCase() + oauthType.slice(1),
     };
+  }
+  // 2. Field-name heuristic only when no oauthType metadata is set
+  if (fieldKeys.has('client_id') && fieldKeys.has('client_secret') && fieldKeys.has('refresh_token')) {
+    return { kind: 'google_oauth', providerLabel: 'Google' };
   }
   return { kind: 'api_key' };
 }

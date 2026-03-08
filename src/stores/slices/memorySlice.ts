@@ -3,6 +3,8 @@ import type { PersonaStore } from "../storeTypes";
 import { errMsg } from "../storeTypes";
 import type { DbPersonaMemory } from "@/lib/types/types";
 import type { MemoryStats, MemoryReviewResult } from "@/api/memories";
+import type { MemoryAction } from "@/features/overview/sub_memories/memoryActions";
+import { extractActionsFromReview, loadActions, saveActions } from "@/features/overview/sub_memories/memoryActions";
 import * as api from "@/api/tauriApi";
 
 export interface MemorySlice {
@@ -10,18 +12,22 @@ export interface MemorySlice {
   memories: DbPersonaMemory[];
   memoriesTotal: number;
   memoryStats: MemoryStats | null;
+  memoryActions: MemoryAction[];
 
   // Actions
   fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string }) => Promise<void>;
   createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] }) => Promise<boolean>;
   deleteMemory: (id: string) => Promise<void>;
   reviewMemories: (personaId?: string) => Promise<MemoryReviewResult>;
+  dismissMemoryAction: (actionId: string) => void;
+  loadMemoryActions: () => void;
 }
 
 export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> = (set, get) => ({
   memories: [],
   memoriesTotal: 0,
   memoryStats: null,
+  memoryActions: loadActions(),
 
   fetchMemories: async (filters?) => {
     try {
@@ -79,9 +85,33 @@ export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> 
   },
 
   reviewMemories: async (personaId?) => {
+    const memoriesBefore = get().memories;
     const result = await api.reviewMemoriesWithCli(personaId);
     // Refresh memories list after review
     await get().fetchMemories();
+
+    // Extract actionable rules from high-scoring memories (8+)
+    if (result.details.length > 0) {
+      const newActions = extractActionsFromReview(result.details, memoriesBefore);
+      if (newActions.length > 0) {
+        const all = [...get().memoryActions, ...newActions];
+        saveActions(all);
+        set({ memoryActions: all });
+      }
+    }
+
     return result;
+  },
+
+  dismissMemoryAction: (actionId) => {
+    const updated = get().memoryActions.map((a) =>
+      a.id === actionId ? { ...a, dismissed: true } : a,
+    );
+    saveActions(updated);
+    set({ memoryActions: updated });
+  },
+
+  loadMemoryActions: () => {
+    set({ memoryActions: loadActions() });
   },
 });

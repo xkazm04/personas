@@ -291,6 +291,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
                     onToggle={() => setTerminalExpanded((v) => !v)}
                     onClear={queryDebug.clear}
                     expandedMaxHeight="max-h-52"
+                    operation="query_debug"
                   />
                 </motion.div>
               )}

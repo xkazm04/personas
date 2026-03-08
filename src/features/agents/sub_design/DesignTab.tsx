@@ -4,15 +4,17 @@ import { DesignTabPhaseContent } from './DesignTabPhaseContent';
 export function DesignTab() {
   const {
     selectedPersona, toolDefinitions, credentials, connectorDefinitions,
-    phase, outputLines, result, error, applyWarnings, question,
+    phase, outputLines, result, error, applyWarnings, failedOperations, question, retryFailed,
     cancelAnalysis, conversations, activeConversationId, removeConversation,
-    instruction, setInstruction, intentMode, setIntentMode,
+    instruction, setInstruction, intentMode,
+    inputMode, setInputMode, examplePairs, setExamplePairs,
     designContext, setDesignContext, refinementMessage, setRefinementMessage,
     selectedTools, handleToolToggle, selectedTriggerIndices, handleTriggerToggle,
     selectedChannelIndices, handleChannelToggle, selectedSubscriptionIndices, handleSubscriptionToggle,
     savedDesignResult, currentToolNames, changeSummary,
     handleStartAnalysis, handleApply, handleRefine, handleSendRefinement,
     handleDiscard, handleReset, handleAnswerQuestion, handleResumeConversation,
+    driftEvents, dismissDriftEvent,
   } = useDesignTabState();
 
   if (!selectedPersona) {
@@ -39,7 +41,10 @@ export function DesignTab() {
       error={error}
       onStartAnalysis={handleStartAnalysis}
       intentMode={intentMode}
-      onIntentModeChange={setIntentMode}
+      inputMode={inputMode}
+      onInputModeChange={setInputMode}
+      examplePairs={examplePairs}
+      onExamplePairsChange={setExamplePairs}
       outputLines={outputLines}
       result={result}
       question={question}
@@ -61,11 +66,16 @@ export function DesignTab() {
       onDiscard={handleDiscard}
       onSendRefinement={handleSendRefinement}
       applyWarnings={applyWarnings}
+      failedOperations={failedOperations}
+      onRetryFailed={retryFailed}
       onReset={handleReset}
       conversations={conversations}
       activeConversationId={activeConversationId}
       onResumeConversation={handleResumeConversation}
       onDeleteConversation={removeConversation}
+      onRetry={handleStartAnalysis}
+      driftEvents={driftEvents}
+      onDismissDrift={dismissDriftEvent}
     />
   );
 }

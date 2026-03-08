@@ -50,12 +50,12 @@ impl CliProvider for CopilotProvider {
     ) -> CliArgs {
         let (command, mut args) = base_cli_setup();
 
-        // copilot -p "<prompt>" --output-format stream-json --yolo
+        // copilot -p "<prompt>" --output-format json --yolo
         args.extend([
             "-p".to_string(),
             String::new(), // placeholder — prompt injected by build_execution_args_with_prompt
             "--output-format".to_string(),
-            "stream-json".to_string(),
+            "json".to_string(),
             "--yolo".to_string(),
         ]);
 
@@ -114,9 +114,11 @@ impl CliProvider for CopilotProvider {
     }
 
     fn parse_stream_line(&self, line: &str) -> (StreamLineType, Option<String>) {
-        // Copilot CLI stream format is not fully documented (technical preview).
-        // We handle both Gemini-style and Codex-style events so whichever
-        // format the actual CLI emits will be parsed correctly.
+        // GitHub Copilot CLI (GA) uses --output-format json with NDJSON events:
+        //   assistant.turn_start, assistant.message_delta, assistant.message,
+        //   assistant.tool.start, assistant.tool.end, assistant.turn_end
+        // We also handle legacy Codex-style and Gemini-style events for
+        // forward/backward compatibility.
         let trimmed = line.trim();
         if trimmed.is_empty() {
             return (StreamLineType::Unknown, None);
@@ -130,7 +132,124 @@ impl CliProvider for CopilotProvider {
         let line_type = value.get("type").and_then(|t| t.as_str()).unwrap_or("");
 
         match line_type {
-            // ── Gemini-style events ──────────────────────────────────────
+            // ── GitHub Copilot CLI (GA) events ───────────────────────────
+
+            "assistant.turn_start" => {
+                let model = value
+                    .pointer("/data/model")
+                    .and_then(|m| m.as_str())
+                    .unwrap_or("unknown")
+                    .to_string();
+                let session_id = value
+                    .pointer("/data/interactionId")
+                    .or_else(|| value.get("id"))
+                    .and_then(|s| s.as_str())
+                    .map(String::from);
+                let display = format!("Session started ({model})");
+                (
+                    StreamLineType::SystemInit { model, session_id },
+                    Some(display),
+                )
+            }
+
+            "assistant.message_delta" => {
+                let delta = value
+                    .pointer("/data/deltaContent")
+                    .and_then(|d| d.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                if !delta.is_empty() {
+                    (
+                        StreamLineType::AssistantText { text: delta.clone() },
+                        Some(delta),
+                    )
+                } else {
+                    (StreamLineType::Unknown, None)
+                }
+            }
+
+            "assistant.message" => {
+                // Complete message with full content
+                if let Some(content) = value.pointer("/data/content").and_then(|c| c.as_str()) {
+                    if !content.is_empty() {
+                        return (
+                            StreamLineType::AssistantText { text: content.to_string() },
+                            Some(content.to_string()),
+                        );
+                    }
+                }
+                // Check for tool requests in the message
+                if let Some(tool_reqs) = value.pointer("/data/toolRequests").and_then(|t| t.as_array()) {
+                    if let Some(req) = tool_reqs.iter().next() {
+                        let name = req.get("toolName")
+                            .or_else(|| req.get("name"))
+                            .and_then(|n| n.as_str())
+                            .unwrap_or("unknown")
+                            .to_string();
+                        let input = req.get("input").cloned().unwrap_or(serde_json::Value::Null);
+                        let input_preview = serde_json::to_string(&input).unwrap_or_default();
+                        let display = format!("> Using tool: {name}");
+                        return (
+                            StreamLineType::AssistantToolUse {
+                                tool_name: name,
+                                input_preview: truncate(&input_preview, 500),
+                            },
+                            Some(display),
+                        );
+                    }
+                }
+                (StreamLineType::Unknown, None)
+            }
+
+            "assistant.tool.start" => {
+                let name = value.pointer("/data/toolName")
+                    .or_else(|| value.pointer("/data/name"))
+                    .and_then(|n| n.as_str())
+                    .unwrap_or("unknown")
+                    .to_string();
+                let input = value.pointer("/data/input").cloned().unwrap_or(serde_json::Value::Null);
+                let input_preview = serde_json::to_string(&input).unwrap_or_default();
+                let display = format!("> Using tool: {name}");
+                (
+                    StreamLineType::AssistantToolUse {
+                        tool_name: name,
+                        input_preview: truncate(&input_preview, 500),
+                    },
+                    Some(display),
+                )
+            }
+
+            "assistant.tool.end" => {
+                let output = value.pointer("/data/output")
+                    .or_else(|| value.pointer("/data/result"))
+                    .and_then(|o| o.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let display = format!("  Tool result: {}", truncate(&output, 200));
+                (
+                    StreamLineType::ToolResult {
+                        content_preview: output,
+                    },
+                    Some(display),
+                )
+            }
+
+            "assistant.turn_end" => {
+                let output_tokens = value.pointer("/data/outputTokens").and_then(|t| t.as_u64());
+                (
+                    StreamLineType::Result {
+                        duration_ms: None,
+                        total_cost_usd: None,
+                        total_input_tokens: None,
+                        total_output_tokens: output_tokens,
+                        model: None,
+                        session_id: None,
+                    },
+                    Some("Completed".to_string()),
+                )
+            }
+
+            // ── Legacy Gemini-style events ───────────────────────────────
 
             "system" => {
                 let subtype = value.get("subtype").and_then(|s| s.as_str()).unwrap_or("");
@@ -611,7 +730,7 @@ mod tests {
         let args = provider.build_execution_args_with_prompt(None, None, "Do the thing");
         assert!(args.args.contains(&"-p".to_string()));
         assert!(args.args.contains(&"Do the thing".to_string()));
-        assert!(args.args.contains(&"stream-json".to_string()));
+        assert!(args.args.contains(&"json".to_string()));
     }
 
     #[test]

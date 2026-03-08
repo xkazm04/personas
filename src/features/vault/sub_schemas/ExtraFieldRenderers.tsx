@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Plus, Trash2, Eye, EyeOff } from 'lucide-react';
 import type { ExtraFieldDef } from './schemaFormTypes';
 
 export function ExtraFieldRenderer({
@@ -62,11 +62,21 @@ function KeyValueListField({
   setState: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
 }) {
   const pairs = (state[def.key] as { key: string; value: string }[]) ?? [];
+  const [visibleIndices, setVisibleIndices] = useState<Set<number>>(new Set());
 
   const update = useCallback(
     (next: { key: string; value: string }[]) => setState((prev) => ({ ...prev, [def.key]: next })),
     [def.key, setState],
   );
+
+  const toggleVisibility = useCallback((index: number) => {
+    setVisibleIndices((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }, []);
 
   return (
     <>
@@ -106,19 +116,38 @@ function KeyValueListField({
                 className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-xl text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder-muted-foreground/30"
               />
               <span className="text-muted-foreground/30">=</span>
-              <input
-                type="text"
-                value={pair.value}
-                onChange={(e) => {
-                  const next = [...pairs];
-                  next[i] = { ...pair, value: e.target.value };
-                  update(next);
-                }}
-                placeholder="value"
-                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-xl text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder-muted-foreground/30"
-              />
+              <div className="flex-1 relative">
+                <input
+                  type={visibleIndices.has(i) ? 'text' : 'password'}
+                  value={pair.value}
+                  onChange={(e) => {
+                    const next = [...pairs];
+                    next[i] = { ...pair, value: e.target.value };
+                    update(next);
+                  }}
+                  placeholder="value"
+                  className="w-full px-2.5 py-1.5 pr-8 bg-background/50 border border-border/50 rounded-xl text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder-muted-foreground/30"
+                />
+                <button
+                  type="button"
+                  onClick={() => toggleVisibility(i)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground/50 hover:text-foreground/80 transition-colors"
+                >
+                  {visibleIndices.has(i) ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
               <button
-                onClick={() => update(pairs.filter((_, j) => j !== i))}
+                onClick={() => {
+                  update(pairs.filter((_, j) => j !== i));
+                  setVisibleIndices((prev) => {
+                    const next = new Set<number>();
+                    for (const idx of prev) {
+                      if (idx < i) next.add(idx);
+                      else if (idx > i) next.add(idx - 1);
+                    }
+                    return next;
+                  });
+                }}
                 className="p-1 text-muted-foreground/40 hover:text-red-400 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />

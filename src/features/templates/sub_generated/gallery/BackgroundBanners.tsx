@@ -1,4 +1,6 @@
-import { Sparkles, RefreshCw, Play } from 'lucide-react';
+import { Sparkles, RefreshCw, Play, FileEdit, X } from 'lucide-react';
+import type { AdoptionDraft } from '@/stores/slices/uiSlice';
+import { ADOPT_STEP_META } from '../adoption/useAdoptReducer';
 
 interface BackgroundBannersProps {
   /** Whether the template adoption is active in the store */
@@ -7,6 +9,13 @@ interface BackgroundBannersProps {
   adoptModalOpen: boolean;
   /** Resume the adoption wizard */
   onResumeAdoption: () => void;
+
+  /** Saved adoption draft (partial progress) */
+  adoptionDraft: AdoptionDraft | null;
+  /** Resume from a saved draft */
+  onResumeDraft: (draft: AdoptionDraft) => void;
+  /** Discard the saved draft */
+  onDiscardDraft: () => void;
 
   /** Background rebuild state */
   rebuildIsActive: boolean;
@@ -31,6 +40,9 @@ export function BackgroundBanners({
   templateAdoptActive,
   adoptModalOpen,
   onResumeAdoption,
+  adoptionDraft,
+  onResumeDraft,
+  onDiscardDraft,
   rebuildIsActive,
   rebuildModalOpen,
   rebuildReviewName,
@@ -40,8 +52,42 @@ export function BackgroundBanners({
   previewReviewName,
   onResumePreview,
 }: BackgroundBannersProps) {
+  // Don't show draft banner if there's an active adoption or the modal is open
+  const showDraftBanner = adoptionDraft && !templateAdoptActive && !adoptModalOpen;
+
   return (
     <>
+      {/* Saved draft banner */}
+      {showDraftBanner && (
+        <div className="mx-4 mt-3 mb-0">
+          <div className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-500/8 border border-amber-500/15">
+            <button
+              onClick={() => onResumeDraft(adoptionDraft)}
+              className="flex-1 flex items-center gap-3 hover:opacity-80 transition-opacity text-left min-w-0"
+            >
+              <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                <FileEdit className="w-4 h-4 text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium text-amber-300 block truncate">
+                  Draft: {adoptionDraft.templateName}
+                </span>
+                <span className="text-sm text-muted-foreground/80">
+                  Step: {ADOPT_STEP_META[adoptionDraft.step].label} — click to resume
+                </span>
+              </div>
+            </button>
+            <button
+              onClick={onDiscardDraft}
+              className="p-1 rounded-lg hover:bg-amber-500/15 text-muted-foreground/50 hover:text-amber-400 transition-colors flex-shrink-0"
+              title="Discard draft"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Background adoption banner */}
       {templateAdoptActive && !adoptModalOpen && (
         <div className="mx-4 mt-3 mb-0">

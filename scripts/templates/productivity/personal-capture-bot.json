@@ -637,6 +637,28 @@
           }
         ]
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Confirmation required for high-priority actions",
+        "context": "High-priority confirmation gate detected"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack notifications for status updates and alerts (periodic digests, critical alerts, completion confirmations, error notifications)",
+        "context": "1 notification channel(s) configured: telegram"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Historical baselines and trend data for comparative analysis",
+        "context": "Tracks: recurring patterns"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits lifecycle events to the event bus for downstream automation",
+        "context": "2 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

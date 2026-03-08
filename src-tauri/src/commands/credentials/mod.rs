@@ -12,4 +12,7 @@ pub(crate) mod shared;
 pub mod db_schema;
 pub mod api_proxy;
 pub mod mcp_tools;
+pub mod desktop;
+pub mod desktop_bridges;
 pub mod query_debug;
+pub mod auth_detect;

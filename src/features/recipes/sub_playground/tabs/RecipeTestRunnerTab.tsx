@@ -341,6 +341,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
                 isExpanded={terminalExpanded}
                 onToggle={() => setTerminalExpanded((p) => !p)}
                 expandedMaxHeight="max-h-48"
+                operation="recipe_execution"
               />
             </div>
           ) : llmOutput ? (

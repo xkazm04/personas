@@ -57,6 +57,15 @@ pub fn delete_team(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, 
 }
 
 #[tauri::command]
+pub fn clone_team(
+    state: State<'_, Arc<AppState>>,
+    source_team_id: String,
+) -> Result<PersonaTeam, AppError> {
+    require_auth_sync(&state)?;
+    repo::clone_team(&state.db, &source_team_id)
+}
+
+#[tauri::command]
 pub fn list_team_members(
     state: State<'_, Arc<AppState>>,
     team_id: String,

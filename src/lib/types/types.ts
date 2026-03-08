@@ -220,10 +220,10 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 export type SidebarSection = "home" | "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "settings";
 export type HomeTab = "welcome" | "system-check";
 export type EditorTab = "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "design" | "health";
-export type OverviewTab = "home" | "system-check" | "executions" | "manual-review" | "messages" | "usage" | "events" | "observability" | "analytics" | "realtime" | "memories" | "budget" | "knowledge" | "sla" | "workflows" | "tier" | "cron-agents";
+export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "cron-agents";
 export type TemplateTab = "n8n" | "generated";
-export type CloudTab = "cloud" | "gitlab";
-export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability";
+export type CloudTab = "cloud" | "gitlab" | "unified";
+export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "admin";
 
 export type CliEngine = "claude_code" | "codex_cli" | "gemini_cli" | "copilot_cli";
 

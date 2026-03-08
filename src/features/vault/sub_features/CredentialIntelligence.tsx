@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Activity, Users, Clock, Shield, AlertTriangle } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { Activity, Users, Clock, Shield, AlertTriangle, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { formatTimestamp, formatRelativeTime } from '@/lib/utils/formatters';
 import {
   getCredentialAuditLog,
@@ -45,7 +45,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
     Promise.all([
       getCredentialUsageStats(credentialId),
       getCredentialDependents(credentialId),
-      getCredentialAuditLog(credentialId, 30),
+      getCredentialAuditLog(credentialId, 500),
     ])
       .then(([s, d, a]) => {
         if (cancelled) return;
@@ -102,7 +102,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
       {tab === 'overview' && stats && (
         <div className="space-y-3">
           {/* Stats grid */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <StatCard
               icon={<Activity className={`w-3.5 h-3.5 ${INFO_STATUS.color}`} />}
               label="Total Accesses"
@@ -190,60 +190,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
 
       {/* Audit log tab */}
       {tab === 'audit' && (
-        <div data-testid="audit-log-tab">
-          {auditLog.length === 0 ? (
-            <div className="text-sm text-muted-foreground/80 py-3 text-center" data-testid="audit-log-empty">
-              No audit entries yet. Operations will be logged as they occur.
-            </div>
-          ) : (
-            <div className="max-h-60 overflow-y-auto pr-1" data-testid="audit-log-timeline">
-              {auditLog.map((entry, idx) => {
-                const op = OP_LABELS[entry.operation] ?? { label: entry.operation, color: 'text-muted-foreground', dot: 'bg-muted-foreground' };
-                const isFirst = idx === 0;
-                const isLast = idx === auditLog.length - 1;
-                return (
-                  <div
-                    key={entry.id}
-                    className="flex gap-3 group"
-                    data-testid={`audit-entry-${entry.id}`}
-                  >
-                    {/* Timeline rail */}
-                    <div className="flex flex-col items-center shrink-0 w-3">
-                      {/* Dot */}
-                      <div
-                        className={`rounded-full shrink-0 ${op.dot} ${
-                          isFirst ? 'w-3 h-3 ring-2 ring-background shadow-sm' : 'w-2 h-2 mt-0.5'
-                        }`}
-                        data-testid={`audit-dot-${entry.id}`}
-                      />
-                      {/* Connecting line */}
-                      {!isLast && (
-                        <div className="flex-1 w-px border-l border-border/20 min-h-[16px]" />
-                      )}
-                    </div>
-
-                    {/* Entry content */}
-                    <div className="flex-1 min-w-0 pb-3">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-sm font-medium shrink-0 ${op.color}`} data-testid={`audit-op-${entry.id}`}>
-                          {op.label}
-                        </span>
-                        <span className="text-sm text-foreground/80 truncate">
-                          {entry.persona_name
-                            ? `by ${entry.persona_name}`
-                            : entry.detail ?? ''}
-                        </span>
-                      </div>
-                      <span className="text-sm text-muted-foreground/60 tabular-nums" data-testid={`audit-time-${entry.id}`}>
-                        {formatRelativeTime(entry.created_at, '')}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <AuditLogTable auditLog={auditLog} />
       )}
     </div>
   );
@@ -251,12 +198,121 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
 
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-2.5 px-3 py-2 bg-secondary/20 border border-primary/10 rounded-xl">
+    <div className="flex items-center gap-2 px-2 py-1.5 bg-secondary/20 border border-primary/10 rounded-xl">
       {icon}
       <div>
-        <div className="text-sm font-semibold text-foreground/90 tabular-nums">{value}</div>
-        <div className="text-sm text-muted-foreground/80">{label}</div>
+        <div className="text-xs font-semibold text-foreground/90 tabular-nums">{value}</div>
+        <div className="text-xs text-muted-foreground/80">{label}</div>
       </div>
+    </div>
+  );
+}
+
+const AUDIT_FILTERS = ['all', 'decrypt', 'create', 'update', 'delete', 'healthcheck'] as const;
+const AUDIT_PAGE_SIZE = 20;
+
+function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }) {
+  const [auditFilter, setAuditFilter] = useState('all');
+  const [auditPage, setAuditPage] = useState(0);
+
+  const filtered = useMemo(() => {
+    if (auditFilter === 'all') return auditLog;
+    return auditLog.filter((e) => e.operation === auditFilter);
+  }, [auditLog, auditFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / AUDIT_PAGE_SIZE));
+  const pageEntries = filtered.slice(auditPage * AUDIT_PAGE_SIZE, (auditPage + 1) * AUDIT_PAGE_SIZE);
+
+  // Reset page when filter changes
+  const handleFilterChange = (f: string) => {
+    setAuditFilter(f);
+    setAuditPage(0);
+  };
+
+  if (auditLog.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground/80 py-3 text-center" data-testid="audit-log-empty">
+        No audit entries yet. Operations will be logged as they occur.
+      </div>
+    );
+  }
+
+  return (
+    <div data-testid="audit-log-tab" className="space-y-2">
+      {/* Filter */}
+      <div className="flex items-center gap-1">
+        {AUDIT_FILTERS.map((f) => (
+          <button
+            key={f}
+            onClick={() => handleFilterChange(f)}
+            className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+              auditFilter === f
+                ? 'bg-primary/15 text-foreground/90 border border-primary/20'
+                : 'text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/30'
+            }`}
+          >
+            {f === 'all' ? 'All' : (OP_LABELS[f]?.label ?? f)}
+          </button>
+        ))}
+        <span className="ml-auto text-xs text-muted-foreground/50">{filtered.length} entries</span>
+      </div>
+
+      {/* Table */}
+      <div className="border border-primary/10 rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-primary/10 bg-secondary/10">
+              <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Operation</th>
+              <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Detail</th>
+              <th className="text-right px-3 py-1.5 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pageEntries.map((entry) => {
+              const op = OP_LABELS[entry.operation] ?? { label: entry.operation, color: 'text-muted-foreground', dot: 'bg-muted-foreground' };
+              return (
+                <tr key={entry.id} className="border-b border-primary/5 last:border-b-0 hover:bg-secondary/10" data-testid={`audit-entry-${entry.id}`}>
+                  <td className="px-3 py-1.5">
+                    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${op.color}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${op.dot}`} />
+                      {op.label}
+                    </span>
+                  </td>
+                  <td className="px-3 py-1.5 text-xs text-foreground/80 truncate max-w-[300px]">
+                    {entry.persona_name ? `by ${entry.persona_name}` : entry.detail ?? ''}
+                  </td>
+                  <td className="px-3 py-1.5 text-xs text-muted-foreground/60 tabular-nums text-right whitespace-nowrap">
+                    {formatRelativeTime(entry.created_at, '')}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => setAuditPage((p) => Math.max(0, p - 1))}
+            disabled={auditPage === 0}
+            className="p-1 rounded hover:bg-secondary/30 disabled:opacity-30 transition-colors"
+          >
+            <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/70" />
+          </button>
+          <span className="text-xs text-muted-foreground/60 tabular-nums">
+            Page {auditPage + 1}/{totalPages}
+          </span>
+          <button
+            onClick={() => setAuditPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={auditPage >= totalPages - 1}
+            className="p-1 rounded hover:bg-secondary/30 disabled:opacity-30 transition-colors"
+          >
+            <ChevronRightIcon className="w-3.5 h-3.5 text-muted-foreground/70" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

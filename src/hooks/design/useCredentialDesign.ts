@@ -26,6 +26,7 @@ export interface CredentialDesignResult {
 
 export function useCredentialDesign() {
   const [savedCredentialId, setSavedCredentialId] = useState<string | null>(null);
+  const [registeredConnectorName, setRegisteredConnectorName] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
 
@@ -90,6 +91,7 @@ export function useCredentialDesign() {
           is_builtin: false,
         });
         createdConnectorId = connector.id;
+        setRegisteredConnectorName(conn.label);
       }
 
       // Create the credential
@@ -123,6 +125,7 @@ export function useCredentialDesign() {
     setIsSaving(false);
     flow.reset();
     setSavedCredentialId(null);
+    setRegisteredConnectorName(null);
   }, [flow.reset]);
 
   const loadTemplate = useCallback((template: CredentialDesignResult) => {
@@ -156,6 +159,7 @@ export function useCredentialDesign() {
     result: flow.result,
     error: flow.error,
     savedCredentialId,
+    registeredConnectorName,
     isSaving,
     start: flow.start,
     cancel,

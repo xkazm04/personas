@@ -18,6 +18,7 @@ import {
 import { useClickOutside } from '@/hooks/utility/useClickOutside';
 import { DraggablePersonaCard } from './DraggablePersonaCard';
 import type { DbPersona, DbPersonaGroup } from '@/lib/types/types';
+import type { DragPayload, DropPayload } from '@/lib/types/frontendTypes';
 
 interface DroppableGroupProps {
   group: DbPersonaGroup;
@@ -50,13 +51,15 @@ export function DroppableGroup({
   isDragActive,
   onPersonaContextMenu,
 }: DroppableGroupProps) {
+  const dropData: DropPayload = { type: 'group', groupId: group.id };
   const { isOver, setNodeRef: setDropRef } = useDroppable({
     id: `group:${group.id}`,
-    data: { type: 'group', groupId: group.id },
+    data: dropData,
   });
+  const dragData: DragPayload = { type: 'group-reorder', groupId: group.id };
   const { attributes, listeners, setNodeRef: setDragRef, transform, isDragging } = useDraggable({
     id: `group-drag:${group.id}`,
-    data: { type: 'group-reorder', groupId: group.id },
+    data: dragData,
   });
   const setNodeRef = useCallback((node: HTMLElement | null) => {
     setDropRef(node);
@@ -141,7 +144,7 @@ export function DroppableGroup({
             </button>
           </div>
         ) : (
-          <span className="text-sm font-medium text-foreground/90 truncate flex-1">{group.name}</span>
+          <span className="text-sm font-medium text-foreground/90 truncate flex-1" title={group.name}>{group.name}</span>
         )}
         {hasWorkspaceDefaults && (
           <Settings2 className="w-3 h-3 text-primary/40 flex-shrink-0" />

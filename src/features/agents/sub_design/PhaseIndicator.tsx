@@ -7,11 +7,12 @@ const STAGES = [
   { key: 'question', label: 'Question' },
   { key: 'review', label: 'Review' },
   { key: 'applied', label: 'Applied' },
+  { key: 'error', label: 'Error' },
 ] as const;
 
 type StageKey = (typeof STAGES)[number]['key'];
 
-/** Map the 7 internal DesignPhase values to 5 visible stage keys */
+/** Map the internal DesignPhase values to visible stage keys */
 function phaseToStageIndex(phase: DesignPhase): number {
   const map = {
     idle: 'input',
@@ -21,6 +22,7 @@ function phaseToStageIndex(phase: DesignPhase): number {
     preview: 'review',
     applying: 'applied',
     applied: 'applied',
+    error: 'error',
   } satisfies Record<DesignPhase, StageKey>;
   const key = map[phase];
   return STAGES.findIndex((s) => s.key === key);
@@ -32,6 +34,8 @@ interface PhaseIndicatorProps {
 
 export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
   const activeIndex = phaseToStageIndex(phase);
+
+  const isError = phase === 'error';
 
   // Don't render when idle — the indicator is only useful once the workflow starts
   if (phase === 'idle') return null;
@@ -59,7 +63,8 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
                   <motion.div
                     layoutId="phase-ring"
                     className={`absolute w-4 h-4 rounded-full ${
-                      phase === 'awaiting-input' ? 'bg-purple-500/20' : 'bg-primary/20'
+                      isError ? 'bg-red-500/20'
+                        : phase === 'awaiting-input' ? 'bg-purple-500/20' : 'bg-primary/20'
                     }`}
                     initial={false}
                     animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0, 0.4] }}
@@ -69,9 +74,11 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
                 <motion.div
                   className={`w-2 h-2 rounded-full transition-colors duration-300 ${
                     isActive
-                      ? phase === 'awaiting-input'
-                        ? 'bg-purple-400 shadow-sm shadow-purple-400/40'
-                        : 'bg-primary shadow-sm shadow-primary/40'
+                      ? isError
+                        ? 'bg-red-400 shadow-sm shadow-red-400/40'
+                        : phase === 'awaiting-input'
+                          ? 'bg-purple-400 shadow-sm shadow-purple-400/40'
+                          : 'bg-primary shadow-sm shadow-primary/40'
                       : isCompleted
                         ? 'bg-emerald-400'
                         : 'bg-secondary/40'
@@ -85,9 +92,11 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
               <span
                 className={`text-sm font-medium truncate transition-colors duration-300 ${
                   isActive
-                    ? phase === 'awaiting-input'
-                      ? 'text-purple-300'
-                      : 'text-foreground/80'
+                    ? isError
+                      ? 'text-red-300'
+                      : phase === 'awaiting-input'
+                        ? 'text-purple-300'
+                        : 'text-foreground/80'
                     : isCompleted
                       ? 'text-emerald-400/70'
                       : 'text-muted-foreground/80'

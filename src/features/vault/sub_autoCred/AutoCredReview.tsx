@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, RefreshCw, Loader2, Save, Database, Plug, AlertTriangle } from 'lucide-react';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
-import type { ExtractedValues } from './types';
+import type { ExtractedValues, ExtractionCompleteness } from './types';
 import { buildConnectorContext } from './types';
 import { savePlaywrightProcedure } from '@/api/autoCredBrowser';
 import { FieldCaptureRow } from '@/features/vault/sub_forms/FieldCaptureRow';
@@ -20,6 +20,7 @@ interface AutoCredReviewProps {
   onCancel: () => void;
   isSaving: boolean;
   isPartial?: boolean;
+  completeness?: ExtractionCompleteness | null;
 }
 
 export function AutoCredReview({
@@ -35,6 +36,7 @@ export function AutoCredReview({
   onCancel,
   isSaving,
   isPartial = false,
+  completeness,
 }: AutoCredReviewProps) {
   const ctx = buildConnectorContext(designResult);
   const isDev = import.meta.env.DEV;
@@ -87,13 +89,15 @@ export function AutoCredReview({
       </div>
 
       {/* Partial extraction warning */}
-      {isPartial && (
+      {(isPartial || completeness?.isPartial) && (
         <div className="flex items-start gap-2.5 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-amber-400">Partial Extraction</p>
             <p className="text-sm text-muted-foreground/70 mt-0.5">
-              Some fields could not be filled automatically. Please complete the missing fields manually before saving.
+              {completeness
+                ? `${completeness.filledRequired} of ${completeness.totalRequired} required fields filled. Complete the missing fields before saving.`
+                : 'Some fields could not be filled automatically. Please complete the missing fields manually before saving.'}
             </p>
           </div>
         </div>
@@ -114,7 +118,7 @@ export function AutoCredReview({
       <div className="space-y-2.5">
         {ctx.fields.map((field) => {
           const isEmpty = !(extractedValues[field.key] ?? '').trim();
-          const isMissing = isPartial && isEmpty && field.required;
+          const isMissing = (completeness?.missingKeys.includes(field.key)) ?? (isPartial && isEmpty && field.required);
           return (
             <div key={field.key} className={isMissing ? 'ring-1 ring-amber-500/30 rounded-lg' : ''}>
               <FieldCaptureRow

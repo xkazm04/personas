@@ -7,12 +7,40 @@ import { createModuleCache, useModuleSubscription } from '@/hooks/utility/useMod
 
 // ── Types ─────────────────────────────────────────────────────────────
 
+/**
+ * Health result storage contract
+ *
+ * Health results exist in three layers with the following priority:
+ *
+ * 1. **Module cache** (authoritative for the current session)
+ *    `resultCache` — a module-level `ModuleCache<string, HealthResult>`.
+ *    Populated by `checkStored`, `checkPreview`, `checkDesign`, or `setResult`.
+ *    Cleared on page reload. This is the source of truth when present.
+ *
+ * 2. **Credential metadata** (persisted, possibly stale)
+ *    `credential.healthcheck_last_success` / `healthcheck_last_message` /
+ *    `healthcheck_last_tested_at` — written by `checkStored` via
+ *    `patchCredentialMetadata` after each healthcheck. Survives reloads.
+ *    Used as a fallback in `CredentialCard` when the module cache has
+ *    no entry for that credential ID.
+ *
+ * 3. **Zustand credentialSlice** (pass-through, not authoritative)
+ *    `credentialSlice.healthcheckCredential` calls the API but does NOT
+ *    cache the result. It exists for one-off calls from non-hook code.
+ *    Consumers should prefer `useCredentialHealth` for cached results.
+ *
+ * When `CredentialCard` falls back to persisted metadata, it marks the
+ * result with `isStale: true` so the UI can show a staleness indicator.
+ */
+
 export interface HealthResult {
   success: boolean;
   message: string;
   /** Only populated for design-flow healthchecks */
   healthcheckConfig?: Record<string, unknown> | null;
   lastSuccessfulTestAt?: string | null;
+  /** True when this result was loaded from persisted metadata rather than a live check. */
+  isStale?: boolean;
 }
 
 type CredentialHealthPreviewTarget = {
@@ -73,12 +101,31 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
     };
   }, [key, targetMode]);
 
+  // Track in-flight checks so we can clean up orphaned refcounts on unmount.
+  const inflightRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      // On unmount, if any checks are still in-flight, their finally blocks
+      // will eventually decrement. But if the component is destroyed due to
+      // an uncaught error boundary, force-clear to prevent stuck loading.
+      if (inflightRef.current > 0) {
+        const count = loadingRefCounts.get(key) ?? 0;
+        const corrected = count - inflightRef.current;
+        if (corrected <= 0) loadingRefCounts.delete(key);
+        else loadingRefCounts.set(key, corrected);
+        inflightRef.current = 0;
+      }
+    };
+  }, [key]);
+
   const result = useModuleSubscription(resultCache, key) ?? null;
   const isHealthchecking = (loadingRefCounts.get(key) ?? 0) > 0;
 
   /** Generic async check: sets loading, runs fn, caches result. */
   const check = useCallback(async (fn: () => Promise<HealthResult>) => {
     beginLoading(key);
+    inflightRef.current += 1;
     resultCache.delete(key);
     resultCache.notify();
     try {
@@ -91,6 +138,7 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
       });
     } finally {
       endLoading(key);
+      inflightRef.current = Math.max(0, inflightRef.current - 1);
       resultCache.notify();
     }
   }, [key]);

@@ -22,14 +22,16 @@ fn well_known_base_url(service_type: &str) -> Option<&'static str> {
         "discord" => Some("https://discord.com/api/v10"),
         "airtable" => Some("https://api.airtable.com"),
         "notion" => Some("https://api.notion.com"),
-        "clickup" => Some("https://api.clickup.com"),
+        "clickup" => Some("https://api.clickup.com/api/v2"),
+        "cal_com" => Some("https://api.cal.com"),
         "calendly" => Some("https://api.calendly.com"),
+        "leonardo_ai" => Some("https://cloud.leonardo.ai/api/rest/v1"),
         "betterstack" => Some("https://uptime.betterstack.com"),
         "mixpanel" => Some("https://mixpanel.com"),
         "twilio_segment" => Some("https://api.segment.io"),
         "monday" | "monday_com" => Some("https://api.monday.com"),
         "linear" => Some("https://api.linear.app"),
-        "circleci" => Some("https://circleci.com"),
+        "circleci" => Some("https://circleci.com/api/v2"),
         "buffer" => Some("https://api.bufferapp.com"),
         "sendgrid" => Some("https://api.sendgrid.com"),
         "resend" => Some("https://api.resend.com"),
@@ -155,7 +157,7 @@ pub async fn execute_api_request(
     let connector_metadata = connector.and_then(|c| c.metadata.as_deref());
 
     let strategy =
-        connector_strategy::registry().get(&credential.service_type, connector_metadata);
+        connector_strategy::registry()?.get(&credential.service_type, connector_metadata);
     let token = strategy
         .resolve_auth_token(connector_metadata, &fields)
         .await?;

@@ -288,6 +288,7 @@ pub async fn synthesize_team_from_templates(
         CreateTeamInput {
             name: team_name.clone(),
             project_id: None,
+            parent_team_id: None,
             description: Some(response.team_description.clone()),
             canvas_data: None,
             team_config: None,

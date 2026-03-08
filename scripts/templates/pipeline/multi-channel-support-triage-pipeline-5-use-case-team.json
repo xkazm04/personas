@@ -900,6 +900,28 @@
         "label": "Cross-Channel Deduplication Rules",
         "content": "1. **Exact match**: Same email address across Zendesk + Intercom → auto-merge (confidence 95%+)\n2. **Handle match**: Twitter handle linked to known customer profile → auto-merge (confidence 85%+)\n3. **Topic similarity**: Same customer + similar keywords within 24h window → suggest merge (confidence 70-85%), require human review below 70%\n4. **Merge strategy**: Keep the earliest ticket as primary, link all others as related. Add internal notes on each with cross-references.\n5. **Never auto-merge**: Different customers, different topics, or items older than 48 hours apart"
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Escalation to human for critical or ambiguous items",
+        "context": "Escalation logic detected in instructions"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack alerts plus email digests and summaries (periodic digests, critical alerts, completion confirmations, error notifications)",
+        "context": "3 notification channel(s) configured: slack, slack, email"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Processing state and deduplication memory across runs",
+        "context": "Inferred from template role — persistent state enables continuity across executions"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: item created, threshold breached, escalation triggered",
+        "context": "5 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

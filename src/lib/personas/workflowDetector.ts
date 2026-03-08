@@ -162,11 +162,8 @@ export function countElements(json: Record<string, unknown>): { count: number; l
 
 /** Render-friendly platform label for preview summaries. */
 export function detectPlatformLabel(json: Record<string, unknown>): string {
-  if (Array.isArray(json.nodes)) return 'n8n';
-  if (Array.isArray(json.steps) || (json.trigger && Array.isArray(json.actions))) return 'Zapier';
-  if (json.blueprint || Array.isArray(json.flow) || Array.isArray(json.modules)) return 'Make';
-  if (json.jobs && typeof json.jobs === 'object') return 'GitHub Actions';
-  return 'Workflow';
+  const result = detectWorkflowPlatform(json, '.json');
+  return result.platform === 'unknown' ? 'Workflow' : result.label;
 }
 
 export { PLATFORM_LABELS };

@@ -818,6 +818,28 @@
           }
         ]
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Approval workflow for high-impact actions",
+        "context": "Approval workflow detected in instructions"
+      },
+      {
+        "type": "user_message",
+        "label": "Real-time Slack notifications for status updates and alerts (periodic digests, critical alerts, completion confirmations, error notifications)",
+        "context": "1 notification channel(s) configured: slack"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Persistent state across runs for pattern recognition and deduplication",
+        "context": "Tracks: human review outcomes, calibrated thresholds"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: execution completed, execution failed, item created, threshold breached",
+        "context": "2 event subscription(s) configured — agent participates in event bus"
+      }
     ]
   }
 }

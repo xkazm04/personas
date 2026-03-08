@@ -10,6 +10,7 @@ use ts_rs::TS;
 pub struct PersonaTeam {
     pub id: String,
     pub project_id: Option<String>,
+    pub parent_team_id: Option<String>,
     pub name: String,
     pub description: Option<String>,
     pub canvas_data: Option<String>,
@@ -26,6 +27,7 @@ pub struct PersonaTeam {
 pub struct CreateTeamInput {
     pub name: String,
     pub project_id: Option<String>,
+    pub parent_team_id: Option<String>,
     pub description: Option<String>,
     pub canvas_data: Option<String>,
     pub team_config: Option<String>,

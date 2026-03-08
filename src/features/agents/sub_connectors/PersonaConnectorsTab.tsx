@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, CheckCircle2, AlertCircle, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
@@ -9,7 +9,10 @@ import { AutomationsSection } from './AutomationsSection';
 import { AutomationSetupModal } from './AutomationSetupModal';
 import { ConnectorStatusCard } from './ConnectorStatusCard';
 import { UseCaseSubscriptionsSection } from './UseCaseSubscriptionsSection';
+import { AgentCredentialDemands } from './AgentCredentialDemands';
 import { useConnectorStatuses } from './useConnectorStatuses';
+import { getRoleForConnector, getAlternatives } from '@/lib/credentials/connectorRoles';
+import type { ConnectorStatus } from './connectorTypes';
 
 interface PersonaConnectorsTabProps {
   onMissingCountChange?: (count: number) => void;
@@ -20,8 +23,8 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
 
   const {
     statuses, tools, requiredCredTypes, credentials,
-    testingAll, fetchCredentials, testConnector,
-    handleTestAll, handleLinkCredential,
+    testingAll, readinessCounts, fetchCredentials, testConnector,
+    handleTestAll, handleLinkCredential, clearLinkError,
   } = useConnectorStatuses();
 
   const [linkingConnector, setLinkingConnector] = useState<string | null>(null);
@@ -42,9 +45,40 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
     void fetchCredentials().catch(() => {});
   };
 
-  const onLink = (connectorName: string, credentialId: string, credentialName: string) => {
-    handleLinkCredential(connectorName, credentialId, credentialName);
+  // Group statuses by functional role
+  const roleGroups = useMemo(() => {
+    const groups: { roleLabel: string; items: ConnectorStatus[] }[] = [];
+    const grouped = new Set<string>();
+
+    for (const s of statuses) {
+      if (grouped.has(s.name)) continue;
+      const role = getRoleForConnector(s.name);
+      if (role) {
+        // Collect all statuses that share this role
+        const members = statuses.filter((st) => role.members.includes(st.name));
+        for (const m of members) grouped.add(m.name);
+        groups.push({ roleLabel: role.label, items: members });
+      } else {
+        grouped.add(s.name);
+        groups.push({ roleLabel: '', items: [s] });
+      }
+    }
+    return groups;
+  }, [statuses]);
+
+  const handleSwap = (_currentName: string, newName: string) => {
+    // Swap means: user wants newName instead of currentName.
+    // Open credential design for the new connector so they can link it.
+    handleAddCredential(newName);
+  };
+
+  const onLink = async (connectorName: string, credentialId: string, credentialName: string) => {
     setLinkingConnector(null);
+    const success = await handleLinkCredential(connectorName, credentialId, credentialName);
+    if (!success) {
+      // Re-open the linking dropdown so the user can try again
+      setLinkingConnector(connectorName);
+    }
   };
 
   if (!selectedPersona) {
@@ -55,27 +89,42 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
     );
   }
 
-  const testableCount = statuses.filter((s) => s.credentialId).length;
-  const readyCount = statuses.filter((s) => s.result?.success).length;
-  const missingCount = statuses.filter((s) => !s.credentialId).length;
+  const { unlinked, healthy, unhealthy } = readinessCounts;
+  const testableCount = statuses.length - unlinked;
 
-  // Report missing count to parent
+  // Report unlinked count to parent (blocks execution)
   useEffect(() => {
-    onMissingCountChange?.(missingCount);
-  }, [missingCount, onMissingCountChange]);
+    onMissingCountChange?.(unlinked);
+  }, [unlinked, onMissingCountChange]);
 
   return (
     <div className="space-y-6">
-      {/* Readiness warning */}
-      {missingCount > 0 && (
+      {/* Demand-driven credential prompts */}
+      <AgentCredentialDemands />
+
+      {/* Readiness warnings */}
+      {unlinked > 0 && (
         <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/15">
           <AlertTriangle className="w-4 h-4 text-amber-400/70 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
             <p className="font-medium text-amber-400/80">
-              {missingCount} connector{missingCount !== 1 ? 's' : ''} need credentials before execution
+              {unlinked} connector{unlinked !== 1 ? 's' : ''} missing credentials — execution blocked
             </p>
             <p className="text-amber-400/50 mt-0.5">
               Link or create credentials for all connectors to enable execution.
+            </p>
+          </div>
+        </div>
+      )}
+      {unlinked === 0 && unhealthy > 0 && (
+        <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-500/5 border border-red-500/15">
+          <AlertCircle className="w-4 h-4 text-red-400/70 flex-shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-red-400/80">
+              {unhealthy} connector{unhealthy !== 1 ? 's' : ''} failed healthcheck — execution may fail at runtime
+            </p>
+            <p className="text-red-400/50 mt-0.5">
+              Re-test or re-link credentials for failing connectors.
             </p>
           </div>
         </div>
@@ -99,16 +148,22 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
             label={`${requiredCredTypes.length} connector${requiredCredTypes.length !== 1 ? 's' : ''} required`}
             badge={(
               <>
-                {readyCount > 0 && (
+                {healthy > 0 && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                     <CheckCircle2 className="w-2.5 h-2.5" />
-                    {readyCount} ready
+                    {healthy} healthy
                   </span>
                 )}
-                {missingCount > 0 && (
+                {unhealthy > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-red-500/10 border border-red-500/20 text-red-400">
+                    <AlertCircle className="w-2.5 h-2.5" />
+                    {unhealthy} failed
+                  </span>
+                )}
+                {unlinked > 0 && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
                     <AlertCircle className="w-2.5 h-2.5" />
-                    {missingCount} missing
+                    {unlinked} missing
                   </span>
                 )}
               </>
@@ -126,17 +181,30 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
           />
 
           <div className="space-y-2">
-            {statuses.map((status) => (
-              <ConnectorStatusCard
-                key={status.name}
-                status={status}
-                isLinking={linkingConnector === status.name}
-                credentials={credentials}
-                onTest={(name, credId) => void testConnector(name, credId)}
-                onToggleLinking={setLinkingConnector}
-                onLinkCredential={onLink}
-                onAddCredential={handleAddCredential}
-              />
+            {roleGroups.map((group) => (
+              <div key={group.items.map((s) => s.name).join(',')} className="space-y-2">
+                {group.roleLabel && group.items.length > 1 && (
+                  <p className="text-[11px] font-semibold text-muted-foreground/40 uppercase tracking-wider px-1 pt-1">
+                    {group.roleLabel}
+                  </p>
+                )}
+                {group.items.map((status) => (
+                  <ConnectorStatusCard
+                    key={status.name}
+                    status={status}
+                    isLinking={linkingConnector === status.name}
+                    credentials={credentials}
+                    onTest={(name, credId) => void testConnector(name, credId)}
+                    onToggleLinking={setLinkingConnector}
+                    onLinkCredential={onLink}
+                    onAddCredential={handleAddCredential}
+                    onClearLinkError={clearLinkError}
+                    roleLabel={group.roleLabel || undefined}
+                    alternatives={getAlternatives(status.name)}
+                    onSwap={handleSwap}
+                  />
+                ))}
+              </div>
             ))}
           </div>
         </div>

@@ -79,6 +79,12 @@ export default function GitLabPanel() {
     usePersonaStore.setState({ gitlabSelectedProjectId: id });
   };
 
+  const handleDeploySuccess = useCallback(() => {
+    if (selectedProjectId) {
+      fetchAgents(selectedProjectId);
+    }
+  }, [selectedProjectId, fetchAgents]);
+
   const handleCreateFromTemplate = useCallback(async (template: CiCdTemplate): Promise<string> => {
     const persona = await createPersona({
       name: template.name,
@@ -134,6 +140,7 @@ export default function GitLabPanel() {
               onSelectProject={handleSelectProject}
               onFetchProjects={fetchProjects}
               onDeploy={deployPersona}
+              onDeploySuccess={handleDeploySuccess}
               onCreateFromTemplate={handleCreateFromTemplate}
               gitlabTier="free"
             />

@@ -47,6 +47,7 @@ export function CredentialCard({
         : {
             success: credential.healthcheck_last_success,
             message: credential.healthcheck_last_message ?? 'Stored connection test result',
+            isStale: true,
           }
     ), [healthcheckResult, credential.healthcheck_last_success, credential.healthcheck_last_message]);
 
