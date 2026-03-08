@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput';
-import { IMPORTANCE_MIN, IMPORTANCE_MAX, IMPORTANCE_DEFAULT } from './memoryConstants';
+import { IMPORTANCE_MIN, IMPORTANCE_MAX, IMPORTANCE_DEFAULT } from '../libs/memoryConstants';
 
 const CATEGORIES = ['observation', 'decision', 'context', 'learning'] as const;
 
