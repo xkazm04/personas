@@ -10,14 +10,14 @@
   "service_flow": [
     "Gmail",
     "Web Search",
-    "SQLite",
+    "Built-in Database",
     "Slack"
   ],
   "payload": {
     "service_flow": [
       "Gmail",
       "Web Search",
-      "SQLite",
+      "Built-in Database",
       "Slack"
     ],
     "structured_prompt": {
@@ -182,25 +182,16 @@
         "category": "messaging"
       },
       {
-        "name": "sqlite",
-        "label": "SQLite Database",
+        "name": "personas_database",
+        "label": "Built-in Database",
         "auth_type": "api_key",
-        "credential_fields": [
-          {
-            "key": "database_path",
-            "label": "Database File Path",
-            "type": "text",
-            "placeholder": "/data/product-scout.db",
-            "helpText": "Path to the SQLite database file. Will be created if it doesn't exist. Tables are created during adoption.",
-            "required": true
-          }
-        ],
-        "setup_instructions": "1. Choose a persistent storage location for the SQLite database\n2. The adoption wizard will create the required tables (scout_opportunities, scout_seen_urls) automatically\n3. Ensure the agent process has read/write access to the database file path",
+        "credential_fields": [],
+        "setup_instructions": "No setup required — the built-in SQLite database is always available. Tables are created automatically during the adoption wizard.",
         "related_tools": [
           "http_request"
         ],
         "related_triggers": [],
-        "api_base_url": "sqlite:///local",
+        "api_base_url": "sqlite:///internal",
         "role": "data_store",
         "category": "database"
       }
@@ -276,7 +267,7 @@
             "type": "connector",
             "label": "Dedup URLs against SQLite",
             "detail": "SELECT url FROM scout_seen_urls WHERE url = ? for each extracted URL",
-            "connector": "sqlite"
+            "connector": "personas_database"
           },
           {
             "id": "n7",
@@ -301,7 +292,7 @@
             "type": "connector",
             "label": "Store in SQLite",
             "detail": "INSERT into scout_opportunities and scout_seen_urls tables",
-            "connector": "sqlite"
+            "connector": "personas_database"
           },
           {
             "id": "n11",
@@ -382,7 +373,7 @@
             "type": "connector",
             "label": "Update status → accepted",
             "detail": "UPDATE scout_opportunities SET status='accepted', triaged_at=CURRENT_TIMESTAMP WHERE id=?",
-            "connector": "sqlite"
+            "connector": "personas_database"
           },
           {
             "id": "n4",
@@ -401,7 +392,7 @@
             "type": "connector",
             "label": "Update status → rejected",
             "detail": "UPDATE scout_opportunities SET status='rejected', rejection_reason=?, triaged_at=CURRENT_TIMESTAMP WHERE id=?",
-            "connector": "sqlite"
+            "connector": "personas_database"
           },
           {
             "id": "n7",
