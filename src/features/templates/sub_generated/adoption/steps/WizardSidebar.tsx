@@ -15,6 +15,7 @@ export interface WizardSidebarStep {
 const STEP_DESCRIPTIONS: Record<AdoptWizardStep, string> = {
   choose: 'Pick capabilities',
   connect: 'Link credentials',
+  data: 'Setup tables',
   tune: 'Set preferences',
   build: 'Generate persona',
   create: 'Review & save',

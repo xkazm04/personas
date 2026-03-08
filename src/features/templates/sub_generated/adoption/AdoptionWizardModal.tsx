@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -11,6 +11,7 @@ import {
   RefreshCw,
   ListChecks,
   Plug,
+  Database,
   Sliders,
   Hammer,
   CirclePlus,
@@ -24,13 +25,14 @@ import {
   WizardSidebar,
   ChooseStep,
   ConnectStep,
+  DataStep,
   TuneStep,
   BuildStep,
   CreateStep,
   QuickAdoptConfirm,
 } from './steps';
 import type { WizardSidebarStep } from './steps';
-import type { AdoptWizardStep } from './useAdoptReducer';
+import { hasDataStep, type AdoptWizardStep } from './useAdoptReducer';
 import {
   AdoptionWizardProvider,
   useAdoptionWizard,
@@ -51,7 +53,7 @@ interface AdoptionWizardModalProps {
 
 // ── Sidebar step config ────────────────────────────────────────────────
 
-const SIDEBAR_STEPS: WizardSidebarStep[] = [
+const BASE_SIDEBAR_STEPS: WizardSidebarStep[] = [
   { key: 'choose',  label: 'Use Cases', Icon: ListChecks },
   { key: 'connect', label: 'Connect',   Icon: Plug },
   { key: 'tune',    label: 'Configure', Icon: Sliders },
@@ -59,12 +61,15 @@ const SIDEBAR_STEPS: WizardSidebarStep[] = [
   { key: 'create',  label: 'Review',    Icon: CirclePlus },
 ];
 
+const DATA_STEP: WizardSidebarStep = { key: 'data', label: 'Data', Icon: Database };
+
 // ── Step content map ───────────────────────────────────────────────────
 // Replaces the large inline switch with a declarative component map.
 
 const STEP_COMPONENTS: Record<AdoptWizardStep, React.ComponentType> = {
   choose: ChooseStep,
   connect: ConnectStep,
+  data: DataStep,
   tune: TuneStep,
   build: BuildStep,
   create: CreateStep,
@@ -119,6 +124,17 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
     saveDraftToStore,
   } = useAdoptionWizard();
 
+  // Conditionally include Data step when template has a database connector
+  const needsDataStep = useMemo(() => hasDataStep(state), [state]);
+  const sidebarSteps = useMemo<WizardSidebarStep[]>(() => {
+    if (!needsDataStep) return BASE_SIDEBAR_STEPS;
+    // Insert Data step after Connect
+    const idx = BASE_SIDEBAR_STEPS.findIndex((s) => s.key === 'connect');
+    const copy = [...BASE_SIDEBAR_STEPS];
+    copy.splice(idx + 1, 0, DATA_STEP);
+    return copy;
+  }, [needsDataStep]);
+
   // ── Close handler ──
 
   const handleClose = useCallback(() => {
@@ -163,12 +179,19 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
           (c) => c.activeName !== 'personas_messages' && c.activeName !== 'personas_database' && !state.connectorCredentialMap[c.activeName],
         ).length;
         return {
-          label: unconfigured > 0 ? `Configure (${unconfigured} remaining)` : 'Configure',
+          label: unconfigured > 0 ? `Configure (${unconfigured} remaining)` : needsDataStep ? 'Next: Data Setup' : 'Configure',
           icon: ArrowRight,
           disabled: unconfigured > 0,
           variant: 'violet',
         };
       }
+      case 'data':
+        return {
+          label: 'Next: Configure',
+          icon: ArrowRight,
+          disabled: false,
+          variant: 'violet',
+        };
       case 'tune':
         if (state.questionGenerating) {
           return { label: 'Analyzing...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true };
@@ -284,7 +307,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
         ) : (
           <div className="flex flex-1 min-h-0">
             <WizardSidebar
-              steps={SIDEBAR_STEPS}
+              steps={sidebarSteps}
               currentStep={state.step}
               completedSteps={completedSteps}
               onStepClick={handleSidebarStepClick}

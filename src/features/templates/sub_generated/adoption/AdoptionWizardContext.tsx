@@ -33,6 +33,7 @@ import {
   useAdoptReducer,
   ADOPT_STEPS,
   ADOPT_STEP_META,
+  hasDataStep,
   type AdoptWizardStep,
   type AdoptState,
 } from './useAdoptReducer';
@@ -54,7 +55,11 @@ export const STEP_TRANSITIONS: Record<
   (state: AdoptState) => StepTransition
 > = {
   choose: () => ({ action: 'navigate', target: 'connect' }),
-  connect: () => ({ action: 'navigate', target: 'tune' }),
+  connect: (s) => ({
+    action: 'navigate',
+    target: hasDataStep(s) ? 'data' : 'tune',
+  }),
+  data: () => ({ action: 'navigate', target: 'tune' }),
   tune: (s) =>
     s.backgroundAdoptId
       ? { action: 'continue' }

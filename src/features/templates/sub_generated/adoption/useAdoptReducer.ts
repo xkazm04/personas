@@ -28,11 +28,12 @@ export interface PersistedAdoptContext {
 
 // ── Wizard Steps ──
 
-export type AdoptWizardStep = 'choose' | 'connect' | 'tune' | 'build' | 'create';
+export type AdoptWizardStep = 'choose' | 'connect' | 'data' | 'tune' | 'build' | 'create';
 
 export const ADOPT_STEPS: readonly AdoptWizardStep[] = [
   'choose',
   'connect',
+  'data',
   'tune',
   'build',
   'create',
@@ -41,9 +42,10 @@ export const ADOPT_STEPS: readonly AdoptWizardStep[] = [
 export const ADOPT_STEP_META: Record<AdoptWizardStep, { label: string; index: number }> = {
   choose:  { label: 'Choose',  index: 0 },
   connect: { label: 'Connect', index: 1 },
-  tune:    { label: 'Tune',    index: 2 },
-  build:   { label: 'Build',   index: 3 },
-  create:  { label: 'Create',  index: 4 },
+  data:    { label: 'Data',    index: 2 },
+  tune:    { label: 'Tune',    index: 3 },
+  build:   { label: 'Build',   index: 4 },
+  create:  { label: 'Create',  index: 5 },
 };
 
 // ── Helpers ──
@@ -154,6 +156,9 @@ export interface AdoptState {
   showEditInline: boolean;
   error: string | null;
 
+  // Data step
+  dataSchemaReady: boolean;
+
   // Auto-adoption
   autoResolved: boolean;
 }
@@ -200,6 +205,7 @@ const INITIAL_STATE: AdoptState = {
   partialEntityErrors: [],
   showEditInline: false,
   error: null,
+  dataSchemaReady: false,
   autoResolved: false,
 };
 
@@ -210,6 +216,19 @@ function prefillDefaults(questions: TransformQuestionResponse[]): Record<string,
   }, {});
 }
 
+/** Check if the current template needs the Data step (has a database connector). */
+function hasDataStep(s: AdoptState): boolean {
+  const connectors = s.designResult?.suggested_connectors ?? [];
+  const DATABASE_CONNECTORS = new Set([
+    'personas_database', 'supabase', 'neon', 'planetscale',
+    'postgres', 'mongodb', 'duckdb', 'sqlite',
+  ]);
+  return connectors.some((c) => DATABASE_CONNECTORS.has(c.name));
+}
+
+/** Exported for use in context/modal to conditionally show the Data sidebar step. */
+export { hasDataStep };
+
 // ── Hook ──
 
 export function useAdoptReducer() {
@@ -219,7 +238,8 @@ export function useAdoptReducer() {
     canGoBack: (s) => s.step !== 'choose' && !s.transforming && !s.confirming && !s.questionGenerating,
     goBack: (s, goToStep) => {
       if (s.step === 'connect') goToStep('choose');
-      else if (s.step === 'tune') goToStep('connect');
+      else if (s.step === 'data') goToStep('connect');
+      else if (s.step === 'tune') goToStep(s.dataSchemaReady || hasDataStep(s) ? 'data' : 'connect');
       else if (s.step === 'build') goToStep('tune');
       else if (s.step === 'create') {
         if (s.draft) goToStep('build');
