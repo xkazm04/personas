@@ -184,7 +184,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
             {roleGroups.map((group) => (
               <div key={group.items.map((s) => s.name).join(',')} className="space-y-2">
                 {group.roleLabel && group.items.length > 1 && (
-                  <p className="text-[11px] font-semibold text-muted-foreground/40 uppercase tracking-wider px-1 pt-1">
+                  <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-1 pt-1">
                     {group.roleLabel}
                   </p>
                 )}

@@ -128,7 +128,7 @@ export function ImportPreview({
                           <p className="text-[11px] text-muted-foreground/50 truncate">{secret.sourcePath}</p>
                         )}
                       </div>
-                      <span className="text-sm text-muted-foreground/40 font-mono">
+                      <span className="text-sm text-muted-foreground/60 font-mono">
                         {secret.value.slice(0, 4)}{'...'}
                       </span>
                     </label>

@@ -620,7 +620,7 @@ function OutputBox({ label, text, accent }: { label: string; text: string; accen
         {label}
       </div>
       <div className="px-2.5 py-2 text-xs text-foreground/70 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">
-        {text || <span className="text-muted-foreground/40 italic">No output</span>}
+        {text || <span className="text-muted-foreground/60 italic">No output</span>}
       </div>
     </div>
   );

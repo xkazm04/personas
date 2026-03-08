@@ -136,7 +136,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
           <div className="flex flex-col items-center justify-center py-16 space-y-2">
             <Server className="w-8 h-8 text-muted-foreground/15" />
             <p className="text-sm text-muted-foreground/50">No tools found on this MCP server</p>
-            <p className="text-sm text-muted-foreground/30">
+            <p className="text-sm text-muted-foreground/60">
               The server responded but reported no available tools.
             </p>
           </div>
@@ -161,7 +161,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
         {currentTool && (
           <div className="border-t border-primary/8 pt-4 space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm uppercase tracking-wider text-muted-foreground/30 font-semibold">
+              <span className="text-sm uppercase tracking-wider text-muted-foreground/60 font-semibold">
                 Test Tool
               </span>
               <span className="font-mono text-sm text-foreground/70">{currentTool.name}</span>
@@ -244,7 +244,7 @@ function ToolRow({
         </span>
 
         {tool.description && (
-          <span className="text-sm text-muted-foreground/40 truncate max-w-[300px] hidden sm:inline">
+          <span className="text-sm text-muted-foreground/60 truncate max-w-[300px] hidden sm:inline">
             {tool.description}
           </span>
         )}
@@ -265,10 +265,10 @@ function ToolRow({
           )}
           {tool.input_schema && (
             <div className="space-y-1">
-              <span className="text-sm uppercase tracking-wider text-muted-foreground/30 font-semibold">
+              <span className="text-sm uppercase tracking-wider text-muted-foreground/60 font-semibold">
                 Input Schema
               </span>
-              <pre className="text-sm text-muted-foreground/40 font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[200px]">
+              <pre className="text-sm text-muted-foreground/60 font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[200px]">
                 {JSON.stringify(tool.input_schema, null, 2)}
               </pre>
             </div>
@@ -293,7 +293,7 @@ function ToolInputForm({
   const schema = tool.input_schema as Record<string, unknown> | null;
   if (!schema) {
     return (
-      <p className="text-sm text-muted-foreground/40">This tool takes no input parameters.</p>
+      <p className="text-sm text-muted-foreground/60">This tool takes no input parameters.</p>
     );
   }
 
@@ -303,7 +303,7 @@ function ToolInputForm({
 
   if (keys.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground/40">This tool takes no input parameters.</p>
+      <p className="text-sm text-muted-foreground/60">This tool takes no input parameters.</p>
     );
   }
 
@@ -324,7 +324,7 @@ function ToolInputForm({
               <span className="text-sm text-violet-400/50">{propType}</span>
             </div>
             {description && (
-              <p className="text-sm text-muted-foreground/40">{description}</p>
+              <p className="text-sm text-muted-foreground/60">{description}</p>
             )}
             {isComplex ? (
               <textarea
@@ -378,7 +378,7 @@ function ToolResultDisplay({ result }: { result: McpToolResult }) {
             Success
           </span>
         )}
-        <span className="flex items-center gap-1 text-sm text-muted-foreground/40">
+        <span className="flex items-center gap-1 text-sm text-muted-foreground/60">
           <Clock className="w-3 h-3" />
           {result.duration_ms}ms
         </span>
@@ -388,7 +388,7 @@ function ToolResultDisplay({ result }: { result: McpToolResult }) {
       {result.content.map((block, i) => (
         <div key={i} className="rounded-lg border border-primary/8 overflow-hidden">
           {block.content_type !== 'text' && (
-            <div className="px-3 py-1 text-sm text-muted-foreground/30 bg-secondary/20 border-b border-primary/5">
+            <div className="px-3 py-1 text-sm text-muted-foreground/60 bg-secondary/20 border-b border-primary/5">
               {block.content_type}
             </div>
           )}
@@ -409,7 +409,7 @@ function EmptyState({ onDiscover }: { onDiscover: () => void }) {
       <Server className="w-10 h-10 text-muted-foreground/15" />
       <div className="text-center space-y-1">
         <p className="text-sm text-muted-foreground/50">Discover MCP server tools</p>
-        <p className="text-sm text-muted-foreground/30">
+        <p className="text-sm text-muted-foreground/60">
           Connect to the MCP server to discover available tools and test them.
         </p>
       </div>

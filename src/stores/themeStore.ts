@@ -11,6 +11,8 @@ export type ThemeId =
   | 'dark-red'
   | 'light';
 
+export type TextScale = 'large' | 'larger';
+
 export interface ThemeDefinition {
   id: ThemeId;
   label: string;
@@ -28,8 +30,13 @@ export const THEMES: ThemeDefinition[] = [
   { id: 'dark-frost', label: 'Frost', primaryColor: '#e2e8f0', accentColor: '#f8fafc', backgroundSample: '#0f1115', foregroundSample: '#f1f5f9', isLight: false },
   { id: 'dark-purple', label: 'Purple', primaryColor: '#a855f7', accentColor: '#c084fc', backgroundSample: '#0e0a14', foregroundSample: '#f3e8ff', isLight: false },
   { id: 'dark-pink', label: 'Pink', primaryColor: '#ec4899', accentColor: '#f472b6', backgroundSample: '#140a10', foregroundSample: '#fce7f3', isLight: false },
-  { id: 'dark-red', label: 'Red', primaryColor: '#ef4444', accentColor: '#f87171', backgroundSample: '#140a0a', foregroundSample: '#fee2e2', isLight: false },
+  { id: 'dark-red', label: 'Red', primaryColor: '#cc0000', accentColor: '#e60000', backgroundSample: '#080808', foregroundSample: '#ededed', isLight: false },
   { id: 'light', label: 'Light', primaryColor: '#2554b0', accentColor: '#3568c7', backgroundSample: '#f0ede6', foregroundSample: '#1c1c28', isLight: true },
+];
+
+export const TEXT_SCALES: { id: TextScale; label: string; description: string }[] = [
+  { id: 'large', label: 'Standard', description: 'Default text size' },
+  { id: 'larger', label: 'Larger', description: 'Maximum readability' },
 ];
 
 let transitionTimer: ReturnType<typeof setTimeout> | undefined;
@@ -49,24 +56,38 @@ function applyTheme(id: ThemeId) {
   }
 }
 
+function applyTextScale(scale: TextScale) {
+  document.documentElement.setAttribute('data-text-scale', scale);
+}
+
 interface ThemeState {
   themeId: ThemeId;
+  textScale: TextScale;
   setTheme: (id: ThemeId) => void;
+  setTextScale: (scale: TextScale) => void;
 }
 
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
       themeId: 'dark-midnight' as ThemeId,
+      textScale: 'large' as TextScale,
       setTheme: (id: ThemeId) => {
         applyTheme(id);
         set({ themeId: id });
+      },
+      setTextScale: (scale: TextScale) => {
+        applyTextScale(scale);
+        set({ textScale: scale });
       },
     }),
     {
       name: 'persona-theme',
       onRehydrateStorage: () => (state) => {
-        if (state) applyTheme(state.themeId);
+        if (state) {
+          applyTheme(state.themeId);
+          applyTextScale(state.textScale ?? 'large');
+        }
       },
     }
   )

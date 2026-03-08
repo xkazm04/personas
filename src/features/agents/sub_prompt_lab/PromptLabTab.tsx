@@ -74,7 +74,7 @@ export function PromptLabTab() {
           <div className="text-center py-8 space-y-2">
             <GitBranch className="w-8 h-8 text-muted-foreground/20 mx-auto" />
             <p className="text-sm text-muted-foreground/60">No versions yet</p>
-            <p className="text-sm text-muted-foreground/40">Versions are created automatically when you edit the prompt</p>
+            <p className="text-sm text-muted-foreground/60">Versions are created automatically when you edit the prompt</p>
           </div>
         ) : pv.filteredCount === 0 ? (
           <div className="text-center py-8 space-y-2">
@@ -93,7 +93,7 @@ export function PromptLabTab() {
                 >
                   {pv.collapsedGroups.has(g.group) ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   {g.group}
-                  <span className="text-muted-foreground/30 ml-auto">{g.versions.length}</span>
+                  <span className="text-muted-foreground/60 ml-auto">{g.versions.length}</span>
                 </button>
                 {!pv.collapsedGroups.has(g.group) && (
                   <div className="space-y-1.5">
@@ -173,9 +173,9 @@ export function PromptLabTab() {
                     <ArrowLeftRight className="w-3.5 h-3.5" />Start comparing
                   </button>
                 ) : (
-                  <p className="text-sm text-muted-foreground/40">Create at least two versions to compare them</p>
+                  <p className="text-sm text-muted-foreground/60">Create at least two versions to compare them</p>
                 )}
-                <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground/40">
+                <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground/60">
                   <span>or click</span>
                   <span className="font-mono bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded">A</span>
                   <span>&</span>

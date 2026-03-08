@@ -96,7 +96,7 @@ export function AutomationCard({
 
             {/* Fallback indicator */}
             {automation.fallbackMode === 'connector' && (
-              <span className="inline-flex items-center gap-0.5 text-sm text-muted-foreground/40" title="Falls back to direct connector on failure">
+              <span className="inline-flex items-center gap-0.5 text-sm text-muted-foreground/60" title="Falls back to direct connector on failure">
                 <ShieldCheck className="w-3 h-3" />
                 Fallback
               </span>

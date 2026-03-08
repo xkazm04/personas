@@ -84,13 +84,13 @@ export default function AdminSettings() {
               {/* Tour state summary */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground/40 mb-1">Progress</p>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">Progress</p>
                   <p className="text-sm font-medium text-foreground/80">
                     {completedCount} / {TOUR_STEPS.length} steps
                   </p>
                 </div>
                 <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground/40 mb-1">Current Step</p>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">Current Step</p>
                   <p className="text-sm font-medium text-foreground/80">
                     {tourActive ? TOUR_STEPS[tourCurrentStepIndex]?.title ?? 'N/A' : '--'}
                   </p>
@@ -99,7 +99,7 @@ export default function AdminSettings() {
 
               {/* Step completion detail */}
               <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground/40 mb-2">Step Status</p>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-2">Step Status</p>
                 <div className="space-y-1.5">
                   {TOUR_STEPS.map((step, i) => (
                     <div key={step.id} className="flex items-center gap-2">
@@ -119,7 +119,7 @@ export default function AdminSettings() {
                       }`}>
                         {step.title}
                       </span>
-                      <span className="text-[11px] text-muted-foreground/30 ml-auto font-mono">
+                      <span className="text-[11px] text-muted-foreground/60 ml-auto font-mono">
                         {step.id}
                       </span>
                     </div>

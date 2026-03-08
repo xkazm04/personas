@@ -323,7 +323,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
       {grouped.map(({ category, items }, gi) => (
         <div key={category || gi}>
           {category && (
-            <p className={`text-sm font-semibold uppercase tracking-wider text-muted-foreground/40 mb-2 ${gi > 0 ? 'mt-4' : ''}`}>
+            <p className={`text-sm font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2 ${gi > 0 ? 'mt-4' : ''}`}>
               {capitalize(category)}
             </p>
           )}

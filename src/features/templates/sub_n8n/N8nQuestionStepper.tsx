@@ -212,7 +212,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
       </div>
 
       {/* Keyboard hint */}
-      <p className="text-sm text-muted-foreground/40 mt-2">
+      <p className="text-sm text-muted-foreground/60 mt-2">
         Use{' '}
         <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 text-sm font-mono">&larr;</kbd>
         {' '}

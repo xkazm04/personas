@@ -188,7 +188,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {elapsed && (
-              <span className="flex items-center gap-1 text-sm text-muted-foreground/40 tabular-nums">
+              <span className="flex items-center gap-1 text-sm text-muted-foreground/60 tabular-nums">
                 <Clock className="w-3 h-3" />
                 {elapsed}
               </span>
@@ -243,8 +243,8 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
         })}
 
         {visibleLogs.length === 0 && (
-          <div className="text-muted-foreground/40 text-center py-10 space-y-2">
-            <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground/30" />
+          <div className="text-muted-foreground/60 text-center py-10 space-y-2">
+            <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground/50" />
             <p className="text-sm">
               {isGuided ? 'Preparing guided setup instructions...' : 'Starting browser session...'}
             </p>

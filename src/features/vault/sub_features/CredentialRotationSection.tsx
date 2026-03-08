@@ -9,6 +9,7 @@ interface CredentialRotationSectionProps {
   credentialId: string;
   rotationStatus: RotationStatus | null;
   rotationCountdown: string | null;
+  isOAuth?: boolean;
   onRefresh: () => Promise<void>;
   onHealthcheck: (id: string) => void;
 }
@@ -17,6 +18,7 @@ export function CredentialRotationSection({
   credentialId,
   rotationStatus,
   rotationCountdown,
+  isOAuth,
   onRefresh,
   onHealthcheck,
 }: CredentialRotationSectionProps) {
@@ -60,6 +62,7 @@ export function CredentialRotationSection({
           credentialId={credentialId}
           rotationStatus={rotationStatus}
           rotationCountdown={rotationCountdown}
+          isOAuth={isOAuth}
           onRefresh={onRefresh}
           onHealthcheck={onHealthcheck}
           onError={setActionError}

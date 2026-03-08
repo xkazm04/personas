@@ -181,7 +181,7 @@ export function ChooseStep() {
           )}
           {/* Empty state */}
           {summary.selected === 0 && (
-            <p className="text-sm text-muted-foreground/40 italic">No use cases selected</p>
+            <p className="text-sm text-muted-foreground/60 italic">No use cases selected</p>
           )}
         </div>
       </div>

@@ -159,7 +159,7 @@ function ReplayTerminalPanel({
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
         <Terminal className="w-3.5 h-3.5 text-muted-foreground/60" />
         <span className="text-sm font-medium text-muted-foreground/70">Output</span>
-        <span className="ml-auto text-sm tabular-nums text-muted-foreground/40">
+        <span className="ml-auto text-sm tabular-nums text-muted-foreground/60">
           {visibleLines.length}/{totalLines} lines
         </span>
       </div>
@@ -177,7 +177,7 @@ function ReplayTerminalPanel({
           );
         })}
         {visibleLines.length === 0 && (
-          <div className="text-muted-foreground/40 italic">Scrub forward to see output...</div>
+          <div className="text-muted-foreground/60 italic">Scrub forward to see output...</div>
         )}
       </div>
     </div>
@@ -205,7 +205,7 @@ function ReplayToolPanel({
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
         <Wrench className="w-3.5 h-3.5 text-muted-foreground/60" />
         <span className="text-sm font-medium text-muted-foreground/70">Tool Steps</span>
-        <span className="ml-auto text-sm tabular-nums text-muted-foreground/40">
+        <span className="ml-auto text-sm tabular-nums text-muted-foreground/60">
           {completedSteps.length}/{toolSteps.length}
         </span>
       </div>
@@ -255,7 +255,7 @@ function ReplayToolPanel({
 
                 {/* Duration */}
                 {step.duration_ms != null && isCompleted && (
-                  <span className="ml-auto text-sm font-mono text-muted-foreground/40 tabular-nums">
+                  <span className="ml-auto text-sm font-mono text-muted-foreground/60 tabular-nums">
                     {formatDuration(step.duration_ms)}
                   </span>
                 )}
@@ -278,7 +278,7 @@ function ReplayToolPanel({
           );
         })}
         {toolSteps.length === 0 && (
-          <div className="text-center py-6 text-sm text-muted-foreground/40">No tool calls recorded</div>
+          <div className="text-center py-6 text-sm text-muted-foreground/60">No tool calls recorded</div>
         )}
       </div>
     </div>
@@ -312,7 +312,7 @@ function ReplayCostPanel({
         <span className="text-sm font-mono tabular-nums text-emerald-400">
           {formatCost(accumulatedCost)}
         </span>
-        <span className="text-sm text-muted-foreground/40">
+        <span className="text-sm text-muted-foreground/60">
           / {formatCost(totalCost)}
         </span>
       </div>
@@ -331,7 +331,7 @@ function ReplayCostPanel({
         <span className="text-sm font-mono tabular-nums text-blue-400">
           {formatMs(currentMs)}
         </span>
-        <span className="text-sm text-muted-foreground/40">
+        <span className="text-sm text-muted-foreground/60">
           ({timePct.toFixed(0)}%)
         </span>
       </div>

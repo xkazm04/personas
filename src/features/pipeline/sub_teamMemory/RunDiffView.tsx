@@ -92,7 +92,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
             </option>
           ))}
         </select>
-        <ArrowRight className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />
+        <ArrowRight className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
         <select
           value={runB}
           onChange={(e) => setRunB(e.target.value)}
@@ -133,7 +133,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary/5 border border-primary/10">
             <div className="flex items-center gap-1 text-xs">
               <span className="text-muted-foreground/50">{diff.totalA}</span>
-              <ArrowRight className="w-3 h-3 text-muted-foreground/30" />
+              <ArrowRight className="w-3 h-3 text-muted-foreground/50" />
               <span className="text-foreground/70 font-medium">{diff.totalB}</span>
             </div>
             <div className="flex-1" />
@@ -160,7 +160,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
                       {cd.category}
                     </span>
                     <span className="flex items-center gap-2">
-                      <span className="text-muted-foreground/40">{cd.countA} → {cd.countB}</span>
+                      <span className="text-muted-foreground/60">{cd.countA} → {cd.countB}</span>
                       {cd.delta !== 0 && (
                         <span className={cd.delta > 0 ? 'text-emerald-400' : 'text-red-400'}>
                           {cd.delta > 0 ? '+' : ''}{cd.delta}
@@ -186,7 +186,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
                         {s.category}
                       </span>
                       <span className="flex items-center gap-1.5">
-                        <span className="text-muted-foreground/40">
+                        <span className="text-muted-foreground/60">
                           {s.avgA.toFixed(1)} → {s.avgB.toFixed(1)}
                         </span>
                         {s.delta > 0
@@ -264,7 +264,7 @@ function DiffMemoryItem({ memory, variant }: { memory: TeamMemory; variant: 'add
       <p className="text-xs text-muted-foreground/60 line-clamp-1 mt-0.5">{memory.content}</p>
       <div className="flex items-center gap-2 mt-1">
         <span className={`text-xs capitalize ${catColor}`}>{memory.category}</span>
-        <span className="text-xs text-muted-foreground/30">imp: {memory.importance}</span>
+        <span className="text-xs text-muted-foreground/60">imp: {memory.importance}</span>
       </div>
     </div>
   );

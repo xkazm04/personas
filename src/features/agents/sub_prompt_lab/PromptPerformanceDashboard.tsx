@@ -115,7 +115,7 @@ export function PromptPerformanceDashboard({
       <div className="text-center py-12 space-y-2">
         <BarChart3 className="w-8 h-8 text-muted-foreground/20 mx-auto" />
         <p className="text-sm text-muted-foreground/60">No execution data yet</p>
-        <p className="text-sm text-muted-foreground/40">Run some executions to see performance trends</p>
+        <p className="text-sm text-muted-foreground/60">Run some executions to see performance trends</p>
       </div>
     );
   }

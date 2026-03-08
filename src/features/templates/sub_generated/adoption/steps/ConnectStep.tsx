@@ -441,7 +441,7 @@ export function ConnectStep() {
       {resolved.length > 0 && (
         <div>
           {unresolved.length > 0 && (
-            <p className="text-sm text-muted-foreground/40 mb-1.5">Configured</p>
+            <p className="text-sm text-muted-foreground/60 mb-1.5">Configured</p>
           )}
           <div className="flex flex-col gap-1">
             {resolved.map(({ connector, credName }) => (

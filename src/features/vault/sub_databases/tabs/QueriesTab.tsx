@@ -207,9 +207,9 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
           {queries.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 gap-2">
               <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center">
-                <Plus className="w-4 h-4 text-muted-foreground/30" />
+                <Plus className="w-4 h-4 text-muted-foreground/50" />
               </div>
-              <p className="text-sm text-muted-foreground/40">No saved queries</p>
+              <p className="text-sm text-muted-foreground/60">No saved queries</p>
             </div>
           )}
         </div>
@@ -222,7 +222,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
             {/* ── Editor toolbar ── */}
             <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/8 bg-secondary/5 shrink-0">
               <span className="text-sm font-semibold text-foreground/70 flex-1 truncate">{selectedQuery.title}</span>
-              <span className="text-sm uppercase tracking-wider text-muted-foreground/30 px-2 py-0.5 rounded-lg bg-secondary/40 border border-primary/8 font-medium">
+              <span className="text-sm uppercase tracking-wider text-muted-foreground/60 px-2 py-0.5 rounded-lg bg-secondary/40 border border-primary/8 font-medium">
                 {language}
               </span>
 
@@ -361,7 +361,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
                       <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-40" />
                       <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
                     </span>
-                    <span className="text-sm text-muted-foreground/40">Executing query...</span>
+                    <span className="text-sm text-muted-foreground/60">Executing query...</span>
                   </motion.div>
                 )}
               </AnimatePresence>

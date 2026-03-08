@@ -131,7 +131,7 @@ export function UseCaseRow({
 
       {/* Human-readable summary */}
       {humanSummary && (
-        <span className="text-sm text-muted-foreground/40 flex-shrink-0 hidden sm:inline">
+        <span className="text-sm text-muted-foreground/60 flex-shrink-0 hidden sm:inline">
           {humanSummary}
         </span>
       )}

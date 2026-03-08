@@ -373,7 +373,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
 function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPaste: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 space-y-4">
-      <Globe className="w-10 h-10 text-muted-foreground/30" />
+      <Globe className="w-10 h-10 text-muted-foreground/50" />
       <div className="text-center space-y-1">
         <p className="text-sm text-muted-foreground/70">No API endpoints loaded</p>
         <p className="text-sm text-muted-foreground/50">

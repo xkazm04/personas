@@ -107,7 +107,7 @@ export function CompilationStepper({ outputLines, isRunning }: CompilationSteppe
                       ? 'text-foreground/80'
                       : isCompleted
                         ? 'text-emerald-400/70'
-                        : 'text-muted-foreground/40'
+                        : 'text-muted-foreground/60'
                   }`}
                 >
                   {stage.label}
@@ -146,7 +146,7 @@ export function CompilationStepper({ outputLines, isRunning }: CompilationSteppe
           <span className="text-xs text-muted-foreground/50">
             {COMPILATION_STAGES[activeIndex]!.description}
           </span>
-          <span className="text-xs tabular-nums font-mono text-muted-foreground/40 shrink-0 ml-2">
+          <span className="text-xs tabular-nums font-mono text-muted-foreground/60 shrink-0 ml-2">
             {formatElapsed(elapsed)}
           </span>
         </motion.div>

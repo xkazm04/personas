@@ -258,7 +258,7 @@ export function HealthDigestPanel() {
 
       {/* Timestamp */}
       <div className="px-4 py-2 border-t border-primary/10 bg-primary/[0.02]">
-        <p className="text-xs text-muted-foreground/40">
+        <p className="text-xs text-muted-foreground/60">
           Last run: {new Date(digest.generatedAt).toLocaleString()}
         </p>
       </div>

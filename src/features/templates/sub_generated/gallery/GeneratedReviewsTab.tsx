@@ -622,7 +622,7 @@ export default function GeneratedReviewsTab({
                                     {review.adoption_count}
                                   </span>
                                 ) : (
-                                  <span className="text-sm text-muted-foreground/40">--</span>
+                                  <span className="text-sm text-muted-foreground/60">--</span>
                                 )}
                               </div>
                             </div>

@@ -43,7 +43,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
                 {meta.label}
               </span>
               {count > 0 && (
-                <span className="text-sm text-muted-foreground/40 tabular-nums">{count}</span>
+                <span className="text-sm text-muted-foreground/60 tabular-nums">{count}</span>
               )}
             </button>
           );
@@ -53,7 +53,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
       {/* Top templates preview */}
       {topTemplates.length > 0 && (
         <div className="border-t border-primary/8 pt-2.5">
-          <div className="text-sm uppercase tracking-wider text-muted-foreground/40 mb-1.5 px-1">
+          <div className="text-sm uppercase tracking-wider text-muted-foreground/60 mb-1.5 px-1">
             Popular
           </div>
           {topTemplates.slice(0, 3).map((t) => (

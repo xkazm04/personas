@@ -204,7 +204,7 @@ function StageBar({
                 <div className="mt-1 space-y-0.5">
                   {Object.entries(entry.metadata).map(([k, v]) => (
                     <div key={k} className="text-sm text-muted-foreground/60">
-                      <span className="text-muted-foreground/40">{k}:</span>{' '}
+                      <span className="text-muted-foreground/60">{k}:</span>{' '}
                       <span className="font-mono">{String(v)}</span>
                     </div>
                   ))}

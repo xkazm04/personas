@@ -555,7 +555,7 @@ function SortHeader({
     >
       <span className="inline-flex items-center gap-1">
         {label}
-        <ArrowUpDown className={`w-3 h-3 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground/30'}`} />
+        <ArrowUpDown className={`w-3 h-3 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground/50'}`} />
         {isActive && (
           <span className="text-primary text-[10px]">{dir === 'asc' ? '\u2191' : '\u2193'}</span>
         )}

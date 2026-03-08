@@ -455,7 +455,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
                       <span>~{fmtCost(p.avg_cost_per_exec)}/exec</span>
                     </div>
                   </div>
-                  <ArrowUpRight className="w-3 h-3 text-muted-foreground/30" />
+                  <ArrowUpRight className="w-3 h-3 text-muted-foreground/50" />
                 </div>
               );
             })}

@@ -418,7 +418,7 @@ export function ChatCreator({ onCancel, onCreated, onActivated }: ChatCreatorPro
                           )}
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground/40">None yet</p>
+                        <p className="text-sm text-muted-foreground/60">None yet</p>
                       )}
                     </PreviewSection>
 
@@ -436,7 +436,7 @@ export function ChatCreator({ onCancel, onCreated, onActivated }: ChatCreatorPro
                           ))}
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground/40">None yet</p>
+                        <p className="text-sm text-muted-foreground/60">None yet</p>
                       )}
                     </PreviewSection>
 

@@ -223,10 +223,10 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
                 <div key={i} className="pl-2 border-l-2 border-primary/10 space-y-0.5">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground/70 truncate">{rev.title}</span>
-                    <span className="text-sm text-muted-foreground/40 capitalize">{rev.category}</span>
+                    <span className="text-sm text-muted-foreground/60 capitalize">{rev.category}</span>
                   </div>
                   <p className="text-sm text-muted-foreground/50 line-clamp-1">{rev.content}</p>
-                  <span className="text-sm text-muted-foreground/30">
+                  <span className="text-sm text-muted-foreground/60">
                     {new Date(rev.edited_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>

@@ -120,7 +120,7 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
           {emptyMessage ?? (designContext ? 'No structured use cases found.' : 'No use cases generated yet.')}
         </p>
         {emptyHint && (
-          <p className="text-sm text-muted-foreground/40">{emptyHint}</p>
+          <p className="text-sm text-muted-foreground/60">{emptyHint}</p>
         )}
       </div>
     );

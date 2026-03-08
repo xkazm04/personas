@@ -144,7 +144,7 @@ function AgentRow({ agent }: { agent: CronAgent }) {
           <span className="font-mono">{schedule}</span>
           {agent.description && (
             <>
-              <span className="text-muted-foreground/30">·</span>
+              <span className="text-muted-foreground/50">·</span>
               <span className="truncate">{agent.description}</span>
             </>
           )}
@@ -159,7 +159,7 @@ function AgentRow({ agent }: { agent: CronAgent }) {
             {formatRelative(agent.next_trigger_at)}
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground/40">—</div>
+          <div className="text-xs text-muted-foreground/60">—</div>
         )}
         {agent.last_triggered_at && (
           <div className="text-[10px] text-muted-foreground/50 mt-0.5">

@@ -87,7 +87,7 @@ function AccordionSection({
               ? 'text-emerald-400/60'
               : meta.hasMissing
                 ? 'text-amber-400/60'
-                : 'text-muted-foreground/30'
+                : 'text-muted-foreground/60'
           }`}>
             {meta.isRequired
               ? `${meta.configured}/${meta.total} required`
@@ -342,7 +342,7 @@ export function TuneStep() {
                     {variable.label}
                     {variable.required && <span className="text-red-400 ml-0.5">*</span>}
                     {variable.type !== 'text' && variable.type !== 'select' && (
-                      <span className="ml-1.5 text-sm text-muted-foreground/40 font-normal">{variable.type}</span>
+                      <span className="ml-1.5 text-sm text-muted-foreground/60 font-normal">{variable.type}</span>
                     )}
                   </label>
                   {variable.description && <p className={descClass}>{variable.description}</p>}

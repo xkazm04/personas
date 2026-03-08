@@ -122,7 +122,7 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
                 {isActive && showTimer && (
                   <span className="text-sm font-mono text-muted-foreground/90 tabular-nums leading-none">
                     {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}
-                    <span className="ml-1 text-muted-foreground/40">{hint}</span>
+                    <span className="ml-1 text-muted-foreground/60">{hint}</span>
                   </span>
                 )}
                 {isActive && !showTimer && hint && (

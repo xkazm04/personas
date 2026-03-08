@@ -277,7 +277,7 @@ export function EventSubscriptionsPanel() {
           {/* Subscriptions table */}
           {subscriptions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Radio className="w-8 h-8 text-muted-foreground/30 mb-3" />
+              <Radio className="w-8 h-8 text-muted-foreground/50 mb-3" />
               <p className="text-sm text-muted-foreground/70">No event subscriptions yet</p>
               <p className="text-sm text-muted-foreground/50 mt-1">
                 Subscribe agents to event types so they activate automatically

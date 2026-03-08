@@ -108,7 +108,7 @@ export function WizardSidebar({
                   {step.label}
                 </span>
                 <span className={`text-[10px] block ${
-                  isActive ? 'text-violet-400/50' : 'text-muted-foreground/30'
+                  isActive ? 'text-violet-400/50' : 'text-muted-foreground/60'
                 }`}>
                   {STEP_DESCRIPTIONS[step.key]}
                 </span>

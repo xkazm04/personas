@@ -163,7 +163,7 @@ export function ChannelPicker({ channels, onToggle }: ChannelPickerProps) {
       ))}
 
       {channelOptions.length <= 1 && (
-        <p className="text-sm text-muted-foreground/40 italic">
+        <p className="text-sm text-muted-foreground/60 italic">
           Save communication credentials (Slack, Email, etc.) in the Vault to see them here.
         </p>
       )}

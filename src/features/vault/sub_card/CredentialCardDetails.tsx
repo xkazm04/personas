@@ -250,6 +250,10 @@ export function CredentialCardDetails({
               credentialId={credential.id}
               rotationStatus={rotationStatus}
               rotationCountdown={rotationCountdown}
+              isOAuth={
+                (credential.oauth_token_expires_at != null) ||
+                (credential.oauth_refresh_count > 0)
+              }
               onRefresh={fetchRotationStatus}
               onHealthcheck={() => health.checkStored()}
             />

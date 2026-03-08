@@ -258,7 +258,7 @@ function ToolTimelineComparison({
                   )}
                 </>
               ) : (
-                <span className="text-muted-foreground/30 text-sm">—</span>
+                <span className="text-muted-foreground/60 text-sm">—</span>
               )}
             </div>
 
@@ -273,7 +273,7 @@ function ToolTimelineComparison({
                   {durDelta > 0 ? '+' : ''}{formatDuration(durDelta)}
                 </span>
               ) : l && r ? (
-                <span className="text-muted-foreground/30 text-sm">—</span>
+                <span className="text-muted-foreground/60 text-sm">—</span>
               ) : null}
             </div>
 
@@ -288,7 +288,7 @@ function ToolTimelineComparison({
                   )}
                 </>
               ) : (
-                <span className="text-muted-foreground/30 text-sm">—</span>
+                <span className="text-muted-foreground/60 text-sm">—</span>
               )}
             </div>
           </div>
@@ -422,7 +422,7 @@ function JsonDiffSection({
         {diffs.length > 0 ? (
           <span className="text-sm text-amber-400/70">{diffs.length} diff{diffs.length > 1 ? 's' : ''}</span>
         ) : (
-          <span className="text-sm text-muted-foreground/40">identical</span>
+          <span className="text-sm text-muted-foreground/60">identical</span>
         )}
       </button>
 
@@ -507,7 +507,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
             )}
           </div>
           <div className="text-sm text-muted-foreground/60 font-mono">#{left.id.slice(0, 8)}</div>
-          <div className="text-sm text-muted-foreground/40 mt-0.5">{formatTimestamp(left.started_at)}</div>
+          <div className="text-sm text-muted-foreground/60 mt-0.5">{formatTimestamp(left.started_at)}</div>
         </div>
         <div className="bg-secondary/30 border border-primary/10 rounded-xl px-3 py-2">
           <div className="flex items-center gap-2 mb-1">
@@ -518,7 +518,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
             )}
           </div>
           <div className="text-sm text-muted-foreground/60 font-mono">#{right.id.slice(0, 8)}</div>
-          <div className="text-sm text-muted-foreground/40 mt-0.5">{formatTimestamp(right.started_at)}</div>
+          <div className="text-sm text-muted-foreground/60 mt-0.5">{formatTimestamp(right.started_at)}</div>
         </div>
       </div>
 

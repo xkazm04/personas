@@ -60,7 +60,7 @@ export function TableSelector({
       {/* Toolbar */}
       <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-primary/8">
         <div className="relative flex-1">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/30" />
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/50" />
           <input
             type="text"
             value={filter}
@@ -94,7 +94,7 @@ export function TableSelector({
             <Square className="w-3 h-3" />
           )}
           {allFilteredSelected ? 'Deselect all' : 'Select all'}
-          <span className="ml-auto text-muted-foreground/30">{filteredTables.length}</span>
+          <span className="ml-auto text-muted-foreground/60">{filteredTables.length}</span>
         </button>
       )}
 
@@ -102,8 +102,8 @@ export function TableSelector({
       <div className="overflow-y-auto" style={{ maxHeight }}>
         {loading && tables.length === 0 && (
           <div className="flex items-center justify-center py-6 gap-1.5">
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground/40" />
-            <span className="text-sm text-muted-foreground/40">Loading tables...</span>
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground/60" />
+            <span className="text-sm text-muted-foreground/60">Loading tables...</span>
           </div>
         )}
 
@@ -114,13 +114,13 @@ export function TableSelector({
         )}
 
         {!loading && !error && filteredTables.length === 0 && tables.length === 0 && (
-          <p className="text-sm text-muted-foreground/40 text-center py-6">
+          <p className="text-sm text-muted-foreground/60 text-center py-6">
             No tables found
           </p>
         )}
 
         {!loading && !error && filteredTables.length === 0 && tables.length > 0 && (
-          <p className="text-sm text-muted-foreground/40 text-center py-6">
+          <p className="text-sm text-muted-foreground/60 text-center py-6">
             No matching tables
           </p>
         )}
@@ -143,7 +143,7 @@ export function TableSelector({
               ) : (
                 <Square className="w-3 h-3 text-muted-foreground/25 shrink-0" />
               )}
-              <Table2 className="w-2.5 h-2.5 text-muted-foreground/30 shrink-0" />
+              <Table2 className="w-2.5 h-2.5 text-muted-foreground/50 shrink-0" />
               <span className="flex-1 text-sm font-mono text-foreground/70 truncate">
                 {table.table_name}
               </span>
@@ -159,7 +159,7 @@ export function TableSelector({
 
       {/* Footer */}
       {selectedTables.length > 0 && (
-        <div className="px-2.5 py-1.5 border-t border-primary/5 text-sm text-muted-foreground/40">
+        <div className="px-2.5 py-1.5 border-t border-primary/5 text-sm text-muted-foreground/60">
           {selectedTables.length} of {tables.length} table{tables.length !== 1 ? 's' : ''} selected
         </div>
       )}

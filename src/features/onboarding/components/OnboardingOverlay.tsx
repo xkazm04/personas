@@ -243,7 +243,7 @@ function ExecutionStep({
               <span className="text-sm">Agent Output</span>
             </div>
             {executionOutput.length === 0 && !finished && (
-              <p className="text-muted-foreground/40 text-sm">Waiting for output...</p>
+              <p className="text-muted-foreground/60 text-sm">Waiting for output...</p>
             )}
             {executionOutput.map((line, i) => (
               <div key={i} className="text-foreground/70 whitespace-pre-wrap break-all leading-relaxed">

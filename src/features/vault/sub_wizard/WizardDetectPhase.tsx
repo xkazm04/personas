@@ -292,7 +292,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
         {/* Already added */}
         {alreadyAdded.length > 0 && (
           <div>
-            <h3 className="text-sm font-medium text-muted-foreground/30 uppercase tracking-wider mb-2">
+            <h3 className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider mb-2">
               Already added ({alreadyAdded.length})
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

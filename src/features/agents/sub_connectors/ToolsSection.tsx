@@ -34,7 +34,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
           {tools.length} tool{tools.length !== 1 ? 's' : ''} configured
         </span>
         {!toolsExpanded && tools.length > 0 && (
-          <span className="text-sm text-muted-foreground/40 truncate flex-1">
+          <span className="text-sm text-muted-foreground/60 truncate flex-1">
             {tools.slice(0, 4).map((t) => t.name).join(', ')}{tools.length > 4 ? `, +${tools.length - 4}` : ''}
           </span>
         )}

@@ -10,6 +10,7 @@ interface RotationPolicyControlsProps {
   credentialId: string;
   rotationStatus: RotationStatus;
   rotationCountdown: string | null;
+  isOAuth?: boolean;
   onRefresh: () => Promise<void>;
   onHealthcheck: (id: string) => void;
   onError: (message: string | null) => void;
@@ -18,6 +19,7 @@ export function RotationPolicyControls({
   credentialId,
   rotationStatus,
   rotationCountdown,
+  isOAuth,
   onRefresh,
   onHealthcheck,
   onError,
@@ -35,7 +37,9 @@ export function RotationPolicyControls({
             <ShieldCheck className={`w-4 h-4 ${rotationStatus.policy_enabled ? ROTATION_STATUS.color : 'text-muted-foreground/80'}`} />
             <div className="text-sm">
               <span className={rotationStatus.policy_enabled ? `${ROTATION_STATUS.color} font-medium` : 'text-muted-foreground/90'}>
-                {rotationStatus.policy_enabled ? 'Auto-rotation active' : 'Rotation paused'}
+                {rotationStatus.policy_enabled
+                  ? (isOAuth ? 'OAuth token refresh active' : 'Auto-rotation active')
+                  : 'Rotation paused'}
               </span>
             </div>
           </div>

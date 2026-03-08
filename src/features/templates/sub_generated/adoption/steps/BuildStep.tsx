@@ -50,7 +50,7 @@ export function BuildStep() {
           <RefreshCw className="w-3.5 h-3.5 text-violet-400 animate-spin flex-shrink-0" />
           <span className="text-sm text-violet-300/80">{phaseLabel}</span>
           {connectorCount > 0 && (
-            <span className="text-sm text-muted-foreground/40 ml-auto">{connectorCount} connectors</span>
+            <span className="text-sm text-muted-foreground/60 ml-auto">{connectorCount} connectors</span>
           )}
         </div>
       )}

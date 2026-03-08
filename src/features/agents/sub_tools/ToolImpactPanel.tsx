@@ -144,7 +144,7 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
                     title={`Co-used ${co.coOccurrences} time${co.coOccurrences !== 1 ? 's' : ''}`}
                   >
                     {co.toolName}
-                    <span className="text-muted-foreground/40 tabular-nums">{co.coOccurrences}</span>
+                    <span className="text-muted-foreground/60 tabular-nums">{co.coOccurrences}</span>
                   </span>
                 ))}
               </div>
