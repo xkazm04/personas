@@ -51,9 +51,28 @@ pub struct CloudExecutionPoll {
     pub execution_id: String,
     pub status: String,
     pub output: Vec<String>,
+    /// Cloud renamed this to `totalOutputLines` — accept both.
+    #[serde(alias = "totalOutputLines", default)]
     pub output_lines: u32,
     pub duration_ms: Option<u64>,
+    /// Cloud renamed this to `totalCostUsd` — accept both.
+    #[serde(alias = "totalCostUsd")]
     pub cost_usd: Option<f64>,
+    /// Whether older output was evicted from the in-memory tail buffer.
+    #[serde(default)]
+    pub output_evicted: Option<bool>,
+    /// Number of lines currently in the tail buffer.
+    #[serde(default)]
+    pub tail_buffer_lines: Option<u32>,
+    /// Claude session ID for the execution.
+    #[serde(default)]
+    pub session_id: Option<String>,
+    /// Real-time execution progress (stage, tool, percent).
+    #[serde(default)]
+    pub progress: Option<serde_json::Value>,
+    /// Pending human-in-the-loop review requests.
+    #[serde(default)]
+    pub pending_reviews: Option<Vec<serde_json::Value>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -97,8 +116,145 @@ pub struct CloudDeployment {
     pub webhook_secret: Option<String>,
     pub invocation_count: u64,
     pub last_invoked_at: Option<String>,
+    /// Monthly budget cap in USD — None means unlimited.
+    #[serde(default)]
+    pub max_monthly_budget_usd: Option<f64>,
+    /// Accumulated cost for the current budget month.
+    #[serde(default)]
+    pub current_month_cost_usd: Option<f64>,
+    /// Budget tracking month (YYYY-MM format).
+    #[serde(default)]
+    pub budget_month: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+}
+
+/// A pending cloud review request.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CloudReviewRequest {
+    pub review_id: String,
+    pub execution_id: String,
+    pub persona_id: String,
+    #[serde(default)]
+    pub project_id: Option<String>,
+    pub payload: Option<serde_json::Value>,
+    pub status: String,
+    #[serde(default)]
+    pub created_at: Option<f64>,
+    #[serde(default)]
+    pub resolved_at: Option<f64>,
+    #[serde(default)]
+    pub response_message: Option<String>,
+}
+
+/// A completed cloud execution record (from GET /api/executions).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CloudExecution {
+    pub id: String,
+    pub persona_id: String,
+    #[serde(default)]
+    pub project_id: Option<String>,
+    pub status: String,
+    #[serde(default)]
+    pub input_data: Option<String>,
+    #[serde(default)]
+    pub error_message: Option<String>,
+    #[serde(default)]
+    pub duration_ms: Option<u64>,
+    #[serde(default)]
+    pub cost_usd: Option<f64>,
+    #[serde(default)]
+    pub input_tokens: Option<u64>,
+    #[serde(default)]
+    pub output_tokens: Option<u64>,
+    #[serde(default)]
+    pub retry_count: Option<u32>,
+    #[serde(default)]
+    pub started_at: Option<String>,
+    #[serde(default)]
+    pub completed_at: Option<String>,
+    pub created_at: String,
+}
+
+/// Aggregated execution stats from GET /api/executions/stats.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CloudExecutionStats {
+    pub total_executions: u64,
+    pub completed: u64,
+    pub failed: u64,
+    pub cancelled: u64,
+    pub success_rate: Option<f64>,
+    pub total_cost_usd: f64,
+    pub avg_cost_usd: Option<f64>,
+    pub avg_duration_ms: Option<u64>,
+    pub daily_breakdown: Vec<CloudDailyBreakdown>,
+    pub top_errors: Vec<CloudTopError>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CloudDailyBreakdown {
+    pub date: String,
+    pub count: u64,
+    pub cost: f64,
+    pub success_rate: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CloudTopError {
+    pub message: String,
+    pub count: u64,
+}
+
+// ============================================================================
+// Cloud Trigger types
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CloudTrigger {
+    pub id: String,
+    pub project_id: String,
+    pub persona_id: String,
+    pub trigger_type: String,
+    pub config: Option<String>,
+    #[serde(default)]
+    pub enabled: bool,
+    pub last_triggered_at: Option<String>,
+    pub next_trigger_at: Option<String>,
+    #[serde(default)]
+    pub health_status: Option<String>,
+    #[serde(default)]
+    pub health_message: Option<String>,
+    #[serde(default)]
+    pub use_case_id: Option<String>,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CloudTriggerFiring {
+    pub id: String,
+    pub trigger_id: String,
+    pub persona_id: Option<String>,
+    pub execution_id: Option<String>,
+    pub status: String,
+    pub cost_usd: Option<f64>,
+    pub duration_ms: Option<u64>,
+    pub fired_at: Option<String>,
+    pub resolved_at: Option<String>,
 }
 
 // ============================================================================
@@ -127,6 +283,32 @@ struct CreateDeploymentBody<'a> {
     persona_id: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     label: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    max_monthly_budget_usd: Option<f64>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateCloudTriggerBody {
+    pub persona_id: String,
+    pub trigger_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub config: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub use_case_id: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateCloudTriggerBody {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trigger_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub config: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
 }
 
 // ============================================================================
@@ -311,10 +493,11 @@ impl CloudClient {
         &self,
         persona_id: &str,
         label: Option<&str>,
+        max_monthly_budget_usd: Option<f64>,
     ) -> Result<CloudDeployment, AppError> {
         let req = self
             .authed(reqwest::Method::POST, "/api/deployments").await
-            .json(&CreateDeploymentBody { persona_id, label });
+            .json(&CreateDeploymentBody { persona_id, label, max_monthly_budget_usd });
         self.send_json(req).await
     }
 
@@ -345,6 +528,104 @@ impl CloudClient {
     pub async fn delete_deployment(&self, id: &str) -> Result<(), AppError> {
         let path = format!("/api/deployments/{}", id);
         self.send_ok(self.authed(reqwest::Method::DELETE, &path).await).await
+    }
+
+    // --------------------------------------------------------------------
+    // Cloud Reviews (human-in-the-loop)
+    // --------------------------------------------------------------------
+
+    /// `GET /api/reviews/pending` -- list pending review requests.
+    pub async fn list_pending_reviews(&self) -> Result<Vec<CloudReviewRequest>, AppError> {
+        self.send_json(self.authed(reqwest::Method::GET, "/api/reviews/pending").await).await
+    }
+
+    /// `POST /api/executions/{execId}/reviews/{reviewId}/respond` -- respond to a review.
+    pub async fn respond_to_review(
+        &self,
+        execution_id: &str,
+        review_id: &str,
+        decision: &str,
+        message: &str,
+    ) -> Result<serde_json::Value, AppError> {
+        let path = format!("/api/executions/{}/reviews/{}/respond", execution_id, review_id);
+        let req = self
+            .authed(reqwest::Method::POST, &path).await
+            .json(&serde_json::json!({ "decision": decision, "message": message }));
+        self.send_json(req).await
+    }
+
+    // --------------------------------------------------------------------
+    // Execution History & Stats
+    // --------------------------------------------------------------------
+
+    /// `GET /api/executions` -- list execution history.
+    pub async fn list_executions(
+        &self,
+        persona_id: Option<&str>,
+        status: Option<&str>,
+        limit: Option<u32>,
+        offset: Option<u32>,
+    ) -> Result<Vec<CloudExecution>, AppError> {
+        let mut path = "/api/executions?".to_string();
+        if let Some(pid) = persona_id { path.push_str(&format!("personaId={pid}&")); }
+        if let Some(s) = status { path.push_str(&format!("status={s}&")); }
+        if let Some(l) = limit { path.push_str(&format!("limit={l}&")); }
+        if let Some(o) = offset { path.push_str(&format!("offset={o}&")); }
+        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
+    }
+
+    /// `GET /api/executions/stats` -- aggregated execution statistics.
+    pub async fn execution_stats(
+        &self,
+        persona_id: Option<&str>,
+        period_days: Option<u32>,
+    ) -> Result<CloudExecutionStats, AppError> {
+        let mut path = "/api/executions/stats?".to_string();
+        if let Some(pid) = persona_id { path.push_str(&format!("personaId={pid}&")); }
+        if let Some(p) = period_days { path.push_str(&format!("period={p}&")); }
+        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
+    }
+
+    // --------------------------------------------------------------------
+    // Cloud Triggers (schedules, webhooks, etc.)
+    // --------------------------------------------------------------------
+
+    /// `GET /api/personas/{id}/triggers` -- list triggers for a persona.
+    pub async fn list_persona_triggers(&self, persona_id: &str) -> Result<Vec<CloudTrigger>, AppError> {
+        let path = format!("/api/personas/{}/triggers", persona_id);
+        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
+    }
+
+    /// `POST /api/triggers` -- create a new trigger.
+    pub async fn create_trigger(&self, body: &CreateCloudTriggerBody) -> Result<CloudTrigger, AppError> {
+        let req = self.authed(reqwest::Method::POST, "/api/triggers").await.json(body);
+        self.send_json(req).await
+    }
+
+    /// `PUT /api/triggers/{id}` -- update an existing trigger.
+    pub async fn update_trigger(&self, id: &str, body: &UpdateCloudTriggerBody) -> Result<CloudTrigger, AppError> {
+        let path = format!("/api/triggers/{}", id);
+        let req = self.authed(reqwest::Method::PUT, &path).await.json(body);
+        self.send_json(req).await
+    }
+
+    /// `DELETE /api/triggers/{id}` -- delete a trigger.
+    pub async fn delete_trigger(&self, id: &str) -> Result<(), AppError> {
+        let path = format!("/api/triggers/{}", id);
+        self.send_ok(self.authed(reqwest::Method::DELETE, &path).await).await
+    }
+
+    /// `GET /api/triggers/{id}/firings` -- list recent firings for a trigger.
+    pub async fn list_trigger_firings(&self, trigger_id: &str, limit: Option<u32>) -> Result<Vec<CloudTriggerFiring>, AppError> {
+        let mut path = format!("/api/triggers/{}/firings?", trigger_id);
+        if let Some(l) = limit { path.push_str(&format!("limit={l}&")); }
+        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
+    }
+
+    /// `GET /api/triggers/{id}/stats` -- trigger firing statistics.
+    pub async fn trigger_stats(&self, trigger_id: &str) -> Result<serde_json::Value, AppError> {
+        let path = format!("/api/triggers/{}/stats", trigger_id);
+        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
     }
 
     /// Returns the base URL of the orchestrator (for building endpoint URLs).
