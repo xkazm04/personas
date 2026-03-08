@@ -189,7 +189,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
             >
               {showAdvanced ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
               Customize appearance
-              <span className="text-muted-foreground/40">(optional)</span>
+              <span className="text-muted-foreground/60">(optional)</span>
             </button>
 
             <AnimatePresence>

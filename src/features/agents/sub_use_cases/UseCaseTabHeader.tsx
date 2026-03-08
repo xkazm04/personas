@@ -50,7 +50,7 @@ export function UseCaseGeneralHistory({ personaId, refreshSignal }: UseCaseGener
         <span className="text-sm text-muted-foreground/70">
           General History
           {!showGeneralHistory && generalHistory.length > 0 && (
-            <span className="ml-1 text-muted-foreground/40">
+            <span className="ml-1 text-muted-foreground/60">
               ({generalHistory.length} unlinked execution{generalHistory.length !== 1 ? 's' : ''})
             </span>
           )}
@@ -62,7 +62,7 @@ export function UseCaseGeneralHistory({ personaId, refreshSignal }: UseCaseGener
           {generalHistoryLoading ? (
             <div className="px-4 py-3 text-sm text-muted-foreground/50">Loading...</div>
           ) : generalHistory.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-muted-foreground/40">
+            <div className="px-4 py-3 text-sm text-muted-foreground/60">
               No unlinked executions found.
             </div>
           ) : (

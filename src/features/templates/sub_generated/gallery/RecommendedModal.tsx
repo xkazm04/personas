@@ -34,7 +34,7 @@ export function RecommendedModal({
           <h2 id="recommended-modal-title" className="text-sm font-semibold text-foreground/90">
             Recommended for You
           </h2>
-          <span className="text-xs text-muted-foreground/40">
+          <span className="text-xs text-muted-foreground/60">
             Based on your connectors
           </span>
         </div>
@@ -88,7 +88,7 @@ export function RecommendedModal({
                       );
                     })}
                     {connectors.length > 3 && (
-                      <span className="text-xs text-muted-foreground/40">+{connectors.length - 3}</span>
+                      <span className="text-xs text-muted-foreground/60">+{connectors.length - 3}</span>
                     )}
                   </div>
 

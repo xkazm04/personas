@@ -465,7 +465,7 @@ function RoleCard({
                           </span>
                         ))}
                         {comp.watchedTables.length > 4 && (
-                          <span className="text-sm text-muted-foreground/40 self-center">
+                          <span className="text-sm text-muted-foreground/60 self-center">
                             +{comp.watchedTables.length - 4}
                           </span>
                         )}

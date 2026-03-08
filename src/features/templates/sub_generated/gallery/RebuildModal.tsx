@@ -99,7 +99,7 @@ export function RebuildModal({
                   placeholder="Add specific requirements, focus areas, or constraints for this rebuild..."
                   className="w-full h-28 px-4 py-3 bg-secondary/20 border border-primary/10 rounded-xl text-sm text-foreground/90 placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:border-violet-500/30 focus:ring-1 focus:ring-violet-500/20 transition-colors"
                 />
-                <p className="text-sm text-muted-foreground/40 mt-1">
+                <p className="text-sm text-muted-foreground/60 mt-1">
                   The rebuild will regenerate all 9 data dimensions using the Protocol System.
                 </p>
               </div>
@@ -116,7 +116,7 @@ export function RebuildModal({
               {/* Streaming output */}
               <div className="bg-[#0d1117] rounded-xl border border-primary/10 p-4 h-64 overflow-y-auto font-mono text-sm leading-relaxed">
                 {lines.length === 0 && (
-                  <span className="text-muted-foreground/40">Waiting for output...</span>
+                  <span className="text-muted-foreground/60">Waiting for output...</span>
                 )}
                 {lines.map((line, i) => {
                   const isMilestone = line.startsWith('[Milestone]');
@@ -136,7 +136,7 @@ export function RebuildModal({
                 <div ref={linesEndRef} />
               </div>
 
-              <p className="text-sm text-muted-foreground/40 text-center">
+              <p className="text-sm text-muted-foreground/60 text-center">
                 You can close this dialog — the rebuild will continue in the background.
               </p>
             </div>

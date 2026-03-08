@@ -272,7 +272,7 @@ function ConversationThread({
                 <span className="text-xs text-muted-foreground/60">
                   {SEVERITY_LABELS[review.severity] ?? 'Info'} severity
                 </span>
-                <span className="text-xs text-muted-foreground/40">·</span>
+                <span className="text-xs text-muted-foreground/50">·</span>
                 <span className="text-xs text-muted-foreground/60">
                   {formatRelativeTime(review.created_at)}
                 </span>
@@ -308,7 +308,7 @@ function ConversationThread({
               <span className="text-xs font-medium text-violet-400">
                 {review.persona_name || 'Agent'}
               </span>
-              <span className="text-xs text-muted-foreground/40">
+              <span className="text-xs text-muted-foreground/60">
                 {formatRelativeTime(review.created_at)}
               </span>
             </div>
@@ -372,7 +372,7 @@ function ConversationThread({
                   <span className={`text-xs font-medium ${isUser ? 'text-blue-400' : 'text-violet-400'}`}>
                     {isUser ? 'You' : (review.persona_name || 'Agent')}
                   </span>
-                  <span className="text-xs text-muted-foreground/40">
+                  <span className="text-xs text-muted-foreground/60">
                     {formatRelativeTime(msg.created_at)}
                   </span>
                 </div>
@@ -707,7 +707,7 @@ export default function ManualReviewList() {
               ) : (
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center">
-                    <MessageSquare className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <MessageSquare className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground/50">Select a review to view</p>
                   </div>
                 </div>

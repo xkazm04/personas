@@ -219,7 +219,7 @@ export default function TeamMemoryPanel({
             <p className="text-sm text-muted-foreground/50">
               {activeRunFilter ? 'No memories for this run' : 'No memories yet'}
             </p>
-            <p className="text-sm text-muted-foreground/30 mt-0.5">
+            <p className="text-sm text-muted-foreground/60 mt-0.5">
               {activeRunFilter ? 'Try clearing the run filter' : 'Run a pipeline or add one manually'}
             </p>
           </div>
@@ -251,7 +251,7 @@ export default function TeamMemoryPanel({
               </button>
             )}
             {!activeRunFilter && total > memories.length && (
-              <div className="text-center text-sm text-muted-foreground/40 py-1">
+              <div className="text-center text-sm text-muted-foreground/60 py-1">
                 Showing {memories.length} of {total}
               </div>
             )}
@@ -281,7 +281,7 @@ export default function TeamMemoryPanel({
               {stats.category_counts.map(([cat, count]) => (
                 <div key={cat} className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground/60 capitalize">{cat}</span>
-                  <span className="text-muted-foreground/40">{count}</span>
+                  <span className="text-muted-foreground/60">{count}</span>
                 </div>
               ))}
             </div>

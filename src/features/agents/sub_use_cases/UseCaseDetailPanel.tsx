@@ -23,7 +23,7 @@ interface UseCaseDetailPanelProps {
 function PipelineArrow() {
   return (
     <div className="flex items-center justify-center px-0.5 flex-shrink-0">
-      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30" />
+      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />
     </div>
   );
 }

@@ -94,7 +94,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                           isCellCopied
                             ? 'bg-emerald-500/10 text-emerald-400'
                             : isNull
-                              ? 'text-muted-foreground/30 italic'
+                              ? 'text-muted-foreground/50 italic'
                               : 'text-foreground/75 hover:bg-primary/5'
                         }`}
                         title={isCellCopied ? 'Copied!' : `Click to copy: ${formatCell(cell)}`}

@@ -245,7 +245,7 @@ export function TemplateCard({
                 )}
               </div>
             ) : (
-              <span className="text-sm text-muted-foreground/40 italic">No flows</span>
+              <span className="text-sm text-muted-foreground/60 italic">No flows</span>
             )}
           </div>
 
@@ -276,7 +276,7 @@ export function TemplateCard({
                 })}
               </div>
             ) : (
-              <span className="text-sm text-muted-foreground/40 italic">None</span>
+              <span className="text-sm text-muted-foreground/60 italic">None</span>
             )}
           </div>
 
@@ -300,7 +300,7 @@ export function TemplateCard({
                 })}
               </div>
             ) : (
-              <span className="text-sm text-muted-foreground/40 italic">None</span>
+              <span className="text-sm text-muted-foreground/60 italic">None</span>
             )}
           </div>
         </div>
@@ -422,7 +422,7 @@ export function TemplateCard({
                           {isReady ? (
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/70 flex-shrink-0" />
                           ) : (
-                            <XCircle className="w-3.5 h-3.5 text-muted-foreground/30 flex-shrink-0" />
+                            <XCircle className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
                           )}
                         </div>
                       );

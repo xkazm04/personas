@@ -137,7 +137,7 @@ export function ExpandedRowContent({
                     ? 'bg-white/10'
                     : hasItems
                       ? 'bg-secondary/60 text-muted-foreground/50'
-                      : 'text-muted-foreground/30'
+                      : 'text-muted-foreground/60'
                 }`}
                 style={isActive ? { color: sec.color } : undefined}
               >

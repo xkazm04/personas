@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
-import { Check, Palette } from 'lucide-react';
-import { useThemeStore, THEMES } from '@/stores/themeStore';
-import type { ThemeId, ThemeDefinition } from '@/stores/themeStore';
+import { Check, Palette, Type } from 'lucide-react';
+import { useThemeStore, THEMES, TEXT_SCALES } from '@/stores/themeStore';
+import type { ThemeId, ThemeDefinition, TextScale } from '@/stores/themeStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 
 function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
@@ -73,6 +73,8 @@ function ThemeSwatch({ theme, active, onSelect }: { theme: ThemeDefinition; acti
 export default function AppearanceSettings() {
   const themeId = useThemeStore((s) => s.themeId);
   const setTheme = useThemeStore((s) => s.setTheme);
+  const textScale = useThemeStore((s) => s.textScale);
+  const setTextScale = useThemeStore((s) => s.setTextScale);
 
   const darkThemes = THEMES.filter((t) => !t.isLight);
   const lightThemes = THEMES.filter((t) => t.isLight);
@@ -115,6 +117,51 @@ export default function AppearanceSettings() {
                   onSelect={() => setTheme(t.id as ThemeId)}
                 />
               ))}
+            </div>
+          </div>
+
+          {/* Text sizing */}
+          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+            <div className="flex items-center gap-2.5">
+              <Type className="w-4 h-4 text-muted-foreground/70" />
+              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Text Size</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {TEXT_SCALES.map((scale) => {
+                const isActive = textScale === scale.id;
+                return (
+                  <button
+                    key={scale.id}
+                    onClick={() => setTextScale(scale.id as TextScale)}
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
+                      isActive
+                        ? 'border-primary/30 bg-primary/5'
+                        : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                    }`}
+                  >
+                    <span
+                      className={`font-semibold ${
+                        scale.id === 'large'
+                          ? 'text-base'
+                          : 'text-lg'
+                      } ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}
+                    >
+                      Aa
+                    </span>
+                    <span className={`text-xs ${isActive ? 'text-foreground/80 font-medium' : 'text-muted-foreground/60'}`}>
+                      {scale.label}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground/50">
+                      {scale.description}
+                    </span>
+                    {isActive && (
+                      <div className="absolute top-2 right-2">
+                        <Check className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

@@ -98,7 +98,7 @@ function KeyValueListField({
         </div>
 
         {pairs.length === 0 && (
-          <p className="text-sm text-muted-foreground/40 italic">{def.emptyMessage ?? 'None configured.'}</p>
+          <p className="text-sm text-muted-foreground/60 italic">{def.emptyMessage ?? 'None configured.'}</p>
         )}
 
         <div className="space-y-2">

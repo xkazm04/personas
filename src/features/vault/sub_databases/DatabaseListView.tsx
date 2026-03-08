@@ -103,7 +103,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
       >
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
           <input
             type="text"
             value={search}
@@ -134,7 +134,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
                       <ThemedConnectorIcon url={group.connector.icon_url} label={group.connector.label} color={group.connector.color} size="w-3.5 h-3.5" />
                     ) : null}
                     {group.label}
-                    <span className="text-muted-foreground/40">({group.credentials.length})</span>
+                    <span className="text-muted-foreground/60">({group.credentials.length})</span>
                   </span>
                   {isActive && (
                     <motion.div

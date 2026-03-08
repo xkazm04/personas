@@ -255,7 +255,7 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar({
           <span className="text-sm text-muted-foreground/50">
             {totalEventCount}
           </span>
-          <span className="text-sm text-muted-foreground/40 ml-0.5">events</span>
+          <span className="text-sm text-muted-foreground/60 ml-0.5">events</span>
         </div>
 
         {/* Range badge */}

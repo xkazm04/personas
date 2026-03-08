@@ -190,7 +190,7 @@ export function TemplatePreviewModal({
               </button>
             )}
             {isRunning && (
-              <span className="text-sm text-muted-foreground/40">
+              <span className="text-sm text-muted-foreground/60">
                 You can close — test will continue in background
               </span>
             )}

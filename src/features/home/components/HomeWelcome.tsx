@@ -424,7 +424,7 @@ export default function HomeWelcome() {
             transition={{ delay: 0.8, duration: 0.5 }}
             className="flex items-center justify-center pt-4 pb-8"
           >
-            <div className="flex items-center gap-2 text-sm uppercase tracking-[0.25em] text-muted-foreground/30 font-medium">
+            <div className="flex items-center gap-2 text-sm uppercase tracking-[0.25em] text-muted-foreground/50 font-medium">
               <div className="w-8 h-px bg-gradient-to-r from-transparent to-muted-foreground/20" />
               personas platform
               <div className="w-8 h-px bg-gradient-to-l from-transparent to-muted-foreground/20" />

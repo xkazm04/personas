@@ -239,7 +239,7 @@ export function AdoptConfirmStep({
                   <div key={s.connector_name} className="flex items-center gap-2 text-sm">
                     <span className={`w-1.5 h-1.5 rounded-full ${s.health === 'ready' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                     <span className="text-foreground/70">{s.connector_name}</span>
-                    <span className="text-muted-foreground/40 ml-auto">
+                    <span className="text-muted-foreground/60 ml-auto">
                       {s.health === 'ready' ? 'Ready' : 'Needs setup'}
                     </span>
                   </div>

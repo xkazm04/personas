@@ -104,7 +104,7 @@ export function PromptPerformanceCard({ personaId, onOpenLab }: PromptPerformanc
     return (
       <div className="rounded-xl border border-primary/10 bg-secondary/20 p-4">
         <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-muted-foreground/30" />
+          <Activity className="w-4 h-4 text-muted-foreground/50" />
           <span className="text-sm text-muted-foreground/50">No execution data yet</span>
         </div>
       </div>
@@ -244,7 +244,7 @@ export function PromptPerformanceCard({ personaId, onOpenLab }: PromptPerformanc
             />
           </button>
         </div>
-        <p className="text-[11px] text-muted-foreground/40 mt-1.5">
+        <p className="text-[11px] text-muted-foreground/60 mt-1.5">
           Automatically rollback if error rate exceeds 2x the previous version&apos;s rate.
         </p>
       </div>

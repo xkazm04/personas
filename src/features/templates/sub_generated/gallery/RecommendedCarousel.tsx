@@ -21,7 +21,7 @@ export function RecommendedCarousel({
         <span className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wide">
           Recommended for You
         </span>
-        <span className="text-sm text-muted-foreground/40">
+        <span className="text-sm text-muted-foreground/60">
           Based on your connectors
         </span>
       </div>
@@ -55,7 +55,7 @@ export function RecommendedCarousel({
                   );
                 })}
                 {connectors.length > 3 && (
-                  <span className="text-sm text-muted-foreground/40">+{connectors.length - 3}</span>
+                  <span className="text-sm text-muted-foreground/60">+{connectors.length - 3}</span>
                 )}
                 {t.adoption_count > 0 && (
                   <span className="ml-auto inline-flex items-center gap-1 text-sm font-mono text-emerald-400/60">

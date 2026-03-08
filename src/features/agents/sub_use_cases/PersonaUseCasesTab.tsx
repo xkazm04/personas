@@ -188,7 +188,7 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
             {toolRunnerOpen ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />}
             <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
             <span className="text-sm font-medium text-muted-foreground/80">Direct Tool Testing</span>
-            <span className="text-sm text-muted-foreground/40">{selectedPersona!.tools!.length} tool{selectedPersona!.tools!.length !== 1 ? 's' : ''}</span>
+            <span className="text-sm text-muted-foreground/60">{selectedPersona!.tools!.length} tool{selectedPersona!.tools!.length !== 1 ? 's' : ''}</span>
           </button>
           <AnimatePresence>
             {toolRunnerOpen && (

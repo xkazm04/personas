@@ -205,7 +205,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
                 {/* Not installed */}
                 {notInstalledApps.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground/40 uppercase tracking-wide">
+                    <h4 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wide">
                       Not detected
                     </h4>
                     {notInstalledApps.map((app) => (
@@ -221,7 +221,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
                 )}
 
                 {apps.length === 0 && !scanning && (
-                  <div className="text-center py-8 text-muted-foreground/40 text-sm">
+                  <div className="text-center py-8 text-muted-foreground/60 text-sm">
                     No desktop apps detected. Try refreshing.
                   </div>
                 )}
@@ -274,10 +274,10 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
               </>
             ) : (
               <div className="text-center py-8 space-y-2">
-                <p className="text-sm text-muted-foreground/40">
+                <p className="text-sm text-muted-foreground/60">
                   No Claude Desktop MCP configuration found.
                 </p>
-                <p className="text-xs text-muted-foreground/30">
+                <p className="text-xs text-muted-foreground/60">
                   If you have Claude Desktop installed, ensure it has MCP servers configured in its settings.
                 </p>
               </div>
@@ -343,10 +343,10 @@ function DesktopAppCard({
             )}
           </div>
           {app.binary_path && (
-            <p className="text-xs text-muted-foreground/40 truncate">{app.binary_path}</p>
+            <p className="text-xs text-muted-foreground/60 truncate">{app.binary_path}</p>
           )}
         </div>
-        {!disabled && <ChevronRight className="w-4 h-4 text-muted-foreground/30" />}
+        {!disabled && <ChevronRight className="w-4 h-4 text-muted-foreground/50" />}
       </div>
     </button>
   );
@@ -423,7 +423,7 @@ function CapabilityApprovalCard({
         </div>
 
         {manifest.allowed_binaries.length > 0 && (
-          <div className="text-xs text-muted-foreground/40">
+          <div className="text-xs text-muted-foreground/60">
             <span className="font-medium">Allowed binaries: </span>
             {manifest.allowed_binaries.join(', ')}
           </div>
@@ -471,9 +471,9 @@ function McpServerCard({
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground">{server.label}</p>
-        <p className="text-xs text-muted-foreground/40 truncate font-mono">{server.command}</p>
+        <p className="text-xs text-muted-foreground/60 truncate font-mono">{server.command}</p>
         {Object.keys(server.env).length > 0 && (
-          <p className="text-xs text-muted-foreground/30">
+          <p className="text-xs text-muted-foreground/60">
             {Object.keys(server.env).length} env var{Object.keys(server.env).length !== 1 ? 's' : ''}
           </p>
         )}

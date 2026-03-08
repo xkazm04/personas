@@ -47,7 +47,7 @@ export function ConnectorPicker({ selected, onToggle }: ConnectorPickerProps) {
     <div className="space-y-3">
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
         <input
           type="text"
           value={search}
@@ -96,7 +96,7 @@ export function ConnectorPicker({ selected, onToggle }: ConnectorPickerProps) {
         ))}
 
         {grouped.length === 0 && (
-          <p className="text-sm text-muted-foreground/40 text-center py-2">No connectors match "{search}"</p>
+          <p className="text-sm text-muted-foreground/60 text-center py-2">No connectors match "{search}"</p>
         )}
       </div>
     </div>

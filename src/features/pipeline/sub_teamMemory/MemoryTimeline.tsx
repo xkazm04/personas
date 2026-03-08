@@ -142,7 +142,7 @@ function RunMarker({
               {group.memories.length} memor{group.memories.length !== 1 ? 'ies' : 'y'}
             </span>
           </div>
-          <span className="text-sm text-muted-foreground/40">{formatTime(group.firstCreatedAt)}</span>
+          <span className="text-sm text-muted-foreground/60">{formatTime(group.firstCreatedAt)}</span>
         </div>
         <ChevronRight className={`w-3 h-3 text-muted-foreground/40 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`} />
       </button>
@@ -200,7 +200,7 @@ function MemoryEntry({ memory, isManual }: { memory: TeamMemory; isManual?: bool
           ) : (
             <Zap className="w-2.5 h-2.5 text-amber-400/50" />
           )}
-          <span className="text-sm text-muted-foreground/40">{formatTime(memory.created_at)}</span>
+          <span className="text-sm text-muted-foreground/60">{formatTime(memory.created_at)}</span>
         </div>
       </div>
     </div>

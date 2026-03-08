@@ -354,7 +354,7 @@ function DayTimeGrid({
             />
           ))}
         </div>
-        <div className="flex justify-between mt-0.5 text-sm text-muted-foreground/40 font-mono px-0.5">
+        <div className="flex justify-between mt-0.5 text-sm text-muted-foreground/60 font-mono px-0.5">
           <span>12a</span>
           <span>6a</span>
           <span>12p</span>
@@ -593,7 +593,7 @@ export function ScheduleBuilder({
             </div>
 
             {/* Field legend */}
-            <div className="flex gap-3 text-sm text-muted-foreground/40 font-mono px-0.5">
+            <div className="flex gap-3 text-sm text-muted-foreground/60 font-mono px-0.5">
               <span>min</span>
               <span>hour</span>
               <span>day</span>
@@ -617,7 +617,7 @@ export function ScheduleBuilder({
       {/* Current cron display (for non-cron modes) */}
       {mode !== 'cron' && cronExpression && (
         <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/20 border border-primary/8">
-          <Code2 className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />
+          <Code2 className="w-3 h-3 text-muted-foreground/60 flex-shrink-0" />
           <span className="text-sm font-mono text-muted-foreground/50 flex-1 truncate">{cronExpression}</span>
           {cronPreview?.valid && (
             <span className="text-sm text-amber-400/70 truncate">{cronPreview.description}</span>
@@ -688,7 +688,7 @@ export function ScheduleBuilder({
 
       {/* Description from AI if available */}
       {suggestedTrigger.description && (
-        <p className="text-sm text-muted-foreground/40 px-0.5 leading-relaxed">
+        <p className="text-sm text-muted-foreground/60 px-0.5 leading-relaxed">
           AI suggestion: {suggestedTrigger.description}
         </p>
       )}

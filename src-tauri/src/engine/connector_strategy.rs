@@ -239,6 +239,39 @@ impl ConnectorStrategy for DefaultStrategy {
     ) -> Result<Option<String>, AppError> {
         Ok(find_auth_token(fields))
     }
+
+    /// For OAuth credentials, rotate via token refresh; for API keys, use default healthcheck.
+    async fn rotate(
+        &self,
+        pool: &DbPool,
+        credential: &PersonaCredential,
+    ) -> Result<String, AppError> {
+        let fields = crate::db::repos::resources::credentials::get_decrypted_fields(pool, credential)?;
+        if self.is_oauth(&fields) {
+            // OAuth path: refresh + verify
+            let refresh_msg = super::oauth_refresh::refresh_single_credential(pool, credential).await?;
+            match super::healthcheck::run_healthcheck(pool, &credential.id).await {
+                Ok(hc) if hc.success => Ok(format!("{refresh_msg} — verified: {}", hc.message)),
+                Ok(hc) => Ok(format!("{refresh_msg} — healthcheck warning: {}", hc.message)),
+                Err(_) => Ok(format!("{refresh_msg} — healthcheck skipped")),
+            }
+        } else {
+            // API key path: default healthcheck-based rotation
+            let original_fields = fields;
+            let result = super::healthcheck::run_healthcheck(pool, &credential.id).await;
+            match result {
+                Ok(hc) if hc.success => Ok(format!("API key verified healthy: {}", hc.message)),
+                Ok(hc) => {
+                    let _ = crate::db::repos::resources::credentials::save_fields(pool, &credential.id, &original_fields);
+                    Err(AppError::Internal(format!("Rotation failed (credentials restored): {}", hc.message)))
+                }
+                Err(e) => {
+                    let _ = crate::db::repos::resources::credentials::save_fields(pool, &credential.id, &original_fields);
+                    Err(e)
+                }
+            }
+        }
+    }
 }
 
 // ── Google OAuth ───────────────────────────────────────────────────
@@ -270,6 +303,23 @@ impl ConnectorStrategy for GoogleOAuthStrategy {
         let access_token =
             exchange_google_refresh_token(&client_id, &client_secret, &refresh_token).await?;
         Ok(Some(access_token))
+    }
+
+    /// OAuth rotation = token refresh + persist + healthcheck verify.
+    async fn rotate(
+        &self,
+        pool: &DbPool,
+        credential: &PersonaCredential,
+    ) -> Result<String, AppError> {
+        // Refresh the token via the shared oauth_refresh module
+        let refresh_msg = super::oauth_refresh::refresh_single_credential(pool, credential).await?;
+
+        // Verify the refreshed token with a healthcheck
+        match super::healthcheck::run_healthcheck(pool, &credential.id).await {
+            Ok(hc) if hc.success => Ok(format!("{refresh_msg} — verified: {}", hc.message)),
+            Ok(hc) => Ok(format!("{refresh_msg} — healthcheck warning: {}", hc.message)),
+            Err(_) => Ok(format!("{refresh_msg} — healthcheck skipped")),
+        }
     }
 }
 

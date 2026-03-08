@@ -98,7 +98,7 @@ export function VersionsPanel() {
           <div className="text-center py-8 space-y-2">
             <GitBranch className="w-8 h-8 text-muted-foreground/20 mx-auto" />
             <p className="text-sm text-muted-foreground/60">No versions yet</p>
-            <p className="text-sm text-muted-foreground/40">Versions are created automatically when you edit the prompt</p>
+            <p className="text-sm text-muted-foreground/60">Versions are created automatically when you edit the prompt</p>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
@@ -132,7 +132,7 @@ export function VersionsPanel() {
           <div className="text-center py-12 space-y-2">
             <ArrowLeftRight className="w-8 h-8 text-muted-foreground/20 mx-auto" />
             <p className="text-sm text-muted-foreground/60">Select two versions to compare</p>
-            <p className="text-sm text-muted-foreground/40">
+            <p className="text-sm text-muted-foreground/60">
               Click the <span className="font-mono bg-blue-500/10 text-blue-400 px-1 rounded">A</span> and <span className="font-mono bg-violet-500/10 text-violet-400 px-1 rounded">B</span> buttons on any version
             </p>
           </div>

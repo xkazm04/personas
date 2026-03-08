@@ -95,13 +95,13 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
             {executing ? 'Running...' : 'Run Query'}
           </button>
 
-          <span className="text-sm text-muted-foreground/30">Ctrl+Enter</span>
+          <span className="text-sm text-muted-foreground/60">Ctrl+Enter</span>
         </div>
 
         {/* History chips */}
         {history.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-sm text-muted-foreground/30">Recent:</span>
+            <span className="text-sm text-muted-foreground/60">Recent:</span>
             {history.map((h, i) => (
               <button
                 key={i}
@@ -132,7 +132,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
 
         {!result && !error && !executing && (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-muted-foreground/30">
+            <p className="text-sm text-muted-foreground/60">
               {language === 'redis' ? 'Enter a Redis command and click Run' : 'Write a query and press Run or Ctrl+Enter'}
             </p>
           </div>
@@ -140,8 +140,8 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
 
         {executing && (
           <div className="flex items-center justify-center h-full gap-2">
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/40" />
-            <span className="text-sm text-muted-foreground/40">Executing query...</span>
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/60" />
+            <span className="text-sm text-muted-foreground/60">Executing query...</span>
           </div>
         )}
       </div>

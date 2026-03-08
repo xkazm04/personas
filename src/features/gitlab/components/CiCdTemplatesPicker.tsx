@@ -84,7 +84,7 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
                       <p className="text-xs text-muted-foreground/60 mt-0.5 line-clamp-2">
                         {template.description}
                       </p>
-                      <span className="inline-block mt-1 text-[10px] text-muted-foreground/40 font-mono">
+                      <span className="inline-block mt-1 text-[10px] text-muted-foreground/60 font-mono">
                         on: {template.trigger}
                       </span>
                     </div>

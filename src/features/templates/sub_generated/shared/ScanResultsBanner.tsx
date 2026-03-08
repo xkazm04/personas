@@ -60,7 +60,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
       {expanded && finding.context && (
         <div className="px-3 pb-2.5 pt-0">
           <div className="ml-4 pl-3 border-l-2 border-white/5">
-            <p className="text-sm uppercase tracking-wider text-muted-foreground/40 mb-1">
+            <p className="text-sm uppercase tracking-wider text-muted-foreground/60 mb-1">
               Source: <span className="text-muted-foreground/60">{finding.source}</span>
             </p>
             <pre className="text-sm text-muted-foreground/70 whitespace-pre-wrap font-mono bg-black/20 rounded-xl px-2.5 py-2 leading-relaxed">
@@ -99,7 +99,7 @@ function SeveritySection({
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         {icon}
         <span className="font-medium uppercase tracking-wider">{label}</span>
-        <span className="text-muted-foreground/40 ml-auto">{findings.length}</span>
+        <span className="text-muted-foreground/60 ml-auto">{findings.length}</span>
       </button>
       {open && (
         <div className="space-y-1.5 ml-1">

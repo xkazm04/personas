@@ -138,12 +138,12 @@ export function VersionTimeline({ markers }: { markers: VersionMarker[] }) {
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: VERSION_COLORS[v.tag] ?? '#71717a' }} />
             <span className="text-sm font-mono text-foreground/80">v{v.version_number}</span>
             <span className="text-sm text-muted-foreground/50">{v.tag}</span>
-            <span className="text-sm text-muted-foreground/40 flex items-center gap-0.5">
+            <span className="text-sm text-muted-foreground/60 flex items-center gap-0.5">
               <Calendar className="w-2.5 h-2.5" />
               {fmtDate(v.created_at.slice(0, 10))}
             </span>
             {v.change_summary && (
-              <span className="text-sm text-muted-foreground/40 max-w-[120px] truncate" title={v.change_summary}>
+              <span className="text-sm text-muted-foreground/60 max-w-[120px] truncate" title={v.change_summary}>
                 {v.change_summary}
               </span>
             )}

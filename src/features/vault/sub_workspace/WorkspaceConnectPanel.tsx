@@ -193,7 +193,7 @@ function ProviderSection({
           <p className="text-sm text-muted-foreground/70 text-center">
             Sign in with your Google account in the browser window.
             <br />
-            <span className="text-xs text-muted-foreground/40">
+            <span className="text-xs text-muted-foreground/60">
               This will grant access to {ws.selectedServices.length} service{ws.selectedServices.length !== 1 ? 's' : ''}
             </span>
           </p>

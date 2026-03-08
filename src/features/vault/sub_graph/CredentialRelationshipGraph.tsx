@@ -241,7 +241,7 @@ export function CredentialRelationshipGraph() {
                 exit={{ opacity: 0 }}
                 className="rounded-xl border border-primary/10 bg-secondary/20 p-6 text-center"
               >
-                <Network className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
+                <Network className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm text-muted-foreground/50">
                   Select a credential to see its blast radius and dependencies
                 </p>
@@ -270,7 +270,7 @@ export function CredentialRelationshipGraph() {
                 );
               })}
               {filteredEdges.length > 30 && (
-                <div className="text-xs text-muted-foreground/40 pt-1">
+                <div className="text-xs text-muted-foreground/60 pt-1">
                   +{filteredEdges.length - 30} more
                 </div>
               )}
@@ -317,7 +317,7 @@ function NodeChip({
       </div>
       <span className="text-xs text-foreground/80 truncate flex-1">{node.label}</span>
       {node.meta.serviceType && (
-        <span className="text-xs text-muted-foreground/40 font-mono truncate max-w-[80px]">{node.meta.serviceType}</span>
+        <span className="text-xs text-muted-foreground/60 font-mono truncate max-w-[80px]">{node.meta.serviceType}</span>
       )}
       {node.meta.dependentCount != null && node.meta.dependentCount > 0 && (
         <span className="text-xs text-blue-400/60">{node.meta.dependentCount} dep{node.meta.dependentCount !== 1 ? 's' : ''}</span>
@@ -399,7 +399,7 @@ function BlastRadiusPanel({ blast, onClose }: { blast: BlastRadius; onClose: () 
                   <Bot className="w-3 h-3 text-blue-400/60" />
                   <span className="text-xs text-foreground/80 flex-1 truncate">{agent.name}</span>
                   {agent.via && (
-                    <span className="text-xs text-muted-foreground/40 font-mono">{agent.via}</span>
+                    <span className="text-xs text-muted-foreground/60 font-mono">{agent.via}</span>
                   )}
                 </div>
               ))}
@@ -488,7 +488,7 @@ function NodeDetailPanel({
                 <ConnIcon className="w-3 h-3 flex-shrink-0" style={{ color: connNode.color }} />
                 <span className="text-xs text-foreground/80 truncate flex-1">{connNode.label}</span>
                 {edge.label && (
-                  <span className="text-xs text-muted-foreground/40">{edge.label}</span>
+                  <span className="text-xs text-muted-foreground/60">{edge.label}</span>
                 )}
               </button>
             );

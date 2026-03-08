@@ -132,7 +132,7 @@ export function N8nUseCasesTab({
                               isTesting
                                 ? 'bg-primary/20 border-primary/30 text-primary'
                                 : mode === 'non_executable'
-                                  ? 'bg-secondary/30 border-primary/10 text-muted-foreground/30 cursor-not-allowed'
+                                  ? 'bg-secondary/30 border-primary/10 text-muted-foreground/50 cursor-not-allowed'
                                   : 'bg-secondary/40 border-primary/15 text-foreground/70 hover:bg-primary/10 hover:text-primary hover:border-primary/25'
                             }`}
                             title={
@@ -156,7 +156,7 @@ export function N8nUseCasesTab({
                           </button>
                         )}
                         {!onTestUseCase && mode !== 'non_executable' && (
-                          <span className="text-sm text-muted-foreground/30 flex-shrink-0 mt-1">
+                          <span className="text-sm text-muted-foreground/60 flex-shrink-0 mt-1">
                             Save to test
                           </span>
                         )}

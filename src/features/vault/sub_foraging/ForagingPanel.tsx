@@ -84,7 +84,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
               <Sparkles className="w-3.5 h-3.5" />
               Start Scan
             </button>
-            <div className="text-sm text-muted-foreground/40 space-y-0.5">
+            <div className="text-sm text-muted-foreground/60 space-y-0.5">
               <p>Scans: ~/.aws, ~/.kube, env vars, .env, ~/.npmrc, Docker, GitHub CLI, SSH</p>
               <p>No secrets are uploaded — scanning happens entirely on your machine.</p>
             </div>
@@ -155,7 +155,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
                 <p className="text-sm text-muted-foreground/70">
                   No credentials found on your filesystem.
                 </p>
-                <p className="text-sm text-muted-foreground/40 mt-1">
+                <p className="text-sm text-muted-foreground/60 mt-1">
                   Try setting environment variables like OPENAI_API_KEY or configure ~/.aws/credentials.
                 </p>
               </div>

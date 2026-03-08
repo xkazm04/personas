@@ -142,7 +142,7 @@ export function OnboardingBanner({ personaId }: { personaId: string }) {
               {item.done ? (
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
               ) : (
-                <Circle className="w-3.5 h-3.5 text-muted-foreground/30 flex-shrink-0" />
+                <Circle className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
               )}
               <span className={`text-sm flex-1 ${item.done ? 'line-through' : ''}`}>
                 {item.label}

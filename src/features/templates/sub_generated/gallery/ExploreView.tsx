@@ -51,7 +51,7 @@ export function ExploreView({
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle2 className="w-4 h-4 text-emerald-400/70" />
             <h2 className="text-sm font-semibold text-foreground/80">Ready to Deploy</h2>
-            <span className="text-sm text-muted-foreground/40">Templates with all connectors configured</span>
+            <span className="text-sm text-muted-foreground/60">Templates with all connectors configured</span>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2">
             {readyTemplates.map((t) => (

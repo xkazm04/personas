@@ -193,7 +193,7 @@ function JobRow({
                 </div>
               ))
             ) : (
-              <div className="text-muted-foreground/40 py-4 text-center">No output yet</div>
+              <div className="text-muted-foreground/60 py-4 text-center">No output yet</div>
             )}
           </div>
         </div>
@@ -283,7 +283,7 @@ export default function WorkflowsDashboard() {
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <Terminal className="w-10 h-10 text-muted-foreground/20" />
             <div className="text-sm text-muted-foreground/60">No background jobs running or recent</div>
-            <div className="text-[11px] text-muted-foreground/40">
+            <div className="text-[11px] text-muted-foreground/60">
               Jobs appear here when you run N8n transforms, template adoptions, template generation, or query debugging
             </div>
           </div>

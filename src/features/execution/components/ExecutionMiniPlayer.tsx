@@ -264,10 +264,10 @@ export default function ExecutionMiniPlayer() {
 
         {/* ── Pipeline stage dots ─────────────────────────────────── */}
         <div className="flex items-center gap-2 px-3 py-1.5 border-b border-primary/5 bg-secondary/10">
-          <span className="text-sm text-muted-foreground/40 uppercase tracking-wider">Pipeline</span>
+          <span className="text-sm text-muted-foreground/60 uppercase tracking-wider">Pipeline</span>
           <PipelineDots trace={pipelineTrace} />
           {executionOutput.length > 0 && (
-            <span className="ml-auto text-sm font-mono text-muted-foreground/40">
+            <span className="ml-auto text-sm font-mono text-muted-foreground/60">
               {executionOutput.length} lines
             </span>
           )}
@@ -294,7 +294,7 @@ export default function ExecutionMiniPlayer() {
             className="max-h-52 overflow-y-auto bg-black/20 px-3 py-2 font-mono text-sm leading-relaxed scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent"
           >
             {lastLines.length === 0 && (
-              <div className="text-muted-foreground/30 flex items-center gap-2 py-2">
+              <div className="text-muted-foreground/60 flex items-center gap-2 py-2">
                 <Terminal className="w-3.5 h-3.5" />
                 {isExecuting ? 'Waiting for output...' : 'No output'}
               </div>

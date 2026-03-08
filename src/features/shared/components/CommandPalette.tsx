@@ -317,7 +317,7 @@ export default function CommandPalette() {
 
               {sections.map(section => (
                 <div key={section.kind}>
-                  <div className="px-4 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/40">
+                  <div className="px-4 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
                     {section.label}
                   </div>
                   {section.items.map(item => (
@@ -337,7 +337,7 @@ export default function CommandPalette() {
                       </span>
                       <span className="flex-1 truncate text-sm">{item.label}</span>
                       {item.description && (
-                        <span className="text-xs text-muted-foreground/40 truncate max-w-[140px]">
+                        <span className="text-xs text-muted-foreground/60 truncate max-w-[140px]">
                           {item.description}
                         </span>
                       )}
@@ -351,7 +351,7 @@ export default function CommandPalette() {
             </div>
 
             {/* Footer hint */}
-            <div className="flex items-center gap-4 px-4 py-2 border-t border-primary/10 text-[11px] text-muted-foreground/40">
+            <div className="flex items-center gap-4 px-4 py-2 border-t border-primary/10 text-[11px] text-muted-foreground/60">
               <span className="flex items-center gap-1">
                 <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&uarr;&darr;</kbd>
                 navigate

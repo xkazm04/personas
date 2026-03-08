@@ -71,7 +71,7 @@ export function AbTestPanel({ personaId, compareA, compareB }: AbTestPanelProps)
         <p className="text-sm text-muted-foreground/50 text-center max-w-xs">
           Compare two prompt versions head-to-head. See which one performs better on cost, speed, and output quality.
         </p>
-        <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground/40">
+        <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground/60">
           <span>Select</span>
           <span className="font-mono bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded">A</span>
           <span>&</span>
