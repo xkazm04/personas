@@ -1,1 +1,1 @@
-export { ToolSelector } from './ToolSelector';
+export { ToolSelector } from './components/ToolSelector';
