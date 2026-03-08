@@ -1,0 +1,56 @@
+{
+  "templateId": "email-deliverability-monitor",
+  "templateName": "Email Deliverability Monitor",
+  "category": ["email"],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T12:00:00Z",
+
+  "connectorClassification": {
+    "available": ["slack"],
+    "swapped": {},
+    "missing": ["sendgrid", "airtable"]
+  },
+
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      { "name": "schema_completeness", "passed": true, "detail": "All required payload fields present and substantive" },
+      { "name": "flow_integrity", "passed": true, "detail": "3 flows: flow_webhook_processing (17 nodes/21 edges), flow_weekly_report (13 nodes/14 edges), flow_periodic_spike_check (11 nodes/12 edges). All well-connected with error nodes." },
+      { "name": "trigger_validity", "passed": true, "detail": "3 triggers: webhook (sendgrid events), schedule (0 9 * * 1 weekly), schedule (*/15 * * * * every 15 min). All valid." },
+      { "name": "connector_role_alignment", "passed": true, "detail": "sendgrid=email_delivery, airtable=knowledge_base, slack=chat_messaging — all valid roles" },
+      { "name": "adoption_question_fitness", "passed": true, "detail": "5 adoption_questions added: alert_channel, critical_channel, airtable_base_id, bounce_spike_threshold, auto_suppress_engaged" },
+      { "name": "safety_scan", "passed": true, "detail": "0 critical findings. PII hashing mentioned. Compliance safety (never un-suppress without approval) explicitly handled." }
+    ]
+  },
+
+  "dimensions": [
+    { "name": "Prompt Completeness", "category": "technical", "score": 10, "weight": 3, "rationale": "Identity is 70+ words. Instructions cover 6 major sections with detailed logic (webhook ingestion, Airtable dashboard, spike detection, alerting, auto-suppression, weekly report). Tool guidance has specific API endpoints for all 3 services. Examples have 3 concrete scenarios. Error handling covers all services plus compliance." },
+    { "name": "Tool-Prompt Alignment", "category": "technical", "score": 10, "weight": 2, "rationale": "http_request, file_read, file_write all mapped to specific API calls. SendGrid, Airtable, Slack APIs all documented with endpoints and body formats. No phantom tools." },
+    { "name": "Trigger Coherence", "category": "technical", "score": 10, "weight": 2, "rationale": "Webhook for real-time events, Monday 9AM for weekly report, every-15-min for spike detection — all three match prompt workflow descriptions precisely." },
+    { "name": "Connector Coverage", "category": "technical", "score": 10, "weight": 2, "rationale": "All 3 service_flow entries (SendGrid, Airtable, Slack) backed by connectors with complete credential fields." },
+    { "name": "Memory Design", "category": "technical", "score": 9, "weight": 1, "rationale": "Rolling baselines in deliverability_baselines.json, deduplication via last_processed_event.json, agent_memory for calibrated thresholds. Good scope." },
+    { "name": "Error Handling", "category": "technical", "score": 10, "weight": 2, "rationale": "Comprehensive: SendGrid retry with backoff, Airtable rate limits (5 req/s) with batching, Slack fallback to admin DM, duplicate webhook deduplication, stale baseline recovery, PII protection, compliance safety rules." },
+    { "name": "Use Case Fidelity", "category": "technical", "score": 10, "weight": 2, "rationale": "All 3 use_case_flows fully described in prompt: webhook processing with suppression logic, weekly report with trend analysis, periodic spike detection with baseline comparison." },
+    { "name": "Value Clarity", "category": "business", "score": 10, "weight": 2, "rationale": "Clear business outcome: protect sender reputation, maintain deliverability dashboard, automated suppression with compliance. Replaces 5 separate workflows." },
+    { "name": "Execution Feasibility", "category": "technical", "score": 8, "weight": 3, "rationale": "SendGrid, Airtable, Slack APIs are standard. Webhook setup requires SendGrid configuration. All trigger configs are actionable. Four-table Airtable setup is substantial but well-documented." },
+    { "name": "Differentiation", "category": "business", "score": 10, "weight": 1, "rationale": "Significant reasoning: bounce classification, spike detection with rolling baselines, safety checks for recently-engaged addresses, compliance decisions. Well beyond cron capabilities." },
+    { "name": "Variable Necessity", "category": "technical", "score": 9, "weight": 1, "rationale": "All 5 questions target genuine config needs. bounce_spike_threshold and auto_suppress_engaged add meaningful customization beyond just connector config." },
+    { "name": "Default Quality", "category": "technical", "score": 8, "weight": 2, "rationale": "Good defaults for channels and threshold. Airtable base_id must be user-provided. Overall, user needs to provide 1 value (base_id) minimum to get started." }
+  ],
+
+  "overall": 9.48,
+  "grade": "A",
+
+  "issues": [
+    "No adoption_questions existed — 5 added covering channel routing, Airtable config, thresholds, and suppression policy",
+    "SendGrid and Airtable connectors may not have builtin definitions"
+  ],
+
+  "fixes_applied": {
+    "template": [
+      "Added 5 adoption_questions: alert_channel, critical_channel, airtable_base_id, bounce_spike_threshold, auto_suppress_engaged",
+      "Included use_case_ids on threshold and suppression questions to scope them to relevant flows"
+    ],
+    "app_code": []
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "templateId": "ai-cost-usage-monitor",
+  "templateName": "AI Cost & Usage Monitor",
+  "category": [
+    "productivity"
+  ],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T00:00:00Z",
+  "connectorClassification": {
+    "available": [
+      "notion",
+      "slack"
+    ],
+    "swapped": {},
+    "missing": [
+      "openai"
+    ]
+  },
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "schema_completeness",
+        "passed": true,
+        "detail": "All required payload fields present including customSections for budget config and Notion schema"
+      },
+      {
+        "name": "flow_integrity",
+        "passed": true,
+        "detail": "3 flows (daily collection 15 edges, monthly report 11 edges, error recovery 11 edges) — all properly connected"
+      },
+      {
+        "name": "trigger_validity",
+        "passed": true,
+        "detail": "Daily 7AM schedule and monthly 1st-of-month 8AM schedule — both valid crons"
+      },
+      {
+        "name": "connector_role_alignment",
+        "passed": false,
+        "detail": "openai connector has role 'ai_platform' with no builtin definition. However, template uses http_request with API key, making it self-contained."
+      },
+      {
+        "name": "adoption_question_fitness",
+        "passed": true,
+        "detail": "4 adoption_questions added covering Slack channel, Notion DB, daily budget, and monthly budget"
+      },
+      {
+        "name": "default_value_coverage",
+        "passed": true,
+        "detail": "Budget defaults ($15/day, $350/month) and Slack channel default provided"
+      },
+      {
+        "name": "prompt_quality",
+        "passed": true,
+        "detail": "Identity 62w, instructions 700w+ with daily and monthly sections, tool guidance with OpenAI/Notion/Slack API endpoints, 3 examples, comprehensive error handling"
+      },
+      {
+        "name": "safety_scan",
+        "passed": true,
+        "detail": "0 critical findings. Read-only against OpenAI usage API."
+      }
+    ]
+  },
+  "dimensions": [
+    {
+      "name": "Prompt Completeness",
+      "category": "technical",
+      "score": 9,
+      "weight": 3,
+      "rationale": "Identity 62w (>50), instructions cover daily collection (8 steps) and monthly reporting (7 steps) totaling 700+ words, tool guidance with specific OpenAI Usage API endpoints, 3 examples (normal, exceeded, monthly), comprehensive error handling per API."
+    },
+    {
+      "name": "Tool-Prompt Alignment",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "http_request for all 3 APIs with endpoint documentation. file_read/file_write for local state. All tools referenced in prompt match suggested_tools. No phantom tools."
+    },
+    {
+      "name": "Trigger Coherence",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "Daily 7AM for usage collection and monthly 1st-at-8AM for optimization report. Both schedules align precisely with the described workflows and timing."
+    },
+    {
+      "name": "Connector Coverage",
+      "category": "technical",
+      "score": 7,
+      "weight": 2,
+      "rationale": "Notion and Slack have builtins. OpenAI connector is well-defined with credential fields but has no builtin — template is still functional via http_request with API key."
+    },
+    {
+      "name": "Memory Design",
+      "category": "technical",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Local state tracks budget thresholds, rolling averages, and last run. Monthly cache avoids re-querying Notion. Agent memory stores trends and optimization insights. Good design."
+    },
+    {
+      "name": "Error Handling",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Per-API error handling: OpenAI (401, 429, 5xx, empty data), Notion (400, 404, 429), Slack (channel_not_found, invalid_auth). Data anomaly detection prevents false alerts. Credential refresh flow."
+    },
+    {
+      "name": "Use Case Fidelity",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "3 flows cover daily collection with budget evaluation, monthly report with optimization recommendations, and error recovery with backfill. All prompt steps map to flow nodes."
+    },
+    {
+      "name": "Value Clarity",
+      "category": "business",
+      "score": 10,
+      "weight": 2,
+      "rationale": "Unmistakable value: automated tracking and budget enforcement for AI API spending with monthly optimization recommendations. Directly saves money."
+    },
+    {
+      "name": "Execution Feasibility",
+      "category": "business",
+      "score": 7,
+      "weight": 3,
+      "rationale": "OpenAI Usage API requires Organization Owner/Reader role and 'Usage: Read' permission. Notion and Slack have builtins. OpenAI lacks a builtin connector but works via http_request."
+    },
+    {
+      "name": "Differentiation",
+      "category": "business",
+      "score": 9,
+      "weight": 1,
+      "rationale": "Tiered budget alerting, per-model cost analysis, model downgrade recommendations, caching opportunity detection, and batch processing suggestions go well beyond simple cost tracking."
+    },
+    {
+      "name": "Variable Necessity",
+      "category": "business",
+      "score": 9,
+      "weight": 1,
+      "rationale": "All 4 adoption questions are necessary. Budget amounts and Notion DB ID are required for core functionality. Slack channel customizes delivery."
+    },
+    {
+      "name": "Default Quality",
+      "category": "business",
+      "score": 8,
+      "weight": 2,
+      "rationale": "Good defaults for budgets ($15/day, $350/month) and Slack channel (#ai-cost-alerts). Notion DB ID requires user input. Template works immediately with defaults for cost tracking."
+    }
+  ],
+  "overall": 8.7,
+  "grade": "A",
+  "issues": [
+    "No adoption_questions existed — connectors need user-specific configuration",
+    "OpenAI connector has no builtin definition — requires user to set up API key via connector form",
+    "OpenAI Usage API requires Organization-level permissions which may not be available to all users"
+  ],
+  "fixes_applied": {
+    "template": [
+      "Added 4 adoption_questions: slack_alert_channel, notion_tracking_db, daily_budget, monthly_budget"
+    ],
+    "app_code": []
+  }
+}

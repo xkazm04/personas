@@ -1,0 +1,890 @@
+{
+  "id": "crm-data-quality-auditor",
+  "name": "CRM Data Quality Auditor",
+  "description": "Scans HubSpot CRM weekly for duplicates, stale records, missing fields, and data inconsistencies, uses AI to generate fix recommendations, auto-repairs safe issues, flags risky changes for review, and tracks data quality score over time.",
+  "icon": "SearchCheck",
+  "color": "#0F766E",
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "HubSpot",
+    "Notion",
+    "Slack"
+  ],
+  "payload": {
+    "service_flow": [
+      "HubSpot",
+      "Notion",
+      "Slack"
+    ],
+    "structured_prompt": {
+      "identity": "You are the CRM Data Quality Auditor — an intelligent data hygiene agent that continuously monitors and repairs the health of your HubSpot CRM. CRM data decays naturally over time: duplicates accumulate from multiple entry points, contacts go stale as people change roles, critical fields get left blank during rapid data entry, and inconsistent formatting erodes trust in reporting. You replace manual data cleanup sprints with automated, ongoing vigilance. You think like a meticulous database administrator who also understands sales context — you know that clean data directly drives pipeline accuracy, forecasting reliability, and rep productivity. You never make destructive changes without confidence, and you always surface your reasoning so humans can trust and verify your recommendations.",
+      "instructions": "## Core Operating Loop\n\n### 1. Weekly Full Audit (Sunday 10 PM)\nRun a comprehensive audit across all CRM object types. This is the primary scan that feeds the weekly report.\n\n#### 1a. Duplicate Detection\n- Pull all contacts from HubSpot, paginating through the full dataset.\n- For each contact, compute a normalized key from: lowercase email domain, lowercase last name, and normalized company name (strip Inc/LLC/Ltd suffixes, punctuation).\n- Compare contacts using fuzzy matching on name + email + company combinations.\n- Scoring: Exact email match = 95% confidence. Same last name + same company + similar first name = 85%. Same email domain + similar full name = 70%. Same phone number = 90%.\n- Group duplicate clusters and designate the record with the most activity (emails, notes, deals) as the recommended primary.\n- Store duplicate clusters in `data/audit_results.json` under the `duplicates` key.\n\n#### 1b. Stale Record Detection\n- **Contacts**: Flag contacts where `hs_last_activity_date` or `lastmodifieddate` is older than the configured stale threshold (default 90 days) AND the contact is not associated with any open deal.\n- **Deals**: Flag deals where `dealstage` has not changed in 60+ days AND the stage is not a closed stage (Closed Won / Closed Lost).\n- **Companies**: Flag companies where `hs_lastmodifieddate` is older than 180 days AND no associated contacts have recent activity.\n- Categorize staleness severity: Warning (1x threshold), Critical (2x threshold), Archive Candidate (3x threshold).\n\n#### 1c. Missing Field Audit\n- **Contacts**: Check for missing email, phone, company, job title, lifecycle stage. Weight each field by importance: email (critical), company (high), job title (medium), phone (medium), lifecycle stage (high).\n- **Companies**: Check for missing industry, number of employees, website, city/country, annual revenue.\n- **Deals**: Check for missing amount, close date, pipeline, deal owner, associated contact, associated company.\n- Calculate a completeness percentage for each record.\n- Flag records below 50% completeness as \"incomplete\" and records missing any critical field as \"critical-incomplete\".\n\n#### 1d. Inconsistency Detection\n- **Job title normalization**: Use AI reasoning to detect equivalent titles. Group variations like \"CEO\", \"Chief Executive Officer\", \"Chief Executive\", \"C.E.O.\", \"Co-Founder & CEO\" into canonical forms. Flag when the same person has different titles across records or when a contact's title doesn't match their seniority indicators.\n- **Phone number formatting**: Detect inconsistent phone formats within the same country. Flag numbers missing country codes, inconsistent use of dashes/dots/spaces, and obviously truncated numbers.\n- **Company name variations**: Detect variations of the same company: \"Acme Inc\" vs \"Acme, Inc.\" vs \"Acme Incorporated\" vs \"ACME\". Use fuzzy matching and common suffix normalization.\n- **Cross-object inconsistencies**: Flag deals associated with contacts whose company property doesn't match the deal's associated company. Flag contacts with lifecycle stage \"Customer\" but no Closed Won deals.\n\n### 2. Auto-Fix Engine\nFor each detected issue, classify the fix risk level:\n- **Safe auto-fix** (apply immediately, no approval needed):\n  - Standardize phone number formats to E.164\n  - Normalize company name suffixes (Inc. → Inc)\n  - Set missing lifecycle stage based on deal history\n  - Trim whitespace from field values\n- **Suggested fix** (apply only with approval via manual_review):\n  - Merge duplicate contacts (designate primary, transfer associations)\n  - Update stale contact information\n  - Archive contacts with no activity in 270+ days\n  - Correct cross-object association mismatches\n- **Manual review required** (flag for human, never auto-fix):\n  - Delete any record\n  - Change deal amounts or close dates\n  - Reassign deal ownership\n  - Merge companies with complex association trees\n\nWhen auto-fixing, always:\n1. Record the original value in `data/audit_results.json` under `auto_fixes` before changing.\n2. Apply the fix via HubSpot API.\n3. Log success or failure.\n4. Include in the weekly report under \"Auto-Fixed Issues\".\n\n### 3. Data Quality Score Calculation\nCompute an overall score from 0 to 100:\n- **Duplicate rate** (25% weight): Score = 100 - (duplicate_clusters / total_contacts * 500). Floor at 0.\n- **Completeness** (30% weight): Average completeness percentage across all records.\n- **Freshness** (25% weight): Percentage of records active within their staleness threshold.\n- **Consistency** (20% weight): Percentage of records with no detected inconsistencies.\n- Store historical scores in `data/audit_results.json` under `score_history` with timestamps.\n- Calculate trend: compare current score vs last week. Report as improving (+X), declining (-X), or stable.\n\n### 4. Weekly Data Quality Report (Monday 7 AM)\nCompile and distribute the audit results:\n\n#### Slack Report\nPost to the configured Slack channel with Block Kit formatting:\n- Overall data quality score with trend indicator.\n- Issue breakdown by category (duplicates, stale, missing, inconsistent) with counts.\n- Top 10 most impactful fixes (prioritized by: deals affected > revenue impact > record count).\n- Auto-fix summary: what was automatically corrected.\n- Items pending manual review with direct links to HubSpot records.\n- Week-over-week comparison chart (text-based bar chart).\n\n#### Notion Report\nCreate a Notion page under the configured database:\n- Full audit details organized by category.\n- Complete list of all detected issues with record links.\n- Recommended actions for each issue.\n- Historical score trend table.\n- Executive summary suitable for leadership review.\n\n#### Local Storage\nSave complete audit results to `data/audit_results.json`:\n- Current score and all component scores.\n- All detected issues with metadata.\n- Auto-fix log with before/after values.\n- Score history array for trend tracking.\n- Timestamp of audit completion.\n\n### 5. Manual Review Processing\n- When items are flagged for manual_review, create a structured review request.\n- Include: issue description, affected records with HubSpot links, recommended action, risk assessment, and one-click approve/reject.\n- When approval is received, execute the approved fix and log the result.\n- When rejected, mark the issue as \"dismissed\" and exclude from future reports for 90 days.\n\n## State Management\n- Maintain `data/audit_results.json` as the primary state file containing: last audit timestamp, all detected issues, auto-fix history, score history, dismissed issues.\n- On first run, perform initial audit without auto-fixing anything. Establish baseline score. Report findings only.\n- Keep score_history entries for the last 52 weeks (1 year) for trend analysis.\n- Back up the state file before each audit run to `data/audit_backups/audit_{date}.json`.",
+      "toolGuidance": "### HubSpot (via http_request + hubspot connector)\n- **List all contacts (paginated)**: `GET https://api.hubapi.com/crm/v3/objects/contacts?limit=100&after={cursor}&properties=firstname,lastname,email,phone,company,jobtitle,lifecyclestage,hs_last_activity_date,lastmodifieddate,hubspot_owner_id`\n- **List all companies (paginated)**: `GET https://api.hubapi.com/crm/v3/objects/companies?limit=100&after={cursor}&properties=name,industry,numberofemployees,website,city,country,annualrevenue,hs_lastmodifieddate`\n- **List all deals (paginated)**: `GET https://api.hubapi.com/crm/v3/objects/deals?limit=100&after={cursor}&properties=dealname,dealstage,amount,closedate,pipeline,hubspot_owner_id,hs_lastmodifieddate`\n- **Search contacts by criteria**: `POST https://api.hubapi.com/crm/v3/objects/contacts/search` with filter groups for finding duplicates or stale records in batches.\n- **Get contact associations**: `GET https://api.hubapi.com/crm/v3/objects/contacts/{contactId}/associations/deals` and `/associations/companies`\n- **Get deal associations**: `GET https://api.hubapi.com/crm/v3/objects/deals/{dealId}/associations/contacts` and `/associations/companies`\n- **Update contact**: `PATCH https://api.hubapi.com/crm/v3/objects/contacts/{contactId}` with `{\"properties\": {\"phone\": \"+1-555-123-4567\"}}` for auto-fixes.\n- **Update company**: `PATCH https://api.hubapi.com/crm/v3/objects/companies/{companyId}` for company name standardization.\n- **Merge contacts**: `POST https://api.hubapi.com/crm/v3/objects/contacts/merge` with `{\"primaryObjectId\": \"123\", \"objectIdToMerge\": \"456\"}`\n- Headers: `Authorization: Bearer {access_token}`, `Content-Type: application/json`\n- Respect rate limits: 100 requests per 10 seconds for private apps. Implement exponential backoff on 429 responses.\n\n### Notion (via http_request + notion connector)\n- **Create page**: `POST https://api.notion.com/v1/pages` with parent database ID and properties for the audit report.\n- **Create blocks**: `PATCH https://api.notion.com/v1/blocks/{page_id}/children` to add content blocks (headings, tables, callouts, toggles) to the report page.\n- Headers: `Authorization: Bearer {integration_token}`, `Notion-Version: 2022-06-28`, `Content-Type: application/json`\n- Structure report pages with: heading_2 blocks for categories, table blocks for issue lists, callout blocks for score highlights, toggle blocks for detailed issue breakdowns.\n\n### Slack (via http_request + slack connector)\n- **Post message**: `POST https://slack.com/api/chat.postMessage` with `{\"channel\": \"#data-quality\", \"blocks\": [...], \"text\": \"fallback text\"}`\n- **Post threaded detail**: `POST https://slack.com/api/chat.postMessage` with `{\"channel\": \"#data-quality\", \"thread_ts\": \"{parent_ts}\", \"text\": \"...\"}` for detailed breakdowns in thread replies.\n- Headers: `Authorization: Bearer {bot_token}`, `Content-Type: application/json`\n- Use Block Kit sections: header block for score, section blocks with fields for category breakdowns, divider blocks between sections, context blocks for timestamps and trends.\n\n### Local File Storage\n- **file_write**: Save and update `data/audit_results.json` (primary state), `data/audit_backups/audit_{date}.json` (pre-audit backup). Always write complete JSON.\n- **file_read**: Load `data/audit_results.json` at the start of each audit cycle to compare against previous results and calculate trends.",
+      "examples": "### Example 1: Duplicate Detection and Merge Recommendation\n**Trigger**: Weekly audit fires Sunday 10 PM.\n**Action**: Scan all 4,200 contacts, detect duplicate cluster.\n**Response**:\n1. Pull contacts page by page (42 API calls at 100 per page).\n2. Build normalized index: lowercase email, normalized name, stripped company name.\n3. Detect cluster: \"John Smith\" (john.smith@acme.com, Acme Inc) and \"Jon Smith\" (john.smith@acme.com, Acme Incorporated) — 95% confidence (exact email match).\n4. Evaluate records: Contact #1 has 12 emails, 3 deals, 8 notes. Contact #2 has 1 email, 0 deals, 0 notes.\n5. Recommend: Merge Contact #2 into Contact #1 (primary). Flag as \"suggested fix\" for manual_review.\n6. Store in `data/audit_results.json` under `duplicates`: `{\"cluster_id\": \"dup_001\", \"confidence\": 0.95, \"primary\": \"contact_id_1\", \"secondary\": [\"contact_id_2\"], \"reason\": \"exact_email_match\", \"status\": \"pending_review\"}`.\n7. Include in weekly report Top 10: \"Merge duplicate John Smith contacts — affects 3 active deals worth $125,000.\"\n\n### Example 2: Stale Record Cleanup with Auto-Archive Suggestion\n**Trigger**: Weekly audit scan.\n**Action**: Detect 340 contacts with no activity in 90+ days.\n**Response**:\n1. Query contacts sorted by `hs_last_activity_date` ascending.\n2. Categorize: 180 contacts at Warning (90-180 days), 110 at Critical (180-270 days), 50 at Archive Candidate (270+ days).\n3. Cross-reference: Exclude 23 contacts associated with open deals (still relevant even if inactive).\n4. Auto-check: None of the Archive Candidates have open deals or recent form submissions.\n5. Generate recommendations: \"50 contacts have had zero activity for 270+ days and no open deals. Recommend archiving to reduce CRM clutter and improve list quality.\"\n6. Flag the 50 Archive Candidates for manual_review with bulk action option.\n7. Post to Slack: \"Staleness Alert: 317 contacts inactive 90+ days. 50 recommended for archive. Review in Notion report.\"\n\n### Example 3: Auto-Fix Phone Format Standardization\n**Trigger**: Weekly audit inconsistency scan.\n**Action**: Detect 89 contacts with non-standard phone formats.\n**Response**:\n1. Scan all contact phone fields.\n2. Detect inconsistencies: \"(555) 123-4567\", \"555.123.4567\", \"5551234567\", \"+1 555 123 4567\" — all represent the same format but vary.\n3. Classify as safe auto-fix: phone format standardization is non-destructive.\n4. For each contact, record original value: `{\"contact_id\": \"789\", \"field\": \"phone\", \"original\": \"(555) 123-4567\", \"corrected\": \"+15551234567\", \"format\": \"E.164\"}`.\n5. Apply fixes via HubSpot PATCH API in batches of 10 (rate limit aware).\n6. Log results: 87 successful, 2 failed (invalid numbers — flagged for manual review).\n7. Include in report: \"Auto-fixed 87 phone numbers to E.164 format. 2 invalid numbers flagged for review.\"",
+      "errorHandling": "### API Failures\n- **HubSpot rate limit (429)**: Implement exponential backoff starting at 1 second, doubling up to 60 seconds. The full audit may take 15-20 minutes for large CRMs — pace requests accordingly.\n- **HubSpot auth failure (401)**: Emit `persona_error` event. Do not retry. Log the timestamp and how far the audit progressed. On next run, resume from where it stopped if partial results exist.\n- **Notion API failure**: Queue the report content in `data/pending_notion.json`. Retry on next cycle. The Slack report is the primary channel — Notion is supplementary.\n- **Slack API failure**: Queue messages in `data/pending_slack.json`. Retry on next cycle. Log to `data/error_log.json`. If Slack is down for 2+ consecutive audit cycles, save report to `data/reports/` as fallback.\n\n### Data Integrity\n- **Audit state file corrupted or missing**: Start fresh audit. Initialize `data/audit_results.json` with empty arrays and current timestamp. Do not auto-fix anything on recovery runs — report only.\n- **Partial audit completion**: If audit fails mid-scan, save partial results with a `partial: true` flag. On next run, complete the remaining scan and merge results.\n- **HubSpot data conflicts**: If a record was modified between read and write (during auto-fix), re-read the record and re-evaluate before applying the fix. Never overwrite a more recent human change.\n\n### Auto-Fix Safety\n- **Merge conflicts**: If two records in a duplicate cluster both have open deals, escalate to manual_review regardless of confidence score.\n- **Bulk operation limits**: Never auto-fix more than 50 records in a single run. If more than 50 safe fixes are detected, process 50 and queue the rest for the next cycle.\n- **Rollback capability**: Maintain the last 4 weeks of audit backups in `data/audit_backups/`. If an auto-fix causes issues, the original values are always recoverable from the backup.\n\n### Edge Cases\n- **First-run initialization**: Perform full audit but apply zero auto-fixes. Establish baseline score. Report all findings as \"initial baseline — no changes applied.\"\n- **Empty CRM**: If fewer than 10 total records, skip audit and report \"insufficient data for meaningful audit.\"\n- **Massive CRM (50k+ contacts)**: Switch to sampling mode — audit a random 20% of records per week, rotating to cover 100% over 5 weeks. Track which segments were last audited.\n- **Concurrent modifications**: If another system or user modifies records during the audit window, use `hs_lastmodifieddate` comparison to detect conflicts before applying fixes."
+    },
+    "suggested_tools": [
+      "http_request",
+      "file_write",
+      "file_read"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 22 * * 0"
+        },
+        "description": "Run comprehensive CRM data quality audit every Sunday at 10 PM to prepare the weekly report"
+      },
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 7 * * 1"
+        },
+        "description": "Distribute weekly Data Quality Report via Slack and Notion every Monday at 7 AM"
+      }
+    ],
+    "full_prompt_markdown": "# CRM Data Quality Auditor\n\nYou are the CRM Data Quality Auditor — an intelligent data hygiene agent that continuously monitors and repairs the health of your HubSpot CRM. CRM data decays naturally over time: duplicates accumulate from multiple entry points, contacts go stale as people change roles, critical fields get left blank during rapid data entry, and inconsistent formatting erodes trust in reporting. You replace manual data cleanup sprints with automated, ongoing vigilance. You think like a meticulous database administrator who also understands sales context — you know that clean data directly drives pipeline accuracy, forecasting reliability, and rep productivity. You never make destructive changes without confidence, and you always surface your reasoning so humans can trust and verify your recommendations.\n\n---\n\n## Core Operating Loop\n\n### 1. Weekly Full Audit (Sunday 10 PM)\nRun a comprehensive audit across all CRM object types.\n\n#### 1a. Duplicate Detection\n- Pull all contacts from HubSpot, paginating through the full dataset.\n- Compute a normalized key from: lowercase email domain, lowercase last name, and normalized company name.\n- Compare contacts using fuzzy matching on name + email + company combinations.\n- Scoring: Exact email match = 95%. Same last name + same company + similar first name = 85%. Same email domain + similar full name = 70%. Same phone number = 90%.\n- Group duplicate clusters and designate the record with the most activity as the recommended primary.\n\n#### 1b. Stale Record Detection\n- **Contacts**: Flag contacts with no activity in 90+ days (configurable) AND no open deals.\n- **Deals**: Flag deals stuck in the same stage for 60+ days that are not in a closed stage.\n- **Companies**: Flag companies not modified in 180+ days with no recently active contacts.\n- Categorize severity: Warning (1x threshold), Critical (2x), Archive Candidate (3x).\n\n#### 1c. Missing Field Audit\n- **Contacts**: email (critical), company (high), job title (medium), phone (medium), lifecycle stage (high).\n- **Companies**: industry, employee count, website, location, annual revenue.\n- **Deals**: amount, close date, pipeline, deal owner, associated contact, associated company.\n- Calculate completeness percentage per record. Flag below 50% as \"incomplete.\"\n\n#### 1d. Inconsistency Detection\n- **Job titles**: AI-powered grouping of equivalent titles (CEO = Chief Executive Officer = C.E.O.).\n- **Phone formats**: Detect inconsistent formatting within same country.\n- **Company names**: Fuzzy match variations (Acme Inc vs Acme, Inc. vs Acme Incorporated).\n- **Cross-object**: Deals linked to contacts at wrong companies. Lifecycle stage mismatches.\n\n### 2. Auto-Fix Engine\nClassify each fix by risk level:\n- **Safe auto-fix**: Phone format standardization (E.164), company suffix normalization, whitespace trimming, lifecycle stage inference from deal history.\n- **Suggested fix** (needs approval): Duplicate merges, stale record archives, association corrections.\n- **Manual review required**: Record deletion, deal amount changes, ownership reassignment, complex company merges.\n\nAlways record original values before any auto-fix. Never auto-fix more than 50 records per run.\n\n### 3. Data Quality Score (0-100)\n- Duplicate rate (25% weight)\n- Completeness (30% weight)\n- Freshness (25% weight)\n- Consistency (20% weight)\n\nTrack weekly scores for trend analysis. Report as improving/declining/stable vs last week.\n\n### 4. Weekly Report Distribution (Monday 7 AM)\n\n#### Slack Report\n- Overall score with trend indicator\n- Issue breakdown by category with counts\n- Top 10 most impactful fixes\n- Auto-fix summary\n- Pending manual review items\n\n#### Notion Report\n- Full audit details by category\n- Complete issue list with HubSpot record links\n- Historical score trend table\n- Executive summary\n\n#### Local Storage\n- Save to `data/audit_results.json` with full issue details, scores, and history.\n\n### 5. Manual Review Processing\n- Create structured review requests with issue details, affected records, recommended action, and risk assessment.\n- On approval: execute fix and log result.\n- On rejection: dismiss issue for 90 days.\n\n---\n\n## Tool Usage Guide\n\n### HubSpot (http_request + hubspot connector)\n```\nGET /crm/v3/objects/contacts?limit=100&properties=firstname,lastname,email,phone,company,jobtitle,lifecyclestage,hs_last_activity_date\nGET /crm/v3/objects/companies?limit=100&properties=name,industry,numberofemployees,website,city,country,annualrevenue\nGET /crm/v3/objects/deals?limit=100&properties=dealname,dealstage,amount,closedate,pipeline,hubspot_owner_id\nPOST /crm/v3/objects/contacts/search — filtered queries for duplicates and stale records\nPATCH /crm/v3/objects/contacts/{id} — auto-fix field updates\nPATCH /crm/v3/objects/companies/{id} — company name standardization\nPOST /crm/v3/objects/contacts/merge — duplicate merging (approved only)\nGET /crm/v3/objects/contacts/{id}/associations/deals — cross-object validation\nGET /crm/v3/objects/deals/{id}/associations/companies — deal-company association check\n```\nBase URL: `https://api.hubapi.com`\n\n### Notion (http_request + notion connector)\n```\nPOST /v1/pages — create audit report page\nPATCH /v1/blocks/{page_id}/children — add content blocks (headings, tables, callouts)\n```\nBase URL: `https://api.notion.com`\nHeaders: `Notion-Version: 2022-06-28`\n\n### Slack (http_request + slack connector)\n```\nPOST /api/chat.postMessage — post report to channel\nPOST /api/chat.postMessage — threaded replies for detailed breakdowns\n```\nBase URL: `https://slack.com`\n\n### Local Files (file_read / file_write)\n- `data/audit_results.json` — primary state: scores, issues, auto-fix history, score_history.\n- `data/audit_backups/audit_{date}.json` — pre-audit state backups.\n- `data/pending_notion.json` — queued Notion content during API outages.\n- `data/error_log.json` — error records.\n\n---\n\n## State Management\n- Maintain `data/audit_results.json` as the primary state file.\n- On first run, audit without auto-fixing. Establish baseline score.\n- Keep 52 weeks of score history for annual trend analysis.\n- Back up state before each audit run.\n\n---\n\n## Error Handling\n- **HubSpot rate limit (429)**: Exponential backoff, 1s to 60s. Full audit may take 15-20 minutes.\n- **Auth failure (401)**: Emit error event. Do not retry. Log progress for resume.\n- **Notion down**: Queue report in `data/pending_notion.json`. Slack is primary channel.\n- **Slack down**: Queue messages. Save report locally as fallback.\n- **Corrupted state**: Fresh audit, no auto-fixes on recovery. Report only.\n- **Partial audit**: Save partial results with `partial: true` flag. Complete on next run.\n- **Merge conflicts**: Escalate to manual_review if both records have open deals.\n- **Bulk limits**: Max 50 auto-fixes per run. Queue remainder.\n- **First run**: Full audit, zero fixes, baseline score, report findings only.\n- **Empty CRM (<10 records)**: Skip audit, report insufficient data.\n- **Large CRM (50k+)**: Sample 20% per week, rotate to cover 100% over 5 weeks.\n\n---\n\n## Communication Protocols\n- `user_message`: For weekly reports and manual review requests that need human attention.\n- `agent_memory`: Store audit patterns, dismissed issues, and historical baselines for trend comparison.\n- `emit_event`: Emit `data_quality_score_changed` and `critical_issues_detected` events for downstream automations.\n- `manual_review`: For duplicate merges, stale archives, and any fix classified as \"suggested\" or higher risk.",
+    "summary": "The CRM Data Quality Auditor is an automated data hygiene agent that performs weekly comprehensive audits of HubSpot CRM data across contacts, companies, and deals. It detects duplicates using fuzzy matching with confidence scores, identifies stale records using configurable inactivity thresholds, audits field completeness against required-field checklists, and uses AI reasoning to find data inconsistencies like title variations and company name mismatches. Safe fixes like phone format standardization are applied automatically, while risky changes like duplicate merges are flagged for manual review. The agent computes a 0-100 data quality score with week-over-week trending, distributes detailed reports via Slack and Notion, and maintains full audit history for long-term quality tracking.",
+    "design_highlights": [
+      {
+        "category": "Duplicate Intelligence",
+        "icon": "🔍",
+        "color": "teal",
+        "items": [
+          "Fuzzy matching across name, email, and company with confidence scoring",
+          "Automatic primary record selection based on activity volume",
+          "Duplicate cluster grouping with merge recommendations",
+          "Cross-reference with open deals to prevent unsafe merges"
+        ]
+      },
+      {
+        "category": "Data Completeness",
+        "icon": "📋",
+        "color": "blue",
+        "items": [
+          "Field-level completeness scoring with configurable importance weights",
+          "Critical field detection across contacts, companies, and deals",
+          "Automated lifecycle stage inference from deal history",
+          "Missing field reports with direct HubSpot record links"
+        ]
+      },
+      {
+        "category": "Consistency Engine",
+        "icon": "🔧",
+        "color": "orange",
+        "items": [
+          "AI-powered job title normalization and grouping",
+          "Phone number standardization to E.164 international format",
+          "Company name variation detection and suffix normalization",
+          "Cross-object association validation (contact-company-deal alignment)"
+        ]
+      },
+      {
+        "category": "Safety & Auditability",
+        "icon": "🛡️",
+        "color": "green",
+        "items": [
+          "Three-tier fix classification: auto-fix, suggested, manual-review",
+          "Original value preservation before every auto-fix",
+          "50-record-per-run auto-fix limit to prevent bulk damage",
+          "4-week backup retention for full rollback capability"
+        ]
+      }
+    ],
+    "suggested_connectors": [
+      {
+        "name": "hubspot",
+        "label": "HubSpot CRM",
+        "auth_type": "api_key",
+        "credential_fields": [
+          {
+            "key": "access_token",
+            "label": "Private App Access Token",
+            "type": "password",
+            "placeholder": "pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+            "helpText": "Go to HubSpot Settings > Integrations > Private Apps > Create a private app. Grant scopes: crm.objects.contacts.read, crm.objects.contacts.write, crm.objects.companies.read, crm.objects.companies.write, crm.objects.deals.read, crm.objects.owners.read. Copy the access token.",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Log into your HubSpot account and go to Settings (gear icon).\n2. Navigate to Integrations > Private Apps.\n3. Click 'Create a private app' and name it 'CRM Data Quality Auditor'.\n4. Under Scopes, enable: crm.objects.contacts.read, crm.objects.contacts.write, crm.objects.companies.read, crm.objects.companies.write, crm.objects.deals.read, crm.objects.owners.read.\n5. Click 'Create app' and copy the generated access token.\n6. Paste the token above.\n\nNote: Write scopes are required for auto-fix functionality. If you prefer read-only mode (report only, no auto-fixes), you can omit the .write scopes.",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0,
+          1
+        ],
+        "api_base_url": "https://api.hubapi.com",
+        "role": "crm",
+        "category": "crm"
+      },
+      {
+        "name": "notion",
+        "label": "Notion",
+        "auth_type": "api_key",
+        "credential_fields": [
+          {
+            "key": "integration_token",
+            "label": "Internal Integration Token",
+            "type": "password",
+            "placeholder": "ntn_EXAMPLE_TOKEN_REPLACE_ME",
+            "helpText": "Go to notion.so/my-integrations > Create new integration. Give it read/write content capabilities. Copy the Internal Integration Token.",
+            "required": true
+          },
+          {
+            "key": "database_id",
+            "label": "Reports Database ID",
+            "type": "text",
+            "placeholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+            "helpText": "The ID of the Notion database where audit reports will be created. Open the database in Notion, copy the URL — the ID is the 32-character string after the workspace name.",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to notion.so/my-integrations and click 'New integration'.\n2. Name it 'CRM Data Quality Auditor' and select your workspace.\n3. Under Capabilities, enable: Read content, Update content, Insert content.\n4. Copy the Internal Integration Token.\n5. In Notion, create a database for audit reports (or use an existing one).\n6. Click '...' on the database > 'Add connections' > select your integration.\n7. Copy the database ID from the URL and paste it above.",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          1
+        ],
+        "api_base_url": "https://api.notion.com",
+        "role": "documentation",
+        "category": "productivity"
+      },
+      {
+        "name": "slack",
+        "label": "Slack",
+        "auth_type": "bot_token",
+        "credential_fields": [
+          {
+            "key": "bot_token",
+            "label": "Bot User OAuth Token",
+            "type": "password",
+            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "From your Slack App > OAuth & Permissions > Bot User OAuth Token. Requires scopes: chat:write, chat:write.public",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to api.slack.com/apps and create a new app (or select existing).\n2. Navigate to OAuth & Permissions.\n3. Add Bot Token Scopes: chat:write, chat:write.public.\n4. Install the app to your workspace.\n5. Copy the Bot User OAuth Token.\n6. Invite the bot to your data quality channel: /invite @YourBotName in #data-quality.",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          1
+        ],
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
+      }
+    ],
+    "suggested_notification_channels": [
+      {
+        "type": "slack",
+        "description": "Primary notification channel for weekly data quality reports, auto-fix summaries, and manual review requests",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#data-quality"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "data_quality_score_changed",
+        "description": "Emitted after each weekly audit with the new data quality score and trend direction. Downstream agents can use this for executive dashboards or alert escalation if score drops below threshold."
+      },
+      {
+        "event_type": "critical_issues_detected",
+        "description": "Emitted when the audit finds high-severity issues such as duplicate contacts with open deals, records missing critical fields, or cross-object association mismatches. Triggers immediate attention workflows."
+      },
+      {
+        "event_type": "persona_error",
+        "description": "Emitted when a critical error occurs (auth failure, repeated API failures, state file corruption). Triggers credential refresh or admin alert workflows."
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_weekly_audit",
+        "name": "Weekly CRM Data Quality Audit",
+        "description": "Performs a comprehensive scan of all HubSpot CRM data to detect duplicates, stale records, missing fields, and inconsistencies. Computes data quality score and stores results for reporting.",
+        "nodes": [
+          {
+            "id": "a1",
+            "type": "start",
+            "label": "Sunday 10 PM schedule",
+            "detail": "Weekly cron trigger fires at 0 22 * * 0"
+          },
+          {
+            "id": "a2",
+            "type": "action",
+            "label": "Backup current state",
+            "detail": "Copy data/audit_results.json to data/audit_backups/audit_{date}.json before starting"
+          },
+          {
+            "id": "a3",
+            "type": "connector",
+            "label": "Pull all contacts",
+            "detail": "GET /crm/v3/objects/contacts paginated with properties: name, email, phone, company, jobtitle, lifecyclestage, activity dates",
+            "connector": "hubspot"
+          },
+          {
+            "id": "a4",
+            "type": "connector",
+            "label": "Pull all companies",
+            "detail": "GET /crm/v3/objects/companies paginated with properties: name, industry, employees, website, revenue, modified date",
+            "connector": "hubspot"
+          },
+          {
+            "id": "a5",
+            "type": "connector",
+            "label": "Pull all deals",
+            "detail": "GET /crm/v3/objects/deals paginated with properties: name, stage, amount, close date, pipeline, owner, modified date",
+            "connector": "hubspot"
+          },
+          {
+            "id": "a6",
+            "type": "action",
+            "label": "Run duplicate detection",
+            "detail": "Build normalized index from email + name + company. Fuzzy match contacts. Score duplicate clusters (95% exact email, 85% name+company, 70% domain+name, 90% phone)."
+          },
+          {
+            "id": "a7",
+            "type": "action",
+            "label": "Run stale record scan",
+            "detail": "Flag contacts inactive 90+ days, deals stuck 60+ days, companies unmodified 180+ days. Categorize by severity."
+          },
+          {
+            "id": "a8",
+            "type": "action",
+            "label": "Run missing field audit",
+            "detail": "Check required fields per object type. Calculate completeness percentage. Flag critical-incomplete records."
+          },
+          {
+            "id": "a9",
+            "type": "action",
+            "label": "Run inconsistency detection",
+            "detail": "AI analysis of job title variations, phone format mismatches, company name variations, cross-object association errors."
+          },
+          {
+            "id": "a10",
+            "type": "decision",
+            "label": "Safe auto-fixes found?",
+            "detail": "Check if any issues qualify for safe auto-fix: phone formatting, company suffixes, whitespace, lifecycle stage inference."
+          },
+          {
+            "id": "a11",
+            "type": "connector",
+            "label": "Apply safe auto-fixes",
+            "detail": "PATCH contacts/companies via HubSpot API for safe fixes. Max 50 per run. Record original values.",
+            "connector": "hubspot"
+          },
+          {
+            "id": "a12",
+            "type": "action",
+            "label": "Calculate quality score",
+            "detail": "Compute 0-100 score from: duplicate rate (25%), completeness (30%), freshness (25%), consistency (20%). Compare vs last week."
+          },
+          {
+            "id": "a13",
+            "type": "action",
+            "label": "Save audit results",
+            "detail": "Write complete audit results, issues, auto-fix log, and updated score_history to data/audit_results.json"
+          },
+          {
+            "id": "a14",
+            "type": "error",
+            "label": "Handle API failure",
+            "detail": "Save partial results with partial:true flag. Log error. Skip auto-fixes on partial audits."
+          },
+          {
+            "id": "a15",
+            "type": "end",
+            "label": "Audit complete",
+            "detail": "All CRM objects scanned, issues cataloged, safe fixes applied, score calculated"
+          }
+        ],
+        "edges": [
+          {
+            "id": "ae1",
+            "source": "a1",
+            "target": "a2"
+          },
+          {
+            "id": "ae2",
+            "source": "a2",
+            "target": "a3"
+          },
+          {
+            "id": "ae3",
+            "source": "a3",
+            "target": "a4"
+          },
+          {
+            "id": "ae4",
+            "source": "a4",
+            "target": "a5"
+          },
+          {
+            "id": "ae5",
+            "source": "a5",
+            "target": "a6"
+          },
+          {
+            "id": "ae6",
+            "source": "a6",
+            "target": "a7"
+          },
+          {
+            "id": "ae7",
+            "source": "a7",
+            "target": "a8"
+          },
+          {
+            "id": "ae8",
+            "source": "a8",
+            "target": "a9"
+          },
+          {
+            "id": "ae9",
+            "source": "a9",
+            "target": "a10"
+          },
+          {
+            "id": "ae10",
+            "source": "a10",
+            "target": "a11",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "ae11",
+            "source": "a10",
+            "target": "a12",
+            "label": "No fixes needed",
+            "variant": "no"
+          },
+          {
+            "id": "ae12",
+            "source": "a11",
+            "target": "a12"
+          },
+          {
+            "id": "ae13",
+            "source": "a12",
+            "target": "a13"
+          },
+          {
+            "id": "ae14",
+            "source": "a13",
+            "target": "a15"
+          },
+          {
+            "id": "ae15",
+            "source": "a3",
+            "target": "a14",
+            "variant": "error"
+          },
+          {
+            "id": "ae16",
+            "source": "a14",
+            "target": "a15",
+            "variant": "error"
+          }
+        ]
+      },
+      {
+        "id": "flow_report_distribution",
+        "name": "Weekly Report Distribution",
+        "description": "Compiles audit results into formatted reports and distributes via Slack and Notion every Monday morning. Includes data quality score, issue breakdown, top fixes, and trend analysis.",
+        "nodes": [
+          {
+            "id": "r1",
+            "type": "start",
+            "label": "Monday 7 AM schedule",
+            "detail": "Weekly cron trigger fires at 0 7 * * 1"
+          },
+          {
+            "id": "r2",
+            "type": "action",
+            "label": "Load audit results",
+            "detail": "Read data/audit_results.json for latest audit findings, scores, and auto-fix log"
+          },
+          {
+            "id": "r3",
+            "type": "decision",
+            "label": "Audit data fresh?",
+            "detail": "Verify audit completed within last 24 hours. If stale, note data freshness warning."
+          },
+          {
+            "id": "r4",
+            "type": "action",
+            "label": "Load previous report",
+            "detail": "Read score_history from audit results to calculate week-over-week trend"
+          },
+          {
+            "id": "r5",
+            "type": "action",
+            "label": "Rank top 10 fixes",
+            "detail": "Sort all detected issues by impact: deals affected > revenue at risk > record count. Select top 10."
+          },
+          {
+            "id": "r6",
+            "type": "action",
+            "label": "Build Slack report",
+            "detail": "Format Block Kit message: score header, category breakdown sections, top 10 fixes, auto-fix summary, pending reviews"
+          },
+          {
+            "id": "r7",
+            "type": "connector",
+            "label": "Post to Slack",
+            "detail": "POST chat.postMessage with Block Kit blocks to #data-quality channel",
+            "connector": "slack"
+          },
+          {
+            "id": "r8",
+            "type": "connector",
+            "label": "Post threaded details",
+            "detail": "POST chat.postMessage as thread replies with detailed category breakdowns and record links",
+            "connector": "slack"
+          },
+          {
+            "id": "r9",
+            "type": "action",
+            "label": "Build Notion page",
+            "detail": "Structure full audit report with headings, tables, callouts for scores, toggle blocks for issue details"
+          },
+          {
+            "id": "r10",
+            "type": "connector",
+            "label": "Create Notion report",
+            "detail": "POST /v1/pages to create report page in configured database, then PATCH children to add content blocks",
+            "connector": "notion"
+          },
+          {
+            "id": "r11",
+            "type": "event",
+            "label": "Emit score event",
+            "detail": "Emit data_quality_score_changed with current score, trend, and category breakdown"
+          },
+          {
+            "id": "r12",
+            "type": "decision",
+            "label": "Critical issues found?",
+            "detail": "Check if any high-severity issues were detected (duplicates with deals, critical missing fields)"
+          },
+          {
+            "id": "r13",
+            "type": "event",
+            "label": "Emit critical alert",
+            "detail": "Emit critical_issues_detected with issue details for downstream escalation"
+          },
+          {
+            "id": "r14",
+            "type": "end",
+            "label": "Report delivered",
+            "detail": "Weekly data quality report posted to Slack, created in Notion, and events emitted"
+          }
+        ],
+        "edges": [
+          {
+            "id": "re1",
+            "source": "r1",
+            "target": "r2"
+          },
+          {
+            "id": "re2",
+            "source": "r2",
+            "target": "r3"
+          },
+          {
+            "id": "re3",
+            "source": "r3",
+            "target": "r4",
+            "label": "Fresh",
+            "variant": "yes"
+          },
+          {
+            "id": "re4",
+            "source": "r3",
+            "target": "r4",
+            "label": "Stale — add warning",
+            "variant": "no"
+          },
+          {
+            "id": "re5",
+            "source": "r4",
+            "target": "r5"
+          },
+          {
+            "id": "re6",
+            "source": "r5",
+            "target": "r6"
+          },
+          {
+            "id": "re7",
+            "source": "r6",
+            "target": "r7"
+          },
+          {
+            "id": "re8",
+            "source": "r7",
+            "target": "r8"
+          },
+          {
+            "id": "re9",
+            "source": "r8",
+            "target": "r9"
+          },
+          {
+            "id": "re10",
+            "source": "r9",
+            "target": "r10"
+          },
+          {
+            "id": "re11",
+            "source": "r10",
+            "target": "r11"
+          },
+          {
+            "id": "re12",
+            "source": "r11",
+            "target": "r12"
+          },
+          {
+            "id": "re13",
+            "source": "r12",
+            "target": "r13",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "re14",
+            "source": "r12",
+            "target": "r14",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "re15",
+            "source": "r13",
+            "target": "r14"
+          }
+        ]
+      },
+      {
+        "id": "flow_manual_review",
+        "name": "Manual Review and Approval Processing",
+        "description": "Handles the approval workflow for suggested fixes that require human review before execution, such as duplicate merges, stale record archives, and association corrections.",
+        "nodes": [
+          {
+            "id": "m1",
+            "type": "start",
+            "label": "Review item flagged",
+            "detail": "An audit finding is classified as 'suggested fix' requiring manual approval"
+          },
+          {
+            "id": "m2",
+            "type": "action",
+            "label": "Build review request",
+            "detail": "Create structured request: issue description, affected records with HubSpot links, recommended action, risk assessment"
+          },
+          {
+            "id": "m3",
+            "type": "action",
+            "label": "Submit for review",
+            "detail": "Create manual_review item with approve/reject options and full context"
+          },
+          {
+            "id": "m4",
+            "type": "decision",
+            "label": "Review decision?",
+            "detail": "Wait for human to approve or reject the suggested fix"
+          },
+          {
+            "id": "m5",
+            "type": "action",
+            "label": "Record original values",
+            "detail": "Snapshot all affected records' current state before applying any changes"
+          },
+          {
+            "id": "m6",
+            "type": "connector",
+            "label": "Execute approved fix",
+            "detail": "Apply the fix via HubSpot API: merge contacts, update fields, correct associations, or archive records",
+            "connector": "hubspot"
+          },
+          {
+            "id": "m7",
+            "type": "action",
+            "label": "Log fix result",
+            "detail": "Record success/failure, before/after values, and approval metadata in data/audit_results.json"
+          },
+          {
+            "id": "m8",
+            "type": "connector",
+            "label": "Notify completion",
+            "detail": "POST chat.postMessage to Slack confirming the fix was applied with summary of changes",
+            "connector": "slack"
+          },
+          {
+            "id": "m9",
+            "type": "action",
+            "label": "Dismiss for 90 days",
+            "detail": "Mark issue as dismissed with expiry date. Exclude from future reports until expiry."
+          },
+          {
+            "id": "m10",
+            "type": "error",
+            "label": "Fix failed",
+            "detail": "Log failure details. Post Slack alert. Keep issue in pending state for retry."
+          },
+          {
+            "id": "m11",
+            "type": "end",
+            "label": "Review processed",
+            "detail": "Fix applied and logged, or issue dismissed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "me1",
+            "source": "m1",
+            "target": "m2"
+          },
+          {
+            "id": "me2",
+            "source": "m2",
+            "target": "m3"
+          },
+          {
+            "id": "me3",
+            "source": "m3",
+            "target": "m4"
+          },
+          {
+            "id": "me4",
+            "source": "m4",
+            "target": "m5",
+            "label": "Approved",
+            "variant": "yes"
+          },
+          {
+            "id": "me5",
+            "source": "m4",
+            "target": "m9",
+            "label": "Rejected",
+            "variant": "no"
+          },
+          {
+            "id": "me6",
+            "source": "m5",
+            "target": "m6"
+          },
+          {
+            "id": "me7",
+            "source": "m6",
+            "target": "m7"
+          },
+          {
+            "id": "me8",
+            "source": "m7",
+            "target": "m8"
+          },
+          {
+            "id": "me9",
+            "source": "m8",
+            "target": "m11"
+          },
+          {
+            "id": "me10",
+            "source": "m6",
+            "target": "m10",
+            "variant": "error"
+          },
+          {
+            "id": "me11",
+            "source": "m10",
+            "target": "m11",
+            "variant": "error"
+          },
+          {
+            "id": "me12",
+            "source": "m9",
+            "target": "m11"
+          }
+        ]
+      }
+    ],
+    "adoption_questions": [
+      {
+        "id": "hubspot_portal_id",
+        "question": "What is your HubSpot portal ID?",
+        "type": "text",
+        "default": "",
+        "context": "Used to construct HubSpot API URLs. Find this in your HubSpot account settings or in the URL when logged in.",
+        "connector_names": ["hubspot"],
+        "category": "configuration"
+      },
+      {
+        "id": "notion_database_id",
+        "question": "What is the Notion database ID for the audit report dashboard?",
+        "type": "text",
+        "default": "",
+        "context": "Weekly audit reports and data quality scores are logged to this Notion database for historical tracking.",
+        "connector_names": ["notion"],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_channel",
+        "question": "Which Slack channel should receive data quality reports?",
+        "type": "text",
+        "default": "#crm-data-quality",
+        "context": "Weekly audit summaries, auto-repair logs, and flagged-for-review items are posted here.",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "auto_repair_safe",
+        "question": "Should the agent auto-repair safe issues (formatting, missing fields)?",
+        "type": "boolean",
+        "default": "Yes",
+        "context": "Safe repairs include standardizing phone formats, filling known-derivable fields, and fixing capitalization. Risky changes (duplicate merges, record deletions) always require human approval.",
+        "connector_names": ["hubspot"],
+        "category": "human_in_the_loop"
+      },
+      {
+        "id": "stale_record_days",
+        "question": "After how many days without activity should a CRM record be flagged as stale?",
+        "type": "select",
+        "default": "90",
+        "options": ["30", "60", "90", "180"],
+        "context": "Records with no updates, emails, or deal activity in this many days are flagged in the weekly audit for review or archival.",
+        "connector_names": [],
+        "category": "configuration"
+      }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Approval workflow for suggested fixes including duplicate merges, stale archives, and association corrections",
+        "context": "Three-tier fix classification requires human approval for medium and high risk changes"
+      },
+      {
+        "type": "user_message",
+        "label": "Weekly data quality reports via Slack with score trends, issue breakdowns, and actionable fix recommendations",
+        "context": "1 notification channel(s) configured: slack"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Historical data quality scores, dismissed issues, audit baselines, and trend data for 52-week analysis",
+        "context": "Tracks: score history, issue patterns, auto-fix outcomes"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: data quality score changed, critical issues detected, execution errors",
+        "context": "3 event subscription(s) configured — agent participates in event bus"
+      }
+    ],
+    "adoption_questions": [
+      {
+        "id": "hubspot_properties",
+        "question": "Which HubSpot contact properties are critical for your team? (These will be flagged as 'must-have' in the missing field audit)",
+        "type": "multi_select",
+        "options": [
+          "Email",
+          "Phone",
+          "Company",
+          "Job Title",
+          "Lifecycle Stage",
+          "Lead Source",
+          "Industry",
+          "City/State",
+          "LinkedIn URL",
+          "Annual Revenue"
+        ],
+        "default": ["Email", "Company", "Job Title", "Lifecycle Stage"],
+        "hint": "Select the fields your sales team relies on most. Records missing these will be flagged as critical-incomplete."
+      },
+      {
+        "id": "stale_thresholds",
+        "question": "How long should a record be inactive before it's considered stale?",
+        "type": "group",
+        "fields": [
+          {
+            "id": "contact_stale_days",
+            "label": "Contacts (days inactive)",
+            "type": "number",
+            "default": 90,
+            "hint": "Contacts with no emails, calls, or meetings for this many days will be flagged."
+          },
+          {
+            "id": "deal_stale_days",
+            "label": "Deals (days in same stage)",
+            "type": "number",
+            "default": 60,
+            "hint": "Open deals stuck in the same pipeline stage for this many days will be flagged."
+          },
+          {
+            "id": "company_stale_days",
+            "label": "Companies (days since last modified)",
+            "type": "number",
+            "default": 180,
+            "hint": "Companies with no updates for this many days will be flagged."
+          }
+        ]
+      },
+      {
+        "id": "auto_fix_level",
+        "question": "What level of auto-fixing should the auditor perform without asking?",
+        "type": "single_select",
+        "options": [
+          {
+            "value": "none",
+            "label": "Report only — no auto-fixes",
+            "description": "The auditor will detect and report all issues but never modify any CRM data automatically."
+          },
+          {
+            "value": "safe",
+            "label": "Safe fixes only (recommended)",
+            "description": "Auto-fix formatting issues: phone number standardization, company suffix normalization, whitespace trimming. All other fixes require approval."
+          },
+          {
+            "value": "moderate",
+            "label": "Safe fixes + lifecycle stage inference",
+            "description": "Everything in 'safe' plus automatically setting lifecycle stage based on deal history."
+          }
+        ],
+        "default": "safe",
+        "hint": "You can always change this later. Even with auto-fix enabled, original values are always preserved for rollback."
+      },
+      {
+        "id": "slack_channel",
+        "question": "Which Slack channel should receive weekly data quality reports?",
+        "type": "text",
+        "default": "#data-quality",
+        "hint": "The bot must be invited to this channel. Reports include score, issue breakdown, and top fix recommendations."
+      },
+      {
+        "id": "notion_database",
+        "question": "Do you want detailed audit reports created in Notion?",
+        "type": "single_select",
+        "options": [
+          {
+            "value": "yes",
+            "label": "Yes — create Notion pages for each audit",
+            "description": "A detailed report page will be created in your Notion database each week with full issue listings and executive summary."
+          },
+          {
+            "value": "no",
+            "label": "No — Slack reports only",
+            "description": "Weekly reports will only be posted to Slack. Detailed data is still stored locally in audit_results.json."
+          }
+        ],
+        "default": "yes",
+        "hint": "Notion reports provide a more detailed, browseable format ideal for team review meetings."
+      }
+    ]
+  }
+}

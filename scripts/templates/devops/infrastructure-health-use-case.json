@@ -815,6 +815,61 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aws_region",
+        "question": "Which AWS region should be monitored?",
+        "type": "text",
+        "default": "us-east-1",
+        "context": "The primary AWS region for CloudWatch alarms and metrics. Additional regions can be configured later.",
+        "connector_names": ["aws"],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_incidents_channel",
+        "question": "Which Slack channel should receive critical infrastructure alerts?",
+        "type": "text",
+        "default": "#incidents",
+        "context": "CRITICAL alarms are posted here immediately with @channel mention",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_alerts_channel",
+        "question": "Which Slack channel should receive warning-level alerts?",
+        "type": "text",
+        "default": "#infra-alerts",
+        "context": "WARNING-level infrastructure alerts are posted here for team awareness",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "jira_project_key",
+        "question": "What is the Jira project key for ops tickets?",
+        "type": "text",
+        "default": "OPS",
+        "context": "Persistent alarms are escalated to Jira tickets in this project",
+        "connector_names": ["jira"],
+        "category": "configuration"
+      },
+      {
+        "id": "cost_anomaly_threshold",
+        "question": "At what percentage above baseline should cost anomalies be flagged?",
+        "type": "select",
+        "default": "25%",
+        "options": ["10%", "25%", "50%", "100%"],
+        "context": "Daily AWS spend exceeding this threshold above the 7-day rolling average triggers an alert",
+        "category": "configuration"
+      },
+      {
+        "id": "cost_manual_review",
+        "question": "Should cost spikes over 50% require manual approval?",
+        "type": "boolean",
+        "default": "Yes",
+        "context": "When enabled, significant cost anomalies require human confirmation before any automated response",
+        "category": "human_in_the_loop"
+      }
+    ],
     "protocol_capabilities": [
       {
         "type": "manual_review",

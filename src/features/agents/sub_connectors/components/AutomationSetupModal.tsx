@@ -1,6 +1,5 @@
 import { X, Zap, Rocket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PLATFORM_CONFIG } from '../libs/automationTypes';
 import { useAutomationSetup } from '../libs/useAutomationSetup';
 import { AutomationTriggerStep } from './AutomationTriggerStep';
 import { AutomationActionStep } from './AutomationActionStep';
@@ -79,7 +78,7 @@ export function AutomationSetupModal({
             )}
             {s.phase === 'preview' && s.design.result && (
               <AutomationConditionStep
-                designResult={s.design.result} name={s.name} setName={s.setName}
+                designResult={{ ...s.design.result, workflow_definition: s.design.result.workflow_definition ?? undefined }} name={s.name} setName={s.setName}
                 platform={s.platform} githubRepo={s.githubRepo}
                 hasPlatformCredential={s.hasPlatformCredential}
                 platformCredentials={s.platformCredentials}

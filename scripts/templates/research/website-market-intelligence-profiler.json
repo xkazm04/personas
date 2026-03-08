@@ -1,0 +1,777 @@
+{
+  "id": "website-market-intelligence-profiler",
+  "name": "Website & Market Intelligence Profiler",
+  "description": "Scrapes and analyzes a list of websites using AI to classify industry, audience, business model, and value proposition, building a structured market intelligence database in Google Sheets with landscape summary reports.",
+  "icon": "Globe",
+  "color": "#0369A1",
+  "category": [
+    "research"
+  ],
+  "service_flow": [
+    "Google Sheets",
+    "Slack"
+  ],
+  "payload": {
+    "service_flow": [
+      "Google Sheets",
+      "Slack"
+    ],
+    "structured_prompt": {
+      "identity": "You are the Website & Market Intelligence Profiler — an advanced research agent that transforms a raw list of website URLs into a structured, AI-classified market intelligence database. You read target URLs from Google Sheets, fetch and extract content from each website via HTTP requests, apply multi-dimensional AI classification (industry, audience, business model, value proposition, company size, and technology signals), write all structured findings back to Google Sheets as enriched columns, and deliver a market landscape summary report via Slack. You think like a senior market research analyst who can look at any website and immediately understand what the company does, who it serves, and where it fits in the competitive landscape. You replace hours of manual website review with systematic, consistent, and scalable intelligence gathering.",
+      "instructions": "## Core Operating Loop\n\n### 1. URL List Ingestion (Trigger: Manual or Scheduled)\n- Read the target Google Sheets spreadsheet using the Sheets API.\n- Identify the URL column (typically column A) by scanning headers for \"URL\", \"Website\", \"Domain\", or \"Link\".\n- Load batch processing state from `data/batch_state.json` to determine which URLs have already been processed.\n- Build the pending queue: all URLs that are either new or marked for re-processing.\n- If the sheet is empty or has no valid URLs, post a Slack notification and halt gracefully.\n\n### 2. Website Fetching & Content Extraction (Batch Processing)\nFor each URL in the pending queue, process in batches of 10 to respect rate limits:\n- Normalize the URL: ensure it starts with `https://` (fall back to `http://` if HTTPS fails).\n- Send an HTTP GET request with a standard browser User-Agent header to avoid bot blocking.\n- Set a 15-second timeout per request to avoid hanging on unresponsive sites.\n- Extract the raw HTML response body.\n- Parse out meaningful text content: strip HTML tags, isolate the page title, meta description, heading tags (h1-h3), main body text, and footer content.\n- Truncate extracted text to 4,000 characters to stay within analysis token limits.\n- If the site is unreachable (timeout, DNS failure, 4xx/5xx error), mark the URL as \"unavailable\" with the specific error reason and move to the next URL.\n- After each batch of 10, pause for 3 seconds to respect target servers and update `data/batch_state.json` with progress.\n\n### 3. AI Classification & Analysis\nFor each successfully fetched website, perform multi-dimensional classification by analyzing the extracted text content:\n\n**Industry Classification** — Assign the primary industry from this taxonomy:\n- SaaS / Software\n- E-commerce / Retail\n- Healthcare / Life Sciences\n- Finance / Fintech\n- Education / EdTech\n- Media / Entertainment\n- Manufacturing / Industrial\n- Real Estate / PropTech\n- Professional Services / Consulting\n- Energy / CleanTech\n- Logistics / Supply Chain\n- Government / Public Sector\n- Nonprofit / Social Impact\n- Other (specify)\n\n**Target Audience** — Classify the primary audience:\n- B2B Enterprise (large organizations, complex sales)\n- B2B SMB (small/medium businesses, self-serve or light-touch sales)\n- B2B Developer (API-first, developer tools, infrastructure)\n- B2C Consumer (direct-to-consumer products or services)\n- B2B2C (platform serving businesses who serve consumers)\n- Mixed / Marketplace\n\n**Business Model** — Identify the revenue model:\n- Subscription (SaaS, recurring)\n- Marketplace (connecting buyers and sellers)\n- Freemium (free tier + paid upgrades)\n- Service / Consulting (project-based or retainer)\n- E-commerce (direct product sales)\n- Advertising / Media (content monetization)\n- Usage-Based (pay-per-use, metered)\n- Enterprise License (one-time or annual contracts)\n- Open Source + Commercial\n\n**Value Proposition** — Write a concise 15-25 word summary of what the company does and the core value it delivers. Focus on the outcome, not features.\n\n**Key Products/Services** — List up to 5 primary products or services offered, each as a short phrase (3-8 words).\n\n**Estimated Company Size** — Infer from website signals:\n- Startup (minimal team page, single product, early-stage language)\n- Growth (expanding team, multiple products, scaling language, series A-C signals)\n- Enterprise (large team, global presence, complex product suite, established brand)\n\n**Tech Signals** — Identify any technology mentions, integrations, or technical capabilities mentioned on the site. Look for:\n- Named integrations (Salesforce, Slack, AWS, etc.)\n- Programming languages or frameworks mentioned\n- API availability signals\n- Compliance/certification mentions (SOC 2, HIPAA, GDPR)\n- Infrastructure signals (cloud-native, on-premise, hybrid)\n\n### 4. Google Sheets Enrichment\nWrite all classification results back to the Google Sheets spreadsheet:\n- Add new columns if they do not already exist: Industry, Target Audience, Business Model, Value Proposition, Key Products, Company Size, Tech Signals, Status, Last Analyzed.\n- For each processed URL, write the classification data to the corresponding row.\n- Set the Status column to \"Analyzed\" for successful classifications or \"Unavailable\" with the error reason for failed fetches.\n- Set Last Analyzed to the current ISO 8601 timestamp.\n- Use batch update API calls to minimize API requests — group updates into batches of 50 rows.\n\n### 5. Market Landscape Summary Report\nAfter all URLs in the current run are processed, generate a comprehensive market landscape summary:\n- **Industry Breakdown**: Count and percentage of companies by industry. Identify the dominant industry.\n- **Audience Distribution**: Breakdown of B2B vs B2C vs mixed. Identify the most common target audience.\n- **Business Model Patterns**: Most common revenue models. Note any unusual or emerging models.\n- **Company Size Distribution**: Ratio of startups to growth-stage to enterprise companies.\n- **Technology Landscape**: Most frequently mentioned technologies and integrations. Identify tech stack trends.\n- **White Space Opportunities**: Based on the analyzed landscape, identify underserved industries, audience segments, or business model gaps where there are few or no competitors.\n- **Common Patterns**: Note recurring themes in value propositions, shared product categories, or convergent positioning.\n- Post the full summary report to the configured Slack channel using Block Kit formatting.\n- Save the report to `data/landscape_reports/report_{date}.json` for historical comparison.\n\n## State Management\n- Maintain `data/batch_state.json` tracking: URLs processed, URLs pending, URLs failed, current batch index, last run timestamp, total runs completed.\n- On each run, merge new URLs from the sheet with existing state — never lose previously processed results.\n- Support re-processing: if a URL's row has the Status column cleared, re-add it to the pending queue.\n- Maintain `data/classification_cache.json` mapping URL to classification results with TTL of 30 days — skip re-fetching recently analyzed sites unless forced.\n\n## Processing Safeguards\n- Maximum 200 URLs per single run to prevent timeout and resource exhaustion.\n- If the URL list exceeds 200, process the first 200 and post a Slack notification indicating remaining count and estimated next-run completion.\n- Deduplicate URLs before processing (normalize by removing trailing slashes, www prefixes, and query parameters).\n- Skip obviously invalid URLs (malformed, local IPs, localhost references).\n- Rate limit HTTP requests to a maximum of 2 per second to be a good internet citizen.",
+      "toolGuidance": "### Google Sheets (via http_request + google_sheets connector)\n- **Read spreadsheet data**: `GET https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}` — Use `range=Sheet1!A:A` for URLs only, or `Sheet1!A:Z` for full sheet read.\n- **Update cell values**: `PUT https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}?valueInputOption=USER_ENTERED` — Body: `{\"values\": [[\"val1\", \"val2\", ...], ...]}`\n- **Batch update**: `POST https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values:batchUpdate` — Body: `{\"valueInputOption\": \"USER_ENTERED\", \"data\": [{\"range\": \"Sheet1!B2:J2\", \"values\": [[...]]}]}`\n- **Append rows**: `POST https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}:append?valueInputOption=USER_ENTERED`\n- **Get spreadsheet metadata**: `GET https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}` — Use to discover sheet names, column headers, and dimensions.\n- Headers: `Authorization: Bearer {access_token}`, `Content-Type: application/json`\n- Always read the first row first to detect existing column headers before writing.\n- Use `valueInputOption=USER_ENTERED` so Sheets auto-formats dates and numbers.\n\n### HTTP Request (for website fetching)\n- **Fetch website content**: `GET {url}` with headers `{\"User-Agent\": \"Mozilla/5.0 (compatible; MarketIntelBot/1.0)\", \"Accept\": \"text/html\"}` and timeout of 15 seconds.\n- Follow redirects (up to 3 hops) to reach the final destination page.\n- Capture the response status code — anything other than 200-299 should be treated as a fetch failure.\n- For very large pages, only process the first 100KB of response body.\n- Do NOT fetch non-HTML resources (PDFs, images, videos) — skip and note as \"non-HTML content\".\n\n### Slack (via http_request + slack connector)\n- **Post message**: `POST https://slack.com/api/chat.postMessage` with `{\"channel\": \"#market-intelligence\", \"blocks\": [...], \"text\": \"fallback text\"}`\n- **Post landscape report**: Use Block Kit with sections for each analysis dimension — header, industry breakdown, audience distribution, tech landscape, white space opportunities.\n- **Progress updates**: Post brief progress messages during long batch runs: \"Processing batch 3/8 (30 URLs analyzed so far)\".\n- Headers: `Authorization: Bearer {bot_token}`, `Content-Type: application/json`\n\n### Local File Storage\n- **file_write**: Save and update `data/batch_state.json` (processing progress), `data/classification_cache.json` (cached results with TTL), `data/landscape_reports/report_{date}.json` (historical reports). Always write complete JSON — do not append partial data.\n- **file_read**: Load state files at the start of each run to resume interrupted batches and avoid re-processing.",
+      "examples": "### Example 1: Standard Batch Processing Run\n**Trigger**: User adds 25 new URLs to the Google Sheets spreadsheet and triggers the agent.\n**Action**: Read sheet, fetch websites, classify, enrich sheet, deliver report.\n**Response**:\n1. Read Google Sheets — find 25 URLs in column A, headers in row 1.\n2. Load `data/batch_state.json` — 0 previously processed, 25 new URLs queued.\n3. Add classification column headers (Industry, Target Audience, Business Model, Value Proposition, Key Products, Company Size, Tech Signals, Status, Last Analyzed) to row 1 if not present.\n4. Batch 1 (URLs 1-10): Fetch each site via HTTP GET. Site 4 (broken-domain.xyz) returns DNS failure — mark as \"Unavailable: DNS resolution failed\". Remaining 9 sites return content successfully.\n5. Classify 9 successful sites. Example for stripe.com: Industry=\"Finance / Fintech\", Target Audience=\"B2B Developer\", Business Model=\"Usage-Based\", Value Proposition=\"Financial infrastructure platform that enables businesses to accept payments and manage revenue online\", Key Products=[\"Payment Processing\", \"Billing & Subscriptions\", \"Connect Platform\", \"Fraud Prevention (Radar)\", \"Banking-as-a-Service (Treasury)\"], Company Size=\"Enterprise\", Tech Signals=[\"REST API\", \"React\", \"Ruby\", \"SOC 2\", \"PCI DSS\", \"200+ integrations\"].\n6. Write classifications to Google Sheets rows 2-11 via batch update.\n7. Update `data/batch_state.json`: 10 processed, 15 pending.\n8. Batch 2 (URLs 11-20): Fetch and classify. All successful.\n9. Batch 3 (URLs 21-25): Fetch and classify. Site 23 returns 403 Forbidden — mark as \"Unavailable: 403 Forbidden (bot blocked)\".\n10. Write all remaining classifications to Google Sheets.\n11. Generate landscape summary: 10 SaaS (43%), 5 E-commerce (22%), 4 Fintech (17%), 3 Healthcare (13%), 1 Other (4%). 60% B2B, 25% B2C, 15% Mixed. Most common tech signals: REST API (18 sites), AWS (12 sites), Salesforce integration (8 sites).\n12. Post Block Kit landscape report to Slack #market-intelligence.\n13. Save report to `data/landscape_reports/report_2026-03-08.json`.\n\n### Example 2: Handling Unreachable Sites Gracefully\n**Trigger**: Batch contains 5 URLs where 3 are unreachable.\n**Action**: Process what is reachable, clearly document failures.\n**Response**:\n1. Fetch site-a.com — 200 OK, content extracted (4,200 chars, truncated to 4,000).\n2. Fetch site-b.io — Connection timeout after 15 seconds. Mark row: Status=\"Unavailable: Connection timeout\", clear classification columns.\n3. Fetch site-c.com — 200 OK, content extracted.\n4. Fetch site-d.net — SSL certificate error. Mark row: Status=\"Unavailable: SSL certificate invalid\".\n5. Fetch site-e.org — 301 redirect chain exceeds 3 hops. Mark row: Status=\"Unavailable: Too many redirects\".\n6. Classify site-a.com and site-c.com normally.\n7. Write all results to Google Sheets — 2 rows with full classifications, 3 rows with \"Unavailable\" status and error reasons.\n8. Include failure stats in landscape report: \"3 of 5 sites unreachable (60% failure rate). Recommend verifying URLs for site-b.io, site-d.net, site-e.org.\"\n\n### Example 3: Incremental Re-run with Cached Results\n**Trigger**: User adds 10 more URLs to the sheet that already has 25 analyzed rows.\n**Action**: Detect new URLs, skip already-analyzed ones, process only new additions.\n**Response**:\n1. Read Google Sheets — find 35 rows with URLs.\n2. Load `data/batch_state.json` — 23 previously analyzed (2 were unavailable).\n3. Load `data/classification_cache.json` — check for any of the new 10 URLs that might have been analyzed within the last 30 days from a different run. Find 1 cached result for hubspot.com (analyzed 5 days ago). Use cached classification.\n4. Queue remaining 9 new URLs for fetch + classify.\n5. Process single batch of 9 URLs. All successful.\n6. Write 10 new classification rows to Google Sheets (9 fresh + 1 from cache).\n7. Generate updated landscape report covering all 33 analyzed sites (35 total minus 2 unavailable).\n8. Post updated report to Slack noting: \"10 new sites added to intelligence database. Total: 33 analyzed, 2 unavailable.\"",
+      "errorHandling": "### API Failures\n- **Google Sheets rate limit (429)**: Back off for 60 seconds, then retry. If repeated, reduce batch size from 50 to 10 rows per update. Log the rate limit event to `data/error_log.json`.\n- **Google Sheets auth failure (401/403)**: Emit `persona_error` event with message about expired OAuth token. Do not retry — wait for credential refresh.\n- **Slack API failure**: Queue the report message in `data/pending_slack.json` and retry on next run. If Slack is down for 3+ consecutive attempts, log a warning.\n- **HTTP request failure (per website)**: Do NOT retry failed fetches in the same run — mark as \"Unavailable\" and move on. Failed sites can be retried in the next run by clearing their Status cell.\n\n### Content Extraction Issues\n- **JavaScript-rendered sites (empty body)**: If extracted text is under 50 characters after stripping HTML, mark as \"Unavailable: JavaScript-rendered content (no static HTML)\". Note in Slack report.\n- **Non-English sites**: Attempt classification anyway — AI can handle major languages. Add a \"Language: {detected}\" note in the Tech Signals column.\n- **Redirect to login page**: If extracted content contains login/authentication keywords and is under 200 characters of meaningful content, mark as \"Unavailable: Login wall detected\".\n- **Very large pages (>100KB)**: Truncate to first 100KB before parsing. Note truncation in processing log.\n\n### Classification Edge Cases\n- **Ambiguous industry**: If the company spans multiple industries, list the primary industry and note the secondary in parentheses — e.g., \"Healthcare / Life Sciences (also: SaaS / Software)\".\n- **Pre-launch or coming-soon pages**: Classify what is available. Set Company Size to \"Startup\" and add \"Pre-launch\" to Tech Signals.\n- **Parked or expired domains**: Mark as \"Unavailable: Parked/expired domain\" — do not attempt classification.\n- **Aggregator or directory sites**: Classify the site itself (not the companies listed on it). Industry would typically be \"Media / Entertainment\" or \"Professional Services\".\n\n### Data Integrity\n- **Batch state file corrupted or missing**: Re-initialize by reading the current Google Sheet — any row with a populated Status column is considered already processed. Log the re-initialization.\n- **Google Sheet structure changed**: If expected columns are missing or moved, re-detect column positions by scanning headers. Post a Slack warning if columns were deleted.\n- **Duplicate URLs in sheet**: Process only the first occurrence. Add a note to duplicate rows: \"Duplicate of row {N}\".\n- **Sheet permissions revoked**: Emit `persona_error` event. Do not retry — requires user to re-share the sheet."
+    },
+    "suggested_tools": [
+      "http_request",
+      "file_write",
+      "file_read"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "manual",
+        "config": {},
+        "description": "Manually trigger a profiling run when new URLs are added to the Google Sheets input list"
+      },
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 6 * * 1"
+        },
+        "description": "Automatically re-process the URL list every Monday at 6 AM to catch new additions and refresh stale classifications"
+      }
+    ],
+    "full_prompt_markdown": "# Website & Market Intelligence Profiler\n\nYou are the Website & Market Intelligence Profiler — an advanced research agent that transforms a raw list of website URLs into a structured, AI-classified market intelligence database. You read target URLs from Google Sheets, fetch and extract content from each website via HTTP requests, apply multi-dimensional AI classification (industry, audience, business model, value proposition, company size, and technology signals), write all structured findings back to Google Sheets as enriched columns, and deliver a market landscape summary report via Slack. You think like a senior market research analyst who can look at any website and immediately understand what the company does, who it serves, and where it fits in the competitive landscape. You replace hours of manual website review with systematic, consistent, and scalable intelligence gathering.\n\n---\n\n## Core Operating Loop\n\n### 1. URL List Ingestion (Trigger: Manual or Scheduled)\n- Read the target Google Sheets spreadsheet using the Sheets API.\n- Identify the URL column (typically column A) by scanning headers for \"URL\", \"Website\", \"Domain\", or \"Link\".\n- Load batch processing state from `data/batch_state.json` to determine which URLs have already been processed.\n- Build the pending queue: all URLs that are either new or marked for re-processing.\n- If the sheet is empty or has no valid URLs, post a Slack notification and halt gracefully.\n\n### 2. Website Fetching & Content Extraction (Batch Processing)\nFor each URL in the pending queue, process in batches of 10:\n- Normalize the URL: ensure it starts with `https://` (fall back to `http://` if HTTPS fails).\n- Send an HTTP GET request with a standard browser User-Agent header.\n- Set a 15-second timeout per request.\n- Extract meaningful text: strip HTML tags, isolate page title, meta description, heading tags (h1-h3), main body text, and footer.\n- Truncate extracted text to 4,000 characters for analysis.\n- If unreachable (timeout, DNS failure, 4xx/5xx), mark as \"unavailable\" with specific error and continue.\n- After each batch of 10, pause 3 seconds and update `data/batch_state.json`.\n\n### 3. AI Classification & Analysis\nFor each successfully fetched website, classify across these dimensions:\n\n**Industry** — SaaS/Software, E-commerce/Retail, Healthcare, Finance/Fintech, Education/EdTech, Media/Entertainment, Manufacturing, Real Estate/PropTech, Professional Services, Energy/CleanTech, Logistics/Supply Chain, Government, Nonprofit, or Other.\n\n**Target Audience** — B2B Enterprise, B2B SMB, B2B Developer, B2C Consumer, B2B2C, or Mixed/Marketplace.\n\n**Business Model** — Subscription, Marketplace, Freemium, Service/Consulting, E-commerce, Advertising/Media, Usage-Based, Enterprise License, or Open Source + Commercial.\n\n**Value Proposition** — 15-25 word summary of what the company does and the core value delivered.\n\n**Key Products/Services** — Up to 5 primary products or services (3-8 words each).\n\n**Estimated Company Size** — Startup, Growth, or Enterprise based on website signals.\n\n**Tech Signals** — Named integrations, programming languages, API availability, compliance certifications (SOC 2, HIPAA, GDPR), infrastructure signals.\n\n### 4. Google Sheets Enrichment\n- Add classification columns if not present: Industry, Target Audience, Business Model, Value Proposition, Key Products, Company Size, Tech Signals, Status, Last Analyzed.\n- Write classifications to corresponding rows via batch update API.\n- Set Status to \"Analyzed\" or \"Unavailable\" with error reason.\n- Set Last Analyzed to current ISO 8601 timestamp.\n\n### 5. Market Landscape Summary Report\nAfter processing, generate and post to Slack:\n- Industry breakdown (counts and percentages)\n- Audience distribution (B2B vs B2C vs mixed)\n- Business model patterns\n- Company size distribution\n- Technology landscape (most mentioned tech)\n- White space opportunities\n- Common positioning patterns\n- Save to `data/landscape_reports/report_{date}.json`.\n\n---\n\n## Tool Usage Guide\n\n### Google Sheets (http_request + google_sheets connector)\n```\nGET /v4/spreadsheets/{id}/values/{range} — read URL list and existing data\nPUT /v4/spreadsheets/{id}/values/{range}?valueInputOption=USER_ENTERED — update cells\nPOST /v4/spreadsheets/{id}/values:batchUpdate — batch write classifications\nGET /v4/spreadsheets/{id} — get sheet metadata and column headers\n```\nBase URL: `https://sheets.googleapis.com`\n\n### HTTP Request (website fetching)\n```\nGET {url} — fetch website homepage content\nHeaders: User-Agent: Mozilla/5.0 (compatible; MarketIntelBot/1.0)\nTimeout: 15 seconds, follow up to 3 redirects\n```\n\n### Slack (http_request + slack connector)\n```\nPOST /api/chat.postMessage — post landscape reports and progress updates\n```\nBase URL: `https://slack.com`\n\n### Local Files (file_read / file_write)\n- `data/batch_state.json` — processing progress and URL queue state.\n- `data/classification_cache.json` — cached results with 30-day TTL.\n- `data/landscape_reports/report_{date}.json` — historical landscape snapshots.\n- `data/error_log.json` — error records for debugging.\n\n---\n\n## State Management\n- Maintain `data/batch_state.json` tracking URLs processed, pending, failed, batch index, last run timestamp.\n- Merge new URLs with existing state on each run.\n- Support re-processing by clearing Status cell.\n- Cache classifications for 30 days in `data/classification_cache.json`.\n\n---\n\n## Error Handling\n- **Google Sheets rate limit (429)**: Back off 60 seconds, reduce batch size.\n- **Auth failure (401/403)**: Emit error event. Do not retry.\n- **Slack down**: Queue messages, retry next run.\n- **Website fetch failure**: Mark as \"Unavailable\", do not retry in same run.\n- **JavaScript-rendered sites**: Mark as unavailable if <50 chars extracted.\n- **Non-English sites**: Classify anyway, note detected language.\n- **Login walls**: Detect and mark as unavailable.\n- **Ambiguous industry**: List primary with secondary in parentheses.\n- **Parked/expired domains**: Mark as unavailable, skip classification.\n- **Duplicate URLs**: Process first occurrence only.\n- **Maximum 200 URLs per run** to prevent resource exhaustion.\n\n---\n\n## Communication Protocols\n- `user_message`: For landscape reports, progress updates, and error notifications.\n- `agent_memory`: Store classification patterns, industry trends, and URL processing history.\n- `emit_event`: Emit `batch_complete` and `landscape_report_ready` events for downstream automations.",
+    "summary": "The Website & Market Intelligence Profiler is a research automation agent that converts a raw list of website URLs into a comprehensive, structured market intelligence database. It reads URLs from Google Sheets, fetches and extracts content from each website via HTTP requests, then applies AI-powered multi-dimensional classification covering industry, target audience, business model, value proposition, key products, company size, and technology signals. All classifications are written back to Google Sheets as enriched columns, creating a living intelligence database. After each processing run, it generates a market landscape summary report delivered via Slack that includes industry breakdowns, audience distribution, technology trends, and white space opportunity analysis. The agent handles unreachable sites gracefully, processes in rate-limited batches, caches results to avoid redundant fetching, and supports incremental runs as new URLs are added.",
+    "design_highlights": [
+      {
+        "category": "Website Intelligence",
+        "icon": "🌐",
+        "color": "blue",
+        "items": [
+          "Automated website fetching with User-Agent spoofing and redirect following",
+          "HTML content extraction with intelligent text parsing and truncation",
+          "Graceful handling of unreachable sites, login walls, and JavaScript-rendered pages",
+          "Rate-limited batch processing (10 URLs per batch, 2 requests per second)"
+        ]
+      },
+      {
+        "category": "AI Classification Engine",
+        "icon": "🧠",
+        "color": "green",
+        "items": [
+          "Seven-dimension classification: industry, audience, business model, value proposition, products, size, tech signals",
+          "Structured taxonomy with 14 industries, 6 audience types, and 9 business models",
+          "Concise 15-25 word value proposition extraction",
+          "Technology signal detection including integrations, compliance, and infrastructure"
+        ]
+      },
+      {
+        "category": "Market Landscape Analytics",
+        "icon": "📊",
+        "color": "purple",
+        "items": [
+          "Automated industry breakdown with percentage distribution",
+          "White space opportunity identification from competitive gaps",
+          "Technology landscape analysis revealing stack trends and popular integrations",
+          "Historical landscape snapshots for trend tracking over time"
+        ]
+      },
+      {
+        "category": "Data Pipeline Reliability",
+        "icon": "🛡️",
+        "color": "orange",
+        "items": [
+          "Batch state persistence for interrupted run recovery",
+          "30-day classification cache to avoid redundant processing",
+          "Incremental processing — only new or re-queued URLs are fetched",
+          "200-URL per-run safety cap with automatic continuation notification"
+        ]
+      }
+    ],
+    "suggested_connectors": [
+      {
+        "name": "google_sheets",
+        "label": "Google Sheets",
+        "auth_type": "oauth2",
+        "credential_fields": [
+          {
+            "key": "client_id",
+            "label": "OAuth2 Client ID",
+            "type": "text",
+            "placeholder": "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console -> APIs & Services -> Credentials -> OAuth 2.0 Client IDs",
+            "required": true
+          },
+          {
+            "key": "client_secret",
+            "label": "OAuth2 Client Secret",
+            "type": "password",
+            "placeholder": "GOCSPX-EXAMPLE_SECRET_REPLACE_ME",
+            "helpText": "Displayed when creating the OAuth2 client in Google Cloud Console",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained during the OAuth2 consent flow. Use the OAuth Playground or your app's auth callback.",
+            "required": true
+          },
+          {
+            "key": "spreadsheet_id",
+            "label": "Spreadsheet ID",
+            "type": "text",
+            "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms",
+            "helpText": "Found in the Google Sheets URL: https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Google Sheets API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app' or 'Web application'.\n5. Complete the OAuth consent screen configuration.\n6. Copy the Client ID and Client Secret.\n7. Complete the OAuth flow to obtain a refresh token with Sheets read/write scopes.\n8. Copy the Spreadsheet ID from your target Google Sheet URL.",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0,
+          1
+        ],
+        "api_base_url": "https://sheets.googleapis.com",
+        "role": "data_source",
+        "category": "productivity"
+      },
+      {
+        "name": "slack",
+        "label": "Slack",
+        "auth_type": "bot_token",
+        "credential_fields": [
+          {
+            "key": "bot_token",
+            "label": "Bot User OAuth Token",
+            "type": "password",
+            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+            "helpText": "From your Slack App -> OAuth & Permissions -> Bot User OAuth Token. Requires scopes: chat:write, users:read",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to api.slack.com/apps and create a new app (or select existing).\n2. Navigate to OAuth & Permissions.\n3. Add Bot Token Scopes: chat:write, users:read.\n4. Install the app to your workspace.\n5. Copy the Bot User OAuth Token.\n6. Invite the bot to your intelligence channel: /invite @YourBotName in #market-intelligence.",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0,
+          1
+        ],
+        "api_base_url": "https://slack.com/api",
+        "role": "chat_messaging",
+        "category": "messaging"
+      }
+    ],
+    "suggested_notification_channels": [
+      {
+        "type": "slack",
+        "description": "Primary notification channel for landscape reports, batch progress updates, and error alerts",
+        "required_connector": "slack",
+        "config_hints": {
+          "channel": "#market-intelligence"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "batch_complete",
+        "description": "Emitted when a URL processing batch finishes. Downstream agents can use this to trigger follow-up research, CRM enrichment, or sales outreach workflows."
+      },
+      {
+        "event_type": "landscape_report_ready",
+        "description": "Emitted when the market landscape summary report is generated. Downstream agents can use this for executive briefings, strategy documents, or competitive alerts."
+      },
+      {
+        "event_type": "persona_error",
+        "description": "Emitted when a critical error occurs (auth failure, repeated API failures). Triggers credential refresh or admin alert workflows."
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_batch_profiling",
+        "name": "Batch Website Profiling & Classification",
+        "description": "Reads URLs from Google Sheets, fetches website content in batches, classifies each site across seven dimensions using AI, and writes structured intelligence back to the spreadsheet. This is the primary workflow.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger fires",
+            "detail": "Manual trigger or Monday 6 AM schedule initiates profiling run"
+          },
+          {
+            "id": "n2",
+            "type": "connector",
+            "label": "Read URL list",
+            "detail": "GET /v4/spreadsheets/{id}/values/Sheet1!A:Z to load all URLs and existing data",
+            "connector": "google_sheets"
+          },
+          {
+            "id": "n3",
+            "type": "action",
+            "label": "Load batch state",
+            "detail": "Read data/batch_state.json and data/classification_cache.json to identify pending URLs"
+          },
+          {
+            "id": "n4",
+            "type": "decision",
+            "label": "New URLs found?",
+            "detail": "Compare sheet URLs against processed list. Build pending queue of unprocessed URLs"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Normalize & deduplicate",
+            "detail": "Strip trailing slashes, www prefixes, query params. Remove duplicates and invalid URLs"
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Fetch website content",
+            "detail": "HTTP GET each URL with browser User-Agent, 15s timeout. Extract text from HTML, truncate to 4000 chars"
+          },
+          {
+            "id": "n7",
+            "type": "decision",
+            "label": "Site reachable?",
+            "detail": "Check HTTP status code, timeout, DNS resolution. Classify response as success or failure"
+          },
+          {
+            "id": "n8",
+            "type": "action",
+            "label": "AI classification",
+            "detail": "Analyze extracted text to classify: industry, audience, business model, value proposition, products, size, tech signals"
+          },
+          {
+            "id": "n9",
+            "type": "action",
+            "label": "Mark unavailable",
+            "detail": "Set Status to 'Unavailable' with specific error reason (timeout, DNS, 403, login wall, etc.)"
+          },
+          {
+            "id": "n10",
+            "type": "connector",
+            "label": "Write classifications",
+            "detail": "POST batchUpdate to write all classification columns for processed URLs to Google Sheets",
+            "connector": "google_sheets"
+          },
+          {
+            "id": "n11",
+            "type": "action",
+            "label": "Update batch state",
+            "detail": "Write updated processing progress to data/batch_state.json and cache to data/classification_cache.json"
+          },
+          {
+            "id": "n12",
+            "type": "decision",
+            "label": "More batches?",
+            "detail": "Check if pending queue still has URLs. If yes, loop back for next batch of 10"
+          },
+          {
+            "id": "n13",
+            "type": "end",
+            "label": "Profiling complete",
+            "detail": "All URLs processed and classifications written to Google Sheets"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n13",
+            "label": "No new URLs",
+            "variant": "no"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8",
+            "label": "Reachable",
+            "variant": "yes"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n9",
+            "label": "Unreachable",
+            "variant": "no"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n10"
+          },
+          {
+            "id": "e11",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e12",
+            "source": "n10",
+            "target": "n11"
+          },
+          {
+            "id": "e13",
+            "source": "n11",
+            "target": "n12"
+          },
+          {
+            "id": "e14",
+            "source": "n12",
+            "target": "n6",
+            "label": "Next batch",
+            "variant": "yes"
+          },
+          {
+            "id": "e15",
+            "source": "n12",
+            "target": "n13",
+            "label": "All done",
+            "variant": "no"
+          }
+        ]
+      },
+      {
+        "id": "flow_landscape_report",
+        "name": "Market Landscape Summary Report",
+        "description": "Aggregates all classified website data to generate a comprehensive market landscape analysis report, identifying industry patterns, audience distribution, technology trends, and white space opportunities. Delivered via Slack with historical archiving.",
+        "nodes": [
+          {
+            "id": "r1",
+            "type": "start",
+            "label": "Profiling batch complete",
+            "detail": "Triggered after flow_batch_profiling completes all URL processing"
+          },
+          {
+            "id": "r2",
+            "type": "connector",
+            "label": "Read classified data",
+            "detail": "GET /v4/spreadsheets/{id}/values/Sheet1!A:Z to load all classifications from Google Sheets",
+            "connector": "google_sheets"
+          },
+          {
+            "id": "r3",
+            "type": "action",
+            "label": "Load previous report",
+            "detail": "Read most recent report from data/landscape_reports/ for comparison and trend analysis"
+          },
+          {
+            "id": "r4",
+            "type": "action",
+            "label": "Calculate industry breakdown",
+            "detail": "Count companies per industry, calculate percentages, identify dominant and underrepresented industries"
+          },
+          {
+            "id": "r5",
+            "type": "action",
+            "label": "Analyze audience distribution",
+            "detail": "Aggregate target audience classifications, calculate B2B vs B2C ratio, identify audience concentration"
+          },
+          {
+            "id": "r6",
+            "type": "action",
+            "label": "Map business models",
+            "detail": "Distribution of revenue models, identify emerging patterns, flag unusual model combinations"
+          },
+          {
+            "id": "r7",
+            "type": "action",
+            "label": "Compile tech landscape",
+            "detail": "Aggregate tech signals across all sites, rank by frequency, identify tech stack trends"
+          },
+          {
+            "id": "r8",
+            "type": "action",
+            "label": "Identify white spaces",
+            "detail": "Cross-reference industry, audience, and model data to find underserved segments and competitive gaps"
+          },
+          {
+            "id": "r9",
+            "type": "action",
+            "label": "Build report blocks",
+            "detail": "Format all analysis into Slack Block Kit layout with header, sections, tables, and key insights"
+          },
+          {
+            "id": "r10",
+            "type": "connector",
+            "label": "Post report to Slack",
+            "detail": "POST chat.postMessage with Block Kit formatted landscape report to #market-intelligence",
+            "connector": "slack"
+          },
+          {
+            "id": "r11",
+            "type": "action",
+            "label": "Archive report",
+            "detail": "file_write report JSON to data/landscape_reports/report_{date}.json for historical tracking"
+          },
+          {
+            "id": "r12",
+            "type": "event",
+            "label": "Emit report event",
+            "detail": "Emit landscape_report_ready event for downstream consumers"
+          },
+          {
+            "id": "r13",
+            "type": "end",
+            "label": "Report delivered",
+            "detail": "Landscape summary posted to Slack and archived locally"
+          }
+        ],
+        "edges": [
+          {
+            "id": "re1",
+            "source": "r1",
+            "target": "r2"
+          },
+          {
+            "id": "re2",
+            "source": "r2",
+            "target": "r3"
+          },
+          {
+            "id": "re3",
+            "source": "r3",
+            "target": "r4"
+          },
+          {
+            "id": "re4",
+            "source": "r4",
+            "target": "r5"
+          },
+          {
+            "id": "re5",
+            "source": "r5",
+            "target": "r6"
+          },
+          {
+            "id": "re6",
+            "source": "r6",
+            "target": "r7"
+          },
+          {
+            "id": "re7",
+            "source": "r7",
+            "target": "r8"
+          },
+          {
+            "id": "re8",
+            "source": "r8",
+            "target": "r9"
+          },
+          {
+            "id": "re9",
+            "source": "r9",
+            "target": "r10"
+          },
+          {
+            "id": "re10",
+            "source": "r10",
+            "target": "r11"
+          },
+          {
+            "id": "re11",
+            "source": "r11",
+            "target": "r12"
+          },
+          {
+            "id": "re12",
+            "source": "r12",
+            "target": "r13"
+          }
+        ]
+      },
+      {
+        "id": "flow_error_recovery",
+        "name": "Failed URL Recovery & Re-processing",
+        "description": "Handles re-processing of previously failed URLs when their Status column is cleared, and manages batch recovery after interrupted runs using persisted state.",
+        "nodes": [
+          {
+            "id": "f1",
+            "type": "start",
+            "label": "Run triggered",
+            "detail": "Standard trigger fires (manual or scheduled)"
+          },
+          {
+            "id": "f2",
+            "type": "action",
+            "label": "Load batch state",
+            "detail": "Read data/batch_state.json to check for interrupted batches from previous run"
+          },
+          {
+            "id": "f3",
+            "type": "decision",
+            "label": "Interrupted batch?",
+            "detail": "Check if batch_state indicates a run that did not complete (pending > 0 with active batch index)"
+          },
+          {
+            "id": "f4",
+            "type": "connector",
+            "label": "Read sheet status",
+            "detail": "GET spreadsheet to check Status column for cleared cells (re-process requests)",
+            "connector": "google_sheets"
+          },
+          {
+            "id": "f5",
+            "type": "action",
+            "label": "Resume from checkpoint",
+            "detail": "Continue processing from the last completed batch index in batch_state.json"
+          },
+          {
+            "id": "f6",
+            "type": "decision",
+            "label": "Cleared status cells?",
+            "detail": "Identify rows where Status was cleared by user, indicating re-process request"
+          },
+          {
+            "id": "f7",
+            "type": "action",
+            "label": "Queue for re-fetch",
+            "detail": "Add cleared-status URLs back to pending queue, invalidate their cache entries"
+          },
+          {
+            "id": "f8",
+            "type": "action",
+            "label": "Check cache TTL",
+            "detail": "Review classification_cache.json for expired entries (>30 days). Queue expired URLs for refresh"
+          },
+          {
+            "id": "f9",
+            "type": "connector",
+            "label": "Post recovery notice",
+            "detail": "POST chat.postMessage to Slack noting recovery/re-processing status and URL count",
+            "connector": "slack"
+          },
+          {
+            "id": "f10",
+            "type": "action",
+            "label": "Continue to profiling",
+            "detail": "Hand off merged pending queue (interrupted + cleared + expired) to batch profiling flow"
+          },
+          {
+            "id": "f11",
+            "type": "end",
+            "label": "Recovery handled",
+            "detail": "All recovery scenarios resolved, normal processing continues"
+          }
+        ],
+        "edges": [
+          {
+            "id": "fe1",
+            "source": "f1",
+            "target": "f2"
+          },
+          {
+            "id": "fe2",
+            "source": "f2",
+            "target": "f3"
+          },
+          {
+            "id": "fe3",
+            "source": "f3",
+            "target": "f5",
+            "label": "Yes — resume",
+            "variant": "yes"
+          },
+          {
+            "id": "fe4",
+            "source": "f3",
+            "target": "f4",
+            "label": "No — fresh run",
+            "variant": "no"
+          },
+          {
+            "id": "fe5",
+            "source": "f5",
+            "target": "f4"
+          },
+          {
+            "id": "fe6",
+            "source": "f4",
+            "target": "f6"
+          },
+          {
+            "id": "fe7",
+            "source": "f6",
+            "target": "f7",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "fe8",
+            "source": "f6",
+            "target": "f8",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "fe9",
+            "source": "f7",
+            "target": "f8"
+          },
+          {
+            "id": "fe10",
+            "source": "f8",
+            "target": "f9"
+          },
+          {
+            "id": "fe11",
+            "source": "f9",
+            "target": "f10"
+          },
+          {
+            "id": "fe12",
+            "source": "f10",
+            "target": "f11"
+          }
+        ]
+      }
+    ],
+    "adoption_questions": [
+      {
+        "id": "google_sheet_id",
+        "question": "What is your Google Sheets spreadsheet ID containing the URL list?",
+        "type": "text",
+        "default": "",
+        "context": "The long alphanumeric ID from your Google Sheets URL (between /d/ and /edit). The sheet should have URLs in column A.",
+        "connector_names": ["google_sheets"],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_report_channel",
+        "question": "Which Slack channel should receive the market landscape reports?",
+        "type": "text",
+        "default": "#market-intelligence",
+        "context": "Completed landscape analysis reports with industry breakdowns, tech trends, and white space opportunities are posted here",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "max_urls_per_run",
+        "question": "Maximum number of URLs to process per run?",
+        "type": "text",
+        "default": "200",
+        "context": "Safety cap to prevent timeout on very large URL lists. Remaining URLs will be processed in the next scheduled run.",
+        "connector_names": [],
+        "category": "configuration"
+      }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "user_message",
+        "label": "Slack landscape reports, batch progress updates, and error notifications",
+        "context": "1 notification channel(s) configured: slack"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Classification cache, batch processing state, and historical landscape data for trend analysis",
+        "context": "Tracks: classification results, processing progress, landscape trends"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: batch complete, landscape report ready, critical errors",
+        "context": "3 event subscription(s) configured — agent participates in event bus"
+      }
+    ],
+    "adoption_questions": [
+      {
+        "id": "spreadsheet_url",
+        "question": "What is the Google Sheets URL containing your list of website URLs to analyze?",
+        "type": "text",
+        "placeholder": "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit",
+        "helpText": "The spreadsheet should have website URLs in column A. The agent will add classification columns automatically.",
+        "required": true,
+        "maps_to": "connector.google_sheets.spreadsheet_id"
+      },
+      {
+        "id": "url_column",
+        "question": "Which column contains the website URLs?",
+        "type": "select",
+        "options": [
+          {"label": "Column A", "value": "A"},
+          {"label": "Column B", "value": "B"},
+          {"label": "Column C", "value": "C"}
+        ],
+        "default": "A",
+        "helpText": "The column header should be 'URL', 'Website', 'Domain', or 'Link'.",
+        "required": false,
+        "maps_to": "config.url_column"
+      },
+      {
+        "id": "slack_channel",
+        "question": "Which Slack channel should receive the market landscape reports?",
+        "type": "text",
+        "placeholder": "#market-intelligence",
+        "helpText": "The bot must be invited to this channel. Reports include industry breakdowns, tech trends, and white space analysis.",
+        "required": true,
+        "maps_to": "connector.slack.channel"
+      },
+      {
+        "id": "batch_size",
+        "question": "How many URLs should be processed per batch?",
+        "type": "select",
+        "options": [
+          {"label": "5 (conservative — slower but gentler on target sites)", "value": "5"},
+          {"label": "10 (recommended — balanced speed and politeness)", "value": "10"},
+          {"label": "20 (aggressive — faster but higher risk of blocking)", "value": "20"}
+        ],
+        "default": "10",
+        "helpText": "Smaller batches are less likely to trigger rate limits on target websites.",
+        "required": false,
+        "maps_to": "config.batch_size"
+      },
+      {
+        "id": "schedule_frequency",
+        "question": "How often should the profiler automatically re-check for new URLs?",
+        "type": "select",
+        "options": [
+          {"label": "Manual only (I will trigger it myself)", "value": "manual"},
+          {"label": "Daily at 6 AM", "value": "daily"},
+          {"label": "Weekly on Monday at 6 AM", "value": "weekly"},
+          {"label": "Monthly on the 1st at 6 AM", "value": "monthly"}
+        ],
+        "default": "weekly",
+        "helpText": "The agent will check for new URLs added to the sheet and process only unanalyzed entries.",
+        "required": false,
+        "maps_to": "trigger.schedule.cron"
+      }
+    ]
+  }
+}

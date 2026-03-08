@@ -904,6 +904,36 @@ const google_sheets: EP[] = [
   ], ['Spreadsheets'], jsonBody(), 'Body: { "requests": [{ "addSheet": { "properties": { "title": "New Sheet" } } }] }'),
 ];
 
+// ── Microsoft Outlook (Graph API) ───────────────────────────────────
+
+const microsoft_outlook: EP[] = [
+  ep('GET', '/v1.0/me', 'Get current user profile', [], ['Users']),
+  ep('GET', '/v1.0/me/messages', 'List messages', [
+    queryP('$top', false, 'Number of messages to return'),
+    queryP('$filter', false, 'OData filter (e.g. isRead eq false)'),
+    queryP('$select', false, 'Fields to return (e.g. subject,from,receivedDateTime)'),
+    queryP('$orderby', false, 'Sort order (e.g. receivedDateTime desc)'),
+  ], ['Mail']),
+  ep('GET', '/v1.0/me/messages/{id}', 'Get message by ID', [
+    pathP('id', 'Message ID'),
+    queryP('$select', false, 'Fields to return'),
+  ], ['Mail']),
+  ep('POST', '/v1.0/me/sendMail', 'Send an email', [], ['Mail'], jsonBody(), 'Body: { "message": { "subject": "Hello", "body": { "contentType": "Text", "content": "Hello World" }, "toRecipients": [{ "emailAddress": { "address": "user@example.com" } }] } }'),
+  ep('GET', '/v1.0/me/mailFolders', 'List mail folders', [
+    queryP('$top', false, 'Number of folders'),
+  ], ['Mail Folders']),
+  ep('GET', '/v1.0/me/events', 'List calendar events', [
+    queryP('$top', false, 'Number of events'),
+    queryP('$filter', false, 'OData filter'),
+    queryP('$orderby', false, 'Sort order (e.g. start/dateTime)'),
+  ], ['Calendar']),
+  ep('POST', '/v1.0/me/events', 'Create calendar event', [], ['Calendar'], jsonBody(), 'Body: { "subject": "Meeting", "start": { "dateTime": "2026-01-01T10:00:00", "timeZone": "UTC" }, "end": { "dateTime": "2026-01-01T11:00:00", "timeZone": "UTC" } }'),
+  ep('GET', '/v1.0/me/contacts', 'List contacts', [
+    queryP('$top', false, 'Number of contacts'),
+    queryP('$select', false, 'Fields to return'),
+  ], ['Contacts']),
+];
+
 // ── LinkedIn ────────────────────────────────────────────────────────
 
 const linkedin: EP[] = [
@@ -962,4 +992,5 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   linkedin,
   google_sheets,
   gmail,
+  microsoft_outlook,
 };

@@ -678,6 +678,44 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "slack_product_channel",
+        "question": "Which Slack channel should receive product signal insight cards?",
+        "type": "text",
+        "default": "#product-signals",
+        "context": "Anomaly insight cards grouped by severity will be posted here daily",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "linear_team_id",
+        "question": "What is your Linear team ID for investigation tickets?",
+        "type": "text",
+        "default": "",
+        "context": "Critical signals auto-create Linear tickets in this team. Find via Linear API: query { teams { nodes { id name } } }",
+        "connector_names": ["linear"],
+        "category": "configuration"
+      },
+      {
+        "id": "linear_label_id",
+        "question": "What is the Linear label ID for 'product-signal' tickets?",
+        "type": "text",
+        "default": "",
+        "context": "Optional label to tag auto-created investigation tickets for easy filtering in Linear",
+        "connector_names": ["linear"],
+        "category": "configuration"
+      },
+      {
+        "id": "critical_threshold",
+        "question": "What negative deviation percentage defines a critical signal?",
+        "type": "text",
+        "default": "25",
+        "context": "Metrics deviating more than this percentage below baseline trigger immediate Slack alerts and Linear tickets",
+        "connector_names": [],
+        "category": "configuration"
+      }
+    ],
     "protocol_capabilities": [
       {
         "type": "manual_review",

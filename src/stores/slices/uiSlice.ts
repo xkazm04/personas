@@ -12,6 +12,16 @@ export interface AdoptionDraft {
   connectorCredentialMap: Record<string, string>;
   variableValues: Record<string, string>;
   savedAt: number;
+  // Extended fields — persisted for full session restore
+  triggerConfigs?: Record<number, Record<string, string>>;
+  requireApproval?: boolean;
+  autoApproveSeverity?: string;
+  reviewTimeout?: string;
+  memoryEnabled?: boolean;
+  memoryScope?: string;
+  userAnswers?: Record<string, string>;
+  /** Non-null when the user closed while a background transform was running. */
+  backgroundAdoptId?: string | null;
 }
 
 export interface UiSlice {

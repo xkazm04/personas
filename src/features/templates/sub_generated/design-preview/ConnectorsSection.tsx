@@ -63,7 +63,7 @@ export function ConnectorsSection({
         <Plug className="w-4 h-4 text-emerald-400" />
         Connectors & Tools
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
         {connectorToolMap.map((item, idx) => {
           const isGeneral = item.connector.name === 'general';
           const installed = !isGeneral && connectorNames.has(item.connector.name);

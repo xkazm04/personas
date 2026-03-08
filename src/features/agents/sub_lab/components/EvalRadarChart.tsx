@@ -3,7 +3,7 @@ import {
   PolarAngleAxis, PolarGrid, PolarRadiusAxis,
   Radar, RadarChart, ResponsiveContainer, Tooltip,
 } from 'recharts';
-import { ChartErrorBoundary } from '@/features/overview/sub_usage/charts/ChartErrorBoundary';
+import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
 import type { VersionAggregate } from '../libs/evalAggregation';
 
 interface EvalRadarChartProps {

@@ -638,6 +638,71 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "telegram_chat_id",
+        "question": "What is your Telegram chat ID for receiving captures and digests?",
+        "type": "text",
+        "default": "",
+        "context": "Your personal chat ID with the bot. Send any message to your bot, then check getUpdates to find it.",
+        "connector_names": ["telegram"],
+        "category": "configuration"
+      },
+      {
+        "id": "notion_ideas_db",
+        "question": "What is the Notion database ID for Ideas?",
+        "type": "text",
+        "default": "",
+        "context": "Database where captured ideas and brainstorms will be stored. See template docs for required schema.",
+        "connector_names": ["notion"],
+        "category": "configuration"
+      },
+      {
+        "id": "notion_bookmarks_db",
+        "question": "What is the Notion database ID for Bookmarks?",
+        "type": "text",
+        "default": "",
+        "context": "Database where saved URLs and references will be stored with extracted titles and tags.",
+        "connector_names": ["notion"],
+        "category": "configuration"
+      },
+      {
+        "id": "notion_notes_db",
+        "question": "What is the Notion database ID for Notes?",
+        "type": "text",
+        "default": "",
+        "context": "Database where general notes, observations, and meeting summaries will be stored.",
+        "connector_names": ["notion"],
+        "category": "configuration"
+      },
+      {
+        "id": "airtable_base_id",
+        "question": "What is your Airtable Base ID for task management?",
+        "type": "text",
+        "default": "",
+        "context": "The Base ID (starts with 'app') where captured tasks will be routed. Found in Airtable API docs.",
+        "connector_names": ["airtable"],
+        "category": "configuration"
+      },
+      {
+        "id": "airtable_table_name",
+        "question": "What is the name of your Airtable tasks table?",
+        "type": "text",
+        "default": "Tasks",
+        "context": "The table where action items from Telegram captures will be created with status, priority, and due date fields.",
+        "connector_names": ["airtable"],
+        "category": "configuration"
+      },
+      {
+        "id": "digest_time",
+        "question": "What time should the daily capture digest be sent?",
+        "type": "text",
+        "default": "21:00",
+        "context": "Daily digest summarizing all captures grouped by type will be sent to your Telegram at this time (24h format, UTC)",
+        "connector_names": [],
+        "category": "configuration"
+      }
+    ],
     "protocol_capabilities": [
       {
         "type": "manual_review",

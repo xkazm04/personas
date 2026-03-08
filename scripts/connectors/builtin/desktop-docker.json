@@ -1,0 +1,42 @@
+{
+  "id": "builtin-desktop-docker",
+  "name": "desktop_docker",
+  "label": "Docker",
+  "color": "#2496ED",
+  "icon_url": "/icons/connectors/docker.svg",
+  "category": "devops",
+  "fields": [
+    {
+      "key": "binary_path",
+      "label": "Binary Path",
+      "type": "text",
+      "required": false,
+      "placeholder": "docker",
+      "helpText": "Path to Docker binary. Auto-detected if left blank."
+    }
+  ],
+  "healthcheck_config": null,
+  "services": [
+    { "toolName": "docker_list_containers", "label": "List Containers" },
+    { "toolName": "docker_list_images", "label": "List Images" },
+    { "toolName": "docker_start", "label": "Start Container" },
+    { "toolName": "docker_stop", "label": "Stop Container" },
+    { "toolName": "docker_logs", "label": "Container Logs" },
+    { "toolName": "docker_exec", "label": "Exec in Container" },
+    { "toolName": "docker_compose_up", "label": "Compose Up" },
+    { "toolName": "docker_compose_down", "label": "Compose Down" }
+  ],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Docker container management — list, start, stop, inspect containers and run compose stacks via desktop bridge.",
+    "auth_type": "desktop_bridge",
+    "auth_type_label": "Desktop Bridge",
+    "connection_mode": "desktop_bridge",
+    "bridge_name": "docker",
+    "docs_url": "https://docs.docker.com/reference/cli/docker/",
+    "setup_guide": "1. Ensure Docker Desktop or Docker Engine is installed\n2. The 'docker' command should be available in your PATH\n3. Click Detect to scan for Docker\n4. Approve the requested capabilities",
+    "pricing_tier": "free",
+    "capabilities": ["process_spawn", "network_local"]
+  }
+}

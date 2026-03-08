@@ -67,7 +67,7 @@ export function AnalyzeButton({ disabled, onClick, variant }: AnalyzeButtonProps
       className={`flex items-center justify-center gap-2.5 px-4 py-2 rounded-xl font-medium text-sm transition-all w-full ${
         disabled
           ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'
-          : `bg-gradient-to-r ${cfg.gradient} hover:from-${cfg.gradient.split(' ')[0].replace('from-', '')}/90 hover:to-${cfg.gradient.split(' ')[1].replace('to-', '')}/90 text-white shadow-lg ${cfg.shadow} hover:scale-[1.01] active:scale-[0.99]`
+          : `bg-gradient-to-r ${cfg.gradient} hover:from-${cfg.gradient.split(' ')[0]?.replace('from-', '') ?? ''}/90 hover:to-${cfg.gradient.split(' ')[1]?.replace('to-', '') ?? ''}/90 text-white shadow-lg ${cfg.shadow} hover:scale-[1.01] active:scale-[0.99]`
       }`}
     >
       {cfg.icon}

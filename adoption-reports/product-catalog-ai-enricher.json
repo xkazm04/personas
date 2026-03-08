@@ -1,0 +1,57 @@
+{
+  "templateId": "product-catalog-ai-enricher",
+  "templateName": "Product Catalog AI Enricher",
+  "category": ["content"],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T12:00:00Z",
+
+  "connectorClassification": {
+    "available": ["slack"],
+    "swapped": {},
+    "missing": ["google_sheets"]
+  },
+
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      { "name": "schema_completeness", "passed": true, "detail": "All required payload fields present: structured_prompt, suggested_tools, suggested_triggers, suggested_connectors, use_case_flows, full_prompt_markdown, summary, design_highlights" },
+      { "name": "flow_integrity", "passed": true, "detail": "2 flows (flow_batch_enrichment: 15 nodes/16 edges, flow_weekly_catalog_health: 12 nodes connected). All start/end nodes present, edges valid." },
+      { "name": "trigger_validity", "passed": true, "detail": "2 schedule triggers with valid cron expressions (0 6 * * * daily, 0 9 * * 1 weekly)" },
+      { "name": "connector_role_alignment", "passed": true, "detail": "google_sheets=data_source, slack=chat_messaging — roles are valid" },
+      { "name": "adoption_question_fitness", "passed": true, "detail": "5 adoption_questions added covering spreadsheet_id, sheet_name, writing_tone, batch_size, slack_channel" },
+      { "name": "safety_scan", "passed": true, "detail": "0 critical findings. No credential exposure, no destructive operations without checks." }
+    ]
+  },
+
+  "dimensions": [
+    { "name": "Prompt Completeness", "category": "technical", "score": 10, "weight": 3, "rationale": "Identity is 110+ words with clear persona. Instructions are 2000+ words with 7 numbered sections. Tool guidance covers Google Sheets and Slack APIs with specific endpoints and JSON bodies. Examples include 3 detailed scenarios (electronics, fashion, batch summary). Error handling is comprehensive with per-service strategies." },
+    { "name": "Tool-Prompt Alignment", "category": "technical", "score": 9, "weight": 2, "rationale": "All tools (http_request, file_read, file_write) are referenced in prompt with concrete API calls. No phantom tools. Slight gap: prompt mentions 'AI content generation' but no explicit LLM tool reference — acceptable since the persona IS the AI." },
+    { "name": "Trigger Coherence", "category": "technical", "score": 10, "weight": 2, "rationale": "Daily 6 AM batch enrichment and Monday 9 AM weekly report are both described in detail in the prompt instructions and match the trigger configs exactly." },
+    { "name": "Connector Coverage", "category": "technical", "score": 10, "weight": 2, "rationale": "Service flow [Google Sheets, Slack] fully backed by google_sheets and slack connectors with complete credential fields and setup instructions." },
+    { "name": "Memory Design", "category": "technical", "score": 9, "weight": 1, "rationale": "Enrichment queue (data/enrichment_queue.json) tracks SKU-level state with hashes for change detection. Weekly reports archived. Agent memory for enrichment patterns mentioned. Good scope for the use case." },
+    { "name": "Error Handling", "category": "technical", "score": 10, "weight": 2, "rationale": "Covers Google Sheets 401/403/404/429/400/500, content generation failures (insufficient data, too short, too long, duplicates), Slack failures, data integrity (queue corruption, sheet structure changes, concurrent edits), and edge cases (non-English, large catalogs, first-run). Excellent coverage." },
+    { "name": "Use Case Fidelity", "category": "technical", "score": 10, "weight": 2, "rationale": "Both use_case_flows (batch enrichment and weekly health report) are fully covered in the prompt instructions with matching step-by-step procedures." },
+    { "name": "Value Clarity", "category": "business", "score": 9, "weight": 2, "rationale": "Clear business outcome: transforms sparse product data into SEO-optimized catalog content at scale. Replaces content team manual work. Quantified batch sizes and progress tracking." },
+    { "name": "Execution Feasibility", "category": "technical", "score": 8, "weight": 3, "rationale": "Google Sheets API and Slack API are standard and well-documented. OAuth2 for Google Sheets adds adoption complexity. All trigger configs are actionable. The AI content generation is the persona's native capability." },
+    { "name": "Differentiation", "category": "business", "score": 9, "weight": 1, "rationale": "Adds significant reasoning: tone selection, quality checks, duplicate detection, category suggestion, re-enrichment detection. Far beyond what a simple cron+API workflow could do." },
+    { "name": "Variable Necessity", "category": "technical", "score": 9, "weight": 1, "rationale": "All 5 adoption questions are genuinely needed: spreadsheet_id and sheet_name are required for operation, tone and batch_size customize behavior, slack_channel routes notifications." },
+    { "name": "Default Quality", "category": "technical", "score": 7, "weight": 2, "rationale": "Good defaults for sheet_name (Sheet1), writing_tone (Professional), batch_size (25), slack_channel (#ecommerce-catalog). Missing defaults for spreadsheet_id (required, no sensible default). User must provide 1-2 values to get started." }
+  ],
+
+  "overall": 9.17,
+  "grade": "A",
+
+  "issues": [
+    "No adoption_questions existed — 5 added covering all user-specific config values",
+    "Google Sheets OAuth2 connector may not have a builtin definition, adding adoption friction",
+    "Spreadsheet ID has no default (unavoidable — user-specific)"
+  ],
+
+  "fixes_applied": {
+    "template": [
+      "Added 5 adoption_questions: spreadsheet_id, sheet_name, writing_tone, batch_size, slack_channel",
+      "Questions include select types with options for tone and batch_size for constrained choices"
+    ],
+    "app_code": []
+  }
+}

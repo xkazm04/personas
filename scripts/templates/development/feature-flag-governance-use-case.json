@@ -840,6 +840,70 @@
         "label": "Emits events: execution completed, execution failed, item created, threshold breached",
         "context": "2 event subscription(s) configured — agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "ld_project_keys",
+        "question": "Which LaunchDarkly project keys should be monitored?",
+        "type": "text",
+        "default": "default",
+        "context": "Comma-separated LaunchDarkly project keys. The agent scans all flags in these projects.",
+        "connector_names": [
+          "launchdarkly"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "notion_flag_db_id",
+        "question": "Notion database ID for the feature flag registry?",
+        "type": "text",
+        "default": "",
+        "context": "The Notion database used as the single source of truth for all flag metadata. Create it before adopting.",
+        "connector_names": [
+          "notion"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "linear_team_id",
+        "question": "Linear team ID for cleanup tickets?",
+        "type": "text",
+        "default": "",
+        "context": "Stale flag cleanup and naming violation tickets are assigned to this team.",
+        "connector_names": [
+          "linear"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_audit_channel",
+        "question": "Which Slack channel for flag audit logs?",
+        "type": "text",
+        "default": "#feature-flags-audit",
+        "context": "Color-coded change audit messages, collision alerts, and weekly digests are posted here.",
+        "connector_names": [
+          "slack"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "stale_threshold_days",
+        "question": "Days before a flag is considered stale?",
+        "type": "select",
+        "default": "90",
+        "context": "Flags older than this with no active targeting or recent evaluations are flagged for cleanup.",
+        "connector_names": [],
+        "category": "configuration"
+      },
+      {
+        "id": "enforce_naming_conventions",
+        "question": "Enforce flag naming conventions (kebab-case, domain prefix)?",
+        "type": "boolean",
+        "default": "Yes",
+        "context": "Posts Slack warnings and creates Linear tickets when flags violate naming rules.",
+        "connector_names": [],
+        "category": "human_in_the_loop"
+      }
     ]
   }
 }

@@ -67,7 +67,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
         <h3 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-3">
           Activity
         </h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 3xl:grid-cols-4 gap-3">
           <ActivityGauge
             label="Queue Length"
             value={status.queueLength}

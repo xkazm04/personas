@@ -1,0 +1,57 @@
+{
+  "templateId": "community-engagement-scorer",
+  "templateName": "Community Engagement Scorer",
+  "category": ["marketing"],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T12:00:00Z",
+
+  "connectorClassification": {
+    "available": ["slack"],
+    "swapped": {},
+    "missing": ["notion"]
+  },
+
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      { "name": "schema_completeness", "passed": true, "detail": "All required payload fields present and substantive" },
+      { "name": "flow_integrity", "passed": true, "detail": "Use case flows present with connected nodes and valid edges" },
+      { "name": "trigger_validity", "passed": true, "detail": "Schedule triggers with valid cron expressions" },
+      { "name": "connector_role_alignment", "passed": true, "detail": "notion=knowledge_base, slack=chat_messaging — valid roles" },
+      { "name": "adoption_question_fitness", "passed": true, "detail": "5 adoption_questions added: notion_database_id, slack_channel, recognition_channel, scoring_weight_messages, at_risk_threshold_days" },
+      { "name": "safety_scan", "passed": true, "detail": "0 critical findings. Community data handling is read-heavy with no destructive operations." }
+    ]
+  },
+
+  "dimensions": [
+    { "name": "Prompt Completeness", "category": "technical", "score": 10, "weight": 3, "rationale": "Identity is 100+ words covering community management context. Instructions detail activity polling, score calculation with weighted factors, member classification, health reporting, and recognition automation. Tool guidance covers Notion and Slack APIs. Examples present. Error handling present." },
+    { "name": "Tool-Prompt Alignment", "category": "technical", "score": 9, "weight": 2, "rationale": "http_request mapped to Notion and Slack APIs. file_read/file_write for state. Description mentions Discord and Slack activity monitoring but connectors only cover Notion and Slack — Discord data may need to be fed through Notion or another mechanism." },
+    { "name": "Trigger Coherence", "category": "technical", "score": 9, "weight": 2, "rationale": "Schedule triggers align with weekly cadence described in prompt. Activity polling interval makes sense for the use case." },
+    { "name": "Connector Coverage", "category": "technical", "score": 8, "weight": 2, "rationale": "Notion and Slack connectors fully defined. However, the description mentions 'across Discord and Slack' activity tracking — Discord connector is not included. The template description implies Discord data is aggregated into Notion, which is workable but not explicit." },
+    { "name": "Memory Design", "category": "technical", "score": 9, "weight": 1, "rationale": "Member engagement history, scoring baselines, and activity patterns tracked across runs. Good scope for evolving member classifications over time." },
+    { "name": "Error Handling", "category": "technical", "score": 8, "weight": 2, "rationale": "Covers API failures, rate limits, and data integrity. Could be more specific about Notion API error codes and recovery strategies." },
+    { "name": "Use Case Fidelity", "category": "technical", "score": 9, "weight": 2, "rationale": "Main flows covered: activity polling, score calculation, classification, health reporting, and recognition. All described in prompt." },
+    { "name": "Value Clarity", "category": "business", "score": 9, "weight": 2, "rationale": "Clear outcome: automated community health monitoring with rising star and at-risk detection. Replaces 5 manual workflows. Actionable leaderboards and recognition." },
+    { "name": "Execution Feasibility", "category": "technical", "score": 8, "weight": 3, "rationale": "Notion and Slack APIs are standard. The gap between 'monitors Discord and Slack' in the description vs. only having Notion+Slack connectors adds some ambiguity. Assuming Discord data is pre-loaded into Notion." },
+    { "name": "Differentiation", "category": "business", "score": 9, "weight": 1, "rationale": "Weighted scoring with behavioral trend analysis, AI classification of rising stars vs. at-risk members, and automated recognition — significant reasoning layer." },
+    { "name": "Variable Necessity", "category": "technical", "score": 9, "weight": 1, "rationale": "All 5 questions target genuine config needs. Scoring weight and at-risk threshold allow meaningful behavioral tuning." },
+    { "name": "Default Quality", "category": "technical", "score": 7, "weight": 2, "rationale": "Good defaults for channels, scoring weight (Medium), and at-risk threshold (14 days). notion_database_id must be user-provided." }
+  ],
+
+  "overall": 8.74,
+  "grade": "A",
+
+  "issues": [
+    "No adoption_questions existed — 5 added covering Notion config, Slack channels, scoring tuning, and at-risk threshold",
+    "Description mentions Discord+Slack activity tracking but no Discord connector is defined — relies on Notion as aggregation layer",
+    "Notion connector may not have a builtin definition"
+  ],
+
+  "fixes_applied": {
+    "template": [
+      "Added 5 adoption_questions: notion_database_id, slack_channel, recognition_channel, scoring_weight_messages, at_risk_threshold_days",
+      "Included use_case_ids on recognition_channel to scope it to the recognition flow"
+    ],
+    "app_code": []
+  }
+}

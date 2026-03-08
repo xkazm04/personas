@@ -6,7 +6,7 @@ import { profileToDropdownValue, getOllamaPreset, OLLAMA_CLOUD_BASE_URL } from '
 import { ModelSelector } from '@/features/agents/sub_model_config/ModelSelector';
 import { IconSelector } from '@/features/shared/components/IconSelector';
 import { ColorPicker } from '@/features/shared/components/ColorPicker';
-import { NotificationChannelSettings } from '@/features/agents/sub_connectors/NotificationChannelSettings';
+import { NotificationChannelSettings } from '@/features/agents/sub_connectors/components/NotificationChannelSettings';
 
 // ── model_profile ↔ dropdown value helpers ────────────────────────────
 

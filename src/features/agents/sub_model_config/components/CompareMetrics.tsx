@@ -1,4 +1,4 @@
-import { Trophy, Clock, DollarSign, Target, FileText, Shield } from 'lucide-react';
+import { Trophy, Clock, DollarSign, Target, FileText } from 'lucide-react';
 import { scoreColor } from '@/lib/eval/evalFramework';
 import type { ModelOption, ModelMetrics } from '../libs/compareHelpers';
 

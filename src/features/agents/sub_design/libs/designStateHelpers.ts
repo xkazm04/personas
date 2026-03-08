@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useCallback, useRef } from 'react';
+import { useMemo, useEffect, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToggleSet } from '@/hooks/utility/useToggleSet';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';

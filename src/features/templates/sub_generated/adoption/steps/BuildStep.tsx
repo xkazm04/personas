@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
+import { Sparkles, AlertCircle, RefreshCw, Trash2 } from 'lucide-react';
 import { TransformProgress } from '@/features/shared/components/TransformProgress';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
 
@@ -24,6 +24,7 @@ export function BuildStep() {
     isRestoring,
     startTransform,
     cancelTransform,
+    discardDraft,
     requiredConnectors,
   } = useAdoptionWizard();
 
@@ -104,6 +105,18 @@ export function BuildStep() {
             className="w-full h-20 p-3 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground/75 resize-y placeholder-muted-foreground/30"
           />
         </div>
+      )}
+
+      {/* Discard draft */}
+      {!state.transforming && !state.confirming && (
+        <button
+          type="button"
+          onClick={discardDraft}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground/40 hover:text-red-400/70 transition-colors"
+        >
+          <Trash2 className="w-3 h-3" />
+          Discard draft and start over
+        </button>
       )}
     </div>
   );

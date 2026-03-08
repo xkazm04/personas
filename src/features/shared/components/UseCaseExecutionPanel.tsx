@@ -3,7 +3,7 @@ import { X, Play, Square, Clock, Timer } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
 import { useElapsedTimer } from '@/hooks/utility/useElapsedTimer';
-import { ExecutionTerminal } from '@/features/agents/sub_executions/ExecutionTerminal';
+import { ExecutionTerminal } from '@/features/agents/sub_executions';
 import { JsonEditor } from '@/features/shared/components/JsonEditor';
 import { formatElapsed } from '@/lib/utils/formatters';
 import type { UseCaseItem, UseCaseInputField } from './UseCasesList';

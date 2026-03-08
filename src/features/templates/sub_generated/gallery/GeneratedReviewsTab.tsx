@@ -43,6 +43,7 @@ import { TrendingCarousel } from './TrendingCarousel';
 import { RecommendedModal } from './RecommendedModal';
 import { EmptyState } from './EmptyState';
 import { ExploreView } from './ExploreView';
+import { useAdoptionCompletionNotifier } from './useAdoptionCompletionNotifier';
 
 export type ViewMode = 'list' | 'explore';
 
@@ -93,6 +94,9 @@ export default function GeneratedReviewsTab({
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [isBackfillingPipeline, setIsBackfillingPipeline] = useState(false);
   const [isBackfillingTools, setIsBackfillingTools] = useState(false);
+
+  // OS notification for background adoption completion
+  useAdoptionCompletionNotifier(templateAdoptActive, modals.isOpen('adopt'));
 
   // Background rebuild state
   const rebuild = useBackgroundRebuild(() => gallery.refresh());

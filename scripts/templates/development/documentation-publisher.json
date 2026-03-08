@@ -754,6 +754,74 @@
         "label": "Emits events: execution completed, execution failed, threshold breached",
         "context": "3 event subscription(s) configured — agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "notion_database_id",
+        "question": "Which Notion database contains the documentation pages?",
+        "type": "text",
+        "default": "",
+        "context": "The database ID from the Notion URL. Pages with Status = \"Ready to Publish\" will be processed.",
+        "connector_names": [
+          "notion"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "github_repo_owner",
+        "question": "GitHub Pages repository owner (org or user)?",
+        "type": "text",
+        "default": "your-org",
+        "context": "The GitHub username or organization owning the Pages repository.",
+        "connector_names": [
+          "github"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "github_repo_name",
+        "question": "GitHub Pages repository name?",
+        "type": "text",
+        "default": "docs-site",
+        "context": "The repository where Markdown files and images are committed.",
+        "connector_names": [
+          "github"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_docs_channel",
+        "question": "Which Slack channel for publish notifications?",
+        "type": "text",
+        "default": "#docs-updates",
+        "context": "Publishing summaries with live page links, update notices, and error alerts are posted here.",
+        "connector_names": [
+          "slack"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "docs_base_url",
+        "question": "Base URL of your GitHub Pages site?",
+        "type": "text",
+        "default": "https://your-org.github.io/docs-site",
+        "context": "Used to construct live page URLs in Slack notifications and Notion Published URL fields.",
+        "connector_names": [
+          "github"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "auto_update_notion_status",
+        "question": "Automatically update Notion page status after publishing?",
+        "type": "boolean",
+        "default": "Yes",
+        "context": "Sets the page Status to \"Published\" and fills in the Published URL property after a successful deploy.",
+        "connector_names": [
+          "notion"
+        ],
+        "category": "human_in_the_loop"
+      }
     ]
   }
 }

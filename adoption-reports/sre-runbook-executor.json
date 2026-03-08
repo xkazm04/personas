@@ -1,0 +1,58 @@
+{
+  "templateId": "sre-runbook-executor",
+  "templateName": "SRE Runbook Executor",
+  "category": ["devops"],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T00:00:00Z",
+
+  "connectorClassification": {
+    "available": ["slack", "github", "notion"],
+    "swapped": {},
+    "missing": []
+  },
+
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      { "name": "schema_completeness", "passed": true, "detail": "All required payload fields present. Has customSections for runbook_schema and alertmanager_payload providing operational context." },
+      { "name": "flow_integrity", "passed": true, "detail": "3 flows (Alert with Runbook, No Runbook Escalation, Alert Resolution). Flow 1 has n6 connector labeled as 'notion' but should be 'diagnostics' — minor attribution issue. Flow 2 includes error node for Notion API failure." },
+      { "name": "trigger_validity", "passed": true, "detail": "Webhook trigger has path (/alertmanager), method (POST), and content_type. Well-configured for Alertmanager integration." },
+      { "name": "connector_role_alignment", "passed": true, "detail": "slack->chat_messaging, github->source_control, notion->knowledge_base all valid roles in connectorRoles.ts" },
+      { "name": "adoption_question_fitness", "passed": true, "detail": "5 adoption_questions added: notion_runbook_db_id, github_incident_repo, slack_incident_channel, oncall_slack_user, alertmanager_url" },
+      { "name": "default_value_coverage", "passed": true, "detail": "Notion needs database_id (no default possible). GitHub owner/repo required. Slack needs bot_token. All fields have helpText." },
+      { "name": "prompt_quality", "passed": true, "detail": "Identity: 120 words (excellent depth). Instructions: ~1100 words with 9 numbered steps. Tool guidance: 4 service APIs detailed. 3 examples covering auto-resolve, critical escalation, and no-runbook. Comprehensive error handling." },
+      { "name": "safety_scan", "passed": true, "detail": "0 critical. Malformed payloads get fallback handling. INCONCLUSIVE results escalate rather than hide. No destructive auto-actions." }
+    ]
+  },
+
+  "dimensions": [
+    { "name": "Prompt Completeness", "category": "technical", "score": 10, "weight": 3, "rationale": "Identity 120 words with SRE philosophy. Instructions 1100+ words with 9 detailed steps covering the full incident lifecycle. Tool guidance for Notion, Slack, GitHub, and diagnostic endpoints. 3 excellent examples with different outcomes. Custom sections document expected runbook schema and Alertmanager payload format." },
+    { "name": "Tool-Prompt Alignment", "category": "technical", "score": 9, "weight": 2, "rationale": "http_request, file_write, file_read all documented. Notion database query, Slack Block Kit, GitHub issue CRUD all covered with specific endpoints and body examples. Minor: diagnostic HTTP endpoints are dynamic (from runbooks), not hardcoded — this is correct but means the LLM must interpret runbook content." },
+    { "name": "Trigger Coherence", "category": "technical", "score": 10, "weight": 2, "rationale": "Single webhook trigger perfectly matches the use case: Alertmanager sends POST webhooks. Config includes path, method, and content_type. No unnecessary triggers." },
+    { "name": "Connector Coverage", "category": "technical", "score": 10, "weight": 2, "rationale": "Slack, GitHub, Notion all have full connector definitions. Notion connector includes the runbook_database_id field which is essential. All credential fields have detailed setup instructions." },
+    { "name": "Memory Design", "category": "technical", "score": 8, "weight": 1, "rationale": "Agent memory stores incident summaries and outcomes. Notion runbook updated with Last Incident date. Could benefit from more explicit local state tracking (incident log, diagnostic result cache)." },
+    { "name": "Error Handling", "category": "technical", "score": 10, "weight": 2, "rationale": "Exceptional: malformed payloads get fallback Slack notification. Notion failure treated as no-runbook with immediate escalation. Diagnostic failures marked INCONCLUSIVE (not false positive). Slack rate limiting with retry. GitHub failure writes local fallback file. Resolved alert without matching issue handled gracefully." },
+    { "name": "Use Case Fidelity", "category": "technical", "score": 9, "weight": 2, "rationale": "All 3 flows covered by prompt. Flow 1 covers the full diagnostic path. Flow 2 handles missing runbooks. Flow 3 handles resolution. Minor: Flow 1 node n6 is labeled as connector 'notion' but represents diagnostic HTTP checks to service endpoints, not Notion API calls." },
+    { "name": "Value Clarity", "category": "business", "score": 10, "weight": 2, "rationale": "Crystal clear: every alert gets immediate, documented response with diagnostics. Eliminates the gap between alert and first-response. Ensures runbook compliance. Creates trackable incident records automatically." },
+    { "name": "Execution Feasibility", "category": "technical", "score": 8, "weight": 3, "rationale": "Notion, Slack, GitHub APIs are standard. The dynamic diagnostic HTTP checks (endpoints defined in Notion runbooks) require the LLM to interpret and execute arbitrary HTTP calls — feasible but adds complexity. File write for fallback is straightforward." },
+    { "name": "Differentiation", "category": "business", "score": 10, "weight": 1, "rationale": "Excellent: intelligent runbook matching, automated diagnostics execution, evidence-based incident reports, full lifecycle tracking (fire → diagnose → notify → create issue → resolve → close). No simple automation could replicate this reasoning chain." },
+    { "name": "Variable Necessity", "category": "technical", "score": 7, "weight": 1, "rationale": "Full_prompt_markdown references configuration variables (NOTION_RUNBOOK_DB_ID, GITHUB_OWNER, GITHUB_REPO, DEFAULT_SLACK_CHANNEL, ONCALL_SLACK_USER) but these are not defined as formal template variables. They exist in connector fields and adoption_questions instead, which works." },
+    { "name": "Default Quality", "category": "technical", "score": 7, "weight": 2, "rationale": "Slack channel defaults to #sre-incidents. GitHub repo defaults to 'incidents'. But Notion database ID, GitHub owner, and Alertmanager URL must be configured. Requires moderate setup effort." }
+  ],
+
+  "overall": 9.0,
+  "grade": "A",
+
+  "issues": [
+    "No adoption_questions — Notion DB ID, GitHub repo, Slack channel, on-call user, and Alertmanager URL should be asked",
+    "Flow 1 node n6 has connector='notion' but represents diagnostic HTTP checks to arbitrary service endpoints, not Notion API calls",
+    "Configuration variables referenced in full_prompt_markdown (NOTION_RUNBOOK_DB_ID, GITHUB_OWNER, etc.) not formalized as template variables"
+  ],
+
+  "fixes_applied": {
+    "template": [
+      "Added 5 adoption_questions: notion_runbook_db_id, github_incident_repo, slack_incident_channel, oncall_slack_user, alertmanager_url"
+    ],
+    "app_code": []
+  }
+}

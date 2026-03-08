@@ -1,0 +1,61 @@
+{
+  "templateId": "workflow-error-intelligence",
+  "templateName": "Workflow Error Intelligence",
+  "category": ["devops"],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T00:00:00Z",
+
+  "connectorClassification": {
+    "available": ["slack"],
+    "swapped": {},
+    "missing": []
+  },
+
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      { "name": "schema_completeness", "passed": true, "detail": "All required payload fields present: structured_prompt, suggested_tools, suggested_triggers, suggested_connectors, use_case_flows, full_prompt_markdown" },
+      { "name": "flow_integrity", "passed": true, "detail": "2 flows (Error Ingestion & Classification, Cascading Failure Detection) both have connected graphs with proper start/end/decision nodes and edges" },
+      { "name": "trigger_validity", "passed": false, "detail": "4 triggers defined. 'event' trigger type is not in the SuggestedTrigger type union ('manual'|'schedule'|'polling'|'webhook'). TuneStep.tsx TRIGGER_ICONS would return undefined for 'event' type, causing potential runtime error. Two schedule triggers have valid cron. Polling trigger has cron format." },
+      { "name": "connector_role_alignment", "passed": true, "detail": "slack->chat_messaging is a valid role. Only 1 connector needed (lightweight template)." },
+      { "name": "adoption_question_fitness", "passed": true, "detail": "6 adoption_questions present and updated to standard format: slack channel, severity threshold, monitored personas, digest time, recurring threshold, retention days" },
+      { "name": "default_value_coverage", "passed": true, "detail": "All adoption questions have sensible defaults. Slack connector has bot_token as only required field." },
+      { "name": "prompt_quality", "passed": true, "detail": "Identity: 73 words. Instructions: ~2500 words with 6 major sections, the most detailed of all 5 templates. Tool guidance covers event bus, execution API, Slack, and local files. 3 comprehensive examples. Thorough error handling including self-monitoring." },
+      { "name": "safety_scan", "passed": true, "detail": "0 critical. Self-monitoring capability. Sampling mode for volume spikes. No destructive actions." }
+    ]
+  },
+
+  "dimensions": [
+    { "name": "Prompt Completeness", "category": "technical", "score": 10, "weight": 3, "rationale": "Identity 73 words with 'agent that watches the agents' framing. Instructions ~2500 words — the most detailed across all 5 templates — covering error ingestion, classification across 4 dimensions with 7 error categories, cross-workflow pattern detection (4 types), real-time alerts, daily digests, and weekly reports. Tool guidance for event bus, platform API, Slack. 3 examples with cascading failure scenario. Self-monitoring error handling." },
+    { "name": "Tool-Prompt Alignment", "category": "technical", "score": 9, "weight": 2, "rationale": "http_request, file_read, file_write documented. Platform event bus and execution API endpoints specified. Slack API covered. Minor: platform execution API (/api/v1/executions) is internal and may not be accessible via standard http_request." },
+    { "name": "Trigger Coherence", "category": "technical", "score": 7, "weight": 2, "rationale": "Conceptually excellent: event subscription for real-time errors, polling for silent failures, daily and weekly schedules for reports. However, the 'event' trigger type is not defined in the SuggestedTrigger type union, which would cause a TuneStep rendering issue. The polling trigger uses cron format rather than interval." },
+    { "name": "Connector Coverage", "category": "technical", "score": 9, "weight": 2, "rationale": "Only Slack is needed as an external connector — the template is intentionally lightweight, relying on internal platform event bus and APIs. This is correct for a meta-observability agent. Minor: no connector for the platform's execution API (implicitly uses internal access)." },
+    { "name": "Memory Design", "category": "technical", "score": 10, "weight": 1, "rationale": "Exceptional state management: error_index.json (90-day rolling), error_patterns.json, persona_reliability.json with dependency maps, daily digests, weekly reports. 90-day pruning. Atomic state updates. Empty initialization on first run." },
+    { "name": "Error Handling", "category": "technical", "score": 10, "weight": 2, "rationale": "Outstanding: self-monitoring, event bus fallback to polling, deduplication, malformed event handling, Slack buffering with consolidated recovery, state file corruption handling, volume spike detection with sampling mode, performance monitoring." },
+    { "name": "Use Case Fidelity", "category": "technical", "score": 9, "weight": 2, "rationale": "2 flows cover the core scenarios: error ingestion with classification and cascade detection. Daily digest and weekly report flows are documented in the prompt but not as separate use_case_flows — they could be added as additional flows." },
+    { "name": "Value Clarity", "category": "business", "score": 10, "weight": 2, "rationale": "Exceptional value proposition: meta-observability for the entire persona ecosystem. Each execution produces classified errors, pattern detection, and actionable remediation suggestions. Weekly reports with reliability rankings and improvement recommendations." },
+    { "name": "Execution Feasibility", "category": "technical", "score": 8, "weight": 3, "rationale": "Slack API is standard. Platform event bus subscription and execution API depend on platform internals that may or may not be exposed. AI-powered error classification requires strong LLM reasoning. File-based state management is straightforward." },
+    { "name": "Differentiation", "category": "business", "score": 10, "weight": 1, "rationale": "Highest differentiation of all 5 templates: AI-powered error classification, cascading failure detection across dependent personas, time-pattern analysis, and reliability trending. Impossible to replicate with simple automation." },
+    { "name": "Variable Necessity", "category": "technical", "score": 9, "weight": 1, "rationale": "Adoption questions cover all key user-configurable values: channel, severity threshold, monitored personas, digest time, recurring threshold, retention days. All are genuinely needed." },
+    { "name": "Default Quality", "category": "technical", "score": 9, "weight": 2, "rationale": "Excellent defaults: #ops-alerts, severity=high, monitor all personas, 9AM digest, 3 occurrences threshold, 90-day retention. Could adopt with zero changes and get a working meta-monitoring agent. Only Slack bot_token requires actual setup." }
+  ],
+
+  "overall": 9.1,
+  "grade": "A",
+
+  "issues": [
+    "Trigger type 'event' is not in the SuggestedTrigger type union — TuneStep.tsx TRIGGER_ICONS lookup would return undefined, causing potential runtime error",
+    "Adoption questions had non-standard format (helpText/required/maps_to instead of context/connector_names/category) — updated to standard format",
+    "Daily digest and weekly report are documented in prompt but not as separate use_case_flows",
+    "Platform execution API (/api/v1/executions) is internal — accessibility via http_request depends on platform design"
+  ],
+
+  "fixes_applied": {
+    "template": [
+      "Normalized 6 adoption_questions from non-standard format (helpText/maps_to/required with object options) to standard format (context/connector_names/category with flat string options)",
+      "Added connector_names: ['slack'] to the slack_alert_channel question",
+      "Added category: 'configuration' to all questions"
+    ],
+    "app_code": []
+  }
+}

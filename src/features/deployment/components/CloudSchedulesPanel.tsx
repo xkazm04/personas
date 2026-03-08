@@ -346,7 +346,7 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
         <div className="space-y-1">
           {triggers.map((trigger) => {
             const isExpanded = expandedId === trigger.id;
-            const config = parseConfig(trigger.config);
+            const config = parseConfig(trigger.config) as Record<string, string>;
 
             return (
               <div key={trigger.id} className="rounded-lg bg-secondary/30 border border-primary/10 overflow-hidden">
@@ -366,7 +366,7 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
                   </span>
                   {config.cron && (
                     <span className="text-xs font-mono text-muted-foreground/60 bg-secondary/50 px-1.5 py-0.5 rounded">
-                      {String(config.cron)}
+                      {`${config.cron}`}
                     </span>
                   )}
                   {healthBadge(trigger.health_status)}
@@ -382,7 +382,7 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
                       <div><span className="text-muted-foreground/60">Status:</span> <span className="text-foreground/80">{trigger.enabled ? 'Enabled' : 'Disabled'}</span></div>
                       <div><span className="text-muted-foreground/60">Last triggered:</span> <span className="text-foreground/80">{timeAgo(trigger.last_triggered_at)}</span></div>
                       <div><span className="text-muted-foreground/60">Next trigger:</span> <span className="text-foreground/80">{trigger.next_trigger_at ? new Date(trigger.next_trigger_at).toLocaleString() : '-'}</span></div>
-                      {config.cron && <div className="col-span-2"><span className="text-muted-foreground/60">Cron:</span> <span className="text-foreground/80 font-mono">{String(config.cron)}</span></div>}
+                      {config.cron && <div className="col-span-2"><span className="text-muted-foreground/60">Cron:</span> <span className="text-foreground/80 font-mono">{`${config.cron}`}</span></div>}
                       {trigger.health_message && (
                         <div className="col-span-2 p-2 rounded-lg bg-amber-500/5 border border-amber-500/10 text-xs text-amber-400">
                           {trigger.health_message}

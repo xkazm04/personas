@@ -150,30 +150,6 @@ function ConnectorDropdown({
   );
 }
 
-// ── Resolved connector (compact row) ────────────────────────────────
-
-function ResolvedConnectorRow({
-  connector,
-  credentialName,
-}: {
-  connector: RequiredConnector;
-  credentialName: string;
-}) {
-  const meta = getConnectorMeta(connector.activeName);
-  const builtIn = isVirtual(connector.activeName);
-
-  return (
-    <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-emerald-500/15 bg-emerald-500/5">
-      <ConnectorIcon meta={meta} size="w-4 h-4" />
-      <span className="text-sm font-medium text-foreground/80 flex-1 truncate">{meta.label}</span>
-      <span className="text-sm text-muted-foreground/50 truncate max-w-[180px]">
-        {builtIn ? 'Built-in' : credentialName}
-      </span>
-      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-    </div>
-  );
-}
-
 // ── Unresolved Component Card ───────────────────────────────────────
 
 function UnresolvedComponentCard({
@@ -312,29 +288,22 @@ export function ConnectStep() {
     onSetInlineConnector(name);
   }, [onSetInlineConnector]);
 
-  // Classify connectors as resolved vs unresolved
-  const { resolved, unresolved, missingNames } = useMemo(() => {
-    const res: Array<{ connector: RequiredConnector; credName: string }> = [];
-    const unres: RequiredConnector[] = [];
+  // Derive configured count and missing names directly from connectors
+  const { configuredCount, missingNames } = useMemo(() => {
+    let configured = 0;
     const missing: string[] = [];
 
     for (const c of requiredConnectors) {
       const builtIn = isVirtual(c.activeName);
       const credId = connectorCredentialMap[c.activeName];
-      if (builtIn) {
-        res.push({ connector: c, credName: 'Built-in' });
-      } else if (credId) {
-        const cred = credentials.find((cr) => cr.id === credId);
-        res.push({ connector: c, credName: cred?.name ?? 'Configured' });
+      if (builtIn || credId) {
+        configured++;
       } else {
-        unres.push(c);
         missing.push(getConnectorMeta(c.activeName).label);
       }
     }
-    return { resolved: res, unresolved: unres, missingNames: missing };
-  }, [requiredConnectors, connectorCredentialMap, credentials]);
-
-  const configuredCount = resolved.length;
+    return { configuredCount: configured, missingNames: missing };
+  }, [requiredConnectors, connectorCredentialMap]);
   const totalCount = requiredConnectors.length;
   const progressPercent = totalCount > 0 ? (configuredCount / totalCount) * 100 : 0;
 
@@ -418,42 +387,22 @@ export function ConnectStep() {
         </div>
       </div>
 
-      {/* Unresolved connectors — expanded cards */}
-      {unresolved.length > 0 && (
-        <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
-          {unresolved.map((connector) => (
-            <UnresolvedComponentCard
-              key={connector.name}
-              connector={connector}
-              credentials={credentials}
-              selectedCredentialId={connectorCredentialMap[connector.activeName]}
-              onSetCredential={onSetCredential}
-              onClearCredential={onClearCredential}
-              onOpenInlineForm={handleOpenInlineForm}
-              onOpenDesign={handleOpenDesign}
-              onSwapConnector={onSwapConnector!}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Resolved connectors — compact rows */}
-      {resolved.length > 0 && (
-        <div>
-          {unresolved.length > 0 && (
-            <p className="text-sm text-muted-foreground/60 mb-1.5">Configured</p>
-          )}
-          <div className="flex flex-col gap-1">
-            {resolved.map(({ connector, credName }) => (
-              <ResolvedConnectorRow
-                key={connector.name}
-                connector={connector}
-                credentialName={credName}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* All connectors — editable cards */}
+      <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+        {requiredConnectors.map((connector) => (
+          <UnresolvedComponentCard
+            key={connector.name}
+            connector={connector}
+            credentials={credentials}
+            selectedCredentialId={connectorCredentialMap[connector.activeName]}
+            onSetCredential={onSetCredential}
+            onClearCredential={onClearCredential}
+            onOpenInlineForm={handleOpenInlineForm}
+            onOpenDesign={handleOpenDesign}
+            onSwapConnector={onSwapConnector!}
+          />
+        ))}
+      </div>
 
       {/* Inline credential panel */}
       <AnimatePresence initial={false}>

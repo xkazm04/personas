@@ -1,0 +1,58 @@
+{
+  "templateId": "crm-data-quality-auditor",
+  "templateName": "CRM Data Quality Auditor",
+  "category": ["sales"],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T12:00:00Z",
+
+  "connectorClassification": {
+    "available": ["slack"],
+    "swapped": {},
+    "missing": ["hubspot", "notion"]
+  },
+
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      { "name": "schema_completeness", "passed": true, "detail": "All required payload fields present and substantive" },
+      { "name": "flow_integrity", "passed": true, "detail": "Use case flows present with connected nodes, valid edges, and error handling nodes" },
+      { "name": "trigger_validity", "passed": true, "detail": "Schedule triggers with valid cron expressions for weekly audit cadence" },
+      { "name": "connector_role_alignment", "passed": true, "detail": "hubspot=crm, notion=knowledge_base, slack=chat_messaging — valid roles (hubspot crm role may need to be added to connectorRoles.ts)" },
+      { "name": "adoption_question_fitness", "passed": true, "detail": "5 adoption_questions added: hubspot_portal_id, notion_database_id, slack_channel, auto_repair_safe, stale_record_days" },
+      { "name": "safety_scan", "passed": true, "detail": "0 critical findings. Risky changes (merges, deletions) require human approval. Auto-repair is limited to safe operations." }
+    ]
+  },
+
+  "dimensions": [
+    { "name": "Prompt Completeness", "category": "technical", "score": 10, "weight": 3, "rationale": "Identity 120+ words with CRM context. Instructions cover duplicate detection, stale record identification, missing field analysis, formatting standardization, auto-repair vs. flagged-for-review, and quality score tracking. Tool guidance covers HubSpot, Notion, Slack APIs. Examples and error handling present." },
+    { "name": "Tool-Prompt Alignment", "category": "technical", "score": 9, "weight": 2, "rationale": "All tools mapped to specific operations. HubSpot CRM API endpoints documented. Notion for report logging. Slack for notifications. No phantom tools." },
+    { "name": "Trigger Coherence", "category": "technical", "score": 9, "weight": 2, "rationale": "Weekly schedule trigger matches the audit cadence described in the prompt. Could benefit from an additional trigger for on-demand audits." },
+    { "name": "Connector Coverage", "category": "technical", "score": 10, "weight": 2, "rationale": "All 3 service_flow entries fully backed by connector definitions with credential fields and setup instructions." },
+    { "name": "Memory Design", "category": "technical", "score": 9, "weight": 1, "rationale": "Data quality score tracking over time, known duplicate pairs, repair history. Agent memory scope is well-defined for longitudinal quality monitoring." },
+    { "name": "Error Handling", "category": "technical", "score": 9, "weight": 2, "rationale": "Covers HubSpot API rate limits, auth failures, Notion write failures, and Slack notification failures. Safe vs. risky repair distinction is a strong safety pattern." },
+    { "name": "Use Case Fidelity", "category": "technical", "score": 9, "weight": 2, "rationale": "Main audit flows covered: duplicate scanning, stale detection, missing fields, auto-repair, human review flagging, and quality score reporting." },
+    { "name": "Value Clarity", "category": "business", "score": 10, "weight": 2, "rationale": "Clear outcome: replaces manual data cleanup sprints with automated ongoing vigilance. CRM data quality directly impacts pipeline accuracy and forecasting." },
+    { "name": "Execution Feasibility", "category": "technical", "score": 8, "weight": 3, "rationale": "HubSpot, Notion, Slack APIs are standard. HubSpot CRM API has good documentation. Auto-repair scope is well-bounded to safe operations." },
+    { "name": "Differentiation", "category": "business", "score": 10, "weight": 1, "rationale": "AI-powered duplicate detection, fix recommendation generation, safe vs. risky repair classification, quality score trending — substantial reasoning that cannot be replicated with simple automation." },
+    { "name": "Variable Necessity", "category": "technical", "score": 10, "weight": 1, "rationale": "All 5 questions target genuine config needs. auto_repair_safe is critical human-in-the-loop control. stale_record_days allows policy customization." },
+    { "name": "Default Quality", "category": "technical", "score": 7, "weight": 2, "rationale": "Good defaults for channel, auto_repair (Yes), stale_record_days (90). hubspot_portal_id and notion_database_id must be user-provided." }
+  ],
+
+  "overall": 9.13,
+  "grade": "A",
+
+  "issues": [
+    "No adoption_questions existed — 5 added covering HubSpot, Notion, Slack, auto-repair policy, and stale record threshold",
+    "HubSpot connector role 'crm' may need to be added to connectorRoles.ts",
+    "HubSpot and Notion connectors may not have builtin definitions"
+  ],
+
+  "fixes_applied": {
+    "template": [
+      "Added 5 adoption_questions: hubspot_portal_id, notion_database_id, slack_channel, auto_repair_safe, stale_record_days",
+      "Used boolean type for auto_repair_safe with human_in_the_loop category",
+      "Used select type with day options for stale_record_days"
+    ],
+    "app_code": []
+  }
+}

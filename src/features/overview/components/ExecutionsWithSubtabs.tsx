@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Activity, Workflow } from 'lucide-react';
-import GlobalExecutionList from '@/features/overview/sub_executions/GlobalExecutionList';
-import WorkflowsDashboard from '@/features/overview/sub_workflows/WorkflowsDashboard';
+import GlobalExecutionList from '@/features/overview/sub_executions/components/GlobalExecutionList';
+import WorkflowsDashboard from '@/features/overview/sub_workflows/components/WorkflowsDashboard';
 
 type ExecutionSubtab = 'history' | 'workflows';
 
@@ -14,7 +14,7 @@ export default function ExecutionsWithSubtabs() {
   const [subtab, setSubtab] = useState<ExecutionSubtab>('history');
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
       {/* Subtab bar */}
       <div className="flex items-center gap-1 px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/10 flex-shrink-0">
         {SUBTABS.map((tab) => {

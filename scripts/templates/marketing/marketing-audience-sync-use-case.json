@@ -658,6 +658,54 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "airtable_base_id",
+        "question": "What is the Airtable base ID containing your contact records?",
+        "type": "text",
+        "default": "",
+        "context": "The agent monitors this base for tag and segment changes on contact records, and writes unsubscribe statuses back.",
+        "connector_names": ["airtable"],
+        "category": "configuration"
+      },
+      {
+        "id": "airtable_table_name",
+        "question": "What is the Airtable table name for contacts?",
+        "type": "text",
+        "default": "Contacts",
+        "context": "The table containing contact records with email, tags/segments, and email status fields.",
+        "connector_names": ["airtable"],
+        "category": "configuration"
+      },
+      {
+        "id": "mailchimp_list_id",
+        "question": "What is your Mailchimp audience/list ID?",
+        "type": "text",
+        "default": "",
+        "context": "The default Mailchimp audience where contacts are synced. Found in Mailchimp under Audience > Settings > Audience name and defaults.",
+        "connector_names": ["mailchimp"],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_channel",
+        "question": "Which Slack channel should receive sync status reports?",
+        "type": "text",
+        "default": "#marketing-ops",
+        "context": "Sync summaries, campaign trigger notifications, and error alerts are posted here after each polling cycle.",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "auto_trigger_campaigns",
+        "question": "Should new segments automatically trigger Mailchimp campaigns?",
+        "type": "boolean",
+        "default": "Yes",
+        "context": "When enabled, the agent creates and schedules a Mailchimp campaign targeting a new segment when it detects a previously unseen tag. Disable to only sync contacts without campaign automation.",
+        "connector_names": ["mailchimp"],
+        "category": "human_in_the_loop",
+        "use_case_ids": ["flow_2"]
+      }
+    ],
     "protocol_capabilities": [
       {
         "type": "manual_review",

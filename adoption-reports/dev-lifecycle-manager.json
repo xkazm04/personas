@@ -1,0 +1,139 @@
+{
+  "templateId": "dev-lifecycle-manager",
+  "templateName": "Dev Lifecycle Manager",
+  "category": [
+    "development"
+  ],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T19:05:28.575Z",
+  "connectorClassification": {
+    "available": [
+      "github",
+      "jira",
+      "slack"
+    ],
+    "swapped": {},
+    "missing": []
+  },
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "schema_completeness",
+        "passed": true
+      },
+      {
+        "name": "flow_integrity",
+        "passed": true,
+        "detail": "3 use_case_flows with connected directed graphs"
+      },
+      {
+        "name": "trigger_validity",
+        "passed": true,
+        "detail": "3 triggers: polling 2min, webhook, manual"
+      },
+      {
+        "name": "safety_scan",
+        "passed": true,
+        "detail": "0 critical, 0 info findings"
+      }
+    ]
+  },
+  "dimensions": [
+    {
+      "name": "Prompt Completeness",
+      "category": "technical",
+      "score": 10,
+      "weight": 3,
+      "rationale": "Identity >50 words. Instructions >200 words with 6 numbered sections. Tool guidance with GitHub/Jira/Slack API specs. Three examples (new PR, oversized PR, release). Error handling with rate limits, auth, conflicts. Four custom sections for PR size policy, label mapping, Slack formatting, state schema."
+    },
+    {
+      "name": "Tool-Prompt Alignment",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "http_request mapped to GitHub REST v3, Jira REST v3, Slack Web API. file_read/file_write for state/config/logs. No phantom tools."
+    },
+    {
+      "name": "Trigger Coherence",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Three triggers: 2-min polling, webhook for real-time events, manual for full sync. All match corresponding prompt workflow sections."
+    },
+    {
+      "name": "Connector Coverage",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "GitHub, Jira, Slack all have complete connector definitions with multiple credential fields and detailed setup instructions."
+    },
+    {
+      "name": "Memory Design",
+      "category": "technical",
+      "score": 8,
+      "weight": 1,
+      "rationale": "State file schema fully documented in custom section with per-repo tracking, Slack message map, retry queue, and last run timestamp."
+    },
+    {
+      "name": "Error Handling",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "API rate limits with header-based backoff, authentication failures, transient errors with exponential backoff, data integrity checks, conflict resolution for Jira state and duplicate PRs."
+    },
+    {
+      "name": "Use Case Fidelity",
+      "category": "functional",
+      "score": 9,
+      "weight": 2,
+      "rationale": "All 3 use_case_flows covered: PR lifecycle with size classification, issue synchronization with label mapping, release management with Jira versioning."
+    },
+    {
+      "name": "Value Clarity",
+      "category": "functional",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Zero-drift synchronization between GitHub, Jira, and Slack. Replaces multiple brittle webhook integrations with contextual reasoning."
+    },
+    {
+      "name": "Execution Feasibility",
+      "category": "functional",
+      "score": 9,
+      "weight": 3,
+      "rationale": "Standard REST APIs for all services. All connectors have builtin definitions. Multiple trigger types provide flexibility."
+    },
+    {
+      "name": "Differentiation",
+      "category": "functional",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Contextual reasoning: PR size classification with configurable thresholds, GitHub label to Jira type/priority mapping, Jira state transition awareness, thread-based Slack updates."
+    },
+    {
+      "name": "Variable Necessity",
+      "category": "functional",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Adoption questions cover repos, project key, domain, channels, thresholds, and auto-creation toggle. All genuinely needed."
+    },
+    {
+      "name": "Default Quality",
+      "category": "functional",
+      "score": 7,
+      "weight": 2,
+      "rationale": "Channel defaults are good (#dev, #dev-releases). Jira domain and GitHub repos have no sensible defaults and require user input."
+    }
+  ],
+  "overall": 8.83,
+  "grade": "A",
+  "issues": [
+    "No adoption_questions existed before fix - GitHub repos, Jira project/domain, Slack channels, PR threshold all needed user-specific configuration"
+  ],
+  "fixes_applied": {
+    "template": [
+      "Added 7 adoption_questions: github_repos, jira_project_key, jira_domain, slack_dev_channel, slack_releases_channel, pr_size_large_threshold, auto_create_jira_tickets"
+    ],
+    "app_code": []
+  }
+}

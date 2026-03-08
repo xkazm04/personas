@@ -161,7 +161,7 @@ export default function PersonaOverviewPage() {
               <span className="text-sm text-muted-foreground/50">({items.length})</span>
             </div>
 
-            <div className={`grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]`}>
+            <div className={`grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] 3xl:[grid-template-columns:repeat(auto-fill,minmax(320px,1fr))] 4xl:[grid-template-columns:repeat(auto-fill,minmax(360px,1fr))]`}>
               {items.map((sp) => {
                 const persona = sp.persona;
                 const i = flatIndex++;

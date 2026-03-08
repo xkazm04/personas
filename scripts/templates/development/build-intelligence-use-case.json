@@ -669,6 +669,50 @@
         "label": "Emits events: execution completed, threshold breached",
         "context": "2 event subscription(s) configured — agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "slack_ci_channel",
+        "question": "Which Slack channel for build notifications?",
+        "type": "text",
+        "default": "#ci-alerts",
+        "context": "Enriched build failure alerts, recovery notices, and weekly flaky test digests are posted here.",
+        "connector_names": [
+          "slack"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "github_repo",
+        "question": "Which GitHub repository should PR comments target?",
+        "type": "text",
+        "default": "org/repo",
+        "context": "The agent posts failure analysis and fix suggestions as comments on PRs in this repository.",
+        "connector_names": [
+          "github"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "flakiness_threshold",
+        "question": "Flakiness score threshold (%) to flag a test?",
+        "type": "select",
+        "default": "30",
+        "context": "Tests with a failure rate above this percentage are flagged as flaky in reports.",
+        "connector_names": [],
+        "category": "configuration"
+      },
+      {
+        "id": "skip_green_notifications",
+        "question": "Skip Slack notification for consistently green builds?",
+        "type": "boolean",
+        "default": "Yes",
+        "context": "Reduces notification noise by only alerting on failures and recoveries.",
+        "connector_names": [
+          "slack"
+        ],
+        "category": "configuration"
+      }
     ]
   }
 }

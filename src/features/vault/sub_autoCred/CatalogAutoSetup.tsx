@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plug, ArrowLeft, Bot, MessageSquare } from 'lucide-react';
+import { Plug, ArrowLeft, Bot, MessageSquare, Monitor } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
@@ -9,6 +9,7 @@ import { AutoCredPanel } from './AutoCredPanel';
 import { AnalyzingPhase } from '@/features/vault/sub_design/AnalyzingPhase';
 import { usePersonaStore } from '@/stores/personaStore';
 import { checkPlaywrightAvailable } from '@/api/autoCredBrowser';
+import { isDesktopBridge } from '@/lib/utils/connectors';
 import type { AutoCredMode } from './types';
 
 type Phase = 'analyzing' | 'auto';
@@ -50,6 +51,37 @@ function buildDesignResult(connector: ConnectorDefinition): CredentialDesignResu
 }
 
 export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAutoSetupProps) {
+  // Desktop bridge connectors should not use online auto-setup
+  if (isDesktopBridge(connector)) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-secondary/40 backdrop-blur-sm border border-orange-500/15 rounded-xl p-6 space-y-4"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center border bg-orange-500/10 border-orange-500/20">
+            <Monitor className="w-5 h-5 text-orange-400" />
+          </div>
+          <div className="flex-1">
+            <h4 className="font-medium text-foreground">{connector.label} is a desktop app</h4>
+            <p className="text-sm text-muted-foreground/80">
+              This connector uses a local desktop bridge, not an online API. Use the Desktop Apps panel to detect and connect it.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-sm font-medium text-muted-foreground/80 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors"
+          >
+            Back
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
+
   const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
   const hasSetupInstructions = typeof metadata.setup_instructions === 'string' && metadata.setup_instructions.length > 0;
   const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);

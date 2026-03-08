@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, Sparkles, HardDriveDownload, Shield, type LucideIcon } from 'lucide-react';
+import { SidebarIconStyles, SIDEBAR_ICONS } from './SidebarIcons';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -260,12 +261,22 @@ export default function Sidebar() {
     switch (sidebarSection) {
       case 'home':
         return (
-          <SidebarSubNav
-            items={homeItems}
-            activeId={homeTab}
-            onSelect={(id) => setHomeTab(id as HomeTab)}
-            variant="overview"
-          />
+          <>
+            <SidebarSubNav
+              items={homeItems}
+              activeId={homeTab}
+              onSelect={(id) => setHomeTab(id as HomeTab)}
+              variant="overview"
+            />
+            <div className="flex-1" />
+            <div className="flex items-center justify-center py-6 opacity-[0.08] pointer-events-none select-none">
+              <img
+                src="/illustrations/logo-v1-geometric-nobg.png"
+                alt=""
+                className="w-24 h-24 object-contain"
+              />
+            </div>
+          </>
         );
 
       case 'overview':
@@ -372,12 +383,14 @@ export default function Sidebar() {
   return (
     <div className="flex h-full">
 
-      {/* Level 1: Section icons */}
-      <div className="w-[60px] bg-secondary/40 border-r border-primary/15 flex flex-col items-center py-4 gap-1.5">
+      {/* Level 1: Custom animated section icons */}
+      <SidebarIconStyles />
+      <div className="w-[88px] bg-secondary/40 border-r border-primary/15 flex flex-col items-center py-3 gap-1">
         {sections
           .filter((s) => !s.devOnly || isDev)
           .map((section) => {
-          const Icon = section.icon;
+          const CustomIcon = SIDEBAR_ICONS[section.id];
+          const FallbackIcon = section.icon;
           const isActive = sidebarSection === section.id;
           const isDisabled = disabledSections.has(section.id);
           const isDevSection = section.devOnly;
@@ -387,7 +400,7 @@ export default function Sidebar() {
               key={section.id}
               onClick={() => !isDisabled && setSidebarSection(section.id)}
               disabled={isDisabled}
-              className={`relative w-11 h-11 rounded-xl flex items-center justify-center transition-all group ${
+              className={`relative w-[76px] rounded-xl flex flex-col items-center justify-center py-2 transition-all group ${
                 isDisabled ? 'cursor-not-allowed opacity-40' : ''
               } ${isDevSection ? 'ring-1 ring-amber-500/40' : ''}`}
               title={isDisabled ? `${section.label} (${section.id === 'cloud' ? 'Sign in to unlock cloud features' : 'Coming soon'})` : section.label}
@@ -399,29 +412,39 @@ export default function Sidebar() {
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
-              <Icon className={`relative z-10 w-5 h-5 transition-colors ${
+              <div className={`relative z-10 w-9 h-9 transition-colors ${
                 isDisabled
-                  ? 'text-muted-foreground/80'
-                  : isActive ? 'text-primary' : 'text-muted-foreground/90 group-hover:text-foreground/95'
-              }`} />
+                  ? 'text-muted-foreground/50'
+                  : isActive ? 'text-primary' : 'text-foreground/70 group-hover:text-foreground'
+              }`}>
+                {CustomIcon
+                  ? <CustomIcon active={isActive} className="w-full h-full" />
+                  : <FallbackIcon className="w-full h-full" />
+                }
+              </div>
+              <span className={`relative z-10 text-[10px] leading-tight mt-1 font-semibold transition-colors ${
+                isActive ? 'text-primary' : 'text-foreground/60 group-hover:text-foreground/90'
+              }`}>
+                {section.label}
+              </span>
               {isDisabled && section.id !== 'cloud' && (
                 <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px text-sm font-semibold uppercase tracking-wider leading-none rounded bg-muted-foreground/15 text-muted-foreground/80 whitespace-nowrap">
                   soon
                 </span>
               )}
               {section.id === 'overview' && pendingReviewCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 z-20 min-w-[16px] h-4 px-1 flex items-center justify-center text-sm font-bold leading-none rounded-full bg-amber-500 text-white shadow-sm shadow-amber-500/30">
+                <span className="absolute top-0.5 right-0.5 z-20 min-w-[16px] h-4 px-1 flex items-center justify-center text-sm font-bold leading-none rounded-full bg-amber-500 text-white shadow-sm shadow-amber-500/30">
                   {pendingReviewCount > 99 ? '99+' : pendingReviewCount}
                 </span>
               )}
               {section.id === 'design-reviews' && (n8nTransformActive || templateAdoptActive || rebuildActive || templateTestActive) && (
-                <span className="absolute -top-0.5 -right-0.5 z-20 w-4 h-4 flex items-center justify-center">
+                <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
                   <span className="absolute inset-0 rounded-full bg-amber-500/40 animate-ping" />
                   <span className="relative w-2.5 h-2.5 rounded-full bg-amber-500 border border-amber-600/50" />
                 </span>
               )}
               {section.id === 'personas' && (isLabRunning || connectorTestActive) && (
-                <span className="absolute -top-0.5 -right-0.5 z-20 w-4 h-4 flex items-center justify-center">
+                <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
                   <span className="absolute inset-0 rounded-full bg-cyan-500/40 animate-ping" />
                   <span className="relative w-2.5 h-2.5 rounded-full bg-cyan-500 border border-cyan-600/50" />
                 </span>

@@ -684,6 +684,52 @@
         "label": "Emits events: execution failed, credential status change, threshold breached",
         "context": "2 event subscription(s) configured — agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "figma_file_keys",
+        "question": "Which Figma file keys should this agent track?",
+        "type": "text",
+        "default": "",
+        "context": "Comma-separated Figma file keys (found in the file URL). The agent monitors these for version changes.",
+        "connector_names": [
+          "figma"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "linear_team_id",
+        "question": "Which Linear team should receive handoff tickets?",
+        "type": "text",
+        "default": "",
+        "context": "The Linear team ID where design handoff issues are created. Found in Linear team settings.",
+        "connector_names": [
+          "linear"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_design_channel",
+        "question": "Which Slack channel for handoff summaries?",
+        "type": "text",
+        "default": "#design-handoffs",
+        "context": "Component change summaries and Linear ticket links are posted here after each Figma version update.",
+        "connector_names": [
+          "slack"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "batch_thread_threshold",
+        "question": "How many component changes before threading in Slack?",
+        "type": "select",
+        "default": "10",
+        "context": "Batches above this count use a parent summary with threaded details to reduce channel noise.",
+        "connector_names": [
+          "slack"
+        ],
+        "category": "configuration"
+      }
     ]
   }
 }

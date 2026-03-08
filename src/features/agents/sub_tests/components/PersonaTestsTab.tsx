@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { FlaskConical, Play, Square, ChevronDown, AlertCircle, Filter } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaTests } from '@/hooks/tests/usePersonaTests';
-import { TestComparisonTable } from './TestComparisonTable';
 import { TestSuiteManager } from './TestSuiteManager';
 import { TestModelSelector } from './TestModelSelector';
 import { TestProgressPanel } from './TestProgressPanel';

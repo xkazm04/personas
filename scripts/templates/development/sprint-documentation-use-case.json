@@ -680,6 +680,85 @@
         "label": "Emits events: execution failed, item created, threshold breached",
         "context": "2 event subscription(s) configured — agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "jira_board_id",
+        "question": "Jira Scrum board ID to monitor?",
+        "type": "text",
+        "default": "42",
+        "context": "The numeric board ID whose active sprint is documented at close. Found in the board URL.",
+        "connector_names": [
+          "jira"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "jira_domain",
+        "question": "Jira Cloud domain prefix?",
+        "type": "text",
+        "default": "mycompany",
+        "context": "The subdomain from your Atlassian URL (e.g., \"mycompany\" for mycompany.atlassian.net).",
+        "connector_names": [
+          "jira"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "confluence_space_key",
+        "question": "Confluence space key for sprint review pages?",
+        "type": "text",
+        "default": "ENG",
+        "context": "Sprint review pages are created in this Confluence space.",
+        "connector_names": [
+          "confluence"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "confluence_parent_page_id",
+        "question": "Confluence parent page ID for sprint reviews?",
+        "type": "text",
+        "default": "",
+        "context": "New review pages are nested under this page. Found in the page URL (pageId parameter).",
+        "connector_names": [
+          "confluence"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_sprint_channel",
+        "question": "Which Slack channel for sprint review notifications?",
+        "type": "text",
+        "default": "#sprint-reviews",
+        "context": "Sprint close summaries with metrics and Confluence links are posted here.",
+        "connector_names": [
+          "slack"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "scrum_master_slack_id",
+        "question": "Scrum master Slack user ID for DM notifications (optional)?",
+        "type": "text",
+        "default": "",
+        "context": "If provided, the scrum master receives a direct message with the review link and any flags.",
+        "connector_names": [
+          "slack"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "auto_close_sprint",
+        "question": "Automatically close the sprint in Jira after documentation?",
+        "type": "boolean",
+        "default": "Yes",
+        "context": "When enabled, the sprint is archived in Jira after the review page is generated. Incomplete issues move per board config.",
+        "connector_names": [
+          "jira"
+        ],
+        "category": "human_in_the_loop"
+      }
     ]
   }
 }

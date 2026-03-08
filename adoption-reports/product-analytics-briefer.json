@@ -1,0 +1,160 @@
+{
+  "templateId": "product-analytics-briefer",
+  "templateName": "Product Analytics Briefer",
+  "category": [
+    "research"
+  ],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T00:00:00Z",
+  "connectorClassification": {
+    "available": [
+      "mixpanel",
+      "slack",
+      "notion"
+    ],
+    "swapped": {},
+    "missing": []
+  },
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "schema_completeness",
+        "passed": true,
+        "detail": "All required payload fields present with rich design_highlights and notification channels"
+      },
+      {
+        "name": "flow_integrity",
+        "passed": true,
+        "detail": "3 flows (daily briefing with 15 nodes, anomaly recovery with 9 nodes, error recovery with 8 nodes) — all properly connected"
+      },
+      {
+        "name": "trigger_validity",
+        "passed": true,
+        "detail": "Daily schedule at 8AM (0 8 * * *) — valid cron matching the described daily workflow"
+      },
+      {
+        "name": "connector_role_alignment",
+        "passed": true,
+        "detail": "mixpanel (analytics), slack (chat_messaging), notion (knowledge_base) — all roles valid with builtins"
+      },
+      {
+        "name": "adoption_question_fitness",
+        "passed": true,
+        "detail": "5 adoption_questions added covering slack channels, Notion DB, Mixpanel project, and anomaly threshold"
+      },
+      {
+        "name": "default_value_coverage",
+        "passed": true,
+        "detail": "Slack channels have defaults (#product-analytics, #product-alerts). Anomaly threshold defaults to 15%."
+      },
+      {
+        "name": "prompt_quality",
+        "passed": true,
+        "detail": "Identity 83w, instructions 600w+ with 16 numbered steps across 5 phases, tool guidance with specific Mixpanel/Slack/Notion API endpoints, detailed example briefing, comprehensive error handling"
+      },
+      {
+        "name": "safety_scan",
+        "passed": true,
+        "detail": "0 critical findings. Read-only operations against Mixpanel; write to Slack and Notion only."
+      }
+    ]
+  },
+  "dimensions": [
+    {
+      "name": "Prompt Completeness",
+      "category": "technical",
+      "score": 10,
+      "weight": 3,
+      "rationale": "Identity 83w, instructions cover 5 phases with 16 numbered steps totaling 600+ words, tool guidance includes specific Mixpanel API endpoints (/segmentation, /funnels, /export), Slack Block Kit patterns, and Notion page creation. Detailed example with formatted table output. Error handling covers Mixpanel, Slack, Notion, and data integrity issues."
+    },
+    {
+      "name": "Tool-Prompt Alignment",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "http_request used for all 3 APIs with specific endpoint documentation. file_read/file_write for local baselines. All tools in suggested_tools are referenced in prompt."
+    },
+    {
+      "name": "Trigger Coherence",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "Single daily 8AM trigger perfectly matches the 'morning briefing' workflow. Schedule aligns with the described 'start your day with product health' value proposition."
+    },
+    {
+      "name": "Connector Coverage",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "All 3 connectors (Mixpanel, Slack, Notion) have full definitions with credential fields, setup instructions, related tools, API base URLs, and roles."
+    },
+    {
+      "name": "Memory Design",
+      "category": "technical",
+      "score": 9,
+      "weight": 1,
+      "rationale": "Agent memory stores daily metric snapshots for WoW comparisons. Local baselines file tracks rolling averages. Anomaly history enables recovery tracking across runs."
+    },
+    {
+      "name": "Error Handling",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "Per-service error handling: Mixpanel (401, 429, 5xx, timeout), Slack (channel_not_found, message too long, not_in_channel), Notion (404, validation, total failure). Data integrity guards for null/impossible values. Graceful degradation with stale data labeling."
+    },
+    {
+      "name": "Use Case Fidelity",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "3 flows cover every aspect: daily briefing (main workflow), anomaly recovery tracking, and API failure recovery. All prompt steps map to flow nodes."
+    },
+    {
+      "name": "Value Clarity",
+      "category": "business",
+      "score": 10,
+      "weight": 2,
+      "rationale": "Extremely clear value: daily product health briefing with anomaly detection, plain-English insights, and historical trend tracking. Replaces manual Mixpanel dashboard checks."
+    },
+    {
+      "name": "Execution Feasibility",
+      "category": "business",
+      "score": 8,
+      "weight": 3,
+      "rationale": "All connectors have builtins. Mixpanel API, Slack, and Notion are all standard. However, Mixpanel API Secret and Project ID setup requires some technical knowledge."
+    },
+    {
+      "name": "Differentiation",
+      "category": "business",
+      "score": 9,
+      "weight": 1,
+      "rationale": "Multi-window comparison (vs goals, 7d avg, 30d avg, WoW), anomaly detection with threshold-based flagging, health status system, and recovery tracking go well beyond simple data fetching."
+    },
+    {
+      "name": "Variable Necessity",
+      "category": "business",
+      "score": 9,
+      "weight": 1,
+      "rationale": "All 5 adoption questions are needed: Slack channels for briefings vs alerts, Notion DB for logging, Mixpanel project for data source, and anomaly threshold for sensitivity tuning."
+    },
+    {
+      "name": "Default Quality",
+      "category": "business",
+      "score": 8,
+      "weight": 2,
+      "rationale": "Good defaults for Slack channels and anomaly threshold (15%). Mixpanel project ID and Notion DB ID require user input but that is unavoidable."
+    }
+  ],
+  "overall": 9.43,
+  "grade": "A",
+  "issues": [
+    "No adoption_questions existed — connectors need user-specific configuration for Mixpanel project, Slack channels, Notion database, and anomaly threshold"
+  ],
+  "fixes_applied": {
+    "template": [
+      "Added 5 adoption_questions: slack_briefing_channel, slack_alert_channel, notion_database_id, mixpanel_project_id, daily_budget_threshold"
+    ],
+    "app_code": []
+  }
+}

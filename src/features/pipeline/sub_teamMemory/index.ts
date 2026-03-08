@@ -11,8 +11,8 @@ export { default as MemoryPanelHeader } from './components/MemoryPanelHeader';
 export { default as MemoryPanelList } from './components/MemoryPanelList';
 export { default as MemoryRowDetail } from './components/MemoryRowDetail';
 export { default as MemoryRowActions } from './components/MemoryRowActions';
-export { default as TimelineItem } from './components/TimelineItem';
-export { default as TimelineControls } from './components/TimelineControls';
+export { MemoryEntry as TimelineItem, ManualGroup, formatTime } from './components/TimelineItem';
+export { RunMarker as TimelineControls, type RunGroup } from './components/TimelineControls';
 
 // ── Libs ────────────────────────────────────────────────────
 export { computeMemoryDiff } from './libs/memoryDiff';

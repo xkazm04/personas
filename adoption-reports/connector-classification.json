@@ -1,0 +1,1703 @@
+{
+  "timestamp": "2026-03-08T18:43:59.598Z",
+  "total": 96,
+  "runnable": 33,
+  "skipped": 63,
+  "templates": [
+    {
+      "id": "accounting-reconciliation-use-case",
+      "category": "finance",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "xero",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "ad-campaign-optimizer",
+      "category": "marketing",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "google_sheets",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_ads",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "ai-contract-reviewer",
+      "category": "legal",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "ai-cost-usage-monitor",
+      "category": "productivity",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack"
+        ],
+        "swapped": {
+          "openai": "leonardo_ai"
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "ai-document-intelligence-hub",
+      "category": "content",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "telegram",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_drive"
+        ]
+      }
+    },
+    {
+      "id": "ai-research-report-generator",
+      "category": "research",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "telegram",
+          "notion"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace",
+          "news_api"
+        ]
+      }
+    },
+    {
+      "id": "ai-resume-screener",
+      "category": "hr",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "google_sheets",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "ai-weekly-research",
+      "category": "research",
+      "status": "runnable",
+      "connectors": {
+        "available": [],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "analytics-content-distribution-use-case",
+      "category": "content",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "buffer"
+        ],
+        "swapped": {
+          "google_analytics": "mixpanel"
+        },
+        "missing": [
+          "wordpress"
+        ]
+      }
+    },
+    {
+      "id": "app-performance-guardian",
+      "category": "devops",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack",
+          "linear"
+        ],
+        "swapped": {
+          "firebase": "kubernetes"
+        },
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "appointment-orchestrator",
+      "category": "productivity",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "calendly",
+          "hubspot",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "autonomous-issue-resolver",
+      "category": "development",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "jira",
+          "notion",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "brand-protection-sentinel",
+      "category": "security",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "whoisxml"
+        ]
+      }
+    },
+    {
+      "id": "build-intelligence-use-case",
+      "category": "development",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "circleci",
+          "slack",
+          "github"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "campaign-performance-analyst",
+      "category": "marketing",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "airtable",
+          "slack"
+        ],
+        "swapped": {
+          "mailchimp": "sendgrid"
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "ci-cd-pipeline-manager",
+      "category": "development",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack",
+          "jira"
+        ],
+        "swapped": {
+          "gitlab": "github"
+        },
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "client-portal-orchestrator",
+      "category": "project-management",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "telegram",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "cms-index-sync-use-case",
+      "category": "content",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "contentful",
+          "algolia"
+        ]
+      }
+    },
+    {
+      "id": "cms-sync-use-case",
+      "category": "content",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "airtable",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "webflow"
+        ]
+      }
+    },
+    {
+      "id": "community-engagement-scorer",
+      "category": "marketing",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "discord",
+          "slack",
+          "notion"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "competitive-intelligence-pipeline-3-use-case-team",
+      "category": "pipeline",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "content-approval-workflow",
+      "category": "content",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "contract-lifecycle-use-case",
+      "category": "legal",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "airtable",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "docusign",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "conversational-database-analyst",
+      "category": "research",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "supabase",
+          "slack",
+          "telegram"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "crm-data-quality-auditor",
+      "category": "sales",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "hubspot",
+          "notion",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "cross-platform-task-synchronizer",
+      "category": "productivity",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "asana",
+          "github",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "customer-event-intelligence",
+      "category": "research",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "slack",
+          "notion"
+        ],
+        "swapped": {
+          "segment": "mixpanel"
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "customer-feedback-router",
+      "category": "support",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "slack",
+          "linear"
+        ],
+        "swapped": {
+          "intercom": "hubspot"
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "customer-onboarding-pipeline-5-use-case-team",
+      "category": "pipeline",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack",
+          "airtable",
+          "calendly"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace",
+          "stripe"
+        ]
+      }
+    },
+    {
+      "id": "database-health-sentinel",
+      "category": "devops",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {
+          "postgres_proxy": "personas_database"
+        },
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "deadline-synchronizer",
+      "category": "project-management",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {
+          "trello": "jira"
+        },
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "deployment-guardian",
+      "category": "devops",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "vercel",
+          "github",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "design-handoff-coordinator",
+      "category": "development",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "figma",
+          "linear",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "dev-lifecycle-manager",
+      "category": "development",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "github",
+          "jira",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "digital-clone",
+      "category": "productivity",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "gmail",
+          "slack",
+          "telegram",
+          "personas_database"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "documentation-freshness-guardian",
+      "category": "development",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "confluence",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "documentation-publisher",
+      "category": "development",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "notion",
+          "github",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "edge-security-monitor",
+      "category": "security",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "cloudflare",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "pagerduty"
+        ]
+      }
+    },
+    {
+      "id": "editorial-calendar-manager",
+      "category": "legal",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "airtable"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "email-deliverability-monitor",
+      "category": "email",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "sendgrid",
+          "airtable",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "engineering-workflow-orchestrator",
+      "category": "development",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "linear",
+          "github",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "error-response-coordinator",
+      "category": "devops",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "sentry",
+          "github",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "expense-receipt-processor",
+      "category": "finance",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "google_sheets",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "feature-flag-experiment-analyst",
+      "category": "development",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "posthog",
+          "slack",
+          "linear"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "feature-flag-governance-use-case",
+      "category": "development",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "slack",
+          "linear",
+          "notion"
+        ],
+        "swapped": {
+          "launchdarkly": "posthog"
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "finance-controller",
+      "category": "finance",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "quickbooks",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "financial-close-pipeline-4-use-case-team",
+      "category": "pipeline",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "stripe",
+          "quickbooks",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "freelancer-invoice-autopilot",
+      "category": "finance",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "toggl",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "incident-commander",
+      "category": "devops",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "datadog",
+          "pagerduty"
+        ]
+      }
+    },
+    {
+      "id": "industry-intelligence-aggregator",
+      "category": "research",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "infrastructure-health-use-case",
+      "category": "devops",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "slack",
+          "jira"
+        ],
+        "swapped": {
+          "aws": "kubernetes"
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "intake-processor",
+      "category": "email",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack",
+          "notion"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "knowledge-base-review-cycle-manager",
+      "category": "support",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "lead-capture-pipeline",
+      "category": "sales",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "airtable",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "typeform",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "marketing-audience-sync-use-case",
+      "category": "marketing",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "airtable",
+          "slack"
+        ],
+        "swapped": {
+          "mailchimp": "sendgrid"
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "meeting-lifecycle-manager",
+      "category": "productivity",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "multi-agent-content-studio",
+      "category": "pipeline",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack",
+          "telegram"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "multi-channel-support-triage-pipeline-5-use-case-team",
+      "category": "pipeline",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack"
+        ],
+        "swapped": {
+          "intercom": "hubspot",
+          "twitter": "buffer"
+        },
+        "missing": [
+          "zendesk",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "multi-region-e-commerce-fulfillment-pipeline-4-use-case-team",
+      "category": "pipeline",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "airtable",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "shopify",
+          "shipstation",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "operational-playbook-executor",
+      "category": "productivity",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {
+          "coda": "confluence"
+        },
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "outbound-sales-intelligence-pipeline",
+      "category": "sales",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "google_sheets",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "hunter",
+          "clearbit"
+        ]
+      }
+    },
+    {
+      "id": "personal-capture-bot",
+      "category": "productivity",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "telegram",
+          "notion",
+          "airtable"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "personal-finance-use-case",
+      "category": "finance",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "plaid",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "personality-enriched-sales-prep",
+      "category": "sales",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "product-analytics-briefer",
+      "category": "research",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "mixpanel",
+          "slack",
+          "notion"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "product-catalog-ai-enricher",
+      "category": "content",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "google_sheets",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "product-scout",
+      "category": "research",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack",
+          "personas_database"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "product-signal-detector",
+      "category": "research",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "slack",
+          "linear"
+        ],
+        "swapped": {
+          "amplitude": "mixpanel"
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "real-time-database-watcher",
+      "category": "development",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "supabase",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "recruiting-pipeline-use-case",
+      "category": "hr",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "greenhouse",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "revenue-intelligence-copilot",
+      "category": "finance",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "hubspot",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "stripe",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "revenue-operations-hub",
+      "category": "finance",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "airtable"
+        ],
+        "swapped": {},
+        "missing": [
+          "stripe",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "router",
+      "category": "productivity",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack",
+          "notion",
+          "airtable"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "sales-pipeline-autopilot",
+      "category": "sales",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "hubspot",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "search-quality-monitor",
+      "category": "development",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack",
+          "notion"
+        ],
+        "swapped": {},
+        "missing": [
+          "algolia"
+        ]
+      }
+    },
+    {
+      "id": "security-vulnerability-pipeline",
+      "category": "security",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "github",
+          "jira",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "snyk"
+        ]
+      }
+    },
+    {
+      "id": "seo-performance-analyst",
+      "category": "marketing",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {
+          "google_analytics": "mixpanel"
+        },
+        "missing": [
+          "google_search_console",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "sheets-e-commerce-command-center",
+      "category": "sales",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "shopify",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "sheets-project-portfolio-manager",
+      "category": "project-management",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {
+          "monday_com": "jira"
+        },
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "sms-ops-manager",
+      "category": "marketing",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "airtable",
+          "slack"
+        ],
+        "swapped": {
+          "twilio": "twilio_sms"
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "sprint-automation-use-case",
+      "category": "development",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "clickup",
+          "github"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "sprint-documentation-use-case",
+      "category": "development",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "jira",
+          "confluence",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "sre-runbook-executor",
+      "category": "devops",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "slack",
+          "github",
+          "notion"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "status-page-manager",
+      "category": "devops",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack",
+          "notion"
+        ],
+        "swapped": {
+          "uptime_robot": "betterstack"
+        },
+        "missing": [
+          "pagerduty"
+        ]
+      }
+    },
+    {
+      "id": "subscription-billing-use-case",
+      "category": "finance",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "airtable",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "paddle",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "support-escalation-engine",
+      "category": "support",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack",
+          "notion"
+        ],
+        "swapped": {},
+        "missing": [
+          "freshdesk",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "support-intelligence-use-case",
+      "category": "support",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack",
+          "notion"
+        ],
+        "swapped": {},
+        "missing": [
+          "zendesk"
+        ]
+      }
+    },
+    {
+      "id": "survey-processor",
+      "category": "productivity",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "airtable",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "team-decision-logger",
+      "category": "productivity",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack",
+          "notion"
+        ],
+        "swapped": {},
+        "missing": [
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "telegram-ops-command-center",
+      "category": "devops",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "telegram",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "operations_api"
+        ]
+      }
+    },
+    {
+      "id": "user-lifecycle-manager",
+      "category": "development",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "supabase",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "clerk",
+          "google_workspace"
+        ]
+      }
+    },
+    {
+      "id": "video-knowledge-base-builder",
+      "category": "content",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": [
+          "loom"
+        ]
+      }
+    },
+    {
+      "id": "visual-brand-asset-factory",
+      "category": "marketing",
+      "status": "skipped",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {
+          "openai": "leonardo_ai"
+        },
+        "missing": [
+          "google_drive"
+        ]
+      }
+    },
+    {
+      "id": "website-market-intelligence-profiler",
+      "category": "research",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "google_sheets",
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    },
+    {
+      "id": "weekly-planning-automator",
+      "category": "project-management",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "notion",
+          "slack"
+        ],
+        "swapped": {
+          "todoist": "jira"
+        },
+        "missing": []
+      }
+    },
+    {
+      "id": "workflow-error-intelligence",
+      "category": "devops",
+      "status": "runnable",
+      "connectors": {
+        "available": [
+          "slack"
+        ],
+        "swapped": {},
+        "missing": []
+      }
+    }
+  ],
+  "missing_connectors_summary": {
+    "google_workspace": {
+      "count": 48,
+      "templates": [
+        "content-approval-workflow",
+        "ci-cd-pipeline-manager",
+        "documentation-freshness-guardian",
+        "real-time-database-watcher",
+        "sprint-automation-use-case",
+        "user-lifecycle-manager",
+        "app-performance-guardian",
+        "database-health-sentinel",
+        "intake-processor",
+        "accounting-reconciliation-use-case",
+        "expense-receipt-processor",
+        "finance-controller",
+        "freelancer-invoice-autopilot",
+        "personal-finance-use-case",
+        "revenue-intelligence-copilot",
+        "revenue-operations-hub",
+        "subscription-billing-use-case",
+        "ai-resume-screener",
+        "recruiting-pipeline-use-case",
+        "ai-contract-reviewer",
+        "contract-lifecycle-use-case",
+        "editorial-calendar-manager",
+        "ad-campaign-optimizer",
+        "seo-performance-analyst",
+        "competitive-intelligence-pipeline-3-use-case-team",
+        "customer-onboarding-pipeline-5-use-case-team",
+        "financial-close-pipeline-4-use-case-team",
+        "multi-agent-content-studio",
+        "multi-channel-support-triage-pipeline-5-use-case-team",
+        "multi-region-e-commerce-fulfillment-pipeline-4-use-case-team",
+        "appointment-orchestrator",
+        "meeting-lifecycle-manager",
+        "operational-playbook-executor",
+        "router",
+        "survey-processor",
+        "team-decision-logger",
+        "client-portal-orchestrator",
+        "deadline-synchronizer",
+        "sheets-project-portfolio-manager",
+        "ai-research-report-generator",
+        "industry-intelligence-aggregator",
+        "product-scout",
+        "lead-capture-pipeline",
+        "personality-enriched-sales-prep",
+        "sales-pipeline-autopilot",
+        "sheets-e-commerce-command-center",
+        "knowledge-base-review-cycle-manager",
+        "support-escalation-engine"
+      ]
+    },
+    "stripe": {
+      "count": 4,
+      "templates": [
+        "revenue-intelligence-copilot",
+        "revenue-operations-hub",
+        "customer-onboarding-pipeline-5-use-case-team",
+        "financial-close-pipeline-4-use-case-team"
+      ]
+    },
+    "pagerduty": {
+      "count": 3,
+      "templates": [
+        "incident-commander",
+        "status-page-manager",
+        "edge-security-monitor"
+      ]
+    },
+    "google_drive": {
+      "count": 2,
+      "templates": [
+        "ai-document-intelligence-hub",
+        "visual-brand-asset-factory"
+      ]
+    },
+    "algolia": {
+      "count": 2,
+      "templates": [
+        "cms-index-sync-use-case",
+        "search-quality-monitor"
+      ]
+    },
+    "quickbooks": {
+      "count": 2,
+      "templates": [
+        "finance-controller",
+        "financial-close-pipeline-4-use-case-team"
+      ]
+    },
+    "zendesk": {
+      "count": 2,
+      "templates": [
+        "multi-channel-support-triage-pipeline-5-use-case-team",
+        "support-intelligence-use-case"
+      ]
+    },
+    "shopify": {
+      "count": 2,
+      "templates": [
+        "multi-region-e-commerce-fulfillment-pipeline-4-use-case-team",
+        "sheets-e-commerce-command-center"
+      ]
+    },
+    "wordpress": {
+      "count": 1,
+      "templates": [
+        "analytics-content-distribution-use-case"
+      ]
+    },
+    "contentful": {
+      "count": 1,
+      "templates": [
+        "cms-index-sync-use-case"
+      ]
+    },
+    "webflow": {
+      "count": 1,
+      "templates": [
+        "cms-sync-use-case"
+      ]
+    },
+    "loom": {
+      "count": 1,
+      "templates": [
+        "video-knowledge-base-builder"
+      ]
+    },
+    "clerk": {
+      "count": 1,
+      "templates": [
+        "user-lifecycle-manager"
+      ]
+    },
+    "datadog": {
+      "count": 1,
+      "templates": [
+        "incident-commander"
+      ]
+    },
+    "operations_api": {
+      "count": 1,
+      "templates": [
+        "telegram-ops-command-center"
+      ]
+    },
+    "xero": {
+      "count": 1,
+      "templates": [
+        "accounting-reconciliation-use-case"
+      ]
+    },
+    "toggl": {
+      "count": 1,
+      "templates": [
+        "freelancer-invoice-autopilot"
+      ]
+    },
+    "plaid": {
+      "count": 1,
+      "templates": [
+        "personal-finance-use-case"
+      ]
+    },
+    "paddle": {
+      "count": 1,
+      "templates": [
+        "subscription-billing-use-case"
+      ]
+    },
+    "greenhouse": {
+      "count": 1,
+      "templates": [
+        "recruiting-pipeline-use-case"
+      ]
+    },
+    "docusign": {
+      "count": 1,
+      "templates": [
+        "contract-lifecycle-use-case"
+      ]
+    },
+    "google_ads": {
+      "count": 1,
+      "templates": [
+        "ad-campaign-optimizer"
+      ]
+    },
+    "google_search_console": {
+      "count": 1,
+      "templates": [
+        "seo-performance-analyst"
+      ]
+    },
+    "shipstation": {
+      "count": 1,
+      "templates": [
+        "multi-region-e-commerce-fulfillment-pipeline-4-use-case-team"
+      ]
+    },
+    "news_api": {
+      "count": 1,
+      "templates": [
+        "ai-research-report-generator"
+      ]
+    },
+    "typeform": {
+      "count": 1,
+      "templates": [
+        "lead-capture-pipeline"
+      ]
+    },
+    "hunter": {
+      "count": 1,
+      "templates": [
+        "outbound-sales-intelligence-pipeline"
+      ]
+    },
+    "clearbit": {
+      "count": 1,
+      "templates": [
+        "outbound-sales-intelligence-pipeline"
+      ]
+    },
+    "whoisxml": {
+      "count": 1,
+      "templates": [
+        "brand-protection-sentinel"
+      ]
+    },
+    "snyk": {
+      "count": 1,
+      "templates": [
+        "security-vulnerability-pipeline"
+      ]
+    },
+    "freshdesk": {
+      "count": 1,
+      "templates": [
+        "support-escalation-engine"
+      ]
+    }
+  }
+}

@@ -69,7 +69,7 @@ export function DroppableGroup({
         hasWorkspaceDefaults={hasWorkspaceDefaults}
         isDragging={isDragging}
         dragListeners={listeners ?? {}}
-        dragAttributes={attributes ?? {}}
+        dragAttributes={(attributes ?? {}) as unknown as Record<string, unknown>}
         onToggleCollapse={onToggleCollapse}
         onRename={onRename}
         onDelete={onDelete}

@@ -508,7 +508,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
       <ContentBody centered>
         <div className="space-y-4">
           {/* 2x2 Grid — cards render immediately, items populate when data arrives */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+          <div className="grid gap-4 items-stretch" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
             {SKELETON_SECTIONS.map((stub, stubIdx) => {
               const loaded = sectionMap.get(stub.id);
               const SectionIcon = SECTION_ICONS[stub.id] || Monitor;

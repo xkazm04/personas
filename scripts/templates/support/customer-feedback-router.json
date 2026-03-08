@@ -647,6 +647,58 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "slack_channel",
+        "question": "Which Slack channel should receive feedback summaries?",
+        "type": "text",
+        "default": "#product-feedback",
+        "context": "Real-time summaries of new issues, duplicate detections, and manual review flags are posted here after each polling cycle.",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "linear_default_team",
+        "question": "What is the default Linear team ID for new issues?",
+        "type": "text",
+        "default": "",
+        "context": "Issues are created in this Linear team when the product area cannot be auto-determined from the feedback content. Find your team ID in Linear Settings > General.",
+        "connector_names": ["linear"],
+        "category": "configuration"
+      },
+      {
+        "id": "dedup_confidence",
+        "question": "What confidence threshold should be used for deduplication?",
+        "type": "select",
+        "default": "70%",
+        "options": ["50%", "60%", "70%", "80%", "90%"],
+        "context": "When the agent detects a possible duplicate, it must be at least this confident before linking to an existing issue. Below this threshold, a new issue is created with a 'possibly related' note.",
+        "connector_names": [],
+        "category": "configuration"
+      },
+      {
+        "id": "review_timeout_hours",
+        "question": "After how many hours should unreviewed ambiguous items be re-escalated?",
+        "type": "select",
+        "default": "48",
+        "options": ["24", "48", "72"],
+        "context": "Conversations classified as ambiguous are posted to Slack for human review. If no response is received within this time, the agent reposts with higher urgency.",
+        "connector_names": [],
+        "category": "human_in_the_loop",
+        "use_case_ids": ["flow_3"]
+      },
+      {
+        "id": "polling_interval",
+        "question": "How often should the agent check for new Intercom conversations?",
+        "type": "select",
+        "default": "120",
+        "options": ["60", "120", "300", "600"],
+        "context": "Polling interval in seconds. Lower values provide faster feedback routing but use more API quota.",
+        "connector_names": ["intercom"],
+        "category": "configuration",
+        "use_case_ids": ["flow_1"]
+      }
+    ],
     "protocol_capabilities": [
       {
         "type": "manual_review",

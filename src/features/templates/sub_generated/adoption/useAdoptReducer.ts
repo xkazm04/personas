@@ -127,15 +127,11 @@ export interface AdoptState {
   connectorSwaps: Record<string, string>;
 
   // Persona preferences (Tune step)
-  notificationChannels: string[];
-  alertChannel: string;
-  alertSeverity: string;
   requireApproval: boolean;
   autoApproveSeverity: string;
   reviewTimeout: string;
-  maxConcurrent: number;
-  timeoutMs: number;
-  maxBudgetUsd: number | null;
+  memoryEnabled: boolean;
+  memoryScope: string;
 
   // Transform (Build step)
   transforming: boolean;
@@ -183,15 +179,11 @@ const INITIAL_STATE: AdoptState = {
   connectorCredentialMap: {},
   inlineCredentialConnector: null,
   connectorSwaps: {},
-  notificationChannels: [],
-  alertChannel: '',
-  alertSeverity: 'warning_critical',
   requireApproval: false,
   autoApproveSeverity: 'info',
   reviewTimeout: '24h',
-  maxConcurrent: 1,
-  timeoutMs: 420000,
-  maxBudgetUsd: null,
+  memoryEnabled: true,
+  memoryScope: '',
   transforming: false,
   backgroundAdoptId: null,
   adjustmentRequest: '',

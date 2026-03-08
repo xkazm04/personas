@@ -1,0 +1,160 @@
+{
+  "templateId": "website-market-intelligence-profiler",
+  "templateName": "Website & Market Intelligence Profiler",
+  "category": [
+    "research"
+  ],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T00:00:00Z",
+  "connectorClassification": {
+    "available": [
+      "google_sheets",
+      "slack"
+    ],
+    "swapped": {},
+    "missing": []
+  },
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "schema_completeness",
+        "passed": true,
+        "detail": "All required payload fields present with comprehensive design_highlights"
+      },
+      {
+        "name": "flow_integrity",
+        "passed": true,
+        "detail": "Multiple flows covering batch processing, error handling, and incremental runs — all properly connected"
+      },
+      {
+        "name": "trigger_validity",
+        "passed": true,
+        "detail": "Manual trigger and weekly schedule (Mon 6AM) — valid for on-demand and automatic processing"
+      },
+      {
+        "name": "connector_role_alignment",
+        "passed": true,
+        "detail": "google_sheets (spreadsheet), slack (chat_messaging) — google-sheets builtin available"
+      },
+      {
+        "name": "adoption_question_fitness",
+        "passed": true,
+        "detail": "3 adoption_questions added covering Google Sheet ID, Slack channel, and max URLs per run"
+      },
+      {
+        "name": "default_value_coverage",
+        "passed": true,
+        "detail": "Slack channel (#market-intelligence) and max URLs (200) have defaults. Sheet ID requires user input."
+      },
+      {
+        "name": "prompt_quality",
+        "passed": true,
+        "detail": "Identity 95w, instructions 900w+ with 5 sections covering URL ingestion through landscape reporting, tool guidance with Google Sheets API endpoints, 3 detailed examples, comprehensive error handling"
+      },
+      {
+        "name": "safety_scan",
+        "passed": true,
+        "detail": "0 critical findings. Rate limiting (2 req/s) and 200-URL cap prevent abuse."
+      }
+    ]
+  },
+  "dimensions": [
+    {
+      "name": "Prompt Completeness",
+      "category": "technical",
+      "score": 10,
+      "weight": 3,
+      "rationale": "Identity 95w, instructions cover 5 major sections totaling 900+ words with detailed classification taxonomy (14 industries, 6 audiences, 9 business models), tool guidance with Sheets API batch operations, 3 examples (standard batch, error handling, incremental), and extensive error handling including JS-rendered sites and login walls."
+    },
+    {
+      "name": "Tool-Prompt Alignment",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "http_request for website fetching and Google Sheets API. file_read/file_write for batch state and classification cache. Slack API for reports. All tools match suggested_tools."
+    },
+    {
+      "name": "Trigger Coherence",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Manual trigger for on-demand runs + weekly Monday 6AM schedule for automatic re-processing. Both align with the batch processing workflow."
+    },
+    {
+      "name": "Connector Coverage",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Google Sheets (OAuth2) and Slack (bot_token) connectors well-defined with credential fields and setup instructions. google-sheets builtin available."
+    },
+    {
+      "name": "Memory Design",
+      "category": "technical",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Batch state persistence for interrupted runs, 30-day classification cache with TTL, and historical landscape report storage. Good but no agent_memory protocol usage."
+    },
+    {
+      "name": "Error Handling",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Covers Google Sheets rate limits and auth, Slack failures, per-website fetch failures (timeout, DNS, SSL, redirects, login walls, JS-rendered), content edge cases (non-English, parked domains, ambiguous industries), and data integrity (duplicate URLs, corrupted state, sheet structure changes)."
+    },
+    {
+      "name": "Use Case Fidelity",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Prompt covers URL ingestion, batch processing with rate limiting, 7-dimension AI classification, Google Sheets enrichment, and landscape summary generation. All described flows are executable."
+    },
+    {
+      "name": "Value Clarity",
+      "category": "business",
+      "score": 10,
+      "weight": 2,
+      "rationale": "Crystal clear value: transform a list of URLs into a structured market intelligence database with automated classification and landscape analysis. Replaces hours of manual website review."
+    },
+    {
+      "name": "Execution Feasibility",
+      "category": "business",
+      "score": 8,
+      "weight": 3,
+      "rationale": "Google Sheets and Slack connectors are straightforward. Website fetching via HTTP is standard. OAuth2 for Google Sheets adds setup complexity. 200-URL cap and rate limiting are sensible."
+    },
+    {
+      "name": "Differentiation",
+      "category": "business",
+      "score": 9,
+      "weight": 1,
+      "rationale": "7-dimension AI classification, white space opportunity identification, incremental processing with caching, and landscape trend tracking over time go significantly beyond simple web scraping."
+    },
+    {
+      "name": "Variable Necessity",
+      "category": "business",
+      "score": 8,
+      "weight": 1,
+      "rationale": "All 3 adoption questions are needed. Sheet ID is essential, Slack channel customizes delivery, max URLs controls processing scope."
+    },
+    {
+      "name": "Default Quality",
+      "category": "business",
+      "score": 7,
+      "weight": 2,
+      "rationale": "Good defaults for Slack channel and max URLs. Google Sheet ID has no default — must be provided. The template is otherwise ready to adopt once the sheet is configured."
+    }
+  ],
+  "overall": 8.83,
+  "grade": "A",
+  "issues": [
+    "No adoption_questions existed — connectors need user-specific configuration for Google Sheet ID and Slack channel",
+    "Google Sheets OAuth2 setup is more complex than API key connectors — may benefit from additional setup guidance in adoption flow"
+  ],
+  "fixes_applied": {
+    "template": [
+      "Added 3 adoption_questions: google_sheet_id, slack_report_channel, max_urls_per_run"
+    ],
+    "app_code": []
+  }
+}

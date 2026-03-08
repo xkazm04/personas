@@ -8,7 +8,7 @@ import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscr
 import type { UseCaseEventSubscription } from '@/lib/types/frontendTypes';
 import type { PersonaWithDetails } from '@/lib/types/types';
 import { mergeSubscriptions } from './subscriptionHelpers';
-import type { UnifiedSubscription, SubscriptionStage } from './subscriptionHelpers';
+import type { UnifiedSubscription } from './subscriptionHelpers';
 
 export type { SubscriptionStage, UnifiedSubscription } from './subscriptionHelpers';
 

@@ -1,4 +1,4 @@
-import { Clock, Webhook, MousePointerClick, Radio } from 'lucide-react';
+import { Clock, Webhook, MousePointerClick, Radio, Activity } from 'lucide-react';
 import type { SuggestedTrigger } from '@/lib/types/designTypes';
 
 interface TriggerConfigPanelProps {
@@ -13,6 +13,7 @@ const TRIGGER_ICONS: Record<SuggestedTrigger['trigger_type'], typeof Clock> = {
   webhook: Webhook,
   manual: MousePointerClick,
   polling: Radio,
+  event: Activity,
 };
 
 export function TriggerConfigPanel({

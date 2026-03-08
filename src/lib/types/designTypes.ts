@@ -78,6 +78,8 @@ export interface DesignAnalysisResult {
   service_flow?: ConnectorPipelineStep[];
   /** Protocol capabilities detected from workflow node types (structured) */
   protocol_capabilities?: ProtocolCapability[];
+  /** Pre-defined use-case-specific questions for template adoption */
+  adoption_questions?: AdoptionQuestion[];
 }
 
 /**
@@ -99,7 +101,7 @@ export interface SuggestedNotificationChannel {
 
 /** A trigger suggestion from design analysis */
 export interface SuggestedTrigger {
-  trigger_type: "manual" | "schedule" | "polling" | "webhook";
+  trigger_type: "manual" | "schedule" | "polling" | "webhook" | "event";
   config: Record<string, unknown>;
   description: string;
 }
@@ -144,6 +146,22 @@ export interface AdoptionRequirement {
   default_value?: string;
   options?: string[];
   source: "connector" | "trigger" | "channel";
+}
+
+/** A pre-defined question for template adoption, tied to specific use cases or connectors */
+export interface AdoptionQuestion {
+  id: string;
+  question: string;
+  type: 'text' | 'select' | 'boolean';
+  options?: string[];
+  default?: string;
+  context?: string;
+  /** Which use case flow IDs this question applies to (shown when those use cases are selected) */
+  use_case_ids?: string[];
+  /** Which connector names this question is relevant to */
+  connector_names?: string[];
+  /** Category for grouping: 'configuration', 'credentials', 'human_in_the_loop', 'memory', 'notifications' */
+  category?: string;
 }
 
 /** Readiness status for a connector in a template */

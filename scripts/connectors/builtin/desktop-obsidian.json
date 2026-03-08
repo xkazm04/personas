@@ -1,0 +1,56 @@
+{
+  "id": "builtin-desktop-obsidian",
+  "name": "desktop_obsidian",
+  "label": "Obsidian",
+  "color": "#7C3AED",
+  "icon_url": "/icons/connectors/obsidian.svg",
+  "category": "productivity",
+  "fields": [
+    {
+      "key": "vault_path",
+      "label": "Vault Path",
+      "type": "text",
+      "required": false,
+      "placeholder": "~/Documents/MyVault",
+      "helpText": "Path to your Obsidian vault. Auto-detected if left blank."
+    },
+    {
+      "key": "api_port",
+      "label": "Local REST API Port",
+      "type": "text",
+      "required": false,
+      "placeholder": "27124",
+      "helpText": "Port for the Obsidian Local REST API plugin (optional)"
+    },
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": false,
+      "placeholder": "",
+      "helpText": "API key for the Local REST API plugin (optional)"
+    }
+  ],
+  "healthcheck_config": null,
+  "services": [
+    { "toolName": "obsidian_list_notes", "label": "List Notes" },
+    { "toolName": "obsidian_read_note", "label": "Read Note" },
+    { "toolName": "obsidian_write_note", "label": "Write Note" },
+    { "toolName": "obsidian_search", "label": "Search Notes" },
+    { "toolName": "obsidian_vault_structure", "label": "Vault Structure" },
+    { "toolName": "obsidian_append", "label": "Append to Note" }
+  ],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Obsidian note-taking integration — read, write, search, and navigate your knowledge vault via desktop bridge.",
+    "auth_type": "desktop_bridge",
+    "auth_type_label": "Desktop Bridge",
+    "connection_mode": "desktop_bridge",
+    "bridge_name": "obsidian",
+    "docs_url": "https://obsidian.md/",
+    "setup_guide": "1. Ensure Obsidian is installed on your system\n2. Optionally install the Local REST API plugin for richer access\n3. Click Detect to scan for Obsidian vaults\n4. Approve the requested capabilities",
+    "pricing_tier": "free",
+    "capabilities": ["file_read", "file_write", "network_local"]
+  }
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, Loader2, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, XCircle, Ban } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { cloudListExecutions, cloudExecutionStats } from '@/api/cloud';
@@ -83,7 +83,7 @@ export function CloudHistoryPanel() {
     <div className={DEPLOYMENT_TOKENS.panelSpacing}>
       {/* Stats cards */}
       {stats && (
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-4 3xl:grid-cols-8 gap-3">
           <StatCard label="Total Runs" value={String(stats.total_executions)} />
           <StatCard
             label="Success Rate"

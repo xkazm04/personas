@@ -1,0 +1,160 @@
+{
+  "templateId": "cross-platform-task-synchronizer",
+  "templateName": "Cross-Platform Task Synchronizer",
+  "category": [
+    "productivity"
+  ],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T00:00:00Z",
+  "connectorClassification": {
+    "available": [
+      "asana",
+      "github",
+      "slack"
+    ],
+    "swapped": {},
+    "missing": []
+  },
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "schema_completeness",
+        "passed": true,
+        "detail": "All required payload fields present including customSections for sync state schema, user mapping, and communication protocols"
+      },
+      {
+        "name": "flow_integrity",
+        "passed": true,
+        "detail": "3 flows (Asana->GitHub 11 edges, GitHub->Asana 10 edges, error recovery 13 edges) — all properly connected with decision branches"
+      },
+      {
+        "name": "trigger_validity",
+        "passed": true,
+        "detail": "Polling trigger every 2 minutes (*/2 * * * *) — valid cron for real-time bidirectional sync"
+      },
+      {
+        "name": "connector_role_alignment",
+        "passed": true,
+        "detail": "asana (project_tracking), github (source_control), slack (chat_messaging) — all builtins available"
+      },
+      {
+        "name": "adoption_question_fitness",
+        "passed": true,
+        "detail": "4 adoption_questions added covering Asana project, GitHub repo, Slack channel, and conflict resolution strategy"
+      },
+      {
+        "name": "default_value_coverage",
+        "passed": true,
+        "detail": "Slack channel (#project-sync) and conflict resolution (last_write_wins) have defaults. Asana/GitHub IDs require user input."
+      },
+      {
+        "name": "prompt_quality",
+        "passed": true,
+        "detail": "Identity 68w, instructions 700w+ with 9-step core loop plus conflict resolution protocol, tool guidance with Asana/GitHub/Slack API endpoints, 3 examples, comprehensive error handling with rate limits"
+      },
+      {
+        "name": "safety_scan",
+        "passed": true,
+        "detail": "0 critical findings. Optimistic concurrency prevents stale overwrites. Human escalation for ambiguous conflicts."
+      }
+    ]
+  },
+  "dimensions": [
+    {
+      "name": "Prompt Completeness",
+      "category": "technical",
+      "score": 10,
+      "weight": 3,
+      "rationale": "Identity 68w, instructions cover 9-step core sync loop with conflict resolution protocol totaling 700+ words, tool guidance with specific Asana/GitHub/Slack API endpoints and methods, 3 examples (create, conflict escalation, phase transition), comprehensive error handling covering rate limits for all 3 APIs."
+    },
+    {
+      "name": "Tool-Prompt Alignment",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "http_request for all 3 APIs with detailed endpoint documentation including Asana opt_fields, GitHub pagination, Slack Block Kit. file_read/file_write for sync state and user mapping. Perfect alignment."
+    },
+    {
+      "name": "Trigger Coherence",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "2-minute polling interval perfectly matches real-time bidirectional sync requirements. Single trigger drives the complete sync cycle."
+    },
+    {
+      "name": "Connector Coverage",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "All 3 connectors have builtins with matching auth types (Asana PAT, GitHub PAT, Slack bot_token). Setup instructions include specific permission requirements."
+    },
+    {
+      "name": "Memory Design",
+      "category": "technical",
+      "score": 10,
+      "weight": 1,
+      "rationale": "Exceptional memory design: sync ledger with Asana<->GitHub mappings, content hashes for change detection, conflict log for audit, retry queue that survives restarts, and user identity mapping file."
+    },
+    {
+      "name": "Error Handling",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Per-platform rate limits (Asana 1500/min, GitHub 5000/hr, Slack 1/sec), network failure retry with queue, optimistic concurrency, missing user mapping handling. After 3 consecutive failures, escalates via user_message."
+    },
+    {
+      "name": "Use Case Fidelity",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "3 flows cover Asana->GitHub sync, GitHub->Asana sync, and error recovery. Each flow has detailed decision nodes for conflict detection and resolution. All prompt workflows mapped."
+    },
+    {
+      "name": "Value Clarity",
+      "category": "business",
+      "score": 10,
+      "weight": 2,
+      "rationale": "Replaces 4 separate automation workflows with a single reasoning agent. Bidirectional sync with intelligent conflict resolution is a clear, high-value proposition."
+    },
+    {
+      "name": "Execution Feasibility",
+      "category": "business",
+      "score": 9,
+      "weight": 3,
+      "rationale": "All 3 connectors have builtins. Asana and GitHub PATs are straightforward to generate. Slack bot setup is standard. 2-minute polling is reasonable for the use case."
+    },
+    {
+      "name": "Differentiation",
+      "category": "business",
+      "score": 10,
+      "weight": 1,
+      "rationale": "Field-level merge, last-write-wins with configurable threshold, human escalation for contradictory changes, persistent retry queue, and content hash change detection. Significantly more intelligent than Zapier/IFTTT rules."
+    },
+    {
+      "name": "Variable Necessity",
+      "category": "business",
+      "score": 9,
+      "weight": 1,
+      "rationale": "All 4 adoption questions are essential. Project/repo identifiers are required for sync. Conflict resolution strategy is a meaningful user preference."
+    },
+    {
+      "name": "Default Quality",
+      "category": "business",
+      "score": 7,
+      "weight": 2,
+      "rationale": "Good defaults for Slack channel and conflict resolution. Asana project GID and GitHub repo have no defaults — must be provided. Template cannot function without these."
+    }
+  ],
+  "overall": 9.48,
+  "grade": "A",
+  "issues": [
+    "No adoption_questions existed — connectors need user-specific configuration for Asana project, GitHub repo, and Slack channel"
+  ],
+  "fixes_applied": {
+    "template": [
+      "Added 4 adoption_questions: asana_project_gid, github_repo, slack_sync_channel, conflict_resolution"
+    ],
+    "app_code": []
+  }
+}

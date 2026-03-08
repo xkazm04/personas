@@ -1,0 +1,139 @@
+{
+  "templateId": "engineering-workflow-orchestrator",
+  "templateName": "Engineering Workflow Orchestrator",
+  "category": [
+    "development"
+  ],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T19:05:28.575Z",
+  "connectorClassification": {
+    "available": [
+      "linear",
+      "github",
+      "slack"
+    ],
+    "swapped": {},
+    "missing": []
+  },
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "schema_completeness",
+        "passed": true
+      },
+      {
+        "name": "flow_integrity",
+        "passed": true,
+        "detail": "3 use_case_flows with connected directed graphs"
+      },
+      {
+        "name": "trigger_validity",
+        "passed": true,
+        "detail": "2 triggers: polling 2min + Friday 5PM weekly schedule"
+      },
+      {
+        "name": "safety_scan",
+        "passed": true,
+        "detail": "0 critical, 0 info findings"
+      }
+    ]
+  },
+  "dimensions": [
+    {
+      "name": "Prompt Completeness",
+      "category": "technical",
+      "score": 9,
+      "weight": 3,
+      "rationale": "Identity >50 words. Instructions >200 words with 4 numbered sections. Tool guidance with Linear GraphQL, GitHub REST, Slack API specs. Three examples (branch creation, PR merged, weekly report). Error handling with rate limits, auth, branch conflicts."
+    },
+    {
+      "name": "Tool-Prompt Alignment",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "http_request mapped to Linear GraphQL, GitHub REST v3 (refs API), Slack Web API. file_read/write for linear_state.json and velocity_log.json. No phantom tools."
+    },
+    {
+      "name": "Trigger Coherence",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Two triggers: 2-min polling for issue/PR sync + Friday 5PM schedule for weekly velocity report. Both match corresponding prompt workflow sections."
+    },
+    {
+      "name": "Connector Coverage",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Linear, GitHub, Slack all have complete connector definitions with credential fields and setup instructions."
+    },
+    {
+      "name": "Memory Design",
+      "category": "technical",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Two local files: linear_state.json for sync state (last poll, known issues), velocity_log.json as append-only event log. Custom section documents branch naming convention."
+    },
+    {
+      "name": "Error Handling",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Rate limits with header-based backoff, auth failures with user notification, branch creation conflicts (422), Linear state transition failures with closest-match fallback, state corruption with backup and reinit."
+    },
+    {
+      "name": "Use Case Fidelity",
+      "category": "functional",
+      "score": 9,
+      "weight": 2,
+      "rationale": "All 3 use_case_flows covered: issue-to-branch creation, PR merged-to-issue closure with cycle time, weekly velocity report with per-assignee breakdown."
+    },
+    {
+      "name": "Value Clarity",
+      "category": "functional",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Eliminates manual status syncing between Linear and GitHub. Automated branch creation, ticket closure, and velocity reporting with trend analysis."
+    },
+    {
+      "name": "Execution Feasibility",
+      "category": "functional",
+      "score": 9,
+      "weight": 3,
+      "rationale": "Standard APIs: Linear GraphQL, GitHub REST, Slack Web API. All connectors have builtin definitions. Triggers are standard cron."
+    },
+    {
+      "name": "Differentiation",
+      "category": "functional",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Cycle time calculation, velocity trend analysis with week-over-week comparison, branch naming from issue identifiers. Good reasoning beyond simple automation."
+    },
+    {
+      "name": "Variable Necessity",
+      "category": "functional",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Adoption questions cover owner, repo, team key, channel, default branch, and auto-create toggle. All genuinely needed."
+    },
+    {
+      "name": "Default Quality",
+      "category": "functional",
+      "score": 7,
+      "weight": 2,
+      "rationale": "GitHub owner/repo have generic defaults requiring user input. Linear team key (ENG) and Slack channel (#engineering) have reasonable defaults. Default branch (main) is sensible."
+    }
+  ],
+  "overall": 8.7,
+  "grade": "A",
+  "issues": [
+    "No adoption_questions existed before fix - GitHub repo, Linear team, Slack channel, default branch all needed user-specific configuration"
+  ],
+  "fixes_applied": {
+    "template": [
+      "Added 6 adoption_questions: github_owner, github_repo, linear_team_key, slack_engineering_channel, default_branch, auto_create_branches"
+    ],
+    "app_code": []
+  }
+}

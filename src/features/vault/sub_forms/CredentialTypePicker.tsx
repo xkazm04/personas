@@ -98,7 +98,7 @@ export function CredentialTypePicker({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
         {TYPES.map((type) => {
           const Icon = type.icon;
           return (

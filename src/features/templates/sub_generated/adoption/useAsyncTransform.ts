@@ -27,6 +27,7 @@ import {
   substituteVariables,
 } from './templateVariables';
 import { applySandboxOverrides } from '@/lib/templates/templateVerification';
+import { sendOsNotification, requestNotificationPermission } from '@/lib/utils/osNotification';
 import type { SandboxPolicy } from '@/lib/types/templateTypes';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { TransformQuestionResponse } from '@/api/n8nTransform';
@@ -60,6 +61,7 @@ interface WizardActions {
   transformFailed: (error: string) => void;
   transformCancelled: () => void;
   questionsGenerated: (questions: TransformQuestionResponse[]) => void;
+  awaitingAnswers: (questions: TransformQuestionResponse[]) => void;
   confirmStarted: () => void;
   confirmCompleted: () => void;
   confirmFailed: (error: string) => void;
@@ -154,6 +156,7 @@ export function useAsyncTransform({
     (draft: N8nPersonaDraft) => {
       try {
         wizard.transformCompleted(normalizeDraft(draft));
+        void sendOsNotification('Persona Ready', 'Your persona has been built and is ready for review.');
       } catch (err) {
         try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
         wizard.transformFailed(
@@ -203,10 +206,12 @@ export function useAsyncTransform({
           options: Array.isArray(q.options) ? q.options.map(String) : undefined,
           default: typeof q.default === 'string' ? q.default : undefined,
           context: typeof q.context === 'string' ? q.context : undefined,
+          category: typeof q.category === 'string' ? q.category : undefined,
         }));
-      if (mapped.length > 0) wizard.questionsGenerated(mapped);
+      // Use awaitingAnswers to transition to tune step and pause the transform
+      if (mapped.length > 0) wizard.awaitingAnswers(mapped);
     },
-    [wizard.questionsGenerated],
+    [wizard.awaitingAnswers],
   );
 
   useBackgroundSnapshot({
@@ -231,6 +236,9 @@ export function useAsyncTransform({
     }
 
     transformStartingRef.current = true;
+
+    // Request notification permission early so it's available when transform completes
+    requestNotificationPermission();
 
     const filtered = filterDesignResult(
       state.designResult,
@@ -272,9 +280,9 @@ export function useAsyncTransform({
 
       // Enforce sandbox policy overrides on user-selected preferences
       const enforced = applySandboxOverrides(sandboxPolicy, {
-        maxConcurrent: state.maxConcurrent,
+        maxConcurrent: 1,
         requireApproval: state.requireApproval,
-        maxBudgetUsd: state.maxBudgetUsd,
+        maxBudgetUsd: null,
       });
 
       const hasAnswers = Object.keys(state.userAnswers).length > 0;
@@ -287,20 +295,14 @@ export function useAsyncTransform({
           connectorNames: [...state.selectedConnectorNames],
         },
         _preferences: {
-          notifications: {
-            channels: state.notificationChannels,
-            alertChannel: state.alertChannel,
-            severity: state.alertSeverity,
-          },
           humanReview: {
             required: enforced.requireApproval,
             autoApprove: state.autoApproveSeverity,
             timeout: state.reviewTimeout,
           },
-          execution: {
-            maxConcurrent: enforced.maxConcurrent,
-            timeoutMs: state.timeoutMs,
-            maxBudgetUsd: enforced.maxBudgetUsd,
+          memory: {
+            enabled: state.memoryEnabled,
+            scope: state.memoryScope,
           },
         },
       });

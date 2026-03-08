@@ -327,7 +327,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
               {capitalize(category)}
             </p>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
             {items.map(({ credential, connector }) => (
               <CredentialCard
                 key={credential.id}
@@ -363,7 +363,7 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
           </div>
 
           {/* Two pathway cards */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
             {/* Catalog path */}
             <button
               onClick={() => onGoToCatalog?.()}

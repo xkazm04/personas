@@ -781,6 +781,57 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "alert_channel",
+        "question": "Which Slack channel should receive deliverability alerts?",
+        "type": "text",
+        "default": "#email-deliverability",
+        "context": "Real-time bounce rate spikes, spam threshold breaches, and weekly reports are posted here.",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "critical_channel",
+        "question": "Should critical alerts go to a separate channel?",
+        "type": "text",
+        "default": "#email-alerts-critical",
+        "context": "High-urgency alerts (spam rate >0.1%, hard bounce rate >5%) can be routed to a dedicated critical channel for faster response.",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "airtable_base_id",
+        "question": "What is your Airtable base ID for the deliverability dashboard?",
+        "type": "text",
+        "default": "",
+        "context": "The agent maintains four tables (Events Log, Daily Metrics, Suppression List, Campaign Health) in this base. Find the ID in the Airtable URL.",
+        "connector_names": ["airtable"],
+        "category": "configuration"
+      },
+      {
+        "id": "bounce_spike_threshold",
+        "question": "What bounce rate threshold should trigger a spike alert?",
+        "type": "select",
+        "default": "5%",
+        "options": ["3%", "5%", "8%", "10%"],
+        "context": "An alert fires when the current 1-hour bounce rate exceeds this absolute value or 2x the 7-day rolling baseline.",
+        "connector_names": [],
+        "category": "configuration",
+        "use_case_ids": ["flow_webhook_processing", "flow_periodic_spike_check"]
+      },
+      {
+        "id": "auto_suppress_engaged",
+        "question": "Should recently-engaged addresses be auto-suppressed or flagged for review?",
+        "type": "select",
+        "default": "Flag for review",
+        "options": ["Auto-suppress", "Flag for review"],
+        "context": "Addresses with opens/clicks in the last 30 days that bounce can either be auto-suppressed or flagged for human review to prevent accidental loss of active subscribers.",
+        "connector_names": ["sendgrid"],
+        "category": "human_in_the_loop",
+        "use_case_ids": ["flow_webhook_processing"]
+      }
+    ],
     "protocol_capabilities": [
       {
         "type": "manual_review",

@@ -685,6 +685,70 @@
         "label": "Emits events: item created, escalation triggered",
         "context": "2 event subscription(s) configured — agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "posthog_project_id",
+        "question": "PostHog project ID?",
+        "type": "text",
+        "default": "",
+        "context": "Numeric project ID found in PostHog Settings > Project. Used for all API calls.",
+        "connector_names": [
+          "posthog"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_product_channel",
+        "question": "Which Slack channel for flag updates and experiment results?",
+        "type": "text",
+        "default": "#product-flags",
+        "context": "Experiment winner announcements, flag change alerts, and stale flag digests go here.",
+        "connector_names": [
+          "slack"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "linear_team_key",
+        "question": "Which Linear team for experiment rollout tickets?",
+        "type": "text",
+        "default": "ENG",
+        "context": "Winning experiment follow-up tickets are created in this team.",
+        "connector_names": [
+          "linear"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "significance_threshold",
+        "question": "Statistical significance threshold for declaring a winner?",
+        "type": "select",
+        "default": "0.95",
+        "context": "Variants with probability above this value are declared experiment winners.",
+        "connector_names": [],
+        "category": "configuration"
+      },
+      {
+        "id": "stale_flag_days",
+        "question": "Days of inactivity before a flag is considered stale?",
+        "type": "select",
+        "default": "30",
+        "context": "Active flags not modified beyond this threshold appear in the stale flag digest.",
+        "connector_names": [],
+        "category": "configuration"
+      },
+      {
+        "id": "auto_create_linear_tickets",
+        "question": "Automatically create Linear tickets for winning experiments?",
+        "type": "boolean",
+        "default": "Yes",
+        "context": "When a winner is detected, a rollout ticket is created in Linear with priority based on lift magnitude.",
+        "connector_names": [
+          "linear"
+        ],
+        "category": "human_in_the_loop"
+      }
     ]
   }
 }

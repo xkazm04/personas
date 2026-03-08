@@ -696,6 +696,74 @@
         "label": "Emits events: item created, threshold breached",
         "context": "3 event subscription(s) configured — agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "github_owner",
+        "question": "GitHub repository owner (org or user)?",
+        "type": "text",
+        "default": "my-org",
+        "context": "The organization or user owning the repository where branches are created.",
+        "connector_names": [
+          "github"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "github_repo",
+        "question": "GitHub repository name?",
+        "type": "text",
+        "default": "my-app",
+        "context": "Feature branches are created here and merged PRs are monitored.",
+        "connector_names": [
+          "github"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "linear_team_key",
+        "question": "Which Linear team to monitor for issue status changes?",
+        "type": "text",
+        "default": "ENG",
+        "context": "Issues in this team moving to \"In Progress\" trigger automatic branch creation.",
+        "connector_names": [
+          "linear"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_engineering_channel",
+        "question": "Which Slack channel for merge notifications and velocity reports?",
+        "type": "text",
+        "default": "#engineering",
+        "context": "PR merge notifications with cycle time and weekly velocity reports go here.",
+        "connector_names": [
+          "slack"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "default_branch",
+        "question": "Default branch name for the repository?",
+        "type": "text",
+        "default": "main",
+        "context": "Feature branches are created from the HEAD of this branch.",
+        "connector_names": [
+          "github"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "auto_create_branches",
+        "question": "Automatically create feature branches when issues move to In Progress?",
+        "type": "boolean",
+        "default": "Yes",
+        "context": "When enabled, a branch named {issue-id}-{slugified-title} is created automatically.",
+        "connector_names": [
+          "github"
+        ],
+        "category": "human_in_the_loop"
+      }
     ]
   }
 }

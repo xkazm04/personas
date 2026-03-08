@@ -2,12 +2,12 @@ import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import DashboardWithSubtabs from '@/features/overview/components/DashboardWithSubtabs';
 import ExecutionsWithSubtabs from '@/features/overview/components/ExecutionsWithSubtabs';
-import ManualReviewList from '@/features/overview/sub_manual-review/ManualReviewList';
-import MessageList from '@/features/overview/sub_messages/MessageList';
-import EventLogList from '@/features/overview/sub_events/EventLogList';
+import ManualReviewList from '@/features/overview/sub_manual-review/components/ManualReviewList';
+import MessageList from '@/features/overview/sub_messages/components/MessageList';
+import EventLogList from '@/features/overview/sub_events/components/EventLogList';
 import KnowledgeHub from '@/features/overview/components/KnowledgeHub';
-import SLADashboard from '@/features/overview/sub_sla/SLADashboard';
-import CronAgentsPage from '@/features/overview/sub_cron_agents/CronAgentsPage';
+import SLADashboard from '@/features/overview/sub_sla/components/SLADashboard';
+import CronAgentsPage from '@/features/overview/sub_cron_agents/components/CronAgentsPage';
 import { OverviewFilterProvider } from '@/features/overview/components/OverviewFilterContext';
 
 export default function OverviewPage() {
@@ -20,7 +20,7 @@ export default function OverviewPage() {
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="flex-1 min-h-0 flex flex-col overflow-hidden"
+        className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
       >
         {overviewTab === 'home' ? <DashboardWithSubtabs /> :
         overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :

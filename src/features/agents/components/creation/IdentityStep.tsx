@@ -150,7 +150,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
       </div>
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] 3xl:grid-cols-[1fr_400px] 4xl:grid-cols-[1fr_480px] gap-6">
         {/* Left column: form */}
         <div className="space-y-4 min-w-0">
           {/* Name */}

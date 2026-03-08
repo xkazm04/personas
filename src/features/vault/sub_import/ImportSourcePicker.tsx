@@ -36,7 +36,7 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
         {IMPORT_SOURCES.map((source) => {
           const Icon = ICON_MAP[source.icon] ?? FileText;
           return (

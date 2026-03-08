@@ -214,7 +214,7 @@ export function CredentialSchemaForm({
               <p className="mt-1.5 text-sm text-muted-foreground/60">{activeSubType.description}</p>
             </>
           ) : (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
               {config.subTypes.map((st) => (
                 <button
                   key={st.id}

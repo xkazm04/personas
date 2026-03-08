@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plug, Server, Bot, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plug, Server, Bot, Monitor, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
@@ -7,6 +7,7 @@ import { McpPrefilledForm } from '@/features/vault/sub_schemas/McpPrefilledForm'
 import type { ConnectorDefinition, CredentialTemplateField, ConnectorAuthMethod } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import { getAuthBadgeClasses } from '@/features/vault/utils/authMethodStyles';
+import { isDesktopBridge } from '@/lib/utils/connectors';
 
 interface AuthVariant {
   id: string;
@@ -34,6 +35,7 @@ export interface CredentialTemplateFormProps {
   onValuesChanged: (key: string, value: string) => void;
   onMcpComplete?: () => void;
   onAutoSetup?: () => void;
+  onDesktopDetect?: () => void;
   // Healthcheck props
   onHealthcheck?: (values: Record<string, string>) => void;
   isHealthchecking?: boolean;
@@ -57,6 +59,7 @@ export function CredentialTemplateForm({
   onValuesChanged,
   onMcpComplete,
   onAutoSetup,
+  onDesktopDetect,
   onHealthcheck,
   isHealthchecking,
   healthcheckResult,
@@ -157,14 +160,26 @@ export function CredentialTemplateForm({
               : selectedConnector.healthcheck_config?.description || 'Configure credential fields'}
           </p>
         </div>
-        {onAutoSetup && activeMethod?.type !== 'mcp' && (
-          <button
-            onClick={onAutoSetup}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-cyan-500/20 bg-cyan-500/8 hover:bg-cyan-500/15 text-cyan-300 text-sm font-medium transition-colors"
-          >
-            <Bot className="w-3.5 h-3.5" />
-            Auto Add
-          </button>
+        {isDesktopBridge(selectedConnector) ? (
+          onDesktopDetect && (
+            <button
+              onClick={onDesktopDetect}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-orange-500/20 bg-orange-500/8 hover:bg-orange-500/15 text-orange-300 text-sm font-medium transition-colors"
+            >
+              <Monitor className="w-3.5 h-3.5" />
+              Detect
+            </button>
+          )
+        ) : (
+          onAutoSetup && activeMethod?.type !== 'mcp' && (
+            <button
+              onClick={onAutoSetup}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-cyan-500/20 bg-cyan-500/8 hover:bg-cyan-500/15 text-cyan-300 text-sm font-medium transition-colors"
+            >
+              <Bot className="w-3.5 h-3.5" />
+              Auto Add
+            </button>
+          )
         )}
       </div>
 

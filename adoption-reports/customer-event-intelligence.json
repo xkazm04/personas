@@ -1,0 +1,162 @@
+{
+  "templateId": "customer-event-intelligence",
+  "templateName": "Customer Event Intelligence",
+  "category": [
+    "research"
+  ],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T00:00:00Z",
+  "connectorClassification": {
+    "available": [
+      "slack",
+      "notion"
+    ],
+    "swapped": {
+      "segment": "twilio-segment"
+    },
+    "missing": []
+  },
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "schema_completeness",
+        "passed": true,
+        "detail": "All required payload fields present including customSections for intent catalog and Notion schema"
+      },
+      {
+        "name": "flow_integrity",
+        "passed": true,
+        "detail": "5 flows with webhook-triggered processing, proper start/end nodes, connected edges"
+      },
+      {
+        "name": "trigger_validity",
+        "passed": true,
+        "detail": "Webhook trigger with path /segment-events and POST method — valid for real-time event ingestion"
+      },
+      {
+        "name": "connector_role_alignment",
+        "passed": true,
+        "detail": "segment (analytics), slack (chat_messaging), notion (knowledge_base) — Segment maps to twilio-segment builtin"
+      },
+      {
+        "name": "adoption_question_fitness",
+        "passed": true,
+        "detail": "4 adoption_questions added covering segment_space_id, slack_sales_channel, notion_signals_db, high_intent_score_threshold"
+      },
+      {
+        "name": "default_value_coverage",
+        "passed": true,
+        "detail": "Slack channel has sensible default (#sales-signals). Segment and Notion IDs require user input."
+      },
+      {
+        "name": "prompt_quality",
+        "passed": true,
+        "detail": "Identity 78w, instructions 500w+ with 6 steps, tool guidance with API endpoints, 2 detailed examples, comprehensive error handling"
+      },
+      {
+        "name": "safety_scan",
+        "passed": true,
+        "detail": "0 critical findings. Agent only reads events and writes to Slack/Notion — no destructive operations."
+      }
+    ]
+  },
+  "dimensions": [
+    {
+      "name": "Prompt Completeness",
+      "category": "technical",
+      "score": 9,
+      "weight": 3,
+      "rationale": "Identity 78w, instructions cover 6 detailed steps with intent scoring catalog, tool guidance with specific API endpoints and auth patterns, 2 scenario examples (high intent and pattern escalation), error handling covers 6 failure categories."
+    },
+    {
+      "name": "Tool-Prompt Alignment",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "http_request for Segment Profiles, Slack, Notion APIs. file_read/file_write for cache and error queues. All tools referenced in prompt match suggested_tools."
+    },
+    {
+      "name": "Trigger Coherence",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Single webhook trigger with path and method config. Real-time event processing aligns with the 'as-it-happens' intent classification workflow."
+    },
+    {
+      "name": "Connector Coverage",
+      "category": "technical",
+      "score": 8,
+      "weight": 2,
+      "rationale": "Segment connector defined with Profiles API access token. Slack and Notion connectors well-defined. Segment maps to twilio-segment builtin for adoption."
+    },
+    {
+      "name": "Memory Design",
+      "category": "technical",
+      "score": 9,
+      "weight": 1,
+      "rationale": "Excellent memory design: per-user behavioral history in agent_memory, local cache for userId-to-Notion-page mapping, 30-day behavioral tracking window, pattern escalation from accumulated medium signals."
+    },
+    {
+      "name": "Error Handling",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Malformed webhooks, Profiles API failures (continues with degraded data), Slack retry + queue, Notion queue for next invocation, rate limits, unknown events default to STANDARD. Comprehensive."
+    },
+    {
+      "name": "Use Case Fidelity",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Prompt covers all workflows in use_case_flows: event ingestion, intent classification, profile enrichment, sales alerting, signal logging, and pattern escalation."
+    },
+    {
+      "name": "Value Clarity",
+      "category": "business",
+      "score": 10,
+      "weight": 2,
+      "rationale": "Crystal clear business outcome: transform raw product events into revenue-driving sales intelligence with sub-second alert delivery for high-intent signals."
+    },
+    {
+      "name": "Execution Feasibility",
+      "category": "business",
+      "score": 8,
+      "weight": 3,
+      "rationale": "Requires Segment workspace with webhook destination configured, Segment Profiles API access, Slack bot, and Notion database. Standard APIs but multi-service setup adds complexity."
+    },
+    {
+      "name": "Differentiation",
+      "category": "business",
+      "score": 9,
+      "weight": 1,
+      "rationale": "Pattern escalation engine (3 medium = high), behavioral memory accumulation, and contextual alert composition go well beyond what simple webhook-to-Slack routing provides."
+    },
+    {
+      "name": "Variable Necessity",
+      "category": "business",
+      "score": 8,
+      "weight": 1,
+      "rationale": "All 4 adoption questions are genuinely needed. Segment Space ID and Notion DB ID are required; Slack channel and intent threshold are useful customizations."
+    },
+    {
+      "name": "Default Quality",
+      "category": "business",
+      "score": 7,
+      "weight": 2,
+      "rationale": "Slack channel (#sales-signals) and intent threshold (80) have good defaults. Segment Space ID and Notion DB ID have no defaults — must be provided by user."
+    }
+  ],
+  "overall": 8.65,
+  "grade": "A",
+  "issues": [
+    "No adoption_questions existed — connectors need user-specific configuration for Segment Space ID, Slack channel, and Notion database ID",
+    "Segment connector name 'segment' does not match builtin 'twilio-segment' — may need mapping in connectorRoles.ts"
+  ],
+  "fixes_applied": {
+    "template": [
+      "Added 4 adoption_questions: segment_space_id, slack_sales_channel, notion_signals_db, high_intent_score_threshold"
+    ],
+    "app_code": []
+  }
+}

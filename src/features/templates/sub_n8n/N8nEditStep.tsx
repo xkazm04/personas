@@ -4,7 +4,7 @@ import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { DraftEditStep, type DraftEditTab } from '@/features/shared/components/draft-editor';
-import { ExecutionTerminal } from '@/features/agents/sub_executions/ExecutionTerminal';
+import { ExecutionTerminal } from '@/features/agents/sub_executions';
 import { N8nEntitiesTab } from './edit/N8nEntitiesTab';
 import { N8nUseCasesTab } from './edit/N8nUseCasesTab';
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';

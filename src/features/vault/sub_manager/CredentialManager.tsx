@@ -27,7 +27,7 @@ import { useUndoDelete } from '@/features/vault/hooks/useUndoDelete';
 import { useCredentialViewFSM } from '@/features/vault/hooks/useCredentialViewFSM';
 import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
 import { useBulkHealthcheck } from '@/features/vault/hooks/useBulkHealthcheck';
-import { isUniversalOAuthConnector, getOAuthProviderId, getOAuthScopes } from '@/lib/utils/connectors';
+import { isUniversalOAuthConnector, getOAuthProviderId, getOAuthScopes, isDesktopBridge } from '@/lib/utils/connectors';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import * as api from '@/api/tauriApi';
@@ -254,6 +254,10 @@ export function CredentialManager() {
     dispatch({ type: 'GO_AUTO_SETUP', connector: catalogFormData.connector });
   }, [catalogFormData, dispatch]);
 
+  const handleDesktopDetect = useCallback(() => {
+    dispatch({ type: 'GO_ADD_DESKTOP' });
+  }, [dispatch]);
+
   // Determine which credentials support real rotation (OAuth with refresh tokens)
   const isCredentialRotatable = useCallback((serviceType: string): boolean => {
     const connector = connectorDefinitions.find((c) => c.name === serviceType);
@@ -440,6 +444,7 @@ export function CredentialManager() {
             onCreateCredential={handleCreateCredential}
             onOAuthConsent={handleTemplateOAuthConsent}
             onAutoSetup={handleAutoSetup}
+            onDesktopDetect={isDesktopBridge(viewState.connector) ? handleDesktopDetect : undefined}
             onBack={() => {
               dispatch({ type: 'CANCEL_FORM' });
               oauth.reset();

@@ -67,6 +67,9 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   google_ads:         { label: 'Google Ads',         color: '#4285F4', iconUrl: 'https://cdn.simpleicons.org/googleads/4285F4',       Icon: Megaphone },
   google_analytics:   { label: 'Google Analytics',   color: '#E37400', iconUrl: 'https://cdn.simpleicons.org/googleanalytics/E37400', Icon: BarChart },
 
+  // ── Microsoft ────────────────────────────────────────────────
+  microsoft_outlook: { label: 'Microsoft Outlook', color: '#0078D4', iconUrl: '/icons/connectors/microsoft-outlook.svg', Icon: Mail },
+
   // ── Chat & Messaging ─────────────────────────────────────────
   slack:              { label: 'Slack',              color: '#4A154B', iconUrl: '/icons/connectors/slack.svg',                          Icon: MessageSquare },
   discord:            { label: 'Discord',            color: '#5865F2', iconUrl: 'https://cdn.simpleicons.org/discord/5865F2',          Icon: MessageSquare },

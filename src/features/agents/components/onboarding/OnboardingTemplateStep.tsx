@@ -101,7 +101,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -40 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="flex flex-col gap-6 max-w-lg w-full px-6"
+      className="flex flex-col gap-6 max-w-lg 2xl:max-w-2xl 3xl:max-w-3xl 4xl:max-w-4xl w-full px-6"
     >
       <div>
         <h2 className="text-lg font-semibold text-foreground/90">Choose a Template</h2>
@@ -153,7 +153,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
         </div>
 
         {/* Template grid with layout animation */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
           <AnimatePresence mode="popLayout">
             {filteredTemplates.map((template) => {
               const Icon = getIcon(template.icon);

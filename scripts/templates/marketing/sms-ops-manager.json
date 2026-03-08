@@ -658,6 +658,76 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "twilio_phone_number",
+        "question": "What is your Twilio phone number for sending/receiving SMS?",
+        "type": "text",
+        "default": "",
+        "context": "The phone number in E.164 format (e.g. +15551234567) that receives inbound SMS and sends auto-replies. Found under Twilio Console > Phone Numbers > Active Numbers.",
+        "connector_names": ["twilio"],
+        "category": "configuration"
+      },
+      {
+        "id": "airtable_base_id",
+        "question": "What is your Airtable base ID for SMS conversation logging?",
+        "type": "text",
+        "default": "",
+        "context": "The agent maintains Contacts and SMS Messages tables in this base for full conversation history and contact management.",
+        "connector_names": ["airtable"],
+        "category": "configuration"
+      },
+      {
+        "id": "support_channel",
+        "question": "Which Slack channel should receive support SMS notifications?",
+        "type": "text",
+        "default": "#sms-support",
+        "context": "Messages classified as support requests (order issues, complaints, troubleshooting) are routed here with suggested responses.",
+        "connector_names": ["slack"],
+        "category": "configuration",
+        "use_case_ids": ["flow_inbound_sms"]
+      },
+      {
+        "id": "sales_channel",
+        "question": "Which Slack channel should receive sales SMS notifications?",
+        "type": "text",
+        "default": "#sms-sales",
+        "context": "Messages classified as sales inquiries (pricing, product questions, demos) are routed here as lead notifications.",
+        "connector_names": ["slack"],
+        "category": "configuration",
+        "use_case_ids": ["flow_inbound_sms"]
+      },
+      {
+        "id": "compliance_channel",
+        "question": "Which Slack channel should receive opt-out compliance notifications?",
+        "type": "text",
+        "default": "#sms-compliance",
+        "context": "All opt-out and opt-in events are logged to this channel for compliance auditing and team awareness.",
+        "connector_names": ["slack"],
+        "category": "configuration",
+        "use_case_ids": ["flow_opt_out"]
+      },
+      {
+        "id": "business_hours_start",
+        "question": "What time do your business hours start?",
+        "type": "select",
+        "default": "9:00 AM",
+        "options": ["7:00 AM", "8:00 AM", "9:00 AM", "10:00 AM"],
+        "context": "Auto-replies are customized based on whether messages arrive during or outside business hours.",
+        "connector_names": [],
+        "category": "configuration"
+      },
+      {
+        "id": "business_hours_end",
+        "question": "What time do your business hours end?",
+        "type": "select",
+        "default": "6:00 PM",
+        "options": ["5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM"],
+        "context": "After this time, auto-replies indicate the team is unavailable until the next business day.",
+        "connector_names": [],
+        "category": "configuration"
+      }
+    ],
     "protocol_capabilities": [
       {
         "type": "manual_review",

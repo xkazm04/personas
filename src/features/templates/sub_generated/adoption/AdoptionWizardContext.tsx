@@ -119,6 +119,7 @@ interface AdoptionWizardContextType {
 
   // Draft recovery
   saveDraftToStore: () => void;
+  discardDraft: () => void;
 }
 
 const AdoptionWizardCtx = createContext<AdoptionWizardContextType | null>(null);
@@ -204,12 +205,18 @@ export function AdoptionWizardProvider({
     wizard.init(review.test_case_name, review.id, designResult, review.design_result ?? '');
   }, [isOpen, review, wizard.init, state.backgroundAdoptId]);
 
-  // ── Restore saved draft (runs once after init) ──
+  // ── Restore saved draft (runs once after init or context restoration) ──
   useEffect(() => {
     if (draftRestoredRef.current) return;
     if (!isOpen || !storedDraft || !review) return;
     if (storedDraft.reviewId !== review.id) return;
-    if (state.step !== 'choose' || !state.designResult) return;
+
+    // Case 1: Normal restore — init completed, step='choose', designResult ready
+    const normalRestore = state.step === 'choose' && !!state.designResult;
+    // Case 2: Context restore — background transform resumed, backgroundAdoptId set
+    const contextRestore = !!state.backgroundAdoptId;
+
+    if (!normalRestore && !contextRestore) return;
 
     draftRestoredRef.current = true;
 
@@ -225,11 +232,29 @@ export function AdoptionWizardProvider({
     for (const [key, val] of Object.entries(storedDraft.variableValues)) {
       wizard.updateVariable(key, val);
     }
-    // Navigate to saved step
-    wizard.goToStep(storedDraft.step);
+
+    // Restore extended state (preferences, trigger configs, answers)
+    if (storedDraft.triggerConfigs) {
+      for (const [idx, config] of Object.entries(storedDraft.triggerConfigs)) {
+        wizard.updateTriggerConfig(Number(idx), config);
+      }
+    }
+    if (storedDraft.requireApproval !== undefined) wizard.updatePreference('requireApproval', storedDraft.requireApproval);
+    if (storedDraft.autoApproveSeverity) wizard.updatePreference('autoApproveSeverity', storedDraft.autoApproveSeverity);
+    if (storedDraft.reviewTimeout) wizard.updatePreference('reviewTimeout', storedDraft.reviewTimeout);
+    if (storedDraft.memoryEnabled !== undefined) wizard.updatePreference('memoryEnabled', storedDraft.memoryEnabled);
+    if (storedDraft.memoryScope !== undefined) wizard.updatePreference('memoryScope', storedDraft.memoryScope);
+    if (storedDraft.userAnswers) {
+      wizard.updatePreference('userAnswers', storedDraft.userAnswers);
+    }
+
+    // Navigate to saved step only on normal restore (context restore already set the step)
+    if (normalRestore) {
+      wizard.goToStep(storedDraft.step);
+    }
     // Clear the draft from store since it's now loaded
     setAdoptionDraft(null);
-  }, [isOpen, storedDraft, review, state.step, state.designResult, wizard, setAdoptionDraft]);
+  }, [isOpen, storedDraft, review, state.step, state.designResult, state.backgroundAdoptId, wizard, setAdoptionDraft]);
 
   // ── Use case flows ──
 
@@ -480,16 +505,36 @@ export function AdoptionWizardProvider({
     // Don't save if already created
     if (state.created) return;
 
+    // Save the last user-interactive step — build/create are processing steps,
+    // so resume from tune if the user closes during those phases.
+    const resumeStep: AdoptWizardStep =
+      state.step === 'build' || state.step === 'create' ? 'tune' : state.step;
+
     setAdoptionDraft({
       reviewId: state.reviewId,
       templateName: state.templateName,
-      step: state.step,
+      step: resumeStep,
       connectorSwaps: { ...state.connectorSwaps },
       connectorCredentialMap: { ...state.connectorCredentialMap },
       variableValues: { ...state.variableValues },
       savedAt: Date.now(),
+      // Extended state for full session restore
+      triggerConfigs: { ...state.triggerConfigs },
+      requireApproval: state.requireApproval,
+      autoApproveSeverity: state.autoApproveSeverity,
+      reviewTimeout: state.reviewTimeout,
+      memoryEnabled: state.memoryEnabled,
+      memoryScope: state.memoryScope,
+      userAnswers: { ...state.userAnswers },
+      backgroundAdoptId: state.backgroundAdoptId,
     });
   }, [state, setAdoptionDraft]);
+
+  const discardDraft = useCallback(() => {
+    setAdoptionDraft(null);
+    void async.cleanupAll();
+    wizard.reset();
+  }, [setAdoptionDraft, async, wizard]);
 
   // Clear draft when persona is successfully created
   useEffect(() => {
@@ -530,6 +575,7 @@ export function AdoptionWizardProvider({
       quickAdopt,
       enterFullWizard,
       saveDraftToStore,
+      discardDraft,
     }),
     [
       state,
@@ -554,6 +600,7 @@ export function AdoptionWizardProvider({
       quickAdopt,
       enterFullWizard,
       saveDraftToStore,
+      discardDraft,
     ],
   );
 

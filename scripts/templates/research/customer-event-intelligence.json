@@ -672,6 +672,44 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "segment_space_id",
+        "question": "What is your Segment Space ID for the Profiles API?",
+        "type": "text",
+        "default": "",
+        "context": "Found in Segment under Unify > Settings. Required to enrich user profiles with computed traits like plan, MRR, and company.",
+        "connector_names": ["twilio-segment"],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_sales_channel",
+        "question": "Which Slack channel should receive high-intent sales signals?",
+        "type": "text",
+        "default": "#sales-signals",
+        "context": "Real-time alerts for high-intent events (pricing page visits, demo requests) are posted here for sales team action",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "notion_signals_db",
+        "question": "What is the Notion database ID for signal logging?",
+        "type": "text",
+        "default": "",
+        "context": "A 12-property Notion database where all classified signals are logged for trend analysis. See template docs for required schema.",
+        "connector_names": ["notion"],
+        "category": "configuration"
+      },
+      {
+        "id": "high_intent_score_threshold",
+        "question": "What minimum score should trigger an immediate Slack alert?",
+        "type": "text",
+        "default": "80",
+        "context": "Events scoring above this threshold on the 0-99 intent scale will immediately notify sales via Slack",
+        "connector_names": [],
+        "category": "configuration"
+      }
+    ],
     "protocol_capabilities": [
       {
         "type": "manual_review",

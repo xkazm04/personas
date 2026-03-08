@@ -778,6 +778,83 @@
         "label": "Emits events: review requested, threshold breached",
         "context": "6 event subscription(s) configured — agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "github_repos",
+        "question": "Which GitHub repositories should be monitored?",
+        "type": "text",
+        "default": "org/repo",
+        "context": "Comma-separated owner/repo pairs to watch for PRs, issues, and releases.",
+        "connector_names": [
+          "github"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "jira_project_key",
+        "question": "Which Jira project key for auto-created tickets?",
+        "type": "text",
+        "default": "PROJ",
+        "context": "New issues and PR-linked tickets are created in this Jira project.",
+        "connector_names": [
+          "jira"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "jira_domain",
+        "question": "What is your Jira Cloud domain?",
+        "type": "text",
+        "default": "yourcompany",
+        "context": "The subdomain from your Jira URL (e.g., \"acme\" for acme.atlassian.net).",
+        "connector_names": [
+          "jira"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_dev_channel",
+        "question": "Which Slack channel for dev notifications?",
+        "type": "text",
+        "default": "#dev",
+        "context": "PR notifications, issue sync updates, and size threshold alerts are posted here.",
+        "connector_names": [
+          "slack"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_releases_channel",
+        "question": "Which Slack channel for release announcements?",
+        "type": "text",
+        "default": "#dev-releases",
+        "context": "Release version announcements with parsed changelogs go here. Leave blank to use the dev channel.",
+        "connector_names": [
+          "slack"
+        ],
+        "category": "configuration"
+      },
+      {
+        "id": "pr_size_large_threshold",
+        "question": "Line count threshold to flag a PR as Large?",
+        "type": "select",
+        "default": "500",
+        "context": "PRs with additions+deletions above this trigger a warning badge and manual review flag.",
+        "connector_names": [],
+        "category": "configuration"
+      },
+      {
+        "id": "auto_create_jira_tickets",
+        "question": "Auto-create Jira tickets for PRs with no linked issue?",
+        "type": "boolean",
+        "default": "Yes",
+        "context": "When enabled, PRs without a detectable Jira key in the branch name get a new Task ticket.",
+        "connector_names": [
+          "jira"
+        ],
+        "category": "human_in_the_loop"
+      }
     ]
   }
 }

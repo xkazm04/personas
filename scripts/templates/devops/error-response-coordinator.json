@@ -710,6 +710,53 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "sentry_project",
+        "question": "Which Sentry project should be monitored?",
+        "type": "text",
+        "default": "",
+        "context": "The Sentry project slug to monitor for errors. Found in project settings or the project URL.",
+        "connector_names": ["sentry"],
+        "category": "configuration"
+      },
+      {
+        "id": "github_repo_url",
+        "question": "Which GitHub repository should error issues be created in?",
+        "type": "text",
+        "default": "",
+        "context": "Error issues with stack traces and reproduction context will be created in this repository",
+        "connector_names": ["github"],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_alerts_channel",
+        "question": "Which Slack channel should receive critical error alerts?",
+        "type": "text",
+        "default": "#prod-alerts",
+        "context": "Critical errors (>50 events/hr or >10 affected users) are posted here immediately",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_digest_channel",
+        "question": "Which Slack channel should receive error digests and weekly reports?",
+        "type": "text",
+        "default": "#engineering-errors",
+        "context": "Non-critical errors are batched every 30 minutes, and weekly error reports are posted here",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "critical_error_threshold",
+        "question": "How many events per hour should trigger a critical alert?",
+        "type": "select",
+        "default": "50",
+        "options": ["10", "25", "50", "100"],
+        "context": "Errors exceeding this threshold per hour are classified as critical and alerted immediately",
+        "category": "configuration"
+      }
+    ],
     "protocol_capabilities": [
       {
         "type": "manual_review",

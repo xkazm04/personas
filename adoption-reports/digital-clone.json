@@ -1,0 +1,163 @@
+{
+  "templateId": "digital-clone",
+  "templateName": "Digital Clone",
+  "category": [
+    "productivity",
+    "email"
+  ],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T00:00:00Z",
+  "connectorClassification": {
+    "available": [
+      "gmail",
+      "slack",
+      "telegram",
+      "personas_database"
+    ],
+    "swapped": {},
+    "missing": []
+  },
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "schema_completeness",
+        "passed": true,
+        "detail": "All required payload fields present including customSections for database schema, auto-send graduation, and style profile"
+      },
+      {
+        "name": "flow_integrity",
+        "passed": true,
+        "detail": "Multiple flows covering message polling, classification, drafting, approval routing, sending, and feedback processing"
+      },
+      {
+        "name": "trigger_validity",
+        "passed": true,
+        "detail": "Polling every 60s for messages, 4-hourly digest schedule, manual trigger — all valid"
+      },
+      {
+        "name": "connector_role_alignment",
+        "passed": true,
+        "detail": "gmail (email), slack (chat_messaging), telegram (chat_messaging), personas_database (virtual/built-in) — all available"
+      },
+      {
+        "name": "adoption_question_fitness",
+        "passed": true,
+        "detail": "4 adoption_questions added covering Gmail filter, Slack channels, auto-send threshold, and digest interval"
+      },
+      {
+        "name": "default_value_coverage",
+        "passed": true,
+        "detail": "Gmail filter, Slack channels, auto-send threshold (20), and digest interval (4h) all have sensible defaults"
+      },
+      {
+        "name": "prompt_quality",
+        "passed": true,
+        "detail": "Identity 120w, instructions 900w+ with 11 steps, tool guidance for Gmail/Slack/Telegram/DB tools, 4 examples, comprehensive error handling per channel"
+      },
+      {
+        "name": "safety_scan",
+        "passed": true,
+        "detail": "Strong safety: human-in-the-loop by default, auto-send graduation requires 20 consecutive approvals, safety rails block financial/legal auto-sends"
+      }
+    ]
+  },
+  "dimensions": [
+    {
+      "name": "Prompt Completeness",
+      "category": "technical",
+      "score": 10,
+      "weight": 3,
+      "rationale": "Identity 120w with 3 operational modes explained, instructions cover 11 detailed steps totaling 900+ words including SQL statements, tool guidance for 4 tool types (Gmail, Slack HTTP, Telegram HTTP, SQLite), 4 examples (client email, colleague Slack, social Telegram, style learning from edits), error handling per channel with cross-channel resilience."
+    },
+    {
+      "name": "Tool-Prompt Alignment",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "gmail_read/search/send/mark_read, http_request for Slack/Telegram, db_query for SQLite — all exactly match suggested_tools. Tool guidance includes specific API calls and SQL statements."
+    },
+    {
+      "name": "Trigger Coherence",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "60-second polling for real-time message processing, 4-hour digest schedule, and manual trigger for ad-hoc outbound. All crons valid and well-matched to workflows."
+    },
+    {
+      "name": "Connector Coverage",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "All 4 connectors have builtins: gmail, slack, telegram, personas_database (virtual). Credential fields and setup instructions are thorough."
+    },
+    {
+      "name": "Memory Design",
+      "category": "technical",
+      "score": 10,
+      "weight": 1,
+      "rationale": "Exceptional: per-recipient style profiles in agent_memory with formality scale, greeting/sign-off patterns, emoji usage, vocabulary notes, and confidence scoring. Local SQLite for message logging and contact tracking. Style profiles evolve via feedback analysis."
+    },
+    {
+      "name": "Error Handling",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "Per-channel error handling (Gmail auth, Slack rate limits, Telegram bot blocked), cross-channel resilience (one channel down doesn't halt others), database self-healing (auto-create tables), duplicate detection via UNIQUE constraints, and channel health monitoring."
+    },
+    {
+      "name": "Use Case Fidelity",
+      "category": "technical",
+      "score": 10,
+      "weight": 2,
+      "rationale": "Prompt covers all 11 steps from polling through feedback processing and style learning. Auto-send graduation protocol is fully specified with safety rails."
+    },
+    {
+      "name": "Value Clarity",
+      "category": "business",
+      "score": 10,
+      "weight": 2,
+      "rationale": "Exceptional value clarity: replaces the cognitive load of managing messages across 3 platforms with a learning agent that mirrors your communication style and gradually automates trusted relationships."
+    },
+    {
+      "name": "Execution Feasibility",
+      "category": "business",
+      "score": 8,
+      "weight": 3,
+      "rationale": "All connectors have builtins. Gmail, Slack, and Telegram APIs are standard. However, the multi-channel setup (3 messaging platforms) adds adoption complexity. Database is built-in and auto-initializes."
+    },
+    {
+      "name": "Differentiation",
+      "category": "business",
+      "score": 10,
+      "weight": 1,
+      "rationale": "Per-recipient adaptive style learning, auto-send graduation protocol with safety rails, multi-channel unified inbox, and feedback-driven style evolution are uniquely sophisticated. This is not achievable with simple automation."
+    },
+    {
+      "name": "Variable Necessity",
+      "category": "business",
+      "score": 8,
+      "weight": 1,
+      "rationale": "4 adoption questions are well-chosen: Gmail filter customizes inbox scope, Slack channels target monitoring, auto-send threshold controls trust graduation, digest interval sets reporting frequency."
+    },
+    {
+      "name": "Default Quality",
+      "category": "business",
+      "score": 9,
+      "weight": 2,
+      "rationale": "All 4 questions have good defaults. Gmail filter excludes noise categories. Slack defaults to all DMs. Auto-send at 20 is the documented recommended threshold. Digest at 4 hours is reasonable. Template works immediately with defaults."
+    }
+  ],
+  "overall": 9.48,
+  "grade": "A",
+  "issues": [
+    "No adoption_questions existed — connectors need user-specific configuration",
+    "Multi-channel setup (Gmail + Slack + Telegram) may be overwhelming for first-time adopters — consider a phased onboarding approach"
+  ],
+  "fixes_applied": {
+    "template": [
+      "Added 4 adoption_questions: gmail_filter, slack_channels, auto_send_threshold, digest_interval_hours"
+    ],
+    "app_code": []
+  }
+}

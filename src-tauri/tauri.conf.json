@@ -81,7 +81,10 @@
       "digestAlgorithm": "sha256",
       "timestampUrl": "http://timestamp.digicert.com",
       "wix": {},
-      "nsis": {}
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "languages": ["English"]
+      }
     }
   }
 }

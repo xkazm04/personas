@@ -18,15 +18,15 @@ import { useAuthStore } from '@/stores/authStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { useMemo, useEffect } from 'react';
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
-import { ChartErrorBoundary } from '@/features/overview/sub_usage/charts/ChartErrorBoundary';
-import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
-import { ChartTooltip } from '@/features/overview/sub_usage/charts/ChartTooltip';
-import { GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
+import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
+import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
+import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
+import { GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/libs/chartConstants';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
 import DeployFirstAutomationCard from '@/features/overview/components/DeployFirstAutomationCard';
 import { HealthDigestPanel } from '@/features/agents/health';
-import { MemoryActionsPanel } from '@/features/overview/sub_memories/MemoryActionCard';
+import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
 
 // ---------------------------------------------------------------------------
 // DashboardHome
@@ -197,10 +197,10 @@ export default function DashboardHome() {
           {/* Memory Insight Suggestions */}
           <MemoryActionsPanel actions={memoryActions} onDismiss={dismissMemoryAction} />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
 
             {/* Recent Activity */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2 2xl:col-span-3 space-y-4">
               <div className="flex items-center justify-between px-1">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
                   <Clock className="w-4 h-4" />

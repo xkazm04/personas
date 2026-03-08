@@ -1,10 +1,10 @@
-import { useState, useMemo, useRef, useEffect, useCallback, type ReactNode } from 'react';
-import { Sliders, Zap, Sparkles, Bell, ShieldCheck, Gauge, ChevronRight, Lock, AlertCircle } from 'lucide-react';
-import { TriggerConfigPanel } from '../review/TriggerConfigPanel';
-import { ConfigureStep } from '@/features/shared/components/ConfigureStep';
+import { useMemo } from 'react';
+import { Sliders, Zap, Sparkles, ShieldCheck, Lock, AlertCircle, Brain, Clock, Webhook, MousePointerClick, Radio, MessageCircle, Activity } from 'lucide-react';
+import { N8nQuestionStepper } from '@/features/templates/sub_n8n/N8nQuestionStepper';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
 import { validateVariable } from '@/lib/utils/variableSanitizer';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import type { SuggestedTrigger, AdoptionQuestion } from '@/lib/types/designTypes';
 
 // ── Shared styles ─────────────────────────────────────────────────────
 
@@ -12,103 +12,17 @@ const inputClass = 'w-full px-2.5 py-1.5 bg-background/50 border border-primary/
 const labelClass = 'block text-sm font-medium text-foreground/80';
 const descClass = 'text-sm text-muted-foreground/50 mt-0.5';
 const fieldClass = 'space-y-1';
+const cardClass = 'rounded-xl border border-primary/10 bg-secondary/20 p-4';
 
-// ── Notification channel options ──────────────────────────────────────
+// ── Trigger type icon map ─────────────────────────────────────────────
 
-const CHANNEL_OPTIONS = [
-  { value: 'slack', label: 'Slack' },
-  { value: 'email', label: 'Email' },
-  { value: 'telegram', label: 'Telegram' },
-] as const;
-
-// ── Section completion metadata ───────────────────────────────────────
-
-interface SectionMeta {
-  id: string;
-  icon: ReactNode;
-  title: string;
-  configured: number;
-  total: number;
-  hasMissing: boolean;
-  isRequired: boolean;
-}
-
-// ── Accordion panel ───────────────────────────────────────────────────
-
-function AccordionSection({
-  meta,
-  isOpen,
-  onToggle,
-  children,
-}: {
-  meta: SectionMeta;
-  isOpen: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-}) {
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState<number | undefined>(isOpen ? undefined : 0);
-
-  useEffect(() => {
-    if (!contentRef.current) return;
-    if (isOpen) {
-      setHeight(contentRef.current.scrollHeight);
-      const timer = setTimeout(() => setHeight(undefined), 200);
-      return () => clearTimeout(timer);
-    } else {
-      setHeight(contentRef.current.scrollHeight);
-      requestAnimationFrame(() => setHeight(0));
-    }
-  }, [isOpen]);
-
-  const allDone = meta.configured === meta.total && meta.total > 0;
-
-  return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center gap-2 p-3 text-left hover:bg-secondary/30 transition-colors"
-      >
-        <ChevronRight
-          className={`w-3 h-3 text-muted-foreground/40 transition-transform duration-200 ${
-            isOpen ? 'rotate-90' : ''
-          }`}
-        />
-        <span className="text-muted-foreground/60">{meta.icon}</span>
-        <span className="text-sm font-medium text-foreground/70 flex-1">
-          {meta.title}
-        </span>
-
-        {/* Completion label */}
-        {meta.total > 0 && (
-          <span className={`text-sm ${
-            allDone
-              ? 'text-emerald-400/60'
-              : meta.hasMissing
-                ? 'text-amber-400/60'
-                : 'text-muted-foreground/60'
-          }`}>
-            {meta.isRequired
-              ? `${meta.configured}/${meta.total} required`
-              : allDone ? 'Configured' : 'Optional'
-            }
-          </span>
-        )}
-      </button>
-
-      <div
-        ref={contentRef}
-        style={{ maxHeight: height === undefined ? 'none' : `${height}px` }}
-        className="transition-[max-height] duration-200 ease-in-out overflow-hidden"
-      >
-        <div className="px-4 pb-4">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
+const TRIGGER_ICONS: Record<SuggestedTrigger['trigger_type'], typeof Clock> = {
+  schedule: Clock,
+  webhook: Webhook,
+  manual: MousePointerClick,
+  polling: Radio,
+  event: Activity,
+};
 
 // ── Component ─────────────────────────────────────────────────────────
 
@@ -131,193 +45,75 @@ export function TuneStep() {
     questions,
     userAnswers,
     questionGenerating,
-    notificationChannels,
-    alertChannel,
-    alertSeverity,
     requireApproval,
     autoApproveSeverity,
     reviewTimeout,
-    maxConcurrent,
-    timeoutMs,
-    maxBudgetUsd,
+    memoryEnabled,
+    memoryScope,
   } = state;
 
   const hasVariables = adoptionRequirements.length > 0;
-  const hasTriggers = selectedTriggerIndices.size > 0 && (designResult?.suggested_triggers?.length ?? 0) > 0;
-  // Only show questions section when they've actually loaded
   const hasQuestions = questions !== null && questions.length > 0;
-  // Determine if template uses notifications / approval
-  const hasNotificationChannels = (designResult?.suggested_notification_channels?.length ?? 0) > 0;
 
-  // ── Compute section completion metadata ──
+  // ── Template adoption questions (filtered by selected use cases) ──
 
-  const sections = useMemo<SectionMeta[]>(() => {
-    const result: SectionMeta[] = [];
+  const adoptionQuestions = useMemo<AdoptionQuestion[]>(() => {
+    const all = designResult?.adoption_questions;
+    if (!all || all.length === 0) return [];
+    const selectedIds = state.selectedUseCaseIds;
+    return all.filter((q) => {
+      // Show if no use_case_ids constraint, or if at least one selected use case matches
+      if (!q.use_case_ids || q.use_case_ids.length === 0) return true;
+      return q.use_case_ids.some((id) => selectedIds.has(id));
+    });
+  }, [designResult, state.selectedUseCaseIds]);
 
-    if (hasVariables) {
-      const requiredVars = adoptionRequirements.filter((v) => v.required);
-      const total = requiredVars.length;
-      const configured = requiredVars.filter((v) => {
+  const hasAdoptionQuestions = adoptionQuestions.length > 0;
+
+  // ── Selected triggers ──
+
+  const selectedTriggers = useMemo(() => {
+    if (!designResult?.suggested_triggers) return [];
+    return designResult.suggested_triggers
+      .map((t, i) => ({ trigger: t, originalIndex: i }))
+      .filter(({ originalIndex }) => selectedTriggerIndices.has(originalIndex));
+  }, [designResult, selectedTriggerIndices]);
+
+  // ── Variable validation summary ──
+
+  const hasRequiredMissing = useMemo(() => {
+    if (!hasVariables) return false;
+    return adoptionRequirements
+      .filter((v) => v.required)
+      .some((v) => {
         const val = variableValues[v.key] ?? v.default_value ?? '';
-        if (!val.trim()) return false;
+        if (!val.trim()) return true;
         const check = validateVariable(val, v);
-        return check.valid;
-      }).length;
-      result.push({
-        id: 'variables',
-        icon: <Sliders className="w-4 h-4" />,
-        title: 'Template Configuration',
-        configured,
-        total,
-        hasMissing: configured < total,
-        isRequired: true,
+        return !check.valid;
       });
-    }
-
-    // Only show notifications if the template has notification channels
-    if (hasNotificationChannels) {
-      const notifConfigured = [
-        notificationChannels.length > 0,
-        alertChannel.trim().length > 0,
-        alertSeverity !== 'all',
-      ].filter(Boolean).length;
-      result.push({
-        id: 'notifications',
-        icon: <Bell className="w-4 h-4" />,
-        title: 'Notifications',
-        configured: notifConfigured,
-        total: 3,
-        hasMissing: false,
-        isRequired: false,
-      });
-    }
-
-    // Human Review — always relevant as a safety control
-    const reviewConfigured = [
-      requireApproval,
-      autoApproveSeverity !== 'info',
-      reviewTimeout !== '1h',
-    ].filter(Boolean).length;
-    result.push({
-      id: 'review',
-      icon: <ShieldCheck className="w-4 h-4" />,
-      title: 'Human Review',
-      configured: reviewConfigured,
-      total: 3,
-      hasMissing: false,
-      isRequired: false,
-    });
-
-    // Execution Limits
-    const limitsConfigured = [
-      maxConcurrent !== 1,
-      timeoutMs !== 300000,
-      maxBudgetUsd != null,
-    ].filter(Boolean).length;
-    result.push({
-      id: 'limits',
-      icon: <Gauge className="w-4 h-4" />,
-      title: 'Execution Limits',
-      configured: limitsConfigured,
-      total: 3,
-      hasMissing: !!(sandboxPolicy?.budgetEnforced && maxBudgetUsd == null),
-      isRequired: !!sandboxPolicy?.budgetEnforced,
-    });
-
-    if (hasTriggers) {
-      const selectedCount = selectedTriggerIndices.size;
-      const configuredCount = Object.keys(triggerConfigs).length;
-      result.push({
-        id: 'triggers',
-        icon: <Zap className="w-4 h-4" />,
-        title: 'Trigger Setup',
-        configured: Math.min(configuredCount, selectedCount),
-        total: selectedCount,
-        hasMissing: false,
-        isRequired: false,
-      });
-    }
-
-    if (hasQuestions) {
-      const totalQ = questions.length;
-      const answeredQ = questions.filter((q: { id: string }) => userAnswers[q.id]?.trim()).length;
-      result.push({
-        id: 'questions',
-        icon: <Sparkles className="w-4 h-4" />,
-        title: 'AI Configuration',
-        configured: answeredQ,
-        total: totalQ,
-        hasMissing: totalQ > 0 && answeredQ < totalQ,
-        isRequired: false,
-      });
-    }
-
-    return result;
-  }, [
-    hasVariables, adoptionRequirements, variableValues,
-    hasNotificationChannels, notificationChannels, alertChannel, alertSeverity,
-    requireApproval, autoApproveSeverity, reviewTimeout,
-    maxConcurrent, timeoutMs, maxBudgetUsd, sandboxPolicy,
-    hasTriggers, selectedTriggerIndices, triggerConfigs,
-    hasQuestions, questions, userAnswers,
-  ]);
-
-  // ── Accordion state: auto-expand first section with missing required fields ──
-
-  const [openSections, setOpenSections] = useState<Set<string>>(() => {
-    const initial = new Set<string>();
-    const firstMissing = sections.find((s) => s.hasMissing);
-    if (firstMissing) {
-      initial.add(firstMissing.id);
-    } else if (sections[0]) {
-      initial.add(sections[0].id);
-    }
-    return initial;
-  });
-
-  const toggleSection = useCallback((id: string) => {
-    setOpenSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  function toggleNotificationChannel(channel: string) {
-    const current = [...notificationChannels];
-    const idx = current.indexOf(channel);
-    if (idx >= 0) current.splice(idx, 1);
-    else current.push(channel);
-    wizard.updatePreference('notificationChannels', current);
-  }
-
-  const sectionMap = useMemo(
-    () => new Map(sections.map((s) => [s.id, s])),
-    [sections],
-  );
+  }, [hasVariables, adoptionRequirements, variableValues]);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {/* Step header */}
       <div className="mb-1">
         <h3 className="text-base font-semibold text-foreground">Configure Persona</h3>
         <p className="text-sm text-muted-foreground/60 mt-0.5">
-          Set template variables, notification preferences, and safety limits.
-          {sections.some((s) => s.isRequired && s.hasMissing) && (
+          Set template variables, triggers, review policy, and memory.
+          {hasRequiredMissing && (
             <span className="text-amber-400/70 ml-1">Required fields marked below.</span>
           )}
         </p>
       </div>
 
-      {/* Template Variables */}
-      {sectionMap.has('variables') && (
-        <AccordionSection
-          meta={sectionMap.get('variables')!}
-          isOpen={openSections.has('variables')}
-          onToggle={() => toggleSection('variables')}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {/* Template Variables — simple card */}
+      {hasVariables && (
+        <div className={cardClass}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-muted-foreground/60"><Sliders className="w-4 h-4" /></span>
+            <span className="text-sm font-medium text-foreground/70">Template Configuration</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 3xl:grid-cols-3 gap-3">
             {adoptionRequirements.map((variable) => {
               const value = variableValues[variable.key] ?? variable.default_value ?? '';
               const validation = value.trim() ? validateVariable(value, variable) : null;
@@ -378,77 +174,137 @@ export function TuneStep() {
               );
             })}
           </div>
-        </AccordionSection>
+        </div>
       )}
 
-      {/* Notification Preferences */}
-      {sectionMap.has('notifications') && (
-        <AccordionSection
-          meta={sectionMap.get('notifications')!}
-          isOpen={openSections.has('notifications')}
-          onToggle={() => toggleSection('notifications')}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div className={fieldClass}>
-              <label className={labelClass}>Notify via</label>
-              <div className="flex gap-1.5 flex-wrap mt-1">
-                {CHANNEL_OPTIONS.map(({ value, label }) => {
-                  const active = notificationChannels.includes(value);
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => toggleNotificationChannel(value)}
-                      className={`px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${
-                        active
-                          ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
-                          : 'bg-secondary/30 text-muted-foreground/60 border-primary/10 hover:bg-secondary/50'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className={fieldClass}>
-              <label className={labelClass}>Alert target</label>
-              <p className={descClass}>Channel or email</p>
-              <input
-                type="text"
-                value={alertChannel}
-                onChange={(e) => wizard.updatePreference('alertChannel', e.target.value)}
-                placeholder="#alerts or oncall@..."
-                className={inputClass}
-              />
-            </div>
-
-            <div className={fieldClass}>
-              <label className={labelClass}>Severity threshold</label>
-              <p className={descClass}>Minimum severity to alert</p>
-              <ThemedSelect
-                value={alertSeverity}
-                onChange={(e) => wizard.updatePreference('alertSeverity', e.target.value)}
-                className="py-1.5 px-2.5"
-              >
-                <option value="all">All events</option>
-                <option value="warning_critical">Warning + Critical</option>
-                <option value="critical_only">Critical only</option>
-              </ThemedSelect>
-            </div>
+      {/* Three-column layout: Trigger Setup | Human Review | Memory */}
+      <div className="grid grid-cols-1 md:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-6 gap-4">
+        {/* Column 1: Trigger Setup */}
+        <div className={cardClass}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-amber-400/70"><Zap className="w-4 h-4" /></span>
+            <span className="text-sm font-medium text-foreground/70">Trigger Setup</span>
           </div>
-        </AccordionSection>
-      )}
 
-      {/* Human Review */}
-      {sectionMap.has('review') && (
-        <AccordionSection
-          meta={sectionMap.get('review')!}
-          isOpen={openSections.has('review')}
-          onToggle={() => toggleSection('review')}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {selectedTriggers.length === 0 ? (
+            <p className="text-sm text-muted-foreground/40 italic">No triggers selected</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {selectedTriggers.map(({ trigger, originalIndex }) => {
+                const Icon = TRIGGER_ICONS[trigger.trigger_type];
+                const currentConfig = triggerConfigs[originalIndex] ?? {};
+
+                return (
+                  <div key={originalIndex} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Icon className="w-3.5 h-3.5 text-amber-500/70" />
+                      <span className="text-sm font-medium text-foreground/80 capitalize">
+                        {trigger.trigger_type}
+                      </span>
+                    </div>
+                    {trigger.description && (
+                      <p className={descClass}>{trigger.description}</p>
+                    )}
+
+                    {trigger.trigger_type === 'schedule' && (
+                      <div className={fieldClass}>
+                        <label className={labelClass}>When should this run?</label>
+                        <input
+                          type="text"
+                          className={inputClass}
+                          placeholder="Every weekday at 9am"
+                          value={
+                            currentConfig.schedule ??
+                            currentConfig.cron ??
+                            (trigger.config.cron as string | undefined) ??
+                            ''
+                          }
+                          onChange={(e) =>
+                            wizard.updateTriggerConfig(originalIndex, {
+                              ...currentConfig,
+                              schedule: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    )}
+
+                    {trigger.trigger_type === 'webhook' && (
+                      <div className={fieldClass}>
+                        <label className={labelClass}>Webhook URL</label>
+                        <input
+                          type="text"
+                          className={inputClass}
+                          placeholder="https://..."
+                          value={
+                            currentConfig.url ??
+                            (trigger.config.url as string | undefined) ??
+                            ''
+                          }
+                          onChange={(e) =>
+                            wizard.updateTriggerConfig(originalIndex, {
+                              ...currentConfig,
+                              url: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    )}
+
+                    {trigger.trigger_type === 'polling' && (
+                      <div className={fieldClass}>
+                        <label className={labelClass}>Check interval</label>
+                        <input
+                          type="text"
+                          className={inputClass}
+                          placeholder="Every 5 minutes"
+                          value={
+                            currentConfig.interval ??
+                            (trigger.config.interval as string | undefined) ??
+                            ''
+                          }
+                          onChange={(e) =>
+                            wizard.updateTriggerConfig(originalIndex, {
+                              ...currentConfig,
+                              interval: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    )}
+
+                    {trigger.trigger_type === 'manual' && (
+                      <p className="text-sm text-muted-foreground/40 italic">
+                        Triggered manually — no configuration needed
+                      </p>
+                    )}
+
+                    {trigger.trigger_type === 'event' && (
+                      <p className="text-sm text-muted-foreground/40 italic">
+                        Triggered by system events — no configuration needed
+                      </p>
+                    )}
+
+                    {/* Separator between triggers */}
+                    {selectedTriggers.length > 1 && originalIndex !== selectedTriggers[selectedTriggers.length - 1]?.originalIndex && (
+                      <div className="border-t border-primary/5 mt-1" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Column 2: Human Review */}
+        <div className={cardClass}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-violet-400/70"><ShieldCheck className="w-4 h-4" /></span>
+            <span className="text-sm font-medium text-foreground/70">Human Review</span>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {/* Require approval toggle */}
             <div className={fieldClass}>
               <label className={labelClass}>
                 Require approval
@@ -485,6 +341,7 @@ export function TuneStep() {
               </label>
             </div>
 
+            {/* Auto-approve severity */}
             <div className={fieldClass}>
               <label className={labelClass}>Auto-approve</label>
               <p className={descClass}>Skip review for lower severity</p>
@@ -499,6 +356,7 @@ export function TuneStep() {
               </ThemedSelect>
             </div>
 
+            {/* Review timeout */}
             <div className={fieldClass}>
               <label className={labelClass}>Review timeout</label>
               <p className={descClass}>Auto-reject after timeout</p>
@@ -514,124 +372,147 @@ export function TuneStep() {
               </ThemedSelect>
             </div>
           </div>
-        </AccordionSection>
-      )}
+        </div>
 
-      {/* Execution Limits */}
-      {sectionMap.has('limits') && (
-        <AccordionSection
-          meta={sectionMap.get('limits')!}
-          isOpen={openSections.has('limits')}
-          onToggle={() => toggleSection('limits')}
-        >
-          {sandboxPolicy?.budgetEnforced && maxBudgetUsd == null && (
-            <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-amber-500/10 border border-amber-500/15">
-              <AlertCircle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-              <span className="text-sm text-amber-300/80">Sandbox mode requires a budget cap for safety.</span>
-            </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div className={fieldClass}>
-              <label className={labelClass}>
-                Max concurrent
-                {sandboxPolicy && (
-                  <span className="inline-flex items-center gap-0.5 ml-1.5 text-amber-400/70 text-sm">
-                    <Lock className="w-2.5 h-2.5" /> Max {sandboxPolicy.maxConcurrent}
-                  </span>
-                )}
-              </label>
-              <p className={descClass}>Parallel run limit</p>
-              <input
-                type="number"
-                min={1}
-                max={sandboxPolicy ? sandboxPolicy.maxConcurrent : 10}
-                value={Math.min(maxConcurrent, sandboxPolicy?.maxConcurrent ?? 10)}
-                onChange={(e) => {
-                  const cap = sandboxPolicy?.maxConcurrent ?? 10;
-                  wizard.updatePreference('maxConcurrent', Math.min(cap, Math.max(1, parseInt(e.target.value) || 1)));
-                }}
-                className={inputClass}
-              />
-            </div>
+        {/* Column 3: Memory */}
+        <div className={cardClass}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-emerald-400/70"><Brain className="w-4 h-4" /></span>
+            <span className="text-sm font-medium text-foreground/70">Memory</span>
+          </div>
 
+          <p className={`${descClass} mb-3`}>
+            Persona retains learned patterns and preferences across runs
+          </p>
+
+          <div className="flex flex-col gap-3">
+            {/* Memory enabled toggle */}
             <div className={fieldClass}>
-              <label className={labelClass}>Timeout per run</label>
-              <p className={descClass}>Max execution time</p>
-              <ThemedSelect
-                value={String(timeoutMs)}
-                onChange={(e) => wizard.updatePreference('timeoutMs', parseInt(e.target.value))}
-                className="py-1.5 px-2.5"
+              <label className={labelClass}>Memory enabled</label>
+              <label
+                className={`mt-1 inline-flex w-11 h-6 rounded-full border transition-colors items-center cursor-pointer ${
+                  memoryEnabled
+                    ? 'bg-emerald-500/30 border-emerald-500/40 justify-end'
+                    : 'bg-secondary/40 border-primary/15 justify-start'
+                }`}
               >
-                <option value="300000">5 minutes</option>
-                <option value="900000">15 minutes</option>
-                <option value="1800000">30 minutes</option>
-                <option value="3600000">1 hour</option>
-                <option value="0">No limit</option>
-              </ThemedSelect>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  aria-checked={memoryEnabled}
+                  checked={memoryEnabled}
+                  onChange={() => wizard.updatePreference('memoryEnabled', !memoryEnabled)}
+                  className="sr-only"
+                />
+                <div className={`w-4.5 h-4.5 rounded-full mx-0.5 transition-colors ${
+                  memoryEnabled ? 'bg-emerald-400' : 'bg-muted-foreground/30'
+                }`} />
+              </label>
             </div>
 
+            {/* Memory scope */}
             <div className={fieldClass}>
-              <label className={labelClass}>
-                Budget cap (USD)
-                {sandboxPolicy?.budgetEnforced && (
-                  <span className="inline-flex items-center gap-0.5 ml-1.5 text-amber-400/70 text-sm">
-                    <Lock className="w-2.5 h-2.5" /> Required
-                  </span>
-                )}
-              </label>
-              <p className={descClass}>{sandboxPolicy?.budgetEnforced ? 'Required in sandbox mode' : 'Leave empty for no limit'}</p>
+              <label className={labelClass}>Memory scope</label>
+              <p className={descClass}>Guide what the persona remembers</p>
               <input
-                type="number"
-                min={sandboxPolicy?.budgetEnforced ? 0.5 : 0}
-                step={0.5}
-                value={maxBudgetUsd ?? (sandboxPolicy?.budgetEnforced ? 5 : '')}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (sandboxPolicy?.budgetEnforced && (val === '' || parseFloat(val) <= 0)) {
-                    wizard.updatePreference('maxBudgetUsd', 0.5);
-                  } else {
-                    wizard.updatePreference('maxBudgetUsd', val === '' ? null : parseFloat(val));
-                  }
-                }}
-                placeholder={sandboxPolicy?.budgetEnforced ? '$5.00' : 'No limit'}
+                type="text"
+                value={memoryScope}
+                onChange={(e) => wizard.updatePreference('memoryScope', e.target.value)}
+                placeholder="What should the persona remember between runs?"
                 className={inputClass}
+                disabled={!memoryEnabled}
               />
             </div>
           </div>
-        </AccordionSection>
+        </div>
+      </div>
+
+      {/* Template-specific adoption questions */}
+      {hasAdoptionQuestions && (
+        <div className={cardClass}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-blue-400/70"><MessageCircle className="w-4 h-4" /></span>
+            <span className="text-sm font-medium text-foreground/70">Setup Questions</span>
+            <span className="text-sm text-muted-foreground/40 ml-auto">{adoptionQuestions.length} questions</span>
+          </div>
+          <p className={`${descClass} mb-3`}>
+            These questions help customize the persona for your specific setup.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 3xl:grid-cols-3 gap-3">
+            {adoptionQuestions.map((q) => {
+              const answer = userAnswers[q.id] ?? q.default ?? '';
+              return (
+                <div key={q.id} className={fieldClass}>
+                  <label className={labelClass}>{q.question}</label>
+                  {q.context && <p className={descClass}>{q.context}</p>}
+
+                  {q.type === 'select' && q.options ? (
+                    <ThemedSelect
+                      value={answer}
+                      onChange={(e) => wizard.answerUpdated(q.id, e.target.value)}
+                      className="py-1.5 px-2.5"
+                    >
+                      <option value="">Select...</option>
+                      {q.options.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </ThemedSelect>
+                  ) : q.type === 'boolean' ? (
+                    <div className="flex gap-2 mt-1">
+                      {(q.options ?? ['Yes', 'No']).map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => wizard.answerUpdated(q.id, opt)}
+                          className={`px-3 py-1 text-sm font-medium rounded-lg border transition-colors ${
+                            answer === opt
+                              ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
+                              : 'bg-secondary/30 text-muted-foreground/60 border-primary/10 hover:bg-secondary/50'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      value={answer}
+                      onChange={(e) => wizard.answerUpdated(q.id, e.target.value)}
+                      placeholder={q.default ?? ''}
+                      className={inputClass}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
-      {/* Trigger Configuration */}
-      {sectionMap.has('triggers') && designResult?.suggested_triggers && (
-        <AccordionSection
-          meta={sectionMap.get('triggers')!}
-          isOpen={openSections.has('triggers')}
-          onToggle={() => toggleSection('triggers')}
-        >
-          <TriggerConfigPanel
-            triggers={designResult.suggested_triggers}
-            selectedIndices={selectedTriggerIndices}
-            configs={triggerConfigs}
-            onConfigChange={wizard.updateTriggerConfig}
-          />
-        </AccordionSection>
-      )}
-
-      {/* AI Questions — only shown when loaded */}
-      {sectionMap.has('questions') && (
-        <AccordionSection
-          meta={sectionMap.get('questions')!}
-          isOpen={openSections.has('questions')}
-          onToggle={() => toggleSection('questions')}
-        >
-          <ConfigureStep
+      {/* AI Questions — card stepper (same UX as n8n import) */}
+      {hasQuestions && (
+        <div className={cardClass}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-violet-400/70"><Sparkles className="w-4 h-4" /></span>
+              <span className="text-sm font-medium text-foreground/70">AI Configuration</span>
+              <span className="text-sm text-muted-foreground/40">{questions.length} questions</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleSkipQuestions}
+              className="text-sm text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+            >
+              Skip all
+            </button>
+          </div>
+          <N8nQuestionStepper
             questions={questions}
             userAnswers={userAnswers}
-            questionGenerating={questionGenerating}
             onAnswerUpdated={(questionId, answer) => wizard.answerUpdated(questionId, answer)}
-            onSkip={handleSkipQuestions}
           />
-        </AccordionSection>
+        </div>
       )}
 
       {/* Loading indicator for questions generation (shown inline, not as a section) */}

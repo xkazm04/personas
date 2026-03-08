@@ -40,3 +40,22 @@ export function getOAuthScopes(connector: ConnectorDefinition): string[] {
   const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
   return Array.isArray(metadata.oauth_scopes) ? metadata.oauth_scopes as string[] : [];
 }
+
+/**
+ * Checks whether a connector is a desktop bridge (local app, not an online API).
+ * Desktop bridges connect to locally installed tools like VS Code, Docker, Terminal, or Obsidian.
+ */
+export function isDesktopBridge(connector: ConnectorDefinition): boolean {
+  const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
+  return metadata.connection_mode === 'desktop_bridge';
+}
+
+/**
+ * Get the bridge name for a desktop bridge connector (e.g., "vscode", "docker").
+ * Returns null if the connector is not a desktop bridge.
+ */
+export function getDesktopBridgeName(connector: ConnectorDefinition): string | null {
+  const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
+  if (metadata.connection_mode !== 'desktop_bridge') return null;
+  return typeof metadata.bridge_name === 'string' ? metadata.bridge_name : null;
+}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Brain, Network } from 'lucide-react';
-import MemoriesPage from '@/features/overview/sub_memories/MemoriesPage';
-import KnowledgeGraphDashboard from '@/features/overview/sub_knowledge/KnowledgeGraphDashboard';
+import MemoriesPage from '@/features/overview/sub_memories/components/MemoriesPage';
+import KnowledgeGraphDashboard from '@/features/overview/sub_knowledge/components/KnowledgeGraphDashboard';
 
 type KnowledgeSubtab = 'memories' | 'patterns';
 

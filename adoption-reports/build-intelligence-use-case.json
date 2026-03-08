@@ -1,0 +1,139 @@
+{
+  "templateId": "build-intelligence-use-case",
+  "templateName": "Build Intelligence Use Case",
+  "category": [
+    "development"
+  ],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T19:05:28.575Z",
+  "connectorClassification": {
+    "available": [
+      "circleci",
+      "slack",
+      "github"
+    ],
+    "swapped": {},
+    "missing": []
+  },
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "schema_completeness",
+        "passed": true
+      },
+      {
+        "name": "flow_integrity",
+        "passed": true,
+        "detail": "3 use_case_flows with connected directed graphs"
+      },
+      {
+        "name": "trigger_validity",
+        "passed": true,
+        "detail": "2 triggers: webhook from CircleCI + weekly Monday 9AM schedule"
+      },
+      {
+        "name": "safety_scan",
+        "passed": true,
+        "detail": "0 critical, 0 info findings"
+      }
+    ]
+  },
+  "dimensions": [
+    {
+      "name": "Prompt Completeness",
+      "category": "technical",
+      "score": 10,
+      "weight": 3,
+      "rationale": "Identity >50 words. Instructions >200 words with 8 numbered steps covering event triage, log fetching, root cause analysis, flaky test detection, Slack notifications, GitHub PR comments, and memory updates. Tool guidance with full API specs for CircleCI, Slack, GitHub. Three detailed examples (compilation failure, flaky test, recovery). Comprehensive error handling section."
+    },
+    {
+      "name": "Tool-Prompt Alignment",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "http_request mapped to CircleCI v2 API, Slack Web API, GitHub REST v3 with specific endpoints and auth headers. file_read/file_write for flaky_tests.json and build_history.json. No phantom tools."
+    },
+    {
+      "name": "Trigger Coherence",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Webhook for real-time CircleCI pipeline events + weekly Monday 9AM schedule for flaky test digest. Both match corresponding prompt workflow sections."
+    },
+    {
+      "name": "Connector Coverage",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "All 3 service_flow entries (CircleCI, Slack, GitHub) have complete connector definitions with credential fields, setup instructions, and API base URLs."
+    },
+    {
+      "name": "Memory Design",
+      "category": "technical",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Uses local JSON files for flaky test tracking and build history. Adequate for the use case but could benefit from agent_memory for cross-run pattern recognition."
+    },
+    {
+      "name": "Error Handling",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Per-service error handling: CircleCI (401, 404, 429, 5xx), Slack (channel_not_found, not_in_channel, rate_limited), GitHub (404 on PR, 403 permissions, 422 body too large), log parsing failures, and local state errors."
+    },
+    {
+      "name": "Use Case Fidelity",
+      "category": "functional",
+      "score": 9,
+      "weight": 2,
+      "rationale": "All 3 use_case_flows covered: build failure analysis and notification, weekly flaky test digest, PR comment deduplication and update."
+    },
+    {
+      "name": "Value Clarity",
+      "category": "functional",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Clear value: replaces 4 separate CircleCI workflows. Enriched failure analysis with file/line references, flaky test tracking with scores, PR comments with fix suggestions."
+    },
+    {
+      "name": "Execution Feasibility",
+      "category": "functional",
+      "score": 9,
+      "weight": 3,
+      "rationale": "Standard REST APIs for all services. CircleCI, GitHub, and Slack have well-documented APIs with builtin connectors. Webhook and cron triggers are straightforward."
+    },
+    {
+      "name": "Differentiation",
+      "category": "functional",
+      "score": 9,
+      "weight": 1,
+      "rationale": "Goes beyond simple notification: automated root cause analysis, flaky test detection with scoring, enriched messaging with code locations and fix suggestions, noise reduction for green builds."
+    },
+    {
+      "name": "Variable Necessity",
+      "category": "functional",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Adoption questions cover the needed user-specific values: Slack channel, GitHub repo, flakiness threshold, green notification toggle. All genuinely necessary."
+    },
+    {
+      "name": "Default Quality",
+      "category": "functional",
+      "score": 8,
+      "weight": 2,
+      "rationale": "Good defaults: #ci-alerts channel, 30% flakiness threshold, skip green notifications enabled. GitHub repo needs user input but that is unavoidable."
+    }
+  ],
+  "overall": 8.96,
+  "grade": "A",
+  "issues": [
+    "No adoption_questions existed before fix - Slack channel, GitHub repo, and flakiness threshold needed user-specific configuration"
+  ],
+  "fixes_applied": {
+    "template": [
+      "Added 4 adoption_questions: slack_ci_channel, github_repo, flakiness_threshold, skip_green_notifications"
+    ],
+    "app_code": []
+  }
+}

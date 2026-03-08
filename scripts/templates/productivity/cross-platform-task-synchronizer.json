@@ -629,6 +629,44 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "asana_project_gid",
+        "question": "What is your Asana project GID to sync?",
+        "type": "text",
+        "default": "",
+        "context": "The numeric project GID from Asana. Found in the project URL: app.asana.com/0/{project_gid}/...",
+        "connector_names": ["asana"],
+        "category": "configuration"
+      },
+      {
+        "id": "github_repo",
+        "question": "Which GitHub repository should sync with Asana (owner/repo format)?",
+        "type": "text",
+        "default": "",
+        "context": "Issues in this repo will be synced bidirectionally with Asana tasks. E.g., acme/webapp",
+        "connector_names": ["github"],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_sync_channel",
+        "question": "Which Slack channel should receive sync status updates?",
+        "type": "text",
+        "default": "#project-sync",
+        "context": "Phase transition summaries, conflict escalations, and error alerts are posted here",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "conflict_resolution",
+        "question": "How should sync conflicts be resolved by default?",
+        "type": "select",
+        "default": "last_write_wins",
+        "context": "When both platforms change the same item simultaneously. Last-write-wins uses timestamps; human escalation asks you to choose.",
+        "connector_names": [],
+        "category": "configuration"
+      }
+    ],
     "protocol_capabilities": [
       {
         "type": "manual_review",

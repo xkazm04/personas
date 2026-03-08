@@ -1,0 +1,56 @@
+{
+  "templateId": "campaign-performance-analyst",
+  "templateName": "Campaign Performance Analyst",
+  "category": ["marketing"],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T12:00:00Z",
+
+  "connectorClassification": {
+    "available": ["slack"],
+    "swapped": {},
+    "missing": ["mailchimp", "airtable"]
+  },
+
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      { "name": "schema_completeness", "passed": true, "detail": "All required payload fields present and substantive" },
+      { "name": "flow_integrity", "passed": true, "detail": "3 flows: flow_1 (Campaign Measurement, 13 nodes/13 edges), flow_2 (Outlier Detection, 9 nodes/10 edges), flow_3 (Error Recovery, 9 nodes/11 edges). All well-connected." },
+      { "name": "trigger_validity", "passed": true, "detail": "1 schedule trigger: 0 9 * * * daily at 9 AM. Valid cron." },
+      { "name": "connector_role_alignment", "passed": true, "detail": "mailchimp=email_delivery, airtable=knowledge_base, slack=chat_messaging — all valid roles" },
+      { "name": "adoption_question_fitness", "passed": true, "detail": "5 adoption_questions added: slack_channel, airtable_base_id, airtable_table_name, outlier_threshold, mailchimp_dc" },
+      { "name": "safety_scan", "passed": true, "detail": "0 critical findings. Read-only operations on Mailchimp. No destructive actions." }
+    ]
+  },
+
+  "dimensions": [
+    { "name": "Prompt Completeness", "category": "technical", "score": 10, "weight": 3, "rationale": "Identity 60+ words. Instructions cover 6 numbered steps with measurement windows, benchmark logic, Airtable schema, Slack formatting, and memory management. Tool guidance provides Mailchimp, Airtable, Slack API endpoints. 3 examples covering normal, outlier, and no-op scenarios. Error handling covers per-service failures and recovery." },
+    { "name": "Tool-Prompt Alignment", "category": "technical", "score": 9, "weight": 2, "rationale": "http_request mapped to all 3 service APIs with specific endpoints. Mailchimp datacenter ({dc}) handling documented. No phantom tools. Minor: tool guidance could include agent_memory protocol calls explicitly." },
+    { "name": "Trigger Coherence", "category": "technical", "score": 9, "weight": 2, "rationale": "Daily 9 AM trigger matches the measurement window logic (checking 24h and 72h windows). Solid alignment. Could benefit from a second trigger for retries after failures." },
+    { "name": "Connector Coverage", "category": "technical", "score": 10, "weight": 2, "rationale": "All 3 service_flow entries backed by connectors with complete credential fields and detailed setup instructions." },
+    { "name": "Memory Design", "category": "technical", "score": 9, "weight": 1, "rationale": "Agent memory stores rolling benchmarks per audience (20-campaign window), processed campaign tracking, and error recovery state. Schema documented in JSON. Good design." },
+    { "name": "Error Handling", "category": "technical", "score": 9, "weight": 2, "rationale": "Covers Mailchimp 401/403/429/404, Airtable 422/429, Slack failures, duplicate detection, missing benchmarks, partial data, and mid-pipeline recovery. Very thorough." },
+    { "name": "Use Case Fidelity", "category": "technical", "score": 10, "weight": 2, "rationale": "All 3 use_case_flows fully covered: primary measurement cycle, outlier detection sub-workflow, and error recovery flow. Prompt descriptions match flow diagrams precisely." },
+    { "name": "Value Clarity", "category": "business", "score": 9, "weight": 2, "rationale": "Clear outcome: automated campaign performance monitoring with benchmark-based insights. Replaces 4 separate workflows. Dual-window measurement is a concrete differentiator." },
+    { "name": "Execution Feasibility", "category": "technical", "score": 8, "weight": 3, "rationale": "Mailchimp, Airtable, Slack APIs are standard. Mailchimp DC-based routing adds slight complexity. All configs actionable." },
+    { "name": "Differentiation", "category": "business", "score": 9, "weight": 1, "rationale": "Rolling benchmarks, outlier detection, dual-window analysis, contextual trend reporting — substantial reasoning beyond simple automation." },
+    { "name": "Variable Necessity", "category": "technical", "score": 9, "weight": 1, "rationale": "All 5 questions are genuinely needed. mailchimp_dc is essential for API routing. outlier_threshold allows tuning sensitivity." },
+    { "name": "Default Quality", "category": "technical", "score": 7, "weight": 2, "rationale": "Good defaults for slack_channel (#marketing-analytics), table_name (Campaign Performance), outlier_threshold (15%), mailchimp_dc (us19). airtable_base_id must be user-provided." }
+  ],
+
+  "overall": 9.04,
+  "grade": "A",
+
+  "issues": [
+    "No adoption_questions existed — 5 added covering Slack routing, Airtable config, outlier tuning, and Mailchimp DC",
+    "Mailchimp and Airtable connectors may not have builtin definitions"
+  ],
+
+  "fixes_applied": {
+    "template": [
+      "Added 5 adoption_questions: slack_channel, airtable_base_id, airtable_table_name, outlier_threshold, mailchimp_dc",
+      "Included select type with options for outlier_threshold for constrained choice"
+    ],
+    "app_code": []
+  }
+}

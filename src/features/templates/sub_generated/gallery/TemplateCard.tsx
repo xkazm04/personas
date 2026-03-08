@@ -215,7 +215,7 @@ export function TemplateCard({
         </div>
 
         {/* 3-Column Body */}
-        <div className="hidden md:grid px-4 py-4 md:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-primary/5">
+        <div className="hidden md:grid px-4 py-4 md:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 gap-4 border-t border-primary/5">
           {/* Use Cases */}
           <div className="min-w-0">
             <h4 className="text-sm uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">

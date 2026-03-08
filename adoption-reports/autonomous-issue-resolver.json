@@ -1,0 +1,140 @@
+{
+  "templateId": "autonomous-issue-resolver",
+  "templateName": "Autonomous Issue Resolver",
+  "category": [
+    "development"
+  ],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T19:05:28.575Z",
+  "connectorClassification": {
+    "available": [
+      "jira",
+      "notion",
+      "slack"
+    ],
+    "swapped": {},
+    "missing": []
+  },
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "schema_completeness",
+        "passed": true
+      },
+      {
+        "name": "flow_integrity",
+        "passed": true,
+        "detail": "5 use_case_flows with connected directed graphs"
+      },
+      {
+        "name": "trigger_validity",
+        "passed": true,
+        "detail": "3 triggers: polling */15, daily 0 9, weekly Monday 0 9"
+      },
+      {
+        "name": "safety_scan",
+        "passed": true,
+        "detail": "0 critical, 0 info findings"
+      }
+    ]
+  },
+  "dimensions": [
+    {
+      "name": "Prompt Completeness",
+      "category": "technical",
+      "score": 10,
+      "weight": 3,
+      "rationale": "Identity 82 words. Instructions >2000 words with 9 numbered sections covering discovery, classification, sentiment, resolution, escalation, learning, digests, weekly reports, and state management. Tool guidance documents Jira ADF format, Notion search, Slack DMs. Three rich multi-step examples. Error handling covers API failures, data integrity, and 8+ edge cases."
+    },
+    {
+      "name": "Tool-Prompt Alignment",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "http_request mapped to Jira REST, Notion REST, Slack Web API with specific endpoints and auth headers. file_read/file_write used for 4 state files. No phantom tools referenced."
+    },
+    {
+      "name": "Trigger Coherence",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Three triggers with valid cron: 15-min polling for issue scanning, daily 9AM digest, weekly Monday 9AM health report. All align directly with prompt workflow sections."
+    },
+    {
+      "name": "Connector Coverage",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "All 3 service_flow entries (Jira, Notion, Slack) have matching connector definitions with complete credential fields, setup instructions, and API base URLs."
+    },
+    {
+      "name": "Memory Design",
+      "category": "technical",
+      "score": 9,
+      "weight": 1,
+      "rationale": "Extensive local state design: issue_states.json, solutions_kb.json, pending_confirmations.json, escalation_log.json. Self-improving knowledge base with confidence scores and confirmation tracking."
+    },
+    {
+      "name": "Error Handling",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Per-service failure strategies with rate limit handling, state corruption recovery, duplicate action prevention, and 10+ edge cases including 100+ comment truncation, reporter-assignee conflicts, KB entry conflicts, and first-run initialization."
+    },
+    {
+      "name": "Use Case Fidelity",
+      "category": "functional",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Prompt covers all use_case_flows: stale issue discovery, state classification, sentiment analysis, auto-resolution, sentiment-based routing, KB learning, daily digests, and weekly health reports."
+    },
+    {
+      "name": "Value Clarity",
+      "category": "functional",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Clear business outcome: reduces stale issue backlog through auto-resolution with confidence-scored KB matching, routes by urgency with sentiment analysis, and builds institutional knowledge over time through learning loop."
+    },
+    {
+      "name": "Execution Feasibility",
+      "category": "functional",
+      "score": 9,
+      "weight": 3,
+      "rationale": "All APIs are standard REST (Jira v3, Notion v1, Slack Web API). All connectors have builtin definitions. Triggers are standard cron. File state uses simple JSON."
+    },
+    {
+      "name": "Differentiation",
+      "category": "functional",
+      "score": 10,
+      "weight": 1,
+      "rationale": "Substantial reasoning beyond automation: sentiment analysis with 1-10 scoring, confidence-scored KB matching, learning loop from confirmed resolutions, priority+sentiment routing matrix. Far beyond what a simple cron/webhook could achieve."
+    },
+    {
+      "name": "Variable Necessity",
+      "category": "functional",
+      "score": 8,
+      "weight": 1,
+      "rationale": "No explicit template variables, but adoption_questions now cover all needed config. All 8 questions target genuinely needed user-specific values."
+    },
+    {
+      "name": "Default Quality",
+      "category": "functional",
+      "score": 7,
+      "weight": 2,
+      "rationale": "Most defaults are sensible (7-day stale threshold, #engineering-alerts, 80 confidence threshold). Notion KB database_id has no default, requiring mandatory user input before first run."
+    }
+  ],
+  "overall": 8.96,
+  "grade": "A",
+  "issues": [
+    "No adoption_questions existed before fix - Jira projects, Notion DB ID, Slack channels, thresholds, and manager email all needed user-specific configuration",
+    "Notion KB database_id has no sensible default - user must provide before first run"
+  ],
+  "fixes_applied": {
+    "template": [
+      "Added 8 adoption_questions: jira_projects, stale_threshold_days, slack_alert_channel, slack_escalation_channel, eng_manager_email, notion_kb_database_id, auto_close_enabled, confidence_threshold"
+    ],
+    "app_code": []
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "templateId": "design-handoff-coordinator",
+  "templateName": "Design Handoff Coordinator",
+  "category": [
+    "development"
+  ],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T19:05:28.575Z",
+  "connectorClassification": {
+    "available": [
+      "figma",
+      "linear",
+      "slack"
+    ],
+    "swapped": {},
+    "missing": []
+  },
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "schema_completeness",
+        "passed": true
+      },
+      {
+        "name": "flow_integrity",
+        "passed": true,
+        "detail": "3 use_case_flows with connected directed graphs"
+      },
+      {
+        "name": "trigger_validity",
+        "passed": true,
+        "detail": "2 triggers: Figma webhook + 10-min polling fallback"
+      },
+      {
+        "name": "safety_scan",
+        "passed": true,
+        "detail": "0 critical, 0 info findings"
+      }
+    ]
+  },
+  "dimensions": [
+    {
+      "name": "Prompt Completeness",
+      "category": "technical",
+      "score": 9,
+      "weight": 3,
+      "rationale": "Identity >50 words. Instructions >200 words with 5 numbered steps. Tool guidance with Figma REST, Linear GraphQL, Slack API specs. Three examples (new components, no changes, removal). Error handling with Figma 401/429/404, Linear GraphQL errors, Slack errors, state corruption."
+    },
+    {
+      "name": "Tool-Prompt Alignment",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "http_request mapped to Figma REST v1, Linear GraphQL, Slack Web API. file_read/file_write for figma_state.json and handoff_log.json. No phantom tools."
+    },
+    {
+      "name": "Trigger Coherence",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Webhook for real-time Figma FILE_VERSION_UPDATE events + 10-min polling as fallback. Both documented in prompt with appropriate use cases."
+    },
+    {
+      "name": "Connector Coverage",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "All 3 service_flow entries (Figma, Linear, Slack) have complete connector definitions with PAT/API key/bot token credential fields."
+    },
+    {
+      "name": "Memory Design",
+      "category": "technical",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Local state files for version tracking (figma_state.json) and audit trail (handoff_log.json). Adequate for the use case."
+    },
+    {
+      "name": "Error Handling",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Figma 401/429/404, Linear GraphQL authentication and timeout errors with pending operation recovery, Slack channel errors with fallback, state corruption handling with fresh-start baseline."
+    },
+    {
+      "name": "Use Case Fidelity",
+      "category": "functional",
+      "score": 9,
+      "weight": 2,
+      "rationale": "All 3 use_case_flows covered: new version handoff, error recovery and retry, first-run baseline initialization."
+    },
+    {
+      "name": "Value Clarity",
+      "category": "functional",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Replaces 3 automation workflows. Bridges design-dev gap with component-level tracking, Linear ticket creation, and Slack summaries."
+    },
+    {
+      "name": "Execution Feasibility",
+      "category": "functional",
+      "score": 9,
+      "weight": 3,
+      "rationale": "Figma API, Linear GraphQL, Slack API are all standard. All connectors have builtin definitions. Polling and webhook triggers are actionable."
+    },
+    {
+      "name": "Differentiation",
+      "category": "functional",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Component-level diffing with categorization (ADDED/MODIFIED/REMOVED), priority mapping based on change type, first-run baseline prevention of ticket flooding."
+    },
+    {
+      "name": "Variable Necessity",
+      "category": "functional",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Adoption questions target config values that are genuinely needed: Figma file keys, Linear team ID, Slack channel, thread threshold."
+    },
+    {
+      "name": "Default Quality",
+      "category": "functional",
+      "score": 7,
+      "weight": 2,
+      "rationale": "Figma file keys and Linear team ID have empty defaults requiring mandatory user input. Slack channel (#design-handoffs) and thread threshold (10) have good defaults."
+    }
+  ],
+  "overall": 8.7,
+  "grade": "A",
+  "issues": [
+    "No adoption_questions existed before fix - Figma file keys, Linear team ID, Slack channel needed user-specific configuration",
+    "Figma file keys and Linear team ID have no sensible defaults - user must provide before first run"
+  ],
+  "fixes_applied": {
+    "template": [
+      "Added 4 adoption_questions: figma_file_keys, linear_team_id, slack_design_channel, batch_thread_threshold"
+    ],
+    "app_code": []
+  }
+}

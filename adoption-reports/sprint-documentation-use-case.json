@@ -1,0 +1,141 @@
+{
+  "templateId": "sprint-documentation-use-case",
+  "templateName": "Sprint Documentation Use Case",
+  "category": [
+    "development"
+  ],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T19:05:28.575Z",
+  "connectorClassification": {
+    "available": [
+      "jira",
+      "confluence",
+      "slack"
+    ],
+    "swapped": {},
+    "missing": []
+  },
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "schema_completeness",
+        "passed": true
+      },
+      {
+        "name": "flow_integrity",
+        "passed": true,
+        "detail": "3 use_case_flows with connected directed graphs"
+      },
+      {
+        "name": "trigger_validity",
+        "passed": true,
+        "detail": "2 triggers: bi-weekly Friday 5PM schedule + manual trigger"
+      },
+      {
+        "name": "safety_scan",
+        "passed": true,
+        "detail": "0 critical, 0 info findings"
+      }
+    ]
+  },
+  "dimensions": [
+    {
+      "name": "Prompt Completeness",
+      "category": "technical",
+      "score": 10,
+      "weight": 3,
+      "rationale": "Identity >50 words. Instructions >200 words with 5 phases. Tool guidance with Jira agile REST, Confluence content API, Slack postMessage specs. Three examples (standard close, zero completions, manual mid-sprint). Error handling. Three custom sections for Confluence template, velocity tracking, and required configuration."
+    },
+    {
+      "name": "Tool-Prompt Alignment",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "http_request mapped to Jira agile REST v1, Confluence REST API, Slack Web API. file_read/write for sprint_velocity.json. No phantom tools."
+    },
+    {
+      "name": "Trigger Coherence",
+      "category": "technical",
+      "score": 8,
+      "weight": 2,
+      "rationale": "Bi-weekly Friday 5PM schedule + manual trigger. Cron expression 0 17 */14 * 5 is questionable - */14 applied to day-of-month may not reliably produce bi-weekly Friday behavior."
+    },
+    {
+      "name": "Connector Coverage",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Jira, Confluence, Slack all have complete connector definitions. Confluence shares Atlassian credentials with Jira as documented."
+    },
+    {
+      "name": "Memory Design",
+      "category": "technical",
+      "score": 8,
+      "weight": 1,
+      "rationale": "sprint_velocity.json for rolling velocity tracking with 3-sprint averages. Documented in custom section with deviation alerting (>20%)."
+    },
+    {
+      "name": "Error Handling",
+      "category": "technical",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Jira 401/404/429 with pagination handling, Confluence title conflicts with update fallback, Slack errors, data quality issues (missing story points, empty descriptions), partial failure recovery."
+    },
+    {
+      "name": "Use Case Fidelity",
+      "category": "functional",
+      "score": 9,
+      "weight": 2,
+      "rationale": "All 3 use_case_flows covered: sprint close documentation, mid-sprint progress snapshot, partial failure recovery."
+    },
+    {
+      "name": "Value Clarity",
+      "category": "functional",
+      "score": 9,
+      "weight": 2,
+      "rationale": "Replaces 3 manual workflows. Consistent Confluence review documents, velocity tracking with trend analysis, automated team notification."
+    },
+    {
+      "name": "Execution Feasibility",
+      "category": "functional",
+      "score": 9,
+      "weight": 3,
+      "rationale": "Jira agile REST, Confluence storage format, Slack Block Kit are all standard and well-documented. All connectors have builtin definitions."
+    },
+    {
+      "name": "Differentiation",
+      "category": "functional",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Velocity trend analysis with 3-sprint rolling average, at-risk sprint detection (completion rate < 50% with > 60% elapsed), acceptance criteria extraction from descriptions."
+    },
+    {
+      "name": "Variable Necessity",
+      "category": "functional",
+      "score": 8,
+      "weight": 1,
+      "rationale": "Adoption questions cover board ID, domain, space key, parent page ID, channel, scrum master ID, and auto-close toggle. All genuinely needed."
+    },
+    {
+      "name": "Default Quality",
+      "category": "functional",
+      "score": 7,
+      "weight": 2,
+      "rationale": "Confluence parent page ID has empty default requiring mandatory user input. Board ID default (42) is a placeholder. Channel (#sprint-reviews) has a good default."
+    }
+  ],
+  "overall": 8.74,
+  "grade": "A",
+  "issues": [
+    "No adoption_questions existed before fix - Jira board/domain, Confluence space/parent page, Slack channel all needed user-specific configuration",
+    "Cron expression 0 17 */14 * 5 for bi-weekly schedule may not fire correctly - */14 on day-of-month is unusual",
+    "Confluence parent page ID has no sensible default - user must provide before first run"
+  ],
+  "fixes_applied": {
+    "template": [
+      "Added 7 adoption_questions: jira_board_id, jira_domain, confluence_space_key, confluence_parent_page_id, slack_sprint_channel, scrum_master_slack_id, auto_close_sprint"
+    ],
+    "app_code": []
+  }
+}

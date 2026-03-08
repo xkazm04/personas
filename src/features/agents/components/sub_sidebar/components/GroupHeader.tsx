@@ -23,7 +23,7 @@ interface GroupHeaderProps {
 
 export function GroupHeader({
   group, personaCount, isCollapsed, hasWorkspaceDefaults,
-  isDragging, dragListeners, dragAttributes,
+  isDragging: _isDragging, dragListeners, dragAttributes,
   onToggleCollapse, onRename, onDelete, onToggleSettings,
 }: GroupHeaderProps) {
   const [showMenu, setShowMenu] = useState(false);

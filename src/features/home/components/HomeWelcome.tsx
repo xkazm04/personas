@@ -19,9 +19,7 @@ const NAV_CARDS: any[] = [
 export default function HomeWelcome() {
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
   const user = useAuthStore((s) => s.user);
-  const personas = usePersonaStore((s) => s.personas);
-  const credentials = usePersonaStore((s) => s.credentials);
-  const { t, language } = useHomeTranslation();
+  const { t } = useHomeTranslation();
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -32,20 +30,10 @@ export default function HomeWelcome() {
 
   const displayName = user?.display_name || user?.email?.split('@')[0] || t.operator;
 
-  const summary = useMemo(() => {
-    if (personas.length === 0) return t.summary_empty;
-    return t.summary_stats
-      .replace('{personasCount}', String(personas.length))
-      .replace('{personasPlural}', personas.length !== 1 ? (language === 'en' ? 's' : '') : '')
-      .replace('{credentialsCount}', String(credentials.length))
-      .replace('{credentialsPlural}', credentials.length !== 1 ? (language === 'en' ? 's' : '') : '');
-  }, [personas.length, credentials.length, t, language]);
-
   return (
     <WelcomeLayout
       greeting={greeting}
       displayName={displayName}
-      summary={summary}
       quickNavLabel={t.quick_navigation}
       platformLabel={t.platform_label}
       navCards={NAV_CARDS}

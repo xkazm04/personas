@@ -509,6 +509,44 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "gmail_filter",
+        "question": "Should the clone monitor all unread emails or a specific label/filter?",
+        "type": "text",
+        "default": "is:unread -category:promotions -category:social -category:updates",
+        "context": "Gmail search query used to find new messages. Default excludes promotions, social, and updates.",
+        "connector_names": ["gmail"],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_channels",
+        "question": "Which Slack channels should the clone monitor for messages?",
+        "type": "text",
+        "default": "all DMs",
+        "context": "Comma-separated channel names or 'all DMs' to monitor direct messages only. The clone reads and responds in these channels.",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "auto_send_threshold",
+        "question": "After how many consecutive unadjusted approvals should a contact graduate to auto-send?",
+        "type": "text",
+        "default": "20",
+        "context": "Contacts with this many consecutive approved-without-edits drafts will receive replies automatically without human review",
+        "connector_names": [],
+        "category": "human_in_the_loop"
+      },
+      {
+        "id": "digest_interval_hours",
+        "question": "How often should the communication digest be generated (in hours)?",
+        "type": "text",
+        "default": "4",
+        "context": "Periodic summary of message volumes, pending drafts, auto-send statistics, and contacts nearing graduation",
+        "connector_names": [],
+        "category": "configuration"
+      }
+    ],
     "protocol_capabilities": [
       {
         "type": "manual_review",

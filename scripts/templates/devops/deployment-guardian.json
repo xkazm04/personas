@@ -740,6 +740,43 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "slack_channel",
+        "question": "Which Slack channel should receive deployment notifications?",
+        "type": "text",
+        "default": "#deployments",
+        "context": "Deployment status cards, failure alerts, and rollback requests will be posted to this channel",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "github_repo",
+        "question": "Which GitHub repository is connected to your Vercel project?",
+        "type": "text",
+        "default": "",
+        "context": "Used to fetch commit details, PR information, and CI status for each deployment",
+        "connector_names": ["github"],
+        "category": "configuration"
+      },
+      {
+        "id": "error_rate_threshold",
+        "question": "At what error rate multiplier should rollback be recommended?",
+        "type": "select",
+        "default": "2x",
+        "options": ["1.5x", "2x", "3x", "5x"],
+        "context": "Post-deploy monitoring compares error rate against baseline. If it exceeds this multiplier, a rollback is recommended.",
+        "category": "configuration"
+      },
+      {
+        "id": "auto_rollback",
+        "question": "Should rollbacks require manual approval?",
+        "type": "boolean",
+        "default": "Yes",
+        "context": "When enabled, the agent will request human approval before executing a rollback. Recommended for safety.",
+        "category": "human_in_the_loop"
+      }
+    ],
     "protocol_capabilities": [
       {
         "type": "manual_review",

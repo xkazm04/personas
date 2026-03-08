@@ -550,7 +550,7 @@ export function ComponentsPicker({ components, onAdd, onRemove, onSetWatchedTabl
   return (
     <div>
       <CredentialCoverageBar components={components} />
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
         {COMPONENT_ROLES.map(({ role, label, description }) => (
           <RoleCard
             key={role}

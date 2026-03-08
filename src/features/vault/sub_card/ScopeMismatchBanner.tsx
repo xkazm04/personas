@@ -10,7 +10,7 @@ interface ScopeMismatchBannerProps {
 export function ScopeMismatchBanner({
   requestedScopes,
   grantedScopes,
-  providerLabel,
+  providerLabel: _providerLabel,
   onReauthorize,
 }: ScopeMismatchBannerProps) {
   const requested = new Set(requestedScopes.split(/[\s,]+/).filter(Boolean));

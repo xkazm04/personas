@@ -1,0 +1,57 @@
+{
+  "templateId": "marketing-audience-sync-use-case",
+  "templateName": "Marketing Audience Sync Use Case",
+  "category": ["marketing"],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T12:00:00Z",
+
+  "connectorClassification": {
+    "available": ["slack"],
+    "swapped": {},
+    "missing": ["airtable", "mailchimp"]
+  },
+
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      { "name": "schema_completeness", "passed": true, "detail": "All required payload fields present and substantive" },
+      { "name": "flow_integrity", "passed": true, "detail": "3 flows: flow_1 (Contact Sync, 12 nodes/13 edges), flow_2 (New Segment Campaign, 10 nodes/9 edges), flow_3 (Bidirectional Unsubscribe, 11 nodes/13 edges). All well-connected with error nodes." },
+      { "name": "trigger_validity", "passed": true, "detail": "1 polling trigger: */5 * * * * every 5 minutes. Valid cron." },
+      { "name": "connector_role_alignment", "passed": true, "detail": "airtable=knowledge_base, mailchimp=email_delivery, slack=chat_messaging — all valid" },
+      { "name": "adoption_question_fitness", "passed": true, "detail": "5 adoption_questions added: airtable_base_id, airtable_table_name, mailchimp_list_id, slack_channel, auto_trigger_campaigns" },
+      { "name": "safety_scan", "passed": true, "detail": "0 critical findings. Compliance safety: never re-subscribe opted-out contacts explicitly stated. Bidirectional unsubscribe sync protects PII." }
+    ]
+  },
+
+  "dimensions": [
+    { "name": "Prompt Completeness", "category": "technical", "score": 10, "weight": 3, "rationale": "Identity 80+ words. Instructions cover 5 major sections plus state management: change detection, Mailchimp sync, campaign triggers, bidirectional unsubscribes, Slack reporting, and state file management. Tool guidance has specific API endpoints with query params and body formats for all 3 services plus local files. 3 concrete examples. Comprehensive error handling." },
+    { "name": "Tool-Prompt Alignment", "category": "technical", "score": 10, "weight": 2, "rationale": "All tools (http_request, file_read, file_write) mapped to specific operations. Airtable filterByFormula, Mailchimp subscriber hash (MD5), batch operations — all documented. No phantom tools." },
+    { "name": "Trigger Coherence", "category": "technical", "score": 10, "weight": 2, "rationale": "5-minute polling trigger matches the prompt's polling cycle description exactly. Change detection via timestamp comparison is well-designed." },
+    { "name": "Connector Coverage", "category": "technical", "score": 10, "weight": 2, "rationale": "All 3 service_flow entries fully backed with detailed connector definitions including data_center field for Mailchimp." },
+    { "name": "Memory Design", "category": "technical", "score": 10, "weight": 1, "rationale": "Dual state files: sync_state.json (timestamps, campaign templates) and segment_cache.json (contact-to-tag mapping for change detection). Excellent design with unsubscribe tracking for compliance." },
+    { "name": "Error Handling", "category": "technical", "score": 10, "weight": 2, "rationale": "Covers rate limits for all 3 services with specific thresholds (Airtable 5/s, Mailchimp 10 concurrent, Slack 1/s). API failures with retry logic. Data integrity with unsubscribe compliance checks. State recovery for missing/corrupted files. Consecutive failure alerting." },
+    { "name": "Use Case Fidelity", "category": "technical", "score": 10, "weight": 2, "rationale": "All 3 flows (contact sync, segment campaign trigger, bidirectional unsubscribe) are fully described in the prompt with step-by-step procedures matching the flow diagrams." },
+    { "name": "Value Clarity", "category": "business", "score": 10, "weight": 2, "rationale": "Clear outcome: eliminates manual audience list management, ensures compliance, automates campaign triggers. Replaces 4 separate workflows with real-time sync." },
+    { "name": "Execution Feasibility", "category": "technical", "score": 8, "weight": 3, "rationale": "Airtable, Mailchimp, Slack APIs are standard. The 5-minute polling with change detection is practical. Mailchimp batch operations well-documented. Data center routing adds minor complexity." },
+    { "name": "Differentiation", "category": "business", "score": 9, "weight": 1, "rationale": "Intelligent change detection, compliance-aware sync, automatic campaign triggers for new segments, and bidirectional unsubscribe handling — substantial reasoning beyond basic sync." },
+    { "name": "Variable Necessity", "category": "technical", "score": 10, "weight": 1, "rationale": "All 5 questions target essential config: base_id and table for Airtable, list_id for Mailchimp, channel for Slack, and campaign automation toggle for human-in-the-loop control." },
+    { "name": "Default Quality", "category": "technical", "score": 7, "weight": 2, "rationale": "Good defaults for table_name (Contacts), slack_channel (#marketing-ops), auto_trigger_campaigns (Yes). airtable_base_id and mailchimp_list_id must be user-provided. User needs to fill 2 values." }
+  ],
+
+  "overall": 9.39,
+  "grade": "A",
+
+  "issues": [
+    "No adoption_questions existed — 5 added covering Airtable, Mailchimp, Slack, and campaign automation config",
+    "Airtable and Mailchimp connectors may not have builtin definitions"
+  ],
+
+  "fixes_applied": {
+    "template": [
+      "Added 5 adoption_questions: airtable_base_id, airtable_table_name, mailchimp_list_id, slack_channel, auto_trigger_campaigns",
+      "Included use_case_ids on auto_trigger_campaigns to scope it to the campaign trigger flow",
+      "Used boolean type for campaign trigger toggle with human_in_the_loop category"
+    ],
+    "app_code": []
+  }
+}

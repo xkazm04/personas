@@ -1,11 +1,12 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Radar, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { Search, Radar, CheckCircle2, Loader2, Sparkles, Monitor } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { detectAuthenticatedServices, type AuthDetection } from '@/api/authDetect';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { staggerContainer, staggerItem } from '@/features/templates/animationPresets';
+import { isDesktopBridge } from '@/lib/utils/connectors';
 
 interface WizardDetectPhaseProps {
   onSelect: (connectors: ConnectorDefinition[]) => void;
@@ -180,6 +181,14 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
           </span>
         </div>
 
+        {/* Desktop bridge badge */}
+        {isDesktopBridge(connector) && !isAdded && (
+          <span className="flex items-center gap-1 text-sm px-1.5 py-0.5 rounded-full shrink-0 bg-orange-500/10 text-orange-400 border border-orange-500/20">
+            <Monitor className="w-2.5 h-2.5" />
+            Local
+          </span>
+        )}
+
         {/* Detection badge */}
         {detection && !isAdded && (
           <span className={`text-sm px-1.5 py-0.5 rounded-full shrink-0 ${
@@ -265,7 +274,8 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
               variants={staggerContainer}
               initial="hidden"
               animate="show"
-              className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+              className="grid gap-2"
+              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}
             >
               {detected.map((c) => renderConnectorRow(c, false))}
             </motion.div>
@@ -282,7 +292,8 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
               variants={staggerContainer}
               initial="hidden"
               animate="show"
-              className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+              className="grid gap-2"
+              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}
             >
               {available.map((c) => renderConnectorRow(c, false))}
             </motion.div>
@@ -295,7 +306,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
             <h3 className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider mb-2">
               Already added ({alreadyAdded.length})
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
               {alreadyAdded.map((c) => renderConnectorRow(c, true))}
             </div>
           </div>

@@ -48,6 +48,7 @@ import redis from '../../../scripts/connectors/builtin/redis.json';
 import duckdb from '../../../scripts/connectors/builtin/duckdb.json';
 import googleSheets from '../../../scripts/connectors/builtin/google-sheets.json';
 import gmail from '../../../scripts/connectors/builtin/gmail.json';
+import microsoftOutlook from '../../../scripts/connectors/builtin/microsoft-outlook.json';
 
 export interface BuiltinConnectorDef {
   id: string;
@@ -116,4 +117,5 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   duckdb,
   googleSheets,
   gmail,
+  microsoftOutlook,
 ] as BuiltinConnectorDef[];

@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, ArrowRight } from 'lucide-react';
+import { Search, ArrowRight, Monitor } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { staggerContainer, staggerItem } from '@/features/templates/animationPresets';
+import { isDesktopBridge } from '@/lib/utils/connectors';
 
 interface WizardServiceSelectProps {
   onSelect: (connector: ConnectorDefinition) => void;
@@ -69,7 +70,8 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
               variants={staggerContainer}
               initial="hidden"
               animate="show"
-              className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+              className="grid gap-2"
+              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}
             >
               {connectors.map((connector) => (
                 <motion.button
@@ -91,9 +93,17 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-medium text-foreground/90 group-hover:text-foreground block truncate">
                       {connector.label}
+                      {isDesktopBridge(connector) && (
+                        <span className="inline-flex items-center gap-0.5 ml-1.5 px-1 py-0.5 rounded text-[10px] font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20 align-middle">
+                          <Monitor className="w-2.5 h-2.5" />
+                          Local
+                        </span>
+                      )}
                     </span>
                     <span className="text-sm text-muted-foreground/60 block truncate">
-                      {connector.fields.length} field{connector.fields.length !== 1 ? 's' : ''} required
+                      {isDesktopBridge(connector)
+                        ? 'Desktop bridge — auto-detected'
+                        : `${connector.fields.length} field${connector.fields.length !== 1 ? 's' : ''} required`}
                     </span>
                   </div>
                   <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-violet-400 transition-colors shrink-0" />

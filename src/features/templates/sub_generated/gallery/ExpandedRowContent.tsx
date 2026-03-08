@@ -171,7 +171,7 @@ export function ExpandedRowContent({
       {/* Tab content */}
       {activeSection && activeSection.items.length > 0 && (
         <div className="pt-1 pb-1">
-          <ul className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1">
+          <ul className="grid gap-x-6 gap-y-1" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
             {activeSection.items.map((item, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-foreground/70">
                 <span

@@ -1,0 +1,58 @@
+{
+  "templateId": "customer-feedback-router",
+  "templateName": "Customer Feedback Router",
+  "category": ["support"],
+  "status": "evaluated",
+  "timestamp": "2026-03-08T12:00:00Z",
+
+  "connectorClassification": {
+    "available": ["slack"],
+    "swapped": {},
+    "missing": ["intercom", "linear"]
+  },
+
+  "staticChecks": {
+    "passed": true,
+    "checks": [
+      { "name": "schema_completeness", "passed": true, "detail": "All required payload fields present. Includes customSections (communication_protocols, priority_classification, linear_labeling) — bonus structured content." },
+      { "name": "flow_integrity", "passed": true, "detail": "3 flows: flow_1 (New Conversation Processing, 15 nodes/17 edges), flow_2 (Weekly Feedback Digest, 8 nodes/7 edges), flow_3 (Ambiguous Manual Review, 10 nodes/10 edges). All well-connected with error handling." },
+      { "name": "trigger_validity", "passed": true, "detail": "2 triggers: polling (120s interval) and schedule (0 17 * * 5 weekly Friday 5 PM). Both valid." },
+      { "name": "connector_role_alignment", "passed": true, "detail": "intercom=crm, slack=chat_messaging, linear=project_tracking — all valid" },
+      { "name": "adoption_question_fitness", "passed": true, "detail": "5 adoption_questions added: slack_channel, linear_default_team, dedup_confidence, review_timeout_hours, polling_interval" },
+      { "name": "safety_scan", "passed": true, "detail": "0 critical findings. Ambiguous items flagged for human review. Never silently merges duplicates. Paper trail via comments." }
+    ]
+  },
+
+  "dimensions": [
+    { "name": "Prompt Completeness", "category": "technical", "score": 10, "weight": 3, "rationale": "Identity 55+ words. Instructions cover 6 detailed sections: polling, classification (5 categories), deduplication with memory, Linear issue creation with labeling taxonomy, Slack summaries, and weekly digest. Tool guidance covers Intercom, Linear (GraphQL), Slack APIs. 3 examples (new feature, duplicate bug, ambiguous). Error handling covers API failures, data issues, state corruption. Custom sections add priority guide and labeling taxonomy." },
+    { "name": "Tool-Prompt Alignment", "category": "technical", "score": 10, "weight": 2, "rationale": "All tools mapped: http_request for Intercom REST, Linear GraphQL, Slack REST. file_read/file_write for state (last_poll.json, known_issues.json, processing_log.json, failed_creates.json). Linear GraphQL mutations and queries documented. No phantom tools." },
+    { "name": "Trigger Coherence", "category": "technical", "score": 10, "weight": 2, "rationale": "120-second polling matches the real-time conversation processing requirement. Friday 5 PM weekly digest provides periodic summary. Both triggers align with prompt descriptions." },
+    { "name": "Connector Coverage", "category": "technical", "score": 10, "weight": 2, "rationale": "All 3 service_flow entries fully backed by connectors. Intercom access_token, Linear API key, Slack bot_token — all with setup instructions." },
+    { "name": "Memory Design", "category": "technical", "score": 10, "weight": 1, "rationale": "Excellent: known_issues.json maps keywords to Linear issue IDs with report_count and timestamps. Processing log for audit trail. 90-day pruning during weekly digest. Multi-layer deduplication (local memory + Linear API search)." },
+    { "name": "Error Handling", "category": "technical", "score": 9, "weight": 2, "rationale": "Covers Intercom 429/401/403, Linear create failures with retry queue, Slack message queuing, state file corruption recovery, empty bodies, missing customer info, malformed JSON. Low-confidence deduplication handled with 'possibly related' notes." },
+    { "name": "Use Case Fidelity", "category": "technical", "score": 10, "weight": 2, "rationale": "All 3 flows fully covered: polling cycle with classification and deduplication, weekly digest with trend analysis, and ambiguous feedback manual review with escalation timeout." },
+    { "name": "Value Clarity", "category": "business", "score": 10, "weight": 2, "rationale": "Clear outcome: intelligent feedback triage replacing 4 separate workflows. Deduplication prevents issue spam. Priority classification saves product team time. Weekly digest surfaces trends." },
+    { "name": "Execution Feasibility", "category": "technical", "score": 8, "weight": 3, "rationale": "Intercom, Linear, Slack APIs are standard. Linear GraphQL adds slight complexity but is well-documented. Polling with checkpoint is practical. 120-second interval is reasonable." },
+    { "name": "Differentiation", "category": "business", "score": 10, "weight": 1, "rationale": "Semantic deduplication, 5-category classification with confidence scoring, priority assignment based on impact and frequency, ambiguous item escalation — this is exactly what an AI agent does better than rigid automation." },
+    { "name": "Variable Necessity", "category": "technical", "score": 10, "weight": 1, "rationale": "All 5 questions target meaningful config: team routing, dedup sensitivity, review timeout, polling frequency. Each directly affects agent behavior." },
+    { "name": "Default Quality", "category": "technical", "score": 8, "weight": 2, "rationale": "Good defaults for channel (#product-feedback), dedup_confidence (70%), review_timeout (48h), polling_interval (120s). Only linear_default_team needs user input. Very close to zero-config adoption." }
+  ],
+
+  "overall": 9.52,
+  "grade": "A",
+
+  "issues": [
+    "No adoption_questions existed — 5 added covering Slack, Linear team, dedup tuning, review timeout, and polling config",
+    "Intercom and Linear connectors may not have builtin definitions"
+  ],
+
+  "fixes_applied": {
+    "template": [
+      "Added 5 adoption_questions: slack_channel, linear_default_team, dedup_confidence, review_timeout_hours, polling_interval",
+      "Included use_case_ids on review_timeout_hours (flow_3) and polling_interval (flow_1) to scope them to relevant flows",
+      "Used select type with options for dedup_confidence, review_timeout_hours, and polling_interval for constrained choices",
+      "Used human_in_the_loop category for review_timeout_hours"
+    ],
+    "app_code": []
+  }
+}

@@ -673,6 +673,57 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "notion_database_id",
+        "question": "What is the Notion database ID for your project tracker?",
+        "type": "text",
+        "default": "",
+        "context": "The agent queries this database for tasks with upcoming due dates. Find the 32-character ID in the database URL after the workspace name.",
+        "connector_names": ["notion"],
+        "category": "configuration"
+      },
+      {
+        "id": "todoist_project_id",
+        "question": "What is the Todoist project ID for weekly planning tasks?",
+        "type": "text",
+        "default": "",
+        "context": "Tasks are created in this Todoist project each Monday. Find the project ID in the URL when viewing the project in a browser.",
+        "connector_names": ["todoist"],
+        "category": "configuration"
+      },
+      {
+        "id": "slack_channel",
+        "question": "Which Slack channel should receive weekly plan summaries?",
+        "type": "text",
+        "default": "#weekly-planning",
+        "context": "Monday planning summaries and Friday wrap-up reports are posted here for team visibility.",
+        "connector_names": ["slack"],
+        "category": "configuration"
+      },
+      {
+        "id": "planning_time",
+        "question": "What time should the Monday planning cycle run?",
+        "type": "select",
+        "default": "7:00 AM",
+        "options": ["6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM"],
+        "context": "The agent queries Notion and creates Todoist tasks at this time every Monday. Choose a time before your team's daily standup.",
+        "connector_names": [],
+        "category": "configuration",
+        "use_case_ids": ["flow_monday_planning"]
+      },
+      {
+        "id": "archive_time",
+        "question": "What time should the Friday archival cycle run?",
+        "type": "select",
+        "default": "5:00 PM",
+        "options": ["4:00 PM", "5:00 PM", "6:00 PM"],
+        "context": "The agent checks Todoist completion and archives finished items back to Notion at this time every Friday.",
+        "connector_names": [],
+        "category": "configuration",
+        "use_case_ids": ["flow_friday_archival"]
+      }
+    ],
     "protocol_capabilities": [
       {
         "type": "manual_review",
