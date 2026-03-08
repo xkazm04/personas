@@ -183,6 +183,76 @@ fn resolve_variant_healthcheck(
     None
 }
 
+/// Built-in healthcheck endpoints for known OAuth providers.
+/// Used as fallback when a connector has no explicit healthcheck_config
+/// but the credential was created via provider OAuth.
+fn resolve_oauth_provider_healthcheck(provider: &str) -> Option<HealthcheckConfig> {
+    let (endpoint, method, headers, body) = match provider.to_lowercase().as_str() {
+        "github" => (
+            "https://api.github.com/user",
+            "GET",
+            vec![("User-Agent", "Personas-Desktop/1.0")],
+            None,
+        ),
+        "slack" => (
+            "https://slack.com/api/auth.test",
+            "POST",
+            vec![],
+            None,
+        ),
+        "microsoft" => (
+            "https://graph.microsoft.com/v1.0/me",
+            "GET",
+            vec![],
+            None,
+        ),
+        "atlassian" => (
+            "https://api.atlassian.com/me",
+            "GET",
+            vec![],
+            None,
+        ),
+        "discord" => (
+            "https://discord.com/api/v10/users/@me",
+            "GET",
+            vec![],
+            None,
+        ),
+        "linear" => (
+            "https://api.linear.app/graphql",
+            "POST",
+            vec![("Content-Type", "application/json")],
+            Some(r#"{"query":"{ viewer { id } }"}"#),
+        ),
+        "notion" => (
+            "https://api.notion.com/v1/users/me",
+            "GET",
+            vec![("Notion-Version", "2022-06-28")],
+            None,
+        ),
+        "spotify" => (
+            "https://api.spotify.com/v1/me",
+            "GET",
+            vec![],
+            None,
+        ),
+        _ => return None,
+    };
+
+    let header_map: HashMap<String, String> = headers
+        .into_iter()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect();
+
+    Some(HealthcheckConfig {
+        endpoint: endpoint.to_string(),
+        method: Some(method.to_string()),
+        headers: header_map,
+        body: body.map(|s| s.to_string()),
+        skip: false,
+    })
+}
+
 /// Execute a healthcheck request using a connector strategy for auth dispatch.
 async fn execute_healthcheck_request_with_strategy(
     strategy: &dyn connector_strategy::ConnectorStrategy,
