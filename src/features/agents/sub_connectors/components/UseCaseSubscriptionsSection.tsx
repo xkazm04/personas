@@ -4,7 +4,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';
 import { SectionCard } from '@/features/shared/components/SectionCard';
 import { SectionHeader } from '@/features/shared/components/SectionHeader';
-import { UseCaseSubscriptions } from '@/features/agents/sub_use_cases/UseCaseSubscriptions';
+import { UseCaseSubscriptions } from '@/features/agents/sub_use_cases/components/UseCaseSubscriptions';
 import { useSubscriptionManager } from '../libs/subscriptionLifecycle';
 
 export function UseCaseSubscriptionsSection() {

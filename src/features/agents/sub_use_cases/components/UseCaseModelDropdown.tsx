@@ -6,7 +6,7 @@ import {
   OVERRIDE_OPTIONS,
   profileToOptionId,
   type ModelOption,
-} from './useCaseDetailHelpers';
+} from '../libs/useCaseDetailHelpers';
 
 interface UseCaseModelDropdownProps {
   hasOverride: boolean;

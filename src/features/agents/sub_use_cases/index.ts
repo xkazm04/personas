@@ -1,12 +1,12 @@
-export { PersonaUseCasesTab } from './PersonaUseCasesTab';
-export { UseCaseDetailPanel } from './UseCaseDetailPanel';
-export { DefaultModelSection } from './DefaultModelSection';
-export { UseCaseModelOverride } from './UseCaseModelOverride';
-export { UseCaseSubscriptions } from './UseCaseSubscriptions';
-export { UseCaseTestRunner } from './UseCaseTestRunner';
-export { UseCaseListPanel } from './UseCaseListPanel';
+export { PersonaUseCasesTab } from './components/PersonaUseCasesTab';
+export { UseCaseDetailPanel } from './components/UseCaseDetailPanel';
+export { DefaultModelSection } from './components/DefaultModelSection';
+export { UseCaseModelOverride } from './components/UseCaseModelOverride';
+export { UseCaseSubscriptions } from './components/UseCaseSubscriptions';
+export { UseCaseTestRunner } from './components/UseCaseTestRunner';
+export { UseCaseListPanel } from './components/UseCaseListPanel';
 export {
   applyDesignContextMutation,
   updateUseCaseInContext,
   getUseCaseById,
-} from './useCaseHelpers';
+} from './libs/useCaseHelpers';

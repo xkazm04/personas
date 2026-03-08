@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { UseCaseItem } from '@/features/shared/components/UseCasesList';
 import type { TestFixture } from '@/lib/types/frontendTypes';
-import { resolveEffectiveModel } from './useCaseDetailHelpers';
+import { resolveEffectiveModel } from '../libs/useCaseDetailHelpers';
 import { mutateSingleUseCase } from '@/hooks/design/useDesignContextMutator';
 import { UseCaseFixtureDropdown } from './UseCaseFixtureDropdown';
 

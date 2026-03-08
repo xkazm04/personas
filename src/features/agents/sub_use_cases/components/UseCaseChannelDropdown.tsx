@@ -1,7 +1,7 @@
 import { Bell, ChevronDown, Check } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/Listbox';
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
-import { CHANNEL_TYPES, channelSummary } from './useCaseDetailHelpers';
+import { CHANNEL_TYPES, channelSummary } from '../libs/useCaseDetailHelpers';
 
 interface UseCaseChannelDropdownProps {
   channels: NotificationChannel[];
