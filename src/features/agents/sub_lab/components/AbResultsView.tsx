@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Trophy, Target, FileText, Shield, DollarSign, Clock } from 'lucide-react';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';
-import { compositeScore, scoreColor } from './labUtils';
+import { compositeScore, scoreColor } from '../libs/labUtils';
 
 interface Props {
   results: LabAbResult[];
