@@ -135,6 +135,9 @@ export function getSaveDisabledReason(flow: CredentialFlow): string {
     case 'google_oauth':
       return 'Save is unlocked after Google consent returns a refresh token.';
     case 'provider_oauth':
+      if (PROVIDERS_WITH_HEALTHCHECK.has(flow.providerId.toLowerCase())) {
+        return `Save is unlocked after ${flow.providerLabel} authorization and connection test succeed.`;
+      }
       return `Save is unlocked after ${flow.providerLabel} authorization completes.`;
     case 'api_key':
       return 'Save is locked until Test Connection succeeds for the current credential values.';
