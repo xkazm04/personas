@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Trash2, X } from 'lucide-react';
 import { useViewportClampFixed } from '@/hooks/utility/useViewportClamp';
-import { CONNECTION_TYPE_STYLES, getConnectionStyle } from './teamConstants';
+import { CONNECTION_TYPE_STYLES, getConnectionStyle } from '../libs/teamConstants';
 
 interface EdgeDeleteTooltipProps {
   x: number;

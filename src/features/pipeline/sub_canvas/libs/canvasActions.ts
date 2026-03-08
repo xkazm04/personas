@@ -1,13 +1,10 @@
-import { useReducer, useCallback } from 'react';
 import type { Node, Edge, ReactFlowInstance } from '@xyflow/react';
-import type { DryRunState } from '@/features/pipeline/sub_canvas/DryRunDebugger';
-import type { AlignmentLine } from '@/features/pipeline/sub_canvas/AlignmentGuides';
+import type { DryRunState } from './debuggerTypes';
+import type { AlignmentLine } from '../components/AlignmentGuides';
 import type { PipelineAnalytics } from '@/lib/bindings/PipelineAnalytics';
-import type { PipelineNodeStatus } from '@/features/pipeline/sub_canvas/useDerivedCanvasState';
-import type { StickyNoteCategory } from '@/features/pipeline/sub_canvas/StickyNoteNode';
+import type { PipelineNodeStatus } from './useDerivedCanvasState';
+import type { StickyNoteCategory } from '../components/StickyNoteNode';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
-
-// ── Member with persona info (used by config panel & context menu) ───
 
 export interface MemberWithPersonaInfo extends PersonaTeamMember {
   persona_name?: string;
@@ -99,7 +96,7 @@ export type CanvasAction =
 
 // ── Initial State ────────────────────────────────────────────────────
 
-const initialState: CanvasState = {
+export const initialCanvasState: CanvasState = {
   saveStatus: 'saved',
   selectedMember: null,
   contextMenu: null,
@@ -123,7 +120,7 @@ const initialState: CanvasState = {
 
 // ── Reducer ──────────────────────────────────────────────────────────
 
-function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
+export function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
   switch (action.type) {
     case 'SET_SAVE_STATUS':
       return { ...state, saveStatus: action.status };
@@ -199,26 +196,4 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
         dismissedSuggestionIds: new Set(),
       };
   }
-}
-
-// ── Hook ─────────────────────────────────────────────────────────────
-
-export function useCanvasReducer() {
-  const [state, dispatch] = useReducer(canvasReducer, initialState);
-
-  // Convenience dispatchers for the most common actions
-  const setSaveStatus = useCallback((status: CanvasState['saveStatus']) =>
-    dispatch({ type: 'SET_SAVE_STATUS', status }), []);
-  const setSelectedMember = useCallback((member: MemberWithPersonaInfo | null) =>
-    dispatch({ type: 'SET_SELECTED_MEMBER', member }), []);
-  const setContextMenu = useCallback((menu: CanvasState['contextMenu']) =>
-    dispatch({ type: 'SET_CONTEXT_MENU', menu }), []);
-  const setEdgeTooltip = useCallback((tooltip: CanvasState['edgeTooltip']) =>
-    dispatch({ type: 'SET_EDGE_TOOLTIP', tooltip }), []);
-  const setGhostNode = useCallback((node: Node | null) =>
-    dispatch({ type: 'SET_GHOST_NODE', node }), []);
-  const setReactFlowInstance = useCallback((instance: ReactFlowInstance | null) =>
-    dispatch({ type: 'SET_REACT_FLOW_INSTANCE', instance }), []);
-
-  return { state, dispatch, setSaveStatus, setSelectedMember, setContextMenu, setEdgeTooltip, setGhostNode, setReactFlowInstance };
 }

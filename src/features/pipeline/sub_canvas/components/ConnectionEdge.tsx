@@ -1,5 +1,5 @@
 import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react';
-import { getConnectionStyle } from './teamConstants';
+import { getConnectionStyle } from '../libs/teamConstants';
 
 export default function ConnectionEdge({
   id,

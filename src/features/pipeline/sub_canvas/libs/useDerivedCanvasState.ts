@@ -3,7 +3,7 @@ import type { Node, Edge } from '@xyflow/react';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';
 import type { PipelineAnalytics } from '@/lib/bindings/PipelineAnalytics';
-import type { DryRunState } from '@/features/pipeline/sub_canvas/DryRunDebugger';
+import type { DryRunState } from './debuggerTypes';
 
 export interface PipelineNodeStatus {
   member_id: string;

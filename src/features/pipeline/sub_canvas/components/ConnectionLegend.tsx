@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CONNECTION_TYPE_STYLES } from './teamConstants';
+import { CONNECTION_TYPE_STYLES } from '../libs/teamConstants';
 
 const ENTRIES = Object.values(CONNECTION_TYPE_STYLES);
 

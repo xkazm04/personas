@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Trash2, Settings, UserCog } from 'lucide-react';
-import { TEAM_ROLES } from './teamConstants';
+import { TEAM_ROLES } from '../libs/teamConstants';
 
 interface NodeContextMenuProps {
   x: number;

@@ -1,8 +1,7 @@
 import { useCallback } from 'react';
 import { GripVertical } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { PersonaAvatar } from '@/features/pipeline/sub_canvas/teamConstants';
-import { useCanvasDragRef } from '@/features/pipeline/sub_canvas/CanvasDragContext';
+import { PersonaAvatar, useCanvasDragRef } from '@/features/pipeline/sub_canvas';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 
 export default function TeamDragPanel() {

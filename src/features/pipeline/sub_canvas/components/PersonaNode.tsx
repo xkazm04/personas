@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { motion } from 'framer-motion';
 import { Check, AlertTriangle, Sparkles, CircleDot } from 'lucide-react';
-import { ROLE_COLORS, PersonaAvatar } from './teamConstants';
+import { ROLE_COLORS, PersonaAvatar } from '../libs/teamConstants';
 
 interface PersonaNodeData {
   name: string;

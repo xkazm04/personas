@@ -10,7 +10,7 @@ import CreationWizard from '@/features/agents/components/CreationWizard';
 import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/ErrorBoundary';
-import { CanvasDragProvider } from '@/features/pipeline/sub_canvas/CanvasDragContext';
+import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
 
 const OverviewPage = lazy(() => import('@/features/overview/components/OverviewPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
@@ -109,7 +109,7 @@ export default function PersonasPage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? -14 : 14) : 0 }}
             transition={transition}
-            className="h-full"
+            className="h-full w-full"
           >
             {cloudTab === 'unified' ? (
               <UnifiedDeploymentDashboard />
@@ -164,7 +164,7 @@ export default function PersonasPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="flex-1 flex flex-col overflow-x-auto overflow-y-hidden"
+            className="flex-1 flex flex-col w-full min-w-0 overflow-y-hidden"
           >
             {renderContent()}
           </motion.div>
