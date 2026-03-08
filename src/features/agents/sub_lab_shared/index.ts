@@ -1,8 +1,8 @@
-export { DiffViewer } from './DiffViewer';
-export { VersionItem, type VersionAction } from './VersionItem';
+export { DiffViewer } from './components/DiffViewer';
+export { VersionItem, type VersionAction } from './components/VersionItem';
 export {
   TAG_STYLES,
   formatRelative,
   getSectionSummary,
   diffStrings,
-} from './labPrimitives';
+} from './libs/labPrimitives';
