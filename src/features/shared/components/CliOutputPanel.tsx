@@ -3,10 +3,10 @@ import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { TerminalHeader } from '@/features/shared/components/TerminalHeader';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { useCopyToClipboard } from '@/hooks/utility/useCopyToClipboard';
-import type { CliOperation } from '@/features/settings/sub_engine/engineCapabilities';
+import type { CliOperation } from '@/features/settings/sub_engine/libs/engineCapabilities';
 
 const EngineCapabilityBadge = lazy(() =>
-  import('@/features/settings/sub_engine/EngineCapabilityBadge').then(m => ({ default: m.EngineCapabilityBadge }))
+  import('@/features/settings/sub_engine/components/EngineCapabilityBadge').then(m => ({ default: m.EngineCapabilityBadge }))
 );
 
 interface CliOutputPanelProps {

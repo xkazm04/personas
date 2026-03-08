@@ -15,7 +15,7 @@ import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { SectionHeader } from '@/features/shared/components/SectionHeader';
 import EmptyState from '@/features/shared/components/EmptyState';
-import { LinkedRecipesSection } from '@/features/recipes/sub_list/LinkedRecipesSection';
+import { LinkedRecipesSection } from '@/features/recipes/sub_list/components/LinkedRecipesSection';
 import { ModelABCompare } from '@/features/agents/sub_model_config/ModelABCompare';
 
 const MemoUseCaseRow = memo(UseCaseRow);
