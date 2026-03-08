@@ -1,1 +1,1 @@
-export { PersonaSettingsTab } from './PersonaSettingsTab';
+export { PersonaSettingsTab } from './components/PersonaSettingsTab';
