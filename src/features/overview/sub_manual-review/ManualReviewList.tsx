@@ -15,6 +15,8 @@ import {
   User,
   Zap,
   Plus,
+  Cloud,
+  Monitor,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
@@ -76,12 +78,19 @@ function SeverityIndicator({ severity }: { severity: string }) {
 }
 
 type FilterStatus = 'all' | ManualReviewStatus;
+type SourceFilter = 'all' | 'local' | 'cloud';
 
 const FILTER_LABELS: Record<FilterStatus, string> = {
   all: 'All',
   pending: 'Pending',
   approved: 'Approved',
   rejected: 'Rejected',
+};
+
+const SOURCE_LABELS: Record<SourceFilter, string> = {
+  all: 'All Sources',
+  local: 'Local',
+  cloud: 'Cloud',
 };
 
 // ---------------------------------------------------------------------------
@@ -177,6 +186,12 @@ function InboxItem({
             >
               {statusLabel}
             </span>
+            {review.source === 'cloud' && (
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                <Cloud className="w-2.5 h-2.5" />
+                Cloud
+              </span>
+            )}
           </div>
         </div>
         <ChevronRight className={`w-3.5 h-3.5 mt-1 flex-shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground/30 group-hover:text-muted-foreground/50'}`} />
@@ -202,15 +217,20 @@ function ConversationThread({
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isCloud = review.source === 'cloud';
 
-  // Fetch conversation messages
+  // Fetch conversation messages (local reviews only — cloud reviews don't have local message threads)
   useEffect(() => {
+    if (isCloud) {
+      setMessages([]);
+      return;
+    }
     let cancelled = false;
     listReviewMessages(review.id).then((msgs) => {
       if (!cancelled) setMessages(msgs);
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, [review.id]);
+  }, [review.id, isCloud]);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -276,6 +296,15 @@ function ConversationThread({
                 <span className="text-xs text-muted-foreground/60">
                   {formatRelativeTime(review.created_at)}
                 </span>
+                {isCloud && (
+                  <>
+                    <span className="text-xs text-muted-foreground/40">·</span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                      <Cloud className="w-2.5 h-2.5" />
+                      Cloud
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -411,31 +440,33 @@ function ConversationThread({
       {/* Action Bar */}
       {isPending && (
         <div className="flex-shrink-0 border-t border-primary/10 bg-secondary/20 px-4 py-3 space-y-2">
-          {/* Message input */}
+          {/* Message input — local reviews get full threading; cloud reviews get a response note */}
           <div className="flex items-end gap-2">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Reply to this review..."
+              onKeyDown={isCloud ? undefined : handleKeyDown}
+              placeholder={isCloud ? "Response message (optional)..." : "Reply to this review..."}
               rows={1}
               className="flex-1 text-sm bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-foreground/80 placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30 max-h-24"
               style={{ minHeight: '36px' }}
             />
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || isSending}
-              className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
-              title="Send message"
-            >
-              <Send className="w-4 h-4" />
-            </button>
+            {!isCloud && (
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() || isSending}
+                className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                title="Send message"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {/* Action buttons */}
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground/50">
-              Enter to send · Shift+Enter for new line
+              {isCloud ? 'Approve or reject this cloud review' : 'Enter to send · Shift+Enter for new line'}
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -468,11 +499,16 @@ function ConversationThread({
 
 export default function ManualReviewList() {
   const manualReviews = usePersonaStore((s) => s.manualReviews);
+  const cloudReviews = usePersonaStore((s) => s.cloudReviews);
+  const isCloudConnected = usePersonaStore((s) => s.cloudConfig?.is_connected ?? false);
   const personas = usePersonaStore((s) => s.personas);
   const fetchManualReviews = usePersonaStore((s) => s.fetchManualReviews);
+  const fetchCloudReviews = usePersonaStore((s) => s.fetchCloudReviews);
   const updateManualReview = usePersonaStore((s) => s.updateManualReview);
+  const respondToCloudReview = usePersonaStore((s) => s.respondToCloudReview);
 
   const [filter, setFilter] = useState<FilterStatus>('all');
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [selectedPersonaId, setSelectedPersonaId] = useState('');
   const [activeReviewId, setActiveReviewId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -486,20 +522,38 @@ export default function ManualReviewList() {
     fetchManualReviews();
   }, [fetchManualReviews]);
 
+  // Fetch cloud reviews when connected, auto-refresh every 15s
+  useEffect(() => {
+    if (!isCloudConnected) return;
+    fetchCloudReviews();
+    const interval = setInterval(fetchCloudReviews, 15_000);
+    return () => clearInterval(interval);
+  }, [isCloudConnected, fetchCloudReviews]);
+
+  // Tag local reviews with source='local' and merge with cloud reviews
+  const allReviews = useMemo(() => {
+    const local = manualReviews.map((r) => ({ ...r, source: 'local' as const }));
+    const merged = [...local, ...cloudReviews];
+    // Sort by created_at descending (newest first)
+    merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return merged;
+  }, [manualReviews, cloudReviews]);
+
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: manualReviews.length, pending: 0, approved: 0, rejected: 0 };
-    for (const r of manualReviews) {
+    const counts: Record<string, number> = { all: allReviews.length, pending: 0, approved: 0, rejected: 0 };
+    for (const r of allReviews) {
       if (r.status in counts) counts[r.status] = (counts[r.status] ?? 0) + 1;
     }
     return counts;
-  }, [manualReviews]);
+  }, [allReviews]);
 
   const filteredReviews = useMemo(() => {
-    let result = manualReviews;
+    let result = allReviews;
     if (filter !== 'all') result = result.filter((r) => r.status === filter);
+    if (sourceFilter !== 'all') result = result.filter((r) => (r.source ?? 'local') === sourceFilter);
     if (selectedPersonaId) result = result.filter((r) => r.persona_id === selectedPersonaId);
     return result;
-  }, [manualReviews, filter, selectedPersonaId]);
+  }, [allReviews, filter, sourceFilter, selectedPersonaId]);
 
   const activeReview = useMemo(
     () => filteredReviews.find((r) => r.id === activeReviewId) ?? null,
@@ -517,7 +571,7 @@ export default function ManualReviewList() {
   useEffect(() => {
     setSelectedIds(new Set());
     setConfirmAction(null);
-  }, [filter, selectedPersonaId]);
+  }, [filter, sourceFilter, selectedPersonaId]);
 
   const selectablePendingIds = useMemo(
     () => new Set(filteredReviews.filter((r) => r.status === 'pending').map((r) => r.id)),
@@ -546,10 +600,17 @@ export default function ManualReviewList() {
       if (!activeReview || isProcessing) return;
       setIsProcessing(true);
       try {
-        await updateManualReview(activeReview.id, {
-          status,
-          reviewer_notes: notes,
-        });
+        if (activeReview.source === 'cloud') {
+          // Cloud review: map status → decision string the cloud API expects
+          const decision = status === 'approved' ? 'approve' : 'reject';
+          await respondToCloudReview(activeReview.id, activeReview.execution_id, decision, notes ?? '');
+        } else {
+          // Local review: use existing local handler
+          await updateManualReview(activeReview.id, {
+            status,
+            reviewer_notes: notes,
+          });
+        }
         // Auto-advance to next pending review
         const nextPending = filteredReviews.find(
           (r) => r.id !== activeReview.id && r.status === 'pending',
@@ -559,15 +620,23 @@ export default function ManualReviewList() {
         setIsProcessing(false);
       }
     },
-    [activeReview, isProcessing, updateManualReview, filteredReviews],
+    [activeReview, isProcessing, updateManualReview, respondToCloudReview, filteredReviews],
   );
 
   const handleBulkAction = useCallback(
     async (status: ManualReviewStatus) => {
       setIsBulkProcessing(true);
       try {
+        const decision = status === 'approved' ? 'approve' : 'reject';
         await Promise.allSettled(
-          Array.from(selectedIds).map((id) => updateManualReview(id, { status })),
+          Array.from(selectedIds).map((id) => {
+            const review = allReviews.find((r) => r.id === id);
+            if (!review) return Promise.resolve();
+            if (review.source === 'cloud') {
+              return respondToCloudReview(review.id, review.execution_id, decision, '');
+            }
+            return updateManualReview(id, { status });
+          }),
         );
         setSelectedIds(new Set());
         setConfirmAction(null);
@@ -575,7 +644,7 @@ export default function ManualReviewList() {
         setIsBulkProcessing(false);
       }
     },
-    [selectedIds, updateManualReview],
+    [selectedIds, allReviews, updateManualReview, respondToCloudReview],
   );
 
   const activeSelectionCount = useMemo(
@@ -598,7 +667,7 @@ export default function ManualReviewList() {
         icon={<ClipboardCheck className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
         title="Manual Reviews"
-        subtitle={`${manualReviews.length} review${manualReviews.length !== 1 ? 's' : ''} · ${statusCounts.pending ?? 0} pending`}
+        subtitle={`${allReviews.length} review${allReviews.length !== 1 ? 's' : ''} · ${statusCounts.pending ?? 0} pending${cloudReviews.length > 0 ? ` · ${cloudReviews.length} cloud` : ''}`}
         actions={
           import.meta.env.DEV && (
             <button
@@ -625,6 +694,26 @@ export default function ManualReviewList() {
         layoutIdPrefix="review-filter"
         trailing={
           <div className="ml-auto flex items-center gap-2">
+            {/* Source filter — only shown when cloud reviews exist */}
+            {isCloudConnected && (
+              <div className="flex items-center rounded-xl border border-primary/15 overflow-hidden text-xs">
+                {(['all', 'local', 'cloud'] as SourceFilter[]).map((src) => (
+                  <button
+                    key={src}
+                    onClick={() => setSourceFilter(src)}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 transition-colors ${
+                      sourceFilter === src
+                        ? 'bg-primary/10 text-foreground/90 font-medium'
+                        : 'text-muted-foreground/70 hover:text-muted-foreground hover:bg-white/[0.03]'
+                    }`}
+                  >
+                    {src === 'local' && <Monitor className="w-3 h-3" />}
+                    {src === 'cloud' && <Cloud className="w-3 h-3" />}
+                    {SOURCE_LABELS[src]}
+                  </button>
+                ))}
+              </div>
+            )}
             <PersonaSelect
               value={selectedPersonaId}
               onChange={setSelectedPersonaId}

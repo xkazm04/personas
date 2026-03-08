@@ -1,6 +1,7 @@
 import { RefreshCw, Loader2 } from 'lucide-react';
 import { motion, useMotionValueEvent, useSpring, useTransform } from 'framer-motion';
 import { useMemo, useState } from 'react';
+import { ExecutionProgressBar } from './ExecutionProgressBar';
 
 export interface CloudStatusPanelProps {
   status: {
@@ -11,9 +12,11 @@ export interface CloudStatusPanelProps {
   } | null;
   isLoading: boolean;
   onRefresh: () => void;
+  /** Currently active cloud execution ID (if any) for progress tracking. */
+  activeExecutionId?: string | null;
 }
 
-export function CloudStatusPanel({ status, isLoading, onRefresh }: CloudStatusPanelProps) {
+export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecutionId }: CloudStatusPanelProps) {
   if (!status && isLoading) {
     return (
       <div role="status" aria-live="polite" className="flex items-center justify-center py-12 text-muted-foreground/90">
@@ -79,6 +82,16 @@ export function CloudStatusPanel({ status, isLoading, onRefresh }: CloudStatusPa
           />
         </div>
       </div>
+
+      {/* Active execution progress */}
+      {activeExecutionId && (
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-3">
+            Active Execution
+          </h3>
+          <ExecutionProgressBar executionId={activeExecutionId} />
+        </div>
+      )}
 
       {/* Claude token indicator */}
       <div>

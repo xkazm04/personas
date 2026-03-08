@@ -1,8 +1,34 @@
 import { useState } from 'react';
-import { Rocket, Loader2, RefreshCw, Pause, Play, Trash2, Copy, ExternalLink, Check } from 'lucide-react';
+import { Rocket, Loader2, RefreshCw, Pause, Play, Trash2, Copy, ExternalLink, Check, DollarSign } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { CloudDeployment } from '@/api/cloud';
 import { DEPLOYMENT_TOKENS } from './deploymentTokens';
+
+const BUDGET_PRESETS = [
+  { label: 'No limit', value: undefined },
+  { label: '$5/mo', value: 5 },
+  { label: '$10/mo', value: 10 },
+  { label: '$25/mo', value: 25 },
+  { label: '$50/mo', value: 50 },
+  { label: '$100/mo', value: 100 },
+] as const;
+
+function budgetUtilization(d: CloudDeployment): number | null {
+  if (!d.max_monthly_budget_usd || !d.current_month_cost_usd) return null;
+  return Math.min(100, (d.current_month_cost_usd / d.max_monthly_budget_usd) * 100);
+}
+
+function budgetColor(pct: number): string {
+  if (pct >= 80) return 'bg-red-500';
+  if (pct >= 50) return 'bg-amber-500';
+  return 'bg-emerald-500';
+}
+
+function formatCost(usd: number | null | undefined): string {
+  if (usd == null || usd === 0) return '$0.00';
+  if (usd < 0.01) return '<$0.01';
+  return `$${usd.toFixed(2)}`;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -41,7 +67,7 @@ interface Props {
   deployments: CloudDeployment[];
   baseUrl: string | null;
   isDeploying: boolean;
-  onDeploy: (personaId: string) => Promise<CloudDeployment>;
+  onDeploy: (personaId: string, maxMonthlyBudgetUsd?: number) => Promise<CloudDeployment>;
   onPause: (id: string) => Promise<void>;
   onResume: (id: string) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
@@ -64,6 +90,7 @@ export function CloudDeploymentsPanel({
 }: Props) {
   const personas = usePersonaStore((s) => s.personas);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
+  const [selectedBudget, setSelectedBudget] = useState<number | undefined>(10);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -78,7 +105,7 @@ export function CloudDeploymentsPanel({
   const handleDeploy = async () => {
     if (!selectedPersonaId) return;
     try {
-      await onDeploy(selectedPersonaId);
+      await onDeploy(selectedPersonaId, selectedBudget);
       setSelectedPersonaId('');
     } catch {
       // error handled by store
@@ -146,6 +173,28 @@ export function CloudDeploymentsPanel({
               </option>
               {deployablePersonas.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="deploy-budget-select" className="text-sm font-medium text-muted-foreground/80">
+              Budget
+            </label>
+            <select
+              id="deploy-budget-select"
+              value={selectedBudget ?? ''}
+              onChange={(e) => setSelectedBudget(e.target.value ? Number(e.target.value) : undefined)}
+              disabled={isDeploying}
+              className="w-full px-3 py-2 text-sm rounded-xl
+                         bg-secondary/40 border border-primary/15
+                         text-foreground/80
+                         focus:outline-none focus:border-indigo-500/40
+                         disabled:opacity-40 disabled:cursor-not-allowed
+                         transition-colors"
+            >
+              {BUDGET_PRESETS.map((b) => (
+                <option key={b.label} value={b.value ?? ''}>{b.label}</option>
               ))}
             </select>
           </div>
@@ -271,6 +320,25 @@ export function CloudDeploymentsPanel({
                     </a>
                   )}
                 </div>
+
+                {/* Budget gauge */}
+                {d.max_monthly_budget_usd != null && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground/70">
+                      <span className="flex items-center gap-1">
+                        <DollarSign className="w-3 h-3" />
+                        Budget: {formatCost(d.current_month_cost_usd)} / {formatCost(d.max_monthly_budget_usd)}
+                      </span>
+                      <span>{budgetUtilization(d)?.toFixed(0) ?? 0}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${budgetColor(budgetUtilization(d) ?? 0)}`}
+                        style={{ width: `${budgetUtilization(d) ?? 0}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Stats row */}
                 <div className="flex items-center gap-4 text-xs text-muted-foreground/70">

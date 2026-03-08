@@ -317,6 +317,8 @@ export interface ManualReviewItem extends WithPersonaInfo {
   reviewer_notes: string | null;
   created_at: string;
   resolved_at: string | null;
+  /** Where this review originated — 'local' (default) or 'cloud'. */
+  source?: 'local' | 'cloud';
 }
 
 export interface GlobalExecution extends PersonaExecution, WithPersonaInfo {}

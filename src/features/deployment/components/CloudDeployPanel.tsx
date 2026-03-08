@@ -9,12 +9,14 @@ import { CloudConnectionForm } from '@/features/deployment/components/CloudConne
 import { CloudStatusPanel } from '@/features/deployment/components/CloudStatusPanel';
 import { CloudOAuthPanel } from '@/features/deployment/components/CloudOAuthPanel';
 import { CloudDeploymentsPanel } from '@/features/deployment/components/CloudDeploymentsPanel';
+import { CloudHistoryPanel } from '@/features/deployment/components/CloudHistoryPanel';
+import { CloudSchedulesPanel } from '@/features/deployment/components/CloudSchedulesPanel';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type TabId = 'connection' | 'status' | 'oauth' | 'deployments';
+type TabId = 'connection' | 'status' | 'oauth' | 'deployments' | 'schedules' | 'history';
 
 interface TabDef {
   id: TabId;
@@ -27,6 +29,8 @@ const TABS: TabDef[] = [
   { id: 'status', label: 'Status', disabledWhenOffline: true },
   { id: 'oauth', label: 'OAuth', disabledWhenOffline: true },
   { id: 'deployments', label: 'Deployments', disabledWhenOffline: true },
+  { id: 'schedules', label: 'Schedules', disabledWhenOffline: true },
+  { id: 'history', label: 'History', disabledWhenOffline: true },
 ];
 
 // ---------------------------------------------------------------------------
@@ -75,14 +79,14 @@ export default function CloudDeployPanel() {
     initialize();
   }, [initialize]);
 
-  // Auto-refresh when Status, OAuth, or Deployments tabs become active
+  // Auto-refresh when Status, OAuth, Deployments, or Schedules tabs become active
   useEffect(() => {
     if (!isConnected) return;
     if (activeTab === 'status') {
       fetchStatus();
     } else if (activeTab === 'oauth') {
       fetchOAuthStatus();
-    } else if (activeTab === 'deployments') {
+    } else if (activeTab === 'deployments' || activeTab === 'schedules') {
       fetchDeployments();
     }
   }, [activeTab, isConnected, fetchStatus, fetchOAuthStatus, fetchDeployments]);
@@ -192,6 +196,11 @@ export default function CloudDeployPanel() {
             onRemove={removeDeploy}
             onRefresh={fetchDeployments}
           />}
+          {activeTab === 'schedules' && isConnected && <CloudSchedulesPanel
+            deployments={deployments}
+            onRefresh={fetchDeployments}
+          />}
+          {activeTab === 'history' && isConnected && <CloudHistoryPanel />}
         </div>
       </ContentBody>
 
