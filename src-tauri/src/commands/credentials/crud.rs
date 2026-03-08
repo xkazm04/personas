@@ -209,6 +209,9 @@ pub async fn healthcheck_credential(
     let detail = if result.success { "passed" } else { &result.message };
     let _ = audit_log::insert(&state.db, &credential_id, &name, "healthcheck", None, None, Some(detail));
 
+    // Record credential usage
+    let _ = repo::record_usage(&state.db, &credential_id);
+
     // Append to healthcheck ring buffer for windowed anomaly scoring
     if let Some(ref c) = cred {
         let metadata: serde_json::Value = c

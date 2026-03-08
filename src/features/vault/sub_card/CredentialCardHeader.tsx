@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, Key, Plug, RotateCw, Lock } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { RotationInsightBadge } from '@/features/vault/sub_card/RotationInsightBadge';
+import { OAuthActivityBadge } from '@/features/vault/sub_card/OAuthActivityBadge';
 import type { CredentialMetadata, ConnectorDefinition, ConnectorAuthMethod } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import { getAuthBadgeClasses } from '@/features/vault/utils/authMethodStyles';
@@ -196,6 +197,21 @@ function BadgeRow({
           <RotateCw className="w-2.5 h-2.5 text-cyan-400/70" />
           <span className="text-sm text-cyan-400/70 font-mono">{rotationCountdown}</span>
         </span>
+      ),
+    });
+  }
+
+  // Priority 2.5: OAuth activity (token expiry + refresh count)
+  if (credential.oauth_token_expires_at || credential.oauth_refresh_count > 0) {
+    badges.push({
+      key: 'oauth-activity',
+      label: 'OAuth Activity',
+      node: (
+        <OAuthActivityBadge
+          oauthRefreshCount={credential.oauth_refresh_count}
+          oauthLastRefreshAt={credential.oauth_last_refresh_at}
+          oauthTokenExpiresAt={credential.oauth_token_expires_at}
+        />
       ),
     });
   }
