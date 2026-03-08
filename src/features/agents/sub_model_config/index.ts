@@ -1,12 +1,11 @@
-export { ModelSelector } from './ModelSelector';
-export type { CustomModelConfig } from './ModelSelector';
-export { BudgetControls } from './BudgetControls';
-export { CustomModelConfigForm } from './CustomModelConfigForm';
-export { OllamaApiKeyField } from './OllamaApiKeyField';
-export { LiteLLMConfigField } from './LiteLLMConfigField';
-export { ProviderCredentialField } from './ProviderCredentialField';
-export { SaveConfigButton } from './SaveConfigButton';
-export { ModelABCompare } from './ModelABCompare';
+export { ModelSelector, type CustomModelConfig } from './components/ModelSelector';
+export { BudgetControls } from './components/BudgetControls';
+export { CustomModelConfigForm } from './components/CustomModelConfigForm';
+export { OllamaApiKeyField } from './components/OllamaApiKeyField';
+export { LiteLLMConfigField } from './components/LiteLLMConfigField';
+export { ProviderCredentialField } from './components/ProviderCredentialField';
+export { SaveConfigButton } from './components/SaveConfigButton';
+export { ModelABCompare } from './components/ModelABCompare';
 export {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
@@ -14,5 +13,19 @@ export {
   isOllamaCloudValue,
   getOllamaPreset,
   profileToDropdownValue,
-} from './OllamaCloudPresets';
-export type { OllamaCloudPreset } from './OllamaCloudPresets';
+  type OllamaCloudPreset,
+} from './libs/OllamaCloudPresets';
+export {
+  COPILOT_PRESETS,
+  COPILOT_GITHUB_TOKEN_SETTING,
+  isCopilotValue,
+  getCopilotPreset,
+  type CopilotPreset,
+} from './libs/CopilotPresets';
+export {
+  ALL_COMPARE_MODELS,
+  toTestConfig,
+  aggregateResults,
+  type ModelOption,
+  type ModelMetrics,
+} from './libs/compareHelpers';
