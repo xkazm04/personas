@@ -2,12 +2,8 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 // ── Types ────────────────────────────────────────────────────────────
 
-export interface SchemaProposalResult {
-  proposal_id: string;
-}
-
 export interface SchemaProposalSnapshot {
-  proposal_id: string;
+  job_id: string;
   status: 'idle' | 'running' | 'completed' | 'failed';
   error: string | null;
   lines: string[];
@@ -19,9 +15,9 @@ export interface SchemaProposalSnapshot {
 
 export interface SchemaValidationResult {
   valid: boolean;
-  missing_tables: string[];
-  missing_columns: Record<string, string[]>;
-  errors: string[];
+  found: string[];
+  missing: string[];
+  all_tables: string[];
 }
 
 // ── Commands ─────────────────────────────────────────────────────────
@@ -29,7 +25,7 @@ export interface SchemaValidationResult {
 /**
  * Ask the LLM CLI to propose a database schema based on the template's
  * context (identity, instructions, tool guidance, use case flows).
- * Returns immediately with a proposal_id for polling.
+ * Returns immediately; poll with getSchemaProposalSnapshot.
  */
 export const startSchemaProposal = (
   proposalId: string,
@@ -37,7 +33,7 @@ export const startSchemaProposal = (
   templateContext: string,
   existingTables: string[],
 ) =>
-  invoke<SchemaProposalResult>("start_schema_proposal", {
+  invoke<void>("start_schema_proposal", {
     proposalId,
     templateName,
     templateContext,
@@ -57,7 +53,7 @@ export const cancelSchemaProposal = (proposalId: string) =>
   invoke<void>("cancel_schema_proposal", { proposalId });
 
 /**
- * Validate that the required tables and columns exist in the database
+ * Validate that the required tables exist in the database
  * after schema creation/selection.
  */
 export const validateSchema = (

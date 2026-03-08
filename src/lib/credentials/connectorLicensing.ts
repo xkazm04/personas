@@ -77,6 +77,8 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   duckdb:                          'personal',
   asana:                           'enterprise',
   google_workspace_oauth_template: 'personal',
+  google_sheets:                   'personal',
+  gmail:                           'personal',
   linkedin:                        'personal',
   n8n:                             'personal',
 

@@ -5,6 +5,7 @@ use crate::error::AppError;
 use crate::commands::design::n8n_transform::job_state::list_n8n_transform_jobs;
 use crate::commands::design::template_adopt::{list_adopt_jobs, list_generate_jobs};
 use crate::commands::credentials::query_debug::list_query_debug_jobs;
+use crate::commands::credentials::schema_proposal::list_schema_proposal_jobs;
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -85,6 +86,18 @@ pub fn get_workflows_overview() -> Result<WorkflowsOverview, AppError> {
         });
     }
 
+    for snap in list_schema_proposal_jobs() {
+        jobs.push(WorkflowJob {
+            job_id: snap.job_id,
+            job_type: "schema_proposal".into(),
+            status: snap.status,
+            error: snap.error,
+            line_count: snap.lines.len(),
+            output_tail: snap.lines.into_iter().rev().take(20).collect::<Vec<_>>().into_iter().rev().collect(),
+            elapsed_secs: snap.elapsed_secs,
+        });
+    }
+
     // Sort: running first, then by elapsed (most recent first)
     jobs.sort_by(|a, b| {
         let a_running = a.status == "running";
@@ -114,6 +127,7 @@ pub fn get_workflow_job_output(job_type: String, job_id: String) -> Result<Vec<S
         "template_adopt" => list_adopt_jobs(),
         "template_generate" => list_generate_jobs(),
         "query_debug" => list_query_debug_jobs(),
+        "schema_proposal" => list_schema_proposal_jobs(),
         _ => return Err(AppError::Validation(format!("Unknown job type: {}", job_type))),
     };
 
@@ -147,6 +161,10 @@ pub fn cancel_workflow_job(
         "query_debug" => {
             use crate::commands::credentials::query_debug::cancel_query_debug_job;
             cancel_query_debug_job(&app, &job_id)
+        }
+        "schema_proposal" => {
+            use crate::commands::credentials::schema_proposal::cancel_schema_proposal_job;
+            cancel_schema_proposal_job(&app, &job_id)
         }
         _ => Err(AppError::Validation(format!("Unknown job type: {}", job_type))),
     }

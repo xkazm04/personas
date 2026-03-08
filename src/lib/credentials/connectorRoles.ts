@@ -12,7 +12,7 @@ export interface ConnectorRole {
  */
 export const CONNECTOR_ROLES: ConnectorRole[] = [
   // ── Communication ─────────────────────────────────────────────
-  { role: 'chat_messaging',      label: 'Chat & Messaging',     members: ['slack', 'discord', 'telegram', 'personas_messages'] },
+  { role: 'chat_messaging',      label: 'Chat & Messaging',     members: ['slack', 'discord', 'telegram', 'gmail', 'personas_messages'] },
   { role: 'email_delivery',      label: 'Email Delivery',       members: ['sendgrid', 'resend', 'mailchimp'] },
   { role: 'sms',                 label: 'SMS',                  members: ['twilio_sms', 'twilio'] },
 
@@ -27,7 +27,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   // ── Infrastructure ────────────────────────────────────────────
   { role: 'hosting',             label: 'Hosting & Deploy',     members: ['vercel', 'netlify', 'cloudflare'] },
   { role: 'cloud_infra',         label: 'Cloud Infrastructure', members: ['aws', 'firebase', 'kubernetes'] },
-  { role: 'database',            label: 'Database',             members: ['personas_database', 'supabase', 'neon', 'convex', 'planetscale', 'upstash', 'postgres_proxy', 'postgres', 'mongodb', 'redis', 'duckdb', 'notion'] },
+  { role: 'database',            label: 'Database',             members: ['personas_database', 'supabase', 'neon', 'convex', 'planetscale', 'upstash', 'postgres_proxy', 'postgres', 'mongodb', 'redis', 'duckdb', 'notion', 'google_sheets'] },
   { role: 'cloud_storage',       label: 'Cloud Storage',        members: ['dropbox'] },
 
   // ── Monitoring & Security ─────────────────────────────────────
