@@ -11,6 +11,7 @@ import type { ObservabilityMetrics } from "@/lib/bindings/ObservabilityMetrics";
 import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardData";
 import type { MetricsChartPoint } from "@/lib/bindings/MetricsChartPoint";
 import * as api from "@/api/tauriApi";
+import { cloudListPendingReviews, cloudRespondToReview } from "@/api/cloud";
 
 export interface OverviewSlice {
   // State — navigation
@@ -22,10 +23,14 @@ export interface OverviewSlice {
   globalExecutionsOffset: number;
   globalExecutionsWarning: string | null;
 
-  // State — reviews
+  // State — reviews (local)
   manualReviews: ManualReviewItem[];
   manualReviewsTotal: number;
   pendingReviewCount: number;
+
+  // State — reviews (cloud)
+  cloudReviews: ManualReviewItem[];
+  isLoadingCloudReviews: boolean;
 
   // State — observability metrics
   observabilityMetrics: ObservabilityMetrics | null;
@@ -42,6 +47,8 @@ export interface OverviewSlice {
   fetchManualReviews: (status?: string) => Promise<void>;
   updateManualReview: (id: string, updates: { status?: string; reviewer_notes?: string }) => Promise<void>;
   fetchPendingReviewCount: () => Promise<void>;
+  fetchCloudReviews: () => Promise<void>;
+  respondToCloudReview: (reviewId: string, executionId: string, decision: string, message: string) => Promise<void>;
   fetchObservabilityMetrics: (days?: number, personaId?: string) => Promise<void>;
   fetchExecutionDashboard: (days?: number) => Promise<void>;
 }
@@ -75,6 +82,8 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
   manualReviews: [],
   manualReviewsTotal: 0,
   pendingReviewCount: 0,
+  cloudReviews: [],
+  isLoadingCloudReviews: false,
   observabilityMetrics: null,
   observabilityError: null,
   executionDashboard: null,
@@ -165,6 +174,48 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
     } catch {
       // intentional: non-critical — badge count defaults to zero on failure
       set({ pendingReviewCount: 0 });
+    }
+  },
+
+  fetchCloudReviews: async () => {
+    const { cloudConfig } = get() as PersonaStore;
+    if (!cloudConfig?.is_connected) {
+      set({ cloudReviews: [] });
+      return;
+    }
+    set({ isLoadingCloudReviews: true });
+    try {
+      const raw = await cloudListPendingReviews();
+      const { personas } = get();
+      // Transform CloudReviewRequest → ManualReviewItem shape
+      const shaped = raw.map((r) => ({
+        id: r.review_id,
+        persona_id: r.persona_id,
+        execution_id: r.execution_id,
+        review_type: 'info',
+        content: typeof r.payload === 'string' ? r.payload : JSON.stringify(r.payload ?? ''),
+        severity: 'info',
+        status: r.status === 'pending' ? 'pending' : r.status,
+        reviewer_notes: r.response_message,
+        created_at: r.created_at != null ? new Date(r.created_at * 1000).toISOString() : new Date().toISOString(),
+        resolved_at: r.resolved_at != null ? new Date(r.resolved_at * 1000).toISOString() : null,
+        source: 'cloud' as const,
+      }));
+      const items: ManualReviewItem[] = enrichWithPersona(shaped, personas);
+      set({ cloudReviews: items, isLoadingCloudReviews: false });
+    } catch {
+      // Non-critical — cloud reviews fail silently, local reviews still work
+      set({ cloudReviews: [], isLoadingCloudReviews: false });
+    }
+  },
+
+  respondToCloudReview: async (reviewId, executionId, decision, message) => {
+    try {
+      await cloudRespondToReview(executionId, reviewId, decision, message);
+      // Re-fetch cloud reviews to reflect the update
+      await get().fetchCloudReviews();
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to respond to cloud review") });
     }
   },
 

@@ -60,7 +60,7 @@ export interface CloudSlice {
   cloudClearError: () => void;
   // Deployment actions
   cloudFetchDeployments: () => Promise<void>;
-  cloudDeploy: (personaId: string) => Promise<CloudDeployment>;
+  cloudDeploy: (personaId: string, maxMonthlyBudgetUsd?: number) => Promise<CloudDeployment>;
   cloudPauseDeploy: (deploymentId: string) => Promise<void>;
   cloudResumeDeploy: (deploymentId: string) => Promise<void>;
   cloudRemoveDeploy: (deploymentId: string) => Promise<void>;
@@ -239,11 +239,11 @@ export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = 
     }
   },
 
-  cloudDeploy: async (personaId: string) => {
+  cloudDeploy: async (personaId: string, maxMonthlyBudgetUsd?: number) => {
     set({ cloudIsDeploying: true, cloudError: null });
     emitDeploymentEvent({ eventType: 'deploy_started', target: 'cloud', personaId, status: 'pending' });
     try {
-      const deployment = await cloudDeployPersona(personaId);
+      const deployment = await cloudDeployPersona(personaId, maxMonthlyBudgetUsd);
       const baseUrl = await cloudGetBaseUrl();
       set((state) => ({
         cloudDeployments: [deployment, ...state.cloudDeployments],

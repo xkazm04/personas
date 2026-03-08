@@ -108,6 +108,30 @@ pub async fn run_cloud_execution(
             }
         };
 
+        // Emit execution progress if available (stage, tool, percent)
+        if let Some(progress) = &poll.progress {
+            let _ = app.emit(
+                "execution-progress",
+                serde_json::json!({
+                    "execution_id": local_execution_id,
+                    "progress": progress,
+                }),
+            );
+        }
+
+        // Emit pending review requests if any
+        if let Some(reviews) = &poll.pending_reviews {
+            if !reviews.is_empty() {
+                let _ = app.emit(
+                    "execution-review-request",
+                    serde_json::json!({
+                        "execution_id": local_execution_id,
+                        "reviews": reviews,
+                    }),
+                );
+            }
+        }
+
         // Emit new output lines — use safe slice to avoid panic if the
         // orchestrator restarted and returned fewer lines than our offset.
         let new_lines = if poll.output_lines < offset {
