@@ -14,6 +14,7 @@ pub mod design;
 pub mod eval;
 pub mod failover;
 pub mod google_oauth;
+pub mod oauth_refresh;
 pub mod healing;
 pub mod ai_healing;
 pub mod healthcheck;

@@ -98,3 +98,22 @@ pub async fn rotate_credential_now(
     );
     result
 }
+
+#[tauri::command]
+pub async fn refresh_credential_oauth_now(
+    state: State<'_, Arc<AppState>>,
+    credential_id: String,
+) -> Result<String, AppError> {
+    require_privileged(&state, "refresh_credential_oauth_now").await?;
+    let cred = crate::db::repos::resources::credentials::get_by_id(&state.db, &credential_id)?;
+    let result = crate::engine::oauth_refresh::refresh_single_credential(&state.db, &cred).await;
+    let (op, detail) = match &result {
+        Ok(_) => ("credential_oauth_refreshed", "manual OAuth token refresh succeeded".to_string()),
+        Err(e) => ("credential_oauth_refresh_failed", format!("manual OAuth refresh failed: {e}")),
+    };
+    let _ = audit_log::insert(
+        &state.db, &credential_id, &cred.name,
+        op, None, None, Some(&detail),
+    );
+    result
+}

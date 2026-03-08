@@ -18,7 +18,7 @@ use crate::engine::subscription::{
     self, CleanupSubscription, EventBusSubscription, PollingSubscription,
     RotationSubscription, TriggerSchedulerSubscription,
     FileWatcherSubscription, ClipboardSubscription, AppFocusSubscription,
-    CompositeSubscription,
+    CompositeSubscription, OAuthRefreshSubscription,
 };
 use crate::engine::ExecutionEngine;
 
@@ -148,6 +148,9 @@ pub fn start_loops(
             pool: pool.clone(),
         }),
         Box::new(subscription::AutoRollbackSubscription {
+            pool: pool.clone(),
+        }),
+        Box::new(OAuthRefreshSubscription {
             pool: pool.clone(),
         }),
     ];

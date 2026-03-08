@@ -551,6 +551,7 @@ pub fn run() {
             commands::credentials::rotation::get_rotation_history,
             commands::credentials::rotation::get_rotation_status,
             commands::credentials::rotation::rotate_credential_now,
+            commands::credentials::rotation::refresh_credential_oauth_now,
             // Credentials — Database Schema & Queries
             commands::credentials::db_schema::list_db_schema_tables,
             commands::credentials::db_schema::create_db_schema_table,

@@ -114,3 +114,6 @@ export const getRotationStatus = (credentialId: string) =>
 
 export const rotateCredentialNow = (credentialId: string) =>
   invoke<string>("rotate_credential_now", { credentialId });
+
+export const refreshCredentialOAuthNow = (credentialId: string) =>
+  invoke<string>("refresh_credential_oauth_now", { credentialId });
