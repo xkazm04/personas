@@ -11,7 +11,4 @@ pub mod triggers;
 pub mod db_schema;
 pub mod recipes;
 pub mod automations;
-<<<<<<< HEAD
 pub mod credential_recipes;
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989

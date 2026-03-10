@@ -2,10 +2,7 @@
 // Wizard Instruction Compiler & Summary Helper
 // ============================================================================
 
-<<<<<<< HEAD
 import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { WizardAnswers } from './wizardSteps';
 
 type InstructionEntry =
@@ -47,7 +44,7 @@ const ANSWER_TO_INSTRUCTION: Record<string, InstructionEntry> = {
     type: 'single',
     fallback: 'Autonomy level:',
     map: {
-      'Read-only + report': 'The agent should be read-only — it can analyze and report findings but never modify or create anything externally.',
+      'Read-only + report': 'The agent should be read-only â€” it can analyze and report findings but never modify or create anything externally.',
       'Read + organize': 'The agent can read, label, categorize, and organize data, but cannot send messages or create external records.',
       'Full access with approval gates': 'The agent should have full access to its connected services but must pause for human approval before sending outbound messages or taking any destructive actions.',
       'Full autonomous': 'The agent should operate fully autonomously without requiring approval for any actions.',
@@ -65,7 +62,7 @@ const ANSWER_TO_INSTRUCTION: Record<string, InstructionEntry> = {
       'Real-time (webhook / push)': 'Use a real-time webhook or push notification trigger for instant processing when new data arrives.',
       'Scheduled (cron)': 'Use a scheduled cron trigger to run at fixed intervals (suggest an appropriate schedule based on the use case).',
       'Polling interval': 'Use a polling trigger to check for new data at regular intervals.',
-      'Manual only': 'Use a manual trigger — the agent only runs when explicitly invoked by the user.',
+      'Manual only': 'Use a manual trigger â€” the agent only runs when explicitly invoked by the user.',
     },
   },
   reporting_style: {
@@ -103,10 +100,9 @@ export function compileWizardInstruction(answers: WizardAnswers): string {
   return parts.join('\n\n');
 }
 
-<<<<<<< HEAD
-// ── Wizard → AgentIR Compilation ────────────────────────────────
+// â”€â”€ Wizard â†’ AgentIR Compilation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Produces a structured AgentIR directly from wizard answers,
-// enabling the path: wizard answers → AgentIR → apply(AgentIR).
+// enabling the path: wizard answers â†’ AgentIR â†’ apply(AgentIR).
 
 const TRIGGER_TYPE_MAP: Record<string, SuggestedTrigger['trigger_type']> = {
   'Real-time (webhook / push)': 'webhook',
@@ -191,7 +187,7 @@ export function compileWizardToAgentIR(answers: WizardAnswers): AgentIR {
     design_highlights: [
       {
         category: 'Mission',
-        icon: '🎯',
+        icon: 'ðŸŽ¯',
         color: 'violet',
         items: [mission],
         section: 'identity',
@@ -200,9 +196,7 @@ export function compileWizardToAgentIR(answers: WizardAnswers): AgentIR {
   };
 }
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
-// ── Summary Helper ──────────────────────────────────────────────
+// â”€â”€ Summary Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function getAnswerSummary(answers: WizardAnswers): Array<{ label: string; value: string }> {
   const summary: Array<{ label: string; value: string }> = [];

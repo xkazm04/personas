@@ -1,8 +1,8 @@
 /**
- * PersonaCompiler — explicit compilation pipeline abstraction.
+ * PersonaCompiler â€” explicit compilation pipeline abstraction.
  *
  * The design workflow is structurally a multi-stage compiler:
- *   wizard input → NL instruction → LLM prompt → Claude CLI → structured JSON → DB writes
+ *   wizard input â†’ NL instruction â†’ LLM prompt â†’ Claude CLI â†’ structured JSON â†’ DB writes
  *
  * This module makes the compiler metaphor explicit so that:
  * - Refinement is simply "recompilation with additional constraints"
@@ -12,16 +12,12 @@
  */
 
 import type { CompilationStage } from '@/lib/bindings/CompilationStage';
-<<<<<<< HEAD
 import type { DesignPhase, AgentIR, DesignQuestion } from '@/lib/types/designTypes';
-=======
-import type { DesignPhase, DesignAnalysisResult, DesignQuestion } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 // Re-export the binding type
 export type { CompilationStage };
 
-// ── Stage Metadata ──────────────────────────────────────────────
+// â”€â”€ Stage Metadata â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface CompilationStageInfo {
   stage: CompilationStage;
@@ -58,7 +54,7 @@ export const COMPILATION_STAGES: CompilationStageInfo[] = [
   },
 ];
 
-// ── Phase → Stage Mapping ────────────────────────────────────────
+// â”€â”€ Phase â†’ Stage Mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Map the design phase state machine to the currently active compilation stage.
@@ -72,7 +68,7 @@ export function phaseToStage(phase: DesignPhase): CompilationStage | null {
     case 'analyzing':
     case 'refining':
       // During analysis/refinement, the backend is running stages 1-3
-      // (prompt assembly → LLM generation → result parsing)
+      // (prompt assembly â†’ LLM generation â†’ result parsing)
       return 'llm_generation';
     case 'preview':
       // Preview means parsing and feasibility are complete
@@ -101,7 +97,7 @@ export function activeStageIndex(phase: DesignPhase): number {
   return COMPILATION_STAGES.findIndex((s) => s.stage === stage);
 }
 
-// ── Compilation Mode ────────────────────────────────────────────
+// â”€â”€ Compilation Mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Whether this compilation is initial or a refinement (recompilation). */
 export type CompilationMode = 'initial' | 'recompile';
@@ -112,11 +108,7 @@ export type CompilationMode = 'initial' | 'recompile';
  */
 export function getCompilationMode(
   phase: DesignPhase,
-<<<<<<< HEAD
   existingResult: AgentIR | null,
-=======
-  existingResult: DesignAnalysisResult | null,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 ): CompilationMode {
   if (phase === 'refining' || (existingResult && phase !== 'idle')) {
     return 'recompile';
@@ -124,29 +116,21 @@ export function getCompilationMode(
   return 'initial';
 }
 
-// ── Compiler Result Types ────────────────────────────────────────
+// â”€â”€ Compiler Result Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** The outcome of a compilation pass. */
 export type CompilationOutcome =
-<<<<<<< HEAD
   | { kind: 'success'; result: AgentIR }
-=======
-  | { kind: 'success'; result: DesignAnalysisResult }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   | { kind: 'question'; question: DesignQuestion }
   | { kind: 'error'; error: string };
 
 /**
  * Build a CompilationOutcome from the current hook state.
- * This is a pure derivation — no side effects.
+ * This is a pure derivation â€” no side effects.
  */
 export function deriveOutcome(
   phase: DesignPhase,
-<<<<<<< HEAD
   result: AgentIR | null,
-=======
-  result: DesignAnalysisResult | null,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   question: DesignQuestion | null,
   error: string | null,
 ): CompilationOutcome | null {

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 export const CRASH_STORAGE_KEY = "__personas_frontend_crashes";
 export const CRASH_MAX_ENTRIES = 20;
 
@@ -18,7 +17,7 @@ export function readCrashLogs(): Array<{ timestamp: string; component: string; m
     }
     return trimmed as Array<{ timestamp: string; component: string; message: string; stack?: string }>;
   } catch {
-    // intentional: corrupted data — wipe and return empty
+    // intentional: corrupted data â€” wipe and return empty
     localStorage.removeItem(CRASH_STORAGE_KEY);
     return [];
   }
@@ -27,14 +26,6 @@ export function readCrashLogs(): Array<{ timestamp: string; component: string; m
 /**
  * Persist a frontend crash to localStorage for later diagnostics.
  * Keeps the most recent {@link CRASH_MAX_ENTRIES} entries under {@link CRASH_STORAGE_KEY}.
-=======
-const STORAGE_KEY = "__personas_frontend_crashes";
-const MAX_ENTRIES = 20;
-
-/**
- * Persist a frontend crash to localStorage for later diagnostics.
- * Keeps the most recent {@link MAX_ENTRIES} entries under {@link STORAGE_KEY}.
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
  */
 export function persistCrash(
   label: string,
@@ -43,11 +34,7 @@ export function persistCrash(
 ): void {
   try {
     const crashes: unknown[] = JSON.parse(
-<<<<<<< HEAD
       localStorage.getItem(CRASH_STORAGE_KEY) || "[]",
-=======
-      localStorage.getItem(STORAGE_KEY) || "[]",
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     );
     const entry: Record<string, unknown> = {
       timestamp: new Date().toISOString(),
@@ -59,21 +46,14 @@ export function persistCrash(
       entry.componentStack = componentStack.slice(0, 1000);
     }
     crashes.unshift(entry);
-<<<<<<< HEAD
     const sliced = crashes.slice(0, CRASH_MAX_ENTRIES);
     try {
       localStorage.setItem(CRASH_STORAGE_KEY, JSON.stringify(sliced));
     } catch {
-      // Quota exceeded — halve entries and retry once
+      // Quota exceeded â€” halve entries and retry once
       const halved = sliced.slice(0, Math.max(1, Math.floor(CRASH_MAX_ENTRIES / 2)));
       localStorage.setItem(CRASH_STORAGE_KEY, JSON.stringify(halved));
     }
-=======
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(crashes.slice(0, MAX_ENTRIES)),
-    );
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   } catch {
     // intentional: non-critical -- localStorage may be full or unavailable
   }

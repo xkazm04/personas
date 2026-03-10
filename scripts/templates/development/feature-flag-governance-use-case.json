@@ -160,11 +160,7 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-<<<<<<< HEAD
-            "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
-=======
             "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "From api.slack.com → Your Apps → select your app → OAuth & Permissions → Bot User OAuth Token. Requires scopes: chat:write, chat:write.public.",
             "required": true
           },
@@ -198,11 +194,7 @@
             "key": "api_key",
             "label": "Personal API Key",
             "type": "password",
-<<<<<<< HEAD
-            "placeholder": "lin_api_EXAMPLE_KEY_REPLACE_ME",
-=======
             "placeholder": "lin_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "From Linear → Settings → API → Personal API keys. Click 'Create key', name it 'Flag Governance Agent', and copy the generated key.",
             "required": true
           },
@@ -235,11 +227,7 @@
             "key": "integration_token",
             "label": "Internal Integration Token",
             "type": "password",
-<<<<<<< HEAD
-            "placeholder": "secret_EXAMPLE_KEY_REPLACE_ME",
-=======
             "placeholder": "secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "From notion.so/my-integrations → New Integration → Internal. Copy the Internal Integration Token (starts with 'secret_'). Then share your Flag Registry database with this integration.",
             "required": true
           },
@@ -852,73 +840,6 @@
         "label": "Emits events: execution completed, execution failed, item created, threshold breached",
         "context": "2 event subscription(s) configured — agent participates in event bus"
       }
-<<<<<<< HEAD
-    ],
-    "adoption_questions": [
-      {
-        "id": "ld_project_keys",
-        "question": "Which LaunchDarkly project keys should be monitored?",
-        "type": "text",
-        "default": "default",
-        "context": "Comma-separated LaunchDarkly project keys. The agent scans all flags in these projects.",
-        "connector_names": [
-          "launchdarkly"
-        ],
-        "category": "configuration"
-      },
-      {
-        "id": "notion_flag_db_id",
-        "question": "Notion database ID for the feature flag registry?",
-        "type": "text",
-        "default": "",
-        "context": "The Notion database used as the single source of truth for all flag metadata. Create it before adopting.",
-        "connector_names": [
-          "notion"
-        ],
-        "category": "configuration"
-      },
-      {
-        "id": "linear_team_id",
-        "question": "Linear team ID for cleanup tickets?",
-        "type": "text",
-        "default": "",
-        "context": "Stale flag cleanup and naming violation tickets are assigned to this team.",
-        "connector_names": [
-          "linear"
-        ],
-        "category": "configuration"
-      },
-      {
-        "id": "slack_audit_channel",
-        "question": "Which Slack channel for flag audit logs?",
-        "type": "text",
-        "default": "#feature-flags-audit",
-        "context": "Color-coded change audit messages, collision alerts, and weekly digests are posted here.",
-        "connector_names": [
-          "slack"
-        ],
-        "category": "configuration"
-      },
-      {
-        "id": "stale_threshold_days",
-        "question": "Days before a flag is considered stale?",
-        "type": "select",
-        "default": "90",
-        "context": "Flags older than this with no active targeting or recent evaluations are flagged for cleanup.",
-        "connector_names": [],
-        "category": "configuration"
-      },
-      {
-        "id": "enforce_naming_conventions",
-        "question": "Enforce flag naming conventions (kebab-case, domain prefix)?",
-        "type": "boolean",
-        "default": "Yes",
-        "context": "Posts Slack warnings and creates Linear tickets when flags violate naming rules.",
-        "connector_names": [],
-        "category": "human_in_the_loop"
-      }
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     ]
   }
 }

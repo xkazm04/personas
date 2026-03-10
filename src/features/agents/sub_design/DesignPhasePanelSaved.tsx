@@ -1,19 +1,11 @@
 import { Pencil } from 'lucide-react';
 import { DesignResultPreview } from '@/features/templates/sub_generated';
-<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { PersonaWithDetails, DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { allIndices } from './DesignTabHelpers';
 
 interface DesignPhasePanelSavedProps {
-<<<<<<< HEAD
   savedDesignResult: AgentIR;
-=======
-  savedDesignResult: DesignAnalysisResult;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   selectedPersona: PersonaWithDetails;
   toolDefinitions: DbPersonaToolDefinition[];
   currentToolNames: string[];

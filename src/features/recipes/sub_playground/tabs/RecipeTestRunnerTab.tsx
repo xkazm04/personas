@@ -6,11 +6,7 @@ import { EstimatedProgressBar } from '@/features/shared/components/EstimatedProg
 import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { updateRecipe } from '@/api/recipes';
-<<<<<<< HEAD
 import { useRecipeTestRunner } from '../libs/useRecipeTestRunner';
-=======
-import { useRecipeTestRunner } from '../useRecipeTestRunner';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface RecipeTestRunnerTabProps {
   recipe: RecipeDefinition;
@@ -30,7 +26,7 @@ function parseInputSchema(schema: string | null): InputField[] {
     const parsed = JSON.parse(schema);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical â€” JSON parse fallback
     return [];
   }
 }
@@ -41,7 +37,7 @@ function parseMockValues(sampleInputs: string | null): Record<string, unknown> |
     const parsed = JSON.parse(sampleInputs);
     return typeof parsed === 'object' && parsed !== null ? parsed : null;
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical â€” JSON parse fallback
     return null;
   }
 }
@@ -54,7 +50,7 @@ function formatOutputForMarkdown(output: string): string {
       const formatted = JSON.stringify(JSON.parse(trimmed), null, 2);
       return '```json\n' + formatted + '\n```';
     } catch {
-      // intentional: non-critical — JSON parse fallback
+      // intentional: non-critical â€” JSON parse fallback
     }
   }
   return trimmed;
@@ -87,7 +83,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
       const mock = JSON.parse(recipe.sample_inputs) as Record<string, string>;
       setFieldValues((prev) => ({ ...prev, ...mock }));
     } catch {
-      // intentional: non-critical — JSON parse fallback
+      // intentional: non-critical â€” JSON parse fallback
     }
   }, [recipe.sample_inputs]);
 
@@ -115,7 +111,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
       try {
         inputData = JSON.parse(freeInput);
       } catch {
-        // intentional: non-critical — JSON parse fallback
+        // intentional: non-critical â€” JSON parse fallback
         inputData = { input: freeInput };
       }
     } else {
@@ -285,7 +281,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
         </div>
       )}
 
-      {/* Output Section — Two Columns */}
+      {/* Output Section â€” Two Columns */}
       <div className="flex-1 min-h-0 p-4 grid grid-cols-2 gap-4">
         {/* Left: Rendered Prompt */}
         <div className="flex flex-col min-h-0">

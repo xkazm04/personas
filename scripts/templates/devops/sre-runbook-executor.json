@@ -113,11 +113,7 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-<<<<<<< HEAD
-            "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
-=======
             "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "Go to api.slack.com/apps → select your app → OAuth & Permissions → Bot User OAuth Token. Your app needs chat:write, chat:write.public, and channels:read scopes.",
             "required": true
           }
@@ -142,11 +138,7 @@
             "key": "token",
             "label": "Personal Access Token",
             "type": "password",
-<<<<<<< HEAD
-            "placeholder": "github_pat_EXAMPLE_TOKEN_REPLACE_ME",
-=======
             "placeholder": "github_pat_xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "Go to GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens. Grant Read and Write access to Issues on your incident tracking repository.",
             "required": true
           },
@@ -187,11 +179,7 @@
             "key": "token",
             "label": "Internal Integration Token",
             "type": "password",
-<<<<<<< HEAD
-            "placeholder": "secret_EXAMPLE_KEY_REPLACE_ME",
-=======
             "placeholder": "secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "Go to notion.so/my-integrations → Create new integration → select your workspace → copy the 'Internal Integration Token' (starts with 'secret_').",
             "required": true
           },
@@ -656,55 +644,6 @@
         ]
       }
     ],
-<<<<<<< HEAD
-    "adoption_questions": [
-      {
-        "id": "notion_runbook_db_id",
-        "question": "What is your Notion runbook database ID?",
-        "type": "text",
-        "default": "",
-        "context": "The 32-character ID of the Notion database containing runbook entries. Found in the database URL.",
-        "connector_names": ["notion"],
-        "category": "configuration"
-      },
-      {
-        "id": "github_incident_repo",
-        "question": "Which GitHub repository should incident issues be created in?",
-        "type": "text",
-        "default": "incidents",
-        "context": "Unresolved incidents will be documented as GitHub issues in this repository",
-        "connector_names": ["github"],
-        "category": "configuration"
-      },
-      {
-        "id": "slack_incident_channel",
-        "question": "Which Slack channel should receive incident alerts?",
-        "type": "text",
-        "default": "#sre-incidents",
-        "context": "Diagnostic findings and incident summaries are posted to this channel",
-        "connector_names": ["slack"],
-        "category": "configuration"
-      },
-      {
-        "id": "oncall_slack_user",
-        "question": "Which Slack user or group should be mentioned for critical incidents?",
-        "type": "text",
-        "default": "@oncall-engineer",
-        "context": "Critical incidents will @mention this user or group in Slack for immediate attention",
-        "connector_names": ["slack"],
-        "category": "configuration"
-      },
-      {
-        "id": "alertmanager_url",
-        "question": "What is your Alertmanager webhook endpoint URL?",
-        "type": "text",
-        "default": "",
-        "context": "Configure Alertmanager to send webhooks to this agent's endpoint. The URL will be provided after persona creation.",
-        "category": "configuration"
-      }
-    ],
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     "protocol_capabilities": [
       {
         "type": "manual_review",

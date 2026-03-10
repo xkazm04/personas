@@ -1,9 +1,5 @@
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 import { deriveConnectorReadiness } from './ConnectorReadiness';
 
@@ -19,11 +15,7 @@ export function computeAdoptionReadiness(
   const connectors: string[] = parseJsonSafe(review.connectors_used, []);
   if (connectors.length === 0) return 100; // no connectors needed = fully ready
 
-<<<<<<< HEAD
   const designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
-=======
-  const designResult = parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const statuses = designResult?.suggested_connectors
     ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
     : [];

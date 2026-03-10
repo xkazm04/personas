@@ -12,11 +12,7 @@ import {
   Mail,
 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
-<<<<<<< HEAD
 import type { AgentIR, SuggestedTrigger, SuggestedConnector } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult, SuggestedTrigger, SuggestedConnector } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 // ============================================================================
 // Helpers
@@ -55,11 +51,7 @@ const SECTION_LABEL = 'text-sm font-semibold uppercase tracking-wider text-muted
 // Section 1: Connectors & Tools
 // ============================================================================
 
-<<<<<<< HEAD
 function ConnectorsToolsSection({ designResult }: { designResult: AgentIR }) {
-=======
-function ConnectorsToolsSection({ designResult }: { designResult: DesignAnalysisResult }) {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const suggestedConnectors = designResult.suggested_connectors ?? [];
 
   const connectorRows = useMemo(() => {
@@ -135,11 +127,7 @@ function ConnectorsToolsSection({ designResult }: { designResult: DesignAnalysis
 // Section 2: Events & Triggers
 // ============================================================================
 
-<<<<<<< HEAD
 function EventsTriggersSection({ designResult }: { designResult: AgentIR }) {
-=======
-function EventsTriggersSection({ designResult }: { designResult: DesignAnalysisResult }) {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const triggers = designResult.suggested_triggers ?? [];
   const subscriptions = designResult.suggested_event_subscriptions ?? [];
 
@@ -195,11 +183,7 @@ function EventsTriggersSection({ designResult }: { designResult: DesignAnalysisR
 // Section 3: Messages & Notifications
 // ============================================================================
 
-<<<<<<< HEAD
 function MessagesNotificationsSection({ designResult }: { designResult: AgentIR }) {
-=======
-function MessagesNotificationsSection({ designResult }: { designResult: DesignAnalysisResult }) {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const channels = designResult.suggested_notification_channels ?? [];
 
   if (channels.length === 0) return null;
@@ -238,12 +222,11 @@ function MessagesNotificationsSection({ designResult }: { designResult: DesignAn
 }
 
 // ============================================================================
-// Main Component — read-only display of connectors, triggers, and channels
+// Main Component â€” read-only display of connectors, triggers, and channels
 // ============================================================================
 
 export function DesignConnectorGrid({
   designResult,
-<<<<<<< HEAD
   hideConnectorsTools = false,
 }: {
   designResult: AgentIR;
@@ -252,14 +235,6 @@ export function DesignConnectorGrid({
   return (
     <div className="space-y-6">
       {!hideConnectorsTools && <ConnectorsToolsSection designResult={designResult} />}
-=======
-}: {
-  designResult: DesignAnalysisResult;
-}) {
-  return (
-    <div className="space-y-6">
-      <ConnectorsToolsSection designResult={designResult} />
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       <EventsTriggersSection designResult={designResult} />
       <MessagesNotificationsSection designResult={designResult} />
     </div>

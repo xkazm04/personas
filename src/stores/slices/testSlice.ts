@@ -5,12 +5,9 @@ import type { PersonaTestRun } from "@/lib/bindings/PersonaTestRun";
 import type { PersonaTestResult } from "@/lib/bindings/PersonaTestResult";
 import type { PersonaTestSuite } from "@/lib/bindings/PersonaTestSuite";
 import * as api from "@/api/tauriApi";
-<<<<<<< HEAD
 import { createRunLifecycle } from "./runLifecycle";
 
 const testLifecycle = createRunLifecycle('isTestRunning', 'testRunProgress');
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 export interface TestRunProgress {
   runId?: string;
@@ -38,11 +35,7 @@ export interface TestSlice {
 
   // Actions
   fetchTestRuns: (personaId: string) => Promise<void>;
-<<<<<<< HEAD
   startTest: (personaId: string, models: api.ModelTestConfig[], useCaseFilter?: string, suiteId?: string, fixtureInputs?: Record<string, unknown>) => Promise<string | null>;
-=======
-  startTest: (personaId: string, models: api.ModelTestConfig[], useCaseFilter?: string, suiteId?: string) => Promise<string | null>;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   cancelTest: (runId: string) => Promise<void>;
   fetchTestResults: (testRunId: string) => Promise<void>;
   deleteTest: (runId: string) => Promise<void>;
@@ -71,24 +64,11 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
     }
   },
 
-<<<<<<< HEAD
   startTest: async (personaId, models, useCaseFilter, suiteId, fixtureInputs) => {
     set({ activeTestResults: [], activeTestResultsRunId: null });
     testLifecycle.markStarted(set);
     try {
       const run = await api.startTestRun(personaId, models, useCaseFilter, suiteId, fixtureInputs);
-=======
-  startTest: async (personaId, models, useCaseFilter, suiteId) => {
-    set({
-      isTestRunning: true,
-      testRunProgress: null,
-      activeTestResults: [],
-      activeTestResultsRunId: null,
-      error: null,
-    });
-    try {
-      const run = await api.startTestRun(personaId, models, useCaseFilter, suiteId);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       set({
         testRunProgress: {
           runId: run.id,
@@ -97,12 +77,8 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
       });
       return run.id;
     } catch (err) {
-<<<<<<< HEAD
       testLifecycle.markFailed(set);
       set({ error: errMsg(err, "Failed to start test run") });
-=======
-      set({ error: errMsg(err, "Failed to start test run"), isTestRunning: false });
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       return null;
     }
   },
@@ -110,18 +86,10 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
   cancelTest: async (runId) => {
     try {
       await api.cancelTestRun(runId);
-<<<<<<< HEAD
     } catch (err) {
       set({ error: errMsg(err, "Failed to cancel test run") });
     } finally {
       testLifecycle.markCancelled(set);
-=======
-      set({ testRunProgress: null });
-    } catch (err) {
-      set({ error: errMsg(err, "Failed to cancel test run") });
-    } finally {
-      set({ isTestRunning: false });
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     }
   },
 
@@ -155,11 +123,7 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
   },
 
   finishTestRun: () => {
-<<<<<<< HEAD
     testLifecycle.markFinished(set);
-=======
-    set({ isTestRunning: false });
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     const personaId = get().selectedPersona?.id;
     if (personaId) get().fetchTestRuns(personaId);
   },

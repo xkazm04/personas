@@ -1,7 +1,7 @@
 import { usePersonaStore } from '@/stores/personaStore';
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizeUrl';
 import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
-import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, ShieldAlert, Monitor, Wifi } from 'lucide-react';
+import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, ShieldAlert, Monitor } from 'lucide-react';
 import { IS_MOBILE } from '@/lib/utils/platform';
 import { formatElapsed, getStatusEntry } from '@/lib/utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,7 +31,7 @@ export function PersonaRunner() {
     personaId,
     inputData: state.inputData,
     setJsonError: state.setJsonError,
-    setOutputLines: state.setOutputLines as any,
+    setOutputLines: state.setOutputLines as (fn: (prev: string[]) => string[]) => void,
     fetchTypicalDuration: state.fetchTypicalDuration,
     disconnect: state.disconnect,
     elapsedMs: state.elapsedMs,
@@ -40,7 +40,7 @@ export function PersonaRunner() {
     terminalHeight: state.terminalHeight,
     setTerminalHeight: state.setTerminalHeight,
     isTerminalFullscreen: state.isTerminalFullscreen,
-    setIsTerminalFullscreen: state.setIsTerminalFullscreen as any,
+    setIsTerminalFullscreen: state.setIsTerminalFullscreen as (fn: (prev: boolean) => boolean) => void,
   });
 
   if (!selectedPersona) {
@@ -103,7 +103,7 @@ export function PersonaRunner() {
         )}
         {IS_MOBILE ? (
           <button
-            onClick={() => { try { window.open('https://claude.ai/code', '_blank'); } catch {} }}
+            onClick={() => { try { window.open('https://claude.ai/code', '_blank'); } catch { /* intentional no-op */ } }}
             className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-cyan-500/80 to-blue-500/80 hover:from-cyan-500 hover:to-blue-500 text-foreground shadow-lg shadow-cyan-500/20"
           >
             <Monitor className="w-5 h-5" />

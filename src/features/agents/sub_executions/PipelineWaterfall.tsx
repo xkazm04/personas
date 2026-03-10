@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { DbPersonaExecution } from '@/lib/types/types';
-import type { PipelineTrace, PipelineTraceEntry, PipelineStage } from '@/lib/execution/pipeline';
-import { PIPELINE_STAGES, STAGE_META } from '@/lib/execution/pipeline';
+import type { PipelineTrace, PipelineTraceEntry, PipelineStage, UnifiedSpan } from '@/lib/execution/pipeline';
+import { PIPELINE_STAGES, STAGE_META, isPipelineStage } from '@/lib/execution/pipeline';
 import { usePersonaStore } from '@/stores/personaStore';
 import {
   Clock, DollarSign, Zap, AlertCircle,
@@ -68,56 +68,65 @@ function buildSyntheticTrace(execution: DbPersonaExecution): PipelineTrace | nul
   if (totalDuration <= 0) return null;
 
   // Estimate stage durations based on typical proportions
-  const entries: PipelineTraceEntry[] = [];
-  let cursor = startTime;
+  const spans: UnifiedSpan[] = [];
+  let cursorMs = 0; // relative to startTime
+  let spanIdx = 0;
+
+  const makeSpan = (
+    stage: PipelineStage,
+    durationMs: number,
+    extra?: { metadata?: Record<string, unknown>; error?: string },
+  ): UnifiedSpan => ({
+    span_id: `synth-${spanIdx++}`,
+    parent_span_id: null,
+    span_type: stage,
+    name: stage,
+    start_ms: cursorMs,
+    end_ms: cursorMs + durationMs,
+    duration_ms: durationMs,
+    cost_usd: null,
+    error: extra?.error ?? null,
+    metadata: extra?.metadata ?? null,
+  });
 
   // initiate: ~1% (quick frontend dispatch)
   const initDur = Math.max(totalDuration * 0.01, 5);
-  entries.push({ stage: 'initiate', timestamp: cursor, durationMs: initDur, metadata: { personaId: execution.persona_id } });
-  cursor += initDur;
+  spans.push(makeSpan('initiate', initDur, { metadata: { personaId: execution.persona_id } }));
+  cursorMs += initDur;
 
   // validate: ~2%
   const validateDur = Math.max(totalDuration * 0.02, 10);
-  entries.push({ stage: 'validate', timestamp: cursor, durationMs: validateDur });
-  cursor += validateDur;
+  spans.push(makeSpan('validate', validateDur));
+  cursorMs += validateDur;
 
   // create_record: ~1%
   const createDur = Math.max(totalDuration * 0.01, 5);
-  entries.push({ stage: 'create_record', timestamp: cursor, durationMs: createDur, metadata: { executionId: execution.id } });
-  cursor += createDur;
+  spans.push(makeSpan('create_record', createDur, { metadata: { executionId: execution.id } }));
+  cursorMs += createDur;
 
   // spawn_engine: ~1%
   const spawnDur = Math.max(totalDuration * 0.01, 10);
-  entries.push({ stage: 'spawn_engine', timestamp: cursor, durationMs: spawnDur });
-  cursor += spawnDur;
+  spans.push(makeSpan('spawn_engine', spawnDur));
+  cursorMs += spawnDur;
 
   // stream_output: ~90% (the bulk)
-  const streamDur = endTime - cursor - Math.max(totalDuration * 0.03, 20);
-  entries.push({ stage: 'stream_output', timestamp: cursor, durationMs: Math.max(streamDur, 50) });
-  cursor += Math.max(streamDur, 50);
+  const streamDur = endTime - startTime - cursorMs - Math.max(totalDuration * 0.03, 20);
+  const actualStreamDur = Math.max(streamDur, 50);
+  spans.push(makeSpan('stream_output', actualStreamDur));
+  cursorMs += actualStreamDur;
 
   // finalize_status: ~2%
   const finalizeDur = Math.max(totalDuration * 0.02, 10);
-  entries.push({
-    stage: 'finalize_status',
-    timestamp: cursor,
-    durationMs: finalizeDur,
-    error: execution.error_message ?? undefined,
-  });
-  cursor += finalizeDur;
+  spans.push(makeSpan('finalize_status', finalizeDur, { error: execution.error_message ?? undefined }));
+  cursorMs += finalizeDur;
 
   // frontend_complete: ~1%
-  const feCompleteDur = Math.max(endTime - cursor, 5);
-  entries.push({
-    stage: 'frontend_complete',
-    timestamp: cursor,
-    durationMs: feCompleteDur,
-    metadata: { status: execution.status },
-  });
+  const feCompleteDur = Math.max(totalDuration - cursorMs, 5);
+  spans.push(makeSpan('frontend_complete', feCompleteDur, { metadata: { status: execution.status } }));
 
   return {
     executionId: execution.id,
-    entries,
+    spans,
     startedAt: startTime,
     completedAt: endTime,
   };
@@ -130,23 +139,22 @@ function buildSyntheticTrace(execution: DbPersonaExecution): PipelineTrace | nul
 function StageBar({
   entry,
   totalDurationMs,
-  pipelineStartMs,
   isExpanded,
   onToggle,
   hasSubSpans,
 }: {
   entry: PipelineTraceEntry;
   totalDurationMs: number;
-  pipelineStartMs: number;
   isExpanded: boolean;
   onToggle: () => void;
   hasSubSpans: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
-  const config = STAGE_COLORS[entry.stage];
-  const meta = STAGE_META[entry.stage];
-  const offsetMs = entry.timestamp - pipelineStartMs;
-  const durationMs = entry.durationMs ?? 0;
+  const stageKey = entry.span_type as PipelineStage;
+  const config = STAGE_COLORS[stageKey];
+  const meta = STAGE_META[stageKey];
+  const offsetMs = entry.start_ms;
+  const durationMs = entry.duration_ms ?? 0;
   const leftPct = totalDurationMs > 0 ? (offsetMs / totalDurationMs) * 100 : 0;
   const widthPct = totalDurationMs > 0 ? Math.max((durationMs / totalDurationMs) * 100, 0.5) : 0;
 
@@ -324,17 +332,17 @@ function CostAccrualOverlay({
     pts.push({ pct: 0, costPct: 0 });
 
     for (const entry of entries) {
-      const offsetMs = entry.timestamp - pipelineStartMs;
-      const endMs = offsetMs + (entry.durationMs ?? 0);
+      const offsetMs = entry.start_ms;
+      const endMs = offsetMs + (entry.duration_ms ?? 0);
       const startPct = (offsetMs / totalDurationMs) * 100;
       const endPct = (endMs / totalDurationMs) * 100;
 
-      if (entry.stage === 'stream_output') {
+      if (entry.span_type === 'stream_output') {
         // Bulk of cost accrues here
         pts.push({ pct: startPct, costPct: (accrued / totalCostUsd) * 100 });
         accrued += totalCostUsd * 0.95; // ~95% of cost in streaming
         pts.push({ pct: endPct, costPct: (accrued / totalCostUsd) * 100 });
-      } else if (entry.stage === 'finalize_status') {
+      } else if (entry.span_type === 'finalize_status') {
         pts.push({ pct: startPct, costPct: (accrued / totalCostUsd) * 100 });
         accrued = totalCostUsd;
         pts.push({ pct: endPct, costPct: 100 });
@@ -387,8 +395,8 @@ function CostAccrualOverlay({
 
 function PipelineSummary({ trace, execution }: { trace: PipelineTrace; execution: DbPersonaExecution }) {
   const totalMs = trace.completedAt ? trace.completedAt - trace.startedAt : 0;
-  const stagesHit = trace.entries.length;
-  const errors = trace.entries.filter(e => e.error).length;
+  const stagesHit = trace.spans.length;
+  const errors = trace.spans.filter(e => e.error).length;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -453,7 +461,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
     });
   };
 
-  if (!trace || trace.entries.length === 0) {
+  if (!trace || trace.spans.length === 0) {
     return (
       <div className="text-center py-10">
         <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/15 flex items-center justify-center">
@@ -466,12 +474,12 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
   }
 
   const totalDurationMs = trace.completedAt ? trace.completedAt - trace.startedAt : (
-    trace.entries.reduce((max, e) => Math.max(max, (e.timestamp - trace.startedAt) + (e.durationMs ?? 0)), 0)
+    trace.spans.reduce((max, e) => Math.max(max, e.start_ms + (e.duration_ms ?? 0)), 0)
   );
   const isLive = liveTrace?.executionId === execution.id;
 
   // Find stream_output entry for sub-span anchoring
-  const streamEntry = trace.entries.find(e => e.stage === 'stream_output');
+  const streamEntry = trace.spans.find(e => e.span_type === 'stream_output');
 
   return (
     <div className="space-y-4">
@@ -519,18 +527,17 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
 
         {/* Stage rows */}
         <div className="divide-y divide-primary/5">
-          {trace.entries.map((entry) => {
-            const hasSubSpans = entry.stage === 'stream_output' && toolSteps.length > 0;
-            const isExpanded = expandedStages.has(entry.stage);
+          {trace.spans.filter(s => isPipelineStage(s.span_type)).map((entry) => {
+            const hasSubSpans = entry.span_type === 'stream_output' && toolSteps.length > 0;
+            const isExpanded = expandedStages.has(entry.span_type);
 
             return (
-              <div key={entry.stage}>
+              <div key={entry.span_type}>
                 <StageBar
                   entry={entry}
                   totalDurationMs={totalDurationMs}
-                  pipelineStartMs={trace.startedAt}
                   isExpanded={isExpanded}
-                  onToggle={() => toggleStage(entry.stage)}
+                  onToggle={() => toggleStage(entry.span_type)}
                   hasSubSpans={hasSubSpans}
                 />
 
@@ -548,7 +555,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
                         <SubSpanBar
                           key={step.step_index}
                           step={step}
-                          parentStartMs={streamEntry.timestamp}
+                          parentStartMs={trace.startedAt + streamEntry.start_ms}
                           totalDurationMs={totalDurationMs}
                           pipelineStartMs={trace.startedAt}
                         />
@@ -565,7 +572,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
         {execution.cost_usd > 0 && (
           <div className="border-t border-primary/10">
             <CostAccrualOverlay
-              entries={trace.entries}
+              entries={trace.spans.filter(s => isPipelineStage(s.span_type))}
               totalDurationMs={totalDurationMs}
               pipelineStartMs={trace.startedAt}
               totalCostUsd={execution.cost_usd}
@@ -575,18 +582,19 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
       </div>
 
       {/* Error details */}
-      {trace.entries.some(e => e.error) && (
+      {trace.spans.some(e => e.error) && (
         <div className="space-y-2">
           <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
             <AlertCircle className="w-2.5 h-2.5 text-red-400" /> Stage Errors
           </div>
-          {trace.entries
+          {trace.spans
             .filter(e => e.error)
             .map((entry) => {
-              const config = STAGE_COLORS[entry.stage];
-              const meta = STAGE_META[entry.stage];
+              const sk = entry.span_type as PipelineStage;
+              const config = STAGE_COLORS[sk];
+              const meta = STAGE_META[sk];
               return (
-                <div key={entry.stage} className="p-3 bg-red-500/5 border border-red-500/15 rounded-lg">
+                <div key={entry.span_type} className="p-3 bg-red-500/5 border border-red-500/15 rounded-lg">
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded border ${config.bg} ${config.text} ${config.border}`}>
                       {meta.label}

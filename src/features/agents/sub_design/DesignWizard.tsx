@@ -1,20 +1,14 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-<<<<<<< HEAD
 import { WIZARD_STEPS, compileWizardInstruction, compileWizardToAgentIR, getAnswerSummary } from './wizardSteps';
 import type { WizardAnswers } from './wizardSteps';
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import { WIZARD_STEPS, compileWizardInstruction, getAnswerSummary } from './wizardSteps';
-import type { WizardAnswers } from './wizardSteps';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { WizardStepRenderer } from './WizardStepRenderer';
 import { WizardStepIndicator } from './WizardStepIndicator';
 
 interface DesignWizardProps {
   onComplete: (instruction: string) => void;
-<<<<<<< HEAD
   /** Called with a structured AgentIR compiled from wizard answers.
    *  When provided, enables direct-apply flows without LLM round-trip. */
   onCompleteIR?: (ir: AgentIR) => void;
@@ -22,12 +16,6 @@ interface DesignWizardProps {
 }
 
 export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizardProps) {
-=======
-  onCancel: () => void;
-}
-
-export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<WizardAnswers>({});
   const [additionalContext, setAdditionalContext] = useState('');
@@ -57,14 +45,11 @@ export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
   const handleNext = () => {
     if (isLastStep) {
       const allAnswers = { ...answers, additional_context: additionalContext };
-<<<<<<< HEAD
       // Emit both the structured AgentIR and the string instruction.
       // Callers use whichever form fits their pipeline.
       if (onCompleteIR) {
         onCompleteIR(compileWizardToAgentIR(allAnswers));
       }
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       const instruction = compileWizardInstruction(allAnswers);
       onComplete(instruction);
     } else {

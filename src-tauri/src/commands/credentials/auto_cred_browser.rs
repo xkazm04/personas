@@ -26,13 +26,13 @@ const PROGRESS_EVENT: &str = "auto-cred-browser-progress";
 /// Event emitted when a URL should be opened in the user's browser.
 const OPEN_URL_EVENT: &str = "auto-cred-open-url";
 
-/// Model for browser automation tasks — needs tool use capabilities.
+/// Model for browser automation tasks â€” needs tool use capabilities.
 const BROWSER_MODEL: &str = "claude-sonnet-4-6";
 
-/// Timeout for browser automation (5 minutes — browser work is slow).
+/// Timeout for browser automation (5 minutes â€” browser work is slow).
 const BROWSER_TIMEOUT_SECS: u64 = 300;
 
-/// Timeout for guided mode (8 minutes — user interacts manually).
+/// Timeout for guided mode (8 minutes â€” user interacts manually).
 const GUIDED_TIMEOUT_SECS: u64 = 480;
 
 /// Protocol prefix: when Claude outputs `OPEN_URL:https://...`, the frontend opens it.
@@ -97,13 +97,13 @@ pub struct SessionContext {
     pub tool_call_count: u32,
     pub duration_secs: Option<f64>,
     pub had_waiting_prompt: bool,
-    /// Last meaningful assistant text — used to derive better error messages.
+    /// Last meaningful assistant text â€” used to derive better error messages.
     pub last_assistant_text: Option<String>,
 }
 
 /// Tracks emitted log messages to prevent duplicates in the browser session UI.
 ///
-/// Claude CLI `stream-json` sends cumulative `assistant` events — each contains
+/// Claude CLI `stream-json` sends cumulative `assistant` events â€” each contains
 /// ALL text from the current turn, not just the delta. This tracker computes
 /// deltas so the UI only receives new content.
 #[derive(Default)]
@@ -135,12 +135,12 @@ impl StreamDedup {
             return Some(delta.to_string());
         }
 
-        // If the accumulated text starts with the new text, it's a subset → skip
+        // If the accumulated text starts with the new text, it's a subset â†’ skip
         if self.assistant_text_acc.starts_with(trimmed) {
             return None;
         }
 
-        // Completely new text (new turn or different content) — emit all and reset
+        // Completely new text (new turn or different content) â€” emit all and reset
         self.assistant_text_acc = trimmed.to_string();
         Some(trimmed.to_string())
     }
@@ -171,7 +171,7 @@ impl StreamDedup {
 }
 
 /// Write a subprocess crash/error report to the crash_logs directory so it
-/// appears in System Checks → Crash Logs alongside Rust panics.
+/// appears in System Checks â†’ Crash Logs alongside Rust panics.
 fn write_subprocess_crash_report(
     app: &tauri::AppHandle,
     session_id: &str,
@@ -253,7 +253,7 @@ fn build_browser_prompt(req: &AutoCredBrowserRequest) -> String {
         let mut desc = format!("- `{}` ({})", f.key, f.label);
         if f.required { desc.push_str(" [REQUIRED]"); }
         if let Some(ref ph) = f.placeholder { desc.push_str(&format!(" placeholder: {ph}")); }
-        if let Some(ref ht) = f.help_text { desc.push_str(&format!(" — {ht}")); }
+        if let Some(ref ht) = f.help_text { desc.push_str(&format!(" â€” {ht}")); }
         desc
     }).collect();
 
@@ -291,7 +291,7 @@ Navigate to the {connector_label} API/developer dashboard, create a new API key 
 1. Use `mcp__playwright__browser_navigate` to open the starting URL.
 2. Use `mcp__playwright__browser_snapshot` to read the page content.
 3. Navigate through the credential creation flow using `mcp__playwright__browser_click` and `mcp__playwright__browser_type` as needed.
-4. When you encounter a login page, CAPTCHA, or 2FA prompt, output a message like "WAITING: Login required — please authenticate in the browser" and use `mcp__playwright__browser_wait_for_navigation` to wait for the user.
+4. When you encounter a login page, CAPTCHA, or 2FA prompt, output a message like "WAITING: Login required â€” please authenticate in the browser" and use `mcp__playwright__browser_wait_for_navigation` to wait for the user.
 5. After creating the credential, extract all field values.
 6. Output the final result as a JSON object with exactly this format:
 
@@ -329,7 +329,7 @@ fn build_guided_prompt(req: &AutoCredBrowserRequest) -> String {
         let mut desc = format!("- `{}` ({})", f.key, f.label);
         if f.required { desc.push_str(" [REQUIRED]"); }
         if let Some(ref ph) = f.placeholder { desc.push_str(&format!(" placeholder: {ph}")); }
-        if let Some(ref ht) = f.help_text { desc.push_str(&format!(" — {ht}")); }
+        if let Some(ref ht) = f.help_text { desc.push_str(&format!(" â€” {ht}")); }
         desc
     }).collect();
 
@@ -354,11 +354,11 @@ Browser automation is NOT available. Instead, you will guide the user step-by-st
 
 You have special output prefixes that trigger actions in the desktop app:
 
-1. **OPEN_URL:https://example.com** — Opens the URL in the user's default browser.
+1. **OPEN_URL:https://example.com** â€” Opens the URL in the user's default browser.
    Use this whenever you reference a URL the user should visit.
    Output it on its own line, with no surrounding text on that line.
 
-2. **WAITING: <message>** — Indicates you're waiting for the user to complete a step.
+2. **WAITING: <message>** â€” Indicates you're waiting for the user to complete a step.
    After outputting a WAITING message, the app will pause for user confirmation.
 
 ## Starting Point
@@ -447,7 +447,7 @@ pub async fn start_auto_cred_browser(
     // before creating a new one.
     cleanup_stale_mcp_temp_files();
 
-    // Keep the MCP config file alive for the entire function scope — dropping
+    // Keep the MCP config file alive for the entire function scope â€” dropping
     // the NamedTempFile auto-deletes it, so it must outlive spawn_claude_and_collect.
     let mut _mcp_config_file: Option<tempfile::NamedTempFile> = None;
 
@@ -466,7 +466,7 @@ pub async fn start_auto_cred_browser(
             (build_browser_prompt(&request), BROWSER_TIMEOUT_SECS)
         }
         AutoCredMode::Guided => {
-            // No MCP needed — guided mode uses only text output
+            // No MCP needed â€” guided mode uses only text output
             // Disallow all tools so Claude focuses on generating instructions
             cli_args.args.push("--allowedTools".to_string());
             cli_args.args.push("".to_string());
@@ -496,11 +496,11 @@ pub async fn start_auto_cred_browser(
     let app_clone = app.clone();
     let sid = session_id.clone();
 
-    // Session context accumulator — shared with the streaming callback
+    // Session context accumulator â€” shared with the streaming callback
     let ctx_acc = Arc::new(Mutex::new(SessionContext::default()));
     let ctx_ref = Arc::clone(&ctx_acc);
 
-    // Deduplication tracker — prevents duplicate log entries in the UI.
+    // Deduplication tracker â€” prevents duplicate log entries in the UI.
     // Claude CLI stream-json sends cumulative assistant events (each contains
     // ALL text from the turn), so we compute deltas to only emit new content.
     let dedup = Arc::new(Mutex::new(StreamDedup::default()));
@@ -539,7 +539,7 @@ pub async fn start_auto_cred_browser(
                         }
                     }
 
-                    // Compute delta — only process NEW text not yet emitted
+                    // Compute delta â€” only process NEW text not yet emitted
                     let delta = if let Ok(mut dd) = dedup_ref.lock() {
                         dd.assistant_delta(text)
                     } else {
@@ -559,7 +559,7 @@ pub async fn start_auto_cred_browser(
                                 continue;
                             }
 
-                            // Check for OPEN_URL: protocol — can appear at start OR inline
+                            // Check for OPEN_URL: protocol â€” can appear at start OR inline
                             if let Some(url_start) = trimmed.find(OPEN_URL_PREFIX) {
                                 let url = trimmed[url_start + OPEN_URL_PREFIX.len()..].trim();
                                 // The URL may have trailing text; extract just the URL part
@@ -627,7 +627,7 @@ pub async fn start_auto_cred_browser(
                     }
                 }
                 StreamLineType::AssistantToolUse { tool_name, .. } => {
-                    // Track context only — no progress events for routine tool calls
+                    // Track context only â€” no progress events for routine tool calls
                     // to avoid noisy log entries like "Navigating...", "Working..."
                     if let Ok(mut ctx) = ctx_ref.lock() {
                         ctx.tool_call_count += 1;
@@ -825,7 +825,7 @@ pub async fn start_auto_cred_browser(
                             }
                             _ => "The session completed but couldn't produce the expected credentials. The service may require manual steps (CAPTCHA, 2FA, paid plan). Try setting up manually.".to_string(),
                         };
-                        // Write crash report for System Checks — include raw output tail
+                        // Write crash report for System Checks â€” include raw output tail
                         let output_tail = if spawn_result.text_output.len() > 1000 {
                             &spawn_result.text_output[spawn_result.text_output.len() - 1000..]
                         } else {
@@ -915,7 +915,7 @@ pub async fn get_playwright_procedure(
 /// Claude CLI accepts `--mcp-config <path>` pointing to a JSON file.
 ///
 /// Returns a `NamedTempFile` with a random filename. The caller MUST keep this
-/// handle alive until the CLI process finishes — dropping it deletes the file,
+/// handle alive until the CLI process finishes â€” dropping it deletes the file,
 /// preventing stale credential configs from lingering on disk.
 fn build_playwright_mcp_config() -> Result<tempfile::NamedTempFile, String> {
     use std::io::Write;
@@ -1077,11 +1077,7 @@ pub async fn cancel_auto_cred_browser(
                 .stderr(std::process::Stdio::null())
                 .status();
         }
-<<<<<<< HEAD
         #[cfg(all(not(windows), not(target_os = "android")))]
-=======
-        #[cfg(not(windows))]
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         {
             unsafe { libc::kill(pid as i32, libc::SIGTERM); }
         }
@@ -1089,7 +1085,7 @@ pub async fn cancel_auto_cred_browser(
     Ok(())
 }
 
-/// Check if Playwright MCP is available — exposed as a Tauri command
+/// Check if Playwright MCP is available â€” exposed as a Tauri command
 /// so the frontend can decide the UI mode upfront.
 #[tauri::command]
 pub async fn check_auto_cred_playwright_available() -> Result<bool, String> {
@@ -1211,7 +1207,7 @@ fn extract_browser_result(text: &str) -> Option<(serde_json::Value, String)> {
     None
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[cfg(test)]
 mod tests {
@@ -1249,7 +1245,7 @@ mod tests {
     fn test_dedup_subset_skipped() {
         let mut dd = StreamDedup::default();
         dd.assistant_delta("Full text here with more content");
-        // A shorter version of already-seen text → skip
+        // A shorter version of already-seen text â†’ skip
         let delta = dd.assistant_delta("Full text here");
         assert_eq!(delta, None);
     }

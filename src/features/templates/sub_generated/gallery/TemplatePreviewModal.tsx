@@ -4,26 +4,15 @@ import { TerminalBody } from '@/features/shared/components/TerminalBody';
 import { DimensionRadial } from '../shared/DimensionRadial';
 import { BaseModal } from '../shared/BaseModal';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 
 /**
-<<<<<<< HEAD
  * Build a minimal draft JSON from a AgentIR to pass to testN8nDraft.
- * The Rust side only requires `system_prompt` — everything else is optional.
+ * The Rust side only requires `system_prompt` â€” everything else is optional.
  */
 function buildDraftJson(designResult: AgentIR, name: string): string {
-=======
- * Build a minimal draft JSON from a DesignAnalysisResult to pass to testN8nDraft.
- * The Rust side only requires `system_prompt` — everything else is optional.
- */
-function buildDraftJson(designResult: DesignAnalysisResult, name: string): string {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const sp = designResult.structured_prompt;
   const sections = [
     sp.identity,
@@ -77,11 +66,7 @@ export function TemplatePreviewModal({
   onRetryPreview,
 }: TemplatePreviewModalProps) {
   const designResult = useMemo(
-<<<<<<< HEAD
     () => review ? parseJsonSafe<AgentIR | null>(review.design_result, null) : null,
-=======
-    () => review ? parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null) : null,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     [review],
   );
 
@@ -117,7 +102,7 @@ export function TemplatePreviewModal({
               Preview: {review.test_case_name}
             </h2>
             <p className="text-sm text-muted-foreground/60 mt-0.5">
-              Sandboxed single-turn execution — no persona created
+              Sandboxed single-turn execution â€” no persona created
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -142,7 +127,7 @@ export function TemplatePreviewModal({
                 </h3>
                 <p className="text-sm text-muted-foreground/60 leading-relaxed">
                   Run a sandboxed single-turn execution to see how this persona behaves.
-                  Uses the template's system prompt with mock inputs — nothing is saved.
+                  Uses the template's system prompt with mock inputs â€” nothing is saved.
                 </p>
               </div>
               <button
@@ -206,7 +191,7 @@ export function TemplatePreviewModal({
             )}
             {isRunning && (
               <span className="text-sm text-muted-foreground/60">
-                You can close — test will continue in background
+                You can close â€” test will continue in background
               </span>
             )}
             <button

@@ -6,7 +6,7 @@ import { buildConnectorRailItems } from './connectorHealth';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { CredentialMetadata } from '@/lib/types/types';
 
-// ── Types ────────────────────────────────────────────────────────────────
+// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface ConnectorStatus {
   name: string;
@@ -41,7 +41,7 @@ export interface DraftConnector {
   has_credential: boolean;
 }
 
-// ── Hook options ─────────────────────────────────────────────────────────
+// â”€â”€ Hook options â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface UseConnectorStatusesOptions {
   connectors: DraftConnector[];
@@ -52,7 +52,7 @@ interface UseConnectorStatusesOptions {
   onCredentialCreated?: () => void;
 }
 
-// ── Hook ─────────────────────────────────────────────────────────────────
+// â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function useConnectorStatuses({
   connectors,
@@ -180,7 +180,6 @@ export function useConnectorStatuses({
     }
   }, [statuses, testConnector]);
 
-<<<<<<< HEAD
   const testAllActiveRef = useRef(false);
 
   const handleTestAll = useCallback(async () => {
@@ -196,14 +195,6 @@ export function useConnectorStatuses({
       testAllActiveRef.current = false;
       setTestingAll(false);
     }
-=======
-  const handleTestAll = useCallback(async () => {
-    setTestingAll(true);
-    for (const status of statuses.filter((s) => s.credentialId)) {
-      await testConnector(status.name, status.credentialId!);
-    }
-    setTestingAll(false);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }, [statuses, testConnector]);
 
   const handleAddCredential = useCallback((connectorName: string, n8nType: string) => {

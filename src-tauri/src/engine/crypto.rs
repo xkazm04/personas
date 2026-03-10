@@ -54,7 +54,7 @@ impl SessionKeyPair {
     /// Falls back to plain RSA decryption for legacy payloads (no `.` separator).
     pub fn decrypt(&self, ciphertext_b64: &str) -> Result<String, CryptoError> {
         if let Some(dot_pos) = ciphertext_b64.find('.') {
-            // ── Hybrid mode: RSA-wrapped AES key + AES-GCM payload ──
+            // â”€â”€ Hybrid mode: RSA-wrapped AES key + AES-GCM payload â”€â”€
             let rsa_part = &ciphertext_b64[..dot_pos];
             let aes_part = &ciphertext_b64[dot_pos + 1..];
 
@@ -84,7 +84,7 @@ impl SessionKeyPair {
             String::from_utf8(plaintext_bytes)
                 .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {e}")))
         } else {
-            // ── Legacy mode: plain RSA (small payloads only) ──
+            // â”€â”€ Legacy mode: plain RSA (small payloads only) â”€â”€
             let ciphertext = B64.decode(ciphertext_b64)
                 .map_err(|e| CryptoError::Decrypt(format!("Base64 decode failed: {e}")))?;
             let padding = Oaep::new::<sha2::Sha256>();
@@ -99,7 +99,7 @@ impl SessionKeyPair {
 }
 
 // ---------------------------------------------------------------------------
-// SecureString — zeroize-on-drop wrapper for in-memory secrets
+// SecureString â€” zeroize-on-drop wrapper for in-memory secrets
 // ---------------------------------------------------------------------------
 
 /// A wrapper around `String` that zeroizes the underlying memory on drop and
@@ -159,7 +159,7 @@ impl serde::Serialize for SecureString {
 }
 
 // ---------------------------------------------------------------------------
-// EncryptedToken — AES-256-GCM encrypted token for at-rest protection
+// EncryptedToken â€” AES-256-GCM encrypted token for at-rest protection
 // ---------------------------------------------------------------------------
 
 /// An OAuth token encrypted at rest in memory using AES-256-GCM.
@@ -183,7 +183,7 @@ impl EncryptedToken {
     /// zeroized when dropped at the end of this call.
     pub fn seal(token: SecureString) -> Result<Self, CryptoError> {
         let (ciphertext, nonce) = encrypt_for_db(token.expose_secret())?;
-        // `token` drops here → SecureString::zeroize fires
+        // `token` drops here â†’ SecureString::zeroize fires
         Ok(Self { ciphertext, nonce })
     }
 
@@ -249,9 +249,9 @@ impl From<CryptoError> for AppError {
 /// silently falling through to an unprotected local file.
 ///
 /// The local fallback file is only used when:
-/// 1. The keychain *works* but has no entry yet — we load/generate a key and
+/// 1. The keychain *works* but has no entry yet â€” we load/generate a key and
 ///    backfill it into the keychain (handled inside `try_keychain`).
-/// 2. `PERSONAS_ALLOW_FALLBACK_KEY=1` is explicitly set — for CI, headless
+/// 2. `PERSONAS_ALLOW_FALLBACK_KEY=1` is explicitly set â€” for CI, headless
 ///    environments, or tests where no keychain daemon is available.
 pub fn get_master_key() -> Result<&'static [u8; 32], CryptoError> {
     // OnceLock stores Result so we can propagate the error on every call.
@@ -352,22 +352,19 @@ fn try_keychain() -> Result<[u8; 32], CryptoError> {
     }
 }
 
-<<<<<<< HEAD
-/// On mobile, keychain is not available — always return an error to fall through to fallback.
+/// On mobile, keychain is not available â€” always return an error to fall through to fallback.
 #[cfg(not(feature = "desktop"))]
 fn try_keychain() -> Result<[u8; 32], CryptoError> {
     Err(CryptoError::KeyManagement("Keychain not available on this platform".into()))
 }
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 /// Generate or load a random fallback key when the OS keychain is unavailable
 /// (e.g., in CI, headless environments, or tests).
 fn derive_fallback_key() -> [u8; 32] {
     // Try to load a previously persisted random key first.
     if let Ok(Some(existing)) = load_local_fallback_key() {
         tracing::warn!(
-            "OS keychain unavailable — using fallback key from local file. \
+            "OS keychain unavailable â€” using fallback key from local file. \
              Credential encryption is less protected than with a keychain."
         );
         return existing;
@@ -382,7 +379,7 @@ fn derive_fallback_key() -> [u8; 32] {
     }
 
     tracing::warn!(
-        "OS keychain unavailable — generated new random fallback key. \
+        "OS keychain unavailable â€” generated new random fallback key. \
          Credential encryption is less protected than with a keychain."
     );
     key
@@ -449,7 +446,7 @@ fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
         let protected_bytes = B64.decode(protected_b64)?;
         platform_unprotect(&protected_bytes)?
     } else {
-        // Legacy plaintext base64 format — decode and schedule migration
+        // Legacy plaintext base64 format â€” decode and schedule migration
         let bytes = B64.decode(trimmed)?;
         if bytes.len() == 32 {
             tracing::info!("Found legacy plaintext key file, migrating to protected format");
@@ -494,7 +491,7 @@ fn save_local_fallback_key(key: &[u8; 32]) -> Result<(), CryptoError> {
     let protected = platform_protect(key)?;
     let file_content = format!("{}{}", DPAPI_PREFIX, B64.encode(&protected));
 
-    // Atomic write: create temp file in the same directory → write → set permissions → rename.
+    // Atomic write: create temp file in the same directory â†’ write â†’ set permissions â†’ rename.
     // This eliminates the TOCTOU window where the key could be read by another process.
     let mut tmp = tempfile::NamedTempFile::new_in(parent)
         .map_err(|e| CryptoError::KeyManagement(format!("Failed creating temp file: {}", e)))?;
@@ -516,7 +513,7 @@ fn save_local_fallback_key(key: &[u8; 32]) -> Result<(), CryptoError> {
 }
 
 /// Restrict file permissions so only the current user can read/write the key file.
-/// Returns an error if permissions cannot be set — the caller must not leave the
+/// Returns an error if permissions cannot be set â€” the caller must not leave the
 /// key file world-readable.
 #[cfg(windows)]
 fn restrict_file_permissions(path: &std::path::Path) -> Result<(), CryptoError> {
@@ -569,7 +566,7 @@ fn restrict_file_permissions(path: &std::path::Path) -> Result<(), CryptoError> 
 #[cfg(not(any(windows, unix)))]
 fn restrict_file_permissions(_path: &std::path::Path) -> Result<(), CryptoError> {
     Err(CryptoError::KeyManagement(
-        "Cannot restrict key file permissions on this platform — refusing to store key".into(),
+        "Cannot restrict key file permissions on this platform â€” refusing to store key".into(),
     ))
 }
 
@@ -628,13 +625,10 @@ fn repair_key_file_permissions(path: &std::path::Path) -> bool {
 /// Attempt to upgrade the master key from local fallback to OS keychain.
 ///
 /// Call this when the keychain becomes available (e.g., after authentication).
-/// The same key bytes are stored in the keychain — no credential re-encryption
+/// The same key bytes are stored in the keychain â€” no credential re-encryption
 /// is needed because the encryption key itself doesn't change.
 #[allow(dead_code)]
-<<<<<<< HEAD
 #[cfg(feature = "desktop")]
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 pub fn try_upgrade_to_keychain() -> Result<bool, CryptoError> {
     if key_source() != Some(KeySource::LocalFallback) {
         return Ok(false); // Already on keychain or not initialised
@@ -656,15 +650,12 @@ pub fn try_upgrade_to_keychain() -> Result<bool, CryptoError> {
     Ok(true)
 }
 
-<<<<<<< HEAD
 #[allow(dead_code)]
 #[cfg(not(feature = "desktop"))]
 pub fn try_upgrade_to_keychain() -> Result<bool, CryptoError> {
     Ok(false)
 }
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 // ---------------------------------------------------------------------------
 // Platform-specific key protection (DPAPI on Windows, passthrough elsewhere)
 // ---------------------------------------------------------------------------
@@ -701,7 +692,7 @@ fn platform_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
 
 #[cfg(windows)]
 extern "system" {
-    /// LocalFree from kernel32.dll — used to free buffers allocated by DPAPI.
+    /// LocalFree from kernel32.dll â€” used to free buffers allocated by DPAPI.
     /// Not exported by the `windows` crate v0.58, so we declare it manually.
     fn LocalFree(hmem: *mut std::ffi::c_void) -> *mut std::ffi::c_void;
 }
@@ -867,7 +858,7 @@ pub fn decrypt_field(encrypted_value: &str, iv: &str) -> Result<String, CryptoEr
 
 /// Migrate plaintext credentials (iv == "") to encrypted form.
 /// The entire migration runs inside a SQLite transaction so it either
-/// fully completes or fully rolls back — no partial-state risk.
+/// fully completes or fully rolls back â€” no partial-state risk.
 /// Returns `(migrated_count, failed_count)`.
 pub fn migrate_plaintext_credentials(pool: &DbPool) -> Result<(usize, usize), CryptoError> {
     let mut conn = pool
@@ -978,7 +969,7 @@ mod tests {
 
     #[test]
     fn test_encrypt_unicode() {
-        let plaintext = "API密钥: 🔑 résumé naïve";
+        let plaintext = "APIå¯†é’¥: ðŸ”‘ rÃ©sumÃ© naÃ¯ve";
         let (ciphertext, nonce) = encrypt_for_db(plaintext).unwrap();
         let decrypted = decrypt_from_db(&ciphertext, &nonce).unwrap();
         assert_eq!(decrypted, plaintext);

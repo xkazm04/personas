@@ -40,17 +40,17 @@ function fileNameFromUrl(url: string): string {
     const path = new URL(url).pathname;
     const lastSegment = path.split('/').filter(Boolean).pop() || '';
     if (/\.(json|ya?ml)$/i.test(lastSegment)) return lastSegment;
-  } catch { /* intentional: non-critical — JSON parse fallback */ }
+  } catch { /* intentional: non-critical â€” JSON parse fallback */ }
   return 'imported.json';
 }
 
 /** Resolve share/gist URLs to raw content URLs. */
 function resolveRawUrl(url: string): string {
-  // GitHub Gist: gist.github.com/<user>/<id> → raw
+  // GitHub Gist: gist.github.com/<user>/<id> â†’ raw
   const gistMatch = url.match(/^https?:\/\/gist\.github\.com\/[\w-]+\/([a-f0-9]+)/i);
   if (gistMatch) return `https://gist.githubusercontent.com/raw/${gistMatch[1]}`;
 
-  // GitHub blob → raw
+  // GitHub blob â†’ raw
   if (/github\.com\/.*\/blob\//.test(url)) {
     return url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
   }
@@ -77,11 +77,8 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
   const validatedContentRef = useRef<string | null>(null);
   const validatedUrlRef = useRef<{ content: string; sourceName: string } | null>(null);
 
-<<<<<<< HEAD
   const pasteDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   // Keep callback in a ref so setTimeout closures always call the latest version
   const onContentPasteRef = useRef(onContentPaste);
   useEffect(() => { onContentPasteRef.current = onContentPaste; });
@@ -102,14 +99,11 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
       if (activeReaderRef.current?.readyState === FileReader.LOADING) {
         activeReaderRef.current.abort();
       }
-<<<<<<< HEAD
       if (pasteDebounceRef.current) clearTimeout(pasteDebounceRef.current);
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     };
   }, []);
 
-  // ── File Upload handlers (existing) ──
+  // â”€â”€ File Upload handlers (existing) â”€â”€
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -197,7 +191,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
 
         let json: Record<string, unknown>;
         try { json = JSON.parse(content) as Record<string, unknown>; }
-        catch { setPreview({ kind: 'error', fileName: file.name, message: 'Invalid JSON — could not parse file contents.' }); return; }
+        catch { setPreview({ kind: 'error', fileName: file.name, message: 'Invalid JSON â€” could not parse file contents.' }); return; }
 
         const { count } = countElements(json);
         if (count === 0) {
@@ -245,13 +239,9 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
     }
   }, [preview, forwardContent]);
 
-  // ── Paste JSON handlers ──
+  // â”€â”€ Paste JSON handlers â”€â”€
 
-<<<<<<< HEAD
   const validatePastedContentImmediate = useCallback((text: string) => {
-=======
-  const validatePastedContent = useCallback((text: string) => {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     if (!text.trim()) { setPastePreview(null); return; }
     if (text.length > MAX_PASTE_LENGTH) {
       setPastePreview({ kind: 'error', fileName: 'pasted', message: `Content too large (${formatFileSize(text.length)}). Maximum 5 MB.` });
@@ -260,7 +250,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
 
     let json: Record<string, unknown>;
     try { json = JSON.parse(text.trim()) as Record<string, unknown>; }
-    catch { setPastePreview({ kind: 'error', fileName: 'pasted', message: 'Invalid JSON — could not parse pasted content.' }); return; }
+    catch { setPastePreview({ kind: 'error', fileName: 'pasted', message: 'Invalid JSON â€” could not parse pasted content.' }); return; }
 
     const { count } = countElements(json);
     if (count === 0) {
@@ -278,7 +268,6 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
     });
   }, []);
 
-<<<<<<< HEAD
   // Debounce paste validation so JSON.parse doesn't fire on every keystroke
   // for large content.  For small pastes (<50KB) validate immediately.
   const validatePastedContent = useCallback((text: string) => {
@@ -291,14 +280,12 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
     pasteDebounceRef.current = setTimeout(() => validatePastedContentImmediate(text), 300);
   }, [validatePastedContentImmediate]);
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const handlePasteImport = useCallback(() => {
     if (pastePreview?.kind !== 'valid' || !pasteText.trim()) return;
     onContentPaste?.(pasteText.trim(), 'pasted.json');
   }, [pasteText, pastePreview, onContentPaste]);
 
-  // ── URL Fetch handlers ──
+  // â”€â”€ URL Fetch handlers â”€â”€
 
   const handleUrlFetch = useCallback(async () => {
     const trimmed = urlValue.trim();
@@ -374,7 +361,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
     onContentPaste?.(validated.content, validated.sourceName);
   }, [onContentPaste]);
 
-  // ── Render ──
+  // â”€â”€ Render â”€â”€
 
   const FileIcon = preview?.kind === 'valid' ? getFileIcon(preview.fileName) : FileJson;
 
@@ -405,7 +392,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
       </div>
 
       <AnimatePresence mode="wait">
-        {/* ── File Upload tab ── */}
+        {/* â”€â”€ File Upload tab â”€â”€ */}
         {mode === 'file' && (
           <motion.div
             key="file"
@@ -478,7 +465,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
           </motion.div>
         )}
 
-        {/* ── Paste JSON tab ── */}
+        {/* â”€â”€ Paste JSON tab â”€â”€ */}
         {mode === 'paste' && (
           <motion.div
             key="paste"
@@ -531,7 +518,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
           </motion.div>
         )}
 
-        {/* ── URL Import tab ── */}
+        {/* â”€â”€ URL Import tab â”€â”€ */}
         {mode === 'url' && (
           <motion.div
             key="url"
@@ -607,7 +594,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
   );
 }
 
-// ── Sub-components ──
+// â”€â”€ Sub-components â”€â”€
 
 function PlatformLabels() {
   return (
@@ -668,7 +655,7 @@ function PreviewCard({
               )}
               <span className="text-sm font-medium text-foreground/90 truncate">{preview.workflowName}</span>
               <span className="text-sm text-muted-foreground/60 flex-shrink-0">
-                {preview.nodeCount > 0 && <>{preview.nodeCount} element{preview.nodeCount !== 1 ? 's' : ''} · </>}
+                {preview.nodeCount > 0 && <>{preview.nodeCount} element{preview.nodeCount !== 1 ? 's' : ''} Â· </>}
                 {preview.fileSize}
               </span>
               <ChevronRight className="w-4 h-4 text-muted-foreground/60 flex-shrink-0 ml-auto" />

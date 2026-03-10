@@ -1,9 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-<<<<<<< HEAD
 import { IS_MOBILE } from '@/lib/utils/platform';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -81,11 +78,7 @@ export function BaseModal({
   if (!isOpen) return null;
 
   return (
-<<<<<<< HEAD
     <div className={`fixed inset-0 z-50 flex items-center justify-center ${IS_MOBILE ? 'p-0' : 'p-4'}`}>
-=======
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -101,11 +94,7 @@ export function BaseModal({
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-<<<<<<< HEAD
         className={`relative w-full ${IS_MOBILE ? 'max-w-full' : maxWidthClass} ${panelClassName ?? (IS_MOBILE ? 'h-full bg-background overflow-hidden' : 'max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden')}`}
-=======
-        className={`relative w-full ${maxWidthClass} ${panelClassName ?? 'max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden'}`}
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       >
         {children}
       </motion.div>

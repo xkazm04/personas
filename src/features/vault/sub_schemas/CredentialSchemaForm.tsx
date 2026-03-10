@@ -144,7 +144,7 @@ export function CredentialSchemaForm({
       if (createdConnectorId) {
         try {
           await deleteConnectorDefinition(createdConnectorId);
-        } catch { /* intentional: non-critical — rollback is best-effort */ }
+        } catch { /* intentional: non-critical â€” rollback is best-effort */ }
       }
       setError(err instanceof Error ? err.message : `Failed to save ${config.title.toLowerCase()}`);
     }
@@ -214,11 +214,7 @@ export function CredentialSchemaForm({
               <p className="mt-1.5 text-sm text-muted-foreground/60">{activeSubType.description}</p>
             </>
           ) : (
-<<<<<<< HEAD
             <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
-=======
-            <div className="grid grid-cols-2 gap-2">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
               {config.subTypes.map((st) => (
                 <button
                   key={st.id}

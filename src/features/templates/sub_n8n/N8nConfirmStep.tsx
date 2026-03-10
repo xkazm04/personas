@@ -2,11 +2,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, Wrench, Zap, Link, ChevronDown, ChevronRight, RefreshCw, AlertTriangle, Brain, Activity, ShieldCheck, XCircle } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
-<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';
 import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
@@ -30,11 +26,7 @@ export interface ConfirmResult {
 
 interface N8nConfirmStepProps {
   draft: N8nPersonaDraft;
-<<<<<<< HEAD
   parsedResult: AgentIR;
-=======
-  parsedResult: DesignAnalysisResult;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   selectedToolIndices: Set<number>;
   selectedTriggerIndices: Set<number>;
   selectedConnectorNames: Set<string>;
@@ -217,7 +209,7 @@ export function N8nConfirmStep({
                 boxShadow: `0 4px 24px ${draft.color ?? '#8b5cf6'}15`,
               }}
             >
-              {draft.icon ?? '✨'}
+              {draft.icon ?? 'âœ¨'}
             </motion.div>
             <div>
               <p className="text-base font-semibold text-foreground/90">
@@ -229,7 +221,7 @@ export function N8nConfirmStep({
             </div>
           </div>
 
-          {/* Entity summary grid — 6 cards, responsive */}
+          {/* Entity summary grid â€” 6 cards, responsive */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6 md:gap-2 mb-4">
             <div className="px-2 py-3 rounded-xl bg-blue-500/5 border border-blue-500/10 text-center">
               <Wrench className="w-3.5 h-3.5 text-blue-400/60 mx-auto mb-1" />
@@ -263,7 +255,7 @@ export function N8nConfirmStep({
             </div>
           </div>
 
-          {/* Items breakdown — draft entities preferred over parser results */}
+          {/* Items breakdown â€” draft entities preferred over parser results */}
           {draftTools && draftTools.length > 0 ? (
             <div className="flex flex-wrap gap-1 mb-2">
               {draftTools.map((tool) => (

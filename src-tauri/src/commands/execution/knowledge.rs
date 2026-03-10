@@ -45,7 +45,6 @@ pub fn get_knowledge_summary(
     require_auth_sync(&state)?;
     repo::get_summary(&state.db, persona_id.as_deref())
 }
-<<<<<<< HEAD
 
 #[tauri::command]
 pub fn list_scoped_knowledge(
@@ -113,5 +112,3 @@ pub fn get_shared_knowledge_injection(
     let conn_refs: Vec<&str> = connector_types.iter().map(|s| s.as_str()).collect();
     repo::get_shared_injection(&state.db, &tool_refs, &conn_refs)
 }
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989

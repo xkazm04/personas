@@ -2,11 +2,7 @@ import { useMemo } from 'react';
 import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, Plus, RefreshCw, ChevronDown, Star, Wrench, Zap, ListChecks } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
-<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { PersonaCredential } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
 import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
@@ -26,11 +22,7 @@ import {
 
 interface N8nEntitiesTabProps {
   draft: N8nPersonaDraft;
-<<<<<<< HEAD
   parsedResult: AgentIR;
-=======
-  parsedResult: DesignAnalysisResult;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   selectedToolIndices: Set<number>;
   selectedTriggerIndices: Set<number>;
   selectedConnectorNames: Set<string>;
@@ -71,7 +63,7 @@ export function N8nEntitiesTab({
 }: N8nEntitiesTabProps) {
   const credentials = usePersonaStore((s) => s.credentials);
 
-  // ── Extract entities from draft (post-transform) or parser results (pre-transform) ──
+  // â”€â”€ Extract entities from draft (post-transform) or parser results (pre-transform) â”€â”€
 
   const draftTools: DraftTool[] | null = draft.tools ?? null;
   const draftTriggers: DraftTrigger[] | null = draft.triggers ?? null;
@@ -90,7 +82,7 @@ export function N8nEntitiesTab({
     ? draftConnectors
     : selectedConnectors.map((c) => ({ name: c.name, n8n_credential_type: c.name, has_credential: false }));
 
-  // ── Group tools by connector ──
+  // â”€â”€ Group tools by connector â”€â”€
 
   const { connectorToolMap, generalTools } = useMemo(() => {
     const connNames = new Set(connectorItems.map((c) => c.name));
@@ -110,7 +102,7 @@ export function N8nEntitiesTab({
     return { connectorToolMap: map, generalTools: general };
   }, [toolItems, connectorItems]);
 
-  // ── Connector status tracking (via shared hook) ──
+  // â”€â”€ Connector status tracking (via shared hook) â”€â”€
 
   const cs = useConnectorStatuses({
     connectors: connectorItems,
@@ -120,7 +112,7 @@ export function N8nEntitiesTab({
     onMissingCountChange,
   });
 
-  // ── Render ──
+  // â”€â”€ Render â”€â”€
 
   const hasConnectors = connectorItems.length > 0;
   const hasGeneralTools = generalTools.length > 0;
@@ -186,7 +178,7 @@ export function N8nEntitiesTab({
         </div>
       </div>
 
-      {/* ── Connectors section ── */}
+      {/* â”€â”€ Connectors section â”€â”€ */}
       {hasConnectors && (
         <div className="space-y-2">
           <h5 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider">
@@ -210,7 +202,7 @@ export function N8nEntitiesTab({
         </div>
       )}
 
-      {/* ── General Tools (no connector required) ── */}
+      {/* â”€â”€ General Tools (no connector required) â”€â”€ */}
       {hasGeneralTools && (
         <div className="bg-secondary/20 border border-primary/10 rounded-xl p-4">
           <h5 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5">
@@ -231,7 +223,7 @@ export function N8nEntitiesTab({
         </div>
       )}
 
-      {/* ── Triggers ── */}
+      {/* â”€â”€ Triggers â”€â”€ */}
       {hasTriggers && (
         <div className="bg-secondary/20 border border-primary/10 rounded-xl p-4">
           <h5 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5">
@@ -267,7 +259,7 @@ export function N8nEntitiesTab({
   );
 }
 
-// ── Connector Row sub-component ──────────────────────────────────────────
+// â”€â”€ Connector Row sub-component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface ConnectorRowProps {
   status: ConnectorStatus;

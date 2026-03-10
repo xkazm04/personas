@@ -240,7 +240,7 @@ export function EvalResultsGrid({ results }: Props) {
                   <PolarAngleAxis dataKey="metric" tick={{ fill: 'rgba(226,232,240,0.85)', fontSize: 12 }} />
                   <PolarRadiusAxis domain={[0, 100]} tick={{ fill: 'rgba(148,163,184,0.75)', fontSize: 10 }} />
                   <Tooltip
-                    formatter={(value: number | string | undefined) => [value ?? 0, 'Score']}
+                    formatter={(value) => [typeof value === 'number' || typeof value === 'string' ? value : 0, 'Score']}
                     contentStyle={{
                       background: 'rgba(10, 14, 24, 0.92)',
                       border: '1px solid rgba(99, 102, 241, 0.25)',

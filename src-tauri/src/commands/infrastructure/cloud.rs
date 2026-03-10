@@ -122,7 +122,7 @@ pub async fn cloud_reconnect_from_keyring(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
     require_cloud_auth(&state, "cloud_reconnect_from_keyring").await?;
-    // Already connected — nothing to do
+    // Already connected â€” nothing to do
     if state.cloud_client.lock().await.is_some() {
         return Ok(());
     }
@@ -275,7 +275,7 @@ pub async fn cloud_execute_persona(
         )
         .await;
 
-        // Clean up the local→cloud execution ID mapping
+        // Clean up the localâ†’cloud execution ID mapping
         exec_ids_map.lock().await.remove(&exec_id);
 
         if !cancelled_clone.load(Ordering::Acquire) {
@@ -299,7 +299,7 @@ pub async fn cloud_execute_persona(
                     tracing::error!(
                         execution_id = %exec_id,
                         error = %e2,
-                        "Cloud execution DB status update failed on retry — execution stuck as running",
+                        "Cloud execution DB status update failed on retry â€” execution stuck as running",
                     );
                 }
             }
@@ -459,10 +459,6 @@ pub async fn cloud_deploy_persona(
         "maxTurns": persona.max_turns,
         "designContext": persona.design_context,
         "groupId": persona.group_id,
-<<<<<<< HEAD
-=======
-        "permissionPolicy": persona.permission_policy,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     });
 
     client.upsert_persona(&persona_body).await?;

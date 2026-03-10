@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Plug, ArrowLeft, Bot, MessageSquare, Monitor } from 'lucide-react';
-=======
-import { useCallback, useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Plug, ArrowLeft, Bot, MessageSquare } from 'lucide-react';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
@@ -15,11 +9,8 @@ import { AutoCredPanel } from './AutoCredPanel';
 import { AnalyzingPhase } from '@/features/vault/sub_design/AnalyzingPhase';
 import { usePersonaStore } from '@/stores/personaStore';
 import { checkPlaywrightAvailable } from '@/api/autoCredBrowser';
-<<<<<<< HEAD
 import { isDesktopBridge } from '@/lib/utils/connectors';
 import { lookupRecipeAsDesignResult } from '@/lib/credentials/credentialRecipeRegistry';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { AutoCredMode } from './types';
 
 type Phase = 'analyzing' | 'auto';
@@ -61,7 +52,6 @@ function buildDesignResult(connector: ConnectorDefinition): CredentialDesignResu
 }
 
 export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAutoSetupProps) {
-<<<<<<< HEAD
   // Desktop bridge connectors should not use online auto-setup
   if (isDesktopBridge(connector)) {
     return (
@@ -93,8 +83,6 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
     );
   }
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
   const hasSetupInstructions = typeof metadata.setup_instructions === 'string' && metadata.setup_instructions.length > 0;
   const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
@@ -116,14 +104,13 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
   }, []);
 
   const design = useCredentialDesign();
-<<<<<<< HEAD
   const recipeLookedUpRef = useRef(false);
 
   // Start analysis: check recipe cache first, fall back to AI analysis
   useEffect(() => {
     if (phase !== 'analyzing' || design.phase !== 'idle') return;
     if (recipeLookedUpRef.current) {
-      // Recipe lookup already ran and missed — proceed with AI
+      // Recipe lookup already ran and missed â€” proceed with AI
       design.start(`Analyze ${connector.label} (${connector.name}) connector and discover setup procedures for creating API credentials.`);
       return;
     }
@@ -134,18 +121,10 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
         setDesignResult({ ...cached, match_existing: connector.name });
         setPhase('auto');
       } else {
-        // No recipe — fall back to AI analysis
+        // No recipe â€” fall back to AI analysis
         design.start(`Analyze ${connector.label} (${connector.name}) connector and discover setup procedures for creating API credentials.`);
       }
     });
-=======
-
-  // Start AI analysis if no setup instructions
-  useEffect(() => {
-    if (phase === 'analyzing' && design.phase === 'idle') {
-      design.start(`Analyze ${connector.label} (${connector.name}) connector and discover setup procedures for creating API credentials.`);
-    }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }, [phase]);
 
   // When AI analysis completes, merge result and go to auto phase
@@ -161,7 +140,7 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
     }
   }, [phase, design.phase, design.result, connector.name]);
 
-  // Handle AI error — fall back to synthetic result
+  // Handle AI error â€” fall back to synthetic result
   useEffect(() => {
     if (phase === 'analyzing' && design.phase === 'error') {
       setDesignResult(buildDesignResult(connector));

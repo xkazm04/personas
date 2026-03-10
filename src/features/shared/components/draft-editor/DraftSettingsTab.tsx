@@ -3,19 +3,12 @@ import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { ModelProfile, NotificationChannel } from '@/lib/types/frontendTypes';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { profileToDropdownValue, getOllamaPreset, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_model_config/OllamaCloudPresets';
-<<<<<<< HEAD
 import { ModelSelector } from '@/features/agents/sub_model_config';
 import { IconSelector } from '@/features/shared/components/IconSelector';
 import { ColorPicker } from '@/features/shared/components/ColorPicker';
 import { NotificationChannelSettings } from '@/features/agents/sub_connectors/components/NotificationChannelSettings';
-=======
-import { ModelSelector } from '@/features/agents/sub_model_config/ModelSelector';
-import { IconSelector } from '@/features/shared/components/IconSelector';
-import { ColorPicker } from '@/features/shared/components/ColorPicker';
-import { NotificationChannelSettings } from '@/features/agents/sub_connectors/NotificationChannelSettings';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
-// ── model_profile ↔ dropdown value helpers ────────────────────────────
+// â”€â”€ model_profile â†” dropdown value helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function modelProfileToDropdownValue(profileJson: string | null): string {
   if (!profileJson) return 'sonnet'; // default for n8n drafts
@@ -23,7 +16,7 @@ function modelProfileToDropdownValue(profileJson: string | null): string {
     const mp: ModelProfile = JSON.parse(profileJson);
     return profileToDropdownValue(mp);
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical â€” JSON parse fallback
     return 'sonnet';
   }
 }
@@ -53,12 +46,12 @@ function parseChannels(json: string | null | undefined): NotificationChannel[] {
     const parsed = JSON.parse(json);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical â€” JSON parse fallback
     return [];
   }
 }
 
-// ── Component ─────────────────────────────────────────────────────────
+// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface DraftSettingsTabProps {
   draft: N8nPersonaDraft;

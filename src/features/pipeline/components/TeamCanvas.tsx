@@ -18,7 +18,6 @@ import { listen } from '@tauri-apps/api/event';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox } from '@/features/shared/components/ContentLayout';
 import * as api from '@/api/tauriApi';
-<<<<<<< HEAD
 import {
   useDerivedCanvasState,
   useCanvasReducer,
@@ -45,29 +44,6 @@ import type { DryRunState } from '@/features/pipeline/sub_canvas';
 import TeamList from '@/features/pipeline/components/TeamList';
 import TeamConfigPanel from '@/features/pipeline/components/TeamConfigPanel';
 import { TeamMemoryPanel, TeamMemoryBadge } from '@/features/pipeline/sub_teamMemory';
-=======
-import { useDerivedCanvasState, type PipelineNodeStatus } from '@/features/pipeline/sub_canvas/useDerivedCanvasState';
-import { useCanvasReducer } from '@/features/pipeline/sub_canvas/useCanvasReducer';
-import TeamList from '@/features/pipeline/components/TeamList';
-import PersonaNode from '@/features/pipeline/sub_canvas/PersonaNode';
-import StickyNoteNode, { type StickyNoteCategory } from '@/features/pipeline/sub_canvas/StickyNoteNode';
-import ConnectionEdge from '@/features/pipeline/sub_canvas/ConnectionEdge';
-import GhostEdge from '@/features/pipeline/sub_canvas/GhostEdge';
-import TeamToolbar from '@/features/pipeline/sub_canvas/TeamToolbar';
-import TeamConfigPanel from '@/features/pipeline/components/TeamConfigPanel';
-import NodeContextMenu from '@/features/pipeline/sub_canvas/NodeContextMenu';
-import EdgeDeleteTooltip from '@/features/pipeline/sub_canvas/EdgeDeleteTooltip';
-import PipelineControls from '@/features/pipeline/sub_canvas/PipelineControls';
-import OptimizerPanel from '@/features/pipeline/sub_canvas/OptimizerPanel';
-import CanvasAssistant from '@/features/pipeline/sub_canvas/CanvasAssistant';
-import DryRunDebugger, { type DryRunState } from '@/features/pipeline/sub_canvas/DryRunDebugger';
-import AlignmentGuides, { computeAlignments } from '@/features/pipeline/sub_canvas/AlignmentGuides';
-import ConnectionLegend from '@/features/pipeline/sub_canvas/ConnectionLegend';
-import TeamMemoryPanel from '@/features/pipeline/sub_teamMemory/TeamMemoryPanel';
-import TeamMemoryBadge from '@/features/pipeline/sub_teamMemory/TeamMemoryBadge';
-import { useCanvasDragRef } from '@/features/pipeline/sub_canvas/CanvasDragContext';
-import { buildTeamGraph } from '@/features/pipeline/sub_canvas/teamGraph';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';
@@ -84,7 +60,7 @@ function snapToGrid(v: number) {
 export default function TeamCanvas() {
   const canvasDragRef = useCanvasDragRef();
 
-  // ── Store selectors ──────────────────────────────────────────────
+  // â”€â”€ Store selectors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const selectedTeamId = usePersonaStore((s) => s.selectedTeamId);
   const selectTeam = usePersonaStore((s) => s.selectTeam);
   const teams = usePersonaStore((s) => s.teams);
@@ -108,10 +84,10 @@ export default function TeamCanvas() {
   const updateTeamMemoryImportance = usePersonaStore((s) => s.updateTeamMemoryImportance);
   const updateTeamMemory = usePersonaStore((s) => s.updateTeamMemory);
 
-  // ── Canvas reducer (replaces ~18 useState hooks) ─────────────────
+  // â”€â”€ Canvas reducer (replaces ~18 useState hooks) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const { state: cs, dispatch, setSaveStatus, setSelectedMember, setContextMenu, setEdgeTooltip, setGhostNode, setReactFlowInstance } = useCanvasReducer();
 
-  // ── React Flow node/edge state ──────────────────────────────────
+  // â”€â”€ React Flow node/edge state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [nodes, setNodes, onNodesChangeBase] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -123,7 +99,7 @@ export default function TeamCanvas() {
     [teams, selectedTeamId],
   );
 
-  // ── Derived lookups ─────────────────────────────────────────────
+  // â”€â”€ Derived lookups â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const agentNames = useMemo(() => {
     const map: Record<string, string> = {};
     for (const m of teamMembers) {
@@ -141,7 +117,7 @@ export default function TeamCanvas() {
     return map;
   }, [teamMembers]);
 
-  // ── Analytics ──────────────────────────────────────────────────
+  // â”€â”€ Analytics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const fetchAnalytics = useCallback(async () => {
     if (!selectedTeamId) return;
     dispatch({ type: 'SET_ANALYTICS_LOADING', loading: true });
@@ -167,7 +143,7 @@ export default function TeamCanvas() {
     dispatch({ type: 'RESET_ON_TEAM_SWITCH' });
   }, [selectedTeamId, dispatch]);
 
-  // ── Pipeline status listener ───────────────────────────────────
+  // â”€â”€ Pipeline status listener â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     let cancelled = false;
     let unlistenFn: (() => void) | null = null;
@@ -210,7 +186,7 @@ export default function TeamCanvas() {
     };
   }, [selectedTeamId, fetchAnalytics, fetchTeamMemories, dispatch]);
 
-  // ── Derived canvas state (nodes + edges from source data) ──────
+  // â”€â”€ Derived canvas state (nodes + edges from source data) â”€â”€â”€â”€â”€â”€
   const derived = useDerivedCanvasState({
     selectedTeamId,
     teamMembers,
@@ -223,7 +199,7 @@ export default function TeamCanvas() {
     snapToGrid,
   });
 
-  // ── Sticky note handlers ───────────────────────────────────────
+  // â”€â”€ Sticky note handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleAddNote = useCallback(() => {
     const id = `note-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const count = cs.stickyNotes.length;
@@ -241,7 +217,7 @@ export default function TeamCanvas() {
     setNodes((prev) => prev.filter((n) => n.id !== id));
   }, [dispatch, setNodes]);
 
-  // ── Build sticky note nodes ────────────────────────────────────
+  // â”€â”€ Build sticky note nodes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const stickyNodes = useMemo<Node[]>(() =>
     cs.stickyNotes.map((n) => ({
       id: n.id,
@@ -257,7 +233,7 @@ export default function TeamCanvas() {
     })),
   [cs.stickyNotes, handleUpdateNote, handleDeleteNote]);
 
-  // ── Sync derived + sticky nodes into React Flow ────────────────
+  // â”€â”€ Sync derived + sticky nodes into React Flow â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     setNodes((prev) => {
       const posMap = new Map(prev.map((n) => [n.id, n.position]));
@@ -274,7 +250,7 @@ export default function TeamCanvas() {
     setEdges(derived.edges);
   }, [derived, stickyNodes, setNodes, setEdges]);
 
-  // ── Connection validation ──────────────────────────────────────
+  // â”€â”€ Connection validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const isValidConnection = useCallback(
     (connection: Edge | Connection) => connection.source !== connection.target,
     [],
@@ -294,7 +270,7 @@ export default function TeamCanvas() {
     [selectedTeamId, createTeamConnection, fetchAnalytics, teamConnections],
   );
 
-  // ── Node click → config panel ──────────────────────────────────
+  // â”€â”€ Node click â†’ config panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
       const member = teamMembers.find((m) => m.id === node.id);
@@ -311,7 +287,7 @@ export default function TeamCanvas() {
     [teamMembers, personas, setSelectedMember],
   );
 
-  // ── Add member via toolbar ─────────────────────────────────────
+  // â”€â”€ Add member via toolbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleAddMember = useCallback(
     (personaId: string) => {
       const count = teamMembers.length;
@@ -322,7 +298,7 @@ export default function TeamCanvas() {
     [teamMembers, addTeamMember],
   );
 
-  // ── Drag-to-add ────────────────────────────────────────────────
+  // â”€â”€ Drag-to-add â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const displayNodes = useMemo(() => {
     if (!cs.ghostNode) return nodes;
     return [...nodes, cs.ghostNode];
@@ -390,7 +366,7 @@ export default function TeamCanvas() {
     [cs.reactFlowInstance, addTeamMember, setGhostNode],
   );
 
-  // ── Save ───────────────────────────────────────────────────────
+  // â”€â”€ Save â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleSave = useCallback(async () => {
     if (!selectedTeamId) return;
     setSaveStatus('saving');
@@ -409,7 +385,7 @@ export default function TeamCanvas() {
 
   saveRef.current = handleSave;
 
-  // ── Node changes (drag, position sync, auto-save) ─────────────
+  // â”€â”€ Node changes (drag, position sync, auto-save) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const onNodesChange = useCallback(
     (changes: NodeChange<Node>[]) => {
       onNodesChangeBase(changes);
@@ -428,7 +404,7 @@ export default function TeamCanvas() {
     [onNodesChangeBase, dispatch, setSaveStatus],
   );
 
-  // ── Alignment guides ──────────────────────────────────────────
+  // â”€â”€ Alignment guides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const onNodeDrag = useCallback(
     (_event: React.MouseEvent, node: Node) => {
       dispatch({ type: 'SET_IS_DRAGGING_NODE', dragging: true });
@@ -446,7 +422,7 @@ export default function TeamCanvas() {
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, []);
 
-  // ── Auto-layout ────────────────────────────────────────────────
+  // â”€â”€ Auto-layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleAutoLayout = useCallback(() => {
     setSaveStatus('unsaved');
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
@@ -488,7 +464,7 @@ export default function TeamCanvas() {
     });
   }, [setNodes, teamConnections, setSaveStatus]);
 
-  // ── Role change / member removal ───────────────────────────────
+  // â”€â”€ Role change / member removal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleRoleChange = useCallback(
     async (memberId: string, newRole: string) => {
       dispatch({ type: 'UPDATE_SELECTED_MEMBER_ROLE', memberId, role: newRole });
@@ -509,7 +485,7 @@ export default function TeamCanvas() {
     [removeTeamMember, setSelectedMember],
   );
 
-  // ── Edge click / delete / type change ──────────────────────────
+  // â”€â”€ Edge click / delete / type change â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const onEdgeClick = useCallback(
     (event: React.MouseEvent, edge: Edge) => {
       if (edge.type === 'ghost') return;
@@ -534,7 +510,7 @@ export default function TeamCanvas() {
     [cs.edgeTooltip, selectedTeamId, updateTeamConnection, setEdgeTooltip],
   );
 
-  // ── Node context menu ──────────────────────────────────────────
+  // â”€â”€ Node context menu â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
       event.preventDefault();
@@ -556,7 +532,7 @@ export default function TeamCanvas() {
     [teamMembers, personas, setContextMenu],
   );
 
-  // ── Execute team pipeline ──────────────────────────────────────
+  // â”€â”€ Execute team pipeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleExecuteTeam = useCallback(async () => {
     if (!selectedTeamId || cs.pipelineRunning) return;
     try {
@@ -568,7 +544,7 @@ export default function TeamCanvas() {
     }
   }, [selectedTeamId, cs.pipelineRunning, dispatch]);
 
-  // ── Optimizer suggestion handlers ──────────────────────────────
+  // â”€â”€ Optimizer suggestion handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleAcceptSuggestion = useCallback(
     async (suggestion: TopologySuggestion) => {
       if (!selectedTeamId) return;
@@ -591,7 +567,7 @@ export default function TeamCanvas() {
     dispatch({ type: 'DISMISS_SUGGESTION', suggestionId });
   }, [dispatch]);
 
-  // ── Canvas assistant ───────────────────────────────────────────
+  // â”€â”€ Canvas assistant â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleAssistantSuggest = useCallback(
     async (query: string) => {
       try {
@@ -631,7 +607,7 @@ export default function TeamCanvas() {
     [selectedTeamId, addTeamMember, createTeamConnection, fetchAnalytics, dispatch],
   );
 
-  // ── Dry-run handlers ───────────────────────────────────────────
+  // â”€â”€ Dry-run handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleStartDryRun = useCallback(() => {
     if (cs.pipelineRunning || teamMembers.length === 0) return;
     dispatch({ type: 'SET_DRY_RUN_ACTIVE', active: true });
@@ -646,12 +622,12 @@ export default function TeamCanvas() {
     dispatch({ type: 'SET_DRY_RUN_STATE', state: null });
   }, [dispatch]);
 
-  // ── Early return: no team selected ─────────────────────────────
+  // â”€â”€ Early return: no team selected â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (!selectedTeamId) {
     return <TeamList />;
   }
 
-  // ── Render ─────────────────────────────────────────────────────
+  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
     <ContentBox minWidth={0}>
       <div className="relative z-10">

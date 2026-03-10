@@ -91,7 +91,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
     } else {
       at.reset();
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && at.phase === 'idle') {

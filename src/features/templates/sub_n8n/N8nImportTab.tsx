@@ -12,7 +12,7 @@ import { N8nSessionList } from './N8nSessionList';
 import { CredentialGapPanel } from './CredentialGapPanel';
 import { usePersonaStore } from '@/stores/personaStore';
 
-// ── Slide animation variants ──
+// â”€â”€ Slide animation variants â”€â”€
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -56,14 +56,14 @@ export default function N8nImportTab() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Step indicator — hidden on upload */}
+      {/* Step indicator â€” hidden on upload */}
       {state.step !== 'upload' && (
         <div className="px-6 pt-4 pb-1 border-b border-primary/5">
           <N8nStepIndicator currentStep={state.step} processing={analyzing || state.transforming} />
         </div>
       )}
 
-      {/* Error banner — suppress on transform step (errors shown inline in chat) */}
+      {/* Error banner â€” suppress on transform step (errors shown inline in chat) */}
       {state.error && state.step !== 'transform' && (
         <motion.div
           initial={{ opacity: 0, y: 4 }}
@@ -148,11 +148,8 @@ export default function N8nImportTab() {
                   onToggleConnector={(n) => dispatch({ type: 'TOGGLE_CONNECTOR', name: n })}
                   isAnalyzing={analyzing}
                   platform={state.platform}
-<<<<<<< HEAD
                   platformNeedsConfirmation={state.platformNeedsConfirmation}
                   onConfirmPlatform={() => dispatch({ type: 'CONFIRM_PLATFORM' })}
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                 />
                 {!analyzing && state.parsedResult.suggested_connectors && state.parsedResult.suggested_connectors.length > 0 && (
                   <div className="mt-4">

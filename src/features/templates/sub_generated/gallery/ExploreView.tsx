@@ -1,9 +1,6 @@
 import { useMemo } from 'react';
 import { CheckCircle2, Download } from 'lucide-react';
-<<<<<<< HEAD
 import { IS_MOBILE } from '@/lib/utils/platform';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { CategoryWithCount } from '@/api/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { CATEGORY_ROLE_GROUPS } from './searchConstants';
@@ -48,17 +45,10 @@ export function ExploreView({
   }, [allItems]);
 
   return (
-<<<<<<< HEAD
     <div className="flex-1 overflow-y-auto px-4 py-4 2xl:px-8 3xl:px-12 4xl:px-16">
       {/* Ready to Deploy section */}
       {readyTemplates.length > 0 && (
         <div className="mb-6 max-w-5xl 3xl:max-w-7xl 4xl:max-w-[1800px] mx-auto">
-=======
-    <div className="flex-1 overflow-y-auto px-4 py-4">
-      {/* Ready to Deploy section */}
-      {readyTemplates.length > 0 && (
-        <div className="mb-6 max-w-5xl mx-auto">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle2 className="w-4 h-4 text-emerald-400/70" />
             <h2 className="text-sm font-semibold text-foreground/80">Ready to Deploy</h2>
@@ -88,11 +78,7 @@ export function ExploreView({
       )}
 
       {/* Role group grid */}
-<<<<<<< HEAD
       <div className={`grid gap-4 max-w-6xl 3xl:max-w-[1800px] 4xl:max-w-[2400px] mx-auto ${IS_MOBILE ? '[grid-template-columns:1fr]' : '[grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]'}`}>
-=======
-      <div className="grid gap-4 max-w-6xl mx-auto [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         {CATEGORY_ROLE_GROUPS.map((group) => (
           <RoleGroupCard
             key={group.role}

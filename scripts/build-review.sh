@@ -86,10 +86,10 @@ run_step "TypeScript typecheck" npx tsc -b --noEmit
 run_step "Frontend tests (Vitest)" npx vitest run
 
 # ── Step 4: Rust tests (cargo test) ───────────────────────────────────────
-run_step "Rust tests (cargo test)" cargo test --manifest-path src-tauri/Cargo.toml
+run_step "Rust tests (cargo test)" cargo test --manifest-path src-tauri/Cargo.toml --features desktop
 
 # ── Step 5: Rust lint (cargo clippy) ──────────────────────────────────────
-run_step "Rust lint (cargo clippy)" cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
+run_step "Rust lint (cargo clippy)" cargo clippy --manifest-path src-tauri/Cargo.toml --features desktop -- -D warnings
 
 # ── Summary ────────────────────────────────────────────────────────────────
 {

@@ -1,10 +1,6 @@
 import { useCallback } from 'react';
 import type { N8nPersonaDraft, TransformQuestionResponse } from '@/api/n8nTransform';
-<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { useWizardReducer } from '@/hooks/useWizardReducer';
 import { getAdoptionRequirements, getDefaultValues } from './templateVariables';
@@ -15,7 +11,7 @@ export interface AdoptEntityError {
   error: string;
 }
 
-// ── Persistence ──
+// â”€â”€ Persistence â”€â”€
 
 export const ADOPT_CONTEXT_KEY = 'template-adopt-context-v1';
 
@@ -30,21 +26,13 @@ export interface PersistedAdoptContext {
   savedAt: number;
 }
 
-// ── Wizard Steps ──
+// â”€â”€ Wizard Steps â”€â”€
 
-<<<<<<< HEAD
 export type AdoptWizardStep = 'choose' | 'connect' | 'tune' | 'build' | 'create';
-=======
-export type AdoptWizardStep = 'choose' | 'connect' | 'data' | 'tune' | 'build' | 'create';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 export const ADOPT_STEPS: readonly AdoptWizardStep[] = [
   'choose',
   'connect',
-<<<<<<< HEAD
-=======
-  'data',
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   'tune',
   'build',
   'create',
@@ -53,19 +41,12 @@ export const ADOPT_STEPS: readonly AdoptWizardStep[] = [
 export const ADOPT_STEP_META: Record<AdoptWizardStep, { label: string; index: number }> = {
   choose:  { label: 'Choose',  index: 0 },
   connect: { label: 'Connect', index: 1 },
-<<<<<<< HEAD
   tune:    { label: 'Tune',    index: 2 },
   build:   { label: 'Build',   index: 3 },
   create:  { label: 'Create',  index: 4 },
-=======
-  data:    { label: 'Data',    index: 2 },
-  tune:    { label: 'Tune',    index: 3 },
-  build:   { label: 'Build',   index: 4 },
-  create:  { label: 'Create',  index: 5 },
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 };
 
-// ── Helpers ──
+// â”€â”€ Helpers â”€â”€
 
 function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
   const next = new Set(set);
@@ -74,11 +55,7 @@ function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
   return next;
 }
 
-<<<<<<< HEAD
 function initSelectionsFromDesignResult(design: AgentIR) {
-=======
-function initSelectionsFromDesignResult(design: DesignAnalysisResult) {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const selectedToolIndices = new Set<number>(
     design.suggested_tools.map((_, i) => i),
   );
@@ -109,7 +86,7 @@ function initSelectionsFromDesignResult(design: DesignAnalysisResult) {
   };
 }
 
-// ── State ──
+// â”€â”€ State â”€â”€
 
 export interface AdoptState {
   step: AdoptWizardStep;
@@ -117,11 +94,7 @@ export interface AdoptState {
   // Template context
   templateName: string;
   reviewId: string;
-<<<<<<< HEAD
   designResult: AgentIR | null;
-=======
-  designResult: DesignAnalysisResult | null;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   designResultJson: string;
 
   // Entity selection (Choose step)
@@ -147,28 +120,16 @@ export interface AdoptState {
   connectorCredentialMap: Record<string, string>;
   inlineCredentialConnector: string | null;
 
-  // Connector swaps (Connect step — interchangeable connectors)
-  /** Original connector name → replacement connector name */
+  // Connector swaps (Connect step â€” interchangeable connectors)
+  /** Original connector name â†’ replacement connector name */
   connectorSwaps: Record<string, string>;
 
   // Persona preferences (Tune step)
-<<<<<<< HEAD
   requireApproval: boolean;
   autoApproveSeverity: string;
   reviewTimeout: string;
   memoryEnabled: boolean;
   memoryScope: string;
-=======
-  notificationChannels: string[];
-  alertChannel: string;
-  alertSeverity: string;
-  requireApproval: boolean;
-  autoApproveSeverity: string;
-  reviewTimeout: string;
-  maxConcurrent: number;
-  timeoutMs: number;
-  maxBudgetUsd: number | null;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   // Transform (Build step)
   transforming: boolean;
@@ -189,7 +150,6 @@ export interface AdoptState {
   showEditInline: boolean;
   error: string | null;
 
-<<<<<<< HEAD
   // Database setup (inline in Connect step)
   databaseMode: 'create' | 'existing';
   selectedTableNames: string[];
@@ -197,15 +157,8 @@ export interface AdoptState {
   // Auto-adoption
   autoResolved: boolean;
 
-  // Safety override — user explicitly acknowledges critical scan findings
+  // Safety override â€” user explicitly acknowledges critical scan findings
   safetyCriticalOverride: boolean;
-=======
-  // Data step
-  dataSchemaReady: boolean;
-
-  // Auto-adoption
-  autoResolved: boolean;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 const INITIAL_STATE: AdoptState = {
@@ -228,23 +181,11 @@ const INITIAL_STATE: AdoptState = {
   connectorCredentialMap: {},
   inlineCredentialConnector: null,
   connectorSwaps: {},
-<<<<<<< HEAD
   requireApproval: false,
   autoApproveSeverity: 'info',
   reviewTimeout: '24h',
   memoryEnabled: true,
   memoryScope: '',
-=======
-  notificationChannels: [],
-  alertChannel: '',
-  alertSeverity: 'warning_critical',
-  requireApproval: false,
-  autoApproveSeverity: 'info',
-  reviewTimeout: '24h',
-  maxConcurrent: 1,
-  timeoutMs: 420000,
-  maxBudgetUsd: null,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   transforming: false,
   backgroundAdoptId: null,
   adjustmentRequest: '',
@@ -258,15 +199,10 @@ const INITIAL_STATE: AdoptState = {
   partialEntityErrors: [],
   showEditInline: false,
   error: null,
-<<<<<<< HEAD
   databaseMode: 'create',
   selectedTableNames: [],
   autoResolved: false,
   safetyCriticalOverride: false,
-=======
-  dataSchemaReady: false,
-  autoResolved: false,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 };
 
 function prefillDefaults(questions: TransformQuestionResponse[]): Record<string, string> {
@@ -276,23 +212,7 @@ function prefillDefaults(questions: TransformQuestionResponse[]): Record<string,
   }, {});
 }
 
-<<<<<<< HEAD
-=======
-/** Check if the current template needs the Data step (has a database connector). */
-function hasDataStep(s: AdoptState): boolean {
-  const connectors = s.designResult?.suggested_connectors ?? [];
-  const DATABASE_CONNECTORS = new Set([
-    'personas_database', 'supabase', 'neon', 'planetscale',
-    'postgres', 'mongodb', 'duckdb', 'sqlite',
-  ]);
-  return connectors.some((c) => DATABASE_CONNECTORS.has(c.name));
-}
-
-/** Exported for use in context/modal to conditionally show the Data sidebar step. */
-export { hasDataStep };
-
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
-// ── Hook ──
+// â”€â”€ Hook â”€â”€
 
 export function useAdoptReducer() {
   const core = useWizardReducer<AdoptState>({
@@ -301,12 +221,7 @@ export function useAdoptReducer() {
     canGoBack: (s) => s.step !== 'choose' && !s.transforming && !s.confirming && !s.questionGenerating,
     goBack: (s, goToStep) => {
       if (s.step === 'connect') goToStep('choose');
-<<<<<<< HEAD
       else if (s.step === 'tune') goToStep('connect');
-=======
-      else if (s.step === 'data') goToStep('connect');
-      else if (s.step === 'tune') goToStep(s.dataSchemaReady || hasDataStep(s) ? 'data' : 'connect');
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       else if (s.step === 'build') goToStep('tune');
       else if (s.step === 'create') {
         if (s.draft) goToStep('build');
@@ -315,15 +230,9 @@ export function useAdoptReducer() {
     },
   });
 
-<<<<<<< HEAD
   const { state, update, updateFn } = core;
 
   const init = useCallback((templateName: string, reviewId: string, designResult: AgentIR, designResultJson: string) => {
-=======
-  const { state, update } = core;
-
-  const init = useCallback((templateName: string, reviewId: string, designResult: DesignAnalysisResult, designResultJson: string) => {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     const selections = initSelectionsFromDesignResult(designResult);
     update({
       ...INITIAL_STATE,
@@ -336,20 +245,13 @@ export function useAdoptReducer() {
     });
   }, [update]);
 
-  // ── Entity selection toggles ──
-<<<<<<< HEAD
+  // â”€â”€ Entity selection toggles â”€â”€
   // All toggles use updateFn to read from prev state, avoiding stale closures
   // during rapid toggling.
 
   const toggleUseCaseId = useCallback((id: string) => {
     updateFn((prev) => ({ ...prev, selectedUseCaseIds: toggleInSet(prev.selectedUseCaseIds, id) }));
   }, [updateFn]);
-=======
-
-  const toggleUseCaseId = useCallback((id: string) => {
-    update({ selectedUseCaseIds: toggleInSet(state.selectedUseCaseIds, id) });
-  }, [update, state.selectedUseCaseIds]);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   const selectAllUseCases = useCallback((ids: string[]) => {
     update({ selectedUseCaseIds: new Set(ids) });
@@ -360,7 +262,6 @@ export function useAdoptReducer() {
   }, [update]);
 
   const toggleTool = useCallback((index: number) => {
-<<<<<<< HEAD
     updateFn((prev) => ({ ...prev, selectedToolIndices: toggleInSet(prev.selectedToolIndices, index) }));
   }, [updateFn]);
 
@@ -408,84 +309,26 @@ export function useAdoptReducer() {
   const toggleEvent = useCallback((index: number) => {
     updateFn((prev) => ({ ...prev, selectedEventIndices: toggleInSet(prev.selectedEventIndices, index) }));
   }, [updateFn]);
-=======
-    update({ selectedToolIndices: toggleInSet(state.selectedToolIndices, index) });
-  }, [update, state.selectedToolIndices]);
 
-  const toggleTrigger = useCallback((index: number) => {
-    update({ selectedTriggerIndices: toggleInSet(state.selectedTriggerIndices, index) });
-  }, [update, state.selectedTriggerIndices]);
-
-  const toggleConnector = useCallback((name: string) => {
-    update({ selectedConnectorNames: toggleInSet(state.selectedConnectorNames, name) });
-  }, [update, state.selectedConnectorNames]);
-
-  const swapConnector = useCallback((originalName: string, replacementName: string) => {
-    const newSwaps = { ...state.connectorSwaps };
-    // Determine the previously active connector for this slot
-    const oldActive = state.connectorSwaps[originalName] || originalName;
-
-    // If reverting to the original, remove the swap entry entirely
-    if (originalName === replacementName) {
-      delete newSwaps[originalName];
-    } else {
-      newSwaps[originalName] = replacementName;
-    }
-
-    const newSelected = new Set(state.selectedConnectorNames);
-    newSelected.delete(oldActive);
-    newSelected.add(replacementName);
-
-    const newCredMap = { ...state.connectorCredentialMap };
-    if (oldActive !== replacementName) {
-      delete newCredMap[oldActive];
-    }
-
-    update({
-      connectorSwaps: newSwaps,
-      selectedConnectorNames: newSelected,
-      connectorCredentialMap: newCredMap,
-    });
-  }, [update, state.connectorSwaps, state.selectedConnectorNames, state.connectorCredentialMap]);
-
-  const toggleChannel = useCallback((index: number) => {
-    update({ selectedChannelIndices: toggleInSet(state.selectedChannelIndices, index) });
-  }, [update, state.selectedChannelIndices]);
-
-  const toggleEvent = useCallback((index: number) => {
-    update({ selectedEventIndices: toggleInSet(state.selectedEventIndices, index) });
-  }, [update, state.selectedEventIndices]);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
-
-  // ── Variable & trigger config ──
+  // â”€â”€ Variable & trigger config â”€â”€
 
   const updateVariable = useCallback((key: string, value: string) => {
-<<<<<<< HEAD
     updateFn((prev) => ({ ...prev, variableValues: { ...prev.variableValues, [key]: value } }));
   }, [updateFn]);
 
   const updateTriggerConfig = useCallback((triggerIdx: number, config: Record<string, string>) => {
     updateFn((prev) => ({ ...prev, triggerConfigs: { ...prev.triggerConfigs, [triggerIdx]: config } }));
   }, [updateFn]);
-=======
-    update({ variableValues: { ...state.variableValues, [key]: value } });
-  }, [update, state.variableValues]);
 
-  const updateTriggerConfig = useCallback((triggerIdx: number, config: Record<string, string>) => {
-    update({ triggerConfigs: { ...state.triggerConfigs, [triggerIdx]: config } });
-  }, [update, state.triggerConfigs]);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
-
-  // ── Persona preferences (Tune step) ──
+  // â”€â”€ Persona preferences (Tune step) â”€â”€
 
   const updatePreference = useCallback((key: string, value: unknown) => {
     update({ [key]: value } as Partial<AdoptState>);
   }, [update]);
 
-  // ── Connector credential mapping (Connect step) ──
+  // â”€â”€ Connector credential mapping (Connect step) â”€â”€
 
   const setConnectorCredential = useCallback((connectorName: string, credentialId: string) => {
-<<<<<<< HEAD
     updateFn((prev) => ({ ...prev, connectorCredentialMap: { ...prev.connectorCredentialMap, [connectorName]: credentialId } }));
   }, [updateFn]);
 
@@ -496,29 +339,18 @@ export function useAdoptReducer() {
       return { ...prev, connectorCredentialMap: next };
     });
   }, [updateFn]);
-=======
-    update({ connectorCredentialMap: { ...state.connectorCredentialMap, [connectorName]: credentialId } });
-  }, [update, state.connectorCredentialMap]);
-
-  const clearConnectorCredential = useCallback((connectorName: string) => {
-    const next = { ...state.connectorCredentialMap };
-    delete next[connectorName];
-    update({ connectorCredentialMap: next });
-  }, [update, state.connectorCredentialMap]);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   const setInlineCredentialConnector = useCallback((name: string | null) => {
     update({ inlineCredentialConnector: name });
   }, [update]);
 
-  // ── Create step ──
+  // â”€â”€ Create step â”€â”€
 
   const toggleEditInline = useCallback(() => {
-<<<<<<< HEAD
     updateFn((prev) => ({ ...prev, showEditInline: !prev.showEditInline }));
   }, [updateFn]);
 
-  // ── Database setup (inline in Connect step) ──
+  // â”€â”€ Database setup (inline in Connect step) â”€â”€
 
   const setDatabaseMode = useCallback((mode: 'create' | 'existing') => {
     update({ databaseMode: mode, selectedTableNames: [] });
@@ -537,12 +369,8 @@ export function useAdoptReducer() {
   const setSelectedTableNames = useCallback((names: string[]) => {
     update({ selectedTableNames: names });
   }, [update]);
-=======
-    update({ showEditInline: !state.showEditInline });
-  }, [update, state.showEditInline]);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
-  // ── Existing actions ──
+  // â”€â”€ Existing actions â”€â”€
 
   const questionsGenerating = useCallback(() => {
     update({ step: 'tune', questionGenerating: true, error: null });
@@ -557,13 +385,8 @@ export function useAdoptReducer() {
   }, [update]);
 
   const answerUpdated = useCallback((questionId: string, answer: string) => {
-<<<<<<< HEAD
     updateFn((prev) => ({ ...prev, userAnswers: { ...prev.userAnswers, [questionId]: answer } }));
   }, [updateFn]);
-=======
-    update({ userAnswers: { ...state.userAnswers, [questionId]: answer } });
-  }, [update, state.userAnswers]);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   const transformStarted = useCallback((adoptId: string) => {
     update({ step: 'build', transforming: true, backgroundAdoptId: adoptId, transformPhase: 'running', transformLines: [], error: null });
@@ -582,11 +405,7 @@ export function useAdoptReducer() {
   }, [update]);
 
   const transformCompleted = useCallback((draft: N8nPersonaDraft) => {
-<<<<<<< HEAD
     update({ step: 'create', transforming: false, transformPhase: 'completed', draft, draftJson: JSON.stringify(draft, null, 2), draftJsonError: null, safetyCriticalOverride: false });
-=======
-    update({ step: 'create', transforming: false, transformPhase: 'completed', draft, draftJson: JSON.stringify(draft, null, 2), draftJsonError: null });
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }, [update]);
 
   const transformFailed = useCallback((error: string) => {
@@ -594,12 +413,8 @@ export function useAdoptReducer() {
   }, [update]);
 
   const transformCancelled = useCallback(() => {
-<<<<<<< HEAD
     // Resume at tune step instead of resetting to choose (preserves user progress)
     update({ step: 'tune', transforming: false, backgroundAdoptId: null, transformPhase: 'idle', transformLines: [], error: null });
-=======
-    update({ step: 'choose', transforming: false, backgroundAdoptId: null, transformPhase: 'idle', transformLines: [], error: null });
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }, [update]);
 
   const confirmStarted = useCallback(() => {
@@ -622,13 +437,10 @@ export function useAdoptReducer() {
     update({ autoResolved });
   }, [update]);
 
-<<<<<<< HEAD
   const setSafetyCriticalOverride = useCallback((override: boolean) => {
     update({ safetyCriticalOverride: override });
   }, [update]);
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   return {
     state,
     canGoBack: core.canGoBack,
@@ -654,13 +466,10 @@ export function useAdoptReducer() {
     setInlineCredentialConnector,
     // Create step
     toggleEditInline,
-<<<<<<< HEAD
     // Database setup
     setDatabaseMode,
     toggleTableName,
     setSelectedTableNames,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     // Domain-specific actions
     init,
     questionsGenerating,
@@ -679,9 +488,6 @@ export function useAdoptReducer() {
     confirmFailed,
     restoreContext,
     setAutoResolved,
-<<<<<<< HEAD
     setSafetyCriticalOverride,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   };
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useCredentialNav } from '@/features/vault/hooks/CredentialNavContext';
-import type { DbPersonaToolDefinition } from '@/lib/bindings/DbPersonaToolDefinition';
+import type { DbPersonaToolDefinition } from '@/lib/types/types';
 
 /**
  * Tool toggle, undo, bulk, and add-credential actions.

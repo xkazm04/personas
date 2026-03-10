@@ -19,21 +19,15 @@ import { formatElapsed } from '@/lib/utils/formatters';
 import {
   PIPELINE_STAGES,
   STAGE_META,
-<<<<<<< HEAD
   isPipelineStage,
   type PipelineStage,
   type UnifiedTrace,
-=======
-  type PipelineStage,
-  type PipelineTrace,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 } from '@/lib/execution/pipeline';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { Tooltip } from '@/features/shared/components/Tooltip';
 
-// ── Pipeline stage dot visualisation ───────────────────────────────────
+// â”€â”€ Pipeline stage dot visualisation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-<<<<<<< HEAD
 function PipelineDots({ trace }: { trace: UnifiedTrace | null }) {
   const completedStages = useMemo(() => {
     if (!trace) return new Set<PipelineStage>();
@@ -42,25 +36,15 @@ function PipelineDots({ trace }: { trace: UnifiedTrace | null }) {
         .filter((s) => isPipelineStage(s.span_type))
         .map((s) => s.span_type as PipelineStage),
     );
-=======
-function PipelineDots({ trace }: { trace: PipelineTrace | null }) {
-  const completedStages = useMemo(() => {
-    if (!trace) return new Set<PipelineStage>();
-    return new Set(trace.entries.map((e) => e.stage));
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }, [trace]);
 
   const errorStages = useMemo(() => {
     if (!trace) return new Set<PipelineStage>();
-<<<<<<< HEAD
     return new Set(
       trace.spans
         .filter((s) => isPipelineStage(s.span_type) && s.error)
         .map((s) => s.span_type as PipelineStage),
     );
-=======
-    return new Set(trace.entries.filter((e) => e.error).map((e) => e.stage));
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }, [trace]);
 
   return (
@@ -68,19 +52,12 @@ function PipelineDots({ trace }: { trace: PipelineTrace | null }) {
       {PIPELINE_STAGES.map((stage) => {
         const completed = completedStages.has(stage);
         const hasError = errorStages.has(stage);
-<<<<<<< HEAD
         const pStages = trace?.spans.filter((s) => isPipelineStage(s.span_type)) ?? [];
         const lastStage = pStages[pStages.length - 1];
         const isLast =
           trace &&
           lastStage &&
           lastStage.span_type === stage &&
-=======
-        const isLast =
-          trace &&
-          trace.entries.length > 0 &&
-          trace.entries[trace.entries.length - 1]!.stage === stage &&
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           !trace.completedAt;
 
         return (
@@ -104,7 +81,7 @@ function PipelineDots({ trace }: { trace: PipelineTrace | null }) {
   );
 }
 
-// ── Status icon ────────────────────────────────────────────────────────
+// â”€â”€ Status icon â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StatusIndicator({ isExecuting, hasError }: { isExecuting: boolean; hasError: boolean }) {
   if (hasError) return <XCircle className="w-4 h-4 text-red-400" />;
@@ -112,7 +89,7 @@ function StatusIndicator({ isExecuting, hasError }: { isExecuting: boolean; hasE
   return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
 }
 
-// ── Main mini-player ───────────────────────────────────────────────────
+// â”€â”€ Main mini-player â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function ExecutionMiniPlayer() {
   const miniPlayerPinned = usePersonaStore((s) => s.miniPlayerPinned);
@@ -236,7 +213,7 @@ export default function ExecutionMiniPlayer() {
           isDragging ? 'cursor-grabbing' : ''
         }`}
       >
-        {/* ── Header (draggable) ──────────────────────────────────── */}
+        {/* â”€â”€ Header (draggable) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div
           className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 bg-secondary/30 cursor-grab active:cursor-grabbing"
           onMouseDown={handleMouseDown}
@@ -296,7 +273,7 @@ export default function ExecutionMiniPlayer() {
           </Tooltip>
         </div>
 
-        {/* ── Pipeline stage dots ─────────────────────────────────── */}
+        {/* â”€â”€ Pipeline stage dots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="flex items-center gap-2 px-3 py-1.5 border-b border-primary/5 bg-secondary/10">
           <span className="text-sm text-muted-foreground/60 uppercase tracking-wider">Pipeline</span>
           <PipelineDots trace={pipelineTrace} />
@@ -307,7 +284,7 @@ export default function ExecutionMiniPlayer() {
           )}
         </div>
 
-        {/* ── Collapsed: single last line ─────────────────────────── */}
+        {/* â”€â”€ Collapsed: single last line â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {!miniPlayerExpanded && (
           <div className="px-3 py-1.5 bg-black/20">
             <div className="font-mono text-sm text-muted-foreground/50 truncate flex items-center gap-1.5">
@@ -321,7 +298,7 @@ export default function ExecutionMiniPlayer() {
           </div>
         )}
 
-        {/* ── Expanded: scrollable terminal ────────────────────────── */}
+        {/* â”€â”€ Expanded: scrollable terminal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {miniPlayerExpanded && (
           <div
             ref={terminalRef}

@@ -1,9 +1,8 @@
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
-<<<<<<< HEAD
 import { Key, Zap, Bot, Play, Radio, Link, ListChecks, type LucideIcon } from 'lucide-react';
 
-// ── Scenario Variants ────────────────────────────────────────────
+// â”€â”€ Scenario Variants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type EmptyStateVariant =
   | 'credentials-need-agents'
@@ -39,7 +38,7 @@ const SCENARIO_CONFIGS: Record<EmptyStateVariant, ScenarioConfig> = {
   'triggers-manual-only': {
     icon: Zap,
     title: 'This agent runs manually only',
-    subtitle: 'Add a trigger to automate it — schedules, webhooks, or event-driven.',
+    subtitle: 'Add a trigger to automate it â€” schedules, webhooks, or event-driven.',
     iconColor: 'text-amber-400/80',
     iconContainerClassName: 'bg-amber-500/10 border-amber-500/20',
   },
@@ -72,24 +71,17 @@ const SCENARIO_CONFIGS: Record<EmptyStateVariant, ScenarioConfig> = {
   'use-cases-empty': {
     icon: ListChecks,
     title: 'No use cases defined yet',
-    subtitle: 'Define what this agent should do — import from a workflow or describe it in plain language.',
+    subtitle: 'Define what this agent should do â€” import from a workflow or describe it in plain language.',
     iconColor: 'text-violet-400/75',
     iconContainerClassName: 'bg-violet-500/10 border-violet-500/20',
   },
 };
 
-// ── Component ────────────────────────────────────────────────────
+// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface EmptyStateProps {
   icon?: LucideIcon;
   title?: string;
-=======
-import type { LucideIcon } from 'lucide-react';
-
-interface EmptyStateProps {
-  icon: LucideIcon;
-  title: string;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   subtitle?: string;
   description?: string;
   action?: { label: string; onClick: () => void };
@@ -97,24 +89,16 @@ interface EmptyStateProps {
   iconContainerClassName?: string;
   className?: string;
   children?: ReactNode;
-<<<<<<< HEAD
   /** Select a predefined scenario template. Explicit props override scenario defaults. */
   variant?: EmptyStateVariant;
 }
 
 export default function EmptyState({
   icon,
-=======
-}
-
-export default function EmptyState({
-  icon: Icon,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   title,
   subtitle,
   description,
   action,
-<<<<<<< HEAD
   iconColor,
   iconContainerClassName,
   className,
@@ -129,14 +113,6 @@ export default function EmptyState({
   const resolvedIconColor = iconColor ?? scenario?.iconColor ?? 'text-muted-foreground/80';
   const resolvedContainerClass = iconContainerClassName ?? scenario?.iconContainerClassName ?? 'bg-secondary/35 border-primary/15';
   const steps = scenario?.steps;
-=======
-  iconColor = 'text-muted-foreground/80',
-  iconContainerClassName = 'bg-secondary/35 border-primary/15',
-  className,
-  children,
-}: EmptyStateProps) {
-  const detailText = subtitle ?? description;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   return (
     <motion.div
@@ -144,7 +120,6 @@ export default function EmptyState({
       animate={{ opacity: 1, y: 0 }}
       className={`py-8 flex flex-col items-center justify-center text-center gap-2.5 ${className ?? ''}`}
     >
-<<<<<<< HEAD
       {Icon && (
         <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${resolvedContainerClass}`}>
           <Icon className={`w-4 h-4 ${resolvedIconColor}`} />
@@ -173,13 +148,6 @@ export default function EmptyState({
         </div>
       )}
 
-=======
-      <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${iconContainerClassName}`}>
-        <Icon className={`w-4 h-4 ${iconColor}`} />
-      </div>
-      <h3 className="text-sm font-medium text-foreground/90">{title}</h3>
-      {detailText && <p className="text-sm text-muted-foreground/60 max-w-[34ch]">{detailText}</p>}
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       {children ? <div className="pt-1">{children}</div> : null}
       {action && (
         <button

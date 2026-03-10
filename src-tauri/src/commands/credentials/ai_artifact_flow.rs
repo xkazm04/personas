@@ -3,7 +3,7 @@
 //! Both credential design and the credential negotiator follow an identical
 //! lifecycle:
 //!
-//!   idle → running → completed | error
+//!   idle â†’ running â†’ completed | error
 //!
 //! They both:
 //! - spawn Claude CLI via `spawn_claude_and_collect`
@@ -27,7 +27,7 @@ use tokio::process::Command;
 use crate::engine::parser::parse_stream_line;
 use crate::engine::types::StreamLineType;
 
-// ── Message configuration ────────────────────────────────────────
+// â”€â”€ Message configuration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Progress and status message labels that differ between artifact flows.
 ///
@@ -43,9 +43,9 @@ pub struct AiArtifactMessages {
     pub id_field: &'static str,
     /// Initial status value emitted at start (e.g. `"analyzing"`).
     pub initial_status: &'static str,
-    /// Progress line after SystemInit (e.g. `"Analyzing service requirements…"`).
+    /// Progress line after SystemInit (e.g. `"Analyzing service requirementsâ€¦"`).
     pub init_progress: &'static str,
-    /// Progress line on first AssistantText (e.g. `"Designing connector structure…"`).
+    /// Progress line on first AssistantText (e.g. `"Designing connector structureâ€¦"`).
     pub streaming_progress: &'static str,
     /// Prefix for the Result progress line (e.g. `"Analysis complete"`).
     pub complete_prefix: &'static str,
@@ -59,7 +59,7 @@ pub struct AiArtifactMessages {
     pub timeout_secs: u64,
 }
 
-// ── Task parameters ──────────────────────────────────────────────
+// â”€â”€ Task parameters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Everything needed to run a single AI artifact generation task.
 pub struct AiArtifactParams {
@@ -80,7 +80,7 @@ pub struct AiArtifactParams {
     pub extractor: fn(&str) -> Option<serde_json::Value>,
 }
 
-// ── Emit helpers ─────────────────────────────────────────────────
+// â”€â”€ Emit helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Emit a progress line on the configured progress event channel.
 fn emit_task_progress(app: &tauri::AppHandle, event: &str, id_field: &str, task_id: &str, line: &str) {
@@ -105,14 +105,14 @@ fn emit_task_status(
     }));
 }
 
-// ── Generic task runner ──────────────────────────────────────────
+// â”€â”€ Generic task runner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Run a complete AI artifact generation task.
 ///
 /// This is the shared lifecycle that both credential design and negotiation
 /// (and any future AI-artifact flows) use:
 ///
-/// 1. Emit initial status + "Connecting to Claude…"
+/// 1. Emit initial status + "Connecting to Claudeâ€¦"
 /// 2. Spawn Claude CLI, stream lines, emit progress
 /// 3. Check cancellation
 /// 4. Extract result via `params.extractor`
@@ -248,7 +248,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
     }
 }
 
-// ── Claude CLI spawn helper ──────────────────────────────────────
+// â”€â”€ Claude CLI spawn helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Result from spawning Claude CLI and collecting output.
 pub struct ClaudeSpawnResult {
@@ -376,10 +376,10 @@ pub async fn spawn_claude_and_collect(
     })
     .await;
 
-    // On timeout, kill the process BEFORE waiting — otherwise wait() hangs
+    // On timeout, kill the process BEFORE waiting â€” otherwise wait() hangs
     // because the process is still running.
     if stream_result.is_err() {
-        tracing::warn!("Claude CLI timed out after {timeout_secs}s — killing process");
+        tracing::warn!("Claude CLI timed out after {timeout_secs}s â€” killing process");
         let _ = child.kill().await;
         // Also kill via PID tree on Windows to clean up child processes
         if let Some(pid_ref) = child_pid_out {
@@ -396,11 +396,7 @@ pub async fn spawn_claude_and_collect(
                         .stderr(std::process::Stdio::null())
                         .status();
                 }
-<<<<<<< HEAD
                 #[cfg(all(not(windows), not(target_os = "android")))]
-=======
-                #[cfg(not(windows))]
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                 {
                     unsafe { libc::kill(pid as i32, libc::SIGTERM); }
                 }
@@ -442,7 +438,7 @@ pub async fn spawn_claude_and_collect(
 
 /// Convenience: spawn Claude, collect text, return the text or an error.
 ///
-/// This is a simpler variant that doesn't stream progress events — useful for
+/// This is a simpler variant that doesn't stream progress events â€” useful for
 /// one-shot prompts like healthcheck generation or step-help.
 pub async fn run_claude_prompt(
     prompt_text: String,

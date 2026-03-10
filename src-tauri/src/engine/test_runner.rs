@@ -25,7 +25,7 @@ use super::parser;
 use super::prompt;
 use super::types::*;
 
-// ── Types ──────────────────────────────────────────────────────
+// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Model configuration for a test run, passed from the frontend.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -82,7 +82,7 @@ pub struct TestScores {
     pub protocol_compliance: Option<i32>,
 }
 
-// ── Main entry point ───────────────────────────────────────────
+// â”€â”€ Main entry point â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Run a full test session: generate scenarios, execute across models, score, summarize.
 /// If `preloaded_scenarios` is Some, skip generation and use those scenarios directly.
@@ -97,10 +97,7 @@ pub async fn run_test(
     cancelled: Arc<std::sync::atomic::AtomicBool>,
     use_case_filter: Option<String>,
     preloaded_scenarios: Option<Vec<TestScenario>>,
-<<<<<<< HEAD
     fixture_inputs: Option<String>,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 ) {
     let persona = &ephemeral.persona;
     let tools = &ephemeral.tools;
@@ -115,11 +112,7 @@ pub async fn run_test(
     } else {
         emit_status(&app, &run_id, "generating", None);
 
-<<<<<<< HEAD
         match generate_scenarios(persona, tools, use_case_filter.as_deref(), fixture_inputs.as_deref()).await {
-=======
-        match generate_scenarios(persona, tools, use_case_filter.as_deref()).await {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             Ok(s) if s.is_empty() => {
                 finish_with_error(&app, &pool, &run_id, "No test scenarios were generated");
                 return;
@@ -161,7 +154,7 @@ pub async fn run_test(
         },
     );
 
-    // Phase 2: Execute each scenario × model combination
+    // Phase 2: Execute each scenario Ã— model combination
     let total = scenario_count * model_configs.len();
     let mut current = 0usize;
 
@@ -352,23 +345,18 @@ pub async fn run_test(
     );
 }
 
-// ── Phase 1: Generate scenarios ────────────────────────────────
+// â”€â”€ Phase 1: Generate scenarios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async fn generate_scenarios(
     persona: &Persona,
     tools: &[PersonaToolDefinition],
     use_case_filter: Option<&str>,
-<<<<<<< HEAD
     fixture_inputs: Option<&str>,
 ) -> Result<Vec<TestScenario>, String> {
     let coordinator_prompt = build_coordinator_prompt(persona, tools, use_case_filter, fixture_inputs);
-=======
-) -> Result<Vec<TestScenario>, String> {
-    let coordinator_prompt = build_coordinator_prompt(persona, tools, use_case_filter);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
     let mut cli_args = prompt::build_cli_args(None, None);
-    // Limit to 1 turn — we just want the JSON output
+    // Limit to 1 turn â€” we just want the JSON output
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 
@@ -378,11 +366,7 @@ async fn generate_scenarios(
     parse_scenarios_from_output(&output)
 }
 
-<<<<<<< HEAD
 fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], use_case_filter: Option<&str>, fixture_inputs: Option<&str>) -> String {
-=======
-fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], use_case_filter: Option<&str>) -> String {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     let mut p = String::new();
 
     p.push_str("# Test Scenario Generator\n\n");
@@ -494,8 +478,7 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
         }
     }
 
-<<<<<<< HEAD
-    // Include fixture inputs when provided — these are user-defined test inputs
+    // Include fixture inputs when provided â€” these are user-defined test inputs
     // that should be used as the input_data for at least one generated scenario
     if let Some(inputs_json) = fixture_inputs {
         p.push_str("\n\n## Test Fixture Inputs\n");
@@ -507,8 +490,6 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
         p.push_str("and additional scenarios that are realistic variations.\n");
     }
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     p
 }
 
@@ -538,7 +519,7 @@ fn parse_scenarios_from_output(output: &str) -> Result<Vec<TestScenario>, String
     ))
 }
 
-// ── Phase 2: Execute scenario with a specific model ────────────
+// â”€â”€ Phase 2: Execute scenario with a specific model â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 struct ScoreResult {
     tool_accuracy: i32,
@@ -586,7 +567,7 @@ async fn execute_scenario(
 
 fn build_sandbox_section(mock_tools: &[MockToolResponse]) -> String {
     let mut section = String::new();
-    section.push_str("\n## SANDBOX TESTING MODE — Simulated Tool Environment\n");
+    section.push_str("\n## SANDBOX TESTING MODE â€” Simulated Tool Environment\n");
     section.push_str("You are running in test mode. Do NOT call actual tools.\n");
     section.push_str("Instead, use these simulated tool responses as if the tools returned them:\n\n");
 
@@ -621,7 +602,7 @@ fn inject_sandbox_into_prompt(base_prompt: &str, sandbox_section: &str) -> Strin
     }
 }
 
-// ── Scoring (delegates to unified eval framework) ──────────────
+// â”€â”€ Scoring (delegates to unified eval framework) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 fn score_result(output: &ExecutionOutput, scenario: &TestScenario) -> ScoreResult {
     let expected_tools = scenario.expected_tool_sequence.as_deref();
@@ -668,7 +649,7 @@ fn score_result(output: &ExecutionOutput, scenario: &TestScenario) -> ScoreResul
     }
 }
 
-// ── Summary builder ────────────────────────────────────────────
+// â”€â”€ Summary builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[allow(clippy::type_complexity)]
 async fn build_summary(
@@ -749,7 +730,7 @@ async fn build_summary(
     })
 }
 
-// ── CLI helpers ────────────────────────────────────────────────
+// â”€â”€ CLI helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Structured output from a CLI execution.
 struct ExecutionOutput {
@@ -766,7 +747,7 @@ struct ExecutionOutput {
 ///
 /// Creates the temp dir, configures args, piped stdin/stdout, null stderr,
 /// Windows `CREATE_NO_WINDOW` flag, and env overrides/removals.
-/// Returns `(Command, exec_dir)` — the caller spawns the command, writes
+/// Returns `(Command, exec_dir)` â€” the caller spawns the command, writes
 /// to stdin, and collects output as needed.
 pub(crate) fn build_cli_command(
     cli_args: &CliArgs,
@@ -912,7 +893,7 @@ async fn spawn_cli_and_collect_structured(
     })
 }
 
-// ── Utility helpers ────────────────────────────────────────────
+// â”€â”€ Utility helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 fn emit_status(app: &AppHandle, run_id: &str, phase: &str, error: Option<&str>) {
     let _ = app.emit(
@@ -941,7 +922,7 @@ fn finish_with_error(app: &AppHandle, pool: &DbPool, run_id: &str, error: &str) 
 }
 
 // ============================================================================
-// Lab: Arena — same flow as run_test but writes to lab_arena tables
+// Lab: Arena â€” same flow as run_test but writes to lab_arena tables
 // ============================================================================
 
 fn emit_lab_status(app: &AppHandle, event_name: &str, run_id: &str, phase: &str, error: Option<&str>) {
@@ -979,11 +960,7 @@ pub async fn run_arena_test(
     let tools = &ephemeral.tools;
     emit_lab_status(&app, "lab-arena-status", &run_id, "generating", None);
 
-<<<<<<< HEAD
     let scenarios = match generate_scenarios(persona, tools, use_case_filter.as_deref(), None).await {
-=======
-    let scenarios = match generate_scenarios(persona, tools, use_case_filter.as_deref()).await {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         Ok(s) if s.is_empty() => {
             let now = chrono::Utc::now().to_rfc3339();
             let _ = arena_repo::update_run_status(&pool, &run_id, "failed", None, None, Some("No test scenarios were generated"), Some(&now));
@@ -1095,7 +1072,7 @@ pub async fn run_arena_test(
 }
 
 // ============================================================================
-// Lab: A/B — runs scenarios across two prompt versions × models
+// Lab: A/B â€” runs scenarios across two prompt versions Ã— models
 // ============================================================================
 
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
@@ -1113,11 +1090,7 @@ pub async fn run_ab_test(
 
     // Generate scenarios from the first variant (primary)
     let primary_persona = &variants[0].2;
-<<<<<<< HEAD
     let scenarios = match generate_scenarios(primary_persona, &tools, use_case_filter.as_deref(), None).await {
-=======
-    let scenarios = match generate_scenarios(primary_persona, &tools, use_case_filter.as_deref()).await {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         Ok(s) if s.is_empty() => {
             let now = chrono::Utc::now().to_rfc3339();
             let _ = ab_repo::update_run_status(&pool, &run_id, "failed", None, None, Some("No test scenarios were generated"), Some(&now));
@@ -1258,7 +1231,7 @@ pub async fn run_ab_test(
 }
 
 // ============================================================================
-// Lab: Eval — N prompt versions × M models evaluation matrix
+// Lab: Eval â€” N prompt versions Ã— M models evaluation matrix
 // ============================================================================
 
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
@@ -1276,11 +1249,7 @@ pub async fn run_eval_test(
 
     // Generate scenarios from the first variant (primary)
     let primary_persona = &variants[0].2;
-<<<<<<< HEAD
     let scenarios = match generate_scenarios(primary_persona, &tools, use_case_filter.as_deref(), None).await {
-=======
-    let scenarios = match generate_scenarios(primary_persona, &tools, use_case_filter.as_deref()).await {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         Ok(s) if s.is_empty() => {
             let now = chrono::Utc::now().to_rfc3339();
             let _ = eval_repo::update_run_status(&pool, &run_id, "failed", None, None, Some("No test scenarios were generated"), Some(&now));
@@ -1421,7 +1390,7 @@ pub async fn run_eval_test(
 }
 
 // ============================================================================
-// Lab: Matrix — draft generation + current vs draft comparison
+// Lab: Matrix â€” draft generation + current vs draft comparison
 // ============================================================================
 
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
@@ -1479,11 +1448,7 @@ pub async fn run_matrix_test(
     // Now run the same flow as A/B but with "current" and "draft" variants
     emit_lab_status(&app, "lab-matrix-status", &run_id, "generating", None);
 
-<<<<<<< HEAD
     let scenarios = match generate_scenarios(persona, tools, use_case_filter.as_deref(), None).await {
-=======
-    let scenarios = match generate_scenarios(persona, tools, use_case_filter.as_deref()).await {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         Ok(s) if s.is_empty() => {
             let now = chrono::Utc::now().to_rfc3339();
             let _ = matrix_repo::update_run_status(&pool, &run_id, "failed", None, None, Some("No test scenarios were generated"), Some(&now));
@@ -1623,7 +1588,7 @@ pub async fn run_matrix_test(
     });
 }
 
-// ── Matrix helpers ─────────────────────────────────────────────
+// â”€â”€ Matrix helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 fn build_draft_generation_prompt(persona: &Persona, user_instruction: &str) -> String {
     let sp_json = persona.structured_prompt.as_deref().unwrap_or("{}");

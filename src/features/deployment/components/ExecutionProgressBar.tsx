@@ -60,13 +60,8 @@ export function ExecutionProgressBar({ executionId }: Props) {
 
   if (!executionId || !progress) return null;
 
-<<<<<<< HEAD
   const config = STAGE_CONFIG[progress.stage] ?? STAGE_CONFIG.thinking!;
   const Icon = config!.icon;
-=======
-  const config = STAGE_CONFIG[progress.stage] ?? STAGE_CONFIG.thinking;
-  const Icon = config.icon;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const isAnimated = !['completed', 'failed'].includes(progress.stage);
 
   return (
@@ -93,15 +88,9 @@ export function ExecutionProgressBar({ executionId }: Props) {
       {/* Current stage info */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-<<<<<<< HEAD
           <Icon className={`w-4 h-4 ${config!.color} ${isAnimated ? 'animate-pulse' : ''}`} />
           <span className={`text-sm font-medium ${config!.color}`}>
             {config!.label}
-=======
-          <Icon className={`w-4 h-4 ${config.color} ${isAnimated ? 'animate-pulse' : ''}`} />
-          <span className={`text-sm font-medium ${config.color}`}>
-            {config.label}
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             {progress.activeTool && (
               <span className="text-muted-foreground/70 font-normal">: {progress.activeTool}</span>
             )}

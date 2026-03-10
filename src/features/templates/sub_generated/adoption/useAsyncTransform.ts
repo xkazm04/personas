@@ -1,5 +1,5 @@
 /**
- * useAsyncTransform — consolidates CLI stream, background snapshot polling,
+ * useAsyncTransform â€” consolidates CLI stream, background snapshot polling,
  * localStorage persistence, and all async adoption handlers into a single
  * orchestration layer.
  */
@@ -27,26 +27,19 @@ import {
   substituteVariables,
 } from './templateVariables';
 import { applySandboxOverrides } from '@/lib/templates/templateVerification';
-<<<<<<< HEAD
 import { sendOsNotification, requestNotificationPermission } from '@/lib/utils/osNotification';
 import type { SandboxPolicy } from '@/lib/types/templateTypes';
 import type { ScanResult } from '@/lib/templates/personaSafetyScanner';
-=======
-import type { SandboxPolicy } from '@/lib/types/templateTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { TransformQuestionResponse } from '@/api/n8nTransform';
 import type { AdoptState, PersistedAdoptContext } from './useAdoptReducer';
 import { ADOPT_CONTEXT_KEY, ADOPT_CONTEXT_MAX_AGE_MS } from './useAdoptReducer';
 
-<<<<<<< HEAD
-/** Remove persisted adoption context from localStorage. Non-critical — silently ignores errors. */
+/** Remove persisted adoption context from localStorage. Non-critical â€” silently ignores errors. */
 function clearPersistedContext() {
   try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* non-critical */ }
 }
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 // Module-level map of adopt IDs that have an in-flight confirmSave.
 // Survives component remounts, preventing duplicate persona creation
 // when the wizard unmounts and remounts while a confirm is pending.
@@ -64,7 +57,7 @@ async function waitForPersonaInStore(personaId: string, attempts = 10, delayMs =
   return false;
 }
 
-// ── Types ──
+// â”€â”€ Types â”€â”€
 
 interface WizardActions {
   transformStarted: (adoptId: string) => void;
@@ -74,10 +67,7 @@ interface WizardActions {
   transformFailed: (error: string) => void;
   transformCancelled: () => void;
   questionsGenerated: (questions: TransformQuestionResponse[]) => void;
-<<<<<<< HEAD
   awaitingAnswers: (questions: TransformQuestionResponse[]) => void;
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   confirmStarted: () => void;
   confirmCompleted: () => void;
   confirmFailed: (error: string) => void;
@@ -96,14 +86,11 @@ interface UseAsyncTransformOptions {
   onPersonaCreated: () => void;
   isOpen: boolean;
   sandboxPolicy: SandboxPolicy | null;
-<<<<<<< HEAD
-  /** Safety scan results — confirmSave is blocked when critical findings exist without override. */
+  /** Safety scan results â€” confirmSave is blocked when critical findings exist without override. */
   safetyScan: ScanResult | null;
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
-// ── Hook ──
+// â”€â”€ Hook â”€â”€
 
 export function useAsyncTransform({
   state,
@@ -112,10 +99,7 @@ export function useAsyncTransform({
   onPersonaCreated,
   isOpen,
   sandboxPolicy,
-<<<<<<< HEAD
   safetyScan,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }: UseAsyncTransformOptions) {
   const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
   const selectPersona = usePersonaStore((s) => s.selectPersona);
@@ -124,7 +108,7 @@ export function useAsyncTransform({
   const transformStartingRef = useRef(false);
   const [isRestoring, setIsRestoring] = useState(false);
 
-  // ── CLI stream ──
+  // â”€â”€ CLI stream â”€â”€
 
   const {
     runId: currentAdoptId,
@@ -139,7 +123,7 @@ export function useAsyncTransform({
     onFailed: (message) => wizard.transformFailed(message),
   });
 
-  // ── Restore persisted context ──
+  // â”€â”€ Restore persisted context â”€â”€
 
   const handleRestoreContext = useCallback(
     (parsed: PersistedAdoptContext) => {
@@ -159,7 +143,7 @@ export function useAsyncTransform({
     onRestore: handleRestoreContext,
   });
 
-  // ── Snapshot callbacks ──
+  // â”€â”€ Snapshot callbacks â”€â”€
 
   const handleSnapshotLines = useCallback(
     (lines: string[]) => {
@@ -181,14 +165,9 @@ export function useAsyncTransform({
     (draft: N8nPersonaDraft) => {
       try {
         wizard.transformCompleted(normalizeDraft(draft));
-<<<<<<< HEAD
         void sendOsNotification('Persona Ready', 'Your persona has been built and is ready for review.');
       } catch (err) {
         clearPersistedContext();
-=======
-      } catch (err) {
-        try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         wizard.transformFailed(
           err instanceof Error
             ? `Draft normalization failed: ${err.message}`
@@ -204,11 +183,7 @@ export function useAsyncTransform({
   const handleSnapshotCompletedNoDraft = useCallback(() => {
     setIsRestoring(false);
     setTemplateAdoptActive(false);
-<<<<<<< HEAD
     clearPersistedContext();
-=======
-    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     wizard.transformFailed('Transform completed but no draft was generated. Please try again.');
   }, [wizard.transformFailed, setTemplateAdoptActive]);
 
@@ -216,11 +191,7 @@ export function useAsyncTransform({
     (error: string) => {
       setIsRestoring(false);
       setTemplateAdoptActive(false);
-<<<<<<< HEAD
       clearPersistedContext();
-=======
-      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       wizard.transformFailed(error);
     },
     [wizard.transformFailed, setTemplateAdoptActive],
@@ -229,11 +200,7 @@ export function useAsyncTransform({
   const handleSnapshotSessionLost = useCallback(() => {
     setIsRestoring(false);
     setTemplateAdoptActive(false);
-<<<<<<< HEAD
     clearPersistedContext();
-=======
-    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     wizard.transformFailed('Adoption session lost. The backend may have restarted. Please try again.');
   }, [wizard.transformFailed, setTemplateAdoptActive]);
 
@@ -248,19 +215,12 @@ export function useAsyncTransform({
           options: Array.isArray(q.options) ? q.options.map(String) : undefined,
           default: typeof q.default === 'string' ? q.default : undefined,
           context: typeof q.context === 'string' ? q.context : undefined,
-<<<<<<< HEAD
           category: typeof q.category === 'string' ? q.category : undefined,
         }));
       // Use awaitingAnswers to transition to tune step and pause the transform
       if (mapped.length > 0) wizard.awaitingAnswers(mapped);
     },
     [wizard.awaitingAnswers],
-=======
-        }));
-      if (mapped.length > 0) wizard.questionsGenerated(mapped);
-    },
-    [wizard.questionsGenerated],
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   );
 
   useBackgroundSnapshot({
@@ -275,7 +235,7 @@ export function useAsyncTransform({
     onQuestions: handleSnapshotQuestions,
   });
 
-  // ── Async handlers ──
+  // â”€â”€ Async handlers â”€â”€
 
   const startTransform = useCallback(async () => {
     if (transformStartingRef.current || state.transforming || state.confirming) return;
@@ -286,12 +246,9 @@ export function useAsyncTransform({
 
     transformStartingRef.current = true;
 
-<<<<<<< HEAD
     // Request notification permission early so it's available when transform completes
     requestNotificationPermission();
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     const filtered = filterDesignResult(
       state.designResult,
       {
@@ -328,19 +285,13 @@ export function useAsyncTransform({
           savedAt: Date.now(),
         };
         window.localStorage.setItem(ADOPT_CONTEXT_KEY, JSON.stringify(context));
-      } catch { /* intentional: non-critical — localStorage cleanup */ }
+      } catch { /* intentional: non-critical â€” localStorage cleanup */ }
 
       // Enforce sandbox policy overrides on user-selected preferences
       const enforced = applySandboxOverrides(sandboxPolicy, {
-<<<<<<< HEAD
         maxConcurrent: 1,
         requireApproval: state.requireApproval,
         maxBudgetUsd: null,
-=======
-        maxConcurrent: state.maxConcurrent,
-        requireApproval: state.requireApproval,
-        maxBudgetUsd: state.maxBudgetUsd,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       });
 
       const hasAnswers = Object.keys(state.userAnswers).length > 0;
@@ -353,43 +304,26 @@ export function useAsyncTransform({
           connectorNames: [...state.selectedConnectorNames],
         },
         _preferences: {
-<<<<<<< HEAD
-=======
-          notifications: {
-            channels: state.notificationChannels,
-            alertChannel: state.alertChannel,
-            severity: state.alertSeverity,
-          },
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           humanReview: {
             required: enforced.requireApproval,
             autoApprove: state.autoApproveSeverity,
             timeout: state.reviewTimeout,
           },
-<<<<<<< HEAD
           memory: {
             enabled: state.memoryEnabled,
             scope: state.memoryScope,
           },
         },
-        // Phase A — pass database config so LLM CLI can handle schema design
+        // Phase A â€” pass database config so LLM CLI can handle schema design
         _database: {
           mode: state.databaseMode,
           selectedTableNames: state.selectedTableNames,
         },
-        // Phase B — pass template adoption_questions as context for LLM to consider
+        // Phase B â€” pass template adoption_questions as context for LLM to consider
         // The LLM decides which questions to generate; these are provided as hints
         _templateQuestions: state.designResult?.adoption_questions ?? [],
-        // Phase C (Area #9) — pass credential mapping so backend knows which credentials to bind
+        // Phase C (Area #9) â€” pass credential mapping so backend knows which credentials to bind
         _credentialMap: state.connectorCredentialMap,
-=======
-          execution: {
-            maxConcurrent: enforced.maxConcurrent,
-            timeoutMs: state.timeoutMs,
-            maxBudgetUsd: enforced.maxBudgetUsd,
-          },
-        },
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       });
 
       const connectorSwapsJson =
@@ -410,11 +344,7 @@ export function useAsyncTransform({
       if (state.adjustmentRequest.trim()) wizard.setAdjustment('');
     } catch (err) {
       setTemplateAdoptActive(false);
-<<<<<<< HEAD
       clearPersistedContext();
-=======
-      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       void resetAdoptStream();
       wizard.transformFailed(err instanceof Error ? err.message : 'Failed to start template adoption.');
     } finally {
@@ -426,20 +356,16 @@ export function useAsyncTransform({
     try {
       const adoptId = state.backgroundAdoptId || currentAdoptId;
       if (adoptId) {
-        try { await cancelTemplateAdopt(adoptId); } catch { /* intentional: non-critical — best-effort cancellation; clean up snapshot */
+        try { await cancelTemplateAdopt(adoptId); } catch { /* intentional: non-critical â€” best-effort cancellation; clean up snapshot */
           void clearTemplateAdoptSnapshot(adoptId).catch(() => {}); }
       }
-<<<<<<< HEAD
       clearPersistedContext();
-=======
-      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       void resetAdoptStream();
       setIsRestoring(false);
       setTemplateAdoptActive(false);
       wizard.transformCancelled();
     } catch {
-      // intentional: non-critical — ensure cancellation completes even if cleanup fails
+      // intentional: non-critical â€” ensure cancellation completes even if cleanup fails
       setIsRestoring(false);
       setTemplateAdoptActive(false);
       wizard.transformCancelled();
@@ -465,7 +391,6 @@ export function useAsyncTransform({
 
   const confirmSave = useCallback(async () => {
     if (confirmingRef.current) return;
-<<<<<<< HEAD
 
     // Block adoption when safety scanner found critical findings and user hasn't acknowledged
     if (safetyScan && safetyScan.critical.length > 0 && !state.safetyCriticalOverride) {
@@ -475,8 +400,6 @@ export function useAsyncTransform({
       return;
     }
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     const payloadJson = state.draft ? stringifyDraft(state.draft) : state.draftJson.trim();
     if (!payloadJson || state.transforming || state.confirming || state.draftJsonError) return;
 
@@ -493,22 +416,15 @@ export function useAsyncTransform({
 
       let parsed: unknown;
       try { parsed = JSON.parse(payloadJson); } catch (parseErr) {
-<<<<<<< HEAD
-        throw new Error(`Draft JSON is malformed: ${parseErr instanceof Error ? parseErr.message : 'parse error'}`);
-=======
-        wizard.confirmFailed(`Draft JSON is malformed: ${parseErr instanceof Error ? parseErr.message : 'parse error'}`);
-        return;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
+        const msg = `Draft JSON is malformed: ${parseErr instanceof Error ? parseErr.message : 'parse error'}`;
+        const wrapped = new Error(msg);
+        (wrapped as Error & { cause: unknown }).cause = parseErr;
+        throw wrapped;
       }
 
       const normalized = normalizeDraftFromUnknown(parsed);
       if (!normalized) {
-<<<<<<< HEAD
         throw new Error('Draft JSON is invalid. Please fix draft fields.');
-=======
-        wizard.confirmFailed('Draft JSON is invalid. Please fix draft fields.');
-        return;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       }
 
       // Enforce sandbox budget cap on the final draft
@@ -538,11 +454,7 @@ export function useAsyncTransform({
       if (state.backgroundAdoptId) {
         void clearTemplateAdoptSnapshot(state.backgroundAdoptId).catch(() => {});
       }
-<<<<<<< HEAD
       clearPersistedContext();
-=======
-      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       // Emit tour event so the guided tour can advance
       usePersonaStore.getState().emitTourEvent('tour:template-adopted');
       usePersonaStore.getState().setTourCreatedPersona(response.persona.id);
@@ -555,21 +467,13 @@ export function useAsyncTransform({
       if (timer) clearTimeout(timer);
       inflight.delete(idempotencyKey);
     }
-<<<<<<< HEAD
   }, [state, wizard, fetchPersonas, selectPersona, onPersonaCreated, reviewTestCaseName, safetyScan]);
-=======
-  }, [state, wizard, fetchPersonas, selectPersona, onPersonaCreated, reviewTestCaseName]);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   /** Clean up all async state (for close / reset). */
   const cleanupAll = useCallback(async () => {
     const snapshotId = state.backgroundAdoptId || currentAdoptId;
     if (snapshotId) void clearTemplateAdoptSnapshot(snapshotId).catch(() => {});
-<<<<<<< HEAD
     clearPersistedContext();
-=======
-    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     void resetAdoptStream();
     setTemplateAdoptActive(false);
   }, [state.backgroundAdoptId, currentAdoptId, resetAdoptStream, setTemplateAdoptActive]);

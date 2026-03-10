@@ -1,13 +1,8 @@
 import { useState } from 'react';
 import { LayoutDashboard, BarChart3, Radio } from 'lucide-react';
 import DashboardHome from '@/features/overview/components/DashboardHome';
-<<<<<<< HEAD
 import AnalyticsDashboard from '@/features/overview/sub_analytics/components/AnalyticsDashboard';
 import RealtimeVisualizerPage from '@/features/overview/sub_realtime/components/RealtimeVisualizerPage';
-=======
-import AnalyticsDashboard from '@/features/overview/sub_analytics/AnalyticsDashboard';
-import RealtimeVisualizerPage from '@/features/overview/sub_realtime/RealtimeVisualizerPage';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 type DashboardSubtab = 'overview' | 'analytics' | 'realtime';
 
@@ -21,11 +16,7 @@ export default function DashboardWithSubtabs() {
   const [subtab, setSubtab] = useState<DashboardSubtab>('overview');
 
   return (
-<<<<<<< HEAD
     <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-=======
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       {/* Subtab bar */}
       <div className="flex items-center gap-1 px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/10 flex-shrink-0">
         {SUBTABS.map((tab) => {

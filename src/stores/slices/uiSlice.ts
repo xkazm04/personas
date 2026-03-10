@@ -12,8 +12,7 @@ export interface AdoptionDraft {
   connectorCredentialMap: Record<string, string>;
   variableValues: Record<string, string>;
   savedAt: number;
-<<<<<<< HEAD
-  // Extended fields — persisted for full session restore
+  // Extended fields â€” persisted for full session restore
   triggerConfigs?: Record<number, Record<string, string>>;
   requireApproval?: boolean;
   autoApproveSeverity?: string;
@@ -23,10 +22,8 @@ export interface AdoptionDraft {
   userAnswers?: Record<string, string>;
   /** Non-null when the user closed while a background transform was running. */
   backgroundAdoptId?: string | null;
-  /** Persisted entity selections (Phase C — Area #13) */
+  /** Persisted entity selections (Phase C â€” Area #13) */
   selectedUseCaseIds?: string[];
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 export interface UiSlice {

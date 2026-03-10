@@ -1,19 +1,11 @@
-<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { PersonaWithDetails } from '@/lib/types/types';
 
 /**
  * Build a human-readable change summary from the design result and user selections.
  */
 export function buildChangeSummary(opts: {
-<<<<<<< HEAD
   result: AgentIR | null;
-=======
-  result: DesignAnalysisResult | null;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   selectedTools: Set<string>;
   selectedTriggerIndices: Set<number>;
   selectedChannelIndices: Set<number>;

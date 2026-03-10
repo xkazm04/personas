@@ -138,11 +138,7 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-<<<<<<< HEAD
-            "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
-=======
             "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "Found in your Slack App → OAuth & Permissions → Bot User OAuth Token. Starts with xoxb-.",
             "required": true
           }
@@ -176,11 +172,7 @@
             "key": "client_secret",
             "label": "OAuth2 Client Secret",
             "type": "password",
-<<<<<<< HEAD
-            "placeholder": "GOCSPX-EXAMPLE_SECRET_REPLACE_ME",
-=======
             "placeholder": "GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx",
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "The client secret paired with your OAuth2 Client ID.",
             "required": true
           },
@@ -188,11 +180,7 @@
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-<<<<<<< HEAD
-            "placeholder": "1//EXAMPLE_REFRESH_TOKEN_REPLACE_ME",
-=======
             "placeholder": "1//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "Obtained during the OAuth2 consent flow. Needed for offline access to Gmail.",
             "required": true
           }

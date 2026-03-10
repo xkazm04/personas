@@ -6,7 +6,7 @@ use crate::db::DbPool;
 use crate::engine::crypto;
 use crate::error::AppError;
 
-// ── Model profile auth_token encryption helpers ─────────────────────────────
+// â”€â”€ Model profile auth_token encryption helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Encrypt the `auth_token` field inside a model_profile JSON string before DB storage.
 /// Replaces `auth_token` with `auth_token_enc` (ciphertext) and `auth_token_iv` (nonce).
@@ -109,7 +109,7 @@ fn encrypt_update_profile(profile: &Option<Option<String>>) -> Result<Option<Opt
     }
 }
 
-// ── Shared validation helpers ────────────────────────────────────────────────
+// â”€â”€ Shared validation helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 fn validate_name(name: &str) -> Result<(), AppError> {
     if name.trim().is_empty() {
@@ -118,7 +118,7 @@ fn validate_name(name: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-/// 50 KB limit — generous for prompts, prevents economic abuse via oversized payloads.
+/// 50 KB limit â€” generous for prompts, prevents economic abuse via oversized payloads.
 const MAX_PROMPT_BYTES: usize = 50 * 1024;
 
 fn validate_system_prompt(prompt: &str) -> Result<(), AppError> {
@@ -270,13 +270,10 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         max_turns: row.get("max_turns")?,
         design_context: row.get("design_context")?,
         group_id: row.get("group_id")?,
-<<<<<<< HEAD
         source_review_id: row.get::<_, Option<String>>("source_review_id").unwrap_or(None),
         trust_level: row.get::<_, Option<String>>("trust_level")?.unwrap_or_else(|| "verified".to_string()),
         trust_origin: row.get::<_, Option<String>>("trust_origin")?.unwrap_or_else(|| "builtin".to_string()),
         trust_verified_at: row.get::<_, Option<String>>("trust_verified_at").unwrap_or(None),
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })

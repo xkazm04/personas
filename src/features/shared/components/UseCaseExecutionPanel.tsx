@@ -3,11 +3,7 @@ import { X, Play, Square, Clock, Timer } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
 import { useElapsedTimer } from '@/hooks/utility/useElapsedTimer';
-<<<<<<< HEAD
 import { ExecutionTerminal } from '@/features/agents/sub_executions';
-=======
-import { ExecutionTerminal } from '@/features/agents/sub_executions/ExecutionTerminal';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { JsonEditor } from '@/features/shared/components/JsonEditor';
 import { formatElapsed } from '@/lib/utils/formatters';
 import type { UseCaseItem, UseCaseInputField } from './UseCasesList';
@@ -78,7 +74,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
     setOutputLines([]);
   }, [useCase.id, buildFieldValues]);
 
-  // Sync store output — scoped to use case, not just persona
+  // Sync store output â€” scoped to use case, not just persona
   useEffect(() => {
     if (isThisUseCaseExecution && executionOutput.length > 0) {
       setOutputLines(executionOutput);
@@ -95,7 +91,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
     }
   }, [isExecuting, isThisUseCaseExecution]);
 
-  // Detect execution completion — checks isExecuting independently of ownership
+  // Detect execution completion â€” checks isExecuting independently of ownership
   useEffect(() => {
     if (prevIsExecutingRef.current && !isExecuting && wasOurExecutionRef.current) {
       wasOurExecutionRef.current = false;
@@ -304,7 +300,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
   );
 }
 
-// ── Structured Input Field ─────────────────────────────────────────
+// â”€â”€ Structured Input Field â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StructuredField({ field, value, onChange }: { field: UseCaseInputField; value: unknown; onChange: (v: unknown) => void }) {
   switch (field.type) {

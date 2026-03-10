@@ -40,7 +40,6 @@ export function getOAuthScopes(connector: ConnectorDefinition): string[] {
   const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
   return Array.isArray(metadata.oauth_scopes) ? metadata.oauth_scopes as string[] : [];
 }
-<<<<<<< HEAD
 
 /**
  * Checks whether a connector is a desktop bridge (local app, not an online API).
@@ -60,5 +59,3 @@ export function getDesktopBridgeName(connector: ConnectorDefinition): string | n
   if (metadata.connection_mode !== 'desktop_bridge') return null;
   return typeof metadata.bridge_name === 'string' ? metadata.bridge_name : null;
 }
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989

@@ -3,13 +3,8 @@ import type { PersonaStore } from "../storeTypes";
 import { errMsg } from "../storeTypes";
 import type { DbPersonaMemory } from "@/lib/types/types";
 import type { MemoryStats, MemoryReviewResult } from "@/api/memories";
-<<<<<<< HEAD
 import type { MemoryAction } from "@/features/overview/sub_memories/libs/memoryActions";
 import { extractActionsFromReview, loadActions, saveActions } from "@/features/overview/sub_memories/libs/memoryActions";
-=======
-import type { MemoryAction } from "@/features/overview/sub_memories/memoryActions";
-import { extractActionsFromReview, loadActions, saveActions } from "@/features/overview/sub_memories/memoryActions";
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import * as api from "@/api/tauriApi";
 
 export interface MemorySlice {

@@ -676,47 +676,6 @@
         "content": "Required properties for the tracking database:\n| Property | Type | Description |\n|----------|------|-------------|\n| Date | Date | The usage date |\n| Total Cost | Number (USD) | Total spend for the day |\n| Total Tokens | Number | Combined input + output tokens |\n| Model Breakdown | Rich Text | Per-model cost and token summary |\n| Daily Budget % | Number | Percentage of daily budget consumed |\n| 7-Day Average | Number (USD) | Rolling 7-day average cost |\n| Projected Monthly | Number (USD) | Projected monthly spend |\n| Status | Select | Normal / Warning / Critical / Exceeded |\n| Type | Select | Daily / Monthly Summary |"
       }
     ],
-<<<<<<< HEAD
-    "adoption_questions": [
-      {
-        "id": "slack_alert_channel",
-        "question": "Which Slack channel should receive cost alerts and daily usage summaries?",
-        "type": "text",
-        "default": "#ai-cost-alerts",
-        "context": "Budget threshold alerts and daily cost summaries are posted here. Critical alerts use @channel mentions.",
-        "connector_names": ["slack"],
-        "category": "configuration"
-      },
-      {
-        "id": "notion_tracking_db",
-        "question": "What is your Notion tracking database ID?",
-        "type": "text",
-        "default": "",
-        "context": "The 32-character ID of the Notion database for daily usage logs. See template docs for required schema properties.",
-        "connector_names": ["notion"],
-        "category": "configuration"
-      },
-      {
-        "id": "daily_budget",
-        "question": "What is your daily AI spending budget in USD?",
-        "type": "text",
-        "default": "15",
-        "context": "Budget threshold for alerts. Warning at 80%, critical at 95%, exceeded at 100%+ of this amount.",
-        "connector_names": [],
-        "category": "configuration"
-      },
-      {
-        "id": "monthly_budget",
-        "question": "What is your monthly AI spending budget in USD?",
-        "type": "text",
-        "default": "350",
-        "context": "Monthly budget cap for the optimization report and cumulative tracking.",
-        "connector_names": [],
-        "category": "configuration"
-      }
-    ],
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     "protocol_capabilities": [
       {
         "type": "manual_review",

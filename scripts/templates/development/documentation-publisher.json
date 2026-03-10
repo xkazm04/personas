@@ -97,11 +97,7 @@
             "key": "integration_token",
             "label": "Internal Integration Token",
             "type": "password",
-<<<<<<< HEAD
-            "placeholder": "ntn_EXAMPLE_TOKEN_REPLACE_ME",
-=======
             "placeholder": "ntn_xxxxxxxxxxxxxxxxxxxx",
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "Create an integration at notion.so/my-integrations, then copy the Internal Integration Token. Make sure to share your database with the integration.",
             "required": true
           },
@@ -134,11 +130,7 @@
             "key": "personal_access_token",
             "label": "Personal Access Token",
             "type": "password",
-<<<<<<< HEAD
-            "placeholder": "github_pat_EXAMPLE_TOKEN_REPLACE_ME",
-=======
             "placeholder": "github_pat_xxxxxxxxxxxx",
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "Create a fine-grained PAT at GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens. Grant 'Contents' (read/write) and 'Pages' (read/write) permissions on the target repository.",
             "required": true
           },
@@ -177,11 +169,7 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
-<<<<<<< HEAD
-            "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
-=======
             "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "Found in your Slack App settings under OAuth & Permissions → Bot User OAuth Token. The bot needs 'chat:write' and 'chat:write.public' scopes.",
             "required": true
           },
@@ -766,77 +754,6 @@
         "label": "Emits events: execution completed, execution failed, threshold breached",
         "context": "3 event subscription(s) configured — agent participates in event bus"
       }
-<<<<<<< HEAD
-    ],
-    "adoption_questions": [
-      {
-        "id": "notion_database_id",
-        "question": "Which Notion database contains the documentation pages?",
-        "type": "text",
-        "default": "",
-        "context": "The database ID from the Notion URL. Pages with Status = \"Ready to Publish\" will be processed.",
-        "connector_names": [
-          "notion"
-        ],
-        "category": "configuration"
-      },
-      {
-        "id": "github_repo_owner",
-        "question": "GitHub Pages repository owner (org or user)?",
-        "type": "text",
-        "default": "your-org",
-        "context": "The GitHub username or organization owning the Pages repository.",
-        "connector_names": [
-          "github"
-        ],
-        "category": "configuration"
-      },
-      {
-        "id": "github_repo_name",
-        "question": "GitHub Pages repository name?",
-        "type": "text",
-        "default": "docs-site",
-        "context": "The repository where Markdown files and images are committed.",
-        "connector_names": [
-          "github"
-        ],
-        "category": "configuration"
-      },
-      {
-        "id": "slack_docs_channel",
-        "question": "Which Slack channel for publish notifications?",
-        "type": "text",
-        "default": "#docs-updates",
-        "context": "Publishing summaries with live page links, update notices, and error alerts are posted here.",
-        "connector_names": [
-          "slack"
-        ],
-        "category": "configuration"
-      },
-      {
-        "id": "docs_base_url",
-        "question": "Base URL of your GitHub Pages site?",
-        "type": "text",
-        "default": "https://your-org.github.io/docs-site",
-        "context": "Used to construct live page URLs in Slack notifications and Notion Published URL fields.",
-        "connector_names": [
-          "github"
-        ],
-        "category": "configuration"
-      },
-      {
-        "id": "auto_update_notion_status",
-        "question": "Automatically update Notion page status after publishing?",
-        "type": "boolean",
-        "default": "Yes",
-        "context": "Sets the page Status to \"Published\" and fills in the Published URL property after a successful deploy.",
-        "connector_names": [
-          "notion"
-        ],
-        "category": "human_in_the_loop"
-      }
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     ]
   }
 }

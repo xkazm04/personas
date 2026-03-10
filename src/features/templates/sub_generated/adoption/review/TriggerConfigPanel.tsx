@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { Clock, Webhook, MousePointerClick, Radio, Activity } from 'lucide-react';
-=======
-import { Clock, Webhook, MousePointerClick, Radio } from 'lucide-react';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { SuggestedTrigger } from '@/lib/types/designTypes';
 
 interface TriggerConfigPanelProps {
@@ -17,10 +13,7 @@ const TRIGGER_ICONS: Record<SuggestedTrigger['trigger_type'], typeof Clock> = {
   webhook: Webhook,
   manual: MousePointerClick,
   polling: Radio,
-<<<<<<< HEAD
   event: Activity,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 };
 
 export function TriggerConfigPanel({
@@ -140,7 +133,7 @@ export function TriggerConfigPanel({
 
               {trigger.trigger_type === 'manual' && (
                 <p className="text-sm text-muted-foreground italic pt-1.5">
-                  Triggered manually — no configuration needed
+                  Triggered manually â€” no configuration needed
                 </p>
               )}
             </div>

@@ -1,11 +1,7 @@
 import { createTrigger } from '@/api/triggers';
 import { createSubscription } from '@/api/events';
 import type { PartialPersonaUpdate } from '@/api/personas';
-<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 export interface ApplyDesignSelections {
   selectedTools?: Set<string>;
@@ -23,11 +19,7 @@ export interface FailedTriggerOp {
   kind: 'trigger';
   index: number;
   label: string;
-<<<<<<< HEAD
   trigger: AgentIR['suggested_triggers'][number];
-=======
-  trigger: DesignAnalysisResult['suggested_triggers'][number];
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   error: string;
 }
 
@@ -35,11 +27,7 @@ export interface FailedSubscriptionOp {
   kind: 'subscription';
   index: number;
   label: string;
-<<<<<<< HEAD
   subscription: NonNullable<AgentIR['suggested_event_subscriptions']>[number];
-=======
-  subscription: NonNullable<DesignAnalysisResult['suggested_event_subscriptions']>[number];
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   error: string;
 }
 
@@ -65,19 +53,11 @@ export interface ApplyDesignOutcome {
  */
 export async function applyDesignResult(
   personaId: string,
-<<<<<<< HEAD
   result: AgentIR,
   deps: ApplyDesignDeps,
   selections?: ApplyDesignSelections,
 ): Promise<ApplyDesignOutcome> {
   const filteredResult: AgentIR = {
-=======
-  result: DesignAnalysisResult,
-  deps: ApplyDesignDeps,
-  selections?: ApplyDesignSelections,
-): Promise<ApplyDesignOutcome> {
-  const filteredResult: DesignAnalysisResult = {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     ...result,
     suggested_tools: selections?.selectedTools
       ? result.suggested_tools.filter((t) => selections.selectedTools!.has(t))

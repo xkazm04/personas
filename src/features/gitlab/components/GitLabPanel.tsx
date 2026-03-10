@@ -8,21 +8,14 @@ import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
 import { GitLabConnectionForm } from '@/features/gitlab/components/GitLabConnectionForm';
 import { GitLabAgentList } from '@/features/gitlab/components/GitLabAgentList';
 import { GitLabDeployModal } from '@/features/gitlab/components/GitLabDeployModal';
-<<<<<<< HEAD
 import { GitLabPipelineViewer } from '@/features/gitlab/components/GitLabPipelineViewer';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { CiCdTemplate } from '../data/cicdTemplates';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-<<<<<<< HEAD
 type TabId = 'connection' | 'agents' | 'deploy' | 'pipelines';
-=======
-type TabId = 'connection' | 'agents' | 'deploy';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface TabDef {
   id: TabId;
@@ -34,10 +27,7 @@ const TABS: TabDef[] = [
   { id: 'connection', label: 'Connection', disabledWhenOffline: false },
   { id: 'deploy', label: 'Deploy', disabledWhenOffline: true },
   { id: 'agents', label: 'Agents', disabledWhenOffline: true },
-<<<<<<< HEAD
   { id: 'pipelines', label: 'Pipelines', disabledWhenOffline: true },
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 ];
 
 // ---------------------------------------------------------------------------
@@ -165,12 +155,9 @@ export default function GitLabPanel() {
               onUndeploy={undeployAgent}
             />
           )}
-<<<<<<< HEAD
           {activeTab === 'pipelines' && isConnected && (
             <GitLabPipelineViewer projectId={selectedProjectId} />
           )}
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         </div>
       </ContentBody>
 

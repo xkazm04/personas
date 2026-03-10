@@ -3,6 +3,10 @@
   "version": "0.1.6",
   "private": true,
   "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "prebuild": "node scripts/generate-template-checksums.mjs",

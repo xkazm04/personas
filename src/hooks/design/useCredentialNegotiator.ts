@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { useState, useCallback, useRef, useMemo } from 'react';
-=======
-import { useState, useCallback, useRef } from 'react';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import {
   startCredentialNegotiation,
   cancelCredentialNegotiation,
@@ -11,14 +7,11 @@ import {
 import { useAiArtifactFlow, defaultGetLine, buildResolveStatus } from './useAiArtifactFlow';
 import { useStepProgress } from '@/hooks/useStepProgress';
 import { lookupPlaybook, savePlaybook, markPlaybookUsed } from './playbookCache';
-<<<<<<< HEAD
 import { resolveStepGraph, type StepGraphContext, type ResolvedSteps } from './negotiatorStepGraph';
 import { saveRecipeFromDesign } from '@/lib/credentials/credentialRecipeRegistry';
 import type { CredentialDesignConnector } from './useCredentialDesign';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
-// ── Types ───────────────────────────────────────────────────────
+// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type NegotiatorPhase = 'idle' | 'planning' | 'guiding' | 'done' | 'error';
 
@@ -49,7 +42,6 @@ interface NegotiationInput {
   fieldKeys: string[];
 }
 
-<<<<<<< HEAD
 /** Runtime context passed to the hook for step graph evaluation. */
 export interface NegotiatorContext {
   /** Values already captured by autoCred or previously saved credentials */
@@ -67,25 +59,17 @@ const EMPTY_RESOLVED: ResolvedSteps = {
   originalToVisible: new Map(),
 };
 
-// ── Hook ────────────────────────────────────────────────────────
+// â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function useCredentialNegotiator(context?: NegotiatorContext) {
-=======
-// ── Hook ────────────────────────────────────────────────────────
-
-export function useCredentialNegotiator() {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const [stepHelp, setStepHelp] = useState<{ answer: string; stepIndex: number } | null>(null);
   const [isLoadingHelp, setIsLoadingHelp] = useState(false);
   const [fromPlaybook, setFromPlaybook] = useState(false);
   const serviceNameRef = useRef('');
   const startedAtRef = useRef(0);
   const helpedStepsRef = useRef<Set<number>>(new Set());
-<<<<<<< HEAD
   /** Tracks completed steps via ref to avoid stale closure in completeStep callback. */
   const completedStepsRef = useRef<Set<number>>(new Set());
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   const flow = useAiArtifactFlow<NegotiationInput, NegotiationPlan>({
     stream: {
@@ -101,8 +85,7 @@ export function useCredentialNegotiator() {
       startCredentialNegotiation(serviceName, connector, fieldKeys),
   });
 
-<<<<<<< HEAD
-  // ── Step graph resolution ──
+  // â”€â”€ Step graph resolution â”€â”€
   // Resolve which steps are visible vs skipped based on runtime context.
   // Re-evaluates when the plan or captured values change so steps can
   // become skipped mid-flow (e.g. after autoCred fills fields).
@@ -134,11 +117,6 @@ export function useCredentialNegotiator() {
   // Use visible step count for progress tracking
   const visibleStepCount = resolved.visible.length;
   const sp = useStepProgress(visibleStepCount);
-=======
-  // Derive totalSteps from plan — this re-renders when flow.result changes
-  const totalSteps = flow.result?.steps.length ?? 0;
-  const sp = useStepProgress(totalSteps);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   const start = useCallback(async (
     serviceName: string,
@@ -148,10 +126,7 @@ export function useCredentialNegotiator() {
     serviceNameRef.current = serviceName;
     startedAtRef.current = Date.now();
     helpedStepsRef.current = new Set();
-<<<<<<< HEAD
     completedStepsRef.current = new Set();
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     sp.reset();
     setStepHelp(null);
     setFromPlaybook(false);
@@ -167,7 +142,6 @@ export function useCredentialNegotiator() {
       return;
     }
 
-<<<<<<< HEAD
     // Cache the connector definition as a recipe for future reuse
     void saveRecipeFromDesign({
       match_existing: null,
@@ -176,8 +150,6 @@ export function useCredentialNegotiator() {
       summary: '',
     }, 'negotiator').catch(() => {/* non-critical */});
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     await flow.start({ serviceName, connector, fieldKeys });
   }, [flow.start, flow.setResult, flow.setPhase, sp.reset]);
 
@@ -185,8 +157,7 @@ export function useCredentialNegotiator() {
     flow.cancel(() => cancelCredentialNegotiation());
   }, [flow.cancel]);
 
-<<<<<<< HEAD
-  // completeStep operates on visible indices — translates to original for refs/playbook
+  // completeStep operates on visible indices â€” translates to original for refs/playbook
   const completeStep = useCallback((visibleIndex: number) => {
     sp.completeStep(visibleIndex);
 
@@ -227,53 +198,12 @@ export function useCredentialNegotiator() {
     if (!step) return;
 
     helpedStepsRef.current.add(visibleIndex);
-=======
-  const completeStep = useCallback((stepIndex: number) => {
-    sp.completeStep(stepIndex);
-
-    // Transition to done when every step is marked complete
-    if (flow.result) {
-      // +1 because the step we just completed isn't in completedSteps yet
-      // (state update is async), so check count manually
-      const willBeComplete = sp.completedSteps.size + (sp.completedSteps.has(stepIndex) ? 0 : 1);
-      if (willBeComplete >= flow.result.steps.length) {
-        flow.setPhase('done');
-
-        // Record successful playbook for future reuse
-        savePlaybook({
-          serviceName: serviceNameRef.current,
-          plan: flow.result,
-          outcome: 'success',
-          durationMs: Date.now() - startedAtRef.current,
-          stepsNeedingHelp: [...helpedStepsRef.current],
-          capturedFieldCount: Object.keys(sp.capturedValues).length,
-          usedAt: new Date().toISOString(),
-          usageCount: 0,
-        });
-      }
-    }
-  }, [flow.result, flow.setPhase, sp.completeStep, sp.completedSteps, sp.capturedValues]);
-
-  const goToStep = useCallback((stepIndex: number) => {
-    sp.goToStep(stepIndex);
-    setStepHelp(null);
-  }, [sp.goToStep]);
-
-  const requestStepHelp = useCallback(async (stepIndex: number, question: string) => {
-    if (!flow.result) return;
-
-    const step = flow.result.steps[stepIndex];
-    if (!step) return;
-
-    helpedStepsRef.current.add(stepIndex);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     setIsLoadingHelp(true);
     setStepHelp(null);
 
     try {
       const result = await getNegotiationStepHelp(
         serviceNameRef.current,
-<<<<<<< HEAD
         originalIndex,
         step.title,
         question,
@@ -283,34 +213,16 @@ export function useCredentialNegotiator() {
       setStepHelp({
         answer: `Failed to get help: ${err instanceof Error ? err.message : 'Unknown error'}`,
         stepIndex: visibleIndex,
-=======
-        stepIndex,
-        step.title,
-        question,
-      );
-      setStepHelp({ answer: result.answer, stepIndex });
-    } catch (err) {
-      setStepHelp({
-        answer: `Failed to get help: ${err instanceof Error ? err.message : 'Unknown error'}`,
-        stepIndex,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       });
     } finally {
       setIsLoadingHelp(false);
     }
-<<<<<<< HEAD
   }, [flow.result, resolved.visibleToOriginal]);
-=======
-  }, [flow.result]);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   const reset = useCallback(() => {
     flow.reset();
     sp.reset();
-<<<<<<< HEAD
     completedStepsRef.current = new Set();
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     setStepHelp(null);
   }, [flow.reset, sp.reset]);
 
@@ -325,13 +237,10 @@ export function useCredentialNegotiator() {
     stepHelp,
     isLoadingHelp,
     fromPlaybook,
-<<<<<<< HEAD
     /** Resolved visible steps (skipped steps removed) */
     visibleSteps: resolved.visible,
     /** Steps that were skipped with reasons */
     skippedSteps: resolved.skipped,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     start,
     cancel,
     completeStep,

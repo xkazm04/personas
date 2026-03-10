@@ -18,7 +18,6 @@ function useIpcSnapshot() {
   );
 
   return useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     void generation; // dependency to recompute on new records
     return {
       stats: computeCommandStats(),

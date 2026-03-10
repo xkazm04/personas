@@ -214,7 +214,7 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
             await movePersonaToGroup(personaId, draftGroup.id);
           }
         } catch {
-          // intentional: non-critical — draft still works without a group
+          // intentional: non-critical â€” draft still works without a group
         }
       }
 
@@ -231,18 +231,14 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
 
       await design.startIntentCompilation(personaId, enhancedIntent);
     } catch {
-      useToastStore.getState().addToast('Failed to generate agent — check your connection', 'error');
+      useToastStore.getState().addToast('Failed to generate agent â€” check your connection', 'error');
       isCreatingRef.current = false;
       setIsGenerating(false);
     }
   }, [canGenerate, draftPersonaId, state.intent, state.components, createPersona, createGroup, movePersonaToGroup, setDraftPersonaId, design]);
 
   return (
-<<<<<<< HEAD
     <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] 3xl:grid-cols-[1fr_340px] 4xl:grid-cols-[1fr_400px] gap-6 w-full">
-=======
-    <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-6 w-full">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       {/* Left column: builder sections */}
       <div className="space-y-3 min-w-0" style={{ minWidth: 900 }}>
         <SectionHeader
@@ -290,7 +286,7 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
           </div>
         </CollapsibleSection>
 
-        {/* Streaming output — persists after error so user can read the log */}
+        {/* Streaming output â€” persists after error so user can read the log */}
         {!logDismissed && design.outputLines.length > 0 && (
           <div className="relative max-h-48 overflow-y-auto rounded-xl bg-background/50 border border-primary/10 p-3 font-mono text-sm text-muted-foreground/60 leading-relaxed">
             {/* Dismiss button (only when not actively generating) */}
@@ -444,7 +440,7 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
                 state.globalTrigger?.label,
               ]
                 .filter(Boolean)
-                .join(' · ') || 'Building...'}
+                .join(' Â· ') || 'Building...'}
             </p>
             <button
               type="button"

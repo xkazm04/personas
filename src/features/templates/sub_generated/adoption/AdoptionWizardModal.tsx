@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { useCallback } from 'react';
-=======
-import { useCallback, useMemo } from 'react';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -15,10 +11,6 @@ import {
   RefreshCw,
   ListChecks,
   Plug,
-<<<<<<< HEAD
-=======
-  Database,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   Sliders,
   Hammer,
   CirclePlus,
@@ -32,21 +24,13 @@ import {
   WizardSidebar,
   ChooseStep,
   ConnectStep,
-<<<<<<< HEAD
-=======
-  DataStep,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   TuneStep,
   BuildStep,
   CreateStep,
   QuickAdoptConfirm,
 } from './steps';
 import type { WizardSidebarStep } from './steps';
-<<<<<<< HEAD
 import type { AdoptWizardStep } from './useAdoptReducer';
-=======
-import { hasDataStep, type AdoptWizardStep } from './useAdoptReducer';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import {
   AdoptionWizardProvider,
   useAdoptionWizard,
@@ -54,7 +38,7 @@ import {
 import { useTemplateMotion } from '@/features/templates/animationPresets';
 import { BaseModal } from '../shared/BaseModal';
 
-// ── Types ──
+// â”€â”€ Types â”€â”€
 
 interface AdoptionWizardModalProps {
   isOpen: boolean;
@@ -65,13 +49,9 @@ interface AdoptionWizardModalProps {
   onPersonaCreated: () => void;
 }
 
-// ── Sidebar step config ────────────────────────────────────────────────
+// â”€â”€ Sidebar step config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-<<<<<<< HEAD
 const SIDEBAR_STEPS: WizardSidebarStep[] = [
-=======
-const BASE_SIDEBAR_STEPS: WizardSidebarStep[] = [
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   { key: 'choose',  label: 'Use Cases', Icon: ListChecks },
   { key: 'connect', label: 'Connect',   Icon: Plug },
   { key: 'tune',    label: 'Configure', Icon: Sliders },
@@ -79,27 +59,18 @@ const BASE_SIDEBAR_STEPS: WizardSidebarStep[] = [
   { key: 'create',  label: 'Review',    Icon: CirclePlus },
 ];
 
-<<<<<<< HEAD
-=======
-const DATA_STEP: WizardSidebarStep = { key: 'data', label: 'Data', Icon: Database };
-
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
-// ── Step content map ───────────────────────────────────────────────────
+// â”€â”€ Step content map â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Replaces the large inline switch with a declarative component map.
 
 const STEP_COMPONENTS: Record<AdoptWizardStep, React.ComponentType> = {
   choose: ChooseStep,
   connect: ConnectStep,
-<<<<<<< HEAD
-=======
-  data: DataStep,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   tune: TuneStep,
   build: BuildStep,
   create: CreateStep,
 };
 
-// ── Back button ────────────────────────────────────────────────────────
+// â”€â”€ Back button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function BackButton({
   state,
@@ -131,7 +102,7 @@ function BackButton({
   );
 }
 
-// ── Inner modal (consumes context) ─────────────────────────────────────
+// â”€â”€ Inner modal (consumes context) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
   const { motion: MOTION } = useTemplateMotion();
@@ -148,22 +119,9 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
     saveDraftToStore,
   } = useAdoptionWizard();
 
-<<<<<<< HEAD
   const sidebarSteps = SIDEBAR_STEPS;
-=======
-  // Conditionally include Data step when template has a database connector
-  const needsDataStep = useMemo(() => hasDataStep(state), [state]);
-  const sidebarSteps = useMemo<WizardSidebarStep[]>(() => {
-    if (!needsDataStep) return BASE_SIDEBAR_STEPS;
-    // Insert Data step after Connect
-    const idx = BASE_SIDEBAR_STEPS.findIndex((s) => s.key === 'connect');
-    const copy = [...BASE_SIDEBAR_STEPS];
-    copy.splice(idx + 1, 0, DATA_STEP);
-    return copy;
-  }, [needsDataStep]);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
-  // ── Close handler ──
+  // â”€â”€ Close handler â”€â”€
 
   const handleClose = useCallback(() => {
     if (state.confirming) return;
@@ -180,7 +138,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
     onClose();
   }, [state.confirming, state.created, state.transforming, cleanupAll, wizard, onClose, saveDraftToStore]);
 
-  // ── Sidebar step click ──
+  // â”€â”€ Sidebar step click â”€â”€
 
   const handleSidebarStepClick = useCallback(
     (step: AdoptWizardStep) => {
@@ -190,7 +148,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
     [state.transforming, state.confirming, wizard],
   );
 
-  // ── Footer button config ──
+  // â”€â”€ Footer button config â”€â”€
 
   const getNextAction = (): {
     label: string;
@@ -201,36 +159,18 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
   } | null => {
     switch (state.step) {
       case 'choose':
-<<<<<<< HEAD
         return { label: 'Next: Connect', icon: ArrowRight, disabled: state.selectedUseCaseIds.size === 0, variant: 'violet' };
-=======
-        return { label: 'Next: Connect', icon: ArrowRight, disabled: false, variant: 'violet' };
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       case 'connect': {
         const unconfigured = requiredConnectors.filter(
           (c) => c.activeName !== 'personas_messages' && c.activeName !== 'personas_database' && !state.connectorCredentialMap[c.activeName],
         ).length;
         return {
-<<<<<<< HEAD
           label: unconfigured > 0 ? `Configure (${unconfigured} remaining)` : 'Next: Configure',
-=======
-          label: unconfigured > 0 ? `Configure (${unconfigured} remaining)` : needsDataStep ? 'Next: Data Setup' : 'Configure',
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           icon: ArrowRight,
           disabled: unconfigured > 0,
           variant: 'violet',
         };
       }
-<<<<<<< HEAD
-=======
-      case 'data':
-        return {
-          label: 'Next: Configure',
-          icon: ArrowRight,
-          disabled: false,
-          variant: 'violet',
-        };
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       case 'tune':
         if (state.questionGenerating) {
           return { label: 'Analyzing...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true };
@@ -248,7 +188,6 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
           return { label: 'Done', icon: Check, disabled: false, variant: 'emerald' };
         }
         const hasCriticalFindings = (safetyScan?.critical.length ?? 0) > 0;
-<<<<<<< HEAD
         const criticalBlocked = hasCriticalFindings && !state.safetyCriticalOverride;
         return state.confirming
           ? { label: 'Creating...', icon: RefreshCw, disabled: true, variant: 'emerald', spinning: true }
@@ -256,14 +195,6 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
               label: criticalBlocked ? 'Blocked by Safety Scan' : 'Create Persona',
               icon: Sparkles,
               disabled: !state.draft || criticalBlocked,
-=======
-        return state.confirming
-          ? { label: 'Creating...', icon: RefreshCw, disabled: true, variant: 'emerald', spinning: true }
-          : {
-              label: hasCriticalFindings ? 'Blocked by Safety Scan' : 'Create Persona',
-              icon: Sparkles,
-              disabled: !state.draft || hasCriticalFindings,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
               variant: 'emerald',
             };
       }
@@ -280,7 +211,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
     return 'Back';
   };
 
-  // ── Render active step ──
+  // â”€â”€ Render active step â”€â”€
 
   const StepComponent = STEP_COMPONENTS[state.step];
 
@@ -419,7 +350,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ── Public modal (wraps with provider) ─────────────────────────────────
+// â”€â”€ Public modal (wraps with provider) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function AdoptionWizardModal({
   isOpen,

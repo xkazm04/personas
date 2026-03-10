@@ -3,20 +3,12 @@ import { SelectionCheckbox } from './SelectionCheckbox';
 import { ConnectorReadiness } from '../../shared/ConnectorReadiness';
 import { DimensionRadial } from '../../shared/DimensionRadial';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
-<<<<<<< HEAD
 import type { AgentIR, ConnectorReadinessStatus } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult, ConnectorReadinessStatus } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { MOTION } from '@/features/templates/animationPresets';
 
 interface TemplateReviewStepProps {
-<<<<<<< HEAD
   designResult: AgentIR;
-=======
-  designResult: DesignAnalysisResult;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   reviewInstruction: string;
   selectedUseCaseIds: Set<string>;
   selectedToolIndices: Set<number>;

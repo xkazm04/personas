@@ -617,56 +617,6 @@
         ]
       }
     ],
-<<<<<<< HEAD
-    "adoption_questions": [
-      {
-        "id": "slack_briefing_channel",
-        "question": "Which Slack channel should receive the daily analytics briefing?",
-        "type": "text",
-        "default": "#product-analytics",
-        "context": "The daily metrics briefing and anomaly callouts will be posted here every morning",
-        "connector_names": ["slack"],
-        "category": "configuration"
-      },
-      {
-        "id": "slack_alert_channel",
-        "question": "Which Slack channel should receive critical metric alerts?",
-        "type": "text",
-        "default": "#product-alerts",
-        "context": "Separate channel for urgent red-status alerts so they stand out from daily briefings",
-        "connector_names": ["slack"],
-        "category": "configuration"
-      },
-      {
-        "id": "notion_database_id",
-        "question": "What is your Notion analytics database ID?",
-        "type": "text",
-        "default": "",
-        "context": "The 32-character ID from your Notion database URL where daily metric snapshots will be logged",
-        "connector_names": ["notion"],
-        "category": "configuration"
-      },
-      {
-        "id": "mixpanel_project_id",
-        "question": "What is your Mixpanel Project ID?",
-        "type": "text",
-        "default": "",
-        "context": "Found in Mixpanel Settings > Project Settings. Required to query your product analytics data.",
-        "connector_names": ["mixpanel"],
-        "category": "configuration"
-      },
-      {
-        "id": "daily_budget_threshold",
-        "question": "What percentage deviation from 7-day average should trigger an anomaly flag?",
-        "type": "text",
-        "default": "15",
-        "context": "Metrics deviating more than this percentage from their rolling average will be flagged in the briefing",
-        "connector_names": [],
-        "category": "configuration"
-      }
-    ],
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     "protocol_capabilities": [
       {
         "type": "manual_review",

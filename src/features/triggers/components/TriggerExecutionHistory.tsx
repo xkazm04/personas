@@ -193,7 +193,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
     if (open && history.executions.length === 0 && !history.loading) {
       void history.fetch();
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const toggle = () => setOpen((v) => !v);
 

@@ -3,20 +3,13 @@ import { ChevronDown, ChevronUp, X, Copy, Check } from 'lucide-react';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { useCopyToClipboard } from '@/hooks/utility/useCopyToClipboard';
 import { Tooltip } from './Tooltip';
-<<<<<<< HEAD
 import type { CliOperation } from '@/features/settings/sub_engine/libs/engineCapabilities';
 
 const EngineCapabilityBadge = lazy(() =>
   import('@/features/settings/sub_engine/components/EngineCapabilityBadge').then(m => ({ default: m.EngineCapabilityBadge }))
-=======
-import type { CliOperation } from '@/features/settings/sub_engine/engineCapabilities';
-
-const EngineCapabilityBadge = lazy(() =>
-  import('@/features/settings/sub_engine/EngineCapabilityBadge').then(m => ({ default: m.EngineCapabilityBadge }))
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 );
 
-// ── Types ─────────────────────────────────────────────────────────────
+// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface TerminalStripProps {
   /** Single line shown in the collapsed strip (typically the latest log entry). */
@@ -41,17 +34,17 @@ interface TerminalStripProps {
   lineClassName?: (line: string) => string;
   /** Max-height class for the expanded panel. Default `"max-h-40"`. */
   expandedMaxHeight?: string;
-  /** CLI operation type — when set, shows the engine capability badge. */
+  /** CLI operation type â€” when set, shows the engine capability badge. */
   operation?: CliOperation;
 }
 
-// ── Default line classifier ───────────────────────────────────────────
+// â”€â”€ Default line classifier â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function defaultLineClassName(line: string): string {
   return TERMINAL_STYLE_MAP[classifyLine(line)];
 }
 
-// ── Component ─────────────────────────────────────────────────────────
+// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function TerminalStrip({
   lastLine,
@@ -77,7 +70,7 @@ export function TerminalStrip({
 
   return (
     <div className="border-b border-primary/8 bg-secondary/10 shrink-0">
-      {/* ── Collapsed strip (always visible) ──────────────────────── */}
+      {/* â”€â”€ Collapsed strip (always visible) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="flex items-center gap-2 px-4 py-2">
         {/* Running indicator */}
         {isRunning && (
@@ -137,7 +130,7 @@ export function TerminalStrip({
         )}
       </div>
 
-      {/* ── Expanded log panel ────────────────────────────────────── */}
+      {/* â”€â”€ Expanded log panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {isExpanded && (
         <div
           ref={scrollRef}

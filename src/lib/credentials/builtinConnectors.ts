@@ -1,7 +1,6 @@
 /**
- * Builtin connector definitions — committed to the repo so all users get the same catalog.
+ * Builtin connector definitions â€” committed to the repo so all users get the same catalog.
  * Each JSON file in scripts/connectors/builtin/ defines a single connector.
-<<<<<<< HEAD
  *
  * BuiltinConnectorDef extends the shared ConnectorDefinitionBase so that builtin
  * connectors and Rust-backed connectors share the same field/event types.
@@ -9,10 +8,6 @@
 
 import type { ConnectorDefinitionBase } from '@/lib/types/types';
 
-=======
- */
-
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import airtable from '../../../scripts/connectors/builtin/airtable.json';
 import asana from '../../../scripts/connectors/builtin/asana.json';
 import azureDevops from '../../../scripts/connectors/builtin/azure-devops.json';
@@ -58,38 +53,14 @@ import redis from '../../../scripts/connectors/builtin/redis.json';
 import duckdb from '../../../scripts/connectors/builtin/duckdb.json';
 import googleSheets from '../../../scripts/connectors/builtin/google-sheets.json';
 import gmail from '../../../scripts/connectors/builtin/gmail.json';
-<<<<<<< HEAD
 import microsoftOutlook from '../../../scripts/connectors/builtin/microsoft-outlook.json';
 
 /**
- * Builtin connector shape — extends the shared ConnectorDefinitionBase.
+ * Builtin connector shape â€” extends the shared ConnectorDefinitionBase.
  * JSON files use plain objects; the `as BuiltinConnectorDef[]` cast below
  * coerces the loosely-typed JSON imports into the canonical shape.
  */
-export interface BuiltinConnectorDef extends ConnectorDefinitionBase {}
-=======
-
-export interface BuiltinConnectorDef {
-  id: string;
-  name: string;
-  label: string;
-  color: string;
-  icon_url?: string;
-  category: string;
-  fields: Array<{
-    key: string;
-    label: string;
-    type: string;
-    required?: boolean;
-    placeholder?: string;
-    helpText?: string;
-  }>;
-  healthcheck_config: Record<string, unknown> | null;
-  services: unknown[];
-  events: unknown[];
-  metadata: Record<string, unknown> | null;
-}
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
+export type BuiltinConnectorDef = ConnectorDefinitionBase;
 
 export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   airtable,
@@ -137,8 +108,5 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   duckdb,
   googleSheets,
   gmail,
-<<<<<<< HEAD
   microsoftOutlook,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 ] as BuiltinConnectorDef[];

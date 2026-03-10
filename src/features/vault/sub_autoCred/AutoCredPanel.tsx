@@ -36,7 +36,6 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
   const adapter = mode === 'guided' ? tauriGuidedAdapter : tauriPlaywrightAdapter;
   const session = useAutoCredSession({ adapter });
 
-<<<<<<< HEAD
   // Kill running browser session on unmount (e.g. wizard closed, navigated away).
   // Store cancelBrowser in a ref so the cleanup always targets the current session,
   // not the stale closure captured at mount time.
@@ -48,15 +47,6 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
     return () => {
       if (sessionPhaseRef.current === 'browser') {
         cancelBrowserRef.current();
-=======
-  // Kill running browser session on unmount (e.g. wizard closed, navigated away)
-  const sessionPhaseRef = useRef(session.phase);
-  sessionPhaseRef.current = session.phase;
-  useEffect(() => {
-    return () => {
-      if (sessionPhaseRef.current === 'browser') {
-        session.cancelBrowser();
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       }
     };
   }, []);
@@ -181,7 +171,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
   );
 }
 
-// ── Browser error with persistent terminal ──────────────────────
+// â”€â”€ Browser error with persistent terminal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function AutoCredBrowserError({
   logs,
@@ -222,7 +212,7 @@ function AutoCredBrowserError({
         </div>
       </div>
 
-      {/* Persistent terminal log — 2x height */}
+      {/* Persistent terminal log â€” 2x height */}
       <div
         ref={scrollRef}
         className="max-h-[26rem] overflow-y-auto rounded-xl border border-primary/10 bg-black/30 p-3 font-mono text-sm space-y-1"
@@ -277,7 +267,7 @@ function useAutoScrollRef(dep: number) {
   return ref;
 }
 
-// ── Copy log helper ─────────────────────────────────────────────
+// â”€â”€ Copy log helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
   const [copied, setCopied] = useState(false);
@@ -319,7 +309,7 @@ function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
   );
 }
 
-// ── Error kind display config ────────────────────────────────────
+// â”€â”€ Error kind display config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const ERROR_KIND_CONFIG: Record<string, { label: string; badgeClass: string; icon: typeof XCircle }> = {
   cli_not_found: { label: 'CLI Not Found', badgeClass: 'bg-red-500/15 text-red-400 border-red-500/25', icon: XCircle },
@@ -330,7 +320,7 @@ const ERROR_KIND_CONFIG: Record<string, { label: string; badgeClass: string; ico
   extraction_failed: { label: 'Extraction Failed', badgeClass: 'bg-amber-500/15 text-amber-400 border-amber-500/25', icon: AlertTriangle },
 };
 
-// ── Categorized error display ────────────────────────────────────
+// â”€â”€ Categorized error display â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function AutoCredErrorDisplay({
   error,
@@ -374,7 +364,7 @@ function AutoCredErrorDisplay({
         </div>
       </div>
 
-      {/* What happened — expandable context */}
+      {/* What happened â€” expandable context */}
       {ctx && (ctx.tool_call_count > 0 || ctx.last_url || ctx.duration_secs) && (
         <div className="rounded-lg border border-primary/10 bg-secondary/15 overflow-hidden">
           <button
@@ -426,7 +416,7 @@ function AutoCredErrorDisplay({
         </div>
       )}
 
-      {/* Session log — expandable with copy */}
+      {/* Session log â€” expandable with copy */}
       {logs.length > 0 && (
         <div className="rounded-lg border border-primary/10 bg-secondary/15 overflow-hidden">
           <button

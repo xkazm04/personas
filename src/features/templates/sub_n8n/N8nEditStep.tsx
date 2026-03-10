@@ -1,17 +1,10 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Wrench, ListChecks, ChevronDown, ChevronRight } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
-<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { DraftEditStep, type DraftEditTab } from '@/features/shared/components/draft-editor';
 import { ExecutionTerminal } from '@/features/agents/sub_executions';
-=======
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
-import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
-import { DraftEditStep, type DraftEditTab } from '@/features/shared/components/draft-editor';
-import { ExecutionTerminal } from '@/features/agents/sub_executions/ExecutionTerminal';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { N8nEntitiesTab } from './edit/N8nEntitiesTab';
 import { N8nUseCasesTab } from './edit/N8nUseCasesTab';
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';
@@ -21,11 +14,7 @@ interface N8nEditStepProps {
   draft: N8nPersonaDraft;
   draftJson: string;
   draftJsonError: string | null;
-<<<<<<< HEAD
   parsedResult: AgentIR;
-=======
-  parsedResult: DesignAnalysisResult;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   selectedToolIndices: Set<number>;
   selectedTriggerIndices: Set<number>;
   selectedConnectorNames: Set<string>;
@@ -105,7 +94,7 @@ export function N8nEditStep({
     onConnectorsMissingChange?.(count);
   }, [onConnectorsMissingChange]);
 
-  // Use Cases tab — inserted after Identity
+  // Use Cases tab â€” inserted after Identity
   const earlyTabs: DraftEditTab[] = useMemo(() => [
     {
       id: 'use-cases',
@@ -131,7 +120,7 @@ export function N8nEditStep({
     <span className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" />
   ) : null;
 
-  // N8n-specific tabs: entities (tools+connectors+triggers) — inserted after Settings
+  // N8n-specific tabs: entities (tools+connectors+triggers) â€” inserted after Settings
   const additionalTabs: DraftEditTab[] = useMemo(() => [
     {
       id: 'entities',
@@ -186,7 +175,7 @@ export function N8nEditStep({
         />
       </div>
 
-      {/* Test output panel — below editor so user can see test CLI log */}
+      {/* Test output panel â€” below editor so user can see test CLI log */}
       {showTestPanel && (
         <div className="flex-shrink-0 border-t border-primary/10">
           <button

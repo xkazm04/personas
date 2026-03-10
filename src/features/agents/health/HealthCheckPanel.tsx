@@ -7,10 +7,6 @@ import {
   Wrench,
   Activity,
   RefreshCw,
-<<<<<<< HEAD
-=======
-  Loader2,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -20,12 +16,9 @@ import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { DryRunIssue, DryRunResult, HealthScore } from './types';
 import type { DesignContextData } from '@/lib/types/frontendTypes';
 import type { UseHealthCheckReturn } from './useHealthCheck';
-<<<<<<< HEAD
 import ContentLoader from '@/features/shared/components/ContentLoader';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
-// ── Score display ────────────────────────────────────────────────────
+// â”€â”€ Score display â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ScoreBadge({ score }: { score: HealthScore }) {
   const gradeColors = {
@@ -49,7 +42,7 @@ function ScoreBadge({ score }: { score: HealthScore }) {
   );
 }
 
-// ── Score ring visualization ─────────────────────────────────────────
+// â”€â”€ Score ring visualization â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ScoreRing({ score }: { score: HealthScore }) {
   const radius = 36;
@@ -81,7 +74,7 @@ function ScoreRing({ score }: { score: HealthScore }) {
   );
 }
 
-// ── Issue card ───────────────────────────────────────────────────────
+// â”€â”€ Issue card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const SEVERITY_ICONS: Record<DryRunIssue['severity'], typeof AlertTriangle> = {
   error: XCircle,
@@ -152,7 +145,7 @@ function HealthIssueCard({ issue, onApplyFix, onResolved }: HealthIssueCardProps
   );
 }
 
-// ── Main panel ───────────────────────────────────────────────────────
+// â”€â”€ Main panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface HealthCheckPanelProps {
   healthCheck: UseHealthCheckReturn;
@@ -230,7 +223,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
     }
   }, [selectedPersona, applyPersonaOp, addToast]);
 
-  // Idle state — prompt to run
+  // Idle state â€” prompt to run
   if (phase === 'idle') {
     return (
       <div className="space-y-4">
@@ -257,18 +250,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
 
   // Running state
   if (phase === 'running') {
-<<<<<<< HEAD
     return <ContentLoader variant="panel" label="Running health check..." hint="health" />;
-=======
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 text-primary/60 animate-spin mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground/60">Analyzing agent configuration...</p>
-        </div>
-      </div>
-    );
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }
 
   // Error state
@@ -296,7 +278,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
     );
   }
 
-  // Done state — show results
+  // Done state â€” show results
   if (!result || !score) return null;
 
   const dryRun: DryRunResult = result.result;

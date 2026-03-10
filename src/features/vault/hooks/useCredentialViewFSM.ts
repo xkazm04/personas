@@ -4,7 +4,7 @@ import { getAuthMethods } from '@/lib/types/types';
 import { isGoogleOAuthConnector } from '@/lib/utils/connectors';
 import { useCredentialNav, type CredentialNavKey } from './CredentialNavContext';
 
-// ── View names (the finite states) ──────────────────────────────────
+// â”€â”€ View names (the finite states) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type ViewName =
   | 'list'
@@ -22,7 +22,7 @@ export type ViewName =
   | 'foraging'
   | 'databases';
 
-// ── Discriminated union: each state carries exactly the data it needs ──
+// â”€â”€ Discriminated union: each state carries exactly the data it needs â”€â”€
 
 export type CredentialViewState =
   | { view: 'list' }
@@ -40,7 +40,7 @@ export type CredentialViewState =
   | { view: 'foraging' }
   | { view: 'databases' };
 
-// ── Typed actions ──
+// â”€â”€ Typed actions â”€â”€
 
 export type CredentialViewAction =
   | { type: 'GO_LIST' }
@@ -61,9 +61,9 @@ export type CredentialViewAction =
   | { type: 'GO_FORAGING' }
   | { type: 'GO_DATABASES' };
 
-// ── Transition Table ────────────────────────────────────────────────
+// â”€â”€ Transition Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //
-// Explicit map of (sourceView, actionType) → allowed.
+// Explicit map of (sourceView, actionType) â†’ allowed.
 // If a transition isn't listed, it's invalid and the reducer ignores it.
 // This makes the navigation graph inspectable and prevents impossible states.
 
@@ -80,11 +80,7 @@ const GLOBAL_ACTIONS: ActionType[] = ['GO_LIST', 'GO_CATALOG', 'GO_ADD_NEW', 'GO
 const VIEW_TRANSITIONS: Record<ViewName, readonly ActionType[]> = {
   'list':               [],
   'catalog-browse':     ['PICK_CONNECTOR', 'SET_CATALOG_SEARCH'],
-<<<<<<< HEAD
   'catalog-form':       ['CANCEL_FORM', 'GO_AUTO_SETUP', 'GO_ADD_DESKTOP', 'SET_CREDENTIAL_NAME'],
-=======
-  'catalog-form':       ['CANCEL_FORM', 'GO_AUTO_SETUP', 'SET_CREDENTIAL_NAME'],
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   'catalog-auto-setup': ['CANCEL_FORM'],
   'add-new':            ['GO_ADD_API_TOOL', 'GO_ADD_MCP', 'GO_ADD_CUSTOM', 'GO_ADD_DATABASE', 'GO_ADD_DESKTOP', 'GO_ADD_WIZARD', 'GO_WORKSPACE_CONNECT', 'GO_FORAGING'],
   'add-api-tool':       [],
@@ -113,7 +109,7 @@ function isValidTransition(view: ViewName, action: ActionType): boolean {
   return TRANSITION_TABLE[view].has(action);
 }
 
-// ── Nav key for sidebar highlighting ──
+// â”€â”€ Nav key for sidebar highlighting â”€â”€
 
 const NAV_KEY_MAP: Record<ViewName, CredentialNavKey> = {
   'list':               'credentials',
@@ -136,7 +132,7 @@ export function getNavKey(state: CredentialViewState): CredentialNavKey {
   return NAV_KEY_MAP[state.view];
 }
 
-// ── Action handlers ─────────────────────────────────────────────────
+// â”€â”€ Action handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //
 // Each handler produces the next state for its action type.
 // These are only called after the transition table validates the action.
@@ -221,7 +217,7 @@ const ACTION_HANDLERS: Record<ActionType, ActionHandler<never>> = {
   GO_DATABASES: GO_DATABASES as ActionHandler<never>,
 };
 
-// ── Reducer ─────────────────────────────────────────────────────────
+// â”€â”€ Reducer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function reducer(state: CredentialViewState, action: CredentialViewAction): CredentialViewState {
   if (!isValidTransition(state.view, action.type)) {
@@ -236,7 +232,7 @@ function reducer(state: CredentialViewState, action: CredentialViewAction): Cred
 
 const INITIAL_STATE: CredentialViewState = { view: 'list' };
 
-// ── Hook ────────────────────────────────────────────────────────────
+// â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);

@@ -3,22 +3,15 @@
  *
  * Each platform parser defines a small adapter that normalizes its
  * platform-specific JSON into a common intermediate form. This pipeline
- * then runs the identical classification → tool naming → connector
-<<<<<<< HEAD
- * building → prompt assembly algorithm, producing a AgentIR.
+ * then runs the identical classification â†’ tool naming â†’ connector
+ * building â†’ prompt assembly algorithm, producing a AgentIR.
  */
 
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
- * building → prompt assembly algorithm, producing a DesignAnalysisResult.
- */
-
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { PlatformDefinition, ProtocolMapRule } from './platformDefinitions';
 import { extractProtocolsFromNodes } from './platformDefinitions';
 
-// ── Adapter interface ───────────────────────────────────────────
+// â”€â”€ Adapter interface â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** A normalized workflow node from any platform. */
 export interface NormalizedNode {
@@ -30,7 +23,7 @@ export interface NormalizedNode {
   isTrigger: boolean;
   /** Whether this node should be excluded from connectors/tools (e.g. routers) */
   isExcluded?: boolean;
-  /** Trigger type override — if not provided, inferred from service name */
+  /** Trigger type override â€” if not provided, inferred from service name */
   triggerType?: 'manual' | 'schedule' | 'polling' | 'webhook';
   /** Config payload for the trigger */
   config?: Record<string, unknown>;
@@ -66,7 +59,7 @@ export interface AdapterResult {
   protocolCapabilities?: { type: ProtocolMapRule['targetProtocol']; label: string; context: string }[];
 }
 
-// ── Pipeline ────────────────────────────────────────────────────
+// â”€â”€ Pipeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Run the shared extraction pipeline on an adapter result.
@@ -74,11 +67,7 @@ export interface AdapterResult {
  * This is the single algorithm that all parsers share. Each parser
  * calls its adapter to produce an `AdapterResult`, then passes it here.
  */
-<<<<<<< HEAD
 export function runExtractionPipeline(adapter: AdapterResult): AgentIR {
-=======
-export function runExtractionPipeline(adapter: AdapterResult): DesignAnalysisResult {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const { platformLabel, platformNoun, elementNoun, workflowName, nodes } = adapter;
   const excludedServices = new Set(adapter.excludedServices ?? []);
 

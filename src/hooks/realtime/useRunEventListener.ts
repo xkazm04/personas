@@ -74,6 +74,5 @@ export function useRunEventListener<T extends RunStatusPayload = RunStatusPayloa
       unlistenRef.current.forEach((fn) => fn());
       unlistenRef.current = [];
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 }

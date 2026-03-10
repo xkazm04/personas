@@ -2,10 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { startCredentialDesign, cancelCredentialDesign } from '@/api/tauriApi';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAiArtifactFlow, defaultGetLine, buildResolveStatus } from './useAiArtifactFlow';
-<<<<<<< HEAD
 import { saveRecipeFromDesign } from '@/lib/credentials/credentialRecipeRegistry';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 export type CredentialDesignPhase = 'idle' | 'analyzing' | 'preview' | 'saving' | 'done' | 'error';
 
@@ -34,10 +31,7 @@ export function useCredentialDesign() {
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
 
-<<<<<<< HEAD
   const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const createConnectorDefinition = usePersonaStore((s) => s.createConnectorDefinition);
   const deleteConnectorDefinition = usePersonaStore((s) => s.deleteConnectorDefinition);
   const createCredential = usePersonaStore((s) => s.createCredential);
@@ -70,7 +64,7 @@ export function useCredentialDesign() {
     // (e.g. refine click, modal close) cannot silently invalidate it.
     const snapshot = flow.result;
     if (!snapshot || !snapshot.connector?.name) {
-      flow.setError('Design result is missing — please run the design again');
+      flow.setError('Design result is missing â€” please run the design again');
       return;
     }
 
@@ -82,13 +76,12 @@ export function useCredentialDesign() {
       // Create connector definition if it doesn't already exist
       if (!snapshot.match_existing) {
         const conn = snapshot.connector;
-<<<<<<< HEAD
         // Check for existing connector with the same name to avoid unique constraint errors
         const existing = connectorDefinitions.find(
           (c) => c.name.toLowerCase() === conn.name.toLowerCase(),
         );
         if (existing) {
-          // Reuse existing connector — no need to create or rollback
+          // Reuse existing connector â€” no need to create or rollback
           setRegisteredConnectorName(existing.label);
         } else {
           const connector = await createConnectorDefinition({
@@ -110,26 +103,6 @@ export function useCredentialDesign() {
           createdConnectorId = connector.id;
           setRegisteredConnectorName(conn.label);
         }
-=======
-        const connector = await createConnectorDefinition({
-          name: conn.name,
-          label: conn.label,
-          category: conn.category,
-          color: conn.color,
-          fields: JSON.stringify(conn.fields),
-          healthcheck_config: JSON.stringify(healthcheckOverride ?? conn.healthcheck_config ?? null),
-          services: JSON.stringify(conn.services || []),
-          events: JSON.stringify(conn.events || []),
-          metadata: JSON.stringify({
-            template_enabled: true,
-            setup_instructions: snapshot.setup_instructions,
-            summary: snapshot.summary,
-          }),
-          is_builtin: false,
-        });
-        createdConnectorId = connector.id;
-        setRegisteredConnectorName(conn.label);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       }
 
       // Create the credential
@@ -141,13 +114,10 @@ export function useCredentialDesign() {
       });
 
       setSavedCredentialId(credId);
-<<<<<<< HEAD
 
       // Cache the recipe for reuse by Negotiator and AutoCred paths
       void saveRecipeFromDesign(snapshot);
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       flow.setPhase('done');
     } catch (err) {
       // Rollback: if we created a connector but credential creation failed,
@@ -155,7 +125,7 @@ export function useCredentialDesign() {
       if (createdConnectorId) {
         try {
           await deleteConnectorDefinition(createdConnectorId);
-        } catch { /* intentional: non-critical — rollback is best-effort */ }
+        } catch { /* intentional: non-critical â€” rollback is best-effort */ }
       }
       flow.setError(err instanceof Error ? err.message : 'Failed to save credential');
       flow.setPhase('preview');
@@ -190,7 +160,7 @@ export function useCredentialDesign() {
   const refine = useCallback(
     (instruction: string) => {
       if (savingRef.current) return;
-      // Transition back to analyzing — keep savedCredentialId intact
+      // Transition back to analyzing â€” keep savedCredentialId intact
       flow.setLines([]);
       flow.setError(null);
       flow.start(instruction);

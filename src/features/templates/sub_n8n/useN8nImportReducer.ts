@@ -22,7 +22,7 @@ import {
   INITIAL_SESSION,
 } from './reducers/sessionReducer';
 
-// ── Wizard Steps ──
+// â”€â”€ Wizard Steps â”€â”€
 
 export type N8nWizardStep = 'upload' | 'analyze' | 'transform' | 'edit' | 'confirm';
 
@@ -42,11 +42,11 @@ export const STEP_META: Record<N8nWizardStep, { label: string; index: number }> 
   confirm:   { label: 'Link',      index: 4 },
 };
 
-// ── Transform Sub-Phases ──
+// â”€â”€ Transform Sub-Phases â”€â”€
 
 export type TransformSubPhase = 'idle' | 'asking' | 'answering' | 'generating' | 'completed' | 'failed';
 
-// ── Transform Questions ──
+// â”€â”€ Transform Questions â”€â”€
 
 export interface TransformQuestion {
   id: string;
@@ -58,7 +58,7 @@ export interface TransformQuestion {
   context?: string;
 }
 
-// ── State ──
+// â”€â”€ State â”€â”€
 
 export interface N8nImportState {
   step: N8nWizardStep;
@@ -80,7 +80,7 @@ export interface N8nImportState {
   selectedTriggerIndices: Set<number>;
   selectedConnectorNames: Set<string>;
 
-  // Configure (pre-transform questions) — now inline within transform step
+  // Configure (pre-transform questions) â€” now inline within transform step
   questions: TransformQuestion[] | null;
   userAnswers: Record<string, string>;
 
@@ -114,13 +114,10 @@ export interface N8nImportState {
   // Confirm
   confirming: boolean;
   created: boolean;
-<<<<<<< HEAD
 
   // Platform detection confidence
   platformNeedsConfirmation: boolean;
   detectedConfidence: 'high' | 'medium' | 'low';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 const INITIAL_STATE: N8nImportState = {
@@ -130,15 +127,11 @@ const INITIAL_STATE: N8nImportState = {
   ...INITIAL_TEST,
 };
 
-// ── Actions ──
+// â”€â”€ Actions â”€â”€
 
 export type N8nImportAction =
-<<<<<<< HEAD
   | { type: 'FILE_PARSED'; workflowName: string; rawWorkflowJson: string; parsedResult: AgentIR; platform?: WorkflowPlatform; needsConfirmation?: boolean; detectedConfidence?: 'high' | 'medium' | 'low' }
   | { type: 'CONFIRM_PLATFORM' }
-=======
-  | { type: 'FILE_PARSED'; workflowName: string; rawWorkflowJson: string; parsedResult: AgentIR; platform?: WorkflowPlatform }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   | { type: 'TOGGLE_TOOL'; index: number }
   | { type: 'TOGGLE_TRIGGER'; index: number }
   | { type: 'TOGGLE_CONNECTOR'; name: string }
@@ -189,7 +182,7 @@ export interface SessionLoadedPayload {
   recoveryWarning?: string | null;
 }
 
-// ── Composed Reducer ──
+// â”€â”€ Composed Reducer â”€â”€
 //
 // Cross-cutting actions (RESET, SESSION_LOADED) are handled at the
 // orchestrator level. Each sub-reducer manages its own state slice
@@ -205,7 +198,7 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
     return handleSessionLoaded(action.payload);
   }
 
-  // Delegate to sub-reducers — each handles its own slice
+  // Delegate to sub-reducers â€” each handles its own slice
   const nav = navigationReducer({ step: state.step }, action, state);
   const transform = transformReducer({
     questions: state.questions,
@@ -242,11 +235,8 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
     selectedConnectorNames: state.selectedConnectorNames,
     confirming: state.confirming,
     created: state.created,
-<<<<<<< HEAD
     platformNeedsConfirmation: state.platformNeedsConfirmation,
     detectedConfidence: state.detectedConfidence,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }, action, state);
 
   return {
@@ -289,7 +279,7 @@ function handleSessionLoaded(p: SessionLoadedPayload): N8nImportState {
   };
 }
 
-// ── Hook ──
+// â”€â”€ Hook â”€â”€
 
 export function useN8nImportReducer() {
   const [state, dispatch] = useReducer(n8nImportReducer, INITIAL_STATE);
@@ -299,7 +289,7 @@ export function useN8nImportReducer() {
   const goBack = useCallback(() => {
     if (!canGoBack) return;
 
-    // From edit or transform → go to analyze (skip transform since it's a live process step)
+    // From edit or transform â†’ go to analyze (skip transform since it's a live process step)
     if (state.step === 'edit' || state.step === 'transform') {
       dispatch({ type: 'GO_TO_STEP', step: 'analyze' });
       return;

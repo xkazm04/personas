@@ -1,20 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Check, AlertTriangle, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
-<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { FailedOperation } from '@/hooks/design/applyDesignResult';
 import { DesignPhaseAppliedDetails } from './DesignPhaseAppliedDetails';
 
 interface DesignPhaseAppliedProps {
-<<<<<<< HEAD
   result: AgentIR | null;
-=======
-  result: DesignAnalysisResult | null;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   warnings?: string[];
   failedOperations?: FailedOperation[];
   onRetryFailed?: () => void;
@@ -107,7 +99,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
           <ul className="space-y-1.5 mb-3">
             {failedOperations.map((op, i) => (
               <li key={i} className="text-sm text-amber-400/90 flex items-start gap-1.5">
-                <span className="mt-0.5 shrink-0 text-amber-500">{op.kind === 'trigger' ? '⚡' : '📡'}</span>
+                <span className="mt-0.5 shrink-0 text-amber-500">{op.kind === 'trigger' ? 'âš¡' : 'ðŸ“¡'}</span>
                 <span>
                   <span className="font-medium">{op.label}</span>
                   <span className="block text-xs text-amber-400/60">{op.error}</span>
@@ -125,7 +117,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors disabled:opacity-50"
             >
               <RotateCcw className={`w-3.5 h-3.5 ${retrying ? 'animate-spin' : ''}`} />
-              {retrying ? 'Retrying…' : `Retry ${failedOperations.length} failed`}
+              {retrying ? 'Retryingâ€¦' : `Retry ${failedOperations.length} failed`}
             </button>
           )}
         </motion.div>
@@ -142,7 +134,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
           <ul className="space-y-1">
             {warnings.map((w, i) => (
               <li key={i} className="text-sm text-amber-400/90 flex items-start gap-1.5">
-                <span className="mt-0.5 shrink-0">•</span>
+                <span className="mt-0.5 shrink-0">â€¢</span>
                 <span>{w}</span>
               </li>
             ))}

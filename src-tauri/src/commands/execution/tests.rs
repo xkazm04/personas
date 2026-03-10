@@ -24,10 +24,7 @@ pub async fn start_test_run(
     models: Vec<serde_json::Value>,
     use_case_filter: Option<String>,
     suite_id: Option<String>,
-<<<<<<< HEAD
     fixture_inputs: Option<String>,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 ) -> Result<PersonaTestRun, AppError> {
     require_auth(&state).await?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
@@ -95,10 +92,7 @@ pub async fn start_test_run(
             cancelled_clone,
             use_case_filter,
             preloaded_scenarios,
-<<<<<<< HEAD
             fixture_inputs,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         )
         .await;
 
@@ -145,7 +139,7 @@ pub fn cancel_test_run(
     id: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    // Set cancellation flag — the test runner checks this between iterations
+    // Set cancellation flag â€” the test runner checks this between iterations
     if let Ok(flags) = state.active_test_run_cancelled.lock() {
         if let Some(flag) = flags.get(&id) {
             flag.store(true, std::sync::atomic::Ordering::Release);
@@ -159,7 +153,7 @@ pub fn cancel_test_run(
     Ok(())
 }
 
-// ── Draft Validation & Streaming Test ──────────────────────────
+// â”€â”€ Draft Validation & Streaming Test â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[derive(Serialize)]
 pub struct ToolIssue {
@@ -219,7 +213,7 @@ pub async fn validate_n8n_draft(
                 });
             }
         } else {
-            // Relative path — no mechanism creates these
+            // Relative path â€” no mechanism creates these
             tool_issues.push(ToolIssue {
                 tool_name: tool.name.clone(),
                 issue: format!("Script '{script}' does not exist."),
@@ -373,7 +367,7 @@ pub async fn test_n8n_draft(
     // Write prompt to stdin
     write_prompt_to_stdin(&mut child, &prompt_text).await;
 
-    // Track whether the draft has tools — confused agents without tool use should fail
+    // Track whether the draft has tools â€” confused agents without tool use should fail
     let has_tools = !tools.is_empty();
 
     // Background task: read stdout, emit events, determine result
@@ -444,7 +438,7 @@ pub async fn test_n8n_draft(
         // Clean up temp dir
         let _ = std::fs::remove_dir_all(&exec_dir);
 
-        // Emit final status — enhanced validation with confusion detection
+        // Emit final status â€” enhanced validation with confusion detection
         let (status, passed, error) = if read_result.is_err() {
             let _ = child.kill().await;
             ("failed".to_string(), Some(false), Some("Test timed out after 60 seconds".to_string()))
@@ -463,7 +457,7 @@ pub async fn test_n8n_draft(
             };
             ("failed".to_string(), Some(false), Some(err))
         } else {
-            // saw_init && saw_text — apply confusion detection via eval framework
+            // saw_init && saw_text â€” apply confusion detection via eval framework
             let actual_tools_empty: Vec<String> = Vec::new();
             let actual_tools: &[String] = if saw_tool_use { &["_tool_used".to_string()] } else { &actual_tools_empty };
             let eval_input = eval::EvalInput {

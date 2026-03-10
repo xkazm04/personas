@@ -15,7 +15,7 @@ import {
 } from './n8nTypes';
 import type { N8nImportAction, TransformQuestion } from './useN8nImportReducer';
 
-// Color presets — synced with ColorPicker.tsx
+// Color presets â€” synced with ColorPicker.tsx
 const COLOR_PRESETS = [
   '#8b5cf6', '#6366f1', '#3b82f6', '#06b6d4', '#10b981',
   '#f59e0b', '#f97316', '#ef4444', '#ec4899', '#a855f7',
@@ -44,7 +44,7 @@ export interface N8nTransformApi {
  * Manages the transform CLI stream, background snapshot polling, and
  * persisted-context restoration for the n8n import wizard.
  *
- * Dispatches to the reducer on snapshot events — the useN8nSession hook
+ * Dispatches to the reducer on snapshot events â€” the useN8nSession hook
  * auto-syncs reducer state to DB and localStorage, so no manual
  * session.update() calls are needed here.
  */
@@ -62,7 +62,7 @@ export function useN8nTransform(
   const transformIdRef = useRef(backgroundTransformId);
   transformIdRef.current = backgroundTransformId;
 
-  // ── CLI stream for transform events ──
+  // â”€â”€ CLI stream for transform events â”€â”€
 
   const {
     runId: currentTransformId,
@@ -74,17 +74,13 @@ export function useN8nTransform(
     outputEvent: 'n8n-transform-output',
     statusEvent: 'n8n-transform-status',
     idField: 'transform_id',
-<<<<<<< HEAD
     onFailed: (message) => {
       clearPersistedContext();
       dispatch({ type: 'TRANSFORM_FAILED', error: message });
     },
-=======
-    onFailed: (message) => dispatch({ type: 'TRANSFORM_FAILED', error: message }),
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   });
 
-  // ── Restore persisted context on mount ──
+  // â”€â”€ Restore persisted context on mount â”€â”€
 
   const handleRestoreContext = useCallback(
     (parsed: PersistedTransformContext) => {
@@ -119,8 +115,8 @@ export function useN8nTransform(
     onRestore: handleRestoreContext,
   });
 
-  // ── Snapshot handlers ──
-  // These only dispatch to reducer — DB/localStorage sync is handled by useN8nSession.
+  // â”€â”€ Snapshot handlers â”€â”€
+  // These only dispatch to reducer â€” DB/localStorage sync is handled by useN8nSession.
 
   const handleSnapshotLines = useCallback(
     (lines: string[]) => {
@@ -212,7 +208,7 @@ export function useN8nTransform(
           context: typeof q.context === 'string' ? q.context : undefined,
         }));
 
-      // CLI process has stopped — waiting for user input, not actively running
+      // CLI process has stopped â€” waiting for user input, not actively running
       setN8nTransformActive(false);
 
       if (mapped.length > 0) {
@@ -244,7 +240,7 @@ export function useN8nTransform(
     [dispatch],
   );
 
-  // ── Background snapshot polling ──
+  // â”€â”€ Background snapshot polling â”€â”€
 
   useBackgroundSnapshot({
     snapshotId: backgroundTransformId,

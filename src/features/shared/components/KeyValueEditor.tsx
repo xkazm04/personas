@@ -56,7 +56,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
       // Can't represent as key-value — flip to advanced
       setIsAdvanced(true);
     }
-  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [value]);
 
   const syncToJson = useCallback((updated: KeyValuePair[]) => {
     setRows(updated);

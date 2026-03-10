@@ -40,7 +40,7 @@ export function useN8nWizard() {
   const [confirmResult, setConfirmResult] = useState<ConfirmResult | null>(null);
   const [connectorsMissing, setConnectorsMissing] = useState(0);
 
-  // ── Composed hooks ──
+  // â”€â”€ Composed hooks â”€â”€
 
   const session = useN8nSession(state, dispatch);
 
@@ -54,7 +54,7 @@ export function useN8nWizard() {
 
   const test = useN8nTest(dispatch);
 
-  // ── Slide direction tracking ──
+  // â”€â”€ Slide direction tracking â”€â”€
 
   const currentIndex = STEP_META[state.step].index;
   const direction = currentIndex >= prevStepRef.current ? 1 : -1;
@@ -76,7 +76,7 @@ export function useN8nWizard() {
     createSession,
   });
 
-  // ── Handlers ──
+  // â”€â”€ Handlers â”€â”€
 
   const handleTransform = async () => {
     if (!state.parsedResult || !state.rawWorkflowJson || state.transforming || state.confirming || transformLockRef.current) return;
@@ -107,7 +107,7 @@ export function useN8nWizard() {
       try {
         parserJson = JSON.stringify(state.parsedResult);
       } catch {
-        // intentional: non-critical — JSON parse fallback
+        // intentional: non-critical â€” JSON parse fallback
         parserJson = '{}';
       }
 
@@ -142,10 +142,7 @@ export function useN8nWizard() {
     } catch (err) {
       transform.setAnalyzing(false);
       setN8nTransformActive(false);
-<<<<<<< HEAD
       clearPersistedContext();
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       dispatch({
         type: 'TRANSFORM_FAILED',
         error: err instanceof Error ? err.message : 'Failed to generate transformation draft.',
@@ -240,7 +237,7 @@ export function useN8nWizard() {
               break;
             }
           } catch {
-            // intentional: non-critical — snapshot no longer available is treated as stopped
+            // intentional: non-critical â€” snapshot no longer available is treated as stopped
             stopped = true;
             break;
           }
@@ -281,7 +278,7 @@ export function useN8nWizard() {
       dispatch({ type: 'RESET' });
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch {
-      // intentional: non-critical — ensure reset completes even if cleanup fails
+      // intentional: non-critical â€” ensure reset completes even if cleanup fails
       setN8nTransformActive(false);
       dispatch({ type: 'RESET' });
     }
@@ -320,10 +317,7 @@ export function useN8nWizard() {
       );
     } catch (err) {
       setN8nTransformActive(false);
-<<<<<<< HEAD
       clearPersistedContext();
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       dispatch({
         type: 'TRANSFORM_FAILED',
         error: err instanceof Error ? err.message : 'Failed to continue transformation.',
@@ -333,7 +327,7 @@ export function useN8nWizard() {
     }
   };
 
-  // ── Next step handler ──
+  // â”€â”€ Next step handler â”€â”€
 
   const handleNext = () => {
     switch (state.step) {

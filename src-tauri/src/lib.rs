@@ -55,7 +55,7 @@ pub struct AppState {
     pub refresh_lock: Arc<tokio::sync::Mutex<()>>,
     /// Cloud orchestrator HTTP client (None when not connected).
     pub cloud_client: Arc<tokio::sync::Mutex<Option<Arc<cloud::client::CloudClient>>>>,
-    /// Maps local execution ID → cloud execution ID for active cloud runs.
+    /// Maps local execution ID â†’ cloud execution ID for active cloud runs.
     pub cloud_exec_ids: Arc<tokio::sync::Mutex<HashMap<String, String>>>,
     /// PID of the CLI child process for the active auto-cred browser session.
     /// Used to kill the process when the user cancels.
@@ -78,19 +78,14 @@ pub struct AppState {
     /// Current tier configuration (rate limits, queue depth).
     pub tier_config: Arc<Mutex<engine::tier::TierConfig>>,
     /// Desktop connector capability approvals.
-<<<<<<< HEAD
     #[cfg(feature = "desktop")]
     pub desktop_approvals: Arc<engine::desktop_security::DesktopApprovalStore>,
     /// Local agent runtime for cross-app desktop plan execution.
     #[cfg(feature = "desktop")]
-=======
-    pub desktop_approvals: Arc<engine::desktop_security::DesktopApprovalStore>,
-    /// Local agent runtime for cross-app desktop plan execution.
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     pub desktop_runtime: Arc<engine::desktop_runtime::DesktopRuntime>,
 }
 
-/// Hello world IPC command — verifies the Rust ↔ React bridge works.
+/// Hello world IPC command â€” verifies the Rust â†” React bridge works.
 #[tauri::command]
 #[tracing::instrument]
 fn greet(name: String) -> String {
@@ -112,7 +107,6 @@ pub fn run() {
     let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_dialog::init())
-<<<<<<< HEAD
         .plugin(tauri_plugin_notification::init());
 
     // Desktop-only plugins
@@ -125,11 +119,6 @@ pub fn run() {
     }
 
     builder
-=======
-        .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_window_state::Builder::new().build())
-        .plugin(tauri_plugin_updater::Builder::new().build())
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         .plugin(
             tauri::plugin::Builder::<tauri::Wry, ()>::new("ipc-auth")
                 .js_init_script(ipc_auth::IPC_AUTH_SCRIPT.to_string())
@@ -259,22 +248,15 @@ pub fn run() {
                 rate_limiter: Arc::new(engine::rate_limiter::RateLimiter::new()),
                 session_key: Arc::new(engine::crypto::SessionKeyPair::generate()?),
                 tier_config: Arc::new(Mutex::new(engine::tier::TierConfig::default())),
-<<<<<<< HEAD
                 #[cfg(feature = "desktop")]
                 desktop_approvals: Arc::new(engine::desktop_security::DesktopApprovalStore::new()),
                 #[cfg(feature = "desktop")]
-=======
-                desktop_approvals: Arc::new(engine::desktop_security::DesktopApprovalStore::new()),
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                 desktop_runtime: Arc::new(engine::desktop_runtime::DesktopRuntime::new()),
             });
             app.manage(state_arc.clone());
 
             // Load desktop connector approvals from database
-<<<<<<< HEAD
             #[cfg(feature = "desktop")]
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             if let Err(e) = state_arc.desktop_approvals.load_from_db(&state_arc.db) {
                 tracing::warn!("Failed to load desktop connector approvals: {}", e);
             }
@@ -328,12 +310,8 @@ pub fn run() {
                     startup_rate_limiter,
                     startup_tier_config,
                 );
-<<<<<<< HEAD
                 tracing::info!("Scheduler auto-started");
                 #[cfg(feature = "desktop")]
-=======
-                tracing::info!("Scheduler auto-started (with webhook server on port 9420)");
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                 tray::refresh_tray(&app_handle);
                 // Keep _webhook_shutdown alive for the lifetime of the app.
                 // When this task ends (app shutdown), the sender is dropped,
@@ -351,20 +329,20 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             // Phase 1
             greet,
-            // Core — Personas
+            // Core â€” Personas
             commands::core::personas::list_personas,
             commands::core::personas::get_persona,
             commands::core::personas::create_persona,
             commands::core::personas::update_persona,
             commands::core::personas::delete_persona,
             commands::core::personas::get_persona_summaries,
-            // Core — Groups
+            // Core â€” Groups
             commands::core::groups::list_groups,
             commands::core::groups::create_group,
             commands::core::groups::update_group,
             commands::core::groups::delete_group,
             commands::core::groups::reorder_groups,
-            // Core — Memories
+            // Core â€” Memories
             commands::core::memories::list_memories,
             commands::core::memories::get_memory_count,
             commands::core::memories::get_memory_stats,
@@ -374,10 +352,10 @@ pub fn run() {
             commands::core::memories::update_memory_importance,
             commands::core::memories::batch_delete_memories,
             commands::core::memories::review_memories_with_cli,
-            // Core — Import/Export
+            // Core â€” Import/Export
             commands::core::import_export::export_persona,
             commands::core::import_export::import_persona,
-            // Core — Data Portability
+            // Core â€” Data Portability
             commands::core::data_portability::get_export_stats,
             commands::core::data_portability::export_full,
             commands::core::data_portability::export_selective,
@@ -385,7 +363,7 @@ pub fn run() {
             commands::core::data_portability::preview_competitive_import,
             commands::core::data_portability::export_credentials,
             commands::core::data_portability::import_credentials,
-            // Execution — Executions
+            // Execution â€” Executions
             commands::execution::executions::list_executions,
             commands::execution::executions::list_all_executions,
             commands::execution::executions::get_execution,
@@ -396,11 +374,11 @@ pub fn run() {
             commands::execution::executions::get_execution_log,
             commands::execution::executions::get_execution_trace,
             commands::execution::executions::get_chain_trace,
-            // Execution — Scheduler
+            // Execution â€” Scheduler
             commands::execution::scheduler::get_scheduler_status,
             commands::execution::scheduler::start_scheduler,
             commands::execution::scheduler::stop_scheduler,
-            // Execution — Tests
+            // Execution â€” Tests
             commands::execution::tests::start_test_run,
             commands::execution::tests::list_test_runs,
             commands::execution::tests::get_test_results,
@@ -408,13 +386,13 @@ pub fn run() {
             commands::execution::tests::cancel_test_run,
             commands::execution::tests::validate_n8n_draft,
             commands::execution::tests::test_n8n_draft,
-            // Execution — Test Suites
+            // Execution â€” Test Suites
             commands::execution::test_suites::list_test_suites,
             commands::execution::test_suites::get_test_suite,
             commands::execution::test_suites::create_test_suite,
             commands::execution::test_suites::update_test_suite,
             commands::execution::test_suites::delete_test_suite,
-            // Execution — Lab
+            // Execution â€” Lab
             commands::execution::lab::lab_start_arena,
             commands::execution::lab::lab_list_arena_runs,
             commands::execution::lab::lab_get_arena_results,
@@ -440,7 +418,7 @@ pub fn run() {
             commands::execution::lab::lab_tag_version,
             commands::execution::lab::lab_rollback_version,
             commands::execution::lab::lab_get_error_rate,
-            // Execution — Healing
+            // Execution â€” Healing
             commands::execution::healing::list_healing_issues,
             commands::execution::healing::get_healing_issue,
             commands::execution::healing::update_healing_status,
@@ -448,26 +426,23 @@ pub fn run() {
             commands::execution::healing::get_retry_chain,
             commands::execution::healing::list_healing_knowledge,
             commands::execution::healing::trigger_ai_healing,
-            // Execution — Knowledge Graph
+            // Execution â€” Knowledge Graph
             commands::execution::knowledge::list_execution_knowledge,
             commands::execution::knowledge::get_knowledge_injection,
             commands::execution::knowledge::get_knowledge_summary,
-<<<<<<< HEAD
             commands::execution::knowledge::list_scoped_knowledge,
             commands::execution::knowledge::upsert_knowledge_annotation,
             commands::execution::knowledge::verify_knowledge_annotation,
             commands::execution::knowledge::dismiss_knowledge_annotation,
             commands::execution::knowledge::get_shared_knowledge_injection,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
-            // Design — Analysis
+            // Design â€” Analysis
             commands::design::analysis::start_design_analysis,
             commands::design::analysis::refine_design,
             commands::design::analysis::test_design_feasibility,
             commands::design::analysis::cancel_design_analysis,
             commands::design::analysis::compile_from_intent,
             commands::design::analysis::preview_prompt,
-            // Design — Conversations
+            // Design â€” Conversations
             commands::design::conversations::list_design_conversations,
             commands::design::conversations::get_design_conversation,
             commands::design::conversations::get_active_design_conversation,
@@ -475,20 +450,20 @@ pub fn run() {
             commands::design::conversations::append_design_conversation_message,
             commands::design::conversations::update_design_conversation_status,
             commands::design::conversations::delete_design_conversation,
-            // Design — N8n Transform
+            // Design â€” N8n Transform
             commands::design::n8n_transform::cli_runner::start_n8n_transform_background,
             commands::design::n8n_transform::job_state::get_n8n_transform_snapshot,
             commands::design::n8n_transform::job_state::clear_n8n_transform_snapshot,
             commands::design::n8n_transform::job_state::cancel_n8n_transform,
             commands::design::n8n_transform::confirmation::confirm_n8n_persona_draft,
             commands::design::n8n_transform::cli_runner::continue_n8n_transform,
-            // Design — N8n Sessions
+            // Design â€” N8n Sessions
             commands::design::n8n_sessions::create_n8n_session,
             commands::design::n8n_sessions::get_n8n_session,
             commands::design::n8n_sessions::list_n8n_sessions,
             commands::design::n8n_sessions::update_n8n_session,
             commands::design::n8n_sessions::delete_n8n_session,
-            // Design — Template Adopt
+            // Design â€” Template Adopt
             commands::design::template_adopt::start_template_adopt_background,
             commands::design::template_adopt::get_template_adopt_snapshot,
             commands::design::template_adopt::clear_template_adopt_snapshot,
@@ -502,19 +477,16 @@ pub fn run() {
             commands::design::template_adopt::clear_template_generate_snapshot,
             commands::design::template_adopt::cancel_template_generate,
             commands::design::template_adopt::save_custom_template,
-<<<<<<< HEAD
-            // Design — Template Feedback
+            // Design â€” Template Feedback
             commands::design::template_feedback::create_template_feedback,
             commands::design::template_feedback::list_template_feedback,
             commands::design::template_feedback::get_template_performance,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
-            // Design — Team Synthesis
+            // Design â€” Team Synthesis
             commands::design::team_synthesis::synthesize_team_from_templates,
-            // Design — Platform Definitions
+            // Design â€” Platform Definitions
             commands::design::platform_definitions::list_platform_definitions,
             commands::design::platform_definitions::get_platform_definition,
-            // Design — Reviews
+            // Design â€” Reviews
             commands::design::reviews::list_design_reviews,
             commands::design::reviews::list_design_reviews_paginated,
             commands::design::reviews::list_review_connectors,
@@ -538,9 +510,9 @@ pub fn run() {
             commands::design::reviews::list_review_messages,
             commands::design::reviews::add_review_message,
             commands::design::reviews::seed_mock_manual_review,
-            // Design — Smart Search
+            // Design â€” Smart Search
             commands::design::smart_search::smart_search_templates,
-            // Credentials — CRUD
+            // Credentials â€” CRUD
             commands::credentials::crud::list_credentials,
             commands::credentials::crud::get_session_public_key,
             commands::credentials::crud::create_credential,
@@ -558,45 +530,45 @@ pub fn run() {
             commands::credentials::crud::migrate_plaintext_credentials,
             commands::credentials::crud::list_credential_fields,
             commands::credentials::crud::update_credential_field,
-            // Credentials — Connectors
+            // Credentials â€” Connectors
             commands::credentials::connectors::list_connectors,
             commands::credentials::connectors::get_connector,
             commands::credentials::connectors::create_connector,
             commands::credentials::connectors::update_connector,
             commands::credentials::connectors::delete_connector,
-            // Credentials — Credential Design
+            // Credentials â€” Credential Design
             commands::credentials::credential_design::start_credential_design,
             commands::credentials::credential_design::cancel_credential_design,
             commands::credentials::credential_design::test_credential_design_healthcheck,
-            // Credentials — Negotiator
+            // Credentials â€” Negotiator
             commands::credentials::negotiator::start_credential_negotiation,
             commands::credentials::negotiator::cancel_credential_negotiation,
             commands::credentials::negotiator::get_negotiation_step_help,
-            // Credentials — Intelligence
+            // Credentials â€” Intelligence
             commands::credentials::intelligence::credential_audit_log,
             commands::credentials::intelligence::credential_audit_log_global,
             commands::credentials::intelligence::credential_usage_stats,
             commands::credentials::intelligence::credential_dependents,
-            // Credentials — OAuth
+            // Credentials â€” OAuth
             commands::credentials::oauth::start_google_credential_oauth,
             commands::credentials::oauth::get_google_credential_oauth_status,
-            // Credentials — Universal OAuth
+            // Credentials â€” Universal OAuth
             commands::credentials::oauth::list_oauth_providers,
             commands::credentials::oauth::start_oauth,
             commands::credentials::oauth::get_oauth_status,
             commands::credentials::oauth::refresh_oauth_token,
-            // Credentials — Auto-Credential Browser
+            // Credentials â€” Auto-Credential Browser
             commands::credentials::auto_cred_browser::start_auto_cred_browser,
             commands::credentials::auto_cred_browser::save_playwright_procedure,
             commands::credentials::auto_cred_browser::get_playwright_procedure,
             commands::credentials::auto_cred_browser::check_auto_cred_playwright_available,
             commands::credentials::auto_cred_browser::cancel_auto_cred_browser,
-            // Credentials — Auth Detection
+            // Credentials â€” Auth Detection
             commands::credentials::auth_detect::detect_authenticated_services,
-            // Credentials — Foraging
+            // Credentials â€” Foraging
             commands::credentials::foraging::scan_credential_sources,
             commands::credentials::foraging::import_foraged_credential,
-            // Credentials — Rotation
+            // Credentials â€” Rotation
             commands::credentials::rotation::list_rotation_policies,
             commands::credentials::rotation::create_rotation_policy,
             commands::credentials::rotation::update_rotation_policy,
@@ -605,7 +577,7 @@ pub fn run() {
             commands::credentials::rotation::get_rotation_status,
             commands::credentials::rotation::rotate_credential_now,
             commands::credentials::rotation::refresh_credential_oauth_now,
-            // Credentials — Database Schema & Queries
+            // Credentials â€” Database Schema & Queries
             commands::credentials::db_schema::list_db_schema_tables,
             commands::credentials::db_schema::create_db_schema_table,
             commands::credentials::db_schema::update_db_schema_table,
@@ -617,25 +589,24 @@ pub fn run() {
             commands::credentials::db_schema::execute_db_query,
             commands::credentials::db_schema::introspect_db_tables,
             commands::credentials::db_schema::introspect_db_columns,
-            // Credentials — Query Debug (AI-assisted)
+            // Credentials â€” Query Debug (AI-assisted)
             commands::credentials::query_debug::start_query_debug,
             commands::credentials::query_debug::cancel_query_debug,
-            // Credentials — Schema Proposal (AI-assisted)
+            // Credentials â€” Schema Proposal (AI-assisted)
             commands::credentials::schema_proposal::start_schema_proposal,
             commands::credentials::schema_proposal::get_schema_proposal_snapshot,
             commands::credentials::schema_proposal::cancel_schema_proposal,
             commands::credentials::schema_proposal::validate_db_schema,
-            // Credentials — API Proxy
+            // Credentials â€” API Proxy
             commands::credentials::api_proxy::execute_api_request,
             commands::credentials::api_proxy::parse_api_definition,
             commands::credentials::api_proxy::save_api_definition,
             commands::credentials::api_proxy::load_api_definition,
-            // Credentials — MCP Tools
+            // Credentials â€” MCP Tools
             commands::credentials::mcp_tools::list_mcp_tools,
             commands::credentials::mcp_tools::execute_mcp_tool,
             commands::credentials::mcp_tools::healthcheck_mcp_preview,
-<<<<<<< HEAD
-            // Credentials — Desktop Discovery & Security (desktop only)
+            // Credentials â€” Desktop Discovery & Security (desktop only)
             #[cfg(feature = "desktop")]
             commands::credentials::desktop::discover_desktop_apps,
             #[cfg(feature = "desktop")]
@@ -652,7 +623,7 @@ pub fn run() {
             commands::credentials::desktop::is_desktop_connector_approved,
             #[cfg(feature = "desktop")]
             commands::credentials::desktop::register_imported_mcp_server,
-            // Credentials — Desktop Bridges & Runtime (desktop only)
+            // Credentials â€” Desktop Bridges & Runtime (desktop only)
             #[cfg(feature = "desktop")]
             commands::credentials::desktop_bridges::execute_desktop_bridge,
             #[cfg(feature = "desktop")]
@@ -661,28 +632,12 @@ pub fn run() {
             commands::credentials::desktop_bridges::get_desktop_runtime_status,
             #[cfg(feature = "desktop")]
             commands::credentials::desktop_bridges::get_desktop_plan_result,
-            // Credential Recipes — shared discovery cache
+            // Credential Recipes â€” shared discovery cache
             commands::credentials::credential_recipes::get_credential_recipe,
             commands::credentials::credential_recipes::list_credential_recipes,
             commands::credentials::credential_recipes::upsert_credential_recipe,
             commands::credentials::credential_recipes::use_credential_recipe,
-=======
-            // Credentials — Desktop Discovery & Security
-            commands::credentials::desktop::discover_desktop_apps,
-            commands::credentials::desktop::import_claude_mcp_servers,
-            commands::credentials::desktop::get_desktop_connector_manifest,
-            commands::credentials::desktop::get_pending_desktop_capabilities,
-            commands::credentials::desktop::approve_desktop_capabilities,
-            commands::credentials::desktop::revoke_desktop_approvals,
-            commands::credentials::desktop::is_desktop_connector_approved,
-            commands::credentials::desktop::register_imported_mcp_server,
-            // Credentials — Desktop Bridges & Runtime
-            commands::credentials::desktop_bridges::execute_desktop_bridge,
-            commands::credentials::desktop_bridges::execute_desktop_plan,
-            commands::credentials::desktop_bridges::get_desktop_runtime_status,
-            commands::credentials::desktop_bridges::get_desktop_plan_result,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
-            // Recipes — CRUD & Linking
+            // Recipes â€” CRUD & Linking
             commands::recipes::crud::list_recipes,
             commands::recipes::crud::get_recipe,
             commands::recipes::crud::create_recipe,
@@ -704,7 +659,7 @@ pub fn run() {
             commands::recipes::crud::cancel_recipe_versioning,
             commands::recipes::crud::accept_recipe_version,
             commands::recipes::crud::revert_recipe_version,
-            // Communication — Events
+            // Communication â€” Events
             commands::communication::events::list_events,
             commands::communication::events::list_events_in_range,
             commands::communication::events::publish_event,
@@ -714,7 +669,7 @@ pub fn run() {
             commands::communication::events::update_subscription,
             commands::communication::events::delete_subscription,
             commands::communication::events::test_event_flow,
-            // Communication — Messages
+            // Communication â€” Messages
             commands::communication::messages::list_messages,
             commands::communication::messages::get_message,
             commands::communication::messages::mark_message_read,
@@ -723,21 +678,21 @@ pub fn run() {
             commands::communication::messages::get_unread_message_count,
             commands::communication::messages::get_message_count,
             commands::communication::messages::get_message_deliveries,
-            // Communication — Observability
+            // Communication â€” Observability
             commands::communication::observability::get_metrics_summary,
             commands::communication::observability::get_metrics_chart_data,
             commands::communication::observability::get_prompt_versions,
             commands::communication::observability::get_all_monthly_spend,
-            // Communication — Prompt Performance Dashboard
+            // Communication â€” Prompt Performance Dashboard
             commands::communication::observability::get_prompt_performance,
-            // Communication — Execution Metrics Dashboard
+            // Communication â€” Execution Metrics Dashboard
             commands::communication::observability::get_execution_dashboard,
-            // Communication — Prompt Lab
+            // Communication â€” Prompt Lab
             commands::communication::observability::tag_prompt_version,
             commands::communication::observability::rollback_prompt_version,
             commands::communication::observability::get_prompt_error_rate,
             commands::communication::observability::run_prompt_ab_test,
-            // Communication — SLA Dashboard
+            // Communication â€” SLA Dashboard
             commands::communication::sla::get_sla_dashboard,
             // Teams
             commands::teams::teams::list_teams,
@@ -787,7 +742,7 @@ pub fn run() {
             commands::tools::tools::get_tool_usage_over_time,
             commands::tools::tools::get_tool_usage_by_persona,
             commands::tools::tools::invoke_tool_direct,
-            // Tools — Automations
+            // Tools â€” Automations
             commands::tools::automations::list_automations,
             commands::tools::automations::get_automation,
             commands::tools::automations::create_automation,
@@ -796,21 +751,21 @@ pub fn run() {
             commands::tools::automations::trigger_automation,
             commands::tools::automations::test_automation_webhook,
             commands::tools::automations::get_automation_runs,
-            // Tools — Automation Design (AI)
+            // Tools â€” Automation Design (AI)
             commands::tools::automation_design::start_automation_design,
             commands::tools::automation_design::cancel_automation_design,
-            // Tools — n8n Platform
+            // Tools â€” n8n Platform
             commands::tools::n8n_platform::n8n_list_workflows,
             commands::tools::n8n_platform::n8n_activate_workflow,
             commands::tools::n8n_platform::n8n_deactivate_workflow,
             commands::tools::n8n_platform::n8n_create_workflow,
             commands::tools::n8n_platform::n8n_trigger_webhook,
-            // Tools — GitHub Platform
+            // Tools â€” GitHub Platform
             commands::tools::github_platform::github_list_repos,
             commands::tools::github_platform::github_check_permissions,
-            // Tools — Deploy Automation
+            // Tools â€” Deploy Automation
             commands::tools::deploy_automation::deploy_automation,
-            // Tools — Triggers
+            // Tools â€” Triggers
             commands::tools::triggers::list_all_triggers,
             commands::tools::triggers::list_triggers,
             commands::tools::triggers::create_trigger,
@@ -823,12 +778,12 @@ pub fn run() {
             commands::tools::triggers::preview_cron_schedule,
             commands::tools::triggers::dry_run_trigger,
             commands::tools::triggers::list_cron_agents,
-            // Infrastructure — Auth
+            // Infrastructure â€” Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,
             commands::infrastructure::auth::logout,
             commands::infrastructure::auth::refresh_session,
-            // Infrastructure — System
+            // Infrastructure â€” System
             commands::infrastructure::system::system_health_check,
             commands::infrastructure::system::health_check_local,
             commands::infrastructure::system::health_check_agents,
@@ -837,21 +792,21 @@ pub fn run() {
             commands::infrastructure::system::open_external_url,
             commands::infrastructure::system::get_crash_logs,
             commands::infrastructure::system::clear_crash_logs,
-            // Infrastructure — Setup / Auto-install
+            // Infrastructure â€” Setup / Auto-install
             commands::infrastructure::setup::start_setup_install,
             commands::infrastructure::setup::cancel_setup_install,
-            // Infrastructure — Settings
+            // Infrastructure â€” Settings
             commands::infrastructure::settings::get_app_setting,
             commands::infrastructure::settings::set_app_setting,
             commands::infrastructure::settings::delete_app_setting,
-            // Infrastructure — BYOM (Bring Your Own Model)
+            // Infrastructure â€” BYOM (Bring Your Own Model)
             commands::infrastructure::byom::get_byom_policy,
             commands::infrastructure::byom::set_byom_policy,
             commands::infrastructure::byom::delete_byom_policy,
             commands::infrastructure::byom::list_provider_audit_log,
             commands::infrastructure::byom::list_provider_audit_by_persona,
             commands::infrastructure::byom::get_provider_usage_stats,
-            // Infrastructure — Cloud
+            // Infrastructure â€” Cloud
             commands::infrastructure::cloud::cloud_connect,
             commands::infrastructure::cloud::cloud_reconnect_from_keyring,
             commands::infrastructure::cloud::cloud_disconnect,
@@ -879,7 +834,7 @@ pub fn run() {
             commands::infrastructure::cloud::cloud_update_trigger,
             commands::infrastructure::cloud::cloud_delete_trigger,
             commands::infrastructure::cloud::cloud_list_trigger_firings,
-            // Infrastructure — GitLab
+            // Infrastructure â€” GitLab
             commands::infrastructure::gitlab::gitlab_connect,
             commands::infrastructure::gitlab::gitlab_disconnect,
             commands::infrastructure::gitlab::gitlab_get_config,

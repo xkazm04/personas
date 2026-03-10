@@ -1,9 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-<<<<<<< HEAD
 import { Plug, User, CreditCard, Building2, Monitor } from 'lucide-react';
-=======
-import { Plug, User, CreditCard, Building2 } from 'lucide-react';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 import type { ThemedSelectOption } from '@/features/shared/components/ThemedSelect';
@@ -12,11 +8,8 @@ import { getAuthMethods } from '@/lib/types/types';
 import { getAuthBadgeClasses, getAuthIcon } from '@/features/vault/utils/authMethodStyles';
 import { PURPOSE_GROUPS, getPurposeForConnector } from '@/lib/credentials/connectorRoles';
 import { getLicenseTier, LICENSE_TIER_META, type LicenseTier } from '@/lib/credentials/connectorLicensing';
-<<<<<<< HEAD
 import { IS_MOBILE } from '@/lib/utils/platform';
 import { isDesktopBridge } from '@/lib/utils/connectors';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface CredentialPickerProps {
   connectors: ConnectorDefinition[];
@@ -49,7 +42,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
     return set;
   }, [credentials]);
 
-  // ── Cross-filter helpers ────────────────────────────────────────
+  // â”€â”€ Cross-filter helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const applyConnected = (list: ConnectorDefinition[], filter: ConnectedFilter) => {
     if (filter === 'connected') return list.filter((c) => ownedServiceTypes.has(c.name));
@@ -68,7 +61,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
       ? list.filter((c) => getLicenseTier(c.name, c.metadata as Record<string, unknown> | null) === license)
       : list;
 
-  // ── Cross-filtered counts ──────────────────────────────────────
+  // â”€â”€ Cross-filtered counts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   // Base for each filter = connectors with all OTHER filters applied
   const purposeBase = useMemo(
@@ -91,7 +84,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
     [connectors, activePurpose, activeCategory, connectedFilter, ownedServiceTypes],
   );
 
-  // ── Tab/option data with cross-filtered counts ─────────────────
+  // â”€â”€ Tab/option data with cross-filtered counts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const purposeOptions = useMemo<ThemedSelectOption[]>(() => {
     const counts: Record<string, number> = {};
@@ -152,7 +145,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
     return opts;
   }, [licenseBase]);
 
-  // ── Final filtered list ─────────────────────────────────────────
+  // â”€â”€ Final filtered list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const filteredConnectors = useMemo(() => {
     let result = connectors;
@@ -177,7 +170,6 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
   return (
     <div className="space-y-3">
       {/* Compact filter row */}
-<<<<<<< HEAD
       <div className={`flex ${IS_MOBILE ? 'flex-col' : 'flex-row items-center'} gap-2`}>
         <div className={`flex ${IS_MOBILE ? 'flex-wrap' : ''} gap-2`}>
           <ThemedSelect
@@ -219,45 +211,6 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
             className="!py-1.5 !text-sm"
           />
         </div>
-=======
-      <div className="flex items-center gap-2">
-        <ThemedSelect
-          filterable
-          options={connectedOptions}
-          value={connectedFilter}
-          onValueChange={(v) => setConnectedFilter((v || 'all') as ConnectedFilter)}
-          placeholder="Status"
-          wrapperClassName="w-[150px]"
-          className="!py-1.5 !text-sm"
-        />
-        <ThemedSelect
-          filterable
-          options={purposeOptions}
-          value={activePurpose ?? ''}
-          onValueChange={(v) => setActivePurpose(v || null)}
-          placeholder="Purpose"
-          wrapperClassName="w-[195px]"
-          className="!py-1.5 !text-sm"
-        />
-        <ThemedSelect
-          filterable
-          options={categoryOptions}
-          value={activeCategory ?? ''}
-          onValueChange={(v) => setActiveCategory(v || null)}
-          placeholder="Category"
-          wrapperClassName="w-[175px]"
-          className="!py-1.5 !text-sm"
-        />
-        <ThemedSelect
-          filterable
-          options={licenseOptions}
-          value={activeLicense ?? ''}
-          onValueChange={(v) => setActiveLicense(v || null)}
-          placeholder="License"
-          wrapperClassName="w-[170px]"
-          className="!py-1.5 !text-sm"
-        />
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       </div>
 
       {/* Responsive auto-fill grid */}
@@ -279,7 +232,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
                   : 'bg-secondary/25 border-primary/15 hover:bg-secondary/50 hover:border-primary/25'
               }`}
             >
-              {/* Auth method icons — top-left corner */}
+              {/* Auth method icons â€” top-left corner */}
               <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10 opacity-20 group-hover:opacity-100 transition-opacity duration-200">
                 {authMethods.map((m) => {
                   const Icon = getAuthIcon(m);
@@ -295,7 +248,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
                 })}
               </div>
 
-              {/* License tier badge — top-right corner */}
+              {/* License tier badge â€” top-right corner */}
               <span
                 className={`absolute top-1.5 right-1.5 inline-flex items-center justify-center w-6 h-6 rounded-lg border opacity-20 group-hover:opacity-100 transition-opacity duration-200 ${tierMeta.bgClass} ${tierMeta.borderClass}`}
                 title={`${tierMeta.label} license`}
@@ -303,7 +256,6 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
                 <TierIcon className={`w-3 h-3 ${tierMeta.textClass}`} />
               </span>
 
-<<<<<<< HEAD
               {/* Desktop bridge badge */}
               {isDesktopBridge(connector) && (
                 <span
@@ -314,8 +266,6 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
                 </span>
               )}
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
               {/* Large icon */}
               <div
                 className="w-14 h-14 min-w-14 min-h-14 rounded-xl flex items-center justify-center border"

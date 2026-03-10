@@ -8,7 +8,7 @@ import { classifyLine, parseSummaryLine } from '@/lib/utils/terminalColors';
 import type { TerminalEmptyState } from '@/features/shared/components/TerminalBody';
 import * as api from '@/api/tauriApi';
 import type { HealingEventPayload, PhaseEntry } from './runnerHelpers';
-import { detectPhaseFromLine } from './runnerHelpers';
+import { detectPhaseFromLine, PHASE_META } from './runnerHelpers';
 
 export function useRunnerState(personaId: string) {
   const isExecuting = usePersonaStore((state) => state.isExecuting);
@@ -115,7 +115,6 @@ export function useRunnerState(personaId: string) {
           if (lastTool && lastTool.endMs === undefined) lastTool.endMs = now;
           currentPhase.endMs = now;
         }
-        const { PHASE_META } = require('./runnerHelpers');
         updated.push({ id: detected, label: PHASE_META[detected]?.label ?? detected, startMs: now, toolCalls: [] });
       }
       return updated;

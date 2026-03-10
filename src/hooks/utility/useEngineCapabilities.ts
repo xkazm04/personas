@@ -7,15 +7,9 @@ import {
   mergeCapabilities,
   isOperationEnabled,
   getPreferredProvider,
-<<<<<<< HEAD
 } from '@/features/settings/sub_engine/libs/engineCapabilities';
 import type { CliEngine } from '@/lib/types/types';
 import type { CliOperation, EngineCapabilityMap } from '@/features/settings/sub_engine/libs/engineCapabilities';
-=======
-} from '@/features/settings/sub_engine/engineCapabilities';
-import type { CliEngine } from '@/lib/types/types';
-import type { CliOperation, EngineCapabilityMap } from '@/features/settings/sub_engine/engineCapabilities';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface UseEngineCapabilitiesResult {
   /** Full capability map (merged defaults + saved overrides) */

@@ -20,18 +20,15 @@ fn row_to_knowledge(row: &Row) -> rusqlite::Result<ExecutionKnowledge> {
         last_execution_id: row.get("last_execution_id")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
-<<<<<<< HEAD
         scope_type: row.get::<_, Option<String>>("scope_type")?.unwrap_or_else(|| "persona".to_string()),
         scope_id: row.get("scope_id")?,
         annotation_text: row.get("annotation_text")?,
         annotation_source: row.get("annotation_source")?,
         is_verified: row.get::<_, Option<bool>>("is_verified")?.unwrap_or(false),
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     })
 }
 
-/// Upsert a knowledge entry — update counts and averages if the unique key exists.
+/// Upsert a knowledge entry â€” update counts and averages if the unique key exists.
 #[allow(clippy::too_many_arguments)]
 pub fn upsert(
     pool: &DbPool,
@@ -97,8 +94,7 @@ pub fn upsert(
     Ok(())
 }
 
-<<<<<<< HEAD
-/// Upsert a knowledge annotation — cross-persona knowledge scoped to a tool, connector, or global.
+/// Upsert a knowledge annotation â€” cross-persona knowledge scoped to a tool, connector, or global.
 #[allow(clippy::too_many_arguments)]
 pub fn upsert_annotation(
     pool: &DbPool,
@@ -280,8 +276,6 @@ pub fn get_shared_injection(
     Ok(results)
 }
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 /// List knowledge entries for a persona, optionally filtered by type.
 pub fn list_for_persona(
     pool: &DbPool,
@@ -356,30 +350,19 @@ pub fn get_summary(
             COUNT(*) as total,
             SUM(CASE WHEN knowledge_type = 'tool_sequence' THEN 1 ELSE 0 END),
             SUM(CASE WHEN knowledge_type = 'failure_pattern' THEN 1 ELSE 0 END),
-<<<<<<< HEAD
             SUM(CASE WHEN knowledge_type = 'model_performance' THEN 1 ELSE 0 END),
             SUM(CASE WHEN knowledge_type IN ('agent_annotation','user_annotation') THEN 1 ELSE 0 END)
          FROM execution_knowledge {where_clause}"
     );
 
     let (total, tool_seq, fail_pat, model_perf, annotation_cnt) = if let Some(ref pid) = persona_filter {
-=======
-            SUM(CASE WHEN knowledge_type = 'model_performance' THEN 1 ELSE 0 END)
-         FROM execution_knowledge {where_clause}"
-    );
-
-    let (total, tool_seq, fail_pat, model_perf) = if let Some(ref pid) = persona_filter {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         conn.query_row(&count_sql, params![pid], |row| {
             Ok((
                 row.get::<_, i64>(0)?,
                 row.get::<_, Option<i64>>(1)?.unwrap_or(0),
                 row.get::<_, Option<i64>>(2)?.unwrap_or(0),
                 row.get::<_, Option<i64>>(3)?.unwrap_or(0),
-<<<<<<< HEAD
                 row.get::<_, Option<i64>>(4)?.unwrap_or(0),
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             ))
         })?
     } else {
@@ -389,10 +372,7 @@ pub fn get_summary(
                 row.get::<_, Option<i64>>(1)?.unwrap_or(0),
                 row.get::<_, Option<i64>>(2)?.unwrap_or(0),
                 row.get::<_, Option<i64>>(3)?.unwrap_or(0),
-<<<<<<< HEAD
                 row.get::<_, Option<i64>>(4)?.unwrap_or(0),
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             ))
         })?
     };
@@ -434,10 +414,7 @@ pub fn get_summary(
         tool_sequence_count: tool_seq,
         failure_pattern_count: fail_pat,
         model_performance_count: model_perf,
-<<<<<<< HEAD
         annotation_count: annotation_cnt,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         top_patterns,
         recent_learnings,
     })

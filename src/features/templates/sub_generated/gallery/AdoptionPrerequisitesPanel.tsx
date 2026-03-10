@@ -8,14 +8,10 @@ import {
 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { deriveConnectorReadiness } from '../shared/ConnectorReadiness';
-<<<<<<< HEAD
 import type { ConnectorReadinessStatus, AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
-=======
-import type { ConnectorReadinessStatus, DesignAnalysisResult, SuggestedConnector } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
-// ── Types ────────────────────────────────────────────────────────────
+// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface PrerequisiteItem {
   connectorName: string;
@@ -34,14 +30,10 @@ function deriveOverall(items: PrerequisiteItem[]): PrerequisiteOverall {
   return 'blocked';
 }
 
-// ── Component ────────────────────────────────────────────────────────
+// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface AdoptionPrerequisitesPanelProps {
-<<<<<<< HEAD
   designResult: AgentIR | null;
-=======
-  designResult: DesignAnalysisResult | null;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];
   onAddCredential: (
@@ -111,7 +103,7 @@ export function AdoptionPrerequisitesPanel({
         {overall === 'ready' ? (
           <>
             <ShieldCheck className="w-4 h-4" />
-            All set — Start Adoption
+            All set â€” Start Adoption
           </>
         ) : (
           <>
@@ -127,7 +119,7 @@ export function AdoptionPrerequisitesPanel({
   );
 }
 
-// ── Sub-components ───────────────────────────────────────────────────
+// â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function OverallBadge({ overall, total, ready }: { overall: PrerequisiteOverall; total: number; ready: number }) {
   const config = {

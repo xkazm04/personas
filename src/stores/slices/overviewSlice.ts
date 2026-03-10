@@ -14,33 +14,30 @@ import * as api from "@/api/tauriApi";
 import { cloudListPendingReviews, cloudRespondToReview } from "@/api/cloud";
 
 export interface OverviewSlice {
-  // State — navigation
+  // State â€” navigation
   overviewTab: OverviewTab;
 
-  // State — executions
+  // State â€” executions
   globalExecutions: GlobalExecution[];
   globalExecutionsTotal: number;
   globalExecutionsOffset: number;
   globalExecutionsWarning: string | null;
-<<<<<<< HEAD
   globalExecutionsLimit: number;
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
-  // State — reviews (local)
+  // State â€” reviews (local)
   manualReviews: ManualReviewItem[];
   manualReviewsTotal: number;
   pendingReviewCount: number;
 
-  // State — reviews (cloud)
+  // State â€” reviews (cloud)
   cloudReviews: ManualReviewItem[];
   isLoadingCloudReviews: boolean;
 
-  // State — observability metrics
+  // State â€” observability metrics
   observabilityMetrics: ObservabilityMetrics | null;
   observabilityError: string | null;
 
-  // State — execution dashboard (canonical metrics source)
+  // State â€” execution dashboard (canonical metrics source)
   executionDashboard: ExecutionDashboardData | null;
   executionDashboardLoading: boolean;
   executionDashboardError: string | null;
@@ -57,7 +54,7 @@ export interface OverviewSlice {
   fetchExecutionDashboard: (days?: number) => Promise<void>;
 }
 
-// ── Execution dashboard derivation ──────────────────────────────────────
+// â”€â”€ Execution dashboard derivation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 /** Derive MetricsChartPoint[] from the richer DashboardDailyPoint[]. */
 export function selectDerivedChartPoints(data: ExecutionDashboardData | null): MetricsChartPoint[] {
   if (!data) return [];
@@ -72,7 +69,6 @@ export function selectDerivedChartPoints(data: ExecutionDashboardData | null): M
   }));
 }
 
-<<<<<<< HEAD
 /** Safely convert a Unix timestamp (seconds or milliseconds) to ISO string.
  *  Returns null if the value is missing or invalid (before year 2000). */
 function safeTimestampToISO(value: number | null | undefined): string | null {
@@ -85,10 +81,6 @@ function safeTimestampToISO(value: number | null | undefined): string | null {
 }
 
 // Server-side pagination constants.
-=======
-// Server-side pagination: each "Load More" increases the global limit.
-let currentGlobalLimit = 50;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 const GLOBAL_PAGE_SIZE = 50;
 const MAX_GLOBAL_LIMIT = 500;
 
@@ -98,10 +90,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
   globalExecutionsTotal: 0,
   globalExecutionsOffset: 0,
   globalExecutionsWarning: null,
-<<<<<<< HEAD
   globalExecutionsLimit: GLOBAL_PAGE_SIZE,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   manualReviews: [],
   manualReviewsTotal: 0,
   pendingReviewCount: 0,
@@ -117,7 +106,6 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
 
   fetchGlobalExecutions: async (reset = false, status?: string) => {
     try {
-<<<<<<< HEAD
       const prevLimit = get().globalExecutionsLimit;
       const limit = reset
         ? GLOBAL_PAGE_SIZE
@@ -126,19 +114,6 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
 
       const statusFilter = status === 'running' ? 'running' : status;
       const rows = await api.listAllExecutions(limit, statusFilter);
-=======
-      if (reset) {
-        currentGlobalLimit = GLOBAL_PAGE_SIZE;
-      } else {
-        currentGlobalLimit = Math.min(
-          currentGlobalLimit + GLOBAL_PAGE_SIZE,
-          MAX_GLOBAL_LIMIT,
-        );
-      }
-
-      const statusFilter = status === 'running' ? 'running' : status;
-      const rows = await api.listAllExecutions(currentGlobalLimit, statusFilter);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
       // Map GlobalExecutionRow to GlobalExecution (field names already match)
       // Deduplicate by id to prevent React duplicate-key warnings
@@ -158,11 +133,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
       set({
         globalExecutions: merged,
         // Signal hasMore when result count equals the limit
-<<<<<<< HEAD
         globalExecutionsTotal: merged.length + (merged.length >= limit ? 1 : 0),
-=======
-        globalExecutionsTotal: merged.length + (merged.length >= currentGlobalLimit ? 1 : 0),
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         globalExecutionsOffset: merged.length,
         globalExecutionsWarning: null,
       });
@@ -210,7 +181,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
       const count = await api.getPendingReviewCount();
       set({ pendingReviewCount: count });
     } catch {
-      // intentional: non-critical — badge count defaults to zero on failure
+      // intentional: non-critical â€” badge count defaults to zero on failure
       set({ pendingReviewCount: 0 });
     }
   },
@@ -225,7 +196,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
     try {
       const raw = await cloudListPendingReviews();
       const { personas } = get();
-      // Transform CloudReviewRequest → ManualReviewItem shape
+      // Transform CloudReviewRequest â†’ ManualReviewItem shape
       const shaped = raw.map((r) => ({
         id: r.review_id,
         persona_id: r.persona_id,
@@ -235,19 +206,14 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
         severity: 'info',
         status: r.status === 'pending' ? 'pending' : r.status,
         reviewer_notes: r.response_message,
-<<<<<<< HEAD
         created_at: safeTimestampToISO(r.created_at) ?? new Date().toISOString(),
         resolved_at: safeTimestampToISO(r.resolved_at),
-=======
-        created_at: r.created_at != null ? new Date(r.created_at * 1000).toISOString() : new Date().toISOString(),
-        resolved_at: r.resolved_at != null ? new Date(r.resolved_at * 1000).toISOString() : null,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         source: 'cloud' as const,
       }));
       const items: ManualReviewItem[] = enrichWithPersona(shaped, personas);
       set({ cloudReviews: items, isLoadingCloudReviews: false });
     } catch {
-      // Non-critical — cloud reviews fail silently, local reviews still work
+      // Non-critical â€” cloud reviews fail silently, local reviews still work
       set({ cloudReviews: [], isLoadingCloudReviews: false });
     }
   },

@@ -119,7 +119,7 @@ export function CreateStep() {
     [draft?.system_prompt, draft?.structured_prompt],
   );
 
-  // ── A. Success state ────────────────────────────────────────────────
+  // â”€â”€ A. Success state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (created && draft) {
     return (
       <motion.div
@@ -203,7 +203,7 @@ export function CreateStep() {
     );
   }
 
-  // ── C. No draft state ───────────────────────────────────────────────
+  // â”€â”€ C. No draft state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (!draft) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -219,7 +219,7 @@ export function CreateStep() {
     );
   }
 
-  // ── B. Preview + Edit ───────────────────────────────────────────────
+  // â”€â”€ B. Preview + Edit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
     <div className="space-y-3">
       {/* Step header */}
@@ -230,7 +230,7 @@ export function CreateStep() {
         </p>
       </div>
 
-      {/* Safety warnings — above everything so user can't miss them */}
+      {/* Safety warnings â€” above everything so user can't miss them */}
       <ScanResultsBanner result={safetyScan} scanning={false} />
       {verification.trustLevel !== 'verified' && (
         <SandboxWarningBanner verification={verification} />
@@ -338,7 +338,6 @@ export function CreateStep() {
         )}
       </div>
 
-<<<<<<< HEAD
       {/* Safety critical override toggle */}
       {(safetyScan?.critical.length ?? 0) > 0 && (
         <div className="flex items-start gap-3 p-3 rounded-xl bg-red-500/8 border border-red-500/15">
@@ -362,8 +361,6 @@ export function CreateStep() {
         </div>
       )}
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       {/* Edit Details */}
       <div>
         <button

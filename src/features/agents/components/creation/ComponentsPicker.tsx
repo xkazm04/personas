@@ -10,7 +10,7 @@ import type { BuilderComponent, ComponentRole } from './types';
 import { COMPONENT_ROLES } from './types';
 import { computeCredentialCoverage, computeRoleCoverage } from './builderReducer';
 
-// ── Props ───────────────────────────────────────────────────────────
+// â”€â”€ Props â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface ComponentsPickerProps {
   components: BuilderComponent[];
@@ -19,7 +19,7 @@ interface ComponentsPickerProps {
   onSetWatchedTables?: (componentId: string, tables: string[]) => void;
 }
 
-// ── Role icons ──────────────────────────────────────────────────────
+// â”€â”€ Role icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const roleIcons: Record<ComponentRole, typeof Download> = {
   retrieve: Download,
@@ -42,14 +42,14 @@ const roleIconColors: Record<ComponentRole, string> = {
   notify: 'text-emerald-400',
 };
 
-// ── Database detection ──────────────────────────────────────────────
+// â”€â”€ Database detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function isDatabaseConnector(connectorName: string): boolean {
   const family = getConnectorFamily(connectorName);
   return family !== 'unsupported' && family !== 'redis';
 }
 
-// ── Assign Modal ────────────────────────────────────────────────────
+// â”€â”€ Assign Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function AssignModal({
   role,
@@ -246,7 +246,7 @@ function AssignModal({
   );
 }
 
-// ── Table Selector Modal ────────────────────────────────────────────
+// â”€â”€ Table Selector Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function TableSelectorModal({
   component,
@@ -294,7 +294,7 @@ function TableSelectorModal({
                 Select Tables
               </h3>
               <p className="text-sm text-muted-foreground/65">
-                {meta.label} — choose tables to watch
+                {meta.label} â€” choose tables to watch
               </p>
             </div>
           </div>
@@ -321,7 +321,7 @@ function TableSelectorModal({
           <p className="text-sm text-muted-foreground/50">
             {count > 0
               ? `${count} table${count !== 1 ? 's' : ''} selected`
-              : 'No tables selected — agent watches all'}
+              : 'No tables selected â€” agent watches all'}
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -345,7 +345,7 @@ function TableSelectorModal({
   );
 }
 
-// ── Credential Coverage Bar ─────────────────────────────────────────
+// â”€â”€ Credential Coverage Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function CredentialCoverageBar({ components }: { components: BuilderComponent[] }) {
   const coverage = computeCredentialCoverage(components);
@@ -367,7 +367,7 @@ function CredentialCoverageBar({ components }: { components: BuilderComponent[] 
   );
 }
 
-// ── Role Card ───────────────────────────────────────────────────────
+// â”€â”€ Role Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const BUILTIN_CONNECTORS = new Set(['in-app-messaging', 'http']);
 
@@ -504,7 +504,7 @@ function RoleCard({
   );
 }
 
-// ── Main Component ──────────────────────────────────────────────────
+// â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function ComponentsPicker({ components, onAdd, onRemove, onSetWatchedTables }: ComponentsPickerProps) {
   const [assignRole, setAssignRole] = useState<ComponentRole | null>(null);
@@ -550,11 +550,7 @@ export function ComponentsPicker({ components, onAdd, onRemove, onSetWatchedTabl
   return (
     <div>
       <CredentialCoverageBar components={components} />
-<<<<<<< HEAD
       <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
-=======
-      <div className="grid grid-cols-4 gap-2">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         {COMPONENT_ROLES.map(({ role, label, description }) => (
           <RoleCard
             key={role}

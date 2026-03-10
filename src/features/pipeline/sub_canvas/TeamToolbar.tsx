@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Plus, LayoutGrid, Save, ChevronDown, Check, Loader2, StickyNote } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { PersonaAvatar } from '../libs/teamConstants';
+import { PersonaAvatar } from './libs/teamConstants';
 
 interface TeamToolbarProps {
   teamName: string;

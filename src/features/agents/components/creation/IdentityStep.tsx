@@ -106,7 +106,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
         personaId = persona.id;
       }
 
-      // Always move — either to selected group or to null (removes from Draft group)
+      // Always move â€” either to selected group or to null (removes from Draft group)
       await movePersonaToGroup(personaId, groupId || null);
 
       setSidebarSection('personas');
@@ -150,11 +150,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
       </div>
 
       {/* Two-column layout */}
-<<<<<<< HEAD
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] 3xl:grid-cols-[1fr_400px] 4xl:grid-cols-[1fr_480px] gap-6">
-=======
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         {/* Left column: form */}
         <div className="space-y-4 min-w-0">
           {/* Name */}
@@ -184,7 +180,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
             />
           </div>
 
-          {/* Appearance: Icon, Color, Group — always visible in grid */}
+          {/* Appearance: Icon, Color, Group â€” always visible in grid */}
           <div className="space-y-3">
             <button
               type="button"

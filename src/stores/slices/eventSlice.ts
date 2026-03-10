@@ -28,7 +28,6 @@ export const createEventSlice: StateCreator<PersonaStore, [], [], EventSlice> = 
 
   pushRecentEvent: (event, maxItems = 200) => {
     set((state) => {
-<<<<<<< HEAD
       const isPending = event.status === "pending";
       const existingIndex = state.recentEvents.findIndex((existing) => existing.id === event.id);
 
@@ -41,18 +40,10 @@ export const createEventSlice: StateCreator<PersonaStore, [], [], EventSlice> = 
         // Track transition: pending->non-pending = -1, non-pending->pending = +1
         if (wasPending && !isPending) pendingDelta = -1;
         else if (!wasPending && isPending) pendingDelta = 1;
-=======
-      const existingIndex = state.recentEvents.findIndex((existing) => existing.id === event.id);
-
-      let nextEvents: PersonaEvent[];
-      if (existingIndex >= 0) {
-        // Replace in place so status transitions (pending -> completed/failed) are reflected.
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         nextEvents = [...state.recentEvents];
         nextEvents[existingIndex] = event;
       } else {
         nextEvents = [event, ...state.recentEvents];
-<<<<<<< HEAD
         if (isPending) pendingDelta = 1;
       }
 
@@ -66,16 +57,6 @@ export const createEventSlice: StateCreator<PersonaStore, [], [], EventSlice> = 
       return {
         recentEvents: nextEvents,
         pendingEventCount: Math.max(0, state.pendingEventCount + pendingDelta),
-=======
-      }
-
-      const trimmed = nextEvents.length > maxItems ? nextEvents.slice(0, maxItems) : nextEvents;
-      const nextPendingCount = trimmed.filter((e) => e.status === "pending").length;
-
-      return {
-        recentEvents: trimmed,
-        pendingEventCount: nextPendingCount,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       };
     });
   },

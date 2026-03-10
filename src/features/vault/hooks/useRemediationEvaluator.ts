@@ -82,11 +82,10 @@ export function useRemediationEvaluator() {
       }
 
       // Credential has non-healthy remediation — fetch full rotation status
-      let rotationStatus: RotationStatus | null = null;
+      let rotationStatus: RotationStatus | null;
       try {
         rotationStatus = await getRotationStatus(cred.id);
       } catch {
-        // API failure — skip this credential, don't block others
         continue;
       }
 

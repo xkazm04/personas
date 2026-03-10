@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 export { ModelSelector, type CustomModelConfig } from './components/ModelSelector';
 export { BudgetControls } from './components/BudgetControls';
 export { CustomModelConfigForm } from './components/CustomModelConfigForm';
@@ -7,17 +6,6 @@ export { LiteLLMConfigField } from './components/LiteLLMConfigField';
 export { ProviderCredentialField } from './components/ProviderCredentialField';
 export { SaveConfigButton } from './components/SaveConfigButton';
 export { ModelABCompare } from './components/ModelABCompare';
-=======
-export { ModelSelector } from './ModelSelector';
-export type { CustomModelConfig } from './ModelSelector';
-export { BudgetControls } from './BudgetControls';
-export { CustomModelConfigForm } from './CustomModelConfigForm';
-export { OllamaApiKeyField } from './OllamaApiKeyField';
-export { LiteLLMConfigField } from './LiteLLMConfigField';
-export { ProviderCredentialField } from './ProviderCredentialField';
-export { SaveConfigButton } from './SaveConfigButton';
-export { ModelABCompare } from './ModelABCompare';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 export {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
@@ -25,7 +13,6 @@ export {
   isOllamaCloudValue,
   getOllamaPreset,
   profileToDropdownValue,
-<<<<<<< HEAD
   type OllamaCloudPreset,
 } from './libs/OllamaCloudPresets';
 export {
@@ -42,7 +29,3 @@ export {
   type ModelOption,
   type ModelMetrics,
 } from './libs/compareHelpers';
-=======
-} from './OllamaCloudPresets';
-export type { OllamaCloudPreset } from './OllamaCloudPresets';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989

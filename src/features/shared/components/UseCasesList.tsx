@@ -6,7 +6,7 @@ import type {
   DesignUseCase,
 } from '@/lib/types/frontendTypes';
 
-// ── Re-exports for backward compatibility ───────────────────────────
+// â”€â”€ Re-exports for backward compatibility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // These types are now canonically defined in frontendTypes.ts.
 // Consumers that imported them from here continue to work.
 export type { DesignContextData } from '@/lib/types/frontendTypes';
@@ -16,21 +16,17 @@ export type { UseCaseInputField } from '@/lib/types/frontendTypes';
 export type { UseCaseTimeFilter } from '@/lib/types/frontendTypes';
 export type { UseCaseSuggestedTrigger } from '@/lib/types/frontendTypes';
 
-// ── Parser ──────────────────────────────────────────────────────────
+// â”€â”€ Parser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-<<<<<<< HEAD
 // LRU(1) cache: avoids re-parsing the same design_context string across
 // multiple hooks/components in the same render cycle.
 let _cachedRaw: string | null | undefined;
 let _cachedResult: DesignContextData = {};
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 /**
  * Parse a raw `design_context` JSON string into the typed envelope.
  * Handles both the new structured format (with camelCase keys) and
  * the legacy flat format (with snake_case keys like `use_cases`, `credential_links`).
-<<<<<<< HEAD
  *
  * Results are cached (LRU-1) so repeated calls with the same string
  * (e.g. from useConnectorStatuses, subscriptionLifecycle, etc.) skip parsing.
@@ -49,30 +45,17 @@ export function parseDesignContext(raw: string | null | undefined): DesignContex
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
       return store({ summary: raw });
-=======
- */
-export function parseDesignContext(raw: string | null | undefined): DesignContextData {
-  if (!raw || !raw.trim()) return {};
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return { summary: raw };
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     }
 
     // New format: check for camelCase envelope keys
     if ('designFiles' in parsed || 'credentialLinks' in parsed || 'useCases' in parsed) {
-<<<<<<< HEAD
       return store(parsed as unknown as DesignContextData);
-=======
-      return parsed as unknown as DesignContextData;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     }
 
-    // Legacy format: snake_case top-level keys → migrate to camelCase envelope
+    // Legacy format: snake_case top-level keys â†’ migrate to camelCase envelope
     const result: DesignContextData = {};
 
-    // Legacy: top-level "files"/"references" → designFiles
+    // Legacy: top-level "files"/"references" â†’ designFiles
     if ('files' in parsed || 'references' in parsed) {
       result.designFiles = {
         files: (parsed.files as DesignFilesSection['files']) ?? [],
@@ -95,17 +78,10 @@ export function parseDesignContext(raw: string | null | undefined): DesignContex
       result.summary = parsed.summary;
     }
 
-<<<<<<< HEAD
     return store(result);
   } catch {
-    // intentional: non-critical — JSON parse fallback (treat raw text as summary)
+    // intentional: non-critical â€” JSON parse fallback (treat raw text as summary)
     return store({ summary: raw });
-=======
-    return result;
-  } catch {
-    // intentional: non-critical — JSON parse fallback (treat raw text as summary)
-    return { summary: raw };
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }
 }
 
@@ -129,7 +105,7 @@ export function mergeCredentialLink(
   });
 }
 
-// ── Component ───────────────────────────────────────────────────────
+// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
   notification:   { bg: 'bg-rose-500/10 border-rose-500/15',   text: 'text-rose-400/70' },

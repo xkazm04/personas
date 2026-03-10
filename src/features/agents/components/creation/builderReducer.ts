@@ -1,14 +1,10 @@
 import type { NotificationChannel } from '@/lib/types/frontendTypes';
 import type { DesignContextData, DesignUseCase } from '@/lib/types/frontendTypes';
-<<<<<<< HEAD
 import type { ConnectorPipelineStep, AgentIR } from '@/lib/types/designTypes';
-=======
-import type { ConnectorPipelineStep, DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { BuilderState, BuilderUseCase, BuilderComponent, TriggerPreset, ComponentRole, CredentialCoverage, CoverageStatus } from './types';
 import { INITIAL_BUILDER_STATE, TRIGGER_PRESETS, ERROR_STRATEGIES, REVIEW_POLICIES } from './types';
 
-// ── Actions ─────────────────────────────────────────────────────────
+// â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type BuilderAction =
   | { type: 'SET_INTENT'; payload: string }
@@ -27,11 +23,7 @@ export type BuilderAction =
   | { type: 'SET_ERROR_STRATEGY'; payload: string }
   | { type: 'SET_REVIEW_POLICY'; payload: string }
   | { type: 'SET_WATCHED_TABLES'; payload: { componentId: string; tables: string[] } }
-<<<<<<< HEAD
   | { type: 'APPLY_DESIGN_RESULT'; payload: AgentIR }
-=======
-  | { type: 'APPLY_DESIGN_RESULT'; payload: DesignAnalysisResult }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   | { type: 'RESET' };
 
 let nextId = 1;
@@ -40,7 +32,7 @@ function makeId(prefix: string): string {
   return `${prefix}_${Date.now()}_${nextId++}`;
 }
 
-// ── Design result mapping helpers ───────────────────────────────────
+// â”€â”€ Design result mapping helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function matchTriggerPreset(triggerType: string, cron?: string): TriggerPreset | null {
   if (cron) {
@@ -64,11 +56,7 @@ function inferRole(sc: { role?: string; category?: string; name: string }): Comp
   return 'act'; // default
 }
 
-<<<<<<< HEAD
 function applyDesignResult(state: BuilderState, result: AgentIR): BuilderState {
-=======
-function applyDesignResult(state: BuilderState, result: DesignAnalysisResult): BuilderState {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   let next = { ...state };
 
   // Use cases
@@ -97,7 +85,7 @@ function applyDesignResult(state: BuilderState, result: DesignAnalysisResult): B
     }
   }
 
-  // Connectors → components with inferred roles
+  // Connectors â†’ components with inferred roles
   if (result.suggested_connectors?.length) {
     const existingNames = new Set(next.components.map((c) => c.connectorName));
     const newComponents: BuilderComponent[] = result.suggested_connectors
@@ -124,7 +112,7 @@ function applyDesignResult(state: BuilderState, result: DesignAnalysisResult): B
     next = { ...next, channels: [...next.channels, ...newChannels] };
   }
 
-  // Summary → intent
+  // Summary â†’ intent
   if (!next.intent.trim() && result.summary) {
     next = { ...next, intent: result.summary };
   }
@@ -132,7 +120,7 @@ function applyDesignResult(state: BuilderState, result: DesignAnalysisResult): B
   return next;
 }
 
-// ── Reducer ─────────────────────────────────────────────────────────
+// â”€â”€ Reducer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function builderReducer(state: BuilderState, action: BuilderAction): BuilderState {
   switch (action.type) {
@@ -296,7 +284,7 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
   }
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function triggerToSuggested(preset: TriggerPreset) {
   return {
@@ -418,7 +406,7 @@ export function generateSummary(state: BuilderState): string {
   return parts.join(' \u00b7 ');
 }
 
-// ── Credential Coverage ─────────────────────────────────────────
+// â”€â”€ Credential Coverage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const BUILTIN_CONNECTORS = new Set(['in-app-messaging', 'http']);
 

@@ -1,19 +1,12 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-<<<<<<< HEAD
 import { Search, Radar, CheckCircle2, Loader2, Sparkles, Monitor } from 'lucide-react';
-=======
-import { Search, Radar, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { usePersonaStore } from '@/stores/personaStore';
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { detectAuthenticatedServices, type AuthDetection } from '@/api/authDetect';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { staggerContainer, staggerItem } from '@/features/templates/animationPresets';
-<<<<<<< HEAD
 import { isDesktopBridge } from '@/lib/utils/connectors';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface WizardDetectPhaseProps {
   onSelect: (connectors: ConnectorDefinition[]) => void;
@@ -54,14 +47,14 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
         return next;
       });
     } catch {
-      // Detection failed silently — user can still manually select
+      // Detection failed silently â€” user can still manually select
     } finally {
       setIsDetecting(false);
       setHasDetected(true);
     }
   }, [addedServiceTypes]);
 
-  // Build detection map: service_type → AuthDetection
+  // Build detection map: service_type â†’ AuthDetection
   const detectionMap = useMemo(() => {
     const map = new Map<string, AuthDetection>();
     for (const d of detections) {
@@ -188,7 +181,6 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
           </span>
         </div>
 
-<<<<<<< HEAD
         {/* Desktop bridge badge */}
         {isDesktopBridge(connector) && !isAdded && (
           <span className="flex items-center gap-1 text-sm px-1.5 py-0.5 rounded-full shrink-0 bg-orange-500/10 text-orange-400 border border-orange-500/20">
@@ -197,8 +189,6 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
           </span>
         )}
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         {/* Detection badge */}
         {detection && !isAdded && (
           <span className={`text-sm px-1.5 py-0.5 rounded-full shrink-0 ${
@@ -284,12 +274,8 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
               variants={staggerContainer}
               initial="hidden"
               animate="show"
-<<<<<<< HEAD
               className="grid gap-2"
               style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}
-=======
-              className="grid grid-cols-1 sm:grid-cols-2 gap-2"
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             >
               {detected.map((c) => renderConnectorRow(c, false))}
             </motion.div>
@@ -306,12 +292,8 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
               variants={staggerContainer}
               initial="hidden"
               animate="show"
-<<<<<<< HEAD
               className="grid gap-2"
               style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}
-=======
-              className="grid grid-cols-1 sm:grid-cols-2 gap-2"
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             >
               {available.map((c) => renderConnectorRow(c, false))}
             </motion.div>
@@ -324,11 +306,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
             <h3 className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider mb-2">
               Already added ({alreadyAdded.length})
             </h3>
-<<<<<<< HEAD
             <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
-=======
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
               {alreadyAdded.map((c) => renderConnectorRow(c, true))}
             </div>
           </div>

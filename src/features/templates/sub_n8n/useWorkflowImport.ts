@@ -41,11 +41,7 @@ export function useWorkflowImport({
           return;
         }
 
-<<<<<<< HEAD
         const { detection, result, workflowName: wfName, rawJson, needsConfirmation } = parseResult;
-=======
-        const { detection, result, workflowName: wfName, rawJson } = parseResult;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
         void Promise.resolve(removeSession()).catch(() => {});
         clearPersistedContext();
@@ -58,11 +54,8 @@ export function useWorkflowImport({
           rawWorkflowJson: rawJson,
           parsedResult: result,
           platform: detection.platform,
-<<<<<<< HEAD
           needsConfirmation,
           detectedConfidence: detection.confidence,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         });
 
         void Promise.resolve(createSession(wfName, rawJson)).catch(() => {});

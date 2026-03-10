@@ -3,30 +3,22 @@ import { startDesignAnalysis, refineDesign, cancelDesignAnalysis, compileFromInt
 import { usePersonaStore } from '@/stores/personaStore';
 import { useTauriStream } from './useTauriStream';
 import { applyDesignResult, retryFailedOperations, type ApplyDesignSelections, type FailedOperation } from './applyDesignResult';
-<<<<<<< HEAD
 import type { DesignPhase, AgentIR, DesignQuestion } from '@/lib/types/designTypes';
-=======
-import type { DesignPhase, DesignAnalysisResult, DesignQuestion } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
-// ── Stream outcome discriminator ────────────────────────────────────
+// â”€â”€ Stream outcome discriminator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // The design status event produces three outcomes (result, question, error).
 // useTauriStream natively handles result + error; we encode questions as
 // a result variant and route them in a useEffect.
 
 type DesignStreamOutcome =
-<<<<<<< HEAD
   | { kind: 'result'; data: AgentIR }
-=======
-  | { kind: 'result'; data: DesignAnalysisResult }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   | { kind: 'question'; data: DesignQuestion };
 
 const MAX_OUTPUT_LINES = 500;
 
-// ── Stable stream option callbacks ──────────────────────────────────
+// â”€â”€ Stable stream option callbacks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Defined outside the hook so they don't recreate on every render.
-// They reference `designIdRef` which is a ref — always current.
+// They reference `designIdRef` which is a ref â€” always current.
 
 let _designIdRef: React.RefObject<string | null>;
 
@@ -42,11 +34,7 @@ function resolveStatus(payload: Record<string, unknown>):
   if (_designIdRef.current && payload.design_id !== _designIdRef.current) return null;
   const status = payload.status as string;
   if (status === 'completed' && payload.result) {
-<<<<<<< HEAD
     return { result: { kind: 'result', data: payload.result as AgentIR } };
-=======
-    return { result: { kind: 'result', data: payload.result as DesignAnalysisResult } };
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }
   if (status === 'awaiting-input' && payload.question) {
     return { result: { kind: 'question', data: payload.question as DesignQuestion } };
@@ -57,15 +45,11 @@ function resolveStatus(payload: Record<string, unknown>):
   return null;
 }
 
-// ── Hook ────────────────────────────────────────────────────────────
+// â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function useDesignAnalysis() {
   // Design-specific state (layered on top of the generic stream)
-<<<<<<< HEAD
   const [designResult, setDesignResult] = useState<AgentIR | null>(null);
-=======
-  const [designResult, setDesignResult] = useState<DesignAnalysisResult | null>(null);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const [designPhase, setDesignPhase] = useState<DesignPhase>('idle');
   const [question, setQuestion] = useState<DesignQuestion | null>(null);
   const [applyWarnings, setApplyWarnings] = useState<string[]>([]);
@@ -82,7 +66,7 @@ export function useDesignAnalysis() {
   const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
   const refreshPersonas = usePersonaStore((s) => s.fetchPersonas);
 
-  // ── Core streaming via useTauriStream ─────────────────────────────
+  // â”€â”€ Core streaming via useTauriStream â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Handles: listener lifecycle, line accumulation, cleanup on unmount,
   // timeout, and basic phase + error management.
   const stream = useTauriStream<DesignStreamOutcome>({
@@ -94,7 +78,7 @@ export function useDesignAnalysis() {
     runningPhase: '__design_running__',
   });
 
-  // ── Route stream outcomes to design-specific state ────────────────
+  // â”€â”€ Route stream outcomes to design-specific state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   useEffect(() => {
     const outcome = stream.result;
@@ -110,7 +94,7 @@ export function useDesignAnalysis() {
     }
   }, [stream.result]);
 
-  // Route stream errors — refine failures fall back to 'preview' (preserving
+  // Route stream errors â€” refine failures fall back to 'preview' (preserving
   // the previous result), while analysis failures go to 'error'.
   useEffect(() => {
     if (stream.phase === 'error' && stream.error) {
@@ -118,13 +102,13 @@ export function useDesignAnalysis() {
     }
   }, [stream.phase, stream.error]);
 
-  // ── Derived output (filtered empty strings from design-id guard + capped) ──
+  // â”€â”€ Derived output (filtered empty strings from design-id guard + capped) â”€â”€
   const outputLines = useMemo(() => {
     const filtered = stream.lines.filter(Boolean);
     return filtered.length > MAX_OUTPUT_LINES ? filtered.slice(-MAX_OUTPUT_LINES) : filtered;
   }, [stream.lines]);
 
-  // ── Start methods ─────────────────────────────────────────────────
+  // â”€â”€ Start methods â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const startAnalysis = useCallback(async (
     personaId: string,
@@ -170,7 +154,7 @@ export function useDesignAnalysis() {
 
     setDesignPhase('refining');
     setQuestion(null);
-    // Note: designResult is NOT cleared — preserved for fallback on failure.
+    // Note: designResult is NOT cleared â€” preserved for fallback on failure.
 
     await stream.start(() =>
       refineDesign(
@@ -197,7 +181,7 @@ export function useDesignAnalysis() {
     setQuestion(null);
   }, [stream.cancel]);
 
-  // ── Apply result ──────────────────────────────────────────────────
+  // â”€â”€ Apply result â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const applyResultCb = useCallback(async (selections?: ApplyDesignSelections) => {
     if (!personaIdRef.current || !designResult || applyingRef.current) return;

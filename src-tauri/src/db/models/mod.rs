@@ -26,11 +26,8 @@ mod team_memory;
 mod db_schema;
 mod recipe;
 mod automation;
-<<<<<<< HEAD
 mod template_feedback;
 mod credential_recipe;
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 pub use persona::*;
 pub use tool::*;
@@ -60,8 +57,5 @@ pub use team_memory::*;
 pub use db_schema::*;
 pub use recipe::*;
 pub use automation::*;
-<<<<<<< HEAD
 pub use template_feedback::*;
 pub use credential_recipe::*;
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989

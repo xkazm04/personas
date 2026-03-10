@@ -1,13 +1,8 @@
-<<<<<<< HEAD
+import { memo } from 'react';
 import { ToggleLeft, ToggleRight, ChevronDown, ShieldAlert } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { DbPersonaTrigger } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
-=======
-import { ToggleLeft, ToggleRight, ChevronDown } from 'lucide-react';
-import { motion } from 'framer-motion';
-import type { DbPersonaTrigger } from '@/lib/types/types';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { TriggerStatusSummary } from './TriggerStatusSummary';
 
 interface TriggerRowProps {
@@ -18,12 +13,9 @@ interface TriggerRowProps {
 }
 
 /** Collapsed trigger row: always visible, shows type + config summary + toggle + expand. */
-export function TriggerRow({ trigger, expanded, onToggleExpand, onToggleEnabled }: TriggerRowProps) {
-<<<<<<< HEAD
+export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggleExpand, onToggleEnabled }: TriggerRowProps) {
   const budgetStatus = usePersonaStore((s) => s.getBudgetStatus(trigger.persona_id));
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -38,16 +30,13 @@ export function TriggerRow({ trigger, expanded, onToggleExpand, onToggleEnabled 
         <TriggerStatusSummary trigger={trigger} />
 
         <span className="ml-auto flex items-center gap-2">
-<<<<<<< HEAD
           {/* Budget-paused badge */}
           {budgetStatus === 'exceeded' && trigger.enabled && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-red-500/20 bg-red-500/10 text-red-400/80" title="Monthly budget exceeded — trigger paused">
+            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-red-500/20 bg-red-500/10 text-red-400/80" title="Monthly budget exceeded â€” trigger paused">
               <ShieldAlert className="w-3 h-3" />
               Budget
             </span>
           )}
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           {/* Enabled toggle (stop propagation so it doesn't toggle expand) */}
           <span
             role="button"
@@ -69,4 +58,4 @@ export function TriggerRow({ trigger, expanded, onToggleExpand, onToggleEnabled 
       </button>
     </motion.div>
   );
-}
+});

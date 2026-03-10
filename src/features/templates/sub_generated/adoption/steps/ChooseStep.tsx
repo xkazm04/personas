@@ -4,22 +4,16 @@ import {
   Zap,
   Link,
   Info,
-<<<<<<< HEAD
   Boxes,
 } from 'lucide-react';
 import { SelectionCheckbox } from '../review/SelectionCheckbox';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
 import { getRoleForConnector } from '@/lib/credentials/connectorRoles';
-=======
-} from 'lucide-react';
-import { SelectionCheckbox } from '../review/SelectionCheckbox';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { useAdoptionWizard } from '../AdoptionWizardContext';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { UseCaseRow } from './UseCaseRow';
 
-// ── Dependency derivation helper ─────────────────────────────────────
+// â”€â”€ Dependency derivation helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function deriveRequirementsFromFlows(
   flows: UseCaseFlow[],
@@ -43,9 +37,9 @@ export function deriveRequirementsFromFlows(
   return { connectorNames, toolNames };
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-/** Build a map from connector name → set of flow IDs that use it */
+/** Build a map from connector name â†’ set of flow IDs that use it */
 function buildConnectorFlowIndex(flows: UseCaseFlow[]): Map<string, Set<string>> {
   const index = new Map<string, Set<string>>();
   for (const flow of flows) {
@@ -63,7 +57,7 @@ function buildConnectorFlowIndex(flows: UseCaseFlow[]): Map<string, Set<string>>
   return index;
 }
 
-// ── Component ────────────────────────────────────────────────────────
+// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function ChooseStep() {
   const { state, wizard, useCaseFlows, designResult: rawDesignResult } = useAdoptionWizard();
@@ -80,7 +74,7 @@ export function ChooseStep() {
   const onToggleConnector = wizard.toggleConnector;
   const hasFlows = useCaseFlows.length > 0;
 
-  // Build connector → flow ID index for dependency highlighting
+  // Build connector â†’ flow ID index for dependency highlighting
   const connectorFlowIndex = useMemo(
     () => buildConnectorFlowIndex(useCaseFlows),
     [useCaseFlows],
@@ -99,7 +93,7 @@ export function ChooseStep() {
 
   const allSelected = hasFlows && selectedUseCaseIds.size === useCaseFlows.length;
 
-  // Batch toggle — atomic set/clear instead of per-item loop
+  // Batch toggle â€” atomic set/clear instead of per-item loop
   const handleToggleAll = useCallback(() => {
     if (allSelected) {
       wizard.clearAllUseCases();
@@ -108,9 +102,8 @@ export function ChooseStep() {
     }
   }, [allSelected, wizard, useCaseFlows]);
 
-  // ── Flows-based layout ───────────────────────────────────────────
+  // â”€â”€ Flows-based layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-<<<<<<< HEAD
   // Derive architectural components from connectors
   const components = useMemo(() => {
     const roles = new Map<string, { label: string; connectors: string[] }>();
@@ -141,11 +134,6 @@ export function ChooseStep() {
           )}
         </div>
 
-=======
-  if (hasFlows) {
-    return (
-      <div className="flex flex-col gap-3">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         {/* Step header with context */}
         <div>
           <div className="flex items-center justify-between">
@@ -182,8 +170,7 @@ export function ChooseStep() {
 
         {/* Impact preview */}
         <div className="flex flex-col gap-2 py-2.5 border-t border-primary/10">
-<<<<<<< HEAD
-          {/* Components row — architectural role groups */}
+          {/* Components row â€” architectural role groups */}
           {components.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm text-muted-foreground/50 w-20 flex-shrink-0 flex items-center gap-1">
@@ -206,12 +193,6 @@ export function ChooseStep() {
           {summary.connectorNames.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm text-muted-foreground/50 w-20 flex-shrink-0">Examples</span>
-=======
-          {/* Connector row */}
-          {summary.connectorNames.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-muted-foreground/50 w-20 flex-shrink-0">Connectors</span>
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
               <div className="flex items-center gap-1.5 flex-wrap">
                 {summary.connectorNames.map((name) => {
                   const meta = getConnectorMeta(name);
@@ -248,18 +229,14 @@ export function ChooseStep() {
           )}
           {/* Empty state */}
           {summary.selected === 0 && (
-<<<<<<< HEAD
-            <p className="text-sm text-muted-foreground/60 italic">No use cases selected — select at least one to continue</p>
-=======
-            <p className="text-sm text-muted-foreground/60 italic">No use cases selected</p>
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
+            <p className="text-sm text-muted-foreground/60 italic">No use cases selected â€” select at least one to continue</p>
           )}
         </div>
       </div>
     );
   }
 
-  // ── Fallback: flat entity checklists ─────────────────────────────
+  // â”€â”€ Fallback: flat entity checklists â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const tools = designResult.suggested_tools ?? [];
   const triggers = designResult.suggested_triggers ?? [];
@@ -271,7 +248,7 @@ export function ChooseStep() {
       <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
         <Info className="w-8 h-8 text-muted-foreground/25" />
         <p className="text-sm text-muted-foreground/60">
-          This template has no configurable components — proceed to Connect.
+          This template has no configurable components â€” proceed to Connect.
         </p>
       </div>
     );

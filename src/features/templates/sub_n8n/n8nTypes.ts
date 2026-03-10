@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import type { N8nPersonaDraft, N8nToolDraft, N8nTriggerDraft, N8nConnectorRef } from '@/api/n8nTransform';
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import type { N8nPersonaDraft } from '@/api/n8nTransform';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { WorkflowPlatform } from '@/lib/personas/workflowDetector';
 import {
   toEditableStructuredPrompt,
@@ -24,8 +19,7 @@ export const asNullableString = (value: unknown): string | null => {
 export const asNullableNumber = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 
-<<<<<<< HEAD
-// ── Array element validators ────────────────────────────────────────
+// â”€â”€ Array element validators â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function isValidTool(item: unknown): item is N8nToolDraft {
   if (!item || typeof item !== 'object') return false;
@@ -63,8 +57,6 @@ function filterValidConnectors(value: unknown): N8nConnectorRef[] | undefined {
   return valid.length > 0 ? valid : undefined;
 }
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 export function normalizeDraftFromUnknown(value: unknown): N8nPersonaDraft | null {
   if (!value || typeof value !== 'object') return null;
   const record = value as Record<string, unknown>;
@@ -92,17 +84,10 @@ export function normalizeDraftFromUnknown(value: unknown): N8nPersonaDraft | nul
         ? record.max_turns
         : null,
     design_context: asNullableString(record.design_context),
-<<<<<<< HEAD
-    // Pass through entity fields — validate element shapes to reject corrupt data
+    // Pass through entity fields â€” validate element shapes to reject corrupt data
     tools: filterValidTools(record.tools),
     triggers: filterValidTriggers(record.triggers),
     required_connectors: filterValidConnectors(record.required_connectors),
-=======
-    // Pass through entity fields from Rust N8nPersonaOutput
-    tools: Array.isArray(record.tools) ? record.tools as N8nPersonaDraft['tools'] : undefined,
-    triggers: Array.isArray(record.triggers) ? record.triggers as N8nPersonaDraft['triggers'] : undefined,
-    required_connectors: Array.isArray(record.required_connectors) ? record.required_connectors as N8nPersonaDraft['required_connectors'] : undefined,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   };
 }
 
@@ -126,11 +111,7 @@ export type PersistedTransformContext = {
   transformId: string;
   workflowName: string;
   rawWorkflowJson: string;
-<<<<<<< HEAD
   parsedResult: AgentIR;
-=======
-  parsedResult: DesignAnalysisResult;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   /** Detected source platform */
   platform?: WorkflowPlatform;
   /** Timestamp when context was persisted (ms since epoch) */

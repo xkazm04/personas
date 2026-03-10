@@ -4,21 +4,13 @@ import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import { deriveArchCategories, userHasCategoryCredential } from './architecturalCategories';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-<<<<<<< HEAD
 import type { AgentIR, ConnectorReadinessStatus, ProtocolCapability } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult, ConnectorReadinessStatus, ProtocolCapability } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { LucideIcon } from 'lucide-react';
 
 interface ExpandedRowContentProps {
   review: PersonaDesignReview;
-<<<<<<< HEAD
   designResult: AgentIR | null;
-=======
-  designResult: DesignAnalysisResult | null;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   allConnectorsReady: boolean;
   readinessStatuses: ConnectorReadinessStatus[];
   credentialServiceTypes: Set<string>;
@@ -35,7 +27,7 @@ interface SectionDef {
   items: string[];
 }
 
-// ── Main Component ──────────────────────────────────────────────
+// â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function ExpandedRowContent({
   review,
@@ -155,7 +147,7 @@ export function ExpandedRowContent({
           );
         })}
 
-        {/* Action buttons — right-aligned */}
+        {/* Action buttons â€” right-aligned */}
         <div className="ml-auto flex items-center gap-2">
           {allConnectorsReady && (
             <button
@@ -179,11 +171,7 @@ export function ExpandedRowContent({
       {/* Tab content */}
       {activeSection && activeSection.items.length > 0 && (
         <div className="pt-1 pb-1">
-<<<<<<< HEAD
           <ul className="grid gap-x-6 gap-y-1" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
-=======
-          <ul className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             {activeSection.items.map((item, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-foreground/70">
                 <span

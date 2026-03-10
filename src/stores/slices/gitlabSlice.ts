@@ -11,23 +11,17 @@ import {
   gitlabListAgents,
   gitlabUndeployAgent,
   gitlabRevokeCredentials,
-<<<<<<< HEAD
   gitlabTriggerPipeline,
   gitlabGetPipeline,
   gitlabListPipelines,
   gitlabListPipelineJobs,
   gitlabGetJobLog,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   type GitLabConfig,
   type GitLabProject,
   type GitLabAgent,
   type GitLabDeployResult,
-<<<<<<< HEAD
   type GitLabPipeline,
   type GitLabJob,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 } from "@/api/gitlab";
 
 export interface GitLabSlice {
@@ -39,7 +33,6 @@ export interface GitLabSlice {
   gitlabError: string | null;
   gitlabSelectedProjectId: number | null;
 
-<<<<<<< HEAD
   // Pipeline state
   gitlabPipelines: GitLabPipeline[];
   gitlabActivePipeline: GitLabPipeline | null;
@@ -48,8 +41,6 @@ export interface GitLabSlice {
   gitlabPipelineLoading: boolean;
   gitlabTriggeringPipeline: boolean;
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   // Actions
   gitlabInitialize: () => Promise<void>;
   gitlabConnectAction: (token: string) => Promise<void>;
@@ -67,7 +58,6 @@ export interface GitLabSlice {
   gitlabFetchAgents: (projectId: number) => Promise<void>;
   gitlabUndeployAgent: (projectId: number, agentId: string) => Promise<void>;
   gitlabClearError: () => void;
-<<<<<<< HEAD
 
   // Pipeline actions
   gitlabFetchPipelines: (projectId: number) => Promise<void>;
@@ -76,8 +66,6 @@ export interface GitLabSlice {
   gitlabRefreshPipeline: (projectId: number, pipelineId: number) => Promise<void>;
   gitlabFetchJobLog: (projectId: number, jobId: number) => Promise<void>;
   gitlabClearPipelineState: () => void;
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> = (set) => ({
@@ -87,22 +75,19 @@ export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> 
   gitlabAgents: [],
   gitlabError: null,
   gitlabSelectedProjectId: null,
-<<<<<<< HEAD
   gitlabPipelines: [],
   gitlabActivePipeline: null,
   gitlabPipelineJobs: [],
   gitlabJobLog: null,
   gitlabPipelineLoading: false,
   gitlabTriggeringPipeline: false,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   gitlabInitialize: async () => {
     try {
       const config = await gitlabGetConfig();
       set({ gitlabConfig: config });
     } catch {
-      // intentional: non-critical — no config stored yet is expected on first launch
+      // intentional: non-critical â€” no config stored yet is expected on first launch
     }
   },
 
@@ -198,9 +183,8 @@ export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> 
   gitlabClearError: () => {
     set({ gitlabError: null });
   },
-<<<<<<< HEAD
 
-  // ── Pipeline actions ──────────────────────────────────────────────────
+  // â”€â”€ Pipeline actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   gitlabFetchPipelines: async (projectId: number) => {
     set({ gitlabPipelineLoading: true });
@@ -277,6 +261,4 @@ export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> 
       gitlabJobLog: null,
     });
   },
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 });

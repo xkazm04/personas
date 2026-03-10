@@ -4,31 +4,22 @@ import { useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, LayoutGrid, FolderPlus, X, Check } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-<<<<<<< HEAD
 import { SidebarPersonaCard } from '@/features/agents/components/sub_sidebar/components/DraggablePersonaCard';
 import { DroppableGroup } from '@/features/agents/components/sub_sidebar/components/DroppableGroup';
 import { UngroupedZone } from '@/features/agents/components/sub_sidebar/components/UngroupedZone';
 import { PersonaContextMenu, type ContextMenuState } from '@/features/agents/components/sub_sidebar/components/PersonaContextMenu';
 import { SearchFilterBar } from '@/features/agents/components/sub_sidebar/components/SearchFilterBar';
 import { usePersonaFilters } from '@/features/agents/components/sub_sidebar/libs/usePersonaFilters';
-=======
-import { SidebarPersonaCard } from '@/features/agents/components/sub_sidebar/DraggablePersonaCard';
-import { DroppableGroup } from '@/features/agents/components/sub_sidebar/DroppableGroup';
-import { UngroupedZone } from '@/features/agents/components/sub_sidebar/UngroupedZone';
-import { PersonaContextMenu, type ContextMenuState } from '@/features/agents/components/sub_sidebar/PersonaContextMenu';
-import { SearchFilterBar } from '@/features/agents/components/sub_sidebar/SearchFilterBar';
-import { usePersonaFilters } from '@/features/agents/components/sub_sidebar/usePersonaFilters';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { buildSidebarTree, type DragPayload, type DropPayload } from '@/lib/types/frontendTypes';
 import type { DbPersona } from '@/lib/types/types';
 
-// ── Color palette for groups ──────────────────────────────────────
+// â”€â”€ Color palette for groups â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const GROUP_COLORS = [
   '#6B7280', '#3B82F6', '#8B5CF6', '#EC4899', '#EF4444',
   '#F59E0B', '#10B981', '#06B6D4', '#6366F1', '#F97316',
 ];
 
-// ── Drag payload helpers ─────────────────────────────────────────
+// â”€â”€ Drag payload helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function getDragPayload(event: { active: { data: { current?: Record<string, unknown> } } }): DragPayload | null {
   return (event.active.data.current as DragPayload) ?? null;
@@ -52,7 +43,7 @@ function resolveDropGroupId(drop: DropPayload, personas: DbPersona[]): string | 
   }
 }
 
-// ── Main GroupedAgentSidebar ─────────────────────────────────────
+// â”€â”€ Main GroupedAgentSidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 interface GroupedAgentSidebarProps {
   onCreatePersona: () => void;
 }
@@ -150,7 +141,7 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
     const drop = getDropPayload(event);
     if (!drag || !drop) return;
 
-    // ── Group reordering ──
+    // â”€â”€ Group reordering â”€â”€
     if (drag.type === 'group-reorder') {
       const draggedGroupId = drag.groupId;
       const targetGroupId = (drop.type === 'group' || drop.type === 'group-reorder')
@@ -170,7 +161,7 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
       return;
     }
 
-    // ── Persona reordering ──
+    // â”€â”€ Persona reordering â”€â”€
     const personaId = drag.personaId;
     const targetGroupId = resolveDropGroupId(drop, personas);
 
@@ -283,7 +274,7 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        {/* Groups — iterate filtered tree nodes */}
+        {/* Groups â€” iterate filtered tree nodes */}
         {visibleGroupNodes.map((node) => {
           if (node.kind !== 'group') return null;
           return (

@@ -4,13 +4,10 @@ use ts_rs::TS;
 /// A single knowledge entry extracted from execution history.
 /// Accumulates structured intelligence about tool sequences, failure patterns,
 /// cost-quality tradeoffs, data flows, and model performance.
-<<<<<<< HEAD
 ///
 /// Extended with annotation support: agents and users can annotate knowledge
 /// with scoping (persona, tool, connector, global) to enable cross-persona
 /// knowledge sharing.
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct ExecutionKnowledge {
@@ -30,7 +27,6 @@ pub struct ExecutionKnowledge {
     pub last_execution_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
-<<<<<<< HEAD
     /// Scope type for knowledge sharing: "persona", "tool", "connector", "global"
     pub scope_type: String,
     /// The scoped entity ID (tool name, connector service_type, etc.)
@@ -41,8 +37,6 @@ pub struct ExecutionKnowledge {
     pub annotation_source: Option<String>,
     /// Whether a user has verified the annotation's accuracy
     pub is_verified: bool,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 /// Dashboard summary of the knowledge graph for a persona or globally.
@@ -57,11 +51,8 @@ pub struct KnowledgeGraphSummary {
     pub failure_pattern_count: i64,
     #[ts(type = "number")]
     pub model_performance_count: i64,
-<<<<<<< HEAD
     #[ts(type = "number")]
     pub annotation_count: i64,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     pub top_patterns: Vec<ExecutionKnowledge>,
     pub recent_learnings: Vec<ExecutionKnowledge>,
 }

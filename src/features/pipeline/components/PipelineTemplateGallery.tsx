@@ -1,11 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, ChevronRight, LayoutTemplate } from 'lucide-react';
-<<<<<<< HEAD
-import { ROLE_COLORS } from '../sub_canvas';
-=======
 import { ROLE_COLORS } from '../sub_canvas/teamConstants';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 // ============================================================================
 // Template Definitions
@@ -344,11 +340,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
         <h2 className="text-sm font-semibold text-foreground/80 uppercase tracking-wider">Starter Templates</h2>
       </div>
 
-<<<<<<< HEAD
-      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-=======
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         {PIPELINE_TEMPLATES.map((tpl, i) => {
           const isHovered = hoveredId === tpl.id;
           const isExpanded = expandedId === tpl.id;

@@ -34,7 +34,7 @@ export function onMobilePreviewChange(fn: () => void) {
 
 export function toggleMobilePreview(): boolean {
   _devMobileOverride = !_devMobileOverride;
-  try { localStorage.setItem('dev-mobile-preview', _devMobileOverride ? '1' : '0'); } catch {}
+  try { localStorage.setItem('dev-mobile-preview', _devMobileOverride ? '1' : '0'); } catch { /* intentional no-op */ }
   _listeners.forEach((fn) => fn());
   return _devMobileOverride;
 }
@@ -64,17 +64,16 @@ export const IS_IOS: boolean = import.meta.env.VITE_PLATFORM === 'ios';
 // When the toggle fires in dev mode, update the module-level exports.
 if (import.meta.env.DEV) {
   onMobilePreviewChange(() => {
-    // @ts-expect-error — reassigning exported let is intentional for dev toggle
     IS_MOBILE = BUILD_MOBILE || _devMobileOverride;
-    // @ts-expect-error
     IS_DESKTOP = !IS_MOBILE;
   });
 }
 
 /** Sidebar sections available on mobile. */
-export const MOBILE_SECTIONS = new Set([
+export const MOBILE_SECTIONS = new Set<string>([
+  'home',
   'overview',
   'personas',
   'design-reviews',
   'credentials',
-] as const);
+]);

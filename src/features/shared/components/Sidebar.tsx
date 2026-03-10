@@ -1,13 +1,7 @@
-<<<<<<< HEAD
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useMemo, useState, useCallback, useRef, type ReactNode } from 'react';
 import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, Sparkles, HardDriveDownload, Shield, CalendarClock, PanelLeftClose, PanelLeft, type LucideIcon } from 'lucide-react';
 import { SidebarIconStyles, SIDEBAR_ICONS } from './SidebarIcons';
-=======
-import { motion } from 'framer-motion';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, Sparkles, HardDriveDownload, Shield, type LucideIcon } from 'lucide-react';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -17,10 +11,7 @@ import TeamDragPanel from '@/features/pipeline/components/TeamDragPanel';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 import OnboardingProgressBar from '@/features/onboarding/components/OnboardingProgressBar';
-<<<<<<< HEAD
 import { IS_MOBILE, MOBILE_SECTIONS } from '@/lib/utils/platform';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string; devOnly?: boolean }> = [
   { id: 'home', icon: Home, label: 'Home' },
@@ -35,7 +26,7 @@ const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string; dev
 ];
 
 // ---------------------------------------------------------------------------
-// SidebarSubNav — data-driven sub-navigation
+// SidebarSubNav â€” data-driven sub-navigation
 // ---------------------------------------------------------------------------
 
 interface SubNavItem {
@@ -124,7 +115,6 @@ function SidebarSubNav({
 // ---------------------------------------------------------------------------
 
 export default function Sidebar() {
-<<<<<<< HEAD
   const [collapsed, setCollapsed] = useState(() => {
     if (IS_MOBILE) return true;
     try { return localStorage.getItem('sidebar-collapsed') === '1'; } catch { return false; }
@@ -132,7 +122,7 @@ export default function Sidebar() {
   const toggleCollapsed = useCallback(() => {
     setCollapsed((prev) => {
       const next = !prev;
-      try { localStorage.setItem('sidebar-collapsed', next ? '1' : '0'); } catch {}
+      try { localStorage.setItem('sidebar-collapsed', next ? '1' : '0'); } catch { /* intentional no-op */ }
       return next;
     });
   }, []);
@@ -140,8 +130,6 @@ export default function Sidebar() {
   // Mobile: level-2 drawer opens as overlay when tapping an icon
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const sidebarSection = usePersonaStore((s) => s.sidebarSection);
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
   const { currentKey: credentialView, navigate } = useCredentialNav();
@@ -174,7 +162,6 @@ export default function Sidebar() {
 
   const isDev = import.meta.env.DEV;
 
-<<<<<<< HEAD
   // Persist scroll position per section
   const scrollPositions = useRef(new Map<string, number>());
   const level2ScrollRef = useRef<HTMLDivElement>(null);
@@ -196,8 +183,6 @@ export default function Sidebar() {
     }
   }, [sidebarSection]);
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const disabledSections = useMemo(() => {
     const disabled = new Set<SidebarSection>();
@@ -229,16 +214,12 @@ export default function Sidebar() {
   const setIsCreatingPersona = usePersonaStore((s) => s.setIsCreatingPersona);
   const [appVersion, setAppVersion] = useState('');
 
-<<<<<<< HEAD
   const fetchBudgetSpend = usePersonaStore((s) => s.fetchBudgetSpend);
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   useEffect(() => {
     fetchPendingReviewCount();
     fetchUnreadMessageCount();
     fetchRecentEvents();
-<<<<<<< HEAD
     fetchBudgetSpend();
     getVersion().then(setAppVersion).catch(() => {});
 
@@ -249,16 +230,6 @@ export default function Sidebar() {
     }, 30_000);
     return () => clearInterval(interval);
   }, [fetchPendingReviewCount, fetchUnreadMessageCount, fetchRecentEvents, fetchBudgetSpend]);
-=======
-    getVersion().then(setAppVersion).catch(() => {});
-
-    // Poll for pending reviews periodically so users discover them promptly
-    const interval = setInterval(() => {
-      fetchPendingReviewCount();
-    }, 30_000);
-    return () => clearInterval(interval);
-  }, [fetchPendingReviewCount, fetchUnreadMessageCount, fetchRecentEvents]);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   const handleCreatePersona = () => {
     selectPersona(null);
@@ -280,10 +251,7 @@ export default function Sidebar() {
     { id: 'knowledge', icon: Brain, label: 'Knowledge' },
     { id: 'sla', icon: Shield, label: 'SLA' },
     { id: 'cron-agents', icon: Cpu, label: 'Cron Agents' },
-<<<<<<< HEAD
     { id: 'schedules', icon: CalendarClock, label: 'Schedules' },
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   ];
 
   // Badge maps (only computed for sections that use them)
@@ -335,7 +303,6 @@ export default function Sidebar() {
     switch (sidebarSection) {
       case 'home':
         return (
-<<<<<<< HEAD
           <>
             <SidebarSubNav
               items={homeItems}
@@ -352,14 +319,6 @@ export default function Sidebar() {
               />
             </div>
           </>
-=======
-          <SidebarSubNav
-            items={homeItems}
-            activeId={homeTab}
-            onSelect={(id) => setHomeTab(id as HomeTab)}
-            variant="overview"
-          />
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         );
 
       case 'overview':
@@ -466,7 +425,6 @@ export default function Sidebar() {
   return (
     <div className="flex h-full">
 
-<<<<<<< HEAD
       {/* Level 1: Custom animated section icons */}
       <SidebarIconStyles />
       <div className={`${collapsed ? 'w-[52px]' : 'w-[88px]'} bg-secondary/40 border-r border-primary/15 flex flex-col items-center py-3 gap-1 transition-all duration-200`}>
@@ -475,14 +433,6 @@ export default function Sidebar() {
           .map((section) => {
           const CustomIcon = SIDEBAR_ICONS[section.id];
           const FallbackIcon = section.icon;
-=======
-      {/* Level 1: Section icons */}
-      <div className="w-[60px] bg-secondary/40 border-r border-primary/15 flex flex-col items-center py-4 gap-1.5">
-        {sections
-          .filter((s) => !s.devOnly || isDev)
-          .map((section) => {
-          const Icon = section.icon;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           const isActive = sidebarSection === section.id;
           const isDisabled = disabledSections.has(section.id);
           const isDevSection = section.devOnly;
@@ -490,7 +440,6 @@ export default function Sidebar() {
           return (
             <button
               key={section.id}
-<<<<<<< HEAD
               onClick={() => {
                 if (isDisabled) return;
                 if (IS_MOBILE) {
@@ -506,11 +455,6 @@ export default function Sidebar() {
               }}
               disabled={isDisabled}
               className={`relative ${collapsed ? 'w-[40px]' : 'w-[76px]'} rounded-xl flex flex-col items-center justify-center py-2 transition-all group ${
-=======
-              onClick={() => !isDisabled && setSidebarSection(section.id)}
-              disabled={isDisabled}
-              className={`relative w-11 h-11 rounded-xl flex items-center justify-center transition-all group ${
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                 isDisabled ? 'cursor-not-allowed opacity-40' : ''
               } ${isDevSection ? 'ring-1 ring-amber-500/40' : ''}`}
               title={isDisabled ? `${section.label} (${section.id === 'cloud' ? 'Sign in to unlock cloud features' : 'Coming soon'})` : section.label}
@@ -522,7 +466,6 @@ export default function Sidebar() {
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
-<<<<<<< HEAD
               <div className={`relative z-10 ${collapsed ? 'w-6 h-6' : 'w-9 h-9'} transition-all ${
                 isDisabled
                   ? 'text-muted-foreground/50'
@@ -540,43 +483,24 @@ export default function Sidebar() {
                   {section.label}
                 </span>
               )}
-=======
-              <Icon className={`relative z-10 w-5 h-5 transition-colors ${
-                isDisabled
-                  ? 'text-muted-foreground/80'
-                  : isActive ? 'text-primary' : 'text-muted-foreground/90 group-hover:text-foreground/95'
-              }`} />
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
               {isDisabled && section.id !== 'cloud' && (
                 <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px text-sm font-semibold uppercase tracking-wider leading-none rounded bg-muted-foreground/15 text-muted-foreground/80 whitespace-nowrap">
                   soon
                 </span>
               )}
               {section.id === 'overview' && pendingReviewCount > 0 && (
-<<<<<<< HEAD
                 <span className="absolute top-0.5 right-0.5 z-20 min-w-[16px] h-4 px-1 flex items-center justify-center text-sm font-bold leading-none rounded-full bg-amber-500 text-white shadow-sm shadow-amber-500/30">
-=======
-                <span className="absolute -top-0.5 -right-0.5 z-20 min-w-[16px] h-4 px-1 flex items-center justify-center text-sm font-bold leading-none rounded-full bg-amber-500 text-white shadow-sm shadow-amber-500/30">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                   {pendingReviewCount > 99 ? '99+' : pendingReviewCount}
                 </span>
               )}
               {section.id === 'design-reviews' && (n8nTransformActive || templateAdoptActive || rebuildActive || templateTestActive) && (
-<<<<<<< HEAD
                 <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
-=======
-                <span className="absolute -top-0.5 -right-0.5 z-20 w-4 h-4 flex items-center justify-center">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                   <span className="absolute inset-0 rounded-full bg-amber-500/40 animate-ping" />
                   <span className="relative w-2.5 h-2.5 rounded-full bg-amber-500 border border-amber-600/50" />
                 </span>
               )}
               {section.id === 'personas' && (isLabRunning || connectorTestActive) && (
-<<<<<<< HEAD
                 <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
-=======
-                <span className="absolute -top-0.5 -right-0.5 z-20 w-4 h-4 flex items-center justify-center">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                   <span className="absolute inset-0 rounded-full bg-cyan-500/40 animate-ping" />
                   <span className="relative w-2.5 h-2.5 rounded-full bg-cyan-500 border border-cyan-600/50" />
                 </span>
@@ -585,7 +509,6 @@ export default function Sidebar() {
           );
         })}
 
-<<<<<<< HEAD
         {!IS_MOBILE && (
           <button
             onClick={toggleCollapsed}
@@ -599,11 +522,6 @@ export default function Sidebar() {
         <div className="flex-1" />
         {!collapsed && appVersion && (
           <div className="pb-1 pt-1">
-=======
-        <div className="flex-1" />
-        {appVersion && (
-          <div className="pb-2 pt-1">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             <span className="text-sm font-mono text-muted-foreground/80 block text-center">
               v{appVersion}
             </span>
@@ -618,8 +536,7 @@ export default function Sidebar() {
         {pendingEventCount > 0 && ` ${pendingEventCount} pending event${pendingEventCount !== 1 ? 's' : ''}.`}
       </div>
 
-<<<<<<< HEAD
-      {/* Level 2: Item list — fixed panel on desktop, overlay drawer on mobile */}
+      {/* Level 2: Item list â€” fixed panel on desktop, overlay drawer on mobile */}
       {(IS_MOBILE ? mobileDrawerOpen : !collapsed) && (
         <>
           {IS_MOBILE && (
@@ -655,20 +572,6 @@ export default function Sidebar() {
           </div>
         </>
       )}
-=======
-      {/* Level 2: Item list */}
-      <div className="w-[240px] bg-secondary/30 border-r border-primary/15 flex flex-col overflow-hidden">
-        <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
-          <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-            {sections.find((s) => s.id === sidebarSection)?.label || 'Overview'}
-          </h2>
-        </div>
-        <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent">
-          {renderLevel2()}
-        </div>
-        <OnboardingProgressBar />
-      </div>
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     </div>
   );
 }

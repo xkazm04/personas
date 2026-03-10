@@ -53,7 +53,6 @@ export const gitlabListAgents = (projectId: number) =>
 
 export const gitlabUndeployAgent = (projectId: number, agentId: string) =>
   invoke<void>("gitlab_undeploy_agent", { projectId, agentId });
-<<<<<<< HEAD
 
 // Pipelines
 
@@ -98,5 +97,3 @@ export const gitlabListPipelineJobs = (projectId: number, pipelineId: number) =>
 
 export const gitlabGetJobLog = (projectId: number, jobId: number) =>
   invoke<string>("gitlab_get_job_log", { projectId, jobId });
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989

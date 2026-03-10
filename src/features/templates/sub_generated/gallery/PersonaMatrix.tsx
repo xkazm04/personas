@@ -394,7 +394,6 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         render: () => <EmptySlot />,
       },
     ];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [designResult, flows, isEditMode,
     // Edit-mode deps: re-derive cells when edit state changes
     ...(isEditMode ? [

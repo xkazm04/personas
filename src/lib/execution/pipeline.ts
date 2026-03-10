@@ -8,7 +8,6 @@
  * Each stage is a typed transform from one payload shape to the next.
  * This module serves as both documentation and runtime schema for
  * pipeline-level concerns (tracing, middleware, error propagation).
-<<<<<<< HEAD
  *
  * ## Unified Trace Model
  *
@@ -23,11 +22,6 @@
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { SpanType } from '@/lib/bindings/SpanType';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
-=======
- */
-
-import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 // =============================================================================
 // Stage definitions
@@ -94,11 +88,7 @@ export const STAGE_META: Record<
     label: 'Frontend Complete',
     boundary: 'Events -> Store',
     description:
-<<<<<<< HEAD
       'usePersonaExecution receives terminal status event, passes typed statusData to finishExecution to clear isExecuting and refresh history.',
-=======
-      'usePersonaExecution receives terminal status event, appends [SUMMARY] line, calls finishExecution to clear isExecuting and refresh history.',
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   },
 };
 
@@ -171,7 +161,6 @@ export interface StagePayloadMap {
 }
 
 // =============================================================================
-<<<<<<< HEAD
 // Unified trace model
 // =============================================================================
 
@@ -223,30 +212,10 @@ export interface UnifiedTrace {
   /** Absolute timestamp (ms since epoch) when the trace started. */
   startedAt: number;
   /** Absolute timestamp (ms since epoch) when the trace completed. */
-=======
-// Pipeline tracing
-// =============================================================================
-
-/** A single trace entry for pipeline observability. */
-export interface PipelineTraceEntry {
-  stage: PipelineStage;
-  timestamp: number;
-  durationMs?: number;
-  error?: string;
-  metadata?: Record<string, unknown>;
-}
-
-/** Accumulated trace for one execution's pipeline journey. */
-export interface PipelineTrace {
-  executionId: string;
-  entries: PipelineTraceEntry[];
-  startedAt: number;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   completedAt?: number;
 }
 
 /**
-<<<<<<< HEAD
  * @deprecated Use `UnifiedSpan` instead. Kept as alias for migration.
  */
 export type PipelineTraceEntry = UnifiedSpan;
@@ -267,20 +236,11 @@ export function createPipelineTrace(executionId: string): UnifiedTrace {
   return {
     executionId,
     spans: [],
-=======
- * Create a new pipeline trace for an execution.
- */
-export function createPipelineTrace(executionId: string): PipelineTrace {
-  return {
-    executionId,
-    entries: [],
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     startedAt: Date.now(),
   };
 }
 
 /**
-<<<<<<< HEAD
  * Record a pipeline stage span in the trace.
  * Automatically finalizes the previous stage's end_ms/duration_ms.
  */
@@ -317,33 +277,10 @@ export function traceStage(
   return {
     ...trace,
     spans: [...spans, span],
-=======
- * Record a stage entry in the trace.
- */
-export function traceStage(
-  trace: PipelineTrace,
-  stage: PipelineStage,
-  metadata?: Record<string, unknown>,
-  error?: string,
-): PipelineTrace {
-  const now = Date.now();
-  const prevEntry = trace.entries[trace.entries.length - 1];
-  if (prevEntry && prevEntry.durationMs === undefined) {
-    prevEntry.durationMs = now - prevEntry.timestamp;
-  }
-
-  return {
-    ...trace,
-    entries: [
-      ...trace.entries,
-      { stage, timestamp: now, metadata, error },
-    ],
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   };
 }
 
 /**
-<<<<<<< HEAD
  * Mark the trace as complete. Finalizes any open spans.
  */
 export function completeTrace(trace: UnifiedTrace): UnifiedTrace {
@@ -401,18 +338,6 @@ export function mergeBackendSpans(
     ...trace,
     spans: [...trace.spans, ...newSpans],
   };
-=======
- * Mark the trace as complete.
- */
-export function completeTrace(trace: PipelineTrace): PipelineTrace {
-  const now = Date.now();
-  const entries = [...trace.entries];
-  const last = entries[entries.length - 1];
-  if (last && last.durationMs === undefined) {
-    last.durationMs = now - last.timestamp;
-  }
-  return { ...trace, entries, completedAt: now };
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 // =============================================================================
@@ -426,11 +351,7 @@ export function completeTrace(trace: PipelineTrace): PipelineTrace {
 export type PipelineMiddleware<S extends PipelineStage = PipelineStage> = (
   stage: S,
   payload: StagePayloadMap[S],
-<<<<<<< HEAD
   trace: UnifiedTrace,
-=======
-  trace: PipelineTrace,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 ) => StagePayloadMap[S] | Promise<StagePayloadMap[S]>;
 
 /**
@@ -464,11 +385,7 @@ export function removeMiddleware<S extends PipelineStage>(
 export async function runMiddleware<S extends PipelineStage>(
   stage: S,
   payload: StagePayloadMap[S],
-<<<<<<< HEAD
   trace: UnifiedTrace,
-=======
-  trace: PipelineTrace,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 ): Promise<StagePayloadMap[S]> {
   const list = middlewareRegistry.get(stage);
   if (!list || list.length === 0) return payload;
@@ -500,7 +417,6 @@ export function stageIndex(stage: PipelineStage): number {
 
 /** Check if an execution has passed a given stage based on its trace. */
 export function hasPassedStage(
-<<<<<<< HEAD
   trace: UnifiedTrace,
   stage: PipelineStage,
 ): boolean {
@@ -525,16 +441,3 @@ export function pipelineSpans(trace: UnifiedTrace): UnifiedSpan[] {
 export function engineSpans(trace: UnifiedTrace): UnifiedSpan[] {
   return trace.spans.filter((s) => !isPipelineStage(s.span_type));
 }
-=======
-  trace: PipelineTrace,
-  stage: PipelineStage,
-): boolean {
-  return trace.entries.some((e) => e.stage === stage);
-}
-
-/** Total pipeline duration from trace (if complete). */
-export function traceDuration(trace: PipelineTrace): number | null {
-  if (!trace.completedAt) return null;
-  return trace.completedAt - trace.startedAt;
-}
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989

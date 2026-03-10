@@ -1,12 +1,5 @@
-<<<<<<< HEAD
 import { useMemo } from 'react';
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import { useState, useMemo, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
-import { useTemplateMotion } from '@/features/templates/animationPresets';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 /** The 9 design dimensions scored in reviews.rs `score_design_result()`. */
 const DIMENSIONS = [
@@ -39,11 +32,7 @@ const DIMENSION_LABELS: Record<DimensionKey, string> = {
  * Evaluate which of the 9 design dimensions are filled, mirroring the Rust
  * `score_design_result()` logic in reviews.rs.
  */
-<<<<<<< HEAD
 export function evaluateDimensions(designResult: AgentIR | null): Record<DimensionKey, boolean> {
-=======
-export function evaluateDimensions(designResult: DesignAnalysisResult | null): Record<DimensionKey, boolean> {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const result: Record<DimensionKey, boolean> = {
     prompt: false,
     tools: false,
@@ -59,7 +48,7 @@ export function evaluateDimensions(designResult: DesignAnalysisResult | null): R
   if (!designResult) return result;
   const raw = designResult as unknown as Record<string, unknown>;
 
-  // 1. Prompt — structured_prompt with identity(>20), instructions(>50), and guidance
+  // 1. Prompt â€” structured_prompt with identity(>20), instructions(>50), and guidance
   const sp = raw.structured_prompt as Record<string, unknown> | undefined;
   if (sp) {
     const identity = typeof sp.identity === 'string' && sp.identity.length > 20;
@@ -79,7 +68,7 @@ export function evaluateDimensions(designResult: DesignAnalysisResult | null): R
     (t: unknown) => typeof t === 'object' && t !== null && 'trigger_type' in (t as Record<string, unknown>),
   );
 
-  // 4. Connectors — need credential_fields + auth_type
+  // 4. Connectors â€” need credential_fields + auth_type
   const connectors = Array.isArray(raw.suggested_connectors) ? raw.suggested_connectors : [];
   result.connectors = connectors.length > 0 && connectors.some((c: unknown) => {
     if (typeof c !== 'object' || c === null) return false;
@@ -89,7 +78,7 @@ export function evaluateDimensions(designResult: DesignAnalysisResult | null): R
     return hasCredFields && hasAuthType;
   });
 
-  // 5. Flows — need start node, end node, ≥5 nodes
+  // 5. Flows â€” need start node, end node, â‰¥5 nodes
   const flows = Array.isArray(raw.use_case_flows) ? raw.use_case_flows : [];
   result.flows = flows.length > 0 && flows.some((flow: unknown) => {
     if (typeof flow !== 'object' || flow === null) return false;
@@ -115,7 +104,7 @@ export function evaluateDimensions(designResult: DesignAnalysisResult | null): R
   return result;
 }
 
-// ── SVG Arc Helpers ──────────────────────────────────────────────────────
+// â”€â”€ SVG Arc Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const SEGMENT_COUNT = 9;
 const GAP_DEG = 4; // gap between segments
@@ -133,73 +122,15 @@ function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: nu
   return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 0 ${end.x} ${end.y}`;
 }
 
-// ── Component ────────────────────────────────────────────────────────────
+// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface DimensionRadialProps {
-<<<<<<< HEAD
   designResult: AgentIR | null;
-=======
-  designResult: DesignAnalysisResult | null;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   size?: number;
   className?: string;
 }
 
-<<<<<<< HEAD
 export function DimensionRadial({ designResult, size = 32, className = '' }: DimensionRadialProps) {
-=======
-type TooltipPlacement = 'top' | 'bottom' | 'left' | 'right';
-
-/** Compute best placement by checking available space on each side. */
-function computePlacement(triggerRect: DOMRect): TooltipPlacement {
-  const spaceAbove = triggerRect.top;
-  const spaceBelow = window.innerHeight - triggerRect.bottom;
-  const spaceLeft = triggerRect.left;
-  const spaceRight = window.innerWidth - triggerRect.right;
-
-  // Prefer top, then bottom, then right, then left
-  const candidates: [TooltipPlacement, number][] = [
-    ['top', spaceAbove],
-    ['bottom', spaceBelow],
-    ['right', spaceRight],
-    ['left', spaceLeft],
-  ];
-
-  // Need at least 80px vertical or 160px horizontal for the tooltip to fit
-  const minVertical = 80;
-  const minHorizontal = 160;
-
-  for (const [dir, space] of candidates) {
-    if ((dir === 'top' || dir === 'bottom') && space >= minVertical) return dir;
-    if ((dir === 'left' || dir === 'right') && space >= minHorizontal) return dir;
-  }
-
-  // Fallback: pick whichever side has the most space
-  candidates.sort((a, b) => b[1] - a[1]);
-  return candidates[0]?.[0] ?? 'top';
-}
-
-/** CSS classes for positioning the tooltip relative to the trigger. */
-function placementClasses(placement: TooltipPlacement): string {
-  switch (placement) {
-    case 'top':
-      return 'bottom-full left-1/2 -translate-x-1/2 mb-2';
-    case 'bottom':
-      return 'top-full left-1/2 -translate-x-1/2 mt-2';
-    case 'left':
-      return 'right-full top-1/2 -translate-y-1/2 mr-2';
-    case 'right':
-      return 'left-full top-1/2 -translate-y-1/2 ml-2';
-  }
-}
-
-export function DimensionRadial({ designResult, size = 32, className = '' }: DimensionRadialProps) {
-  const { motion: MOTION } = useTemplateMotion();
-  const [hovered, setHovered] = useState(false);
-  const [placement, setPlacement] = useState<TooltipPlacement>('top');
-  const triggerRef = useRef<HTMLDivElement>(null);
-
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const dimensions = useMemo(() => evaluateDimensions(designResult), [designResult]);
   const filled = DIMENSIONS.filter((d) => dimensions[d]);
   const missing = DIMENSIONS.filter((d) => !dimensions[d]);
@@ -209,33 +140,14 @@ export function DimensionRadial({ designResult, size = 32, className = '' }: Dim
   const strokeWidth = size * 0.14;
   const r = (size - strokeWidth) / 2 - 1;
 
-<<<<<<< HEAD
   const filledNames = filled.map((d) => DIMENSION_LABELS[d]).join(', ');
   const missingNames = missing.map((d) => DIMENSION_LABELS[d]).join(', ');
-  const titleText = `${filled.length}/${SEGMENT_COUNT} dimensions — ${filledNames}${missing.length > 0 ? ` | Missing: ${missingNames}` : ''}`;
+  const titleText = `${filled.length}/${SEGMENT_COUNT} dimensions â€” ${filledNames}${missing.length > 0 ? ` | Missing: ${missingNames}` : ''}`;
 
   return (
     <div
       className={`relative inline-flex ${className}`}
       title={titleText}
-=======
-  const handleMouseEnter = useCallback(() => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setPlacement(computePlacement(rect));
-    }
-    setHovered(true);
-  }, []);
-
-  const summaryLabel = `Design quality: ${filled.length} of ${SEGMENT_COUNT} dimensions met`;
-
-  return (
-    <div
-      ref={triggerRef}
-      className={`relative inline-flex ${className}`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={() => setHovered(false)}
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       data-testid="dimension-radial"
       data-filled={filled.length}
     >
@@ -244,17 +156,8 @@ export function DimensionRadial({ designResult, size = 32, className = '' }: Dim
         height={size}
         viewBox={`0 0 ${size} ${size}`}
         role="img"
-<<<<<<< HEAD
         aria-label={titleText}
       >
-=======
-        tabIndex={0}
-        aria-label={summaryLabel}
-        onFocus={handleMouseEnter}
-        onBlur={() => setHovered(false)}
-      >
-        <title>{summaryLabel}</title>
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         {DIMENSIONS.map((dim, i) => {
           const startDeg = i * (SEGMENT_DEG + GAP_DEG);
           const endDeg = startDeg + SEGMENT_DEG;
@@ -292,37 +195,6 @@ export function DimensionRadial({ designResult, size = 32, className = '' }: Dim
           </li>
         ))}
       </ul>
-<<<<<<< HEAD
-=======
-
-      {/* Tooltip — collision-aware placement with shared motion preset */}
-      <AnimatePresence>
-        {hovered && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={MOTION.snappy.framer}
-            className={`absolute ${placementClasses(placement)} z-50 px-3 py-2 rounded-xl bg-background border border-primary/20 shadow-xl text-sm whitespace-nowrap`}
-            data-testid="dimension-radial-tooltip"
-          >
-            {filled.length > 0 && (
-              <div className="text-emerald-400 mb-1">
-                {filled.map((d) => DIMENSION_LABELS[d]).join(', ')}
-              </div>
-            )}
-            {missing.length > 0 && (
-              <div className="text-muted-foreground/50">
-                Missing: {missing.map((d) => DIMENSION_LABELS[d]).join(', ')}
-              </div>
-            )}
-            <div className="text-foreground/60 mt-1 font-medium">
-              {filled.length}/{SEGMENT_COUNT} dimensions
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     </div>
   );
 }

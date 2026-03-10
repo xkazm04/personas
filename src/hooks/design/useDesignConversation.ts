@@ -10,11 +10,7 @@ import {
 import type {
   DesignConversation,
   DesignConversationMessage,
-<<<<<<< HEAD
   AgentIR,
-=======
-  DesignAnalysisResult,
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   DesignQuestion,
 } from '@/lib/types/designTypes';
 import { parseConversationMessages } from '@/lib/types/designTypes';
@@ -54,7 +50,7 @@ export function useDesignConversation(personaId: string | null) {
       setConversations(list);
       setActiveConversation(active);
     } catch {
-      // intentional: non-critical — conversation preloading is best-effort
+      // intentional: non-critical â€” conversation preloading is best-effort
     }
   }, [personaId]);
 
@@ -73,7 +69,7 @@ export function useDesignConversation(personaId: string | null) {
       try {
         await updateDesignConversationStatus(current.id, 'abandoned');
       } catch {
-        // non-critical — best-effort abandon before creating new conversation
+        // non-critical â€” best-effort abandon before creating new conversation
       }
     }
 
@@ -106,12 +102,12 @@ export function useDesignConversation(personaId: string | null) {
       });
       return conv;
     } catch {
-      // Creation failed — revert the abandon so the old conversation stays active
+      // Creation failed â€” revert the abandon so the old conversation stays active
       if (current) {
         try {
           await updateDesignConversationStatus(current.id, 'active');
         } catch {
-          // non-critical — best-effort revert
+          // non-critical â€” best-effort revert
         }
       }
       useToastStore.getState().addToast('Failed to start design conversation', 'error');
@@ -152,7 +148,7 @@ export function useDesignConversation(personaId: string | null) {
           prev.map((c) => (c.id === updated.id ? updated : c))
         );
       } catch {
-        // intentional: non-critical — preserve appended message in-memory when persistence fails
+        // intentional: non-critical â€” preserve appended message in-memory when persistence fails
         const fallback: DesignConversation = {
           ...conv,
           messages: JSON.stringify(messages),
@@ -198,11 +194,7 @@ export function useDesignConversation(personaId: string | null) {
   }, [enqueueAppend]);
 
   /** Record an AI result in the conversation. */
-<<<<<<< HEAD
   const addResultMessage = useCallback((result: AgentIR) => {
-=======
-  const addResultMessage = useCallback((result: DesignAnalysisResult) => {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     enqueueAppend(() => ({
       message: {
         role: 'assistant',
@@ -242,7 +234,7 @@ export function useDesignConversation(personaId: string | null) {
         prev.map((c) => (c.id === updated.id ? updated : c))
       );
     } catch {
-      // intentional: non-critical — completing conversation status is best-effort
+      // intentional: non-critical â€” completing conversation status is best-effort
     }
   }, []);
 
@@ -261,7 +253,7 @@ export function useDesignConversation(personaId: string | null) {
         await updateDesignConversationStatus(current.id, 'abandoned');
         didAbandon = true;
       } catch {
-        // non-critical — best-effort abandon
+        // non-critical â€” best-effort abandon
       }
     }
 
@@ -279,12 +271,12 @@ export function useDesignConversation(personaId: string | null) {
       );
       return updated;
     } catch {
-      // Activation failed — revert the abandon so the old conversation stays active
+      // Activation failed â€” revert the abandon so the old conversation stays active
       if (didAbandon && current) {
         try {
           await updateDesignConversationStatus(current.id, 'active');
         } catch {
-          // non-critical — best-effort revert
+          // non-critical â€” best-effort revert
         }
       }
       useToastStore.getState().addToast('Failed to resume conversation', 'error');

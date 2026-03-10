@@ -1,13 +1,7 @@
 import { useState, useEffect } from 'react';
-<<<<<<< HEAD
 import { FileJson, FileCode2, Wrench, Zap, Link, Check, Sparkles, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import { FileJson, FileCode2, Wrench, Zap, Link, Check, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { WorkflowPlatform } from '@/lib/personas/workflowDetector';
 import { PLATFORM_LABELS } from '@/lib/personas/workflowDetector';
 
@@ -20,11 +14,7 @@ const PLATFORM_COLORS: Record<WorkflowPlatform, string> = {
 };
 
 interface N8nParserResultsProps {
-<<<<<<< HEAD
   parsedResult: AgentIR;
-=======
-  parsedResult: DesignAnalysisResult;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   workflowName: string;
   onReset: () => void;
   selectedToolIndices?: Set<number>;
@@ -36,13 +26,10 @@ interface N8nParserResultsProps {
   isAnalyzing?: boolean;
   /** Detected source platform */
   platform?: WorkflowPlatform;
-<<<<<<< HEAD
   /** True when platform was guessed and needs user confirmation */
   platformNeedsConfirmation?: boolean;
   /** Callback when user confirms the detected platform */
   onConfirmPlatform?: () => void;
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 function SelectionCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
@@ -89,11 +76,8 @@ export function N8nParserResults({
   onToggleConnector,
   isAnalyzing,
   platform,
-<<<<<<< HEAD
   platformNeedsConfirmation,
   onConfirmPlatform,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }: N8nParserResultsProps) {
   const hasSelection = !!selectedToolIndices;
 
@@ -179,7 +163,6 @@ export function N8nParserResults({
         </button>
       </div>
 
-<<<<<<< HEAD
       {/* Platform confirmation banner */}
       {platformNeedsConfirmation && platform && platform !== 'unknown' && (
         <motion.div
@@ -209,8 +192,6 @@ export function N8nParserResults({
         </motion.div>
       )}
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       {/* Selection summary */}
       {hasSelection && (
         <div className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-muted-foreground/45">

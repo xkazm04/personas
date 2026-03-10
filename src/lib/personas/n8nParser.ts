@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { N8nNode } from '@/lib/types/templateTypes';
 import { N8N_DEFINITION, resolveNodeType, classifyNodeRole } from './platformDefinitions';
 import { sanitizeName } from '@/lib/utils/workflowSanitizer';
@@ -15,11 +11,7 @@ function isValidNode(value: unknown): value is N8nNode {
     && typeof obj.name === 'string' && obj.name.length > 0;
 }
 
-<<<<<<< HEAD
 export function parseN8nWorkflow(json: unknown): AgentIR {
-=======
-export function parseN8nWorkflow(json: unknown): DesignAnalysisResult {
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   if (!json || typeof json !== 'object') {
     throw new Error('Invalid n8n workflow: expected an object');
   }

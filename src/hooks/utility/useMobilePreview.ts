@@ -6,8 +6,8 @@ import {
 } from '@/lib/utils/platform';
 
 const BUILD_MOBILE =
-  (globalThis as any).__VITE_PLATFORM_ANDROID__ ||
-  (globalThis as any).__VITE_PLATFORM_IOS__ ||
+  (globalThis as unknown as Record<string, boolean>).__VITE_PLATFORM_ANDROID__ ||
+  (globalThis as unknown as Record<string, boolean>).__VITE_PLATFORM_IOS__ ||
   false;
 
 function subscribe(cb: () => void) {

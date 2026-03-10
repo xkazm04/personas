@@ -17,18 +17,12 @@ use crate::engine::scheduler as sched_logic;
 use crate::engine::subscription::{
     self, CleanupSubscription, EventBusSubscription, PollingSubscription,
     RotationSubscription, TriggerSchedulerSubscription,
-<<<<<<< HEAD
     CompositeSubscription, OAuthRefreshSubscription,
 };
 #[cfg(feature = "desktop")]
 use crate::engine::subscription::{
     FileWatcherSubscription, ClipboardSubscription, AppFocusSubscription,
 };
-=======
-    FileWatcherSubscription, ClipboardSubscription, AppFocusSubscription,
-    CompositeSubscription, OAuthRefreshSubscription,
-};
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 use crate::engine::ExecutionEngine;
 
 /// Runtime state for the scheduler, shared across threads.
@@ -89,7 +83,7 @@ pub struct SchedulerStats {
 
 /// Start all background loops via the unified subscription model.
 ///
-/// Returns a webhook shutdown sender — hold onto it to keep the server running,
+/// Returns a webhook shutdown sender â€” hold onto it to keep the server running,
 /// send `true` or drop it to trigger graceful shutdown.
 pub fn start_loops(
     scheduler: Arc<SchedulerState>,
@@ -100,11 +94,7 @@ pub fn start_loops(
     tier_config: Arc<std::sync::Mutex<super::tier::TierConfig>>,
 ) -> tokio::sync::watch::Sender<bool> {
     scheduler.running.store(true, Ordering::Relaxed);
-<<<<<<< HEAD
     tracing::info!("Scheduler starting via unified subscription model");
-=======
-    tracing::info!("Scheduler starting via unified subscription model: event_bus (2s) + trigger_scheduler (5s) + polling (10s) + cleanup (3600s) + rotation (60s) + file_watcher (2s) + clipboard (3s) + app_focus (3s) + composite (2s) + webhook server (port 9420)");
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
     // Build the HTTP client for the polling subscription
     let http = reqwest::Client::builder()
@@ -113,16 +103,8 @@ pub fn start_loops(
         .build()
         .unwrap_or_default();
 
-<<<<<<< HEAD
     // Assemble all reactive subscriptions
     let mut subscriptions: Vec<Box<dyn subscription::ReactiveSubscription>> = vec![
-=======
-    // File watcher state
-    let (fw_state, fw_tx, fw_rx) = super::file_watcher::create_file_watcher();
-
-    // Assemble all reactive subscriptions
-    let subscriptions: Vec<Box<dyn subscription::ReactiveSubscription>> = vec![
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         Box::new(EventBusSubscription {
             scheduler: scheduler.clone(),
             app: app.clone(),
@@ -144,27 +126,6 @@ pub fn start_loops(
         Box::new(RotationSubscription {
             pool: pool.clone(),
         }),
-<<<<<<< HEAD
-=======
-        Box::new(FileWatcherSubscription {
-            pool: pool.clone(),
-            state: fw_state,
-            tx: fw_tx,
-            rx: fw_rx,
-        }),
-        Box::new(ClipboardSubscription {
-            pool: pool.clone(),
-            state: Arc::new(tokio::sync::Mutex::new(
-                super::clipboard_monitor::ClipboardState::new(),
-            )),
-        }),
-        Box::new(AppFocusSubscription {
-            pool: pool.clone(),
-            state: Arc::new(tokio::sync::Mutex::new(
-                super::app_focus::AppFocusState::new(),
-            )),
-        }),
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         Box::new(CompositeSubscription {
             pool: pool.clone(),
         }),
@@ -176,7 +137,6 @@ pub fn start_loops(
         }),
     ];
 
-<<<<<<< HEAD
     // Desktop-only subscriptions: file watcher, clipboard monitor, app focus
     #[cfg(feature = "desktop")]
     {
@@ -201,12 +161,10 @@ pub fn start_loops(
         }));
     }
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     // Spawn all subscriptions through the unified scheduler
     subscription::spawn_subscriptions(subscriptions, scheduler.clone());
 
-    // Webhook HTTP server (not a reactive subscription — it's a long-lived server)
+    // Webhook HTTP server (not a reactive subscription â€” it's a long-lived server)
     let (webhook_shutdown_tx, webhook_shutdown_rx) = tokio::sync::watch::channel(false);
     tokio::spawn({
         let pool = pool.clone();
@@ -230,7 +188,7 @@ pub fn stop_loops(scheduler: &SchedulerState) {
 }
 
 // ---------------------------------------------------------------------------
-// Tick functions — single-cycle logic extracted from the old loops.
+// Tick functions â€” single-cycle logic extracted from the old loops.
 // Called by the ReactiveSubscription implementations in subscription.rs.
 // ---------------------------------------------------------------------------
 
@@ -331,7 +289,7 @@ pub(crate) async fn event_bus_tick(
             let input_val: Option<serde_json::Value> =
                 m.payload.as_deref().and_then(|s| serde_json::from_str(s).ok());
 
-            // 9. Start execution (admit() handles concurrency atomically —
+            // 9. Start execution (admit() handles concurrency atomically â€”
             //    no separate has_capacity check to avoid TOCTOU gap)
             if let Err(e) = engine
                 .start_execution(
@@ -388,9 +346,9 @@ pub(crate) fn trigger_scheduler_tick(scheduler: &SchedulerState, pool: &DbPool) 
     };
 
     for trigger in triggers {
-        // Skip polling triggers — they are handled by the PollingSubscription
+        // Skip polling triggers â€” they are handled by the PollingSubscription
         // which does HTTP content-hash diffing before deciding whether to fire.
-        // Skip event_listener triggers — they are event-driven, not time-based.
+        // Skip event_listener triggers â€” they are event-driven, not time-based.
         if trigger.trigger_type == "polling" || trigger.trigger_type == "event_listener" {
             continue;
         }
@@ -416,7 +374,7 @@ pub(crate) fn trigger_scheduler_tick(scheduler: &SchedulerState, pool: &DbPool) 
             }
         }
 
-        // 5. Schedule advanced — now safe to publish the event
+        // 5. Schedule advanced â€” now safe to publish the event
         let event_type = cfg.event_type().to_string();
         let payload = cfg.payload();
 

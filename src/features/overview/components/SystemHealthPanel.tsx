@@ -24,10 +24,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { healthCheckLocal, healthCheckAgents, healthCheckCloud, healthCheckAccount, getCrashLogs, clearCrashLogs } from '@/api/tauriApi';
-<<<<<<< HEAD
 import { readCrashLogs, CRASH_STORAGE_KEY } from '@/lib/utils/crashPersistence';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { HealthCheckSection, HealthCheckItem, CrashLogEntry } from '@/api/tauriApi';
 import { useAuthStore } from '@/stores/authStore';
 import { useAutoInstaller, type InstallState } from '@/hooks/utility/useAutoInstaller';
@@ -36,7 +33,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { ConfigurationPopup, type ConfigField } from '@/features/agents/components/onboarding/ConfigurationPopup';
 import { usePersonaStore } from '@/stores/personaStore';
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const SECTION_ICONS: Record<string, LucideIcon> = {
   local: Monitor,
@@ -54,7 +51,7 @@ const SECTION_STYLES: Record<string, { badge: string; icon: string }> = {
 
 const DEFAULT_SECTION_STYLE = { badge: 'bg-violet-500/10', icon: 'text-violet-300' };
 
-/** Skeleton section stubs — rendered immediately while backend check runs. */
+/** Skeleton section stubs â€” rendered immediately while backend check runs. */
 const SKELETON_SECTIONS = [
   { id: 'local', label: 'Local Environment' },
   { id: 'agents', label: 'Agents' },
@@ -62,7 +59,7 @@ const SKELETON_SECTIONS = [
   { id: 'account', label: 'Account' },
 ];
 
-// ── Helper Components ──────────────────────────────────────────────────────────
+// â”€â”€ Helper Components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function getStatusIcon(status: string) {
   if (status === 'ok') return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
@@ -171,7 +168,7 @@ function InstallButton({
   );
 }
 
-// ── Popup field configs ──────────────────────────────────────────────────────
+// â”€â”€ Popup field configs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const OLLAMA_FIELDS: ConfigField[] = [
   { key: 'ollama_api_key', label: 'API Key', type: 'password', placeholder: 'Paste your key from ollama.com/settings', autoFocus: true },
@@ -197,7 +194,7 @@ const LITELLM_FIELDS: ConfigField[] = [
   { key: 'litellm_master_key', label: 'Master Key', type: 'password', placeholder: 'sk-...' },
 ];
 
-// ── Crash Logs Section ───────────────────────────────────────────────────────
+// â”€â”€ Crash Logs Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function CrashLogsSection() {
   const [expanded, setExpanded] = useState(false);
@@ -210,18 +207,7 @@ function CrashLogsSection() {
     getCrashLogs()
       .then(setBackendLogs)
       .catch(() => setBackendLogs([]));
-<<<<<<< HEAD
     setFrontendLogs(readCrashLogs());
-=======
-    try {
-      const raw = localStorage.getItem('__personas_frontend_crashes');
-      if (raw) setFrontendLogs(JSON.parse(raw));
-      else setFrontendLogs([]);
-    } catch {
-      // intentional: non-critical — JSON parse fallback
-      setFrontendLogs([]);
-    }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }, []);
 
   useEffect(() => {
@@ -234,16 +220,12 @@ function CrashLogsSection() {
     setClearing(true);
     try {
       await clearCrashLogs();
-<<<<<<< HEAD
       localStorage.removeItem(CRASH_STORAGE_KEY);
-=======
-      localStorage.removeItem('__personas_frontend_crashes');
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       setBackendLogs([]);
       setFrontendLogs([]);
       setSelectedLog(null);
     } catch {
-      // intentional: non-critical — crash log clear is best-effort
+      // intentional: non-critical â€” crash log clear is best-effort
     } finally {
       setClearing(false);
     }
@@ -359,7 +341,7 @@ function CrashLogsSection() {
   );
 }
 
-// ── Main SystemHealthPanel ─────────────────────────────────────────────────────
+// â”€â”€ Main SystemHealthPanel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const [sections, setSections] = useState<HealthCheckSection[]>([]);
@@ -411,7 +393,6 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
       { id: 'account', fn: healthCheckAccount },
     ];
 
-<<<<<<< HEAD
     const order = ['local', 'agents', 'cloud', 'account'];
     const sortSections = (arr: HealthCheckSection[]) =>
       arr.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
@@ -436,49 +417,6 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
       });
       setLoading(false);
     });
-=======
-    let resolved = 0;
-    for (const check of checks) {
-      check.fn()
-        .then((section) => {
-          setSections((prev) => {
-            const next = prev.filter((s) => s.id !== section.id);
-            next.push(section);
-            next.sort((a, b) => {
-              const order = ['local', 'agents', 'cloud', 'account'];
-              return order.indexOf(a.id) - order.indexOf(b.id);
-            });
-            return next;
-          });
-        })
-        .catch(() => {
-          setIpcError(true);
-          setSections((prev) => {
-            const next = prev.filter((s) => s.id !== check.id);
-            next.push(ipcFallbacks[check.id]!);
-            next.sort((a, b) => {
-              const order = ['local', 'agents', 'cloud', 'account'];
-              return order.indexOf(a.id) - order.indexOf(b.id);
-            });
-            return next;
-          });
-          setHasIssues(true);
-        })
-        .finally(() => {
-          resolved++;
-          if (resolved === checks.length) {
-            setSections((final_sections) => {
-              const allOk = final_sections.every((s) =>
-                s.items.every((i) => i.status === 'ok' || i.status === 'info' || i.status === 'inactive')
-              );
-              setHasIssues(!allOk);
-              return final_sections;
-            });
-            setLoading(false);
-          }
-        });
-    }
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }, []);
 
   useEffect(() => {
@@ -489,7 +427,6 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
     if (!loading && !ipcError) {
       runChecks();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -505,7 +442,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
     try {
       await loginWithGoogle();
     } catch {
-      // intentional: non-critical — error handled by auth store
+      // intentional: non-critical â€” error handled by auth store
     }
   };
 
@@ -546,18 +483,14 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
 
       <ContentBody centered>
         <div className="space-y-4">
-          {/* 2x2 Grid — cards render immediately, items populate when data arrives */}
-<<<<<<< HEAD
+          {/* 2x2 Grid â€” cards render immediately, items populate when data arrives */}
           <div className="grid gap-4 items-stretch" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-=======
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             {SKELETON_SECTIONS.map((stub, stubIdx) => {
               const loaded = sectionMap.get(stub.id);
               const SectionIcon = SECTION_ICONS[stub.id] || Monitor;
               const sectionStyle = SECTION_STYLES[stub.id] ?? DEFAULT_SECTION_STYLE;
 
-              // Still loading — show card with real header + skeleton items
+              // Still loading â€” show card with real header + skeleton items
               if (loading && !loaded) {
                 return (
                   <motion.div
@@ -607,7 +540,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                 );
               }
 
-              // Data available — render real section
+              // Data available â€” render real section
               const section = loaded ?? { id: stub.id, label: stub.label, items: [] };
               const isAccount = section.id === 'account';
               const authItem = isAccount ? section.items.find((i) => i.id === 'google_auth') : null;
@@ -739,7 +672,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
             )}
           </div>
 
-          {/* Onboarding CTA — shown after checks pass for first-time users */}
+          {/* Onboarding CTA â€” shown after checks pass for first-time users */}
           {!loading && !hasIssues && !ipcError && personas.length === 0 && !onboardingCompleted && !onboardingActive && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
@@ -770,7 +703,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
             {showOllamaPopup && (
               <ConfigurationPopup
                 title="Ollama Cloud API Key"
-                subtitle="Optional — unlocks free cloud models (Qwen3 Coder, GLM-5, Kimi K2.5) for all agents."
+                subtitle="Optional â€” unlocks free cloud models (Qwen3 Coder, GLM-5, Kimi K2.5) for all agents."
                 accent="emerald"
                 fields={OLLAMA_FIELDS}
                 saveLabel="Save Key"
@@ -788,7 +721,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
             {showLiteLLMPopup && (
               <ConfigurationPopup
                 title="LiteLLM Proxy Configuration"
-                subtitle="Optional — route agents through your LiteLLM proxy for model management and cost tracking."
+                subtitle="Optional â€” route agents through your LiteLLM proxy for model management and cost tracking."
                 accent="sky"
                 fields={LITELLM_FIELDS}
                 saveLabel="Save Configuration"

@@ -4,11 +4,7 @@ import { motion } from 'framer-motion';
 import { DesignResultPreview } from '@/features/templates/sub_generated';
 import { IntentResultExtras } from './IntentResultExtras';
 
-<<<<<<< HEAD
 import type { AgentIR, IntentCompilationResult } from '@/lib/types/designTypes';
-=======
-import type { DesignAnalysisResult, IntentCompilationResult } from '@/lib/types/designTypes';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 interface DesignPreviewResources {
@@ -45,11 +41,7 @@ interface DesignPreviewActions {
 }
 
 interface DesignPhasePreviewProps {
-<<<<<<< HEAD
   result: AgentIR;
-=======
-  result: DesignAnalysisResult;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   intentResult?: IntentCompilationResult;
   error: string | null;
   resources: DesignPreviewResources;

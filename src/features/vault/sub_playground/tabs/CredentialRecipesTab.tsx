@@ -9,11 +9,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useRecipeGenerator } from '@/hooks/design/useRecipeGenerator';
 import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
 import { EstimatedProgressBar } from '@/features/shared/components/EstimatedProgressBar';
-<<<<<<< HEAD
 import { RecipePlaygroundModal } from '@/features/recipes/sub_playground/components/RecipePlaygroundModal';
-=======
-import { RecipePlaygroundModal } from '@/features/recipes/sub_playground/RecipePlaygroundModal';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface CredentialRecipesTabProps {
   credentialId: string;
@@ -39,7 +35,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
       const r = await recipeApi.getCredentialRecipes(credentialId);
       setRecipes(r);
     } catch {
-      // intentional: non-critical — initial recipe list load; empty list shown on failure
+      // intentional: non-critical â€” initial recipe list load; empty list shown on failure
     } finally {
       setLoading(false);
     }
@@ -184,7 +180,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
                   />
                 </div>
 
-                {/* Generate button — only when idle or error */}
+                {/* Generate button â€” only when idle or error */}
                 {(generator.phase === 'idle' || generator.phase === 'error') && !generator.draft && (
                   <button
                     onClick={handleGenerate}
@@ -196,7 +192,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
                   </button>
                 )}
 
-                {/* Progress + Terminal strip — visible while generating */}
+                {/* Progress + Terminal strip â€” visible while generating */}
                 {generator.phase === 'generating' && (
                   <div className="space-y-2">
                     <EstimatedProgressBar key={`progress-${generator.phase}`} isRunning={generator.phase === 'generating'} estimatedSeconds={30} />
@@ -219,7 +215,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
                   </div>
                 )}
 
-                {/* Draft Preview — after LLM completes */}
+                {/* Draft Preview â€” after LLM completes */}
                 {generator.draft && (
                   <div className="rounded-lg border border-border/40 bg-card/50 p-4 space-y-3">
                     {/* Terminal strip (collapsed) showing what happened */}

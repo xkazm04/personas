@@ -54,7 +54,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
         setAuditLog(a);
       })
       .catch(() => {
-        // silently fail — intelligence is non-critical
+        // silently fail â€” intelligence is non-critical
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -102,11 +102,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
       {tab === 'overview' && stats && (
         <div className="space-y-3">
           {/* Stats grid */}
-<<<<<<< HEAD
           <div className="grid grid-cols-4 3xl:grid-cols-6 4xl:grid-cols-8 gap-2">
-=======
-          <div className="grid grid-cols-4 gap-2">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             <StatCard
               icon={<Activity className={`w-3.5 h-3.5 ${INFO_STATUS.color}`} />}
               label="Total Accesses"
@@ -183,7 +179,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
                   </div>
                   <div className="text-sm text-muted-foreground/80 shrink-0">
                     {dep.via_connector && <span>via {dep.via_connector}</span>}
-                    {dep.last_used_at && <span> · {formatTimestamp(dep.last_used_at, '')}</span>}
+                    {dep.last_used_at && <span> Â· {formatTimestamp(dep.last_used_at, '')}</span>}
                   </div>
                 </div>
               ))}

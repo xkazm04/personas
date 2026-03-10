@@ -3,19 +3,11 @@ import { CheckCircle2, Plug, AlertCircle, ExternalLink, Wrench } from 'lucide-re
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { DesignCheckbox } from './DesignCheckbox';
 import { SECTION_LABEL } from './helpers';
-<<<<<<< HEAD
 import type { AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
 import type { DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 interface ConnectorsSectionProps {
   result: AgentIR;
-=======
-import type { DesignAnalysisResult, SuggestedConnector } from '@/lib/types/designTypes';
-import type { DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-
-interface ConnectorsSectionProps {
-  result: DesignAnalysisResult;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   allToolDefs: DbPersonaToolDefinition[];
   currentToolNames: string[];
   credentials: CredentialMetadata[];
@@ -71,11 +63,7 @@ export function ConnectorsSection({
         <Plug className="w-4 h-4 text-emerald-400" />
         Connectors & Tools
       </div>
-<<<<<<< HEAD
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-=======
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         {connectorToolMap.map((item, idx) => {
           const isGeneral = item.connector.name === 'general';
           const installed = !isGeneral && connectorNames.has(item.connector.name);

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::db::models::{Persona, PersonaToolDefinition};
 
 // =============================================================================
-// ExecutionState — canonical state machine for execution status
+// ExecutionState â€” canonical state machine for execution status
 // =============================================================================
 
 /// Canonical execution state machine.
@@ -182,30 +182,7 @@ pub enum ProtocolMessage {
 }
 
 // =============================================================================
-// Continuation — unified resume mechanism
-// =============================================================================
-
-/// How to continue a previous execution.
-///
-/// Unifies two independent resume strategies into a single first-class type:
-/// - `PromptHint`: injects a contextual hint into the input data so the LLM
-///   knows it should continue from where a previous execution left off.
-/// - `SessionResume`: uses Claude CLI `--resume <session_id>` to natively
-///   continue a prior conversation, preserving full context.
-///
-/// The frontend decides which variant to use based on whether a
-/// `claude_session_id` is available from the previous execution.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", content = "value")]
-pub enum Continuation {
-    /// Soft continuation: injects a resume hint into the prompt input data.
-    PromptHint(String),
-    /// Hard continuation: resumes a prior Claude CLI session by ID.
-    SessionResume(String),
-}
-
-// =============================================================================
-// Continuation — unified resume mechanism
+// Continuation â€” unified resume mechanism
 // =============================================================================
 
 /// How to continue a previous execution.
@@ -299,7 +276,7 @@ pub mod providers {
 }
 
 // =============================================================================
-// EphemeralPersona — virtual persona that never touches the database
+// EphemeralPersona â€” virtual persona that never touches the database
 // =============================================================================
 
 /// A virtual persona + tools bundle that exists only in memory.
@@ -391,13 +368,10 @@ impl EphemeralPersona {
             max_turns: Some(1),
             design_context: draft.design_context,
             group_id: None,
-<<<<<<< HEAD
             source_review_id: None,
             trust_level: "verified".to_string(),
             trust_origin: "builtin".to_string(),
             trust_verified_at: None,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             created_at: now.clone(),
             updated_at: now,
         };

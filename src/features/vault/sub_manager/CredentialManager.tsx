@@ -27,19 +27,12 @@ import { useUndoDelete } from '@/features/vault/hooks/useUndoDelete';
 import { useCredentialViewFSM } from '@/features/vault/hooks/useCredentialViewFSM';
 import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
 import { useBulkHealthcheck } from '@/features/vault/hooks/useBulkHealthcheck';
-<<<<<<< HEAD
 import { isUniversalOAuthConnector, getOAuthProviderId, getOAuthScopes, isDesktopBridge } from '@/lib/utils/connectors';
-=======
-import { isUniversalOAuthConnector, getOAuthProviderId, getOAuthScopes } from '@/lib/utils/connectors';
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import * as api from '@/api/tauriApi';
 import type { VaultStatus } from '@/api/tauriApi';
-<<<<<<< HEAD
-import { IS_MOBILE, IS_DESKTOP } from '@/lib/utils/platform';
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
+import { IS_DESKTOP } from '@/lib/utils/platform';
 import { rotateCredentialNow } from '@/api/rotation';
 
 export function CredentialManager() {
@@ -77,14 +70,14 @@ export function CredentialManager() {
     if (wizardPhase !== 'closed' && viewState.view !== 'add-wizard') {
       dispatch({ type: 'GO_ADD_WIZARD' });
     }
-  }, [wizardPhase]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [wizardPhase]);
 
   // Close wizard store when navigating away from wizard view
   useEffect(() => {
     if (viewState.view !== 'add-wizard' && wizardPhase !== 'closed') {
       useProvisioningWizardStore.getState().close();
     }
-  }, [viewState.view]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [viewState.view]);
 
   // Sync unified search to FSM when in catalog view
   useEffect(() => {
@@ -182,7 +175,7 @@ export function CredentialManager() {
       try {
         const vs = await api.vaultStatus();
         setVault(vs);
-      } catch { /* intentional: non-critical — vault status is best-effort */ }
+      } catch { /* intentional: non-critical â€” vault status is best-effort */ }
       setLoading(false);
     };
     init();
@@ -262,13 +255,10 @@ export function CredentialManager() {
     dispatch({ type: 'GO_AUTO_SETUP', connector: catalogFormData.connector });
   }, [catalogFormData, dispatch]);
 
-<<<<<<< HEAD
   const handleDesktopDetect = useCallback(() => {
     dispatch({ type: 'GO_ADD_DESKTOP' });
   }, [dispatch]);
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   // Determine which credentials support real rotation (OAuth with refresh tokens)
   const isCredentialRotatable = useCallback((serviceType: string): boolean => {
     const connector = connectorDefinitions.find((c) => c.name === serviceType);
@@ -361,7 +351,7 @@ export function CredentialManager() {
                 {isRotatingAll
                   ? 'Refreshing...'
                   : rotateAllResult
-                    ? `${rotateAllResult.rotated} refreshed${rotateAllResult.failed > 0 ? `, ${rotateAllResult.failed} failed` : ''}${rotateAllResult.skipped > 0 ? ` · ${rotateAllResult.skipped} skipped` : ''}`
+                    ? `${rotateAllResult.rotated} refreshed${rotateAllResult.failed > 0 ? `, ${rotateAllResult.failed} failed` : ''}${rotateAllResult.skipped > 0 ? ` Â· ${rotateAllResult.skipped} skipped` : ''}`
                     : rotatableCount > 0
                       ? `Rotate (${rotatableCount})`
                       : 'Rotate'}
@@ -396,7 +386,7 @@ export function CredentialManager() {
               </button>
             )}
             <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-sm px-1.5 py-0.5 rounded border border-primary/15 bg-secondary/40 text-muted-foreground/60 font-mono pointer-events-none">
-              {navigator.platform?.includes('Mac') ? '⌘K' : 'Ctrl+K'}
+              {navigator.platform?.includes('Mac') ? 'âŒ˜K' : 'Ctrl+K'}
             </kbd>
           </div>
         )}
@@ -455,10 +445,7 @@ export function CredentialManager() {
             onCreateCredential={handleCreateCredential}
             onOAuthConsent={handleTemplateOAuthConsent}
             onAutoSetup={handleAutoSetup}
-<<<<<<< HEAD
             onDesktopDetect={isDesktopBridge(viewState.connector) ? handleDesktopDetect : undefined}
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             onBack={() => {
               dispatch({ type: 'CANCEL_FORM' });
               oauth.reset();
@@ -487,11 +474,7 @@ export function CredentialManager() {
           />
         )}
 
-<<<<<<< HEAD
         {viewState.view === 'catalog-auto-setup' && IS_DESKTOP && (
-=======
-        {viewState.view === 'catalog-auto-setup' && (
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           <CatalogAutoSetup
             connector={viewState.connector}
             onComplete={() => {
@@ -531,11 +514,7 @@ export function CredentialManager() {
           />
         )}
 
-<<<<<<< HEAD
         {viewState.view === 'add-desktop' && IS_DESKTOP && (
-=======
-        {viewState.view === 'add-desktop' && (
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           <DesktopDiscoveryPanel
             onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
             onCredentialCreated={() => {
@@ -553,11 +532,7 @@ export function CredentialManager() {
           }} />
         )}
 
-<<<<<<< HEAD
         {viewState.view === 'foraging' && IS_DESKTOP && (
-=======
-        {viewState.view === 'foraging' && (
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           <ForagingPanel
             onComplete={() => {
               void fetchCredentials();

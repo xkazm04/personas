@@ -17,11 +17,11 @@ const ILLUSTRATIONS = [
 ] as const;
 
 /** Pick a stable illustration per mount based on a simple hash of the label. */
-function pickIllustration(hint?: string): string {
+function pickIllustration(hint?: string): (typeof ILLUSTRATIONS)[number] {
   if (!hint) return ILLUSTRATIONS[0];
   let hash = 0;
   for (let i = 0; i < hint.length; i++) hash = ((hash << 5) - hash + hint.charCodeAt(i)) | 0;
-  return ILLUSTRATIONS[Math.abs(hash) % ILLUSTRATIONS.length];
+  return ILLUSTRATIONS[Math.abs(hash) % ILLUSTRATIONS.length]!;
 }
 
 interface ContentLoaderProps {

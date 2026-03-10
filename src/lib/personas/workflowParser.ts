@@ -10,10 +10,7 @@ import yaml from 'js-yaml';
 import type { AgentIR } from '@/lib/types/designTypes';
 import {
   detectWorkflowPlatform,
-<<<<<<< HEAD
   PLATFORM_LABELS,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   type WorkflowPlatform,
   type DetectionResult,
 } from './workflowDetector';
@@ -31,11 +28,8 @@ export interface WorkflowParseResult {
   workflowName: string;
   /** Serialized JSON representation of the parsed content */
   rawJson: string;
-<<<<<<< HEAD
   /** True when the platform was guessed via fallback parsing and confidence is low */
   needsConfirmation: boolean;
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 /**
@@ -87,12 +81,9 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
 
   // Route to platform-specific parser
   let result: AgentIR;
-<<<<<<< HEAD
   let needsConfirmation = false;
   let finalDetection = detection;
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   switch (detection.platform) {
     case 'n8n':
       result = parseN8nWorkflow(parsed);
@@ -106,7 +97,6 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
     case 'github-actions':
       result = parseGithubActionsWorkflow(parsed);
       break;
-<<<<<<< HEAD
     case 'unknown': {
       // Attempt all parsers and pick the best candidate
       const fallback = tryParsers(parsed);
@@ -125,21 +115,10 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
 
   // Extract workflow name from the parsed result summary
   const workflowName = extractWorkflowName(parsed, finalDetection.platform);
-=======
-    case 'unknown':
-      // Attempt n8n first (most common), then Zapier, then Make
-      result = tryParsers(parsed);
-      break;
-  }
-
-  // Extract workflow name from the parsed result summary
-  const workflowName = extractWorkflowName(parsed, detection.platform);
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   // Serialize to JSON for storage (normalize YAML to JSON)
   const rawJson = JSON.stringify(parsed);
 
-<<<<<<< HEAD
   return { detection: finalDetection, result, workflowName, rawJson, needsConfirmation };
 }
 
@@ -147,14 +126,10 @@ interface TryParsersResult {
   result: AgentIR;
   platform: Exclude<WorkflowPlatform, 'unknown'>;
   confidence: DetectionResult['confidence'];
-=======
-  return { detection, result, workflowName, rawJson };
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 /**
  * Try multiple parsers when platform is unknown.
-<<<<<<< HEAD
  * Runs all parsers, collects successes, and picks the best candidate.
  * Confidence is 'medium' when exactly one parser succeeds, 'low' when multiple do.
  */
@@ -194,36 +169,6 @@ function tryParsers(parsed: Record<string, unknown>): TryParsersResult {
     platform: best.platform,
     confidence: candidates.length === 1 ? 'medium' : 'low',
   };
-=======
- */
-function tryParsers(parsed: Record<string, unknown>): AgentIR {
-  const errors: string[] = [];
-
-  // Try n8n first
-  try {
-    return parseN8nWorkflow(parsed);
-  } catch (e) {
-    errors.push(`n8n: ${e instanceof Error ? e.message : 'failed'}`);
-  }
-
-  // Try Zapier
-  try {
-    return parseZapierWorkflow(parsed);
-  } catch (e) {
-    errors.push(`Zapier: ${e instanceof Error ? e.message : 'failed'}`);
-  }
-
-  // Try Make
-  try {
-    return parseMakeWorkflow(parsed);
-  } catch (e) {
-    errors.push(`Make: ${e instanceof Error ? e.message : 'failed'}`);
-  }
-
-  throw new Error(
-    `Could not identify the workflow platform. Supported formats: n8n (.json), Zapier (.json), Make (.json), GitHub Actions (.yml/.yaml).\n\nParser errors:\n${errors.join('\n')}`,
-  );
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 /**

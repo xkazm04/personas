@@ -33,7 +33,7 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
     if (phase === 'closed') {
       open();
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Track whether batch phase has a running session for cleanup
   const batchActiveRef = useRef(false);

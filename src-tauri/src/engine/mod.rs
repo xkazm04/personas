@@ -44,16 +44,11 @@ pub mod types;
 pub mod webhook;
 pub mod platform_rules;
 pub mod url_safety;
-<<<<<<< HEAD
 #[cfg(feature = "desktop")]
 pub mod file_watcher;
 #[cfg(feature = "desktop")]
 pub mod clipboard_monitor;
 #[cfg(feature = "desktop")]
-=======
-pub mod file_watcher;
-pub mod clipboard_monitor;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 pub mod app_focus;
 pub mod composite;
 pub mod db_query;
@@ -62,7 +57,6 @@ pub mod api_definition;
 pub mod mcp_tools;
 pub mod automation_runner;
 pub mod platforms;
-<<<<<<< HEAD
 #[cfg(feature = "desktop")]
 pub mod desktop_bridges;
 #[cfg(feature = "desktop")]
@@ -70,11 +64,6 @@ pub mod desktop_discovery;
 #[cfg(feature = "desktop")]
 pub mod desktop_runtime;
 #[cfg(feature = "desktop")]
-=======
-pub mod desktop_bridges;
-pub mod desktop_discovery;
-pub mod desktop_runtime;
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 pub mod desktop_security;
 
 use std::collections::HashMap;
@@ -100,7 +89,7 @@ use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
 
 /// Maximum retry attempts for DB status persistence.
 const PERSIST_MAX_RETRIES: u32 = 3;
-/// Initial backoff delay (doubles each retry: 200ms → 400ms → 800ms).
+/// Initial backoff delay (doubles each retry: 200ms â†’ 400ms â†’ 800ms).
 const PERSIST_INITIAL_BACKOFF_MS: u64 = 200;
 
 /// Try to write an execution status update to the DB with exponential backoff.
@@ -167,7 +156,7 @@ pub(crate) async fn persist_status_update(
             tracing::error!(
                 execution_id = %exec_id,
                 error = %e,
-                "Dead-letter write also failed — execution stuck in running state",
+                "Dead-letter write also failed â€” execution stuck in running state",
             );
         }
     }
@@ -266,7 +255,7 @@ impl ExecutionEngine {
             Ok(stale) => {
                 let count = stale.len();
                 for exec in &stale {
-                    // Startup recovery uses a direct sync DB call — no async retry
+                    // Startup recovery uses a direct sync DB call â€” no async retry
                     // needed because there is no contention during app init.
                     let _ = exec_repo::update_status(
                         pool,
@@ -353,7 +342,7 @@ impl ExecutionEngine {
 
         match admit_result {
             AdmitResult::Running => {
-                // Slot available — spawn the execution task immediately
+                // Slot available â€” spawn the execution task immediately
                 self.spawn_execution_task(
                     app, pool, execution_id, persona, tools, input_data, continuation,
                 )
@@ -469,10 +458,7 @@ impl ExecutionEngine {
         let child_pids = self.child_pids.clone();
         let cancelled_flags = self.cancelled_flags.clone();
         let circuit_breaker = self.circuit_breaker.clone();
-<<<<<<< HEAD
         let circuit_breaker_for_drain = self.circuit_breaker.clone();
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         let queued_contexts = self.queued_contexts.clone();
 
         // Clone log_dir for potential healing retries (log_dir is moved into run_execution)
@@ -551,18 +537,12 @@ impl ExecutionEngine {
                 tracker,
                 tasks.clone(),
                 queued_contexts,
-<<<<<<< HEAD
                 cancelled_flags,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                 persona_id,
                 persona_max_concurrent,
                 app_for_drain,
                 pool_for_drain,
-<<<<<<< HEAD
                 circuit_breaker_for_drain,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             )
             .await;
         });
@@ -583,7 +563,7 @@ impl ExecutionEngine {
         pool: &DbPool,
         persona_id: Option<&str>,
     ) -> bool {
-        // 0. Check if execution is queued (not yet running) — just remove from queue
+        // 0. Check if execution is queued (not yet running) â€” just remove from queue
         if let Some(pid) = persona_id {
             let was_queued = self.tracker.lock().await.remove_queued(pid, execution_id);
             if was_queued {
@@ -606,7 +586,7 @@ impl ExecutionEngine {
             }
         }
 
-        // 1. Set cancellation flag — tells the spawned task to write
+        // 1. Set cancellation flag â€” tells the spawned task to write
         //    status='cancelled' with metrics instead of completed/failed
         if let Some(flag) = self.cancelled_flags.lock().await.get(execution_id) {
             flag.store(true, Ordering::Release);
@@ -639,7 +619,7 @@ impl ExecutionEngine {
             .await
             {
                 Ok(_) => {
-                    // Task finished normally — metrics written to DB
+                    // Task finished normally â€” metrics written to DB
                 }
                 Err(_) => {
                     tracing::warn!(
@@ -897,18 +877,12 @@ fn drain_and_start_next(
     tracker: Arc<Mutex<ConcurrencyTracker>>,
     tasks: Arc<Mutex<HashMap<String, tokio::task::JoinHandle<()>>>>,
     queued_contexts: Arc<Mutex<HashMap<String, QueuedExecutionContext>>>,
-<<<<<<< HEAD
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     persona_id: String,
     max_concurrent: i32,
     app: AppHandle,
     pool: DbPool,
-<<<<<<< HEAD
     circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> {
     Box::pin(async move {
     let persona_id = persona_id.as_str();
@@ -967,7 +941,7 @@ fn drain_and_start_next(
                 },
             );
 
-            // Spawn the actual execution — reuse the saved context.
+            // Spawn the actual execution â€” reuse the saved context.
             // We build a mini execution task inline since we don't have &self here.
             let persona = ctx.persona;
             let persona_id_owned = persona.id.clone();
@@ -980,11 +954,6 @@ fn drain_and_start_next(
             let app_for_drain = ctx.app.clone();
             let child_pids: Arc<Mutex<HashMap<String, u32>>> = Arc::new(Mutex::new(HashMap::new()));
             let cancelled = Arc::new(AtomicBool::new(false));
-<<<<<<< HEAD
-=======
-            let cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>> =
-                Arc::new(Mutex::new(HashMap::new()));
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             cancelled_flags
                 .lock()
                 .await
@@ -1003,13 +972,9 @@ fn drain_and_start_next(
             let tracker_clone = tracker.clone();
             let tasks_clone = tasks.clone();
             let queued_contexts_clone = queued_contexts.clone();
-<<<<<<< HEAD
             let cancelled_flags_clone = cancelled_flags.clone();
             let circuit_breaker = circuit_breaker.clone();
             let circuit_breaker_for_drain = circuit_breaker.clone();
-=======
-            let circuit_breaker = Arc::new(failover::ProviderCircuitBreaker::new());
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
             let handle = tokio::spawn(async move {
                 let result = runner::run_execution(
@@ -1069,35 +1034,26 @@ fn drain_and_start_next(
                     .await
                     .remove_running(&persona_id_owned, &exec_id);
                 tasks_clone.lock().await.remove(&exec_id);
-<<<<<<< HEAD
                 cancelled_flags.lock().await.remove(&exec_id);
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
                 // Recursively drain next (owned types for Send safety)
                 drain_and_start_next(
                     tracker_clone,
                     tasks_clone.clone(),
                     queued_contexts_clone,
-<<<<<<< HEAD
                     cancelled_flags_clone,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                     persona_id_owned,
                     persona_max_concurrent_inner,
                     app_for_drain,
                     pool_for_drain,
-<<<<<<< HEAD
                     circuit_breaker_for_drain,
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                 )
                 .await;
             });
 
             tasks.lock().await.insert(exec_id_for_tasks, handle);
         } else {
-            // Context was missing (e.g., cancelled while queued) — release the slot
+            // Context was missing (e.g., cancelled while queued) â€” release the slot
             tracker.lock().await.remove_running(persona_id, &exec_id);
         }
     }
@@ -1146,7 +1102,7 @@ async fn handle_execution_result(
     )
     .await;
 
-    // Knowledge graph extraction — learn from every execution
+    // Knowledge graph extraction â€” learn from every execution
     {
         let use_case_id = exec_repo::get_by_id(pool, exec_id)
             .ok()
@@ -1173,7 +1129,7 @@ async fn handle_execution_result(
         check_budget_enforcement(pool, persona_id, exec_id);
     }
 
-    // Chain triggers — extract chain depth/visited/trace_id from execution's input_data
+    // Chain triggers â€” extract chain depth/visited/trace_id from execution's input_data
     // (propagated via chain event payloads to prevent infinite cycles)
     let (chain_depth, mut visited, existing_chain_trace_id) =
         exec_repo::get_by_id(pool, exec_id)
@@ -1217,10 +1173,7 @@ async fn handle_execution_result(
     }
 
     // Refresh system tray
-<<<<<<< HEAD
     #[cfg(feature = "desktop")]
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     crate::tray::refresh_tray(app);
 }
 
@@ -1421,13 +1374,13 @@ fn evaluate_healing_and_retry(
         );
     }
 
-    // ── AI Healing (dev-mode only) ───────────────────────────────────
+    // â”€â”€ AI Healing (dev-mode only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // When rule-based healing can't resolve the issue, resume the original
     // Claude session as a chained execution to diagnose and fix.
     if cfg!(debug_assertions) || std::env::var("VITE_DEVELOPMENT").as_deref() == Ok("true") {
         let exec_state_str = if result.success { "incomplete" } else { "failed" };
         if ai_healing::should_trigger_ai_healing(&category, exec_state_str, consecutive) {
-            // Need a session ID to resume — if the original CLI never initialized, skip
+            // Need a session ID to resume â€” if the original CLI never initialized, skip
             if let Some(ref session_id) = result.claude_session_id {
                 spawn_healing_chain(
                     pool.clone(),
@@ -1506,7 +1459,7 @@ fn check_circuit_breaker(
             description: Some(format!(
                 "Agent disabled after {consecutive} consecutive failures. Investigation required.",
             )),
-            strategy: Some("Persona disabled — manual intervention required".into()),
+            strategy: Some("Persona disabled â€” manual intervention required".into()),
             backoff_seconds: None,
             retry_number: None,
             max_retries: Some(healing::MAX_RETRY_COUNT),
@@ -1858,10 +1811,7 @@ fn spawn_healing_chain(
         // 12. Cleanup
         tracker.lock().await.remove_running(&persona_id, &exec_id);
         cancelled_flags.lock().await.remove(&exec_id);
-<<<<<<< HEAD
         #[cfg(feature = "desktop")]
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         crate::tray::refresh_tray(&app);
     });
 }
@@ -2015,7 +1965,7 @@ fn spawn_delayed_retry(
             child_pids.clone(),
             cancelled.clone(),
             None, // no continuation for healing retries
-            None, // chain_trace_id — healing retries don't inherit chain context
+            None, // chain_trace_id â€” healing retries don't inherit chain context
             circuit_breaker,
         )
         .await;
@@ -2114,17 +2064,14 @@ fn spawn_delayed_retry(
         // 13. Cleanup
         tracker.lock().await.remove_running(&persona_id, &exec_id);
         cancelled_flags.lock().await.remove(&exec_id);
-<<<<<<< HEAD
         #[cfg(feature = "desktop")]
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         crate::tray::refresh_tray(&app);
     });
 }
 
 /// Find connector names whose `services` JSON lists at least one of the given tools.
 ///
-/// Iterates tools × connectors, parsing each connector's `services` JSON array
+/// Iterates tools Ã— connectors, parsing each connector's `services` JSON array
 /// and checking if any entry's `toolName` matches a tool name.
 fn find_matching_connector_names(
     tools: &[PersonaToolDefinition],

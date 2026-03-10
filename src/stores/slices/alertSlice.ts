@@ -162,7 +162,7 @@ export interface AlertSlice {
 }
 
 /** Track which rules already fired to avoid repeat alerts in the same session */
-let firedRuleIds = new Set<string>();
+const firedRuleIds = new Set<string>();
 
 export const createAlertSlice: StateCreator<PersonaStore, [], [], AlertSlice> = (set, get) => ({
   alertRules: loadRules(),

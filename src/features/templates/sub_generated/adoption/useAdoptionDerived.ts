@@ -137,7 +137,6 @@ export function useAdoptionDerived({
     }
     if (state.created) completed.add('create');
     return completed;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.step, state.created]);
 
   return {

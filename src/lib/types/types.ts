@@ -3,7 +3,7 @@
  * Bridges Rust ts-rs bindings to the shapes components expect.
  */
 
-// ── Re-export Rust binding types with Db-prefixed aliases ──────────────
+// â”€â”€ Re-export Rust binding types with Db-prefixed aliases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaToolDefinition } from "@/lib/bindings/PersonaToolDefinition";
 import type { PersonaTool } from "@/lib/bindings/PersonaTool";
@@ -67,7 +67,7 @@ export type {
   RawConnectorDefinition,
 };
 
-// ── Frontend Enriched Types ────────────────────────────────────────────
+// â”€â”€ Frontend Enriched Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Persona with associated tools, triggers, and event subscriptions */
 export interface PersonaWithDetails extends Persona {
@@ -161,15 +161,12 @@ export interface ConnectorDefinitionBase {
   services: { toolName: string; label: string }[];
   events: CredentialTemplateEvent[];
   metadata: Record<string, unknown> | null;
-<<<<<<< HEAD
 }
 
 /** Parsed frontend connector definition (JSON fields pre-parsed) */
 export interface ConnectorDefinition extends ConnectorDefinitionBase {
   /** Narrowed healthcheck with typed description field. */
   healthcheck_config: { description: string; endpoint?: string; method?: string } | null;
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   is_builtin: boolean;
   created_at: string;
   updated_at: string;
@@ -248,23 +245,19 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
   return [{ id, label, type: 'credential', is_default: true }];
 }
 
-// ── Navigation Types ───────────────────────────────────────────────────
+// â”€â”€ Navigation Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type SidebarSection = "home" | "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "settings";
 export type HomeTab = "welcome" | "system-check";
 export type EditorTab = "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "design" | "health";
-<<<<<<< HEAD
 export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "cron-agents" | "schedules";
-=======
-export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "cron-agents";
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 export type TemplateTab = "n8n" | "generated";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "admin";
 
 export type CliEngine = "claude_code" | "codex_cli" | "gemini_cli" | "copilot_cli";
 
-// ── Analytics Types ────────────────────────────────────────────────────
+// â”€â”€ Analytics Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface ToolUsageSummary {
   tool_name: string;
@@ -288,7 +281,7 @@ export interface PersonaUsageSummary {
   unique_tools: number;
 }
 
-// ── Execution Output Types ─────────────────────────────────────────────
+// â”€â”€ Execution Output Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface ExecutionOutputLine {
   line?: string;
@@ -296,7 +289,7 @@ export interface ExecutionOutputLine {
   status?: string;
 }
 
-// ── Persona Info Mixin (shared across enriched types) ──────────────────
+// â”€â”€ Persona Info Mixin (shared across enriched types) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface WithPersonaInfo {
   persona_name?: string;
@@ -321,7 +314,7 @@ export function enrichWithPersona<T extends { persona_id: string }>(
   });
 }
 
-// ── Enriched Types (with persona info for global views) ────────────────
+// â”€â”€ Enriched Types (with persona info for global views) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface ManualReviewItem extends WithPersonaInfo {
   id: string;
@@ -334,7 +327,7 @@ export interface ManualReviewItem extends WithPersonaInfo {
   reviewer_notes: string | null;
   created_at: string;
   resolved_at: string | null;
-  /** Where this review originated — 'local' (default) or 'cloud'. */
+  /** Where this review originated â€” 'local' (default) or 'cloud'. */
   source?: 'local' | 'cloud';
 }
 

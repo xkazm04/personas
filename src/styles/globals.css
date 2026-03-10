@@ -1,10 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "highlight.js/styles/github-dark-dimmed.min.css";
 @import "./typography.css";
 
 
-/* ── Design Tokens ──
+/* â”€â”€ Design Tokens â”€â”€
    Default :root values (dark base). Theme variants override below. */
 :root {
   --background: #0a0e14;
@@ -70,7 +69,7 @@
 
   --color-btn-primary: var(--btn-primary);
 
-  /* Spacing — bridged from shared tokens */
+  /* Spacing â€” bridged from shared tokens */
   --spacing-1: var(--spacing-1);
   --spacing-2: var(--spacing-2);
   --spacing-3: var(--spacing-3);
@@ -93,16 +92,13 @@
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-<<<<<<< HEAD
 
   /* Ultra-wide breakpoints */
   --breakpoint-3xl: 1920px;
   --breakpoint-4xl: 2560px;
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
-/* ── Base Styles ── */
+/* â”€â”€ Base Styles â”€â”€ */
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
@@ -114,7 +110,7 @@ body {
   overflow: hidden;
 }
 
-/* ── Text Scale ── */
+/* â”€â”€ Text Scale â”€â”€ */
 [data-text-scale="large"] {
   font-size: 15px;
 }
@@ -131,7 +127,7 @@ body {
 [data-text-scale="larger"] .text-\[11px\] { font-size: 13px; }
 [data-text-scale="larger"] .text-\[10px\] { font-size: 12px; }
 
-/* ── Hide number input spinners ── */
+/* â”€â”€ Hide number input spinners â”€â”€ */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -141,24 +137,24 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* ── Glass Morphism ── */
+/* â”€â”€ Glass Morphism â”€â”€ */
 .glass {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
 }
 
-/* ── Button Size Presets ──
+/* â”€â”€ Button Size Presets â”€â”€
    Canonical button sizes.  Prefer these over ad-hoc padding combos.
    Tailwind equivalents noted for grep-ability:
-     btn-sm  ≈  px-2.5 py-1   rounded-lg  text-xs
-     btn-md  ≈  px-3.5 py-1.5 rounded-xl  text-sm
-     btn-lg  ≈  px-5   py-2.5 rounded-xl  text-sm  */
+     btn-sm  â‰ˆ  px-2.5 py-1   rounded-lg  text-xs
+     btn-md  â‰ˆ  px-3.5 py-1.5 rounded-xl  text-sm
+     btn-lg  â‰ˆ  px-5   py-2.5 rounded-xl  text-sm  */
 .btn-sm { padding: 0.25rem 0.625rem; border-radius: var(--radius-sm); font-size: 0.75rem; line-height: 1rem; }
 .btn-md { padding: 0.375rem 0.875rem; border-radius: var(--radius-md); font-size: 0.875rem; line-height: 1.25rem; }
 .btn-lg { padding: 0.625rem 1.25rem; border-radius: var(--radius-md); font-size: 0.875rem; line-height: 1.25rem; }
 
-/* ── Animations ── */
+/* â”€â”€ Animations â”€â”€ */
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
@@ -200,7 +196,7 @@ input[type="number"] {
 .animate-spin-slow { animation: spin-slow 30s linear infinite; }
 .animate-expand-in { animation: expand-in 150ms ease-out both; }
 
-/* ── Animation timing utilities ── */
+/* â”€â”€ Animation timing utilities â”€â”€ */
 .duration-instant { transition-duration: var(--duration-instant); }
 .duration-snap { transition-duration: var(--duration-fast); }
 .duration-flow { transition-duration: var(--duration-normal); }
@@ -218,19 +214,19 @@ input[type="number"] {
   100% { width: 1em; }
 }
 
-/* ── Dot Grid ── */
+/* â”€â”€ Dot Grid â”€â”€ */
 .dot-grid {
   background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
-/* ── Selection ── */
+/* â”€â”€ Selection â”€â”€ */
 ::selection {
   background-color: rgba(6, 182, 212, 0.25);
   color: var(--foreground);
 }
 
-/* ── Theme Variants ── */
+/* â”€â”€ Theme Variants â”€â”€ */
 
 /* Dark: Cyan */
 [data-theme="dark-cyan"] {
@@ -297,7 +293,7 @@ input[type="number"] {
   --btn-primary: #9d174d;
 }
 
-/* Dark: Deadpool — black/white canvas with blood-red accents */
+/* Dark: Deadpool â€” black/white canvas with blood-red accents */
 [data-theme="dark-red"] {
   --primary: #cc0000;
   --accent: #e60000;
@@ -318,7 +314,7 @@ input[type="number"] {
   --glass-border: rgba(204, 0, 0, 0.12);
 }
 
-/* Light — warm paper-like palette */
+/* Light â€” warm paper-like palette */
 [data-theme="light"] {
   --primary: #2554b0;
   --accent: #3568c7;
@@ -354,7 +350,7 @@ input[type="number"] {
   color: #1c1c28;
 }
 
-/* ── Deadpool theme specials ── */
+/* â”€â”€ Deadpool theme specials â”€â”€ */
 [data-theme="dark-red"] * {
   scrollbar-color: rgba(204, 0, 0, 0.25) transparent;
 }
@@ -368,7 +364,7 @@ input[type="number"] {
   background-image: radial-gradient(circle, rgba(204, 0, 0, 0.06) 1px, transparent 1px);
 }
 
-/* ── Pipeline Animations ── */
+/* â”€â”€ Pipeline Animations â”€â”€ */
 @keyframes dash-flow {
   from { stroke-dashoffset: 0; }
   to { stroke-dashoffset: -28; }
@@ -379,7 +375,7 @@ input[type="number"] {
   to { transform: rotate(360deg); }
 }
 
-/* ── JSON Syntax Highlighting (highlight.js tokens) ── */
+/* â”€â”€ JSON Syntax Highlighting (highlight.js tokens) â”€â”€ */
 .json-highlight .hljs-attr { color: #c4b5fd; }
 .json-highlight .hljs-string { color: #86efac; }
 .json-highlight .hljs-number { color: #93c5fd; }
@@ -387,7 +383,7 @@ input[type="number"] {
 .json-highlight .hljs-punctuation { color: #71717a; }
 .json-highlight .hljs-comment { color: #52525b; font-style: italic; }
 
-/* ── Persona Vibe Layer ──
+/* â”€â”€ Persona Vibe Layer â”€â”€
    Ambient overlay driven by the selected agent's personality.
    Uses --vibe-* custom properties set by VibeThemeProvider.
    Falls back to transparent / 1 so no visual change when no vibe is active.
@@ -436,7 +432,7 @@ input[type="number"] {
   animation-duration: calc(4s / var(--vibe-anim-scale, 1));
 }
 
-/* Vibe-tinted card borders — apply subtle glow color to card outlines */
+/* Vibe-tinted card borders â€” apply subtle glow color to card outlines */
 [data-vibe="clinical"] .rounded-xl {
   border-color: rgba(148, 163, 184, calc(0.1 * var(--_border)));
 }
@@ -456,7 +452,7 @@ input[type="number"] {
   border-color: rgba(71, 85, 105, calc(0.04 * var(--_border)));
 }
 
-/* ── Theme Transition ── */
+/* â”€â”€ Theme Transition â”€â”€ */
 .theme-transitioning,
 .theme-transitioning *,
 .theme-transitioning *::before,

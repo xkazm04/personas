@@ -27,7 +27,6 @@ export const getKnowledgeSummary = (personaId?: string) =>
   invoke<KnowledgeGraphSummary>('get_knowledge_summary', {
     personaId: personaId ?? null,
   });
-<<<<<<< HEAD
 
 export const listScopedKnowledge = (
   scopeType: string,
@@ -69,5 +68,3 @@ export const getSharedKnowledgeInjection = (
     toolNames,
     connectorTypes,
   });
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
