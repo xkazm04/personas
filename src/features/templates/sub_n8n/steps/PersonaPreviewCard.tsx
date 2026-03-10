@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Wrench, Zap, Link, ChevronDown, ChevronRight, AlertTriangle, Brain, Activity, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
-import { ConnectorHealthRail } from './ConnectorHealthRail';
+import { ConnectorHealthRail } from './confirm/ConnectorHealthRail';
 import type { ConnectorRailItem } from '../edit/connectorHealth';
 
 interface ProtocolCapability {

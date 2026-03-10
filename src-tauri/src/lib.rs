@@ -113,7 +113,9 @@ pub fn run() {
     #[cfg(feature = "desktop")]
     {
         builder = builder
-            .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {}))
+            .plugin(tauri_plugin_single_instance::init(|_app, argv, _cwd| {
+                tracing::info!("Single-instance callback fired, argv: {:?}", argv);
+            }))
             .plugin(tauri_plugin_window_state::Builder::new().build())
             .plugin(tauri_plugin_updater::Builder::new().build());
     }
@@ -272,8 +274,11 @@ pub fn run() {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 let dl_handle = app.handle().clone();
                 app.deep_link().on_open_url(move |event| {
-                    for url in event.urls() {
+                    let urls = event.urls();
+                    tracing::info!("Deep-link on_open_url fired with {} URL(s)", urls.len());
+                    for url in urls {
                         let url_str = url.to_string();
+                        tracing::info!("Deep-link URL received: {}", url_str);
                         if url_str.starts_with("personas://auth/callback") {
                             let handle = dl_handle.clone();
                             tauri::async_runtime::spawn(async move {
@@ -290,7 +295,10 @@ pub fn run() {
                 // Register protocol during development (desktop only)
                 #[cfg(all(debug_assertions, feature = "desktop"))]
                 {
-                    let _ = app.deep_link().register_all();
+                    match app.deep_link().register_all() {
+                        Ok(_) => tracing::info!("Deep-link protocol registered successfully"),
+                        Err(e) => tracing::error!("Deep-link protocol registration failed: {}", e),
+                    }
                 }
             }
 

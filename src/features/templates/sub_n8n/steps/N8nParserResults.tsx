@@ -1,17 +1,11 @@
 import { useState, useEffect } from 'react';
-import { FileJson, FileCode2, Wrench, Zap, Link, Check, Sparkles, AlertTriangle } from 'lucide-react';
+import { FileJson, FileCode2, Sparkles, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { WorkflowPlatform } from '@/lib/personas/parsers/workflowDetector';
 import { PLATFORM_LABELS } from '@/lib/personas/parsers/workflowDetector';
-
-const PLATFORM_COLORS: Record<WorkflowPlatform, string> = {
-  'n8n': 'bg-orange-500/15 text-orange-400 border-orange-500/20',
-  'zapier': 'bg-amber-500/15 text-amber-400 border-amber-500/20',
-  'make': 'bg-purple-500/15 text-purple-400 border-purple-500/20',
-  'github-actions': 'bg-blue-500/15 text-blue-400 border-blue-500/20',
-  'unknown': 'bg-zinc-500/15 text-zinc-400 border-zinc-500/20',
-};
+import { PLATFORM_COLORS } from './SelectionCheckbox';
+import { ToolsSection, TriggersSection, ConnectorsSection } from './N8nParserResultsSections';
 
 interface N8nParserResultsProps {
   parsedResult: AgentIR;
@@ -32,38 +26,6 @@ interface N8nParserResultsProps {
   onConfirmPlatform?: () => void;
 }
 
-function SelectionCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
-  return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={checked}
-      onClick={(e) => {
-        e.stopPropagation();
-        onChange();
-      }}
-      className={`w-4 h-4 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 cursor-pointer ${
-        checked
-          ? 'bg-violet-500 border border-violet-500'
-          : 'bg-secondary/40 border border-primary/20 hover:border-primary/40'
-      }`}
-    >
-      <AnimatePresence>
-        {checked && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: 'spring', damping: 15, stiffness: 400, duration: 0.15 }}
-          >
-            <Check className="w-3 h-3 text-foreground" strokeWidth={3} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </button>
-  );
-}
-
 export function N8nParserResults({
   parsedResult,
   workflowName,
@@ -81,7 +43,6 @@ export function N8nParserResults({
 }: N8nParserResultsProps) {
   const hasSelection = !!selectedToolIndices;
 
-  // Elapsed timer for analyzing overlay
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   useEffect(() => {
     if (!isAnalyzing) {
@@ -208,116 +169,27 @@ export function N8nParserResults({
         </div>
       )}
 
-      {/* Tools */}
+      {/* Sections */}
       <div className="rounded-xl border border-primary/10 bg-secondary/20 divide-y divide-primary/10">
-        {parsedResult.suggested_tools.length > 0 && (
-          <div className="p-4">
-            <h4 className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5 flex items-center gap-1">
-              <Wrench className="w-3 h-3" />
-              Tools ({parsedResult.suggested_tools.length})
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {parsedResult.suggested_tools.map((tool, i) => {
-                const isSelected = selectedToolIndices?.has(i) ?? true;
-                return (
-                  <div
-                    key={tool}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all duration-150 ${
-                      isSelected
-                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                        : 'bg-secondary/30 text-muted-foreground/80 border-primary/10 opacity-60'
-                    } ${onToggleTool ? 'cursor-pointer hover:opacity-80' : ''}`}
-                    onClick={() => onToggleTool?.(i)}
-                  >
-                    {hasSelection && (
-                      <SelectionCheckbox
-                        checked={isSelected}
-                        onChange={() => onToggleTool?.(i)}
-                      />
-                    )}
-                    <span className="text-sm font-mono">{tool}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Triggers */}
-        {parsedResult.suggested_triggers.length > 0 && (
-          <div className="p-4">
-            <h4 className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5 flex items-center gap-1">
-              <Zap className="w-3 h-3" />
-              Triggers ({parsedResult.suggested_triggers.length})
-            </h4>
-            <div className="space-y-2">
-              {parsedResult.suggested_triggers.map((trigger, i) => {
-                const isSelected = selectedTriggerIndices?.has(i) ?? true;
-                return (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all duration-150 ${
-                      isSelected
-                        ? 'bg-amber-500/5 border-amber-500/15'
-                        : 'bg-secondary/20 border-primary/10 opacity-50'
-                    } ${onToggleTrigger ? 'cursor-pointer hover:opacity-80' : ''}`}
-                    onClick={() => onToggleTrigger?.(i)}
-                  >
-                    {hasSelection && (
-                      <SelectionCheckbox
-                        checked={isSelected}
-                        onChange={() => onToggleTrigger?.(i)}
-                      />
-                    )}
-                    <span className={`px-1.5 py-0.5 text-sm font-mono rounded border ${
-                      isSelected
-                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                        : 'bg-secondary/30 text-muted-foreground/80 border-primary/10'
-                    }`}>
-                      {trigger.trigger_type}
-                    </span>
-                    <span className={`text-sm truncate ${isSelected ? 'text-foreground/80' : 'text-muted-foreground/80'}`}>
-                      {trigger.description}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Connectors */}
+        <ToolsSection
+          tools={parsedResult.suggested_tools}
+          selectedToolIndices={selectedToolIndices}
+          hasSelection={hasSelection}
+          onToggleTool={onToggleTool}
+        />
+        <TriggersSection
+          triggers={parsedResult.suggested_triggers}
+          selectedTriggerIndices={selectedTriggerIndices}
+          hasSelection={hasSelection}
+          onToggleTrigger={onToggleTrigger}
+        />
         {parsedResult.suggested_connectors && parsedResult.suggested_connectors.length > 0 && (
-          <div className="p-4">
-            <h4 className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5 flex items-center gap-1">
-              <Link className="w-3 h-3" />
-              Connectors ({parsedResult.suggested_connectors.length})
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {parsedResult.suggested_connectors.map((conn) => {
-                const isSelected = selectedConnectorNames?.has(conn.name) ?? true;
-                return (
-                  <div
-                    key={conn.name}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all duration-150 ${
-                      isSelected
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                        : 'bg-secondary/30 text-muted-foreground/80 border-primary/10 opacity-60'
-                    } ${onToggleConnector ? 'cursor-pointer hover:opacity-80' : ''}`}
-                    onClick={() => onToggleConnector?.(conn.name)}
-                  >
-                    {hasSelection && (
-                      <SelectionCheckbox
-                        checked={isSelected}
-                        onChange={() => onToggleConnector?.(conn.name)}
-                      />
-                    )}
-                    <span className="text-sm font-medium">{conn.name}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <ConnectorsSection
+            connectors={parsedResult.suggested_connectors}
+            selectedConnectorNames={selectedConnectorNames}
+            hasSelection={hasSelection}
+            onToggleConnector={onToggleConnector}
+          />
         )}
       </div>
     </div>

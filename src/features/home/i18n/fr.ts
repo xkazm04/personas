@@ -26,11 +26,11 @@ export const fr = {
         label: "Clés",
         description: "Gérez les identifiants API, connexions et secrets"
       },
-      templates: {
+      "design-reviews": {
         label: "Modèles",
         description: "Importez des workflows n8n et générez des modèles d'agents"
       },
-      teams: {
+      team: {
         label: "Équipes",
         description: "Construisez des pipelines multi-agents par glisser-déposer"
       },

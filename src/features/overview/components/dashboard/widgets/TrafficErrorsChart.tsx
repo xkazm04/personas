@@ -1,0 +1,81 @@
+import { TrendingUp } from 'lucide-react';
+import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
+import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
+import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
+import { GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/libs/chartConstants';
+
+interface ChartDataPoint {
+  date: string;
+  traffic: number;
+  errors: number;
+}
+
+interface TrafficErrorsChartProps {
+  chartData: ChartDataPoint[];
+  totalTraffic: number;
+  totalErrors: number;
+}
+
+export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: TrafficErrorsChartProps) {
+  return (
+    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm p-4 space-y-4 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full pointer-events-none" />
+      <div className="flex items-center justify-between relative z-10">
+        <h3 className="text-sm font-bold uppercase tracking-widest text-foreground/80 flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
+            <TrendingUp className="w-3.5 h-3.5" />
+          </div>
+          Traffic & Errors
+        </h3>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-cyan-400" />
+            <span className="text-sm text-muted-foreground/60">{totalTraffic}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-rose-400" />
+            <span className="text-sm text-muted-foreground/60">{totalErrors}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="h-32 w-full relative z-10">
+        {chartData.length > 0 ? (
+          <ChartErrorBoundary>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="trafficGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="errorGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 9 }} tickFormatter={(v: string) => v.slice(5)} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 9 }} width={24} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip content={<ChartTooltip />} />
+                <Area type="monotone" dataKey="traffic" name="Traffic" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill="url(#trafficGrad)" />
+                <Area type="monotone" dataKey="errors" name="Errors" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#errorGrad)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartErrorBoundary>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <p className="text-sm text-muted-foreground/50">No execution data yet</p>
+          </div>
+        )}
+      </div>
+
+      <div className="pt-3 border-t border-primary/5 relative z-10">
+        <div className="flex justify-between text-sm font-semibold text-muted-foreground/60 uppercase tracking-widest">
+          <span>14 Days Ago</span>
+          <span>Today</span>
+        </div>
+      </div>
+    </div>
+  );
+}

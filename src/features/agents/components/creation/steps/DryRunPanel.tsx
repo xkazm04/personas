@@ -1,7 +1,7 @@
 import { type Dispatch } from 'react';
 import { CheckCircle2, AlertTriangle, XCircle, Info, Wrench } from 'lucide-react';
-import type { DryRunResult, DryRunIssue } from './types';
-import type { BuilderAction } from './builderReducer';
+import type { DryRunResult, DryRunIssue } from './builder/types';
+import type { BuilderAction } from './builder/builderReducer';
 import { FEASIBILITY_COLORS, SEVERITY_STYLES } from '@/lib/utils/designTokens';
 
 // ── Severity styling ────────────────────────────────────────────────

@@ -26,11 +26,11 @@ export const ja = {
         label: "キー",
         description: "API認証情報、データベース接続、シークレットの管理"
       },
-      templates: {
+      "design-reviews": {
         label: "テンプレート",
         description: "n8nワークフローのインポートとエージェントテンプレートの生成"
       },
-      teams: {
+      team: {
         label: "チーム",
         description: "ドラッグ＆ドロップでマルチエージェントパイプラインを構築"
       },

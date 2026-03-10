@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lightbulb, X, Gauge, Clock, AlertTriangle, Settings, GitBranch } from 'lucide-react';
-import type { MemoryAction, MemoryActionKind } from './memoryActions';
-import { ACTION_KIND_META } from './memoryActions';
+import type { MemoryAction, MemoryActionKind } from './hooks/memoryActions';
+import { ACTION_KIND_META } from './hooks/memoryActions';
 
 const KIND_ICONS: Record<MemoryActionKind, typeof Gauge> = {
   throttle: Gauge,

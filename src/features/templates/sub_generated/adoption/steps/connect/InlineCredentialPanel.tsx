@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { useCredentialDesign, type CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
-import { AutoCredPanel } from '@/features/vault/sub_autoCred/AutoCredPanel';
+import { AutoCredPanel } from '@/features/vault/sub_autoCred/steps/AutoCredPanel';
 import { usePersonaStore } from '@/stores/personaStore';
 import { AnalyzingPhase } from '@/features/vault/sub_design/phases/AnalyzingPhase';
 import { useTemplateMotion } from '@/features/templates/animationPresets';

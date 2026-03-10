@@ -12,35 +12,35 @@ export const en = {
     nav: {
       overview: {
         label: "Overview",
-        description: "Dashboard, analytics, executions, and real-time system monitoring"
+        description: "Dashboard analytics, execution history, and real-time system monitoring across all agents"
       },
       personas: {
         label: "Agents",
-        description: "Create, configure, and manage your AI agent personas"
+        description: "Create, configure, and manage AI agent personas with custom behaviors and capabilities"
       },
       events: {
         label: "Events",
-        description: "Configure event triggers, webhooks, and automations"
+        description: "Configure event triggers, webhook listeners, and schedule-driven automations"
       },
       credentials: {
         label: "Keys",
-        description: "Manage API credentials, database connections, and secrets"
+        description: "Manage API credentials, database connections, OAuth tokens, and encrypted secrets"
       },
-      templates: {
+      "design-reviews": {
         label: "Templates",
-        description: "Import n8n workflows and generate agent templates"
+        description: "Import n8n workflows, browse the template gallery, and generate agent blueprints"
       },
-      teams: {
+      team: {
         label: "Teams",
-        description: "Build multi-agent team pipelines with drag-and-drop"
+        description: "Build multi-agent team pipelines with drag-and-drop orchestration and routing"
       },
       cloud: {
         label: "Cloud",
-        description: "Deploy agents to cloud infrastructure and GitLab CI"
+        description: "Deploy agents to cloud infrastructure, manage schedules, and integrate GitLab CI"
       },
       settings: {
         label: "Settings",
-        description: "Account, appearance, notifications, and engine config"
+        description: "Account preferences, appearance themes, notification rules, and engine configuration"
       }
     }
   }

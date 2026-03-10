@@ -26,11 +26,11 @@ export const cs = {
         label: "Klíče",
         description: "Spravujte API přihlašovací údaje, databázová připojení a tajemství"
       },
-      templates: {
+      "design-reviews": {
         label: "Šablony",
         description: "Importujte n8n workflow a generujte šablony agentů"
       },
-      teams: {
+      team: {
         label: "Týmy",
         description: "Sestavte multi-agentní pipeline přetažením"
       },

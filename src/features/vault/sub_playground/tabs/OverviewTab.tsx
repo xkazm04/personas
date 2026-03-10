@@ -4,7 +4,7 @@ import { Key, Wrench, Zap, Pencil, Copy, Check, ChevronDown, ChevronRight, Trash
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { CredentialEventConfig } from '@/features/vault/sub_features/CredentialEventConfig';
 import { CredentialIntelligence } from '@/features/vault/sub_features/CredentialIntelligence';
-import { VaultErrorBanner } from '@/features/vault/sub_card/VaultErrorBanner';
+import { VaultErrorBanner } from '@/features/vault/sub_card/banners/VaultErrorBanner';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { RotationStatus } from '@/api/vault/rotation';

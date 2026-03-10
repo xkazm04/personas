@@ -5,7 +5,6 @@ import { sanitizeErrorMessage } from '@/lib/utils/sanitizers/maskSensitive';
 import { usePersonaStore } from '@/stores/personaStore';
 import {
   type ErrorAction,
-  type ErrorSeverity,
   SEVERITY_ICONS,
   SEVERITY_TO_TOKEN,
   getErrorExplanation,

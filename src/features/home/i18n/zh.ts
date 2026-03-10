@@ -26,11 +26,11 @@ export const zh = {
         label: "密钥",
         description: "管理 API 凭证、数据库连接和机密"
       },
-      templates: {
+      "design-reviews": {
         label: "模板",
         description: "导入 n8n 工作流并生成代理模板"
       },
-      teams: {
+      team: {
         label: "团队",
         description: "通过拖放构建多代理团队流水线"
       },

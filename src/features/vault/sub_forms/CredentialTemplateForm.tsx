@@ -1,13 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Plug, Server, Bot, Monitor, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { McpPrefilledForm } from '@/features/vault/sub_schemas/McpPrefilledForm';
 import type { ConnectorDefinition, CredentialTemplateField, ConnectorAuthMethod } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
-import { getAuthBadgeClasses } from '@/features/vault/utils/authMethodStyles';
-import { isDesktopBridge } from '@/lib/utils/platform/connectors';
+import { SetupGuideSection } from './SetupGuideSection';
+import { TemplateFormHeader } from './TemplateFormHeader';
+import { AuthMethodTabs } from './AuthMethodTabs';
 
 interface AuthVariant {
   id: string;
@@ -22,11 +21,9 @@ export interface CredentialTemplateFormProps {
   onCredentialNameChange: (name: string) => void;
   effectiveTemplateFields: CredentialTemplateField[];
   isGoogleTemplate: boolean;
-  /** True when using the universal OAuth gateway (non-Google OAuth connectors like LinkedIn) */
   isOAuthTemplate?: boolean;
   isAuthorizingOAuth: boolean;
   oauthCompletedAt: string | null;
-  /** Label for the OAuth consent button (defaults to "Authorize with Google" for Google, "Authorize with {label}" for others) */
   oauthConsentLabel?: string;
   onCreateCredential: (values: Record<string, string>) => void;
   onOAuthConsent: (values: Record<string, string>) => void;
@@ -36,7 +33,6 @@ export interface CredentialTemplateFormProps {
   onMcpComplete?: () => void;
   onAutoSetup?: () => void;
   onDesktopDetect?: () => void;
-  // Healthcheck props
   onHealthcheck?: (values: Record<string, string>) => void;
   isHealthchecking?: boolean;
   healthcheckResult?: { success: boolean; message: string } | null;
@@ -74,7 +70,6 @@ export function CredentialTemplateForm({
     variants?.[0]?.id ?? null,
   );
 
-  // Auth method tabs (PAT vs MCP, etc.)
   const authMethods = useMemo(() => getAuthMethods(selectedConnector), [selectedConnector]);
   const defaultMethodId = useMemo(
     () => (authMethods.find((m) => m.is_default) ?? authMethods[0])?.id ?? authMethods[0]?.id ?? 'default',
@@ -109,104 +104,25 @@ export function CredentialTemplateForm({
   };
 
   const guide = typeof metadata.setup_guide === 'string' ? metadata.setup_guide : null;
-
-  const healthcheckPassed = healthcheckResult?.success === true;
-
   const isAnyOAuth = isGoogleTemplate || isOAuthTemplate;
   const requiresHealthcheck = onHealthcheck != null && !isAnyOAuth;
-  const saveDisabled = isAnyOAuth || (requiresHealthcheck && !healthcheckPassed);
+  const saveDisabled = isAnyOAuth || (requiresHealthcheck && !healthcheckResult?.success);
   const saveDisabledReason = isAnyOAuth
-    ? `Use the authorize button below to connect this credential.`
-    : requiresHealthcheck && !healthcheckPassed
-      ? 'Run a successful connection test before saving.'
-      : undefined;
+    ? 'Use the authorize button below to connect this credential.'
+    : requiresHealthcheck && !healthcheckResult?.success ? 'Run a successful connection test before saving.' : undefined;
 
   return (
-    <motion.div
-      key="form"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="w-full bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-6 space-y-4"
-    >
-      <div className="flex items-center gap-3 mb-4">
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="p-2 -ml-2 rounded-lg hover:bg-secondary/50 transition-colors"
-            title="Back to catalog"
-          >
-            <ArrowLeft className="w-4 h-4 text-muted-foreground/70" />
-          </button>
-        )}
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center border"
-          style={{
-            backgroundColor: `${selectedConnector.color}15`,
-            borderColor: `${selectedConnector.color}30`,
-          }}
-        >
-          {selectedConnector.icon_url ? (
-            <ThemedConnectorIcon url={selectedConnector.icon_url} label={selectedConnector.label} color={selectedConnector.color} size="w-5 h-5" />
-          ) : (
-            <Plug className="w-5 h-5" style={{ color: selectedConnector.color }} />
-          )}
-        </div>
-        <div className="flex-1">
-          <h4 className="font-medium text-foreground">New {selectedConnector.label} Credential</h4>
-          <p className="text-sm text-muted-foreground/80">
-            {activeMethod?.type === 'mcp'
-              ? 'Configure MCP server connection'
-              : selectedConnector.healthcheck_config?.description || 'Configure credential fields'}
-          </p>
-        </div>
-        {isDesktopBridge(selectedConnector) ? (
-          onDesktopDetect && (
-            <button
-              onClick={onDesktopDetect}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-orange-500/20 bg-orange-500/8 hover:bg-orange-500/15 text-orange-300 text-sm font-medium transition-colors"
-            >
-              <Monitor className="w-3.5 h-3.5" />
-              Detect
-            </button>
-          )
-        ) : (
-          onAutoSetup && activeMethod?.type !== 'mcp' && (
-            <button
-              onClick={onAutoSetup}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-cyan-500/20 bg-cyan-500/8 hover:bg-cyan-500/15 text-cyan-300 text-sm font-medium transition-colors"
-            >
-              <Bot className="w-3.5 h-3.5" />
-              Auto Add
-            </button>
-          )
-        )}
-      </div>
-
-      {/* Setup guide â€” collapsible */}
+    <motion.div key="form" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+      className="w-full bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-6 space-y-4">
+      <TemplateFormHeader selectedConnector={selectedConnector} activeMethod={activeMethod}
+        onBack={onBack} onAutoSetup={onAutoSetup} onDesktopDetect={onDesktopDetect} />
       {guide && <SetupGuideSection guide={guide} connectorLabel={selectedConnector.label} />}
+      <AuthMethodTabs
+        authMethods={authMethods}
+        activeAuthMethodId={activeAuthMethodId}
+        onMethodChange={handleAuthMethodChange}
+      />
 
-      {/* Auth method tabs â€” shown when multiple methods available */}
-      {authMethods.length > 1 && (
-        <div className="flex gap-1 p-1 bg-secondary/15 border border-primary/8 rounded-lg">
-          {authMethods.map((method) => (
-            <button
-              key={method.id}
-              onClick={() => handleAuthMethodChange(method)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${
-                activeAuthMethodId === method.id
-                  ? `border ${getAuthBadgeClasses(method)}`
-                  : 'text-muted-foreground/80 hover:bg-secondary/40 border border-transparent'
-              }`}
-            >
-              {method.type === 'mcp' && <Server className="w-3 h-3" />}
-              {method.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* MCP method â€” show McpPrefilledForm */}
       {activeMethod?.type === 'mcp' ? (
         <McpPrefilledForm
           connector={selectedConnector}
@@ -216,7 +132,6 @@ export function CredentialTemplateForm({
         />
       ) : (
         <>
-          {/* Credential name input */}
           <div>
             <label className="block text-sm font-medium text-foreground/80 mb-1.5">
               Credential Name
@@ -230,7 +145,6 @@ export function CredentialTemplateForm({
             />
           </div>
 
-          {/* Auth variant tabs (e.g., Supabase Anon vs Service Role) */}
           {variants && variants.length > 1 && (
             <div className="flex gap-1.5 p-1 bg-secondary/15 border border-primary/8 rounded-lg">
               {variants.map((v) => (
@@ -272,53 +186,5 @@ export function CredentialTemplateForm({
         </>
       )}
     </motion.div>
-  );
-}
-
-function SetupGuideSection({ guide, connectorLabel }: { guide: string; connectorLabel: string }) {
-  const [open, setOpen] = useState(false);
-  const steps = guide.split('\n').filter(Boolean);
-
-  return (
-    <div className="border border-primary/10 rounded-xl overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/30 transition-colors"
-      >
-        {open ? (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60" />
-        ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
-        )}
-        <span className="text-sm font-medium text-muted-foreground/70">
-          How to get {connectorLabel} credentials
-        </span>
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
-          >
-            <div className="px-3.5 pb-3 space-y-2">
-              {steps.map((line, i) => {
-                const stripped = line.replace(/^\d+\.\s*/, '');
-                return (
-                  <div key={i} className="flex gap-2.5">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center text-sm font-bold text-primary/70">
-                      {i + 1}
-                    </span>
-                    <p className="text-sm text-foreground/75 pt-0.5 leading-relaxed">{stripped}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
   );
 }

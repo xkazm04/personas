@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { DbPersonaExecution } from '@/lib/types/types';
-import { ExecutionInspector } from '@/features/agents/sub_executions/detail/ExecutionInspector';
-import { TraceInspector } from '@/features/agents/sub_executions/detail/TraceInspector';
+import { ExecutionInspector } from '@/features/agents/sub_executions/detail/inspector/ExecutionInspector';
+import { TraceInspector } from '@/features/agents/sub_executions/detail/inspector/TraceInspector';
 import { PipelineWaterfall } from '@/features/agents/sub_executions/replay/PipelineWaterfall';
 import { ReplaySandbox } from '@/features/agents/sub_executions/replay/ReplaySandbox';
 import { hasNonEmptyJson } from './executionDetailTypes';

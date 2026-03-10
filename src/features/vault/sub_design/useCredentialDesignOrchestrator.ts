@@ -1,69 +1,26 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useCredentialDesign, type CredentialDesignResult, type CredentialDesignPhase } from '@/hooks/design/credential/useCredentialDesign';
+import { useCredentialDesign, type CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import { useOAuthConsent } from '@/hooks/design/oauth/useOAuthConsent';
 import { useUniversalOAuth } from '@/hooks/design/oauth/useUniversalOAuth';
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
-import type { CredentialTemplateField } from '@/lib/types/types';
-import {
-  extractFirstUrl,
-  deriveCredentialFlow,
-  getEffectiveFields,
-  isSaveReady,
-} from '@/features/vault/sub_design/CredentialDesignHelpers';
+import { extractFirstUrl } from '@/features/vault/sub_design/CredentialDesignHelpers';
 import type { CredentialDesignContextValue } from '@/features/vault/sub_design/CredentialDesignContext';
+import type { CredentialDesignOrchestrator } from './orchestratorTypes';
+import { useDesignFields, useFieldValidation } from './orchestratorDerived';
+import { buildContextValue } from './orchestratorContext';
 
-// ── Return type ─────────────────────────────────────────────────────
-
-export interface CredentialDesignOrchestrator {
-  /** Ready-made context value for CredentialDesignProvider (null before result). */
-  contextValue: CredentialDesignContextValue | null;
-
-  // Phase machine
-  phase: CredentialDesignPhase;
-  outputLines: string[];
-  error: string | null;
-  savedCredentialId: string | null;
-  registeredConnectorName: string | null;
-
-  // Instruction / name
-  instruction: string;
-  setInstruction: (v: string) => void;
-  credentialName: string;
-
-  // Actions
-  start: (override?: string) => void;
-  cancel: () => void;
-  resetAll: () => void;
-
-  /** Additive refinement: restart design with context from previous result. */
-  startRefinement: (refinementText: string) => void;
-  /** How many refinement rounds have been applied in this session. */
-  refinementCount: number;
-
-  // Template support
-  loadTemplate: (template: CredentialDesignResult) => void;
-  invalidateHealth: () => void;
-}
-
-// ── Hook ────────────────────────────────────────────────────────────
+export type { CredentialDesignOrchestrator } from './orchestratorTypes';
 
 /**
  * Composes useCredentialDesign, useOAuthConsent, useUniversalOAuth, and
  * useCredentialHealth into a single orchestrator that returns a ready-made
  * CredentialDesignContextValue plus the extra state the modal needs.
- *
- * All OAuth/healthcheck synchronisation, field derivation, flow detection,
- * and handler wiring happens here — the parent component only renders.
  */
 export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator {
-  // ── Sub-hooks ──────────────────────────────────────────────────────
-
   const design = useCredentialDesign();
   const oauth = useOAuthConsent();
   const universalOAuth = useUniversalOAuth();
   const health = useCredentialHealth('design');
-
-  // ── Local state ────────────────────────────────────────────────────
 
   const [instruction, setInstruction] = useState('');
   const [credentialName, setCredentialName] = useState('');
@@ -71,97 +28,39 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
   const [refinementCount, setRefinementCount] = useState(0);
   const lastResultRef = useRef<CredentialDesignResult | null>(null);
 
-  // Snapshot the result whenever we get one, so it survives phase transitions to 'done'
   useEffect(() => {
     if (design.result) lastResultRef.current = design.result;
   }, [design.result]);
 
-  // ── Derive OAuth status message (separated from healthcheck results) ──
-  // Previously OAuth messages were piped into health.setResult(), conflating
-  // OAuth status with healthcheck results. Now tracked independently so a
-  // failed OAuth doesn't display as a healthcheck failure and vice-versa.
-  // When both oauth and universalOAuth fire, prefer the most recent one.
-
+  // ── Derive OAuth status message ──
   const oauthStatusMessage = useMemo(() => {
     const oMsg = oauth.message;
     const uMsg = universalOAuth.message;
     if (!oMsg && !uMsg) return null;
     if (!oMsg) return uMsg;
     if (!uMsg) return oMsg;
-    // Both present — prefer universalOAuth (provider-specific) over legacy
     return uMsg;
   }, [oauth.message, universalOAuth.message]);
 
-  // ── Auto-set credential name when preview arrives ──────────────────
-
+  // ── Auto-set credential name ──
   useEffect(() => {
     if (design.phase === 'preview' && design.result) {
       setCredentialName((prev) => prev || `${design.result!.connector.label} Credential`);
     }
   }, [design.phase, design.result]);
 
-  // ── Derived values ─────────────────────────────────────────────────
-
-  const fields: CredentialTemplateField[] = useMemo(
-    () =>
-      design.result?.connector.fields.map((f) => ({
-        key: f.key,
-        label: f.label,
-        type: f.type as CredentialTemplateField['type'],
-        required: f.required,
-        placeholder: f.placeholder,
-        helpText: f.helpText,
-      })) ?? [],
-    [design.result],
-  );
-
-  const fieldKeys = useMemo(() => new Set(fields.map((f) => f.key)), [fields]);
-
-  const flow = useMemo(
-    () => deriveCredentialFlow(design.result?.connector.oauth_type ?? null, fieldKeys),
-    [design.result?.connector.oauth_type, fieldKeys],
-  );
-
-  const effectiveFields = useMemo(() => getEffectiveFields(fields, flow), [fields, flow]);
-
+  // ── Derived values ──
+  const { fields, flow, effectiveFields, requiredCount, optionalCount } = useDesignFields(design.result);
   const firstSetupUrl = extractFirstUrl(design.result?.setup_instructions);
-  const requiredCount = fields.filter((f) => f.required).length;
-  const optionalCount = Math.max(0, fields.length - requiredCount);
 
-  // Read OAuth values from refs (not React state) to avoid DevTools exposure.
-  // The valuesVersion counters trigger re-computation when tokens arrive.
   const mergedOAuthValues = useMemo(
     () => ({ ...oauth.getValues(), ...universalOAuth.getValues(), ...negotiatorValues }),
     [oauth.valuesVersion, universalOAuth.valuesVersion, negotiatorValues],
   );
 
-  const hasFieldValidationErrors = useMemo(() => {
-    return effectiveFields.some((field) => {
-      const value = mergedOAuthValues[field.key] ?? '';
-      const trimmed = value.trim();
-      if (field.required && !trimmed) return true;
-      if (trimmed && field.type === 'url') {
-        try {
-          const parsed = new URL(trimmed);
-          return !['http:', 'https:'].includes(parsed.protocol);
-        } catch {
-          // intentional: non-critical -- URL parse fallback
-          return true;
-        }
-      }
-      return false;
-    });
-  }, [effectiveFields, mergedOAuthValues]);
+  const { canSaveCredential } = useFieldValidation(effectiveFields, mergedOAuthValues, flow, health.result);
 
-  const canSaveCredential = !hasFieldValidationErrors && isSaveReady(
-    flow,
-    mergedOAuthValues,
-    health.result?.success === true,
-    health.result?.healthcheckConfig ?? null,
-  );
-
-  // ── Handlers ───────────────────────────────────────────────────────
-
+  // ── Handlers ──
   const start = useCallback(
     (override?: string) => {
       const text = (override ?? instruction).trim();
@@ -174,13 +73,11 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
   const handleSave = useCallback(
     (values: Record<string, string>) => {
       const hcConfig = health.result?.healthcheckConfig ?? null;
-
       if (flow.kind === 'google_oauth' && values.refresh_token?.trim()) {
         const name = credentialName.trim() || `${design.result?.connector.label} Credential`;
         design.save(name, values, hcConfig);
         return;
       }
-
       if (!health.result?.success || !hcConfig) {
         health.setResult({
           success: false,
@@ -188,7 +85,6 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
         });
         return;
       }
-
       const name = credentialName.trim() || `${design.result?.connector.label} Credential`;
       design.save(name, values, hcConfig);
     },
@@ -248,16 +144,10 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     setNegotiatorValues({});
   }, [instruction, design.reset, health.invalidate]);
 
-  /**
-   * Additive refinement: compose a context-enriched prompt from the previous
-   * design result + the user's refinement text, then restart the design stream.
-   * Keeps savedCredentialId intact and increments the refinement counter.
-   */
   const startRefinement = useCallback(
     (refinementText: string) => {
       const text = refinementText.trim();
       if (!text) return;
-
       const prev = lastResultRef.current;
       const contextParts: string[] = [];
       if (prev) {
@@ -271,10 +161,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
         contextParts.push(`Original request: ${instruction.trim()}`);
       }
       contextParts.push(`Refinement: ${text}`);
-
       const enriched = contextParts.join('\n');
-
-      // Clear transient state but keep savedCredentialId (via design.refine)
       setCredentialName('');
       health.invalidate();
       setNegotiatorValues({});
@@ -282,7 +169,6 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
       universalOAuth.reset();
       setRefinementCount((c) => c + 1);
       setInstruction(enriched);
-
       design.refine(enriched);
     },
     [instruction, design.refine, health.invalidate, oauth.reset, universalOAuth.reset],
@@ -296,7 +182,6 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     [health.invalidate],
   );
 
-  /** Full reset — call when modal opens or user starts over. */
   const resetAll = useCallback(() => {
     design.reset();
     oauth.reset();
@@ -309,10 +194,9 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     lastResultRef.current = null;
   }, [design.reset, oauth.reset, universalOAuth.reset, health.invalidate]);
 
-  // ── Context value ──────────────────────────────────────────────────
-
+  // ── Context value ──
   const contextValue: CredentialDesignContextValue | null = design.result
-    ? {
+    ? buildContextValue({
         result: design.result,
         fields,
         effectiveFields,
@@ -321,8 +205,8 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
         firstSetupUrl,
         credentialName,
         onCredentialNameChange: setCredentialName,
-        credentialFlow: flow,
-        oauthInitialValues: mergedOAuthValues,
+        flow,
+        mergedOAuthValues,
         isAuthorizingOAuth: oauth.isAuthorizing || universalOAuth.isAuthorizing,
         oauthConsentCompletedAt: oauth.completedAt || universalOAuth.completedAt,
         isHealthchecking: health.isHealthchecking,
@@ -339,7 +223,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
         onReset: handleReset,
         onRefine: handleRefine,
         onNegotiatorValues: handleNegotiatorValues,
-      }
+      })
     : null;
 
   return {

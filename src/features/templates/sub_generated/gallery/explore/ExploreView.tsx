@@ -3,7 +3,7 @@ import { CheckCircle2, Download } from 'lucide-react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import type { CategoryWithCount } from '@/api/overview/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import { CATEGORY_ROLE_GROUPS } from '../search/searchConstants';
+import { CATEGORY_ROLE_GROUPS } from '../search/filters/searchConstants';
 import { RoleGroupCard } from './RoleGroupCard';
 
 interface ExploreViewProps {

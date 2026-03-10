@@ -1,13 +1,13 @@
 import { useId } from 'react';
-import type { Props } from './EventBusTypes';
-import { useEventBusState } from './useEventBusState';
-import { EventBusSvgDefs } from './EventBusSvgDefs';
-import { ToolNodeGroup, PersonaNodeGroup } from './EventBusNodes';
-import { InboundParticles, ReturnFlowParticles } from './EventBusParticles';
-import { EventBusBadges } from './EventBusBadges';
-import { EventBusOverlays } from './EventBusOverlays';
+import type { Props } from './state/EventBusTypes';
+import { useEventBusState } from '../useEventBusState';
+import { EventBusSvgDefs } from './rendering/EventBusSvgDefs';
+import { ToolNodeGroup, PersonaNodeGroup } from './rendering/EventBusNodes';
+import { InboundParticles, ReturnFlowParticles } from './rendering/EventBusParticles';
+import { EventBusBadges } from './rendering/EventBusBadges';
+import { EventBusOverlays } from './rendering/EventBusOverlays';
 
-export type { DiscoveredSource } from './libs/visualizationHelpers';
+export type { DiscoveredSource } from '../libs/visualizationHelpers';
 
 export default function EventBusVisualization({ events, personas, droppedCount = 0, onSelectEvent }: Props) {
   const uid = useId();

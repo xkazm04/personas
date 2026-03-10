@@ -2,10 +2,10 @@ import { useEffect } from 'react';
 import { FlaskConical, GitBranch, Wand2, ArrowLeftRight, Grid3X3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ArenaPanel } from './panels/ArenaPanel';
-import { AbPanel } from './panels/AbPanel';
-import { MatrixPanel } from './panels/MatrixPanel';
-import { EvalPanel } from './panels/EvalPanel';
+import { ArenaPanel } from './panels/arena/ArenaPanel';
+import { AbPanel } from './panels/ab/AbPanel';
+import { MatrixPanel } from './panels/matrix/MatrixPanel';
+import { EvalPanel } from './panels/eval/EvalPanel';
 import { VersionsPanel } from './panels/VersionsPanel';
 import type { LabMode } from '@/stores/slices/agents/labSlice';
 

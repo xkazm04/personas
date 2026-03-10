@@ -26,11 +26,11 @@ export const es = {
         label: "Claves",
         description: "Gestiona credenciales API, conexiones de bases de datos y secretos"
       },
-      templates: {
+      "design-reviews": {
         label: "Plantillas",
         description: "Importa flujos de trabajo n8n y genera plantillas de agentes"
       },
-      teams: {
+      team: {
         label: "Equipos",
         description: "Construye pipelines multi-agente con arrastrar y soltar"
       },

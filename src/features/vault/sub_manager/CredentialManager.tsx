@@ -1,5 +1,5 @@
 import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { VaultErrorBanner } from '@/features/vault/sub_card/VaultErrorBanner';
+import { VaultErrorBanner } from '@/features/vault/sub_card/banners/VaultErrorBanner';
 import { CredentialRelationshipGraph } from '@/features/vault/sub_graph/CredentialRelationshipGraph';
 import { CredentialDeleteDialog } from '@/features/vault/sub_card/CredentialDeleteDialog';
 import { HealthStatusBar } from '@/features/vault/sub_manager/HealthStatusBar';

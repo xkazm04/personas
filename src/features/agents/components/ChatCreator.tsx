@@ -3,8 +3,8 @@ import {
   MessageCircle,
   Send,
 } from 'lucide-react';
-import { CompletenessRing } from './CompletenessRing';
-import { PreviewPanel } from './PreviewPanel';
+import { CompletenessRing } from './persona/CompletenessRing';
+import { PreviewPanel } from './preview/PreviewPanel';
 import { ChatThread } from './ChatThread';
 import { useChatCreatorState } from './useChatCreatorState';
 

@@ -7,7 +7,7 @@ import {
   applyFilter,
   loadSavedViews,
   persistSavedViews,
-} from './eventBusFilterTypes';
+} from './libs/eventBusFilterTypes';
 
 export interface UseEventBusFilterReturn {
   filter: EventBusFilter;

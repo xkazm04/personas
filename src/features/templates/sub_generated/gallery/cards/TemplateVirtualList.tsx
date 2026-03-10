@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { CompactRow } from './CompactRow';
 import { ComfortableRow } from './ComfortableRow';
-import type { Density } from '../search/DensityToggle';
+import type { Density } from '../search/filters/DensityToggle';
 import type { TemplateModal } from './reviewParseCache';
 import type { ModalStackActions } from '../modals/useModalStack';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';

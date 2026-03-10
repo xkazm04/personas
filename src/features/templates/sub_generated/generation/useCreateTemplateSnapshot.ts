@@ -4,7 +4,7 @@ import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import { getTemplateGenerateSnapshot } from '@/api/templates/templateAdopt';
 import { normalizeDraftFromUnknown } from '@/features/templates/sub_n8n/hooks/n8nTypes';
 import { useBackgroundSnapshot } from '@/hooks/utility/data/useBackgroundSnapshot';
-import { clearPersistedContext } from './createTemplateTypes';
+import { clearPersistedContext } from './modals/createTemplateTypes';
 import type { useCreateTemplateReducer } from './useCreateTemplateReducer';
 
 export function useCreateTemplateSnapshot(

@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CredentialList } from '@/features/vault/sub_list/CredentialList';
 import { CredentialPicker } from '@/features/vault/sub_list/CredentialPicker';
 import { CredentialTemplateForm } from '@/features/vault/sub_forms/CredentialTemplateForm';
-import { CatalogAutoSetup } from '@/features/vault/sub_autoCred/CatalogAutoSetup';
+import { CatalogAutoSetup } from '@/features/vault/sub_autoCred/steps/CatalogAutoSetup';
 import { isUniversalOAuthConnector, isDesktopBridge } from '@/lib/utils/platform/connectors';
 import { CredentialAddViews } from './CredentialAddViews';
 import type { useCredentialManagerState } from './useCredentialManagerState';

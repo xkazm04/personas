@@ -6,10 +6,10 @@ import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/l
 import { usePersonaStore } from '@/stores/personaStore';
 import { isTerminalState } from '@/lib/execution/executionState';
 import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
-import { HighlightedJsonBlock } from './HighlightedJsonBlock';
+import { HighlightedJsonBlock } from './inspector/HighlightedJsonBlock';
 import { ErrorExplanationCard } from './ErrorExplanationCard';
-import { ExecutionMemories } from './ExecutionMemories';
-import { ExecutionLogViewer } from './ExecutionLogViewer';
+import { ExecutionMemories } from './views/ExecutionMemories';
+import { ExecutionLogViewer } from './views/ExecutionLogViewer';
 
 interface ExecutionDetailContentProps {
   execution: DbPersonaExecution;

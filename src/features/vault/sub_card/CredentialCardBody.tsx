@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { CredentialCardDetails } from '@/features/vault/sub_card/CredentialCardDetails';
-import { VaultErrorBanner } from '@/features/vault/sub_card/VaultErrorBanner';
+import { VaultErrorBanner } from '@/features/vault/sub_card/banners/VaultErrorBanner';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { RotationStatus } from '@/api/vault/rotation';

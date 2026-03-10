@@ -1,0 +1,59 @@
+import { Activity } from 'lucide-react';
+import { motion } from 'framer-motion';
+import type { HealthScore } from './types';
+
+// ── Score badge ──────────────────────────────────────────────────
+
+export function ScoreBadge({ score }: { score: HealthScore }) {
+  const gradeColors = {
+    healthy: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+    degraded: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+    unhealthy: 'text-red-400 bg-red-500/10 border-red-500/30',
+  };
+
+  const gradeLabels = {
+    healthy: 'Healthy',
+    degraded: 'Degraded',
+    unhealthy: 'Unhealthy',
+  };
+
+  return (
+    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-semibold border ${gradeColors[score.grade]}`}>
+      <Activity className="w-4 h-4" />
+      <span>{score.value}</span>
+      <span className="text-xs font-normal opacity-70">{gradeLabels[score.grade]}</span>
+    </div>
+  );
+}
+
+// ── Score ring visualization ─────────────────────────────────────
+
+export function ScoreRing({ score }: { score: HealthScore }) {
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (score.value / 100) * circumference;
+
+  const strokeColor = {
+    healthy: '#10B981',
+    degraded: '#F59E0B',
+    unhealthy: '#EF4444',
+  }[score.grade];
+
+  return (
+    <div className="relative w-24 h-24 flex-shrink-0">
+      <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r={radius} fill="none" stroke="currentColor" strokeWidth="4" className="text-primary/10" />
+        <motion.circle
+          cx="40" cy="40" r={radius} fill="none" stroke={strokeColor} strokeWidth="4"
+          strokeLinecap="round" strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-xl font-bold text-foreground/90">{score.value}</span>
+      </div>
+    </div>
+  );
+}

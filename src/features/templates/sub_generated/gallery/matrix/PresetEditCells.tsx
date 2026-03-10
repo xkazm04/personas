@@ -1,5 +1,8 @@
 /**
  * Preset edit cells — Review, Memory, and Messages cells for PersonaMatrix edit mode.
+ *
+ * Each cell shows only a ThemedSelect dropdown — the dimension label is already
+ * rendered by the cell header, so we avoid duplicating the selected value.
  */
 import { useMemo, useCallback } from 'react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -14,7 +17,6 @@ interface ReviewEditCellProps {
 }
 
 export function ReviewEditCell({ editState, callbacks }: ReviewEditCellProps) {
-  // Derive current preset from state
   const currentPreset = useMemo(() => {
     if (!editState.requireApproval) return 'autonomous';
     const match = REVIEW_PRESETS.find(
@@ -37,17 +39,8 @@ export function ReviewEditCell({ editState, callbacks }: ReviewEditCellProps) {
     [callbacks],
   );
 
-  const active = editState.requireApproval;
-  const dotColor = active ? 'bg-violet-400' : 'bg-emerald-400';
-
   return (
-    <div className="space-y-2 w-full">
-      <div className="flex items-center gap-2">
-        <span className={`w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} />
-        <span className="text-sm font-medium text-foreground/80">
-          {REVIEW_PRESETS.find((p) => p.value === currentPreset)?.label ?? 'Custom'}
-        </span>
-      </div>
+    <div className="w-full">
       <ThemedSelect
         filterable
         value={currentPreset}
@@ -85,17 +78,8 @@ export function MemoryEditCell({ editState, callbacks }: MemoryEditCellProps) {
     [callbacks],
   );
 
-  const active = editState.memoryEnabled;
-  const dotColor = active ? 'bg-purple-400' : 'bg-zinc-500';
-
   return (
-    <div className="space-y-2 w-full">
-      <div className="flex items-center gap-2">
-        <span className={`w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} />
-        <span className="text-sm font-medium text-foreground/80">
-          {MEMORY_PRESETS.find((p) => p.value === currentPreset)?.label ?? 'Custom'}
-        </span>
-      </div>
+    <div className="w-full">
       <ThemedSelect
         filterable
         value={currentPreset}
@@ -126,10 +110,7 @@ export function MessagesEditCell({ editState, callbacks }: MessagesEditCellProps
   );
 
   return (
-    <div className="space-y-2 w-full">
-      <span className="text-sm font-medium text-foreground/80">
-        {MESSAGE_PRESETS.find((p) => p.value === currentPreset)?.label ?? 'Custom'}
-      </span>
+    <div className="w-full">
       <ThemedSelect
         filterable
         value={currentPreset}

@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Loader2, SkipForward, Plug } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
-import { CatalogAutoSetup } from '@/features/vault/sub_autoCred/CatalogAutoSetup';
+import { CatalogAutoSetup } from '@/features/vault/sub_autoCred/steps/CatalogAutoSetup';
 import { cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
 import type { ConnectorDefinition } from '@/lib/types/types';
 

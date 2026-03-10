@@ -15,7 +15,7 @@ import type { HealingEventPayload } from '../runnerTypes';
 import { HealingCard } from '../detail/HealingCard';
 import { AiHealingCounters } from '../detail/AiHealingCounters';
 import { PhaseTimeline } from './PhaseTimeline';
-import { ExecutionSummaryCard } from '../detail/ExecutionSummaryCard';
+import { ExecutionSummaryCard } from '../detail/views/ExecutionSummaryCard';
 import { ProgressIndicator } from './ProgressIndicator';
 import { RunnerEmptyState } from './RunnerEmptyState';
 import { InputExecuteCard } from './InputExecuteCard';

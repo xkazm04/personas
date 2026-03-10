@@ -26,11 +26,11 @@ export const id = {
         label: "Kunci",
         description: "Kelola kredensial API, koneksi database, dan rahasia"
       },
-      templates: {
+      "design-reviews": {
         label: "Templat",
         description: "Impor alur kerja n8n dan buat templat agen"
       },
-      teams: {
+      team: {
         label: "Tim",
         description: "Bangun alur tim multi-agen dengan drag-and-drop"
       },

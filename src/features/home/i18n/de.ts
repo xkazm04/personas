@@ -26,11 +26,11 @@ export const de = {
         label: "Schlüssel",
         description: "API-Zugangsdaten, Datenbankverbindungen und Geheimnisse verwalten"
       },
-      templates: {
+      "design-reviews": {
         label: "Vorlagen",
         description: "n8n-Workflows importieren und Agenten-Vorlagen generieren"
       },
-      teams: {
+      team: {
         label: "Teams",
         description: "Multi-Agenten-Pipelines per Drag-and-Drop erstellen"
       },

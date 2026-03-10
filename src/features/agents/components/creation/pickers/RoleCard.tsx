@@ -3,9 +3,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { getConnectorFamily } from '@/features/vault/sub_databases/introspectionQueries';
-import type { BuilderComponent, ComponentRole } from '../steps/types';
-import { computeRoleCoverage } from '../steps/builderReducer';
-import { roleIcons, roleColors, roleIconColors, BUILTIN_CONNECTORS } from './componentPickerConstants';
+import type { BuilderComponent, ComponentRole } from '../steps/builder/types';
+import { computeRoleCoverage } from '../steps/builder/builderReducer';
+import { roleIcons, roleColors, roleIconColors, BUILTIN_CONNECTORS } from './selectors/componentPickerConstants';
 
 // -- Database detection -------------------------------------------------------
 

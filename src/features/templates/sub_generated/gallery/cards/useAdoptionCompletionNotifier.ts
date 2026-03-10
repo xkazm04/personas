@@ -5,7 +5,7 @@
  */
 import { useEffect, useRef } from 'react';
 import { getTemplateAdoptSnapshot } from '@/api/templates/templateAdopt';
-import { ADOPT_CONTEXT_KEY } from '../../adoption/useAdoptReducer';
+import { ADOPT_CONTEXT_KEY } from '../../adoption/hooks/useAdoptReducer';
 import { sendOsNotification } from '@/lib/utils/platform/osNotification';
 
 const POLL_INTERVAL_MS = 5_000;

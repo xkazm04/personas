@@ -3,23 +3,15 @@ import { ChevronDown, ChevronRight, Trash2, Clock, Grid3X3, AlertCircle } from '
 import { statusBadge } from '@/lib/eval/evalFramework';
 import { EvalResultsGrid } from './EvalResultsGrid';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
+import type { LabEvalRun } from '@/lib/bindings/LabEvalRun';
 
-interface EvalRun {
-  id: string;
-  status: string;
-  versionNumbers: string;
-  createdAt: string;
-  scenariosCount: number;
-  error?: string | null;
-}
-
-function parseVersionNums(run: EvalRun) {
+function parseVersionNums(run: LabEvalRun) {
   try { const nums = JSON.parse(run.versionNumbers) as number[]; return nums.map((n) => `v${n}`).join(', '); }
   catch { return run.versionNumbers; }
 }
 
 interface EvalHistoryProps {
-  runs: EvalRun[];
+  runs: LabEvalRun[];
   resultsMap: Record<string, LabEvalResult[]>;
   expandedRunId: string | null;
   onToggleExpand: (runId: string | null) => void;

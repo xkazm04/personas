@@ -5,7 +5,7 @@ import {
   ChevronRight,
   Plus,
 } from 'lucide-react';
-import { useAdoptionWizard } from '../AdoptionWizardContext';
+import { useAdoptionWizard } from '../../AdoptionWizardContext';
 import { useTableIntrospection } from '@/hooks/database/useTableIntrospection';
 import { useSchemaProposal } from '@/hooks/database/useSchemaProposal';
 import { extractDatabaseSetup, extractTableNames } from './dataStepHelpers';

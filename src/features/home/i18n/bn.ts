@@ -26,11 +26,11 @@ export const bn = {
         label: "কী",
         description: "API ক্রেডেনশিয়াল, ডাটাবেস সংযোগ এবং সিক্রেট পরিচালনা করুন"
       },
-      templates: {
+      "design-reviews": {
         label: "টেমপ্লেট",
         description: "n8n ওয়ার্কফ্লো আমদানি করুন এবং এজেন্ট টেমপ্লেট তৈরি করুন"
       },
-      teams: {
+      team: {
         label: "টিম",
         description: "ড্র্যাগ-অ্যান্ড-ড্রপ দিয়ে মাল্টি-এজেন্ট টিম পাইপলাইন তৈরি করুন"
       },

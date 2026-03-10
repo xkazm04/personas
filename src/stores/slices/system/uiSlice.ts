@@ -1,7 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../../storeTypes";
 import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab } from "@/lib/types/types";
-import type { AdoptWizardStep } from "@/features/templates/sub_generated/adoption/useAdoptReducer";
+import type { AdoptWizardStep } from "@/features/templates/sub_generated/adoption/hooks/useAdoptReducer";
 
 /** Snapshot of adoption wizard state saved when the user closes mid-adoption. */
 export interface AdoptionDraft {

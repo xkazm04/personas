@@ -26,11 +26,11 @@ export const ko = {
         label: "키",
         description: "API 자격 증명, 데이터베이스 연결 및 시크릿 관리"
       },
-      templates: {
+      "design-reviews": {
         label: "템플릿",
         description: "n8n 워크플로 가져오기 및 에이전트 템플릿 생성"
       },
-      teams: {
+      team: {
         label: "팀",
         description: "드래그 앤 드롭으로 멀티 에이전트 파이프라인 구축"
       },

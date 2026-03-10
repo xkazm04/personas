@@ -7,7 +7,7 @@ import {
 import type { AgentIR, SuggestedTrigger, SuggestedEventSubscription, ProtocolCapability } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
-import type { RequiredConnector } from '../../adoption/steps/ConnectStep';
+import type { RequiredConnector } from '../../adoption/steps/connect/ConnectStep';
 import type { MatrixEditState, MatrixEditCallbacks } from './EditableMatrixCells';
 import { ConnectorEditCell, TriggerEditCell, ReviewEditCell, MemoryEditCell, MessagesEditCell } from './EditableMatrixCells';
 import { MatrixCommandCenter } from './MatrixCommandCenter';
@@ -22,7 +22,6 @@ interface MatrixCell {
   label: string;
   watermark: React.ComponentType<{ className?: string }>;
   watermarkColor: string;
-  borderTint: string;
   render: () => React.ReactNode;
   editRender?: () => React.ReactNode;
 }
@@ -147,14 +146,13 @@ const TRIGGER_LABELS: Record<string, string> = {
 function MatrixCellRenderer({ cell, isEditMode }: { cell: MatrixCell; isEditMode: boolean }) {
   const Watermark = cell.watermark;
   const useEditRender = isEditMode && cell.editRender;
-  const boostedTint = cell.borderTint.replace('/15', '/30');
 
   return (
     <div className={[
-      'relative rounded-xl border p-4 transition-all duration-150 shadow-md',
+      'relative rounded-xl border border-card-border p-4 transition-all duration-150 shadow-md',
       useEditRender
-        ? `${boostedTint} dark:bg-black/40 bg-white/80 dark:hover:bg-black/50 hover:bg-white/90 ring-1 ring-inset ring-primary/10`
-        : `${boostedTint} dark:bg-black/30 bg-white/70 dark:hover:bg-black/40 hover:bg-white/80`,
+        ? 'bg-card-bg hover:bg-foreground/[0.06] ring-1 ring-inset ring-primary/10'
+        : 'bg-card-bg hover:bg-foreground/[0.04]',
     ].join(' ')}>
       <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
         <div className={`absolute -right-1 -top-1 ${useEditRender ? 'opacity-[0.15]' : 'opacity-[0.25]'}`}>
@@ -190,35 +188,29 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     const editProps = isEditMode ? props as PersonaMatrixEditProps : null;
 
     return [
-      { key: 'use-cases', label: 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400', borderTint: 'border-violet-500/15',
-        render: () => flows.length === 0 ? <CellBullets items={['General-purpose agent']} color="text-muted-foreground/50" /> : <CellBullets items={flows.slice(0, 3).map((f) => f.name)} color="text-foreground/70" /> },
-      { key: 'connectors', label: 'Connectors', watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', borderTint: 'border-cyan-500/15',
-        render: () => {
+      { key: 'use-cases', label: 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400',        render: () => flows.length === 0 ? <CellBullets items={['General-purpose agent']} color="text-muted-foreground/50" /> : <CellBullets items={flows.slice(0, 3).map((f) => f.name)} color="text-foreground/70" /> },
+      { key: 'connectors', label: 'Connectors', watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400',        render: () => {
           if (archCategories.length === 0) return <CellBullets items={['No external services']} color="text-muted-foreground/50" />;
           return (<div className="space-y-1.5">{archCategories.slice(0, 3).map((cat: ArchCategory) => { const CatIcon = cat.icon; return (<div key={cat.key} className="flex items-center gap-2"><CatIcon className="w-3.5 h-3.5 flex-shrink-0 opacity-70" style={{ color: cat.color }} /><span className="text-sm text-foreground/70 leading-snug">{cat.label}</span></div>); })}{archCategories.length > 3 && <span className="text-sm text-muted-foreground/40 pl-[22px]">+{archCategories.length - 3} more</span>}</div>);
         },
         editRender: editProps ? () => (<ConnectorEditCell requiredConnectors={editProps.requiredConnectors} credentials={editProps.credentials} editState={editProps.editState} callbacks={editProps.editCallbacks} missingConnectorTypes={missingConnectorTypes} onNavigateCatalog={onNavigateCatalog} />) : undefined },
-      { key: 'triggers', label: 'Triggers', watermark: TriggersIcon, watermarkColor: 'text-amber-400', borderTint: 'border-amber-500/15',
-        render: () => triggers.length === 0 ? <CellBullets items={['Manual execution only']} color="text-muted-foreground/50" /> : <CellBullets items={triggers.slice(0, 3).map((t) => t.label)} color="text-foreground/70" />,
+      { key: 'triggers', label: 'Triggers', watermark: TriggersIcon, watermarkColor: 'text-amber-400',        render: () => triggers.length === 0 ? <CellBullets items={['Manual execution only']} color="text-muted-foreground/50" /> : <CellBullets items={triggers.slice(0, 3).map((t) => t.label)} color="text-foreground/70" />,
         editRender: editProps ? () => (<TriggerEditCell designResult={designResult} editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'human-review', label: 'Human Review', watermark: HumanReviewIcon,
         watermarkColor: review.level === 'required' ? 'text-rose-400' : review.level === 'optional' ? 'text-amber-400' : 'text-emerald-400',
-        borderTint: review.level === 'required' ? 'border-rose-500/15' : review.level === 'optional' ? 'border-amber-500/15' : 'border-emerald-500/15',
         render: () => { const dotColor = review.level === 'required' ? 'bg-rose-400' : review.level === 'optional' ? 'bg-amber-400' : 'bg-emerald-400'; return (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} /><span className="text-sm font-medium text-foreground/80">{review.label}</span></div><p className="text-sm text-muted-foreground/60 leading-snug pl-[16px]">{review.context.length > 55 ? review.context.slice(0, 53) + '\u2026' : review.context}</p></div>); },
         editRender: editProps ? () => (<ReviewEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'messages', label: 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400', borderTint: 'border-blue-500/15',
+      { key: 'messages', label: 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400',
         render: () => { if (channels.length === 0) return <CellBullets items={['In-app notifications only']} color="text-muted-foreground/50" />; const bullets = channels.slice(0, 3).map((ch) => { const prefix = ch.type.charAt(0).toUpperCase() + ch.type.slice(1); return ch.description.length > 3 && ch.description.length <= 40 ? `${prefix}: ${ch.description}` : `${prefix} channel`; }); return <CellBullets items={bullets} color="text-foreground/70" />; },
         editRender: editProps ? () => (<MessagesEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'memory', label: 'Memory', watermark: MemoryIcon,
         watermarkColor: memory.active ? 'text-purple-400' : 'text-zinc-400',
-        borderTint: memory.active ? 'border-purple-500/15' : 'border-zinc-500/15',
         render: () => (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${memory.active ? 'bg-purple-400' : 'bg-zinc-500'} flex-shrink-0`} /><span className="text-sm font-medium text-foreground/80">{memory.label}</span></div><p className="text-sm text-muted-foreground/60 leading-snug pl-[16px]">{memory.context}</p></div>),
         editRender: editProps ? () => (<MemoryEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'error-handling', label: 'Errors', watermark: ErrorsIcon, watermarkColor: 'text-orange-400', borderTint: 'border-orange-500/15',
+      { key: 'error-handling', label: 'Errors', watermark: ErrorsIcon, watermarkColor: 'text-orange-400',
         render: () => <CellBullets items={errorStrategies} color="text-foreground/70" /> },
       { key: 'events', label: 'Events', watermark: EventsIcon,
         watermarkColor: events.length > 0 ? 'text-teal-400' : 'text-muted-foreground',
-        borderTint: events.length > 0 ? 'border-teal-500/15' : 'border-primary/5',
         render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -236,7 +228,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     <div className="space-y-3 w-full">
       {!hideHeader && (
         <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded bg-violet-500/20 dark:bg-violet-500/25 flex items-center justify-center border border-violet-500/25 dark:border-violet-500/30 shadow-sm dark:shadow-violet-500/20">
+          <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center border border-primary/25 shadow-sm shadow-primary/20">
             <span className="text-[10px] font-bold text-foreground/60">M</span>
           </div>
           <h4 className="text-base font-bold text-foreground/80 uppercase tracking-wider">Persona Matrix</h4>
@@ -244,7 +236,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
       )}
       <div className="grid grid-cols-[1fr_1.3fr_1fr] gap-2.5">
         {firstFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} />))}
-        <div className="relative rounded-xl border-2 border-violet-500/30 dark:border-violet-500/35 bg-gradient-to-br from-violet-600/10 dark:from-violet-600/15 via-white/50 dark:via-black/50 to-cyan-600/10 dark:to-cyan-600/15 p-5 ring-2 ring-violet-500/15 dark:ring-violet-500/20 shadow-2xl shadow-violet-500/5 dark:shadow-violet-500/10">
+        <div className="relative rounded-xl border border-primary/30 bg-card-bg p-5 ring-1 ring-primary/10 shadow-2xl shadow-primary/5">
           {commandCenter}
         </div>
         {lastFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} />))}

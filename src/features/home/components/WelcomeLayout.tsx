@@ -36,7 +36,7 @@ export default function WelcomeLayout({
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
       <HeroMesh />
       <div className="flex-1 overflow-y-auto relative z-10">
-        <div className="max-w-5xl mx-auto w-full px-6 py-4 space-y-4">
+        <div className="w-full px-6 py-4 space-y-4">
           <HeroHeader greeting={greeting} displayName={displayName} />
 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35, duration: 0.3 }} className="flex items-center gap-3">

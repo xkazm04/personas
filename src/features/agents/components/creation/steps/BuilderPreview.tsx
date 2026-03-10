@@ -1,7 +1,7 @@
 import { ListChecks, Plug, Clock, ShieldAlert, UserCheck, FileText } from 'lucide-react';
-import type { BuilderState } from './types';
-import { COMPONENT_ROLES } from './types';
-import { generateSummary, computeCredentialCoverage } from './builderReducer';
+import type { BuilderState } from './builder/types';
+import { COMPONENT_ROLES } from './builder/types';
+import { generateSummary, computeCredentialCoverage } from './builder/builderReducer';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 
 interface BuilderPreviewProps {

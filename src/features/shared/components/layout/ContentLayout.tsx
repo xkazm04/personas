@@ -6,14 +6,14 @@ import { IS_MOBILE } from '@/lib/utils/platform/platform';
 // ---------------------------------------------------------------------------
 
 const ICON_COLOR_MAP = {
-  violet:  { bg: 'bg-violet-500/15',  border: 'border-violet-500/25'  },
-  blue:    { bg: 'bg-blue-500/15',    border: 'border-blue-500/25'    },
+  violet: { bg: 'bg-violet-500/15', border: 'border-violet-500/25' },
+  blue: { bg: 'bg-blue-500/15', border: 'border-blue-500/25' },
   emerald: { bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
-  indigo:  { bg: 'bg-indigo-500/15',  border: 'border-indigo-500/25'  },
-  amber:   { bg: 'bg-amber-500/15',   border: 'border-amber-500/25'   },
-  cyan:    { bg: 'bg-cyan-500/15',    border: 'border-cyan-500/25'    },
-  red:     { bg: 'bg-red-500/15',     border: 'border-red-500/25'     },
-  primary: { bg: 'bg-primary/10',     border: 'border-primary/20'     },
+  indigo: { bg: 'bg-indigo-500/15', border: 'border-indigo-500/25' },
+  amber: { bg: 'bg-amber-500/15', border: 'border-amber-500/25' },
+  cyan: { bg: 'bg-cyan-500/15', border: 'border-cyan-500/25' },
+  red: { bg: 'bg-red-500/15', border: 'border-red-500/25' },
+  primary: { bg: 'bg-primary/10', border: 'border-primary/20' },
 } as const;
 
 type IconColor = keyof typeof ICON_COLOR_MAP;
@@ -86,14 +86,15 @@ export function ContentHeader({
   );
 
   return (
-    <div className={`${IS_MOBILE ? 'px-3 py-3' : 'px-4 md:px-6 xl:px-8 py-6'} border-b border-primary/10 bg-primary/5 flex-shrink-0`}>
-      <div className="flex items-center gap-3">
+    <div className={`${IS_MOBILE ? 'px-3 py-3' : 'px-4 md:px-6 xl:px-8 py-6'} border-b border-primary/10 bg-primary/5 flex-shrink-0 min-w-[80vw]`}>
+      <div className="flex items-center gap-3 pr-20">
         {iconElement}
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-semibold text-foreground/90">{title}</h1>
           {subtitle && (
             <p className="text-sm text-muted-foreground/90">{subtitle}</p>
           )}
+
         </div>
         {actions}
       </div>

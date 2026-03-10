@@ -1,5 +1,5 @@
 /**
- * AdoptionWizardContext â€” provides wizard state, actions, derived data, and
+ * AdoptionWizardContext -- provides wizard state, actions, derived data, and
  * async handlers to all step components via React context, eliminating the
  * 20-35 props previously drilled through AdoptionWizardModal.
  *
@@ -16,85 +16,25 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
-import type { AgentIR, ConnectorReadinessStatus } from '@/lib/types/designTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { TemplateVerification } from '@/lib/types/templateTypes';
 import type { ScanResult } from '@/lib/templates/personaSafetyScanner';
 import { usePersonaStore } from '@/stores/personaStore';
 import { verifyTemplate } from '@/lib/templates/templateVerification';
 import { scanPersonaDraft } from '@/lib/templates/personaSafetyScanner';
-import type { RequiredConnector } from './steps/ConnectStep';
-import {
-  useAdoptReducer,
-  type AdoptWizardStep,
-  type AdoptState,
-} from './useAdoptReducer';
-import { useAsyncTransform } from './useAsyncTransform';
-import { useAdoptionInit } from './useAdoptionInit';
-import { useAdoptionDerived } from './useAdoptionDerived';
-import { useAdoptionAutoResolve } from './useAdoptionAutoResolve';
-import { useAdoptionActions } from './useAdoptionActions';
-import { getAdoptionRequirements } from './templateVariables';
+import { useAdoptReducer } from './hooks/useAdoptReducer';
+import { useAsyncTransform } from './hooks/useAsyncTransform';
+import { useAdoptionInit } from './hooks/useAdoptionInit';
+import { useAdoptionDerived } from './hooks/useAdoptionDerived';
+import { useAdoptionAutoResolve } from './hooks/useAdoptionAutoResolve';
+import { useAdoptionActions } from './hooks/useAdoptionActions';
+import type { AdoptionWizardContextType } from './state/adoptionWizardTypes';
 
 // Re-export step transitions from their dedicated module
-export { STEP_TRANSITIONS, type StepAction } from './stepTransitions';
-
-// â”€â”€ Context type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-interface AdoptionWizardContextType {
-  // Core state & actions
-  state: AdoptState;
-  wizard: ReturnType<typeof useAdoptReducer>;
-
-  // Derived data
-  useCaseFlows: UseCaseFlow[];
-  readinessStatuses: ConnectorReadinessStatus[];
-  adoptionRequirements: ReturnType<typeof getAdoptionRequirements>;
-  requiredConnectors: RequiredConnector[];
-  completedSteps: Set<AdoptWizardStep>;
-  liveCredentials: CredentialMetadata[];
-  designResult: AgentIR | null;
-  connectorDefinitions: ConnectorDefinition[];
-
-  /** Template origin verification and sandbox policy */
-  verification: TemplateVerification;
-
-  /** Safety scan results for the current draft (null if no draft) */
-  safetyScan: ScanResult | null;
-
-  /** Whether template uses a database connector */
-  hasDatabaseConnector: boolean;
-
-  // Async transform orchestration
-  currentAdoptId: string | null;
-  isRestoring: boolean;
-  startTransform: () => Promise<void>;
-  cancelTransform: () => Promise<void>;
-  continueTransform: () => Promise<void>;
-  confirmSave: () => Promise<void>;
-  cleanupAll: () => Promise<void>;
-
-  // Credential actions (manual-selection-aware wrappers)
-  setConnectorCredential: (connectorName: string, credentialId: string) => void;
-  clearConnectorCredential: (connectorName: string) => void;
-
-  // Convenience helpers
-  handleNext: () => void;
-  handleCredentialCreated: () => void;
-  handleSkipQuestions: () => void;
-  updateDraft: (updater: (d: N8nPersonaDraft) => N8nPersonaDraft) => void;
-
-  // Auto-adoption
-  quickAdopt: () => void;
-  enterFullWizard: () => void;
-
-  // Draft recovery
-  saveDraftToStore: () => void;
-  discardDraft: () => void;
-}
+export { STEP_TRANSITIONS, type StepAction } from './state/stepTransitions';
+// Re-export the context type for consumers
+export type { AdoptionWizardContextType } from './state/adoptionWizardTypes';
 
 const AdoptionWizardCtx = createContext<AdoptionWizardContextType | null>(null);
 
@@ -105,7 +45,7 @@ export function useAdoptionWizard(): AdoptionWizardContextType {
   return ctx;
 }
 
-// â”€â”€ Provider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Provider --
 
 interface AdoptionWizardProviderProps {
   isOpen: boolean;
@@ -133,7 +73,7 @@ export function AdoptionWizardProvider({
   const autoResolveRanRef = useRef(false);
   const highWaterMarkRef = useRef(0);
 
-  // â”€â”€ Layer 1: Initialization + draft restore â”€â”€
+  // -- Layer 1: Initialization + draft restore --
 
   const { storedDraft, draftRestoredRef } = useAdoptionInit({
     isOpen,
@@ -144,7 +84,7 @@ export function AdoptionWizardProvider({
     highWaterMarkRef,
   });
 
-  // â”€â”€ Template verification â”€â”€
+  // -- Template verification --
 
   const verification = useMemo<TemplateVerification>(() => {
     if (!review) {
@@ -164,14 +104,14 @@ export function AdoptionWizardProvider({
     });
   }, [review]);
 
-  // â”€â”€ Safety scan â”€â”€
+  // -- Safety scan --
 
   const safetyScan = useMemo<ScanResult | null>(() => {
     if (!state.draft) return null;
     return scanPersonaDraft(state.draft);
   }, [state.draft]);
 
-  // â”€â”€ Async transform orchestration â”€â”€
+  // -- Async transform orchestration --
 
   const asyncOps = useAsyncTransform({
     state,
@@ -183,7 +123,7 @@ export function AdoptionWizardProvider({
     safetyScan,
   });
 
-  // â”€â”€ Layer 2: Derived data â”€â”€
+  // -- Layer 2: Derived data --
 
   const liveCredentials = storeCredentials.length > 0 ? storeCredentials : credentials;
 
@@ -204,7 +144,7 @@ export function AdoptionWizardProvider({
     highWaterMarkRef,
   });
 
-  // â”€â”€ Layer 3: Auto-resolve â”€â”€
+  // -- Layer 3: Auto-resolve --
 
   useAdoptionAutoResolve({
     state,
@@ -218,7 +158,7 @@ export function AdoptionWizardProvider({
     review,
   });
 
-  // â”€â”€ Layer 4: Actions â”€â”€
+  // -- Layer 4: Actions --
 
   const {
     handleNext,
@@ -240,7 +180,7 @@ export function AdoptionWizardProvider({
     manualSelectionsRef,
   });
 
-  // â”€â”€ Context value â”€â”€
+  // -- Context value --
 
   const value = useMemo<AdoptionWizardContextType>(
     () => ({

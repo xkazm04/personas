@@ -3,7 +3,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
-import GroupedAgentSidebar from '@/features/agents/components/GroupedAgentSidebar';
+import GroupedAgentSidebar from '@/features/agents/components/sidebar/GroupedAgentSidebar';
 import TeamDragPanel from '@/features/pipeline/components/TeamDragPanel';
 import SidebarSubNav from './SidebarSubNav';
 import type { SubNavBadge } from './SidebarSubNav';

@@ -36,7 +36,61 @@ export const OAUTH_FIELD = {
 
 // ── Credential flow discriminated union ─────────────────────────
 
-import type { CredentialTemplateField } from '@/lib/types/types';
+import type { CredentialTemplateField, ConnectorDefinition } from '@/lib/types/types';
+import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
+
+/** Filter connector definitions to those with template_enabled metadata, optionally matching a search query. */
+export function filterTemplateConnectors(
+  connectorDefinitions: ConnectorDefinition[],
+  searchQuery: string,
+): ConnectorDefinition[] {
+  return connectorDefinitions.filter((conn) => {
+    const metadata = conn.metadata as Record<string, unknown> | null;
+    if (!metadata) return false;
+    if (metadata.template_enabled !== true) return false;
+
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      conn.label.toLowerCase().includes(q)
+      || conn.name.toLowerCase().includes(q)
+      || conn.category.toLowerCase().includes(q)
+    );
+  });
+}
+
+/** Build a CredentialDesignResult from a ConnectorDefinition template. */
+export function buildTemplateResult(template: ConnectorDefinition): CredentialDesignResult {
+  const metadata = (template.metadata ?? {}) as Record<string, unknown>;
+  const setupInstructions = typeof metadata.setup_instructions === 'string'
+    ? metadata.setup_instructions
+    : '';
+  const summary = typeof metadata.summary === 'string'
+    ? metadata.summary
+    : `${template.label} connector`;
+
+  return {
+    match_existing: template.name,
+    connector: {
+      name: template.name,
+      label: template.label,
+      category: template.category,
+      color: template.color,
+      fields: template.fields.map((f) => ({
+        key: f.key,
+        label: f.label,
+        type: f.type,
+        required: f.required ?? false,
+        placeholder: f.placeholder,
+      })),
+      healthcheck_config: template.healthcheck_config,
+      services: template.services,
+      events: template.events,
+    },
+    setup_instructions: setupInstructions,
+    summary,
+  };
+}
 
 export type CredentialFlow =
   | { kind: 'google_oauth'; providerLabel: string }

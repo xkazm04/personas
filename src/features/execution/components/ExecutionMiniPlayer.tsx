@@ -7,89 +7,15 @@ import {
   GripVertical,
   Bot,
   Timer,
-  Loader2,
-  CheckCircle2,
-  XCircle,
   Terminal,
   PinOff,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useElapsedTimer } from '@/hooks/utility/timing/useElapsedTimer';
 import { formatElapsed } from '@/lib/utils/formatters';
-import {
-  PIPELINE_STAGES,
-  STAGE_META,
-  isPipelineStage,
-  type PipelineStage,
-  type UnifiedTrace,
-} from '@/lib/execution/pipeline';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-
-// â”€â”€ Pipeline stage dot visualisation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-function PipelineDots({ trace }: { trace: UnifiedTrace | null }) {
-  const completedStages = useMemo(() => {
-    if (!trace) return new Set<PipelineStage>();
-    return new Set(
-      trace.spans
-        .filter((s) => isPipelineStage(s.span_type))
-        .map((s) => s.span_type as PipelineStage),
-    );
-  }, [trace]);
-
-  const errorStages = useMemo(() => {
-    if (!trace) return new Set<PipelineStage>();
-    return new Set(
-      trace.spans
-        .filter((s) => isPipelineStage(s.span_type) && s.error)
-        .map((s) => s.span_type as PipelineStage),
-    );
-  }, [trace]);
-
-  return (
-    <div className="flex items-center gap-1">
-      {PIPELINE_STAGES.map((stage) => {
-        const completed = completedStages.has(stage);
-        const hasError = errorStages.has(stage);
-        const pStages = trace?.spans.filter((s) => isPipelineStage(s.span_type)) ?? [];
-        const lastStage = pStages[pStages.length - 1];
-        const isLast =
-          trace &&
-          lastStage &&
-          lastStage.span_type === stage &&
-          !trace.completedAt;
-
-        return (
-          <Tooltip content={STAGE_META[stage].label} placement="bottom">
-            <div
-              key={stage}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                hasError
-                  ? 'bg-red-400'
-                  : isLast
-                    ? 'bg-blue-400 animate-pulse'
-                    : completed
-                      ? 'bg-emerald-400'
-                      : 'bg-primary/15'
-              }`}
-            />
-          </Tooltip>
-        );
-      })}
-    </div>
-  );
-}
-
-// â”€â”€ Status icon â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-function StatusIndicator({ isExecuting, hasError }: { isExecuting: boolean; hasError: boolean }) {
-  if (hasError) return <XCircle className="w-4 h-4 text-red-400" />;
-  if (isExecuting) return <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />;
-  return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
-}
-
-// â”€â”€ Main mini-player â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+import { PipelineDots, StatusIndicator } from './PipelineDots';
 
 export default function ExecutionMiniPlayer() {
   const miniPlayerPinned = usePersonaStore((s) => s.miniPlayerPinned);
@@ -110,7 +36,6 @@ export default function ExecutionMiniPlayer() {
 
   const elapsed = useElapsedTimer(isExecuting);
 
-  // Find persona name
   const personaName = useMemo(() => {
     if (!executionPersonaId) return 'Agent';
     const p = personas.find((p) => p.id === executionPersonaId);
@@ -122,7 +47,6 @@ export default function ExecutionMiniPlayer() {
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
 
-  // Initialize position to bottom-right if not set
   useEffect(() => {
     if (miniPlayerPinned && miniPlayerPosition.x === -1) {
       setMiniPlayerPosition({
@@ -132,7 +56,6 @@ export default function ExecutionMiniPlayer() {
     }
   }, [miniPlayerPinned, miniPlayerPosition.x, setMiniPlayerPosition]);
 
-  // Terminal scroll ref
   const terminalRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (terminalRef.current && miniPlayerExpanded) {
@@ -140,7 +63,6 @@ export default function ExecutionMiniPlayer() {
     }
   }, [executionOutput, miniPlayerExpanded]);
 
-  // Drag handlers
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).closest('button')) return;
@@ -184,14 +106,12 @@ export default function ExecutionMiniPlayer() {
     }
   };
 
-  // Last N lines for compact view
   const lastLines = useMemo(
     () => executionOutput.slice(-30),
     [executionOutput],
   );
   const lastLine = executionOutput[executionOutput.length - 1] ?? '';
 
-  // Show nothing when not pinned, or when there's nothing to show
   const hasContent = isExecuting || executionOutput.length > 0 || activeExecutionId;
   if (!miniPlayerPinned || !hasContent) return null;
 
@@ -213,30 +133,23 @@ export default function ExecutionMiniPlayer() {
           isDragging ? 'cursor-grabbing' : ''
         }`}
       >
-        {/* â”€â”€ Header (draggable) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* Header (draggable) */}
         <div
           className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 bg-secondary/30 cursor-grab active:cursor-grabbing"
           onMouseDown={handleMouseDown}
         >
           <GripVertical className="w-3.5 h-3.5 text-muted-foreground/30 flex-shrink-0" />
-
           <StatusIndicator isExecuting={isExecuting} hasError={!!error && !isExecuting} />
-
           <div className="flex-1 min-w-0 flex items-center gap-2">
             <Bot className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
-            <span className="text-sm font-medium text-foreground/80 truncate">
-              {personaName}
-            </span>
+            <span className="text-sm font-medium text-foreground/80 truncate">{personaName}</span>
           </div>
-
           {isExecuting && (
             <div className="flex items-center gap-1 text-sm font-mono text-muted-foreground/60">
               <Timer className="w-3 h-3" />
               {formatElapsed(elapsed, 'clock')}
             </div>
           )}
-
-          {/* Stop button */}
           {isExecuting && activeExecutionId && (
             <Tooltip content="Stop execution">
               <button
@@ -247,22 +160,14 @@ export default function ExecutionMiniPlayer() {
               </button>
             </Tooltip>
           )}
-
-          {/* Expand/collapse */}
           <Tooltip content={miniPlayerExpanded ? 'Collapse' : 'Expand'}>
             <button
               onClick={toggleMiniPlayerExpanded}
               className="p-1 rounded-md hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/80 transition-colors"
             >
-              {miniPlayerExpanded ? (
-                <ChevronDown className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronUp className="w-3.5 h-3.5" />
-              )}
+              {miniPlayerExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
             </button>
           </Tooltip>
-
-          {/* Unpin */}
           <Tooltip content="Unpin mini-player">
             <button
               onClick={unpinMiniPlayer}
@@ -273,7 +178,7 @@ export default function ExecutionMiniPlayer() {
           </Tooltip>
         </div>
 
-        {/* â”€â”€ Pipeline stage dots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* Pipeline stage dots */}
         <div className="flex items-center gap-2 px-3 py-1.5 border-b border-primary/5 bg-secondary/10">
           <span className="text-sm text-muted-foreground/60 uppercase tracking-wider">Pipeline</span>
           <PipelineDots trace={pipelineTrace} />
@@ -284,7 +189,7 @@ export default function ExecutionMiniPlayer() {
           )}
         </div>
 
-        {/* â”€â”€ Collapsed: single last line â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* Collapsed: single last line */}
         {!miniPlayerExpanded && (
           <div className="px-3 py-1.5 bg-black/20">
             <div className="font-mono text-sm text-muted-foreground/50 truncate flex items-center gap-1.5">
@@ -298,7 +203,7 @@ export default function ExecutionMiniPlayer() {
           </div>
         )}
 
-        {/* â”€â”€ Expanded: scrollable terminal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* Expanded: scrollable terminal */}
         {miniPlayerExpanded && (
           <div
             ref={terminalRef}

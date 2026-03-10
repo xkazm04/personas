@@ -1,10 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
-import { Paperclip, Link, X, FileText, Database, Settings, File } from 'lucide-react';
+import { Paperclip, Link } from 'lucide-react';
 import type { DesignFileType, DesignFile, DesignContext } from '@/lib/types/frontendTypes';
-
-// ============================================================================
-// Types
-// ============================================================================
+import { ACCEPTED_EXTENSIONS, detectFileType } from './designInputHelpers';
+import { TypeSelectorModal, AttachedFilesRow, ReferencesTextarea } from './DesignInputAttachments';
 
 interface DesignInputProps {
   instruction: string;
@@ -14,37 +12,6 @@ interface DesignInputProps {
   disabled?: boolean;
   onSubmit?: () => void;
 }
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-const FILE_TYPE_ICONS: Record<DesignFileType, typeof FileText> = {
-  'api-spec': FileText,
-  'schema': Database,
-  'mcp-config': Settings,
-  'other': File,
-};
-
-const FILE_TYPE_LABELS: Record<DesignFileType, string> = {
-  'api-spec': 'API Definition',
-  'schema': 'Database Schema',
-  'mcp-config': 'MCP Config',
-  'other': 'Other',
-};
-
-const ACCEPTED_EXTENSIONS = '.json,.yaml,.yml,.graphql,.sql,.prisma,.txt,.md';
-
-function detectFileType(fileName: string, content: string): DesignFileType {
-  if (fileName.endsWith('.json') && content.includes('mcpServers')) return 'mcp-config';
-  if (fileName.match(/\.(json|yaml|yml|graphql)$/)) return 'api-spec';
-  if (fileName.match(/\.(sql|prisma)$/)) return 'schema';
-  return 'other';
-}
-
-// ============================================================================
-// Component
-// ============================================================================
 
 export function DesignInput({
   instruction,
@@ -66,7 +33,6 @@ export function DesignInput({
   const onDesignContextChangeRef = useRef(onDesignContextChange);
   onDesignContextChangeRef.current = onDesignContextChange;
 
-  // Auto-grow textarea
   const handleTextareaInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onInstructionChange(e.target.value);
     const el = e.target;
@@ -74,7 +40,6 @@ export function DesignInput({
     el.style.height = `${Math.max(200, el.scrollHeight)}px`;
   }, [onInstructionChange]);
 
-  // Shared file processing (used by both click-attach and drag-and-drop)
   const acceptedSet = useRef(new Set(ACCEPTED_EXTENSIONS.split(',').map((e) => e.trim())));
 
   const processFile = useCallback((file: globalThis.File) => {
@@ -87,8 +52,6 @@ export function DesignInput({
       const autoType = detectFileType(file.name, content);
 
       if (autoType !== 'other') {
-        // Read latest context from ref to avoid stale closure when
-        // multiple FileReader.onload callbacks fire concurrently.
         const ctx = designContextRef.current;
         onDesignContextChangeRef.current({
           ...ctx,
@@ -102,7 +65,6 @@ export function DesignInput({
     reader.readAsText(file);
   }, []);
 
-  // File handling
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -143,7 +105,6 @@ export function DesignInput({
     }
   }, [onSubmit]);
 
-  // Drag-and-drop handlers
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -189,7 +150,6 @@ export function DesignInput({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {/* Drag overlay */}
         {isDragging && (
           <div className="absolute inset-0 z-10 flex items-center justify-center border-2 border-dashed border-primary/40 bg-primary/5 rounded-xl pointer-events-none">
             <span className="text-sm font-medium text-primary/50">Drop file here</span>
@@ -254,73 +214,26 @@ export function DesignInput({
 
       {/* Type selector modal */}
       {showTypeSelector && pendingFile && (
-        <div className="bg-secondary/60 backdrop-blur-sm border border-primary/15 rounded-xl p-3 space-y-2">
-          <p className="text-sm text-muted-foreground/80">
-            Classify <span className="font-medium text-foreground/90">{pendingFile.name}</span>:
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {(Object.keys(FILE_TYPE_LABELS) as DesignFileType[]).map((type) => {
-              const Icon = FILE_TYPE_ICONS[type];
-              return (
-                <button
-                  key={type}
-                  onClick={() => handleTypeConfirm(type)}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground/90 hover:border-primary/30 hover:bg-primary/5 transition-all"
-                >
-                  <Icon className="w-3 h-3" />
-                  {FILE_TYPE_LABELS[type]}
-                </button>
-              );
-            })}
-            <button
-              onClick={() => { setPendingFile(null); setShowTypeSelector(false); }}
-              className="px-2.5 py-1 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+        <TypeSelectorModal
+          pendingFile={pendingFile}
+          onConfirm={handleTypeConfirm}
+          onCancel={() => { setPendingFile(null); setShowTypeSelector(false); }}
+        />
       )}
 
       {/* Attached files row */}
-      {(designContext?.files?.length ?? 0) > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {designContext.files.map((file, index) => {
-            const Icon = FILE_TYPE_ICONS[file.type] || File;
-            return (
-              <div
-                key={`${file.name}-${index}`}
-                className="flex items-center gap-1.5 bg-secondary/50 border border-primary/10 rounded-full px-3 py-1 text-sm group"
-              >
-                <Icon className="w-3 h-3 text-muted-foreground/90" />
-                <span className="text-foreground/90 max-w-[120px] truncate">{file.name}</span>
-                <span className="text-muted-foreground/80">{FILE_TYPE_LABELS[file.type]}</span>
-                <button
-                  onClick={() => handleRemoveFile(index)}
-                  className="ml-0.5 text-muted-foreground/80 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                  title="Remove file"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <AttachedFilesRow
+        files={designContext?.files ?? []}
+        onRemove={handleRemoveFile}
+      />
 
       {/* References textarea */}
       {showReferences && (
-        <div className="space-y-1">
-          <label className="text-sm text-muted-foreground/90 px-1">References</label>
-          <textarea
-            value={(designContext?.references ?? []).join('\n')}
-            onChange={(e) => handleReferencesChange(e.target.value)}
-            disabled={disabled}
-            placeholder="Paste URLs, connection strings, API keys, or any reference info (one per line)"
-            rows={3}
-            className="w-full bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-sm text-foreground font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30"
-          />
-        </div>
+        <ReferencesTextarea
+          references={designContext?.references ?? []}
+          onChange={handleReferencesChange}
+          disabled={disabled}
+        />
       )}
     </div>
   );

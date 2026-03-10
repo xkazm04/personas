@@ -1,6 +1,6 @@
 import { Download } from 'lucide-react';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import { getCategoryMeta, type RoleGroup } from '../search/searchConstants';
+import { getCategoryMeta, type RoleGroup } from '../search/filters/searchConstants';
 
 interface RoleGroupCardProps {
   group: RoleGroup;

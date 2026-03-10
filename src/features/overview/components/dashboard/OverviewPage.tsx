@@ -5,7 +5,7 @@ import ExecutionsWithSubtabs from '@/features/overview/components/dashboard/Exec
 import ManualReviewList from '@/features/overview/sub_manual-review/components/ManualReviewList';
 import MessageList from '@/features/overview/sub_messages/components/MessageList';
 import EventLogList from '@/features/overview/sub_events/components/EventLogList';
-import KnowledgeHub from '@/features/overview/components/dashboard/KnowledgeHub';
+import KnowledgeHub from '@/features/overview/components/dashboard/cards/KnowledgeHub';
 import SLADashboard from '@/features/overview/sub_sla/components/SLADashboard';
 import CronAgentsPage from '@/features/overview/sub_cron_agents/components/CronAgentsPage';
 import ScheduleTimeline from '@/features/overview/sub_schedules/components/ScheduleTimeline';

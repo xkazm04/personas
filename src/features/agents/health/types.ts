@@ -4,10 +4,10 @@
  * and adds health-check-specific types for per-persona and digest views.
  */
 
-import type { DryRunResult } from '../components/creation/steps/types';
+import type { DryRunResult } from '../components/creation/steps/builder/types';
 
 // Re-export builder types used by health check consumers
-export type { DryRunResult, DryRunIssue, DryRunProposal } from '../components/creation/steps/types';
+export type { DryRunResult, DryRunIssue, DryRunProposal } from '../components/creation/steps/builder/types';
 
 // ── Per-persona health check ─────────────────────────────────────────
 

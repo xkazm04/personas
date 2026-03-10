@@ -4,7 +4,9 @@ import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStr
 import type { ApiEndpoint } from '@/api/system/apiProxy';
 import { useApiExplorerState } from './useApiExplorerState';
 import { apiTestLineClassName } from './apiExplorerHelpers';
-import { EmptyState, TestRunCounters, RequestResponsePanel, PasteSpecModal } from './ApiExplorerSubComponents';
+import { EmptyState, TestRunCounters, PasteSpecModal } from './ApiExplorerSubComponents';
+import { RequestBuilder } from '../RequestBuilder';
+import { ResponseViewer } from '../ResponseViewer';
 
 // ── Component ────────────────────────────────────────────────────
 

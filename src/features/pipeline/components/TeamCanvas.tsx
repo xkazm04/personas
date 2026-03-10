@@ -13,12 +13,12 @@ import {
   TeamToolbar,
 } from '@/features/pipeline/sub_canvas';
 import type { StickyNoteCategory } from '@/features/pipeline/sub_canvas';
-import TeamList from '@/features/pipeline/components/TeamList';
-import CanvasFlowLayer from '@/features/pipeline/components/CanvasFlowLayer';
-import CanvasOverlays from '@/features/pipeline/components/CanvasOverlays';
-import { useCanvasHandlers, snapToGrid } from './useCanvasHandlers';
-import { useCanvasPipelineActions } from './useCanvasPipelineActions';
-import { useCanvasDragDrop } from './useCanvasDragDrop';
+import TeamList from './TeamList';
+import CanvasFlowLayer from './canvas/CanvasFlowLayer';
+import CanvasOverlays from './canvas/CanvasOverlays';
+import { useCanvasHandlers, snapToGrid } from './canvas/useCanvasHandlers';
+import { useCanvasPipelineActions } from './canvas/useCanvasPipelineActions';
+import { useCanvasDragDrop } from './canvas/useCanvasDragDrop';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';
 

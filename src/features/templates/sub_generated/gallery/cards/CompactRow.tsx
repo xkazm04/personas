@@ -5,7 +5,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
-import { getCategoryMeta } from '../search/searchConstants';
+import { getCategoryMeta } from '../search/filters/searchConstants';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { TemplateModal } from './reviewParseCache';
 import type { ModalStackActions } from '../modals/useModalStack';

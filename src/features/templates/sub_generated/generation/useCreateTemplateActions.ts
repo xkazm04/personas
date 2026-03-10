@@ -13,7 +13,7 @@ import {
   CREATE_TEMPLATE_CONTEXT_MAX_AGE_MS,
 } from './useCreateTemplateReducer';
 import type { PersistedCreateTemplateContext } from './useCreateTemplateReducer';
-import { persistContext, clearPersistedContext } from './createTemplateTypes';
+import { persistContext, clearPersistedContext } from './modals/createTemplateTypes';
 import { useCreateTemplateSnapshot } from './useCreateTemplateSnapshot';
 
 export function useCreateTemplateActions(isOpen: boolean, onTemplateCreated: () => void) {

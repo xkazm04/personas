@@ -26,11 +26,11 @@ export const ru = {
         label: "Ключи",
         description: "Управление API-ключами, подключениями к базам данных и секретами"
       },
-      templates: {
+      "design-reviews": {
         label: "Шаблоны",
         description: "Импорт рабочих процессов n8n и создание шаблонов агентов"
       },
-      teams: {
+      team: {
         label: "Команды",
         description: "Создание конвейеров команд из нескольких агентов с помощью drag-and-drop"
       },

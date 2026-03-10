@@ -1,7 +1,7 @@
-export { default as DesignReviewRunner } from './DesignReviewRunner';
-export { CreateTemplateModal } from './CreateTemplateModal';
-export { TemplateSourcePanel } from './TemplateSourcePanel';
-export type { TemplateSource } from './TemplateSourcePanel';
+export { default as DesignReviewRunner } from './runner/DesignReviewRunner';
+export { CreateTemplateModal } from './modals/CreateTemplateModal';
+export { TemplateSourcePanel } from './sources/TemplateSourcePanel';
+export type { TemplateSource } from './sources/TemplateSourcePanel';
 export {
   parseListMdFormat,
   PREDEFINED_TEST_CASES,
@@ -9,8 +9,8 @@ export {
   CATEGORY_OPTIONS,
   TRIGGER_OPTIONS,
   MIN_INSTRUCTION_LENGTH,
-} from './designRunnerConstants';
-export type { PredefinedTestCase, CustomTemplateCase, ParsedTemplate } from './designRunnerConstants';
+} from './runner/designRunnerConstants';
+export type { PredefinedTestCase, CustomTemplateCase, ParsedTemplate } from './runner/designRunnerConstants';
 export {
   useCreateTemplateReducer,
   CREATE_TEMPLATE_CONTEXT_KEY,

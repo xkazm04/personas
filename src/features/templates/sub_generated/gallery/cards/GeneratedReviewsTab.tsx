@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useTemplateGallery } from '@/hooks/design/template/useTemplateGallery';
 import { TemplateSearchBar } from '../search/TemplateSearchBar';
-import { ADOPT_CONTEXT_KEY } from '../../adoption/useAdoptReducer';
+import { ADOPT_CONTEXT_KEY } from '../../adoption/hooks/useAdoptReducer';
 import { useBackgroundRebuild } from '@/hooks/design/core/useBackgroundRebuild';
 import { useBackgroundPreview } from '@/hooks/design/core/useBackgroundPreview';
 import { useModalStack } from '../modals/useModalStack';
@@ -16,7 +16,7 @@ import { TemplateVirtualList } from './TemplateVirtualList';
 import { useGalleryActions } from './useGalleryActions';
 import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
 import type { ViewMode, TemplateModal } from './reviewParseCache';
-import type { Density } from '../search/DensityToggle';
+import type { Density } from '../search/filters/DensityToggle';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 

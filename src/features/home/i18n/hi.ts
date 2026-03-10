@@ -26,11 +26,11 @@ export const hi = {
         label: "कुंजियाँ",
         description: "API क्रेडेंशियल, डेटाबेस कनेक्शन और रहस्य प्रबंधित करें"
       },
-      templates: {
+      "design-reviews": {
         label: "टेम्प्लेट",
         description: "n8n वर्कफ़्लो आयात करें और एजेंट टेम्प्लेट जेनरेट करें"
       },
-      teams: {
+      team: {
         label: "टीमें",
         description: "ड्रैग-एंड-ड्रॉप के साथ मल्टी-एजेंट टीम पाइपलाइन बनाएं"
       },

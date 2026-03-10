@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { LayoutDashboard, BarChart3, Radio } from 'lucide-react';
 import DashboardHome from '@/features/overview/components/dashboard/DashboardHome';
 import AnalyticsDashboard from '@/features/overview/sub_analytics/components/AnalyticsDashboard';
-import RealtimeVisualizerPage from '@/features/overview/sub_realtime/components/RealtimeVisualizerPage';
+import RealtimeVisualizerPage from '@/features/overview/sub_realtime/components/views/RealtimeVisualizerPage';
 
 type DashboardSubtab = 'overview' | 'analytics' | 'realtime';
 

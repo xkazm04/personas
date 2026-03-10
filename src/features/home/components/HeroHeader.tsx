@@ -3,15 +3,11 @@ import { useMemo } from 'react';
 import LanguageSwitcher from './LanguageSwitcher';
 import TourLauncher from '@/features/onboarding/components/TourLauncher';
 
-// â”€â”€ Background variants (randomised per mount) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 const BG_OPTIONS = [
   '/illustrations/bg-v1-command-room.png',
   '/illustrations/bg-v2-orchestrator.png',
   '/illustrations/bg-v3-constellation.png',
 ];
-
-// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface HeroHeaderProps {
   greeting: string;
@@ -22,7 +18,7 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
   const bgSrc = useMemo(() => BG_OPTIONS[Math.floor(Math.random() * BG_OPTIONS.length)]!, []);
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       {/* Random cinematic background at low opacity */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -35,12 +31,13 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
       </motion.div>
 
       <div className="relative z-10">
-        {/* Top bar */}
-        <div className="flex items-center justify-end">
+        {/* Top bar — language on left, tour on right */}
+        <div className="flex items-center justify-between">
           <LanguageSwitcher />
+          <TourLauncher />
         </div>
 
-        {/* Logo + greeting + tour â€” single compact row */}
+        {/* Logo + greeting — centered row */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -70,9 +67,6 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
           >
             {greeting}, {displayName}
           </motion.h1>
-
-          {/* Tour button */}
-          <TourLauncher />
         </motion.div>
       </div>
     </div>

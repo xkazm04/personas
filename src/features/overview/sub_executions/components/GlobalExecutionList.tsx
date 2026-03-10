@@ -7,7 +7,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
-import DetailModal from '@/features/overview/components/dashboard/DetailModal';
+import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { ExecutionDetail } from '@/features/agents/sub_executions';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import type { GlobalExecution } from '@/lib/types/types';

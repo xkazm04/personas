@@ -1,5 +1,7 @@
-import { Loader2, CheckCircle2, XCircle, RefreshCw, Download } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, RefreshCw, Download, ExternalLink } from 'lucide-react';
 import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
+
+const CLAUDE_DOWNLOAD_URL = 'https://docs.anthropic.com/en/docs/claude-code/overview';
 
 export function InstallButton({
   checkId,
@@ -64,24 +66,50 @@ export function InstallButton({
             </code>
           </div>
         )}
-        <button
-          onClick={onInstall}
-          className="inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-lg border border-primary/20 text-foreground/90 hover:bg-secondary/60 transition-colors"
-        >
-          Retry
-          <RefreshCw className="w-3 h-3" />
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={onInstall}
+            className="inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-lg border border-primary/20 text-foreground/90 hover:bg-secondary/60 transition-colors"
+          >
+            Retry
+            <RefreshCw className="w-3 h-3" />
+          </button>
+          {checkId === 'claude_cli' && (
+            <a
+              href={CLAUDE_DOWNLOAD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-lg border border-violet-500/20 text-violet-300 hover:bg-violet-500/10 transition-colors"
+            >
+              Official page
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
+        </div>
       </div>
     );
   }
 
   return (
-    <button
-      onClick={onInstall}
-      className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
-    >
-      <Download className="w-3 h-3" />
-      {label}
-    </button>
+    <div className="mt-2 flex items-center gap-2 flex-wrap">
+      <button
+        onClick={onInstall}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
+      >
+        <Download className="w-3 h-3" />
+        {label}
+      </button>
+      {checkId === 'claude_cli' && (
+        <a
+          href={CLAUDE_DOWNLOAD_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl border border-muted-foreground/20 text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
+        >
+          <ExternalLink className="w-3 h-3" />
+          Official page
+        </a>
+      )}
+    </div>
   );
 }

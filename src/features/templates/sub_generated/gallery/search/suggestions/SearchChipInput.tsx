@@ -1,0 +1,112 @@
+import { Search, X, Loader2, Send } from 'lucide-react';
+import { SearchAutocomplete } from './SearchAutocomplete';
+import { getCategoryMeta } from '../filters/searchConstants';
+import type { CategoryWithCount } from '@/api/overview/reviews';
+import type { QueryChip } from './useStructuredQuery';
+
+interface SearchChipInputProps {
+  chips: QueryChip[];
+  inputValue: string;
+  setInputValue: (v: string) => void;
+  removeChip: (i: number) => void;
+  addChip: (chip: QueryChip) => void;
+  clearAll: () => void;
+  autocompletePrefix: string | null;
+  autocompleteQuery: string;
+  aiSearchMode?: boolean;
+  aiSearchLoading?: boolean;
+  onAiSearchSubmit?: (query: string) => void;
+  availableCategories: CategoryWithCount[];
+}
+
+export function SearchChipInput({
+  chips, inputValue, setInputValue, removeChip, addChip, clearAll,
+  autocompletePrefix, autocompleteQuery,
+  aiSearchMode, aiSearchLoading, onAiSearchSubmit, availableCategories,
+}: SearchChipInputProps) {
+  return (
+    <div className={`relative flex-1 min-w-0 flex items-center flex-wrap gap-1 bg-secondary/40 border rounded-xl transition-all ${
+      aiSearchMode
+        ? 'border-indigo-500/20 focus-within:border-indigo-500/40 focus-within:ring-1 focus-within:ring-indigo-500/20'
+        : 'border-primary/10 focus-within:border-violet-500/30 focus-within:ring-1 focus-within:ring-violet-500/20'
+    }`}>
+      <div className="pl-3 flex-shrink-0">
+        {aiSearchMode && aiSearchLoading
+          ? <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
+          : <Search className="w-4 h-4 text-muted-foreground/50" />}
+      </div>
+
+      {chips.map((chip, i) => {
+        const meta = chip.type === 'category' ? getCategoryMeta(chip.value) : null;
+        const Icon = meta?.icon;
+        return (
+          <span key={`${chip.type}-${chip.value}`}
+            className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 text-sm rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 flex-shrink-0">
+            {Icon && <Icon className="w-3 h-3" style={{ color: meta?.color }} />}
+            {chip.label}
+            <button onClick={() => removeChip(i)}
+              className="ml-0.5 p-0.5 hover:text-white transition-colors rounded-full hover:bg-violet-500/20">
+              <X className="w-2.5 h-2.5" />
+            </button>
+          </span>
+        );
+      })}
+
+      <input
+        type="text" value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && aiSearchMode && onAiSearchSubmit && inputValue.trim()) {
+            e.preventDefault();
+            onAiSearchSubmit(inputValue.trim());
+          }
+          if (e.key === 'Backspace' && !inputValue && chips.length > 0) {
+            removeChip(chips.length - 1);
+          }
+        }}
+        placeholder={
+          chips.length > 0 ? 'Add more filters or search...'
+            : aiSearchMode ? 'Describe what you need, then press Enter...'
+            : 'Search templates... (try category:monitoring)'
+        }
+        className="flex-1 min-w-[120px] py-2 pr-10 text-sm bg-transparent text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none"
+      />
+
+      <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+        {aiSearchMode ? (
+          <>
+            {inputValue && (
+              <button onClick={clearAll} className="p-1 text-muted-foreground/50 hover:text-foreground/70">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <button onClick={() => onAiSearchSubmit?.(inputValue.trim())}
+              disabled={!inputValue.trim() || aiSearchLoading}
+              className="p-1.5 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              title="Search with AI">
+              {aiSearchLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            </button>
+          </>
+        ) : (
+          (inputValue || chips.length > 0) && (
+            <button onClick={clearAll} className="p-1 text-muted-foreground/50 hover:text-foreground/70">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )
+        )}
+      </div>
+
+      {autocompletePrefix && !aiSearchMode && (
+        <SearchAutocomplete
+          prefix={autocompletePrefix} query={autocompleteQuery}
+          availableCategories={availableCategories} activeChips={chips}
+          onSelect={(chip) => addChip(chip)}
+          onDismiss={() => {
+            const words = inputValue.split(/\s+/);
+            setInputValue(words.slice(0, -1).join(' '));
+          }}
+        />
+      )}
+    </div>
+  );
+}

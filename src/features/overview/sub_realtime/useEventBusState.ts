@@ -9,7 +9,7 @@ import {
   DEFAULT_TOOLS, DEFAULT_PERSONAS,
   distributeOnRing,
 } from './libs/visualizationHelpers';
-import type { PersonaInfo } from './EventBusTypes';
+import type { PersonaInfo } from './event_bus/state/EventBusTypes';
 
 // ── Hook: all state logic for EventBusVisualization ──────────────
 

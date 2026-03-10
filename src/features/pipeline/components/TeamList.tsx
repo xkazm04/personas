@@ -1,14 +1,16 @@
 import { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Users, Trash2, ChevronRight, GitBranch, GitFork, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Plus, Users, Zap } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { getTeamCounts, updateTeam } from '@/api/tauriApi';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { serializeTeamConfig } from '@/lib/types/teamConfigTypes';
 import type { TeamConfig } from '@/lib/types/teamConfigTypes';
-import PipelineTemplateGallery from './PipelineTemplateGallery';
-import type { PipelineTemplate } from './PipelineTemplateGallery';
+import PipelineTemplateGallery from './templates/PipelineTemplateGallery';
+import type { PipelineTemplate } from './templates/PipelineTemplateGallery';
 import { AutoTeamModal } from './AutoTeamModal';
+import { CreateTeamForm } from './CreateTeamForm';
+import { TeamCard } from './TeamCard';
 
 export default function TeamList() {
   const teams = usePersonaStore((s) => s.teams);
@@ -33,8 +35,6 @@ export default function TeamList() {
     return () => clearTimeout(timer);
   }, [confirmDeleteId]);
 
-  const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6'];
-
   const fetchCounts = useCallback(async () => {
     try {
       const counts = await getTeamCounts();
@@ -44,17 +44,12 @@ export default function TeamList() {
       }
       setTeamCounts(map);
     } catch {
-      // intentional: non-critical â€” background team count preload
+      // intentional: non-critical
     }
   }, []);
 
-  useEffect(() => {
-    fetchTeams();
-  }, [fetchTeams]);
-
-  useEffect(() => {
-    if (teams.length > 0) fetchCounts();
-  }, [teams, fetchCounts]);
+  useEffect(() => { fetchTeams(); }, [fetchTeams]);
+  useEffect(() => { if (teams.length > 0) fetchCounts(); }, [teams, fetchCounts]);
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -78,7 +73,6 @@ export default function TeamList() {
       icon: template.icon,
     });
     if (team) {
-      // Store blueprint in team_config for canvas guidance
       try {
         await updateTeam(team.id, {
           name: null,
@@ -90,7 +84,7 @@ export default function TeamList() {
           enabled: null,
         });
       } catch {
-        // intentional: non-critical â€” template blueprint save is best-effort (team still created)
+        // intentional: non-critical
       }
       selectTeam(team.id);
     }
@@ -129,201 +123,35 @@ export default function TeamList() {
 
         {/* Create Form */}
         {showCreate && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 rounded-xl bg-secondary/40 backdrop-blur-sm border border-indigo-500/20"
-          >
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider mb-1.5 block">Team Name</label>
-                <input
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. Code Review Pipeline"
-                  className="w-full px-3 py-2 rounded-xl bg-background/60 border border-primary/15 text-sm text-foreground/90 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider mb-1.5 block">Description</label>
-                <input
-                  type="text"
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  placeholder="Optional description"
-                  className="w-full px-3 py-2 rounded-xl bg-background/60 border border-primary/15 text-sm text-foreground/90 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider mb-1.5 block">Color</label>
-                <div className="flex gap-2">
-                  {colors.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => setNewColor(c)}
-                      className={`w-7 h-7 rounded-lg transition-all ${newColor === c ? 'ring-2 ring-offset-2 ring-offset-background scale-110' : 'hover:scale-105'}`}
-                      style={{ backgroundColor: c }}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  onClick={() => setShowCreate(false)}
-                  className="px-3 py-1.5 text-sm text-muted-foreground/80 hover:text-foreground/95 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreate}
-                  disabled={!newName.trim()}
-                  className="px-4 py-1.5 text-sm font-medium rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                >
-                  Create Team
-                </button>
-              </div>
-            </div>
-          </motion.div>
+          <CreateTeamForm
+            newName={newName} onNameChange={setNewName}
+            newDescription={newDescription} onDescriptionChange={setNewDescription}
+            newColor={newColor} onColorChange={setNewColor}
+            onSubmit={handleCreate} onCancel={() => setShowCreate(false)}
+          />
         )}
 
         {/* Team Grid */}
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
           {teams.map((team: PersonaTeam, i: number) => (
-            <motion.div
+            <TeamCard
               key={team.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05, duration: 0.25 }}
-              className="group relative p-4 rounded-xl bg-secondary/40 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
-              onClick={() => selectTeam(team.id)}
-            >
-              {/* Color accent bar */}
-              <div
-                className="absolute top-0 left-4 right-4 h-[2px] rounded-full opacity-60"
-                style={{ backgroundColor: team.color || '#6366f1' }}
-              />
-
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center border"
-                    style={{
-                      backgroundColor: (team.color || '#6366f1') + '15',
-                      borderColor: (team.color || '#6366f1') + '30',
-                    }}
-                  >
-                    {team.icon ? (
-                      <span className="text-lg">{team.icon}</span>
-                    ) : (
-                      <Users className="w-5 h-5" style={{ color: (team.color || '#6366f1') + 'cc' }} />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">
-                      {team.name}
-                    </h3>
-                    {team.description && (
-                      <p className="text-sm text-muted-foreground/90 mt-0.5 line-clamp-1">{team.description}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => cloneTeam(team.id)}
-                    title="Fork team"
-                    className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-indigo-500/15 text-muted-foreground/80 hover:text-indigo-400 transition-all"
-                  >
-                    <GitFork className="w-3.5 h-3.5" />
-                  </button>
-                  <AnimatePresence mode="wait">
-                    {confirmDeleteId === team.id ? (
-                      <motion.div
-                        key="confirm"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className="flex items-center gap-1.5"
-                      >
-                        <button
-                          onClick={() => {
-                            deleteTeam(team.id);
-                            setConfirmDeleteId(null);
-                          }}
-                          className="px-2 py-1 text-sm font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors"
-                        >
-                          Delete
-                        </button>
-                        <button
-                          onClick={() => setConfirmDeleteId(null)}
-                          className="px-2 py-1 text-sm font-medium text-muted-foreground/90 hover:text-foreground/95 rounded-lg transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </motion.div>
-                    ) : (
-                      <motion.button
-                        key="trash"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setConfirmDeleteId(team.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/15 text-muted-foreground/80 hover:text-red-400 transition-all"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </motion.button>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {team.parent_team_id && (() => {
-                const parent = teams.find((t: PersonaTeam) => t.id === team.parent_team_id);
-                return (
-                  <div className="mt-2 flex items-center gap-1.5 text-xs text-violet-400/80">
-                    <GitFork className="w-3 h-3" />
-                    <span>forked from <span className="font-medium">{parent?.name ?? 'deleted team'}</span></span>
-                  </div>
-                );
-              })()}
-
-              <div className="mt-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 text-sm font-mono rounded-full ${team.enabled ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/15 text-muted-foreground border border-zinc-500/20'}`}>
-                    {team.enabled ? 'active' : 'draft'}
-                  </span>
-                  {(() => {
-                    const counts = teamCounts[team.id];
-                    if (!counts) return null;
-                    return (
-                      <>
-                        <span className="flex items-center gap-1 text-sm text-muted-foreground/90">
-                          <Users className="w-3 h-3" />
-                          {counts.members}
-                        </span>
-                        <span className="flex items-center gap-1 text-sm text-muted-foreground/90">
-                          <GitBranch className="w-3 h-3" />
-                          {counts.connections}
-                        </span>
-                      </>
-                    );
-                  })()}
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground/80 group-hover:text-indigo-400/60 group-hover:translate-x-0.5 transition-all" />
-              </div>
-            </motion.div>
+              team={team}
+              index={i}
+              teams={teams}
+              teamCounts={teamCounts}
+              confirmDeleteId={confirmDeleteId}
+              onSelect={selectTeam}
+              onClone={cloneTeam}
+              onDelete={deleteTeam}
+              onConfirmDelete={setConfirmDeleteId}
+            />
           ))}
         </div>
 
         {/* Empty State */}
         {teams.length === 0 && !showCreate && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-12"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
             <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
               <Users className="w-8 h-8 text-indigo-400/50" />
             </div>

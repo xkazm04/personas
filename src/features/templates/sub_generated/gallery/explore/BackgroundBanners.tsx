@@ -1,7 +1,7 @@
 import { Sparkles, RefreshCw, Play, FileEdit, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { AdoptionDraft } from '@/stores/slices/system/uiSlice';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
-import { ADOPT_STEP_META } from '../../adoption/useAdoptReducer';
+import { ADOPT_STEP_META } from '../../adoption/hooks/useAdoptReducer';
 
 interface BackgroundBannersProps {
   /** Whether the template adoption is active in the store */

@@ -10,7 +10,7 @@ import {
   Table2,
   RefreshCw,
 } from 'lucide-react';
-import { useAdoptionWizard } from '../AdoptionWizardContext';
+import { useAdoptionWizard } from '../../AdoptionWizardContext';
 import { useTableIntrospection } from '@/hooks/database/useTableIntrospection';
 
 export function DatabaseSetupCard() {

@@ -6,9 +6,9 @@ export {
   ADOPT_CONTEXT_MAX_AGE_MS,
   ADOPT_STEPS,
   ADOPT_STEP_META,
-} from './useAdoptReducer';
-export type { AdoptWizardStep, AdoptState, PersistedAdoptContext } from './useAdoptReducer';
-export { useAsyncTransform } from './useAsyncTransform';
+} from './hooks/useAdoptReducer';
+export type { AdoptWizardStep, AdoptState, PersistedAdoptContext } from './hooks/useAdoptReducer';
+export { useAsyncTransform } from './hooks/useAsyncTransform';
 export { AdoptConfirmStep } from './AdoptConfirmStep';
 export {
   getAdoptionRequirements,

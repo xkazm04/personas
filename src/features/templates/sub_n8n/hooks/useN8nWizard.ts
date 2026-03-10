@@ -1,25 +1,13 @@
 import { useCallback, useRef, useEffect, useState } from 'react';
-import {
-  cancelN8nTransform,
-  clearN8nTransformSnapshot,
-  confirmN8nPersonaDraft,
-  continueN8nTransform,
-  getN8nTransformSnapshot,
-  startN8nTransformBackground,
-} from '@/api/templates/n8nTransform';
-import { testN8nDraft } from '@/api/agents/tests';
 import { usePersonaStore } from '@/stores/personaStore';
-import {
-  normalizeDraftFromUnknown,
-  stringifyDraft,
-} from './n8nTypes';
 import { useN8nImportReducer, STEP_META } from './useN8nImportReducer';
 import { useN8nSession } from './useN8nSession';
 import { useN8nTransform } from './useN8nTransform';
 import { useN8nTest } from './useN8nTest';
 import { useWorkflowImport } from './useWorkflowImport';
+import { createWizardHandlers } from './useN8nWizardHandlers';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
-import type { ConfirmResult } from '../steps/N8nConfirmStep';
+import type { ConfirmResult } from '../steps/confirm/N8nConfirmStep';
 
 /**
  * Orchestrator hook for the n8n import wizard.
@@ -40,7 +28,7 @@ export function useN8nWizard() {
   const [confirmResult, setConfirmResult] = useState<ConfirmResult | null>(null);
   const [connectorsMissing, setConnectorsMissing] = useState(0);
 
-  // â”€â”€ Composed hooks â”€â”€
+  // -- Composed hooks --
 
   const session = useN8nSession(state, dispatch);
 
@@ -54,7 +42,7 @@ export function useN8nWizard() {
 
   const test = useN8nTest(dispatch);
 
-  // â”€â”€ Slide direction tracking â”€â”€
+  // -- Slide direction tracking --
 
   const currentIndex = STEP_META[state.step].index;
   const direction = currentIndex >= prevStepRef.current ? 1 : -1;
@@ -62,10 +50,8 @@ export function useN8nWizard() {
     prevStepRef.current = currentIndex;
   }, [currentIndex]);
 
-  // Destructure stable function references for useCallback deps
   const { clearPersistedContext, create: createSession, remove: removeSession } = session;
   const { resetTransformStream, setIsRestoring } = transform;
-  const { resetTestStream } = test;
 
   const { processContent, processFile } = useWorkflowImport({
     dispatch,
@@ -76,213 +62,22 @@ export function useN8nWizard() {
     createSession,
   });
 
-  // â”€â”€ Handlers â”€â”€
+  // -- Handlers (delegated to extracted module) --
 
-  const handleTransform = async () => {
-    if (!state.parsedResult || !state.rawWorkflowJson || state.transforming || state.confirming || transformLockRef.current) return;
-
-    transformLockRef.current = true;
-
-    try {
-      const transformId =
-        typeof crypto !== 'undefined' && 'randomUUID' in crypto
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-      const isAdjustment = !!state.adjustmentRequest.trim() || !!state.draft;
-      const subPhase = isAdjustment ? 'generating' as const : 'asking' as const;
-
-      setIsRestoring(false);
-      transform.setAnalyzing(true);
-      await transform.startTransformStream(transformId);
-      dispatch({ type: 'TRANSFORM_STARTED', transformId, subPhase });
-      setN8nTransformActive(true);
-      transform.setAnalyzing(false);
-
-      // DB + localStorage sync handled automatically by useN8nSession
-
-      const previousDraftJson = state.draft ? stringifyDraft(state.draft) : state.draftJson.trim() || null;
-
-      let parserJson: string;
-      try {
-        parserJson = JSON.stringify(state.parsedResult);
-      } catch {
-        // intentional: non-critical â€” JSON parse fallback
-        parserJson = '{}';
-      }
-
-      const storeState = usePersonaStore.getState();
-      const connectorsJson = JSON.stringify(
-        storeState.connectorDefinitions.map((c) => ({ name: c.name, label: c.label })),
-      );
-      const credentialsJson = JSON.stringify(
-        storeState.credentials.map((c) => ({ name: c.name, service_type: c.service_type })),
-      );
-
-      const userAnswersJson = Object.keys(state.userAnswers).length > 0
-        ? JSON.stringify(state.userAnswers)
-        : null;
-
-      await startN8nTransformBackground(
-        transformId,
-        state.workflowName || 'Imported Workflow',
-        state.rawWorkflowJson,
-        parserJson,
-        state.adjustmentRequest.trim() || null,
-        previousDraftJson,
-        connectorsJson,
-        credentialsJson,
-        userAnswersJson,
-        state.sessionId,
-      );
-
-      if (state.adjustmentRequest.trim()) {
-        dispatch({ type: 'SET_ADJUSTMENT', text: '' });
-      }
-    } catch (err) {
-      transform.setAnalyzing(false);
-      setN8nTransformActive(false);
-      clearPersistedContext();
-      dispatch({
-        type: 'TRANSFORM_FAILED',
-        error: err instanceof Error ? err.message : 'Failed to generate transformation draft.',
-      });
-    } finally {
-      transformLockRef.current = false;
-    }
-  };
-
-  const handleConfirmSave = async () => {
-    if (confirmingRef.current) return;
-    try {
-      const payloadJson = state.draft ? stringifyDraft(state.draft) : state.draftJson.trim();
-      if (!payloadJson || state.transforming || state.confirming || state.draftJsonError) return;
-
-      confirmingRef.current = true;
-      dispatch({ type: 'CONFIRM_STARTED' });
-
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(payloadJson);
-      } catch (parseErr) {
-        dispatch({ type: 'CONFIRM_FAILED', error: `Draft JSON is malformed: ${parseErr instanceof Error ? parseErr.message : 'parse error'}` });
-        return;
-      }
-
-      const normalized = normalizeDraftFromUnknown(parsed);
-      if (!normalized) {
-        dispatch({ type: 'CONFIRM_FAILED', error: 'Draft JSON is invalid. Please fix draft fields.' });
-        return;
-      }
-
-      const response = await confirmN8nPersonaDraft(payloadJson, state.sessionId);
-      await fetchPersonas();
-      selectPersona(response.persona.id);
-
-      const responseObj = response as Record<string, unknown>;
-      const rawErrors = Array.isArray(responseObj.entity_errors) ? responseObj.entity_errors : [];
-      setConfirmResult({
-        triggersCreated: typeof responseObj.triggers_created === 'number' ? responseObj.triggers_created : 0,
-        toolsCreated: typeof responseObj.tools_created === 'number' ? responseObj.tools_created : 0,
-        connectorsNeedingSetup: Array.isArray(responseObj.connectors_needing_setup)
-          ? (responseObj.connectors_needing_setup as string[])
-          : [],
-        entityErrors: rawErrors as ConfirmResult['entityErrors'],
-      });
-
-      dispatch({ type: 'CONFIRM_COMPLETED' });
-
-      session.remove();
-
-      if (state.backgroundTransformId) {
-        void clearN8nTransformSnapshot(state.backgroundTransformId).catch(() => {});
-      }
-      clearPersistedContext();
-    } catch (err) {
-      dispatch({
-        type: 'CONFIRM_FAILED',
-        error: err instanceof Error ? err.message : 'Failed to confirm and save persona.',
-      });
-    } finally {
-      confirmingRef.current = false;
-    }
-  };
-
-  const handleTestDraft = async () => {
-    if (!state.draft || state.testStatus === 'running') return;
-    const testId = crypto.randomUUID();
-    dispatch({ type: 'TEST_STREAM_STARTED', testId });
-    try {
-      await test.startTestStream(testId);
-      await testN8nDraft(testId, stringifyDraft(state.draft));
-    } catch (err) {
-      dispatch({ type: 'TEST_FAILED', error: err instanceof Error ? err.message : 'Test failed' });
-    }
-  };
-
-  const handleCancelTransform = async () => {
-    const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-    try {
-      const transformId = state.backgroundTransformId || transform.currentTransformId;
-      if (transformId) {
-        await cancelN8nTransform(transformId);
-
-        let stopped = false;
-        for (let i = 0; i < 6; i += 1) {
-          try {
-            const snapshot = await getN8nTransformSnapshot(transformId);
-            if (!snapshot || (snapshot.status !== 'running' && snapshot.status !== 'awaiting_answers')) {
-              stopped = true;
-              break;
-            }
-          } catch {
-            // intentional: non-critical â€” snapshot no longer available is treated as stopped
-            stopped = true;
-            break;
-          }
-          await delay(250);
-        }
-
-        if (!stopped) {
-          dispatch({ type: 'SET_ERROR', error: 'Unable to confirm transform cancellation. Please wait and try again.' });
-          return;
-        }
-
-        void clearN8nTransformSnapshot(transformId).catch(() => {});
-      }
-      clearPersistedContext();
-      void resetTransformStream();
-      setIsRestoring(false);
-      setN8nTransformActive(false);
-      dispatch({ type: 'TRANSFORM_CANCELLED' });
-    } catch (err) {
-      dispatch({
-        type: 'SET_ERROR',
-        error: err instanceof Error ? err.message : 'Failed to cancel transform. Please try again.',
-      });
-    }
-  };
-
-  const handleReset = () => {
-    try {
-      const snapshotId = state.backgroundTransformId || transform.currentTransformId;
-      if (snapshotId) {
-        void clearN8nTransformSnapshot(snapshotId).catch(() => {});
-      }
-      clearPersistedContext();
-      void resetTransformStream();
-      void resetTestStream();
-      setIsRestoring(false);
-      setN8nTransformActive(false);
-      dispatch({ type: 'RESET' });
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    } catch {
-      // intentional: non-critical â€” ensure reset completes even if cleanup fails
-      setN8nTransformActive(false);
-      dispatch({ type: 'RESET' });
-    }
-  };
+  const handlers = createWizardHandlers({
+    state,
+    dispatch,
+    transform,
+    test,
+    session: { clearPersistedContext, remove: removeSession },
+    setN8nTransformActive,
+    fetchPersonas,
+    selectPersona,
+    setConfirmResult,
+    transformLockRef,
+    confirmingRef,
+    fileInputRef,
+  });
 
   const updateDraft = useCallback(
     (updater: (current: N8nPersonaDraft) => N8nPersonaDraft) => {
@@ -292,64 +87,6 @@ export function useN8nWizard() {
     [state.draft, dispatch],
   );
 
-  const handleContinueTransform = async () => {
-    if (!state.backgroundTransformId || state.transforming || transformLockRef.current) return;
-    if (!state.sessionId) {
-      dispatch({ type: 'SET_ERROR', error: 'Transform session is missing. Please restart the import flow.' });
-      return;
-    }
-
-    transformLockRef.current = true;
-
-    try {
-      dispatch({ type: 'TRANSFORM_STARTED', transformId: state.backgroundTransformId, subPhase: 'generating' });
-      setN8nTransformActive(true);
-      await transform.startTransformStream(state.backgroundTransformId);
-
-      const userAnswersJson = Object.keys(state.userAnswers).length > 0
-        ? JSON.stringify(state.userAnswers)
-        : '{}';
-
-      await continueN8nTransform(
-        state.backgroundTransformId,
-        userAnswersJson,
-        state.sessionId,
-      );
-    } catch (err) {
-      setN8nTransformActive(false);
-      clearPersistedContext();
-      dispatch({
-        type: 'TRANSFORM_FAILED',
-        error: err instanceof Error ? err.message : 'Failed to continue transformation.',
-      });
-    } finally {
-      transformLockRef.current = false;
-    }
-  };
-
-  // â”€â”€ Next step handler â”€â”€
-
-  const handleNext = () => {
-    switch (state.step) {
-      case 'analyze':
-        void handleTransform();
-        break;
-      case 'transform':
-        if (state.transformSubPhase === 'answering') {
-          void handleContinueTransform();
-        } else if (state.draft) {
-          dispatch({ type: 'GO_TO_STEP', step: 'edit' });
-        }
-        break;
-      case 'edit':
-        dispatch({ type: 'GO_TO_STEP', step: 'confirm' });
-        break;
-      case 'confirm':
-        void handleConfirmSave();
-        break;
-    }
-  };
-
   return {
     // State
     state,
@@ -358,15 +95,15 @@ export function useN8nWizard() {
     // Navigation
     canGoBack,
     goBack,
-    handleNext,
+    handleNext: handlers.handleNext,
 
     // Handlers
     processFile,
     processContent,
-    handleTransform,
-    handleCancelTransform,
-    handleTestDraft,
-    handleReset,
+    handleTransform: handlers.handleTransform,
+    handleCancelTransform: handlers.handleCancelTransform,
+    handleTestDraft: handlers.handleTestDraft,
+    handleReset: handlers.handleReset,
     updateDraft,
 
     // Transform state

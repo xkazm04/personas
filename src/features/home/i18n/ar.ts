@@ -26,11 +26,11 @@ export const ar = {
         label: "المفاتيح",
         description: "إدارة اعتمادات API، اتصالات قاعدة البيانات، والأسرار"
       },
-      templates: {
+      "design-reviews": {
         label: "القوالب",
         description: "استيراد تدفقات عمل n8n وإنشاء قوالب الوكلاء"
       },
-      teams: {
+      team: {
         label: "الفرق",
         description: "بناء خطوط أنابيب فرق متعددة الوكلاء باستخدام السحب والإسقاط"
       },

@@ -83,7 +83,7 @@ interface RequestResponsePanelProps {
   response: ApiProxyResponse | null;
   sendError: string | null;
   isSending: boolean;
-  onSend: (method: string, path: string, headers: Record<string, string>, body?: string) => void;
+  onSend: (method: string, path: string, headers: Record<string, string>, body?: string) => Promise<void>;
   onClose: () => void;
 }
 

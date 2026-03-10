@@ -3,9 +3,9 @@ import { X, Search, Key } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
-import type { ComponentRole } from '../steps/types';
-import { COMPONENT_ROLES } from '../steps/types';
-import { roleIcons, roleColors, roleIconColors } from './componentPickerConstants';
+import type { ComponentRole } from '../steps/builder/types';
+import { COMPONENT_ROLES } from '../steps/builder/types';
+import { roleIcons, roleColors, roleIconColors } from './selectors/componentPickerConstants';
 
 // -- Assign Modal -------------------------------------------------------------
 

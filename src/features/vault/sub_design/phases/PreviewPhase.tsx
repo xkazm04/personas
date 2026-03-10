@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plug, CheckCircle, Shield, ListChecks, KeyRound, CircleHelp, Bot, PenLine, PackagePlus } from 'lucide-react';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { NegotiatorPanel } from '@/features/vault/sub_negotiator/NegotiatorPanel';
-import { VaultErrorBanner } from '@/features/vault/sub_card/VaultErrorBanner';
+import { VaultErrorBanner } from '@/features/vault/sub_card/banners/VaultErrorBanner';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { InteractiveSetupInstructions } from '../setup/InteractiveSetupInstructions';
 import { useCredentialDesignContext } from '../CredentialDesignContext';

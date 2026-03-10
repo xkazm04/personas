@@ -1,0 +1,136 @@
+import { Clock, CircleDot } from 'lucide-react';
+import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { TRIGGER_ICONS } from './templateCardTypes';
+import type { SuggestedTrigger } from '@/lib/types/designTypes';
+import type { UseCaseFlow } from '@/lib/types/frontendTypes';
+import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
+
+interface TemplateCardBodyProps {
+  connectors: string[];
+  triggerTypes: string[];
+  suggestedTriggers: SuggestedTrigger[];
+  displayFlows: UseCaseFlow[];
+  readinessStatuses: ConnectorReadinessStatus[];
+  onViewFlows: () => void;
+}
+
+export function TemplateCardBody({
+  connectors,
+  triggerTypes,
+  suggestedTriggers,
+  displayFlows,
+  readinessStatuses,
+  onViewFlows,
+}: TemplateCardBodyProps) {
+  return (
+    <>
+      {/* Compact Body (mobile) */}
+      <div className="px-4 py-3 md:hidden border-t border-primary/5 space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground/60">Use Cases</span>
+          <span className="text-foreground/80">{displayFlows.length}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground/60">Connectors</span>
+          <span className="text-foreground/80">{connectors.length}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground/60">Triggers</span>
+          <span className="text-foreground/80">{suggestedTriggers.length > 0 ? suggestedTriggers.length : triggerTypes.length}</span>
+        </div>
+      </div>
+
+      {/* 3-Column Body */}
+      <div className="hidden md:grid px-4 py-4 md:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 gap-4 border-t border-primary/5">
+        {/* Use Cases */}
+        <div className="min-w-0">
+          <h4 className="text-sm uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
+            Use Cases
+          </h4>
+          {displayFlows.length > 0 ? (
+            <div className="space-y-1.5">
+              {displayFlows.slice(0, 4).map((flow) => (
+                <button
+                  key={flow.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewFlows();
+                  }}
+                  className="flex items-center gap-2 w-full text-left group/flow hover:text-violet-300 transition-colors"
+                >
+                  <CircleDot className="w-3 h-3 text-violet-400/60 flex-shrink-0" />
+                  <span className="text-sm text-foreground/70 group-hover/flow:text-violet-300 truncate">
+                    {flow.name}
+                  </span>
+                </button>
+              ))}
+              {displayFlows.length > 4 && (
+                <span className="text-sm text-muted-foreground/50 pl-5">
+                  +{displayFlows.length - 4} more
+                </span>
+              )}
+            </div>
+          ) : (
+            <span className="text-sm text-muted-foreground/60 italic">No flows</span>
+          )}
+        </div>
+
+        {/* Connectors */}
+        <div className="min-w-0">
+          <h4 className="text-sm uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
+            Connectors
+          </h4>
+          {connectors.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {connectors.map((c) => {
+                const meta = getConnectorMeta(c);
+                const status = readinessStatuses.find((s) => s.connector_name === c);
+                const isReady = status?.health === 'ready';
+                return (
+                  <Tooltip content={`${meta.label}${isReady ? '' : ' (not configured)'}`} placement="bottom">
+                    <div
+                      key={c}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-opacity ${
+                        isReady ? '' : 'opacity-30 grayscale'
+                      }`}
+                      style={{ backgroundColor: `${meta.color}18` }}
+                    >
+                      <ConnectorIcon meta={meta} size="w-4.5 h-4.5" />
+                    </div>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          ) : (
+            <span className="text-sm text-muted-foreground/60 italic">None</span>
+          )}
+        </div>
+
+        {/* Triggers */}
+        <div className="min-w-0">
+          <h4 className="text-sm uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
+            Triggers
+          </h4>
+          {(triggerTypes.length > 0 || suggestedTriggers.length > 0) ? (
+            <div className="space-y-1.5">
+              {(suggestedTriggers.length > 0 ? suggestedTriggers : triggerTypes.map((t) => ({ trigger_type: t, description: t, config: {} }))).slice(0, 3).map((trigger, i) => {
+                const TriggerIcon = TRIGGER_ICONS[trigger.trigger_type] ?? Clock;
+                return (
+                  <div key={i} className="flex items-center gap-2">
+                    <TriggerIcon className="w-3.5 h-3.5 text-blue-400/60 flex-shrink-0" />
+                    <span className="text-sm text-foreground/70 truncate">
+                      {trigger.description || trigger.trigger_type}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <span className="text-sm text-muted-foreground/60 italic">None</span>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}

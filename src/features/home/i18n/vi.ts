@@ -26,11 +26,11 @@ export const vi = {
         label: "Khóa",
         description: "Quản lý thông tin xác thực API, kết nối cơ sở dữ liệu và bí mật"
       },
-      templates: {
+      "design-reviews": {
         label: "Mẫu",
         description: "Nhập workflow n8n và tạo mẫu agent"
       },
-      teams: {
+      team: {
         label: "Nhóm",
         description: "Xây dựng pipeline đa agent với kéo và thả"
       },

@@ -6,17 +6,17 @@ import {
   Clock,
   Shield,
 } from 'lucide-react';
-import type { BuilderState } from './types';
-import type { BuilderAction } from './builderReducer';
+import type { BuilderState } from './builder/types';
+import type { BuilderAction } from './builder/builderReducer';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
-import { UseCaseBuilder } from '../pickers/UseCaseBuilder';
-import { ComponentsPicker } from '../pickers/ComponentsPicker';
-import { TriggerPresetPicker } from '../pickers/TriggerPresetPicker';
-import { PolicyPicker } from '../pickers/PolicyPicker';
+import { UseCaseBuilder } from '../pickers/use_cases/UseCaseBuilder';
+import { ComponentsPicker } from '../pickers/selectors/ComponentsPicker';
+import { TriggerPresetPicker } from '../pickers/triggers/TriggerPresetPicker';
+import { PolicyPicker } from '../pickers/selectors/PolicyPicker';
 import { BuilderPreview } from './BuilderPreview';
 import { CollapsibleSection } from './CollapsibleSection';
-import { useBuilderOrchestration } from './useBuilderOrchestration';
-import { StreamingLogPanel, BuilderActionBar } from './BuilderActions';
+import { useBuilderOrchestration } from './builder/useBuilderOrchestration';
+import { StreamingLogPanel, BuilderActionBar } from './BuilderActionComponents';
 
 interface BuilderStepProps {
   state: BuilderState;

@@ -1,7 +1,7 @@
 import type { RefObject } from 'react';
 import { Search, Key, X, RotateCw, Loader2, CheckCircle2, Network } from 'lucide-react';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
-import { VaultStatusBadge } from '@/features/vault/sub_card/VaultStatusBadge';
+import { VaultStatusBadge } from '@/features/vault/sub_card/badges/VaultStatusBadge';
 import type { VaultStatus } from '@/api/tauriApi';
 
 interface CredentialManagerHeaderProps {

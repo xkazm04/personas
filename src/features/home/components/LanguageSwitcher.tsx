@@ -4,19 +4,21 @@ import { Languages, Check } from 'lucide-react';
 import { useState } from 'react';
 
 const LANGUAGES = ([
-  { code: 'ar' as const, label: 'العربية', flag: '🇸🇦' }, // Arabic
-  { code: 'zh' as const, label: '中文', flag: '🇨🇳' }, // Chinese
+  { code: 'ar' as const, label: 'العربية', flag: '🇸🇦' },
+  { code: 'zh' as const, label: '中文', flag: '🇨🇳' },
   { code: 'en' as const, label: 'English', flag: '🇺🇸' },
-  { code: 'hi' as const, label: 'हिन्दी', flag: '🇮🇳' }, // Hindi
+  { code: 'hi' as const, label: 'हिन्दी', flag: '🇮🇳' },
   { code: 'id' as const, label: 'Bahasa Indonesia', flag: '🇮🇩' },
   { code: 'ru' as const, label: 'Русский', flag: '🇷🇺' },
 ] satisfies { code: Language; label: string; flag: string }[]).sort((a, b) => {
-  // Sort by English label if we had them, but since we have a mix,
-  // I'll manually order them or use a fixed sorted list based on English names:
-  // Arabic, Chinese, English, Hindi, Indonesian, Russian
   const order: Language[] = ['ar', 'zh', 'en', 'hi', 'id', 'ru'];
   return order.indexOf(a.code) - order.indexOf(b.code);
 });
+
+/** Map language code to illustration file (dark variant). */
+function langIllustration(code: string) {
+  return `/illustrations/languages/lang-${code}.png`;
+}
 
 export default function LanguageSwitcher() {
   const { language, setLanguage } = useI18nStore();
@@ -35,37 +37,69 @@ export default function LanguageSwitcher() {
       <AnimatePresence>
         {isOpen && (
           <>
-            <div 
-              className="fixed inset-0 z-40" 
-              onClick={() => setIsOpen(false)} 
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setIsOpen(false)}
             />
             <motion.div
               initial={{ opacity: 0, y: -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              className="absolute top-full mt-2 right-0 w-48 rounded-xl bg-card border border-border shadow-xl z-50 overflow-hidden"
+              className="absolute top-full mt-2 right-0 rounded-xl bg-card border border-border shadow-xl z-50 overflow-hidden p-2"
             >
-              <div className="p-1">
-                {LANGUAGES.map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => {
-                      setLanguage(lang.code);
-                      setIsOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                      language === lang.code 
-                        ? 'bg-primary/10 text-primary font-medium' 
-                        : 'hover:bg-secondary text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>{lang.flag}</span>
-                      <span>{lang.label}</span>
-                    </div>
-                    {language === lang.code && <Check className="w-4 h-4" />}
-                  </button>
-                ))}
+              {/* Card grid with illustration backgrounds */}
+              <div className="grid grid-cols-3 gap-2" style={{ width: '340px' }}>
+                {LANGUAGES.map((lang) => {
+                  const isActive = language === lang.code;
+                  return (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        setLanguage(lang.code);
+                        setIsOpen(false);
+                      }}
+                      className={`group relative rounded-lg overflow-hidden transition-all duration-300 text-left ${
+                        isActive
+                          ? 'ring-2 ring-primary/60 shadow-md'
+                          : 'hover:ring-1 hover:ring-primary/30'
+                      }`}
+                    >
+                      {/* Illustration background */}
+                      <div className="relative aspect-[4/3] bg-secondary/30 overflow-hidden">
+                        <img
+                          src={langIllustration(lang.code)}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${
+                            isActive
+                              ? 'opacity-90 scale-100'
+                              : 'opacity-30 scale-105 group-hover:opacity-85 group-hover:scale-100'
+                          }`}
+                        />
+                        {/* Overlay gradient */}
+                        <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity duration-300 ${
+                          isActive ? 'opacity-80' : 'opacity-40 group-hover:opacity-70'
+                        }`} />
+                        {/* Check badge */}
+                        {isActive && (
+                          <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                            <Check className="w-3 h-3 text-primary-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      {/* Label below */}
+                      <div className="px-2 py-1.5 bg-card/80">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs">{lang.flag}</span>
+                          <span className={`text-xs font-medium truncate ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                            {lang.label}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </motion.div>
           </>

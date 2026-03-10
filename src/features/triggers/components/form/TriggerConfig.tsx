@@ -4,7 +4,7 @@ import { Plus, X } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import type { DbPersonaTrigger } from '@/lib/types/types';
 import { TriggerAddForm } from '@/features/triggers/components/form/TriggerAddForm';
-import { TriggerListItem } from '@/features/triggers/components/display/TriggerListItem';
+import { TriggerListItem } from '@/features/triggers/components/display/trigger/TriggerListItem';
 import { useTriggerOperations } from '@/features/triggers/hooks/useTriggerOperations';
 
 export function TriggerConfig() {

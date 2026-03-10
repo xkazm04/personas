@@ -6,10 +6,10 @@ import { ContentBox, ContentHeader } from '@/features/shared/components/layout/C
 import { useRealtimeEvents } from '@/hooks/realtime/useRealtimeEvents';
 import { useTimelineReplay } from '@/hooks/realtime/useTimelineReplay';
 import RealtimeStatsBar from '@/features/overview/sub_realtime/RealtimeStatsBar';
-import EventBusVisualization from '@/features/overview/sub_realtime/EventBusVisualization';
+import EventBusVisualization from '@/features/overview/sub_realtime/event_bus/EventBusVisualization';
 import EventDetailDrawer from '@/features/overview/sub_realtime/EventDetailDrawer';
 import TimelinePlayer from '@/features/overview/sub_realtime/TimelinePlayer';
-import EventBusFilterBar from '@/features/overview/sub_realtime/EventBusFilterBar';
+import EventBusFilterBar from '@/features/overview/sub_realtime/event_bus/state/EventBusFilterBar';
 import { useEventBusFilter } from '@/features/overview/sub_realtime/useEventBusFilter';
 
 export default function RealtimeVisualizerPage() {

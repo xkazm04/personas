@@ -6,7 +6,7 @@ import Sidebar from '@/features/shared/components/layout/sidebar/Sidebar';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import HomePage from '@/features/home/components/HomePage';
 import { PersonaEditor } from '@/features/agents/sub_editor';
-import PersonaOverviewPage from '@/features/agents/components/PersonaOverviewPage';
+import PersonaOverviewPage from '@/features/agents/components/persona/PersonaOverviewPage';
 import CreationWizard from '@/features/agents/components/CreationWizard';
 import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
@@ -18,7 +18,7 @@ const CredentialManager = lazy(() => import('@/features/vault/sub_manager/Creden
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
 const DesignReviewsPage = lazy(() => import('@/features/templates/components/DesignReviewsPage'));
 const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage'));
-const EventsPage = lazy(() => import('@/features/triggers/components/display/EventsPage').then(m => ({ default: m.EventsPage })));
+const EventsPage = lazy(() => import('@/features/triggers/components/display/event/EventsPage').then(m => ({ default: m.EventsPage })));
 const CloudDeployPanel = lazy(() => import('@/features/deployment/components/cloud/CloudDeployPanel'));
 const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));

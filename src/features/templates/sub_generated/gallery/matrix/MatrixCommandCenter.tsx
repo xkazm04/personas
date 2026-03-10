@@ -2,7 +2,7 @@
  * MatrixCommandCenter — 9th cell centerpiece for PersonaMatrix.
  *
  * Edit mode: prompt input + web search/browse toggles + Build Persona action.
- * View mode: expandable prompt sections + stats summary.
+ * View mode: expandable prompt sections.
  */
 import { useState, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -35,8 +35,8 @@ function MiniTerminalStrip({ isRunning, lastLine, lines }: { isRunning: boolean;
   const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   return (
-    <div className="rounded-lg border border-primary/10 dark:bg-black/30 bg-white/40 overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-white/[0.04] transition-colors" onClick={() => setExpanded(!expanded)}>
+    <div className="rounded-lg border border-primary/10 bg-card-bg overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-foreground/[0.04] transition-colors" onClick={() => setExpanded(!expanded)}>
         {isRunning && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />}
         <Terminal className="w-3 h-3 text-muted-foreground/40 shrink-0" />
         <span className="flex-1 font-mono text-sm text-muted-foreground/50 truncate">{lastLine || 'Ready'}</span>
@@ -57,7 +57,7 @@ function CapabilityToggle({ icon: Icon, label, active, onToggle }: { icon: React
     <button type="button" onClick={onToggle} className={[
       'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition-colors',
       active
-        ? 'border-violet-500/30 bg-violet-500/15 text-violet-400 dark:text-violet-300'
+        ? 'border-violet-500/30 bg-violet-500/15 text-violet-400'
         : 'border-primary/10 bg-transparent text-muted-foreground/40 hover:text-muted-foreground/60 hover:border-primary/20',
     ].join(' ')}>
       <Icon className="w-3 h-3 flex-shrink-0" />
@@ -95,11 +95,6 @@ export function MatrixCommandCenter({ designResult, isEditMode, isRunning = fals
     return r;
   }, [designResult]);
 
-  const stats = useMemo(() => {
-    if (!designResult) return null;
-    return { tools: designResult.suggested_tools?.length ?? 0, connectors: designResult.suggested_connectors?.length ?? 0, triggers: designResult.suggested_triggers?.length ?? 0 };
-  }, [designResult]);
-
   if (isEditMode) {
     return (
       <div className="flex flex-col gap-3 w-full h-full">
@@ -113,7 +108,7 @@ export function MatrixCommandCenter({ designResult, isEditMode, isRunning = fals
           onChange={(e) => setPromptText(e.target.value)}
           placeholder="Additional instructions for this persona..."
           rows={2}
-          className="w-full px-3 py-2 rounded-lg border border-primary/15 dark:bg-black/30 bg-white/50 text-sm text-foreground/80 placeholder-muted-foreground/30 resize-none focus:outline-none focus:border-violet-500/30 transition-colors"
+          className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 resize-none focus:outline-none focus:border-violet-500/30 transition-colors"
         />
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -121,21 +116,11 @@ export function MatrixCommandCenter({ designResult, isEditMode, isRunning = fals
           <CapabilityToggle icon={Globe} label="Web Browse" active={webBrowseEnabled} onToggle={() => setWebBrowseEnabled(!webBrowseEnabled)} />
         </div>
 
-        {stats && (
-          <div className="flex items-center gap-3 text-[12px] text-muted-foreground/50">
-            <span>{stats.tools} tools</span>
-            <span className="w-0.5 h-0.5 rounded-full bg-current opacity-40" />
-            <span>{stats.connectors} connectors</span>
-            <span className="w-0.5 h-0.5 rounded-full bg-current opacity-40" />
-            <span>{stats.triggers} triggers</span>
-          </div>
-        )}
-
         <div className="mt-auto space-y-2">
           {(isRunning || cliLines.length > 0) && <MiniTerminalStrip isRunning={isRunning} lastLine={lastLine} lines={cliLines} />}
           {onLaunch && (
             <button type="button" onClick={onLaunch} disabled={launchDisabled || isRunning}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl bg-violet-500/15 text-violet-400 dark:text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl bg-violet-500/15 text-violet-400 border border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
               {isRunning ? 'Building...' : launchLabel}
             </button>
@@ -160,13 +145,6 @@ export function MatrixCommandCenter({ designResult, isEditMode, isRunning = fals
           </button>
         ); })}
       </div>
-      {stats && (
-        <div className="flex items-center gap-3 text-sm text-muted-foreground/50">
-          <span>{stats.tools} tools</span><span className="w-0.5 h-0.5 rounded-full bg-current opacity-40" />
-          <span>{stats.connectors} connectors</span><span className="w-0.5 h-0.5 rounded-full bg-current opacity-40" />
-          <span>{stats.triggers} triggers</span>
-        </div>
-      )}
       {sections.length > 0 && <p className="text-sm text-muted-foreground/50 leading-relaxed line-clamp-3">{sections[0]!.content.slice(0, 120)}...</p>}
       {openSection && <PromptModal section={openSection} onClose={() => setOpenSection(null)} />}
     </div>

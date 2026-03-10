@@ -1,5 +1,5 @@
-import type { BuilderComponent } from '../steps/types';
-import { computeCredentialCoverage } from '../steps/builderReducer';
+import type { BuilderComponent } from '../steps/builder/types';
+import { computeCredentialCoverage } from '../steps/builder/builderReducer';
 
 // -- Credential Coverage Bar --------------------------------------------------
 

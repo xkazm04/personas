@@ -7,7 +7,7 @@ import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/di
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { CredentialMetadata } from '@/lib/types/types';
-import type { RequiredConnector } from '../../adoption/steps/ConnectStep';
+import type { RequiredConnector } from '../../adoption/steps/connect/ConnectStep';
 import type { MatrixEditState, MatrixEditCallbacks } from './matrixEditTypes';
 
 // ── Connector Popup ───────────────────────────────────────────────────
@@ -111,33 +111,38 @@ export function ConnectorEditCell({
   const [popupConnector, setPopupConnector] = useState<string | null>(null);
   const missingSet = useMemo(() => new Set(missingConnectorTypes ?? []), [missingConnectorTypes]);
 
-  if (requiredConnectors.length === 0) {
-    return <span className="text-sm text-muted-foreground/50">No external services</span>;
+  // Only show connectors that have credentials in the vault
+  const availableConnectors = useMemo(
+    () => requiredConnectors.filter((rc) => {
+      const name = editState.connectorSwaps[rc.name] || rc.activeName;
+      return !missingSet.has(name);
+    }),
+    [requiredConnectors, editState.connectorSwaps, missingSet],
+  );
+
+  if (availableConnectors.length === 0) {
+    return (
+      <div className="space-y-2 w-full">
+        <span className="text-sm text-muted-foreground/40">No credentials in vault</span>
+        {onNavigateCatalog && (
+          <button type="button" onClick={onNavigateCatalog} className="block text-[11px] text-primary/70 hover:text-primary transition-colors">
+            Add in Keys Catalog
+          </button>
+        )}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-1 w-full">
-      {requiredConnectors.slice(0, 4).map((rc) => {
+      {availableConnectors.slice(0, 4).map((rc) => {
         const activeName = editState.connectorSwaps[rc.name] || rc.activeName;
         const meta = getConnectorMeta(activeName);
         const credId = editState.connectorCredentialMap[activeName];
         const matchedCred = credentials.find((c) => c.id === credId);
         const availableCreds = credentials.filter((c) => c.service_type === activeName);
         const isMatched = !!credId;
-        const isMissing = missingSet.has(activeName);
         const isOpen = popupConnector === rc.name;
-
-        if (isMissing) {
-          return (
-            <div key={rc.name} className="flex items-center gap-2 py-1">
-              <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 opacity-40" style={{ backgroundColor: `${meta.color}20` }}>
-                <ConnectorIcon meta={meta} size="w-3 h-3" />
-              </div>
-              <span className="text-sm text-muted-foreground/40 truncate flex-1">{meta.label}</span>
-              <span className="text-[11px] text-rose-400/70 font-medium whitespace-nowrap">not available</span>
-            </div>
-          );
-        }
 
         return (
           <div key={rc.name} className="relative">
@@ -177,13 +182,8 @@ export function ConnectorEditCell({
           </div>
         );
       })}
-      {requiredConnectors.length > 4 && (
-        <span className="text-sm text-muted-foreground/40">+{requiredConnectors.length - 4} more</span>
-      )}
-      {missingSet.size > 0 && onNavigateCatalog && (
-        <button type="button" onClick={onNavigateCatalog} className="text-[11px] text-violet-400/80 hover:text-violet-400 transition-colors mt-1">
-          Add credentials in Keys Catalog
-        </button>
+      {availableConnectors.length > 4 && (
+        <span className="text-sm text-muted-foreground/40">+{availableConnectors.length - 4} more</span>
       )}
     </div>
   );

@@ -317,11 +317,13 @@ pub async fn login_with_google(
     }
 
     let base_url = supabase_url()?;
+    let anon_key = supabase_anon_key()?;
     let oauth_url = format!(
-        "{}/auth/v1/authorize?provider=google&redirect_to={}&state={}",
+        "{}/auth/v1/authorize?provider=google&redirect_to={}&state={}&apikey={}",
         base_url,
         urlencoding::encode("personas://auth/callback"),
         urlencoding::encode(&oauth_state),
+        urlencoding::encode(&anon_key),
     );
 
     open::that(&oauth_url)
