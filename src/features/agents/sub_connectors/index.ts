@@ -1,6 +1,5 @@
 export { PersonaConnectorsTab } from './components/PersonaConnectorsTab';
 export { NotificationChannelSettings } from './components/NotificationChannelSettings';
-export { EventSubscriptionSettings } from './components/EventSubscriptionSettings';
 export { ConnectorStatusCard } from './components/ConnectorStatusCard';
 export { CredentialPicker } from './components/CredentialPicker';
 export { useConnectorStatuses } from './libs/useConnectorStatuses';

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -11,7 +11,6 @@ import {
   RefreshCw,
   ListChecks,
   Plug,
-  Database,
   Sliders,
   Hammer,
   CirclePlus,
@@ -25,14 +24,13 @@ import {
   WizardSidebar,
   ChooseStep,
   ConnectStep,
-  DataStep,
   TuneStep,
   BuildStep,
   CreateStep,
   QuickAdoptConfirm,
 } from './steps';
 import type { WizardSidebarStep } from './steps';
-import { hasDataStep, type AdoptWizardStep } from './useAdoptReducer';
+import type { AdoptWizardStep } from './useAdoptReducer';
 import {
   AdoptionWizardProvider,
   useAdoptionWizard,
@@ -53,7 +51,7 @@ interface AdoptionWizardModalProps {
 
 // ── Sidebar step config ────────────────────────────────────────────────
 
-const BASE_SIDEBAR_STEPS: WizardSidebarStep[] = [
+const SIDEBAR_STEPS: WizardSidebarStep[] = [
   { key: 'choose',  label: 'Use Cases', Icon: ListChecks },
   { key: 'connect', label: 'Connect',   Icon: Plug },
   { key: 'tune',    label: 'Configure', Icon: Sliders },
@@ -61,15 +59,12 @@ const BASE_SIDEBAR_STEPS: WizardSidebarStep[] = [
   { key: 'create',  label: 'Review',    Icon: CirclePlus },
 ];
 
-const DATA_STEP: WizardSidebarStep = { key: 'data', label: 'Data', Icon: Database };
-
 // ── Step content map ───────────────────────────────────────────────────
 // Replaces the large inline switch with a declarative component map.
 
 const STEP_COMPONENTS: Record<AdoptWizardStep, React.ComponentType> = {
   choose: ChooseStep,
   connect: ConnectStep,
-  data: DataStep,
   tune: TuneStep,
   build: BuildStep,
   create: CreateStep,
@@ -124,16 +119,7 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
     saveDraftToStore,
   } = useAdoptionWizard();
 
-  // Conditionally include Data step when template has a database connector
-  const needsDataStep = useMemo(() => hasDataStep(state), [state]);
-  const sidebarSteps = useMemo<WizardSidebarStep[]>(() => {
-    if (!needsDataStep) return BASE_SIDEBAR_STEPS;
-    // Insert Data step after Connect
-    const idx = BASE_SIDEBAR_STEPS.findIndex((s) => s.key === 'connect');
-    const copy = [...BASE_SIDEBAR_STEPS];
-    copy.splice(idx + 1, 0, DATA_STEP);
-    return copy;
-  }, [needsDataStep]);
+  const sidebarSteps = SIDEBAR_STEPS;
 
   // ── Close handler ──
 
@@ -173,25 +159,18 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
   } | null => {
     switch (state.step) {
       case 'choose':
-        return { label: 'Next: Connect', icon: ArrowRight, disabled: false, variant: 'violet' };
+        return { label: 'Next: Connect', icon: ArrowRight, disabled: state.selectedUseCaseIds.size === 0, variant: 'violet' };
       case 'connect': {
         const unconfigured = requiredConnectors.filter(
           (c) => c.activeName !== 'personas_messages' && c.activeName !== 'personas_database' && !state.connectorCredentialMap[c.activeName],
         ).length;
         return {
-          label: unconfigured > 0 ? `Configure (${unconfigured} remaining)` : needsDataStep ? 'Next: Data Setup' : 'Configure',
+          label: unconfigured > 0 ? `Configure (${unconfigured} remaining)` : 'Next: Configure',
           icon: ArrowRight,
           disabled: unconfigured > 0,
           variant: 'violet',
         };
       }
-      case 'data':
-        return {
-          label: 'Next: Configure',
-          icon: ArrowRight,
-          disabled: false,
-          variant: 'violet',
-        };
       case 'tune':
         if (state.questionGenerating) {
           return { label: 'Analyzing...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true };
@@ -209,12 +188,13 @@ function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
           return { label: 'Done', icon: Check, disabled: false, variant: 'emerald' };
         }
         const hasCriticalFindings = (safetyScan?.critical.length ?? 0) > 0;
+        const criticalBlocked = hasCriticalFindings && !state.safetyCriticalOverride;
         return state.confirming
           ? { label: 'Creating...', icon: RefreshCw, disabled: true, variant: 'emerald', spinning: true }
           : {
-              label: hasCriticalFindings ? 'Blocked by Safety Scan' : 'Create Persona',
+              label: criticalBlocked ? 'Blocked by Safety Scan' : 'Create Persona',
               icon: Sparkles,
-              disabled: !state.draft || hasCriticalFindings,
+              disabled: !state.draft || criticalBlocked,
               variant: 'emerald',
             };
       }

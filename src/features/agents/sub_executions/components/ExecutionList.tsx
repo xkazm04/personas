@@ -11,6 +11,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { getSampleInput } from '../libs/useExecutionList';
 import { ExecutionListFilters } from './ExecutionListFilters';
 import { ExecutionListRow } from './ExecutionListRow';
+import ContentLoader from '@/features/shared/components/ContentLoader';
 
 export function ExecutionList() {
   const selectedPersona = usePersonaStore((state) => state.selectedPersona);
@@ -94,7 +95,7 @@ export function ExecutionList() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
+    return <ContentLoader variant="panel" hint="executions" />;
   }
 
   if (showComparison && leftExec && rightExec) {

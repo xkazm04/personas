@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { DbPersonaExecution } from '@/lib/types/types';
-import type { PipelineTrace, PipelineTraceEntry } from '@/lib/execution/pipeline';
-import { PIPELINE_STAGES } from '@/lib/execution/pipeline';
+import type { UnifiedTrace, UnifiedSpan, PipelineStage } from '@/lib/execution/pipeline';
+import { PIPELINE_STAGES, isPipelineStage } from '@/lib/execution/pipeline';
 import { Clock, DollarSign, Zap, AlertCircle } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { STAGE_COLORS } from '../libs/waterfallHelpers';
@@ -11,12 +11,10 @@ import { STAGE_COLORS } from '../libs/waterfallHelpers';
 export function CostAccrualOverlay({
   entries,
   totalDurationMs,
-  pipelineStartMs,
   totalCostUsd,
 }: {
-  entries: PipelineTraceEntry[];
+  entries: UnifiedSpan[];
   totalDurationMs: number;
-  pipelineStartMs: number;
   totalCostUsd: number;
 }) {
   if (totalCostUsd <= 0 || totalDurationMs <= 0) return null;
@@ -28,16 +26,16 @@ export function CostAccrualOverlay({
     pts.push({ pct: 0, costPct: 0 });
 
     for (const entry of entries) {
-      const offsetMs = entry.timestamp - pipelineStartMs;
-      const endMs = offsetMs + (entry.durationMs ?? 0);
-      const startPct = (offsetMs / totalDurationMs) * 100;
+      if (!isPipelineStage(entry.span_type)) continue;
+      const startPct = (entry.start_ms / totalDurationMs) * 100;
+      const endMs = entry.start_ms + (entry.duration_ms ?? 0);
       const endPct = (endMs / totalDurationMs) * 100;
 
-      if (entry.stage === 'stream_output') {
+      if (entry.span_type === 'stream_output') {
         pts.push({ pct: startPct, costPct: (accrued / totalCostUsd) * 100 });
         accrued += totalCostUsd * 0.95;
         pts.push({ pct: endPct, costPct: (accrued / totalCostUsd) * 100 });
-      } else if (entry.stage === 'finalize_status') {
+      } else if (entry.span_type === 'finalize_status') {
         pts.push({ pct: startPct, costPct: (accrued / totalCostUsd) * 100 });
         accrued = totalCostUsd;
         pts.push({ pct: endPct, costPct: 100 });
@@ -50,7 +48,7 @@ export function CostAccrualOverlay({
     }
 
     return pts;
-  }, [entries, totalDurationMs, pipelineStartMs, totalCostUsd]);
+  }, [entries, totalDurationMs, totalCostUsd]);
 
   if (points.length < 2) return null;
 
@@ -85,10 +83,11 @@ export function CostAccrualOverlay({
 
 // Summary row
 
-export function PipelineSummary({ trace, execution }: { trace: PipelineTrace; execution: DbPersonaExecution }) {
+export function PipelineSummary({ trace, execution }: { trace: UnifiedTrace; execution: DbPersonaExecution }) {
   const totalMs = trace.completedAt ? trace.completedAt - trace.startedAt : 0;
-  const stagesHit = trace.entries.length;
-  const errors = trace.entries.filter(e => e.error).length;
+  const stageSpans = trace.spans.filter((s) => isPipelineStage(s.span_type));
+  const stagesHit = stageSpans.length;
+  const errors = stageSpans.filter(s => s.error).length;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 3xl:gap-4 4xl:gap-5">
@@ -124,8 +123,8 @@ export function PipelineSummary({ trace, execution }: { trace: PipelineTrace; ex
 
 // Waterfall error details
 
-export function WaterfallErrors({ entries }: { entries: PipelineTraceEntry[] }) {
-  const errorEntries = entries.filter(e => e.error);
+export function WaterfallErrors({ entries }: { entries: UnifiedSpan[] }) {
+  const errorEntries = entries.filter(e => e.error && isPipelineStage(e.span_type));
   if (errorEntries.length === 0) return null;
 
   return (
@@ -134,12 +133,13 @@ export function WaterfallErrors({ entries }: { entries: PipelineTraceEntry[] }) 
         <AlertCircle className="w-2.5 h-2.5 text-red-400" /> Stage Errors
       </div>
       {errorEntries.map((entry) => {
-        const config = STAGE_COLORS[entry.stage];
+        const stage = entry.span_type as PipelineStage;
+        const config = STAGE_COLORS[stage];
         return (
-          <div key={entry.stage} className="p-3 bg-red-500/5 border border-red-500/15 rounded-lg">
+          <div key={entry.span_id} className="p-3 bg-red-500/5 border border-red-500/15 rounded-lg">
             <div className="flex items-center gap-2 mb-1.5">
               <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded border ${config.bg} ${config.text} ${config.border}`}>
-                {entry.stage}
+                {stage}
               </span>
             </div>
             <pre className="text-sm text-red-300/80 font-mono whitespace-pre-wrap break-words">

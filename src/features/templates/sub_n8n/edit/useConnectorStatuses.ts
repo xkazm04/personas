@@ -180,12 +180,21 @@ export function useConnectorStatuses({
     }
   }, [statuses, testConnector]);
 
+  const testAllActiveRef = useRef(false);
+
   const handleTestAll = useCallback(async () => {
+    if (testAllActiveRef.current) return;
+    testAllActiveRef.current = true;
     setTestingAll(true);
-    for (const status of statuses.filter((s) => s.credentialId)) {
-      await testConnector(status.name, status.credentialId!);
+    try {
+      const testable = statuses.filter((s) => s.credentialId);
+      await Promise.allSettled(
+        testable.map((status) => testConnector(status.name, status.credentialId!)),
+      );
+    } finally {
+      testAllActiveRef.current = false;
+      setTestingAll(false);
     }
-    setTestingAll(false);
   }, [statuses, testConnector]);
 
   const handleAddCredential = useCallback((connectorName: string, n8nType: string) => {

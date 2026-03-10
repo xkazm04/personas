@@ -22,6 +22,7 @@ export interface OverviewSlice {
   globalExecutionsTotal: number;
   globalExecutionsOffset: number;
   globalExecutionsWarning: string | null;
+  globalExecutionsLimit: number;
 
   // State — reviews (local)
   manualReviews: ManualReviewItem[];
@@ -68,8 +69,18 @@ export function selectDerivedChartPoints(data: ExecutionDashboardData | null): M
   }));
 }
 
-// Server-side pagination: each "Load More" increases the global limit.
-let currentGlobalLimit = 50;
+/** Safely convert a Unix timestamp (seconds or milliseconds) to ISO string.
+ *  Returns null if the value is missing or invalid (before year 2000). */
+function safeTimestampToISO(value: number | null | undefined): string | null {
+  if (value == null || value === 0) return null;
+  // If > 1e12, assume milliseconds; otherwise assume seconds
+  const ms = value > 1e12 ? value : value * 1000;
+  // Reject dates before 2000-01-01 as invalid
+  if (ms < 946684800000) return null;
+  return new Date(ms).toISOString();
+}
+
+// Server-side pagination constants.
 const GLOBAL_PAGE_SIZE = 50;
 const MAX_GLOBAL_LIMIT = 500;
 
@@ -79,6 +90,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
   globalExecutionsTotal: 0,
   globalExecutionsOffset: 0,
   globalExecutionsWarning: null,
+  globalExecutionsLimit: GLOBAL_PAGE_SIZE,
   manualReviews: [],
   manualReviewsTotal: 0,
   pendingReviewCount: 0,
@@ -94,17 +106,14 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
 
   fetchGlobalExecutions: async (reset = false, status?: string) => {
     try {
-      if (reset) {
-        currentGlobalLimit = GLOBAL_PAGE_SIZE;
-      } else {
-        currentGlobalLimit = Math.min(
-          currentGlobalLimit + GLOBAL_PAGE_SIZE,
-          MAX_GLOBAL_LIMIT,
-        );
-      }
+      const prevLimit = get().globalExecutionsLimit;
+      const limit = reset
+        ? GLOBAL_PAGE_SIZE
+        : Math.min(prevLimit + GLOBAL_PAGE_SIZE, MAX_GLOBAL_LIMIT);
+      set({ globalExecutionsLimit: limit });
 
       const statusFilter = status === 'running' ? 'running' : status;
-      const rows = await api.listAllExecutions(currentGlobalLimit, statusFilter);
+      const rows = await api.listAllExecutions(limit, statusFilter);
 
       // Map GlobalExecutionRow to GlobalExecution (field names already match)
       // Deduplicate by id to prevent React duplicate-key warnings
@@ -124,7 +133,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
       set({
         globalExecutions: merged,
         // Signal hasMore when result count equals the limit
-        globalExecutionsTotal: merged.length + (merged.length >= currentGlobalLimit ? 1 : 0),
+        globalExecutionsTotal: merged.length + (merged.length >= limit ? 1 : 0),
         globalExecutionsOffset: merged.length,
         globalExecutionsWarning: null,
       });
@@ -197,8 +206,8 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
         severity: 'info',
         status: r.status === 'pending' ? 'pending' : r.status,
         reviewer_notes: r.response_message,
-        created_at: r.created_at != null ? new Date(r.created_at * 1000).toISOString() : new Date().toISOString(),
-        resolved_at: r.resolved_at != null ? new Date(r.resolved_at * 1000).toISOString() : null,
+        created_at: safeTimestampToISO(r.created_at) ?? new Date().toISOString(),
+        resolved_at: safeTimestampToISO(r.resolved_at),
         source: 'cloud' as const,
       }));
       const items: ManualReviewItem[] = enrichWithPersona(shaped, personas);

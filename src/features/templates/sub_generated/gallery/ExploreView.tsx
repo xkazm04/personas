@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { CheckCircle2, Download } from 'lucide-react';
+import { IS_MOBILE } from '@/lib/utils/platform';
 import type { CategoryWithCount } from '@/api/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { CATEGORY_ROLE_GROUPS } from './searchConstants';
@@ -77,7 +78,7 @@ export function ExploreView({
       )}
 
       {/* Role group grid */}
-      <div className="grid gap-4 max-w-6xl 3xl:max-w-[1800px] 4xl:max-w-[2400px] mx-auto [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">
+      <div className={`grid gap-4 max-w-6xl 3xl:max-w-[1800px] 4xl:max-w-[2400px] mx-auto ${IS_MOBILE ? '[grid-template-columns:1fr]' : '[grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]'}`}>
         {CATEGORY_ROLE_GROUPS.map((group) => (
           <RoleGroupCard
             key={group.role}

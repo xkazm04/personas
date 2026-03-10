@@ -1,15 +1,15 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Play, Square, ChevronDown, Filter } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { DiffViewer } from './DiffViewer';
+import { DiffViewer } from '@/features/agents/sub_lab_shared';
 import { LabProgress } from './LabProgress';
 import { AbHistory } from './AbHistory';
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';
 import { Listbox } from '@/features/shared/components/Listbox';
-import { ANTHROPIC_MODELS, selectedModelsToConfigs } from '../libs/labModels';
+import { ANTHROPIC_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { usePanelRunState } from '../libs/usePanelRunState';
 
 export function AbPanel() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const promptVersions = usePersonaStore((s) => s.promptVersions);
   const abRuns = usePersonaStore((s) => s.abRuns);
   const abResultsMap = usePersonaStore((s) => s.abResultsMap);
@@ -21,16 +21,21 @@ export function AbPanel() {
   const fetchAbResults = usePersonaStore((s) => s.fetchAbResults);
   const deleteAbRun = usePersonaStore((s) => s.deleteAbRun);
 
+  const {
+    selectedPersona, selectedModels, toggleModel,
+    expandedRunId, setExpandedRunId,
+    setActiveRunId,
+    selectedUseCaseId, setSelectedUseCaseId,
+    handleCancel,
+  } = usePanelRunState({
+    fetchRuns: (pid) => { fetchVersions(pid); fetchAbRuns(pid); },
+    fetchResults: fetchAbResults,
+    cancelRun: cancelAb,
+  });
+
   const [versionAId, setVersionAId] = useState<string | null>(null);
   const [versionBId, setVersionBId] = useState<string | null>(null);
-  const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['haiku']));
-  const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
   const [testInput, setTestInput] = useState('');
-  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
-  const [activeRunId, setActiveRunId] = useState<string | null>(null);
-
-  useEffect(() => { if (selectedPersona?.id) { fetchVersions(selectedPersona.id); fetchAbRuns(selectedPersona.id); } }, [selectedPersona?.id, fetchVersions, fetchAbRuns]);
-  useEffect(() => { if (expandedRunId) fetchAbResults(expandedRunId); }, [expandedRunId, fetchAbResults]);
 
   const versionA = useMemo(() => promptVersions.find((v) => v.id === versionAId) ?? null, [promptVersions, versionAId]);
   const versionB = useMemo(() => promptVersions.find((v) => v.id === versionBId) ?? null, [promptVersions, versionBId]);
@@ -46,8 +51,6 @@ export function AbPanel() {
     const runId = await startAb(selectedPersona.id, versionAId, versionBId, models, useCaseFilter, testInput.trim() || undefined);
     if (runId) setActiveRunId(runId);
   };
-
-  const handleCancel = async () => { if (activeRunId) { await cancelAb(activeRunId); setActiveRunId(null); } };
 
   const renderVersionPicker = (label: string, color: string, value: string | null, onChange: (v: string) => void) => (
     <div className="space-y-1">
@@ -93,7 +96,7 @@ export function AbPanel() {
             <label className="text-sm font-medium text-muted-foreground/80">Models</label>
             <div className="flex flex-wrap gap-2">
               {ANTHROPIC_MODELS.map((m) => (
-                <button key={m.id} onClick={() => setSelectedModels((prev) => { const next = new Set(prev); if (next.has(m.id)) next.delete(m.id); else next.add(m.id); return next; })} disabled={isLabRunning}
+                <button key={m.id} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
                   className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                   {m.label}
                 </button>

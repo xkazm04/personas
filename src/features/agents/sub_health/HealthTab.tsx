@@ -1,2 +1,0 @@
-// Re-export from new location
-export { HealthTab } from './components/HealthTab';

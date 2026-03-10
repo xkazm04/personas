@@ -7,3 +7,4 @@ pub mod reviews;
 pub mod smart_search;
 pub mod template_adopt;
 pub mod team_synthesis;
+pub mod template_feedback;

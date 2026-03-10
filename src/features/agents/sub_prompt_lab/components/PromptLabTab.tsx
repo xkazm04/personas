@@ -1,15 +1,16 @@
 import {
   GitBranch, FlaskConical,
-  Shield, ArrowLeftRight, Loader2, TrendingUp,
+  Shield, ArrowLeftRight, TrendingUp,
   ArrowUpDown, ChevronDown, ChevronRight,
 } from 'lucide-react';
-import { VersionItem } from '../VersionItem';
-import { DiffViewer } from '../DiffViewer';
+import { VersionItem, DiffViewer } from '@/features/agents/sub_lab_shared';
 import { AbTestPanel } from './AbTestPanel';
 import { AutoRollbackSettings } from './AutoRollbackSettings';
 import { PromptPerformanceDashboard } from './PromptPerformanceDashboard';
 import { usePromptVersions } from '../libs/usePromptVersions';
 import { useState } from 'react';
+import { IS_MOBILE } from '@/lib/utils/platform';
+import ContentLoader from '@/features/shared/components/ContentLoader';
 
 export function PromptLabTab() {
   const pv = usePromptVersions();
@@ -20,9 +21,9 @@ export function PromptLabTab() {
   }
 
   return (
-    <div className="flex h-full min-h-0 gap-4">
+    <div className={`flex ${IS_MOBILE ? 'flex-col' : ''} h-full min-h-0 gap-4`}>
       {/* Left: Version list */}
-      <div className="w-72 3xl:w-80 4xl:w-96 flex-shrink-0 flex flex-col min-h-0">
+      <div className={`${IS_MOBILE ? 'w-full max-h-[40%]' : 'w-72 3xl:w-80 4xl:w-96'} flex-shrink-0 flex flex-col min-h-0`}>
         <div className="flex items-center gap-2 mb-2 flex-shrink-0">
           <GitBranch className="w-4 h-4 text-primary/70" />
           <h3 className="text-sm font-medium text-foreground/80">Prompt Versions</h3>
@@ -69,7 +70,7 @@ export function PromptLabTab() {
         )}
 
         {pv.loading ? (
-          <div className="flex items-center justify-center py-8"><Loader2 className="w-4 h-4 text-muted-foreground/60 animate-spin" /></div>
+          <ContentLoader variant="panel" hint="prompt-lab" />
         ) : pv.versions.length === 0 ? (
           <div className="text-center py-8 space-y-2">
             <GitBranch className="w-8 h-8 text-muted-foreground/20 mx-auto" />

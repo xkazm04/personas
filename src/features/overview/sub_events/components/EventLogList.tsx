@@ -1,4 +1,4 @@
-import { Zap, Activity, RefreshCw, Loader2 } from 'lucide-react';
+import { Zap, Activity, RefreshCw } from 'lucide-react';
 import EmptyState from '@/features/shared/components/EmptyState';
 import { useVirtualList } from '@/hooks/utility/useVirtualList';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
@@ -8,6 +8,7 @@ import DetailModal from '@/features/overview/components/DetailModal';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { useEventLog, type EventFilter } from '../libs/useEventLog';
 import { EventRow, EventDetailContent } from './EventLogItem';
+import ContentLoader from '@/features/shared/components/ContentLoader';
 
 export default function EventLogList() {
   const {
@@ -60,10 +61,7 @@ export default function EventLogList() {
 
       <ContentBody flex>
         {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 text-muted-foreground/80">
-            <Loader2 className="w-8 h-8 mb-3 animate-spin text-primary/70" />
-            <p className="text-sm">Loading events...</p>
-          </div>
+          <ContentLoader label="Loading events..." hint="events" />
         ) : filteredEvents.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-4 md:p-6">
             <EmptyState

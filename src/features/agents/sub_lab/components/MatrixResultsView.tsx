@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Check } from 'lucide-react';
 import type { LabMatrixResult } from '@/lib/bindings/LabMatrixResult';
 import type { LabMatrixRun } from '@/lib/bindings/LabMatrixRun';
-import { compositeScore, scoreColor } from '../libs/labUtils';
+import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import { DraftDiffViewer } from './DraftDiffViewer';
 import { MatrixScoreComparison } from './MatrixScoreComparison';
 import { usePersonaStore } from '@/stores/personaStore';

@@ -148,6 +148,7 @@ fn supabase_anon_key() -> Result<String, AppError> {
 // Helpers: keyring
 // ---------------------------------------------------------------------------
 
+#[cfg(feature = "desktop")]
 fn store_refresh_token(token: &str) -> Result<(), AppError> {
     let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_REFRESH)
         .map_err(|e| AppError::Auth(format!("Keyring entry error: {e}")))?;
@@ -157,11 +158,23 @@ fn store_refresh_token(token: &str) -> Result<(), AppError> {
     Ok(())
 }
 
+#[cfg(not(feature = "desktop"))]
+fn store_refresh_token(_token: &str) -> Result<(), AppError> {
+    Ok(())
+}
+
+#[cfg(feature = "desktop")]
 fn load_refresh_token() -> Option<String> {
     let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_REFRESH).ok()?;
     entry.get_password().ok()
 }
 
+#[cfg(not(feature = "desktop"))]
+fn load_refresh_token() -> Option<String> {
+    None
+}
+
+#[cfg(feature = "desktop")]
 fn clear_tokens() {
     if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, KEYRING_REFRESH) {
         let _ = entry.delete_credential();
@@ -171,6 +184,10 @@ fn clear_tokens() {
     }
 }
 
+#[cfg(not(feature = "desktop"))]
+fn clear_tokens() {}
+
+#[cfg(feature = "desktop")]
 fn cache_user(user: &AuthUser) {
     if let Ok(json) = serde_json::to_string(user) {
         if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER_CACHE) {
@@ -179,10 +196,19 @@ fn cache_user(user: &AuthUser) {
     }
 }
 
+#[cfg(not(feature = "desktop"))]
+fn cache_user(_user: &AuthUser) {}
+
+#[cfg(feature = "desktop")]
 fn load_cached_user() -> Option<AuthUser> {
     let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER_CACHE).ok()?;
     let json = entry.get_password().ok()?;
     serde_json::from_str(&json).ok()
+}
+
+#[cfg(not(feature = "desktop"))]
+fn load_cached_user() -> Option<AuthUser> {
+    None
 }
 
 // ---------------------------------------------------------------------------

@@ -15,7 +15,6 @@ export interface WizardSidebarStep {
 const STEP_DESCRIPTIONS: Record<AdoptWizardStep, string> = {
   choose: 'Pick capabilities',
   connect: 'Link credentials',
-  data: 'Setup tables',
   tune: 'Set preferences',
   build: 'Generate persona',
   create: 'Review & save',
@@ -61,7 +60,7 @@ export function WizardSidebar({
                 ${isCompleted && !disabled ? 'cursor-pointer hover:bg-secondary/30' : ''}
                 ${isFuture || disabled ? 'cursor-default' : ''}
               `}
-              disabled={disabled || isFuture}
+              disabled={disabled || (!isCompleted && !isActive)}
             >
               {/* Node circle */}
               <div className="relative flex-shrink-0">

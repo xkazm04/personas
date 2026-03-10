@@ -1,4 +1,4 @@
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -36,7 +36,7 @@ interface PersonaDesignContext {
   personaName: string;
   timeoutMs: number;
   maxBudgetUsd: number | null;
-  lastDesignResult: DesignAnalysisResult | null;
+  lastDesignResult: AgentIR | null;
   recentFailureCount: number;
 }
 

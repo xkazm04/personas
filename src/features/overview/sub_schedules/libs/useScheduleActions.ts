@@ -14,6 +14,7 @@ export interface ScheduleActionState {
 
 export function useScheduleActions() {
   const fetchCronAgents = usePersonaStore((s) => s.fetchCronAgents);
+  const isBudgetBlocked = usePersonaStore((s) => s.isBudgetBlocked);
   const addToast = useToastStore((s) => s.addToast);
   const [state, setState] = useState<ScheduleActionState>({
     executing: null,
@@ -25,6 +26,10 @@ export function useScheduleActions() {
   // ── Manual Execute ──────────────────────────────────────────────────────
 
   const manualExecute = useCallback(async (agent: CronAgent) => {
+    if (isBudgetBlocked(agent.persona_id)) {
+      addToast(`Budget exceeded for "${agent.persona_name}" — execution blocked`, 'error');
+      return;
+    }
     setState((s) => ({ ...s, executing: agent.trigger_id }));
     try {
       await api.executePersona(agent.persona_id, agent.trigger_id);
@@ -114,6 +119,10 @@ export function useScheduleActions() {
     let failed = 0;
 
     for (const agent of agents) {
+      if (isBudgetBlocked(agent.persona_id)) {
+        failed++;
+        continue;
+      }
       setState((s) => ({ ...s, recovering: agent.trigger_id }));
       try {
         await api.executePersona(agent.persona_id, agent.trigger_id);

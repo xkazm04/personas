@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { FileJson, FileCode2, Wrench, Zap, Link, Check, Sparkles } from 'lucide-react';
+import { FileJson, FileCode2, Wrench, Zap, Link, Check, Sparkles, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import type { WorkflowPlatform } from '@/lib/personas/workflowDetector';
 import { PLATFORM_LABELS } from '@/lib/personas/workflowDetector';
 
@@ -14,7 +14,7 @@ const PLATFORM_COLORS: Record<WorkflowPlatform, string> = {
 };
 
 interface N8nParserResultsProps {
-  parsedResult: DesignAnalysisResult;
+  parsedResult: AgentIR;
   workflowName: string;
   onReset: () => void;
   selectedToolIndices?: Set<number>;
@@ -26,6 +26,10 @@ interface N8nParserResultsProps {
   isAnalyzing?: boolean;
   /** Detected source platform */
   platform?: WorkflowPlatform;
+  /** True when platform was guessed and needs user confirmation */
+  platformNeedsConfirmation?: boolean;
+  /** Callback when user confirms the detected platform */
+  onConfirmPlatform?: () => void;
 }
 
 function SelectionCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
@@ -72,6 +76,8 @@ export function N8nParserResults({
   onToggleConnector,
   isAnalyzing,
   platform,
+  platformNeedsConfirmation,
+  onConfirmPlatform,
 }: N8nParserResultsProps) {
   const hasSelection = !!selectedToolIndices;
 
@@ -156,6 +162,35 @@ export function N8nParserResults({
           Import Another
         </button>
       </div>
+
+      {/* Platform confirmation banner */}
+      {platformNeedsConfirmation && platform && platform !== 'unknown' && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5"
+        >
+          <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+          <p className="flex-1 text-sm text-amber-300/90">
+            This looks like a <strong>{PLATFORM_LABELS[platform]}</strong> workflow, but we're not 100% sure. Is that correct?
+          </p>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={onConfirmPlatform}
+              className="px-2.5 py-1 text-sm rounded-lg border border-amber-500/25 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-colors"
+            >
+              Yes, that's right
+            </button>
+            <button
+              onClick={onReset}
+              className="px-2.5 py-1 text-sm rounded-lg border border-primary/15 text-muted-foreground/70 hover:bg-secondary/50 transition-colors"
+            >
+              No, re-upload
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Selection summary */}
       {hasSelection && (

@@ -9,6 +9,12 @@ import {
 } from "./scripts/webview2-compat";
 
 const host = process.env.TAURI_DEV_HOST;
+const isMobile = !!process.env.TAURI_ANDROID || !!process.env.TAURI_IOS;
+const platform = process.env.TAURI_ANDROID
+  ? "android"
+  : process.env.TAURI_IOS
+    ? "ios"
+    : "desktop";
 
 // WebView2 compatibility uses TWO layers:
 // 1. Runtime shim (public/webview2-compat.js) — converts Object.prototype
@@ -20,7 +26,31 @@ const host = process.env.TAURI_DEV_HOST;
 // comma expressions in minified code.
 
 export default defineConfig(async () => ({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    // Remove crossorigin attribute and type="module" from built HTML.
+    // Android WebView's shouldInterceptRequest has issues with ES module
+    // loading via custom protocols — IIFE format + regular script tags work.
+    {
+      name: "android-webview-compat",
+      transformIndexHtml(html) {
+        // Remove crossorigin (breaks custom protocol CORS)
+        html = html.replace(/ crossorigin/g, "");
+        if (isMobile) {
+          // Ensure script tags don't have type="module" (IIFE output).
+          // Add defer so the IIFE runs after DOM is parsed (module scripts
+          // are deferred by default, but regular scripts in <head> are not).
+          html = html.replace(/ type="module"/g, "");
+          html = html.replace(
+            /(<script )(src="\/assets\/)/g,
+            '$1defer $2',
+          );
+        }
+        return html;
+      },
+    },
+  ],
 
   esbuild: {
     // Strip verbose console calls in production; keep console.warn/error for Sentry
@@ -33,20 +63,57 @@ export default defineConfig(async () => ({
   build: {
     sourcemap: "hidden",
     chunkSizeWarningLimit: 5500,
+    // Disable module preload polyfill — injects crossorigin links at runtime
+    // which breaks Tauri Android WebView's custom protocol
+    modulePreload: false,
     // Strip console.log and console.debug from production builds
     minify: "esbuild",
     rollupOptions: {
-      output: {
-        manualChunks: {
-          "react-vendor": ["react", "react-dom", "zustand"],
-          "ui-vendor": ["framer-motion", "lucide-react"],
-          "tauri-vendor": ["@tauri-apps/api/core", "@tauri-apps/api/event"],
-          "d3-vendor": ["d3-color", "d3-interpolate", "d3-scale", "d3-shape", "d3-array", "d3-format", "d3-time", "d3-time-format", "d3-path", "d3-drag", "d3-selection", "d3-zoom", "d3-ease", "d3-timer", "d3-dispatch", "d3-transition"],
-          "chart-vendor": ["recharts"],
-          "flow-vendor": ["@xyflow/react", "@xyflow/system"],
-          "hljs-vendor": ["highlight.js", "rehype-highlight", "lowlight"],
-        },
-      },
+      output: isMobile
+        ? {
+            // Android WebView's shouldInterceptRequest has known issues with
+            // ES module loading (strict MIME type checking fails, module requests
+            // never resolve). Use IIFE format which produces regular <script> tags
+            // that work reliably with Tauri's custom protocol.
+            format: "iife" as const,
+            inlineDynamicImports: true,
+            name: "PersonasApp",
+          }
+        : {
+            manualChunks: {
+              "react-vendor": ["react", "react-dom", "zustand"],
+              "ui-vendor": ["framer-motion", "lucide-react"],
+              "tauri-vendor": [
+                "@tauri-apps/api/core",
+                "@tauri-apps/api/event",
+              ],
+              "d3-vendor": [
+                "d3-color",
+                "d3-interpolate",
+                "d3-scale",
+                "d3-shape",
+                "d3-array",
+                "d3-format",
+                "d3-time",
+                "d3-time-format",
+                "d3-path",
+                "d3-drag",
+                "d3-selection",
+                "d3-zoom",
+                "d3-ease",
+                "d3-timer",
+                "d3-dispatch",
+                "d3-transition",
+              ],
+              "chart-vendor": ["recharts"],
+              "flow-vendor": ["@xyflow/react", "@xyflow/system"],
+              "hljs-vendor": [
+                "highlight.js",
+                "rehype-highlight",
+                "lowlight",
+              ],
+            },
+          },
     },
   },
 
@@ -87,6 +154,10 @@ export default defineConfig(async () => ({
         },
       ],
     },
+  },
+
+  define: {
+    "import.meta.env.VITE_PLATFORM": JSON.stringify(platform),
   },
 
   resolve: {

@@ -3,7 +3,7 @@ import { startDesignAnalysis, refineDesign, cancelDesignAnalysis, compileFromInt
 import { usePersonaStore } from '@/stores/personaStore';
 import { useTauriStream } from './useTauriStream';
 import { applyDesignResult, retryFailedOperations, type ApplyDesignSelections, type FailedOperation } from './applyDesignResult';
-import type { DesignPhase, DesignAnalysisResult, DesignQuestion } from '@/lib/types/designTypes';
+import type { DesignPhase, AgentIR, DesignQuestion } from '@/lib/types/designTypes';
 
 // ── Stream outcome discriminator ────────────────────────────────────
 // The design status event produces three outcomes (result, question, error).
@@ -11,7 +11,7 @@ import type { DesignPhase, DesignAnalysisResult, DesignQuestion } from '@/lib/ty
 // a result variant and route them in a useEffect.
 
 type DesignStreamOutcome =
-  | { kind: 'result'; data: DesignAnalysisResult }
+  | { kind: 'result'; data: AgentIR }
   | { kind: 'question'; data: DesignQuestion };
 
 const MAX_OUTPUT_LINES = 500;
@@ -34,7 +34,7 @@ function resolveStatus(payload: Record<string, unknown>):
   if (_designIdRef.current && payload.design_id !== _designIdRef.current) return null;
   const status = payload.status as string;
   if (status === 'completed' && payload.result) {
-    return { result: { kind: 'result', data: payload.result as DesignAnalysisResult } };
+    return { result: { kind: 'result', data: payload.result as AgentIR } };
   }
   if (status === 'awaiting-input' && payload.question) {
     return { result: { kind: 'question', data: payload.question as DesignQuestion } };
@@ -49,7 +49,7 @@ function resolveStatus(payload: Record<string, unknown>):
 
 export function useDesignAnalysis() {
   // Design-specific state (layered on top of the generic stream)
-  const [designResult, setDesignResult] = useState<DesignAnalysisResult | null>(null);
+  const [designResult, setDesignResult] = useState<AgentIR | null>(null);
   const [designPhase, setDesignPhase] = useState<DesignPhase>('idle');
   const [question, setQuestion] = useState<DesignQuestion | null>(null);
   const [applyWarnings, setApplyWarnings] = useState<string[]>([]);

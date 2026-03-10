@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { Bot, Trash2, ExternalLink, RefreshCw } from 'lucide-react';
+import { Bot, Trash2, ExternalLink, RefreshCw, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
 import type { GitLabAgent } from '@/api/gitlab';
+import { usePersonaStore } from '@/stores/personaStore';
 
 interface GitLabAgentListProps {
   projectId: number | null;
@@ -76,6 +77,7 @@ export function GitLabAgentList({
             )}
           </div>
           <div className="flex items-center gap-1.5">
+            <PipelineStatusBadge projectId={projectId} />
             {agent.webUrl && (
               <a
                 href={agent.webUrl}
@@ -98,5 +100,62 @@ export function GitLabAgentList({
         </div>
       ))}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Pipeline status badge (reads latest pipeline from store)
+// ---------------------------------------------------------------------------
+
+function PipelineStatusBadge({ projectId }: { projectId: number }) {
+  const pipelines = usePersonaStore((s) => s.gitlabPipelines);
+  const fetchPipelines = usePersonaStore((s) => s.gitlabFetchPipelines);
+
+  useEffect(() => {
+    if (pipelines.length === 0) {
+      fetchPipelines(projectId);
+    }
+  }, [projectId, pipelines.length, fetchPipelines]);
+
+  const latest = pipelines[0];
+  if (!latest) return null;
+
+  const cfg: Record<string, { icon: React.ReactNode; bg: string; text: string }> = {
+    success: {
+      icon: <CheckCircle2 className="w-3 h-3" />,
+      bg: 'bg-emerald-500/10 border-emerald-500/20',
+      text: 'text-emerald-400',
+    },
+    failed: {
+      icon: <XCircle className="w-3 h-3" />,
+      bg: 'bg-red-500/10 border-red-500/20',
+      text: 'text-red-400',
+    },
+    running: {
+      icon: <Loader2 className="w-3 h-3 animate-spin" />,
+      bg: 'bg-amber-500/10 border-amber-500/20',
+      text: 'text-amber-400',
+    },
+    pending: {
+      icon: <Clock className="w-3 h-3" />,
+      bg: 'bg-amber-500/10 border-amber-500/20',
+      text: 'text-amber-400',
+    },
+  };
+
+  const c = cfg[latest.status] ?? {
+    icon: <Clock className="w-3 h-3" />,
+    bg: 'bg-secondary/30 border-primary/10',
+    text: 'text-muted-foreground/60',
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-xs font-medium capitalize ${c.bg} ${c.text}`}
+      title={`Latest pipeline: ${latest.status}`}
+    >
+      {c.icon}
+      {latest.status}
+    </span>
   );
 }

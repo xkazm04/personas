@@ -5,6 +5,7 @@ export interface KnowledgeGraphSummary {
   tool_sequence_count: number;
   failure_pattern_count: number;
   model_performance_count: number;
+  annotation_count: number;
   top_patterns: ExecutionKnowledge[];
   recent_learnings: ExecutionKnowledge[];
 }

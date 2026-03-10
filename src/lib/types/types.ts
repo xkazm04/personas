@@ -144,19 +144,29 @@ export function toCredentialMetadata(c: PersonaCredential): CredentialMetadata {
   };
 }
 
-/** Parsed frontend connector definition (JSON fields pre-parsed) */
-export interface ConnectorDefinition {
+/**
+ * Shared connector shape used by both builtin JSON definitions and
+ * Rust-backed ConnectorDefinition.  Single source of truth for the
+ * fields every connector must carry.
+ */
+export interface ConnectorDefinitionBase {
   id: string;
   name: string;
   label: string;
-  icon_url: string | null;
+  icon_url?: string | null;
   color: string;
   category: string;
   fields: CredentialTemplateField[];
-  healthcheck_config: { description: string; endpoint?: string; method?: string } | null;
+  healthcheck_config: Record<string, unknown> | null;
   services: { toolName: string; label: string }[];
   events: CredentialTemplateEvent[];
   metadata: Record<string, unknown> | null;
+}
+
+/** Parsed frontend connector definition (JSON fields pre-parsed) */
+export interface ConnectorDefinition extends ConnectorDefinitionBase {
+  /** Narrowed healthcheck with typed description field. */
+  healthcheck_config: { description: string; endpoint?: string; method?: string } | null;
   is_builtin: boolean;
   created_at: string;
   updated_at: string;

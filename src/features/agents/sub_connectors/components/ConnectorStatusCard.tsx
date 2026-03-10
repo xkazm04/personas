@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, ChevronDown, Plus, ArrowLeftRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { ConnectorStatus } from '../libs/connectorTypes';
 import { STATUS_CONFIG, getStatusKey } from '../libs/connectorTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -50,21 +49,13 @@ export function ConnectorStatusCard({
             {roleLabel && (
               <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded bg-sky-500/10 border border-sky-500/15 text-sky-400/70 whitespace-nowrap">{roleLabel}</span>
             )}
-            <motion.div layout transition={{ type: 'spring', stiffness: 300 }}>
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.span key={statusKey} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut', layout: { type: 'spring', stiffness: 300 } }}
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full border ${config.bg} ${config.color}`}>
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.span key={`icon-${statusKey}`} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.3, ease: 'easeInOut' }} className="inline-flex">
-                      {(() => { const Icon = STATUS_ICON[statusKey]; return <Icon className={`w-2.5 h-2.5 ${statusKey === 'testing' ? 'animate-spin' : ''}`} />; })()}
-                    </motion.span>
-                  </AnimatePresence>
-                  <motion.span layout transition={{ type: 'spring', stiffness: 300 }}>{config.label}</motion.span>
-                </motion.span>
-              </AnimatePresence>
-            </motion.div>
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full border transition-all duration-300 ease-in-out ${config.bg} ${config.color}`}>
+              <span className="inline-flex transition-transform duration-300 ease-in-out">
+                {(() => { const Icon = STATUS_ICON[statusKey]; return <Icon className={`w-2.5 h-2.5 ${statusKey === 'testing' ? 'animate-spin' : ''}`} />; })()}
+              </span>
+              <span>{config.label}</span>
+            </span>
           </div>
           {status.credentialName && <p className="text-sm text-muted-foreground/80 mt-0.5">Credential: {status.credentialName}</p>}
         </div>

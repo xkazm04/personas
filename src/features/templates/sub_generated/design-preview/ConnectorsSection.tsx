@@ -3,11 +3,11 @@ import { CheckCircle2, Plug, AlertCircle, ExternalLink, Wrench } from 'lucide-re
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { DesignCheckbox } from './DesignCheckbox';
 import { SECTION_LABEL } from './helpers';
-import type { DesignAnalysisResult, SuggestedConnector } from '@/lib/types/designTypes';
+import type { AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
 import type { DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 interface ConnectorsSectionProps {
-  result: DesignAnalysisResult;
+  result: AgentIR;
   allToolDefs: DbPersonaToolDefinition[];
   currentToolNames: string[];
   credentials: CredentialMetadata[];

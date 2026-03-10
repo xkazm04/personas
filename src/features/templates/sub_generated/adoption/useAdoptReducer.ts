@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { N8nPersonaDraft, TransformQuestionResponse } from '@/api/n8nTransform';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { useWizardReducer } from '@/hooks/useWizardReducer';
 import { getAdoptionRequirements, getDefaultValues } from './templateVariables';
@@ -28,12 +28,11 @@ export interface PersistedAdoptContext {
 
 // ── Wizard Steps ──
 
-export type AdoptWizardStep = 'choose' | 'connect' | 'data' | 'tune' | 'build' | 'create';
+export type AdoptWizardStep = 'choose' | 'connect' | 'tune' | 'build' | 'create';
 
 export const ADOPT_STEPS: readonly AdoptWizardStep[] = [
   'choose',
   'connect',
-  'data',
   'tune',
   'build',
   'create',
@@ -42,10 +41,9 @@ export const ADOPT_STEPS: readonly AdoptWizardStep[] = [
 export const ADOPT_STEP_META: Record<AdoptWizardStep, { label: string; index: number }> = {
   choose:  { label: 'Choose',  index: 0 },
   connect: { label: 'Connect', index: 1 },
-  data:    { label: 'Data',    index: 2 },
-  tune:    { label: 'Tune',    index: 3 },
-  build:   { label: 'Build',   index: 4 },
-  create:  { label: 'Create',  index: 5 },
+  tune:    { label: 'Tune',    index: 2 },
+  build:   { label: 'Build',   index: 3 },
+  create:  { label: 'Create',  index: 4 },
 };
 
 // ── Helpers ──
@@ -57,7 +55,7 @@ function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
   return next;
 }
 
-function initSelectionsFromDesignResult(design: DesignAnalysisResult) {
+function initSelectionsFromDesignResult(design: AgentIR) {
   const selectedToolIndices = new Set<number>(
     design.suggested_tools.map((_, i) => i),
   );
@@ -96,7 +94,7 @@ export interface AdoptState {
   // Template context
   templateName: string;
   reviewId: string;
-  designResult: DesignAnalysisResult | null;
+  designResult: AgentIR | null;
   designResultJson: string;
 
   // Entity selection (Choose step)
@@ -152,11 +150,15 @@ export interface AdoptState {
   showEditInline: boolean;
   error: string | null;
 
-  // Data step
-  dataSchemaReady: boolean;
+  // Database setup (inline in Connect step)
+  databaseMode: 'create' | 'existing';
+  selectedTableNames: string[];
 
   // Auto-adoption
   autoResolved: boolean;
+
+  // Safety override — user explicitly acknowledges critical scan findings
+  safetyCriticalOverride: boolean;
 }
 
 const INITIAL_STATE: AdoptState = {
@@ -197,8 +199,10 @@ const INITIAL_STATE: AdoptState = {
   partialEntityErrors: [],
   showEditInline: false,
   error: null,
-  dataSchemaReady: false,
+  databaseMode: 'create',
+  selectedTableNames: [],
   autoResolved: false,
+  safetyCriticalOverride: false,
 };
 
 function prefillDefaults(questions: TransformQuestionResponse[]): Record<string, string> {
@@ -207,19 +211,6 @@ function prefillDefaults(questions: TransformQuestionResponse[]): Record<string,
     return acc;
   }, {});
 }
-
-/** Check if the current template needs the Data step (has a database connector). */
-function hasDataStep(s: AdoptState): boolean {
-  const connectors = s.designResult?.suggested_connectors ?? [];
-  const DATABASE_CONNECTORS = new Set([
-    'personas_database', 'supabase', 'neon', 'planetscale',
-    'postgres', 'mongodb', 'duckdb', 'sqlite',
-  ]);
-  return connectors.some((c) => DATABASE_CONNECTORS.has(c.name));
-}
-
-/** Exported for use in context/modal to conditionally show the Data sidebar step. */
-export { hasDataStep };
 
 // ── Hook ──
 
@@ -230,8 +221,7 @@ export function useAdoptReducer() {
     canGoBack: (s) => s.step !== 'choose' && !s.transforming && !s.confirming && !s.questionGenerating,
     goBack: (s, goToStep) => {
       if (s.step === 'connect') goToStep('choose');
-      else if (s.step === 'data') goToStep('connect');
-      else if (s.step === 'tune') goToStep(s.dataSchemaReady || hasDataStep(s) ? 'data' : 'connect');
+      else if (s.step === 'tune') goToStep('connect');
       else if (s.step === 'build') goToStep('tune');
       else if (s.step === 'create') {
         if (s.draft) goToStep('build');
@@ -240,9 +230,9 @@ export function useAdoptReducer() {
     },
   });
 
-  const { state, update } = core;
+  const { state, update, updateFn } = core;
 
-  const init = useCallback((templateName: string, reviewId: string, designResult: DesignAnalysisResult, designResultJson: string) => {
+  const init = useCallback((templateName: string, reviewId: string, designResult: AgentIR, designResultJson: string) => {
     const selections = initSelectionsFromDesignResult(designResult);
     update({
       ...INITIAL_STATE,
@@ -256,10 +246,12 @@ export function useAdoptReducer() {
   }, [update]);
 
   // ── Entity selection toggles ──
+  // All toggles use updateFn to read from prev state, avoiding stale closures
+  // during rapid toggling.
 
   const toggleUseCaseId = useCallback((id: string) => {
-    update({ selectedUseCaseIds: toggleInSet(state.selectedUseCaseIds, id) });
-  }, [update, state.selectedUseCaseIds]);
+    updateFn((prev) => ({ ...prev, selectedUseCaseIds: toggleInSet(prev.selectedUseCaseIds, id) }));
+  }, [updateFn]);
 
   const selectAllUseCases = useCallback((ids: string[]) => {
     update({ selectedUseCaseIds: new Set(ids) });
@@ -270,62 +262,63 @@ export function useAdoptReducer() {
   }, [update]);
 
   const toggleTool = useCallback((index: number) => {
-    update({ selectedToolIndices: toggleInSet(state.selectedToolIndices, index) });
-  }, [update, state.selectedToolIndices]);
+    updateFn((prev) => ({ ...prev, selectedToolIndices: toggleInSet(prev.selectedToolIndices, index) }));
+  }, [updateFn]);
 
   const toggleTrigger = useCallback((index: number) => {
-    update({ selectedTriggerIndices: toggleInSet(state.selectedTriggerIndices, index) });
-  }, [update, state.selectedTriggerIndices]);
+    updateFn((prev) => ({ ...prev, selectedTriggerIndices: toggleInSet(prev.selectedTriggerIndices, index) }));
+  }, [updateFn]);
 
   const toggleConnector = useCallback((name: string) => {
-    update({ selectedConnectorNames: toggleInSet(state.selectedConnectorNames, name) });
-  }, [update, state.selectedConnectorNames]);
+    updateFn((prev) => ({ ...prev, selectedConnectorNames: toggleInSet(prev.selectedConnectorNames, name) }));
+  }, [updateFn]);
 
   const swapConnector = useCallback((originalName: string, replacementName: string) => {
-    const newSwaps = { ...state.connectorSwaps };
-    // Determine the previously active connector for this slot
-    const oldActive = state.connectorSwaps[originalName] || originalName;
+    updateFn((prev) => {
+      const newSwaps = { ...prev.connectorSwaps };
+      const oldActive = prev.connectorSwaps[originalName] || originalName;
 
-    // If reverting to the original, remove the swap entry entirely
-    if (originalName === replacementName) {
-      delete newSwaps[originalName];
-    } else {
-      newSwaps[originalName] = replacementName;
-    }
+      if (originalName === replacementName) {
+        delete newSwaps[originalName];
+      } else {
+        newSwaps[originalName] = replacementName;
+      }
 
-    const newSelected = new Set(state.selectedConnectorNames);
-    newSelected.delete(oldActive);
-    newSelected.add(replacementName);
+      const newSelected = new Set(prev.selectedConnectorNames);
+      newSelected.delete(oldActive);
+      newSelected.add(replacementName);
 
-    const newCredMap = { ...state.connectorCredentialMap };
-    if (oldActive !== replacementName) {
-      delete newCredMap[oldActive];
-    }
+      const newCredMap = { ...prev.connectorCredentialMap };
+      if (oldActive !== replacementName) {
+        delete newCredMap[oldActive];
+      }
 
-    update({
-      connectorSwaps: newSwaps,
-      selectedConnectorNames: newSelected,
-      connectorCredentialMap: newCredMap,
+      return {
+        ...prev,
+        connectorSwaps: newSwaps,
+        selectedConnectorNames: newSelected,
+        connectorCredentialMap: newCredMap,
+      };
     });
-  }, [update, state.connectorSwaps, state.selectedConnectorNames, state.connectorCredentialMap]);
+  }, [updateFn]);
 
   const toggleChannel = useCallback((index: number) => {
-    update({ selectedChannelIndices: toggleInSet(state.selectedChannelIndices, index) });
-  }, [update, state.selectedChannelIndices]);
+    updateFn((prev) => ({ ...prev, selectedChannelIndices: toggleInSet(prev.selectedChannelIndices, index) }));
+  }, [updateFn]);
 
   const toggleEvent = useCallback((index: number) => {
-    update({ selectedEventIndices: toggleInSet(state.selectedEventIndices, index) });
-  }, [update, state.selectedEventIndices]);
+    updateFn((prev) => ({ ...prev, selectedEventIndices: toggleInSet(prev.selectedEventIndices, index) }));
+  }, [updateFn]);
 
   // ── Variable & trigger config ──
 
   const updateVariable = useCallback((key: string, value: string) => {
-    update({ variableValues: { ...state.variableValues, [key]: value } });
-  }, [update, state.variableValues]);
+    updateFn((prev) => ({ ...prev, variableValues: { ...prev.variableValues, [key]: value } }));
+  }, [updateFn]);
 
   const updateTriggerConfig = useCallback((triggerIdx: number, config: Record<string, string>) => {
-    update({ triggerConfigs: { ...state.triggerConfigs, [triggerIdx]: config } });
-  }, [update, state.triggerConfigs]);
+    updateFn((prev) => ({ ...prev, triggerConfigs: { ...prev.triggerConfigs, [triggerIdx]: config } }));
+  }, [updateFn]);
 
   // ── Persona preferences (Tune step) ──
 
@@ -336,14 +329,16 @@ export function useAdoptReducer() {
   // ── Connector credential mapping (Connect step) ──
 
   const setConnectorCredential = useCallback((connectorName: string, credentialId: string) => {
-    update({ connectorCredentialMap: { ...state.connectorCredentialMap, [connectorName]: credentialId } });
-  }, [update, state.connectorCredentialMap]);
+    updateFn((prev) => ({ ...prev, connectorCredentialMap: { ...prev.connectorCredentialMap, [connectorName]: credentialId } }));
+  }, [updateFn]);
 
   const clearConnectorCredential = useCallback((connectorName: string) => {
-    const next = { ...state.connectorCredentialMap };
-    delete next[connectorName];
-    update({ connectorCredentialMap: next });
-  }, [update, state.connectorCredentialMap]);
+    updateFn((prev) => {
+      const next = { ...prev.connectorCredentialMap };
+      delete next[connectorName];
+      return { ...prev, connectorCredentialMap: next };
+    });
+  }, [updateFn]);
 
   const setInlineCredentialConnector = useCallback((name: string | null) => {
     update({ inlineCredentialConnector: name });
@@ -352,8 +347,28 @@ export function useAdoptReducer() {
   // ── Create step ──
 
   const toggleEditInline = useCallback(() => {
-    update({ showEditInline: !state.showEditInline });
-  }, [update, state.showEditInline]);
+    updateFn((prev) => ({ ...prev, showEditInline: !prev.showEditInline }));
+  }, [updateFn]);
+
+  // ── Database setup (inline in Connect step) ──
+
+  const setDatabaseMode = useCallback((mode: 'create' | 'existing') => {
+    update({ databaseMode: mode, selectedTableNames: [] });
+  }, [update]);
+
+  const toggleTableName = useCallback((tableName: string) => {
+    updateFn((prev) => {
+      const current = prev.selectedTableNames;
+      const next = current.includes(tableName)
+        ? current.filter((t) => t !== tableName)
+        : [...current, tableName];
+      return { ...prev, selectedTableNames: next };
+    });
+  }, [updateFn]);
+
+  const setSelectedTableNames = useCallback((names: string[]) => {
+    update({ selectedTableNames: names });
+  }, [update]);
 
   // ── Existing actions ──
 
@@ -370,8 +385,8 @@ export function useAdoptReducer() {
   }, [update]);
 
   const answerUpdated = useCallback((questionId: string, answer: string) => {
-    update({ userAnswers: { ...state.userAnswers, [questionId]: answer } });
-  }, [update, state.userAnswers]);
+    updateFn((prev) => ({ ...prev, userAnswers: { ...prev.userAnswers, [questionId]: answer } }));
+  }, [updateFn]);
 
   const transformStarted = useCallback((adoptId: string) => {
     update({ step: 'build', transforming: true, backgroundAdoptId: adoptId, transformPhase: 'running', transformLines: [], error: null });
@@ -390,7 +405,7 @@ export function useAdoptReducer() {
   }, [update]);
 
   const transformCompleted = useCallback((draft: N8nPersonaDraft) => {
-    update({ step: 'create', transforming: false, transformPhase: 'completed', draft, draftJson: JSON.stringify(draft, null, 2), draftJsonError: null });
+    update({ step: 'create', transforming: false, transformPhase: 'completed', draft, draftJson: JSON.stringify(draft, null, 2), draftJsonError: null, safetyCriticalOverride: false });
   }, [update]);
 
   const transformFailed = useCallback((error: string) => {
@@ -398,7 +413,8 @@ export function useAdoptReducer() {
   }, [update]);
 
   const transformCancelled = useCallback(() => {
-    update({ step: 'choose', transforming: false, backgroundAdoptId: null, transformPhase: 'idle', transformLines: [], error: null });
+    // Resume at tune step instead of resetting to choose (preserves user progress)
+    update({ step: 'tune', transforming: false, backgroundAdoptId: null, transformPhase: 'idle', transformLines: [], error: null });
   }, [update]);
 
   const confirmStarted = useCallback(() => {
@@ -419,6 +435,10 @@ export function useAdoptReducer() {
 
   const setAutoResolved = useCallback((autoResolved: boolean) => {
     update({ autoResolved });
+  }, [update]);
+
+  const setSafetyCriticalOverride = useCallback((override: boolean) => {
+    update({ safetyCriticalOverride: override });
   }, [update]);
 
   return {
@@ -446,6 +466,10 @@ export function useAdoptReducer() {
     setInlineCredentialConnector,
     // Create step
     toggleEditInline,
+    // Database setup
+    setDatabaseMode,
+    toggleTableName,
+    setSelectedTableNames,
     // Domain-specific actions
     init,
     questionsGenerating,
@@ -464,5 +488,6 @@ export function useAdoptReducer() {
     confirmFailed,
     restoreContext,
     setAutoResolved,
+    setSafetyCriticalOverride,
   };
 }

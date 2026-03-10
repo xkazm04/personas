@@ -1,4 +1,4 @@
-import { Cpu, Bell, ListChecks } from 'lucide-react';
+import { Cpu, Bell } from 'lucide-react';
 import type { UseCaseItem } from '@/features/shared/components/UseCasesList';
 import EmptyState from '@/features/shared/components/EmptyState';
 
@@ -20,13 +20,7 @@ interface UseCaseListPanelProps {
 export function UseCaseListPanel({ useCases, selectedId, onSelect }: UseCaseListPanelProps) {
   if (useCases.length === 0) {
     return (
-      <EmptyState
-        icon={ListChecks}
-        title="No use cases defined yet"
-        subtitle="Create or import use cases to configure execution behavior for this persona."
-        iconContainerClassName="bg-violet-500/10 border-violet-500/20"
-        iconColor="text-violet-400/75"
-      />
+      <EmptyState variant="use-cases-empty" />
     );
   }
 

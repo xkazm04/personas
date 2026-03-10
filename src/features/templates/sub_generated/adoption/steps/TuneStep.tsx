@@ -1,10 +1,10 @@
-import { useMemo } from 'react';
-import { Sliders, Zap, Sparkles, ShieldCheck, Lock, AlertCircle, Brain, Clock, Webhook, MousePointerClick, Radio, MessageCircle, Activity } from 'lucide-react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { Sliders, Zap, Sparkles, ShieldCheck, Lock, AlertCircle, Brain, Clock, Webhook, MousePointerClick, Radio, Activity } from 'lucide-react';
 import { N8nQuestionStepper } from '@/features/templates/sub_n8n/N8nQuestionStepper';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
 import { validateVariable } from '@/lib/utils/variableSanitizer';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
-import type { SuggestedTrigger, AdoptionQuestion } from '@/lib/types/designTypes';
+import type { AdoptionRequirement, SuggestedTrigger } from '@/lib/types/designTypes';
 
 // ── Shared styles ─────────────────────────────────────────────────────
 
@@ -23,6 +23,69 @@ const TRIGGER_ICONS: Record<SuggestedTrigger['trigger_type'], typeof Clock> = {
   polling: Radio,
   event: Activity,
 };
+
+// ── Debounced variable input ──────────────────────────────────────────
+// Keeps local state for immediate keystroke feedback while debouncing
+// the write to the wizard reducer by 300ms. This avoids full
+// substituteVariables / filterDesignResult recomputation on every keystroke.
+
+const VARIABLE_DEBOUNCE_MS = 300;
+
+function DebouncedVariableInput({
+  variable,
+  value: externalValue,
+  onUpdate,
+  inputClass: cls,
+  showError,
+}: {
+  variable: AdoptionRequirement;
+  value: string;
+  onUpdate: (key: string, value: string) => void;
+  inputClass: string;
+  showError: boolean;
+}) {
+  const [localValue, setLocalValue] = useState(externalValue);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // Sync from external when it changes outside this component (e.g. restore)
+  useEffect(() => {
+    setLocalValue(externalValue);
+  }, [externalValue]);
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const next = e.target.value;
+      setLocalValue(next);
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => onUpdate(variable.key, next), VARIABLE_DEBOUNCE_MS);
+    },
+    [onUpdate, variable.key],
+  );
+
+  // Flush pending debounce on unmount
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  const inputType =
+    variable.type === 'url' ? 'url'
+      : variable.type === 'email' ? 'email'
+        : 'text';
+
+  const placeholder =
+    variable.type === 'cron' ? (variable.default_value ?? '0 9 * * 1-5')
+      : variable.type === 'email' ? (variable.default_value ?? 'user@example.com')
+        : variable.type === 'url' ? (variable.default_value ?? 'https://...')
+          : (variable.default_value ?? '');
+
+  return (
+    <input
+      type={inputType}
+      value={localValue}
+      onChange={handleChange}
+      placeholder={placeholder}
+      className={`${cls} ${showError ? '!border-red-500/30' : ''}`}
+    />
+  );
+}
 
 // ── Component ─────────────────────────────────────────────────────────
 
@@ -55,28 +118,20 @@ export function TuneStep() {
   const hasVariables = adoptionRequirements.length > 0;
   const hasQuestions = questions !== null && questions.length > 0;
 
-  // ── Template adoption questions (filtered by selected use cases) ──
-
-  const adoptionQuestions = useMemo<AdoptionQuestion[]>(() => {
-    const all = designResult?.adoption_questions;
-    if (!all || all.length === 0) return [];
-    const selectedIds = state.selectedUseCaseIds;
-    return all.filter((q) => {
-      // Show if no use_case_ids constraint, or if at least one selected use case matches
-      if (!q.use_case_ids || q.use_case_ids.length === 0) return true;
-      return q.use_case_ids.some((id) => selectedIds.has(id));
-    });
-  }, [designResult, state.selectedUseCaseIds]);
-
-  const hasAdoptionQuestions = adoptionQuestions.length > 0;
-
   // ── Selected triggers ──
 
   const selectedTriggers = useMemo(() => {
     if (!designResult?.suggested_triggers) return [];
-    return designResult.suggested_triggers
+    const all = designResult.suggested_triggers
       .map((t, i) => ({ trigger: t, originalIndex: i }))
       .filter(({ originalIndex }) => selectedTriggerIndices.has(originalIndex));
+    // Deduplicate: show only one trigger per type (e.g. one schedule trigger)
+    const seenTypes = new Set<string>();
+    return all.filter(({ trigger }) => {
+      if (seenTypes.has(trigger.trigger_type)) return false;
+      seenTypes.add(trigger.trigger_type);
+      return true;
+    });
   }, [designResult, selectedTriggerIndices]);
 
   // ── Variable validation summary ──
@@ -121,17 +176,6 @@ export function TuneStep() {
               const isEmpty = variable.required && !value.trim();
               const showError = hasError || isEmpty;
 
-              const inputType =
-                variable.type === 'url' ? 'url'
-                  : variable.type === 'email' ? 'email'
-                    : 'text';
-
-              const placeholder =
-                variable.type === 'cron' ? (variable.default_value ?? '0 9 * * 1-5')
-                  : variable.type === 'email' ? (variable.default_value ?? 'user@example.com')
-                    : variable.type === 'url' ? (variable.default_value ?? 'https://...')
-                      : (variable.default_value ?? '');
-
               return (
                 <div key={variable.key} className={fieldClass}>
                   <label className={labelClass}>
@@ -155,12 +199,12 @@ export function TuneStep() {
                       ))}
                     </ThemedSelect>
                   ) : (
-                    <input
-                      type={inputType}
+                    <DebouncedVariableInput
+                      variable={variable}
                       value={value}
-                      onChange={(e) => wizard.updateVariable(variable.key, e.target.value)}
-                      placeholder={placeholder}
-                      className={`${inputClass} ${showError ? '!border-red-500/30' : ''}`}
+                      onUpdate={wizard.updateVariable}
+                      inputClass={inputClass}
+                      showError={showError}
                     />
                   )}
 
@@ -217,6 +261,7 @@ export function TuneStep() {
                             currentConfig.schedule ??
                             currentConfig.cron ??
                             (trigger.config.cron as string | undefined) ??
+                            trigger.description ??
                             ''
                           }
                           onChange={(e) =>
@@ -226,6 +271,9 @@ export function TuneStep() {
                             })
                           }
                         />
+                        <p className="text-[10px] text-muted-foreground/40 mt-0.5">
+                          Natural language (e.g. "Every weekday at 9am") or cron (e.g. "0 9 * * 1-5")
+                        </p>
                       </div>
                     )}
 
@@ -410,87 +458,43 @@ export function TuneStep() {
               </label>
             </div>
 
-            {/* Memory scope */}
+            {/* Memory scope — structured categories + custom input (Area #18) */}
             <div className={fieldClass}>
               <label className={labelClass}>Memory scope</label>
-              <p className={descClass}>Guide what the persona remembers</p>
-              <input
-                type="text"
-                value={memoryScope}
-                onChange={(e) => wizard.updatePreference('memoryScope', e.target.value)}
-                placeholder="What should the persona remember between runs?"
-                className={inputClass}
+              <p className={descClass}>What should the persona remember?</p>
+              <ThemedSelect
+                value={memoryScope.startsWith('custom:') ? 'custom' : memoryScope || 'all'}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  wizard.updatePreference('memoryScope', val === 'custom' ? 'custom:' : val);
+                }}
+                className="py-1.5 px-2.5"
                 disabled={!memoryEnabled}
-              />
+              >
+                <option value="all">Everything (default)</option>
+                <option value="user_preferences">User preferences only</option>
+                <option value="execution_patterns">Execution patterns</option>
+                <option value="error_resolutions">Error resolutions</option>
+                <option value="custom">Custom scope...</option>
+              </ThemedSelect>
+              {memoryScope.startsWith('custom:') && (
+                <input
+                  type="text"
+                  value={memoryScope.replace('custom:', '')}
+                  onChange={(e) => wizard.updatePreference('memoryScope', `custom:${e.target.value}`)}
+                  placeholder="Describe what to remember..."
+                  className={`${inputClass} mt-1.5`}
+                  disabled={!memoryEnabled}
+                />
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Template-specific adoption questions */}
-      {hasAdoptionQuestions && (
-        <div className={cardClass}>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-blue-400/70"><MessageCircle className="w-4 h-4" /></span>
-            <span className="text-sm font-medium text-foreground/70">Setup Questions</span>
-            <span className="text-sm text-muted-foreground/40 ml-auto">{adoptionQuestions.length} questions</span>
-          </div>
-          <p className={`${descClass} mb-3`}>
-            These questions help customize the persona for your specific setup.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 3xl:grid-cols-3 gap-3">
-            {adoptionQuestions.map((q) => {
-              const answer = userAnswers[q.id] ?? q.default ?? '';
-              return (
-                <div key={q.id} className={fieldClass}>
-                  <label className={labelClass}>{q.question}</label>
-                  {q.context && <p className={descClass}>{q.context}</p>}
-
-                  {q.type === 'select' && q.options ? (
-                    <ThemedSelect
-                      value={answer}
-                      onChange={(e) => wizard.answerUpdated(q.id, e.target.value)}
-                      className="py-1.5 px-2.5"
-                    >
-                      <option value="">Select...</option>
-                      {q.options.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </ThemedSelect>
-                  ) : q.type === 'boolean' ? (
-                    <div className="flex gap-2 mt-1">
-                      {(q.options ?? ['Yes', 'No']).map((opt) => (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => wizard.answerUpdated(q.id, opt)}
-                          className={`px-3 py-1 text-sm font-medium rounded-lg border transition-colors ${
-                            answer === opt
-                              ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
-                              : 'bg-secondary/30 text-muted-foreground/60 border-primary/10 hover:bg-secondary/50'
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <input
-                      type="text"
-                      value={answer}
-                      onChange={(e) => wizard.answerUpdated(q.id, e.target.value)}
-                      placeholder={q.default ?? ''}
-                      className={inputClass}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* AI Questions — card stepper (same UX as n8n import) */}
+      {/* AI Questions — single unified question flow (Phase B)
+           Template adoption_questions are now passed as context to the LLM,
+           which decides what to ask during the Build step. */}
       {hasQuestions && (
         <div className={cardClass}>
           <div className="flex items-center justify-between mb-3">

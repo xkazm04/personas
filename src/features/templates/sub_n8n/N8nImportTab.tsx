@@ -148,6 +148,8 @@ export default function N8nImportTab() {
                   onToggleConnector={(n) => dispatch({ type: 'TOGGLE_CONNECTOR', name: n })}
                   isAnalyzing={analyzing}
                   platform={state.platform}
+                  platformNeedsConfirmation={state.platformNeedsConfirmation}
+                  onConfirmPlatform={() => dispatch({ type: 'CONFIRM_PLATFORM' })}
                 />
                 {!analyzing && state.parsedResult.suggested_connectors && state.parsedResult.suggested_connectors.length > 0 && (
                   <div className="mt-4">

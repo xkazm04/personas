@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { BarChart3, Loader2, AlertTriangle } from 'lucide-react';
+import { BarChart3, AlertTriangle } from 'lucide-react';
 import { getPromptPerformance } from '@/api/observability';
 import type { PromptPerformanceData } from '@/lib/bindings/PromptPerformanceData';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 import { AnomalyDot, SummaryCards, VersionTimeline, DashboardToolbar } from './PerformanceWidgets';
 import { PerformanceCharts, type ComparedPoint } from './PerformanceCharts';
+import ContentLoader from '@/features/shared/components/ContentLoader';
 
 interface PromptPerformanceDashboardProps {
   personaId: string;
@@ -93,11 +94,7 @@ export function PromptPerformanceDashboard({
   }, [productionVersion, data]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-5 h-5 text-muted-foreground/60 animate-spin" />
-      </div>
-    );
+    return <ContentLoader variant="panel" hint="performance" />;
   }
 
   if (error) {

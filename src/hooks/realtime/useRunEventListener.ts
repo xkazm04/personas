@@ -1,0 +1,79 @@
+import { useEffect, useRef } from "react";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+
+const TERMINAL_PHASES = ["completed", "failed", "cancelled"];
+
+export interface RunStatusPayload {
+  run_id: string;
+  phase: string;
+  scenarios_count?: number;
+  current?: number;
+  total?: number;
+  model_id?: string;
+  scenario_name?: string;
+  status?: string;
+  scores?: { tool_accuracy?: number; output_quality?: number; protocol_compliance?: number };
+  summary?: Record<string, unknown>;
+  error?: string;
+  scenarios?: unknown[];
+}
+
+export interface RunEventBinding<T extends RunStatusPayload = RunStatusPayload> {
+  eventName: string;
+  /** Return false to skip this event (e.g. stale run filtering). */
+  filter?: (payload: T) => boolean;
+  onProgress: (payload: T) => void;
+  onTerminal: (payload: T) => void;
+}
+
+/**
+ * Generic Tauri event listener for run-status events.
+ * Handles subscription setup, terminal-phase detection, and cleanup.
+ */
+export function useRunEventListener<T extends RunStatusPayload = RunStatusPayload>(
+  bindings: RunEventBinding<T>[],
+  deps: unknown[] = [],
+) {
+  const unlistenRef = useRef<UnlistenFn[]>([]);
+
+  useEffect(() => {
+    let active = true;
+
+    const setup = async () => {
+      const listeners: UnlistenFn[] = [];
+
+      const registrations = bindings.map(async (binding) => {
+        const unlisten = await listen<T>(binding.eventName, (event) => {
+          if (binding.filter && !binding.filter(event.payload)) return;
+          binding.onProgress(event.payload);
+          if (TERMINAL_PHASES.includes(event.payload.phase)) {
+            binding.onTerminal(event.payload);
+          }
+        });
+
+        if (!active) {
+          unlisten();
+          return;
+        }
+        listeners.push(unlisten);
+      });
+
+      await Promise.allSettled(registrations);
+
+      if (!active) {
+        listeners.forEach((fn) => fn());
+        return;
+      }
+      unlistenRef.current = listeners;
+    };
+
+    void setup();
+
+    return () => {
+      active = false;
+      unlistenRef.current.forEach((fn) => fn());
+      unlistenRef.current = [];
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+}

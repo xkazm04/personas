@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { deriveConnectorReadiness } from '../shared/ConnectorReadiness';
-import type { ConnectorReadinessStatus, DesignAnalysisResult, SuggestedConnector } from '@/lib/types/designTypes';
+import type { ConnectorReadinessStatus, AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ function deriveOverall(items: PrerequisiteItem[]): PrerequisiteOverall {
 // ── Component ────────────────────────────────────────────────────────
 
 interface AdoptionPrerequisitesPanelProps {
-  designResult: DesignAnalysisResult | null;
+  designResult: AgentIR | null;
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];
   onAddCredential: (

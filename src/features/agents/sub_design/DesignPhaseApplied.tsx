@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Check, AlertTriangle, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import type { FailedOperation } from '@/hooks/design/applyDesignResult';
 import { DesignPhaseAppliedDetails } from './DesignPhaseAppliedDetails';
 
 interface DesignPhaseAppliedProps {
-  result: DesignAnalysisResult | null;
+  result: AgentIR | null;
   warnings?: string[];
   failedOperations?: FailedOperation[];
   onRetryFailed?: () => void;

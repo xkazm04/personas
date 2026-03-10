@@ -38,8 +38,10 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
   const handleRun = useCallback(async () => {
     if (!selectedPersona || !resolved.config) return;
     // Pass fixture inputs as the suite context if a fixture is selected
-    await startTest(selectedPersona.id, [resolved.config], useCaseId);
-  }, [selectedPersona, resolved.config, useCaseId, startTest]);
+    const inputs = selectedFixture?.inputs;
+    const fixtureInputs = inputs && Object.keys(inputs).length > 0 ? inputs : undefined;
+    await startTest(selectedPersona.id, [resolved.config], useCaseId, undefined, fixtureInputs);
+  }, [selectedPersona, resolved.config, useCaseId, startTest, selectedFixture]);
 
   const handleCancel = useCallback(async () => {
     if (testRunProgress?.runId) {

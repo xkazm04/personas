@@ -19,6 +19,10 @@ export interface SubscriptionManagerState {
   totalActive: number;
   error: string | null;
   activating: Set<string>;
+  /** True while the initial load is in progress */
+  loading: boolean;
+  /** Retry the initial data load */
+  retryLoad: () => void;
 }
 
 export interface SubscriptionManagerActions {
@@ -39,6 +43,8 @@ export function useSubscriptionManager(
   const [dbTriggers, setDbTriggers] = useState<PersonaTrigger[]>([]);
   const [dbSubscriptions, setDbSubscriptions] = useState<PersonaEventSubscription[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadEpoch, setLoadEpoch] = useState(0);
   const [activating, setActivating] = useState<Set<string>>(() => new Set());
   const activatingRef = useRef(activating);
   activatingRef.current = activating;
@@ -49,14 +55,28 @@ export function useSubscriptionManager(
     [persona?.design_context],
   );
 
+  const retryLoad = useCallback(() => setLoadEpoch((e) => e + 1), []);
+
   useEffect(() => {
     setDbTriggers([]); setDbSubscriptions([]); setError(null);
-    if (!persona) return;
+    if (!persona) { setLoading(false); return; }
     let cancelled = false;
-    listTriggers(persona.id).then((t) => { if (!cancelled) setDbTriggers(t); }).catch(() => {});
-    listSubscriptions(persona.id).then((s) => { if (!cancelled) setDbSubscriptions(s); }).catch(() => {});
+    setLoading(true);
+
+    const loadTriggers = listTriggers(persona.id)
+      .then((t) => { if (!cancelled) setDbTriggers(t); })
+      .catch((e) => { if (!cancelled) setError((prev) => prev ?? `Failed to load triggers: ${e instanceof Error ? e.message : 'unknown error'}`); });
+
+    const loadSubs = listSubscriptions(persona.id)
+      .then((s) => { if (!cancelled) setDbSubscriptions(s); })
+      .catch((e) => { if (!cancelled) setError((prev) => prev ?? `Failed to load subscriptions: ${e instanceof Error ? e.message : 'unknown error'}`); });
+
+    Promise.allSettled([loadTriggers, loadSubs]).then(() => {
+      if (!cancelled) setLoading(false);
+    });
+
     return () => { cancelled = true; };
-  }, [persona?.id]);
+  }, [persona?.id, loadEpoch]);
 
   useEffect(() => {
     return () => { controllersRef.current.forEach((c) => c.abort()); controllersRef.current.clear(); };
@@ -101,14 +121,24 @@ export function useSubscriptionManager(
         });
         if (controller.signal.aborted || personaIdRef.current !== personaIdAtStart) return;
         setDbSubscriptions((prev) => [...prev, created]);
+        // Mark the JSON suggestion as adopted so it never resurfaces.
+        if (item.suggestedIndex != null) {
+          void mutateSingleUseCase(personaIdAtStart, item.useCaseId, (uc) => ({
+            ...uc,
+            event_subscriptions: (uc.event_subscriptions ?? []).map((s, i) =>
+              i === item.suggestedIndex ? { ...s, adopted: true } : s,
+            ),
+          }));
+        }
       }
     } catch (e) {
       if (controller.signal.aborted) return;
       console.error('Failed to activate subscription:', e);
       setError(`Failed to activate ${item.kind === 'trigger' ? 'trigger' : 'subscription'}`);
-    } finally { controllersRef.current.delete(item.key); }
-    if (controller.signal.aborted || personaIdRef.current !== personaIdAtStart) return;
-    setActivating((prev) => { const next = new Set(prev); next.delete(item.key); return next; });
+    } finally {
+      controllersRef.current.delete(item.key);
+      setActivating((prev) => { const next = new Set(prev); next.delete(item.key); return next; });
+    }
   }, [persona]);
 
   const retire = useCallback(async (item: UnifiedSubscription) => {
@@ -152,7 +182,7 @@ export function useSubscriptionManager(
   }, [persona]);
 
   return {
-    items, byUseCase, totalSuggested, totalActive, error, activating,
+    items, byUseCase, totalSuggested, totalActive, error, activating, loading, retryLoad,
     activate, retire, addSuggested, removeSuggested, toggleSuggested, updateSuggested,
   };
 }

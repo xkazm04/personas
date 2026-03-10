@@ -53,3 +53,47 @@ export const gitlabListAgents = (projectId: number) =>
 
 export const gitlabUndeployAgent = (projectId: number, agentId: string) =>
   invoke<void>("gitlab_undeploy_agent", { projectId, agentId });
+
+// Pipelines
+
+export interface GitLabPipeline {
+  id: number;
+  status: string;
+  ref: string;
+  webUrl: string;
+  createdAt: string;
+  updatedAt: string;
+  duration: number | null;
+}
+
+export interface GitLabJob {
+  id: number;
+  name: string;
+  stage: string;
+  status: string;
+  webUrl: string;
+  duration: number | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+}
+
+export const gitlabTriggerPipeline = (projectId: number, ref?: string) =>
+  invoke<GitLabPipeline>("gitlab_trigger_pipeline", {
+    projectId,
+    ref: ref ?? null,
+  });
+
+export const gitlabGetPipeline = (projectId: number, pipelineId: number) =>
+  invoke<GitLabPipeline>("gitlab_get_pipeline", { projectId, pipelineId });
+
+export const gitlabListPipelines = (projectId: number, limit?: number) =>
+  invoke<GitLabPipeline[]>("gitlab_list_pipelines", {
+    projectId,
+    limit: limit ?? null,
+  });
+
+export const gitlabListPipelineJobs = (projectId: number, pipelineId: number) =>
+  invoke<GitLabJob[]>("gitlab_list_pipeline_jobs", { projectId, pipelineId });
+
+export const gitlabGetJobLog = (projectId: number, jobId: number) =>
+  invoke<string>("gitlab_get_job_log", { projectId, jobId });

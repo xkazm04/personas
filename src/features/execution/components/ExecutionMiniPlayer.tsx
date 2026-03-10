@@ -19,23 +19,32 @@ import { formatElapsed } from '@/lib/utils/formatters';
 import {
   PIPELINE_STAGES,
   STAGE_META,
+  isPipelineStage,
   type PipelineStage,
-  type PipelineTrace,
+  type UnifiedTrace,
 } from '@/lib/execution/pipeline';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { Tooltip } from '@/features/shared/components/Tooltip';
 
 // ── Pipeline stage dot visualisation ───────────────────────────────────
 
-function PipelineDots({ trace }: { trace: PipelineTrace | null }) {
+function PipelineDots({ trace }: { trace: UnifiedTrace | null }) {
   const completedStages = useMemo(() => {
     if (!trace) return new Set<PipelineStage>();
-    return new Set(trace.entries.map((e) => e.stage));
+    return new Set(
+      trace.spans
+        .filter((s) => isPipelineStage(s.span_type))
+        .map((s) => s.span_type as PipelineStage),
+    );
   }, [trace]);
 
   const errorStages = useMemo(() => {
     if (!trace) return new Set<PipelineStage>();
-    return new Set(trace.entries.filter((e) => e.error).map((e) => e.stage));
+    return new Set(
+      trace.spans
+        .filter((s) => isPipelineStage(s.span_type) && s.error)
+        .map((s) => s.span_type as PipelineStage),
+    );
   }, [trace]);
 
   return (
@@ -43,10 +52,12 @@ function PipelineDots({ trace }: { trace: PipelineTrace | null }) {
       {PIPELINE_STAGES.map((stage) => {
         const completed = completedStages.has(stage);
         const hasError = errorStages.has(stage);
+        const pStages = trace?.spans.filter((s) => isPipelineStage(s.span_type)) ?? [];
+        const lastStage = pStages[pStages.length - 1];
         const isLast =
           trace &&
-          trace.entries.length > 0 &&
-          trace.entries[trace.entries.length - 1]!.stage === stage &&
+          lastStage &&
+          lastStage.span_type === stage &&
           !trace.completedAt;
 
         return (

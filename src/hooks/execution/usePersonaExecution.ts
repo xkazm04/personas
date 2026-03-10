@@ -2,7 +2,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useCorrelatedCliStream } from './useCorrelatedCliStream';
-import { traceStage } from '@/lib/execution/pipeline';
+import { traceStage, runMiddleware, type FinalizeStatusPayload } from '@/lib/execution/pipeline';
 import { isTerminalState } from '@/lib/execution/executionState';
 import type { QueueStatusPayload } from '@/stores/slices/executionSlice';
 
@@ -62,18 +62,29 @@ export function usePersonaExecution() {
           })
           : null,
       }));
+
+      // Run finalize_status middleware (fire-and-forget — non-blocking)
+      const trace = usePersonaStore.getState().pipelineTrace;
+      if (trace) {
+        const finalizePayload: FinalizeStatusPayload = {
+          executionId: store.activeExecutionId ?? '',
+          status: status as FinalizeStatusPayload['status'],
+          error: typeof payload['error'] === 'string' ? payload['error'] : null,
+          durationMs: typeof payload['duration_ms'] === 'number' ? payload['duration_ms'] : null,
+          costUsd: typeof payload['cost_usd'] === 'number' ? payload['cost_usd'] : null,
+        };
+        void runMiddleware('finalize_status', finalizePayload, trace).catch(() => {/* non-critical */});
+      }
     }
     const error = payload['error'];
     if (typeof error === 'string' && error) {
       store.appendExecutionOutput(`[ERROR] ${error}`);
     }
-    const summary = JSON.stringify({
-      status,
-      duration_ms: payload['duration_ms'] ?? null,
-      cost_usd: payload['cost_usd'] ?? null,
+    store.finishExecution(status, {
+      durationMs: typeof payload['duration_ms'] === 'number' ? payload['duration_ms'] : null,
+      costUsd: typeof payload['cost_usd'] === 'number' ? payload['cost_usd'] : null,
+      errorMessage: typeof error === 'string' && error ? error : null,
     });
-    store.appendExecutionOutput(`[SUMMARY]${summary}`);
-    store.finishExecution(status);
   }, []);
 
   const { start, cleanup } = useCorrelatedCliStream({
@@ -88,11 +99,22 @@ export function usePersonaExecution() {
     bufferLines: false,
   });
 
-  // Listen for queue-status events (queued / promoted)
+  // Listen for queue-status events only while an execution is active.
+  // This avoids registering idle listeners on the Tauri IPC bridge when
+  // users are browsing agents without running them.
   useEffect(() => {
+    if (!activeExecutionId) {
+      // No execution — tear down any lingering listener
+      if (queueUnlistenRef.current) {
+        queueUnlistenRef.current();
+        queueUnlistenRef.current = null;
+      }
+      return;
+    }
+
     let cancelled = false;
     const setup = async () => {
-      // Clean up previous listener
+      // Clean up previous listener before setting up new one
       if (queueUnlistenRef.current) {
         queueUnlistenRef.current();
         queueUnlistenRef.current = null;
@@ -128,7 +150,7 @@ export function usePersonaExecution() {
         queueUnlistenRef.current = null;
       }
     };
-  }, []);
+  }, [activeExecutionId]);
 
   // Disconnect listeners when persona changes to prevent cross-contamination.
   // The execution keeps running in the backend; we just stop piping its output

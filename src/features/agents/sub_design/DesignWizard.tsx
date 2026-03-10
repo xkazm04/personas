@@ -1,17 +1,21 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { WIZARD_STEPS, compileWizardInstruction, getAnswerSummary } from './wizardSteps';
+import { WIZARD_STEPS, compileWizardInstruction, compileWizardToAgentIR, getAnswerSummary } from './wizardSteps';
 import type { WizardAnswers } from './wizardSteps';
+import type { AgentIR } from '@/lib/types/designTypes';
 import { WizardStepRenderer } from './WizardStepRenderer';
 import { WizardStepIndicator } from './WizardStepIndicator';
 
 interface DesignWizardProps {
   onComplete: (instruction: string) => void;
+  /** Called with a structured AgentIR compiled from wizard answers.
+   *  When provided, enables direct-apply flows without LLM round-trip. */
+  onCompleteIR?: (ir: AgentIR) => void;
   onCancel: () => void;
 }
 
-export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
+export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizardProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<WizardAnswers>({});
   const [additionalContext, setAdditionalContext] = useState('');
@@ -41,6 +45,11 @@ export function DesignWizard({ onComplete, onCancel }: DesignWizardProps) {
   const handleNext = () => {
     if (isLastStep) {
       const allAnswers = { ...answers, additional_context: additionalContext };
+      // Emit both the structured AgentIR and the string instruction.
+      // Callers use whichever form fits their pipeline.
+      if (onCompleteIR) {
+        onCompleteIR(compileWizardToAgentIR(allAnswers));
+      }
       const instruction = compileWizardInstruction(allAnswers);
       onComplete(instruction);
     } else {

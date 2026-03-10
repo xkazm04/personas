@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Plug, ArrowLeft, Bot, MessageSquare, Monitor } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
@@ -10,6 +10,7 @@ import { AnalyzingPhase } from '@/features/vault/sub_design/AnalyzingPhase';
 import { usePersonaStore } from '@/stores/personaStore';
 import { checkPlaywrightAvailable } from '@/api/autoCredBrowser';
 import { isDesktopBridge } from '@/lib/utils/connectors';
+import { lookupRecipeAsDesignResult } from '@/lib/credentials/credentialRecipeRegistry';
 import type { AutoCredMode } from './types';
 
 type Phase = 'analyzing' | 'auto';
@@ -103,12 +104,27 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
   }, []);
 
   const design = useCredentialDesign();
+  const recipeLookedUpRef = useRef(false);
 
-  // Start AI analysis if no setup instructions
+  // Start analysis: check recipe cache first, fall back to AI analysis
   useEffect(() => {
-    if (phase === 'analyzing' && design.phase === 'idle') {
+    if (phase !== 'analyzing' || design.phase !== 'idle') return;
+    if (recipeLookedUpRef.current) {
+      // Recipe lookup already ran and missed — proceed with AI
       design.start(`Analyze ${connector.label} (${connector.name}) connector and discover setup procedures for creating API credentials.`);
+      return;
     }
+    recipeLookedUpRef.current = true;
+
+    void lookupRecipeAsDesignResult(connector.name).then((cached) => {
+      if (cached) {
+        setDesignResult({ ...cached, match_existing: connector.name });
+        setPhase('auto');
+      } else {
+        // No recipe — fall back to AI analysis
+        design.start(`Analyze ${connector.label} (${connector.name}) connector and discover setup procedures for creating API credentials.`);
+      }
+    });
   }, [phase]);
 
   // When AI analysis completes, merge result and go to auto phase

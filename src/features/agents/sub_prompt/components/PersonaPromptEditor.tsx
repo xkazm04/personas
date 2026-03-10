@@ -1,25 +1,30 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useTabSection } from '@/features/agents/sub_editor/useTabSection';
-import {
-  migratePromptToStructured,
-  parseStructuredPrompt,
-  createEmptyStructuredPrompt,
-} from '@/lib/personas/promptMigration';
+import { useTabSection } from '@/features/agents/sub_editor';
 import type { StructuredPrompt } from '@/lib/personas/promptMigration';
 import { SectionEditor } from '@/features/shared/components/draft-editor/SectionEditor';
 import { PromptSectionSidebar } from './PromptSectionSidebar';
 import { CustomSectionsPanel } from './CustomSectionsPanel';
 import type { SubTab } from './PromptSectionSidebar';
 import { STANDARD_TABS, promptChanged } from '../libs/promptEditorHelpers';
+import { useStructuredPromptSync } from '../libs/useStructuredPromptSync';
 
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 
 export function PersonaPromptEditor() {
-  const selectedPersona = usePersonaStore((state) => state.selectedPersona);
   const applyPersonaOp = usePersonaStore((state) => state.applyPersonaOp);
   const [activeTab, setActiveTab] = useState<SubTab>('instructions');
+
+  const {
+    selectedPersona,
+    sp, setSp,
+    baseline,
+    markSaved,
+    personaIdRef,
+    spRef,
+    baselineRef,
+  } = useStructuredPromptSync();
 
   const isAnthropic = useMemo(() => {
     if (!selectedPersona?.model_profile) return true;
@@ -31,8 +36,6 @@ export function PersonaPromptEditor() {
     return STANDARD_TABS.filter((tab) => tab.key !== 'webSearch' || isAnthropic);
   }, [isAnthropic]);
 
-  const [sp, setSp] = useState<StructuredPrompt>(createEmptyStructuredPrompt());
-  const [baseline, setBaseline] = useState<StructuredPrompt>(sp);
   const [showSaved, setShowSaved] = useState(false);
   const [selectedCustomIndex, setSelectedCustomIndex] = useState(0);
 
@@ -41,48 +44,6 @@ export function PersonaPromptEditor() {
   useEffect(() => {
     if (activeTab === 'webSearch' && !isAnthropic) setActiveTab('instructions');
   }, [isAnthropic, activeTab]);
-
-  const personaIdRef = useRef<string | null>(null);
-  const spRef = useRef(sp);
-  spRef.current = sp;
-  const baselineRef = useRef(baseline);
-  baselineRef.current = baseline;
-  const lastLoadedPromptRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!selectedPersona) {
-      const empty = createEmptyStructuredPrompt();
-      setSp(empty);
-      setBaseline(empty);
-      personaIdRef.current = null;
-      lastLoadedPromptRef.current = null;
-      return;
-    }
-    const currentPromptRaw = selectedPersona.structured_prompt ?? null;
-    const isNewPersona = personaIdRef.current !== selectedPersona.id;
-    const isExternalUpdate =
-      !isNewPersona &&
-      currentPromptRaw !== lastLoadedPromptRef.current &&
-      currentPromptRaw !== JSON.stringify(baselineRef.current);
-    if (!isNewPersona && !isExternalUpdate) return;
-    personaIdRef.current = selectedPersona.id;
-    lastLoadedPromptRef.current = currentPromptRaw;
-    const parsed = parseStructuredPrompt(currentPromptRaw);
-    if (parsed) {
-      setSp(parsed);
-      setBaseline(parsed);
-      return;
-    }
-    if (selectedPersona.system_prompt) {
-      const migrated = migratePromptToStructured(selectedPersona.system_prompt);
-      setSp(migrated);
-      setBaseline(migrated);
-      return;
-    }
-    const empty = createEmptyStructuredPrompt();
-    setSp(empty);
-    setBaseline(empty);
-  }, [selectedPersona]);
 
   const doSave = useCallback(async () => {
     const pid = personaIdRef.current;
@@ -96,12 +57,11 @@ export function PersonaPromptEditor() {
         structured_prompt: jsonStr,
         system_prompt: current.instructions || '',
       });
-      setBaseline(current);
-      lastLoadedPromptRef.current = jsonStr;
+      markSaved(current);
       setShowSaved(true);
       setTimeout(() => setShowSaved(false), 2000);
     } catch (error) { console.error('Failed to save structured prompt:', error); }
-  }, [applyPersonaOp]);
+  }, [applyPersonaOp, personaIdRef, spRef, baselineRef, markSaved]);
 
   const { isSaving } = useTabSection({
     tab: 'prompt',
@@ -114,7 +74,7 @@ export function PersonaPromptEditor() {
 
   const updateField = useCallback((field: keyof Omit<StructuredPrompt, 'customSections'>, value: string) => {
     setSp((prev) => ({ ...prev, [field]: value }));
-  }, []);
+  }, [setSp]);
 
   const addCustomSection = useCallback(() => {
     setSp((prev) => {
@@ -122,14 +82,14 @@ export function PersonaPromptEditor() {
       return { ...prev, customSections: [...prev.customSections, { title: 'New Section', content: '' }] };
     });
     setActiveTab('custom');
-  }, []);
+  }, [setSp]);
 
   const updateCustomSection = useCallback((index: number, field: 'title' | 'content', value: string) => {
     setSp((prev) => ({
       ...prev,
       customSections: prev.customSections.map((s, i) => i === index ? { ...s, [field]: value } : s),
     }));
-  }, []);
+  }, [setSp]);
 
   const removeCustomSection = useCallback((index: number) => {
     setSp((prev) => {
@@ -139,7 +99,7 @@ export function PersonaPromptEditor() {
       );
       return { ...prev, customSections: newSections };
     });
-  }, []);
+  }, [setSp]);
 
   const sectionFilled = useMemo(() => ({
     identity: !!sp.identity?.trim(),

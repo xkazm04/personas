@@ -13,4 +13,14 @@ export interface ExecutionKnowledge {
   last_execution_id: string | null;
   created_at: string;
   updated_at: string;
+  /** Scope type for knowledge sharing: "persona", "tool", "connector", "global" */
+  scope_type: string;
+  /** The scoped entity ID (tool name, connector service_type, etc.) */
+  scope_id: string | null;
+  /** Human/agent-readable annotation text */
+  annotation_text: string | null;
+  /** Who created the annotation: "agent", "user", "system" */
+  annotation_source: string | null;
+  /** Whether a user has verified the annotation's accuracy */
+  is_verified: boolean;
 }

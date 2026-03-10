@@ -31,7 +31,7 @@ import { highlightMatch } from '@/lib/ui/highlightMatch';
 import { getCategoryMeta } from './searchConstants';
 import type { Density } from './DensityToggle';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { DesignAnalysisResult, SuggestedConnector } from '@/lib/types/designTypes';
+import type { AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 import { RowActionMenu } from './RowActionMenu';
@@ -44,6 +44,40 @@ import { RecommendedModal } from './RecommendedModal';
 import { EmptyState } from './EmptyState';
 import { ExploreView } from './ExploreView';
 import { useAdoptionCompletionNotifier } from './useAdoptionCompletionNotifier';
+
+// ── Cached review field parsing ──────────────────────────────────────
+// WeakMap keyed by review object identity — entries are GC'd when the
+// review object is no longer referenced (e.g. after a gallery refresh).
+
+interface CachedReviewFields {
+  connectors: string[];
+  flowCount: number;
+  designResult?: AgentIR | null; // undefined = not yet parsed
+}
+
+const reviewParseCache = new WeakMap<PersonaDesignReview, CachedReviewFields>();
+
+/** Parse & cache lightweight fields (connectors, flowCount) for row rendering. */
+function getCachedLightFields(review: PersonaDesignReview): CachedReviewFields {
+  let cached = reviewParseCache.get(review);
+  if (!cached) {
+    cached = {
+      connectors: parseJsonSafe(review.connectors_used, []),
+      flowCount: parseJsonSafe<unknown[]>(review.use_case_flows, []).length,
+    };
+    reviewParseCache.set(review, cached);
+  }
+  return cached;
+}
+
+/** Lazily parse & cache the heavy design_result — only called on expansion. */
+function getCachedDesignResult(review: PersonaDesignReview): AgentIR | null {
+  const cached = getCachedLightFields(review);
+  if (cached.designResult === undefined) {
+    cached.designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
+  }
+  return cached.designResult;
+}
 
 export type ViewMode = 'list' | 'explore';
 
@@ -325,12 +359,14 @@ export default function GeneratedReviewsTab({
           if (review) modals.open({ type: 'rebuild', review });
         }}
         previewIsActive={preview.isActive}
+        previewPhase={preview.phase}
         previewModalOpen={modals.isOpen('preview')}
         previewReviewName={preview.reviewName ?? null}
         onResumePreview={() => {
           const review = gallery.allItems.find((r) => r.id === preview.reviewId);
           if (review) modals.open({ type: 'preview', review });
         }}
+        onDismissPreview={() => preview.resetPreview()}
       />
 
       {/* Search/Filter/Sort Bar */}
@@ -430,15 +466,16 @@ export default function GeneratedReviewsTab({
                   if (!review) return null;
 
                   const isExpanded = density === 'comfortable' && expandedRow === review.id;
-                  const connectors: string[] = parseJsonSafe(review.connectors_used, []);
-                  const designResult = parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null);
-                  const flowCount = parseJsonSafe<unknown[]>(review.use_case_flows, []).length;
+                  const { connectors, flowCount } = getCachedLightFields(review);
+
+                  // Defer heavy design_result parse to expansion time only
+                  const designResult = isExpanded ? getCachedDesignResult(review) : null;
 
                   const readinessStatuses = designResult?.suggested_connectors
                     ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
                     : [];
 
-                  const allConnectorsReady = connectors.length > 0 && connectors.every((c) => {
+                  const allConnectorsReady = isExpanded && connectors.length > 0 && connectors.every((c) => {
                     const status = readinessStatuses.find((s) => s.connector_name === c);
                     return status?.health === 'ready';
                   });
@@ -712,9 +749,6 @@ export default function GeneratedReviewsTab({
           modals.close('detail');
           modals.open({ type: 'preview', review });
         }}
-        credentials={credentials}
-        connectorDefinitions={connectorDefinitions}
-        onAddCredential={handleConnectorCredentialClick}
       />
 
       {/* Adoption Wizard Modal */}

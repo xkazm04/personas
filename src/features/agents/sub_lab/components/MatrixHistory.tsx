@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown, ChevronRight, Trash2, Clock, Wand2, AlertCircle, Check,
 } from 'lucide-react';
-import { statusBadge } from '../libs/labUtils';
+import { statusBadge } from '@/lib/eval/evalFramework';
 import { MatrixResultsView } from './MatrixResultsView';
 import type { LabMatrixRun } from '@/lib/bindings/LabMatrixRun';
 import type { LabMatrixResult } from '@/lib/bindings/LabMatrixResult';

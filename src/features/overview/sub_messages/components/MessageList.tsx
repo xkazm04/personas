@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { MessageSquare, CheckCheck, RefreshCw, Send, Loader2 } from 'lucide-react';
+import { MessageSquare, CheckCheck, RefreshCw, Send } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { FilterBar } from '@/features/shared/components/FilterBar';
@@ -12,6 +12,7 @@ import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
 import { priorityConfig, FILTER_LABELS, GRID_TEMPLATE_COLUMNS, type FilterType } from '../libs/messageHelpers';
 import { MessageDetailModal } from './MessageDetailModal';
+import ContentLoader from '@/features/shared/components/ContentLoader';
 
 export default function MessageList() {
   const messages = usePersonaStore((s) => s.messages);
@@ -115,12 +116,7 @@ export default function MessageList() {
 
       <ContentBody flex>
         {isLoading ? (
-          <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center"><Loader2 className="w-5 h-5 text-primary/70 animate-spin" /></div>
-              <p className="text-sm text-muted-foreground/90">Loading messages...</p>
-            </div>
-          </div>
+          <ContentLoader variant="panel" hint="messages" />
         ) : filteredMessages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-4 md:p-6">
             <div className="text-center">

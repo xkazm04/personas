@@ -1,4 +1,4 @@
-import { compositeScore } from './labUtils';
+import { compositeScore } from '@/lib/eval/evalFramework';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 
 export interface CellAggregate {

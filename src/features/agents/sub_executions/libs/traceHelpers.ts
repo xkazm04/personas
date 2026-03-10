@@ -1,6 +1,8 @@
-import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { SpanType } from '@/lib/bindings/SpanType';
+import type { UnifiedSpan, UnifiedSpanType, PipelineStage } from '@/lib/execution/pipeline';
+import { isPipelineStage, STAGE_META } from '@/lib/execution/pipeline';
 
+/** Styling config for backend engine span types. */
 export const SPAN_TYPE_CONFIG: Record<SpanType, { label: string; color: string; bg: string; border: string }> = {
   execution:             { label: 'Execution',      color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
   prompt_assembly:       { label: 'Prompt',          color: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/25' },
@@ -14,13 +16,32 @@ export const SPAN_TYPE_CONFIG: Record<SpanType, { label: string; color: string; 
   healing_analysis:      { label: 'Healing',         color: 'text-red-400',     bg: 'bg-red-500/15',     border: 'border-red-500/25' },
 };
 
+/** Styling config for pipeline stage span types. */
+const PIPELINE_STAGE_CONFIG: Record<PipelineStage, { label: string; color: string; bg: string; border: string }> = {
+  initiate:          { label: 'Initiate',          color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
+  validate:          { label: 'Validate',          color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
+  create_record:     { label: 'Create Record',     color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
+  spawn_engine:      { label: 'Spawn Engine',      color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25' },
+  stream_output:     { label: 'Stream Output',     color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25' },
+  finalize_status:   { label: 'Finalize Status',   color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
+  frontend_complete: { label: 'Frontend Complete',  color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
+};
+
+/** Get styling config for any unified span type (pipeline stage or engine span). */
+export function getSpanConfig(spanType: UnifiedSpanType): { label: string; color: string; bg: string; border: string } {
+  if (isPipelineStage(spanType)) {
+    return PIPELINE_STAGE_CONFIG[spanType] ?? { label: STAGE_META[spanType].label, color: 'text-gray-400', bg: 'bg-gray-500/15', border: 'border-gray-500/25' };
+  }
+  return SPAN_TYPE_CONFIG[spanType as SpanType] ?? { label: spanType, color: 'text-gray-400', bg: 'bg-gray-500/15', border: 'border-gray-500/25' };
+}
+
 export interface SpanNode {
-  span: TraceSpan;
+  span: UnifiedSpan;
   children: SpanNode[];
   depth: number;
 }
 
-export function buildSpanTree(spans: TraceSpan[]): SpanNode[] {
+export function buildSpanTree(spans: UnifiedSpan[]): SpanNode[] {
   const byId = new Map<string, SpanNode>();
   const roots: SpanNode[] = [];
 

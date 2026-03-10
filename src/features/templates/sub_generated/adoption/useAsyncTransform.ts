@@ -29,10 +29,16 @@ import {
 import { applySandboxOverrides } from '@/lib/templates/templateVerification';
 import { sendOsNotification, requestNotificationPermission } from '@/lib/utils/osNotification';
 import type { SandboxPolicy } from '@/lib/types/templateTypes';
+import type { ScanResult } from '@/lib/templates/personaSafetyScanner';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { TransformQuestionResponse } from '@/api/n8nTransform';
 import type { AdoptState, PersistedAdoptContext } from './useAdoptReducer';
 import { ADOPT_CONTEXT_KEY, ADOPT_CONTEXT_MAX_AGE_MS } from './useAdoptReducer';
+
+/** Remove persisted adoption context from localStorage. Non-critical — silently ignores errors. */
+function clearPersistedContext() {
+  try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* non-critical */ }
+}
 
 // Module-level map of adopt IDs that have an in-flight confirmSave.
 // Survives component remounts, preventing duplicate persona creation
@@ -80,6 +86,8 @@ interface UseAsyncTransformOptions {
   onPersonaCreated: () => void;
   isOpen: boolean;
   sandboxPolicy: SandboxPolicy | null;
+  /** Safety scan results — confirmSave is blocked when critical findings exist without override. */
+  safetyScan: ScanResult | null;
 }
 
 // ── Hook ──
@@ -91,6 +99,7 @@ export function useAsyncTransform({
   onPersonaCreated,
   isOpen,
   sandboxPolicy,
+  safetyScan,
 }: UseAsyncTransformOptions) {
   const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
   const selectPersona = usePersonaStore((s) => s.selectPersona);
@@ -158,7 +167,7 @@ export function useAsyncTransform({
         wizard.transformCompleted(normalizeDraft(draft));
         void sendOsNotification('Persona Ready', 'Your persona has been built and is ready for review.');
       } catch (err) {
-        try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
+        clearPersistedContext();
         wizard.transformFailed(
           err instanceof Error
             ? `Draft normalization failed: ${err.message}`
@@ -174,7 +183,7 @@ export function useAsyncTransform({
   const handleSnapshotCompletedNoDraft = useCallback(() => {
     setIsRestoring(false);
     setTemplateAdoptActive(false);
-    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
+    clearPersistedContext();
     wizard.transformFailed('Transform completed but no draft was generated. Please try again.');
   }, [wizard.transformFailed, setTemplateAdoptActive]);
 
@@ -182,7 +191,7 @@ export function useAsyncTransform({
     (error: string) => {
       setIsRestoring(false);
       setTemplateAdoptActive(false);
-      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
+      clearPersistedContext();
       wizard.transformFailed(error);
     },
     [wizard.transformFailed, setTemplateAdoptActive],
@@ -191,7 +200,7 @@ export function useAsyncTransform({
   const handleSnapshotSessionLost = useCallback(() => {
     setIsRestoring(false);
     setTemplateAdoptActive(false);
-    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
+    clearPersistedContext();
     wizard.transformFailed('Adoption session lost. The backend may have restarted. Please try again.');
   }, [wizard.transformFailed, setTemplateAdoptActive]);
 
@@ -305,6 +314,16 @@ export function useAsyncTransform({
             scope: state.memoryScope,
           },
         },
+        // Phase A — pass database config so LLM CLI can handle schema design
+        _database: {
+          mode: state.databaseMode,
+          selectedTableNames: state.selectedTableNames,
+        },
+        // Phase B — pass template adoption_questions as context for LLM to consider
+        // The LLM decides which questions to generate; these are provided as hints
+        _templateQuestions: state.designResult?.adoption_questions ?? [],
+        // Phase C (Area #9) — pass credential mapping so backend knows which credentials to bind
+        _credentialMap: state.connectorCredentialMap,
       });
 
       const connectorSwapsJson =
@@ -325,7 +344,7 @@ export function useAsyncTransform({
       if (state.adjustmentRequest.trim()) wizard.setAdjustment('');
     } catch (err) {
       setTemplateAdoptActive(false);
-      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
+      clearPersistedContext();
       void resetAdoptStream();
       wizard.transformFailed(err instanceof Error ? err.message : 'Failed to start template adoption.');
     } finally {
@@ -340,7 +359,7 @@ export function useAsyncTransform({
         try { await cancelTemplateAdopt(adoptId); } catch { /* intentional: non-critical — best-effort cancellation; clean up snapshot */
           void clearTemplateAdoptSnapshot(adoptId).catch(() => {}); }
       }
-      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
+      clearPersistedContext();
       void resetAdoptStream();
       setIsRestoring(false);
       setTemplateAdoptActive(false);
@@ -372,6 +391,15 @@ export function useAsyncTransform({
 
   const confirmSave = useCallback(async () => {
     if (confirmingRef.current) return;
+
+    // Block adoption when safety scanner found critical findings and user hasn't acknowledged
+    if (safetyScan && safetyScan.critical.length > 0 && !state.safetyCriticalOverride) {
+      wizard.setError(
+        `Safety scan found ${safetyScan.critical.length} critical finding(s): ${safetyScan.critical.map((f) => f.title).join(', ')}. Acknowledge the findings to proceed.`,
+      );
+      return;
+    }
+
     const payloadJson = state.draft ? stringifyDraft(state.draft) : state.draftJson.trim();
     if (!payloadJson || state.transforming || state.confirming || state.draftJsonError) return;
 
@@ -388,14 +416,12 @@ export function useAsyncTransform({
 
       let parsed: unknown;
       try { parsed = JSON.parse(payloadJson); } catch (parseErr) {
-        wizard.confirmFailed(`Draft JSON is malformed: ${parseErr instanceof Error ? parseErr.message : 'parse error'}`);
-        return;
+        throw new Error(`Draft JSON is malformed: ${parseErr instanceof Error ? parseErr.message : 'parse error'}`);
       }
 
       const normalized = normalizeDraftFromUnknown(parsed);
       if (!normalized) {
-        wizard.confirmFailed('Draft JSON is invalid. Please fix draft fields.');
-        return;
+        throw new Error('Draft JSON is invalid. Please fix draft fields.');
       }
 
       // Enforce sandbox budget cap on the final draft
@@ -425,7 +451,7 @@ export function useAsyncTransform({
       if (state.backgroundAdoptId) {
         void clearTemplateAdoptSnapshot(state.backgroundAdoptId).catch(() => {});
       }
-      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
+      clearPersistedContext();
       // Emit tour event so the guided tour can advance
       usePersonaStore.getState().emitTourEvent('tour:template-adopted');
       usePersonaStore.getState().setTourCreatedPersona(response.persona.id);
@@ -438,13 +464,13 @@ export function useAsyncTransform({
       if (timer) clearTimeout(timer);
       inflight.delete(idempotencyKey);
     }
-  }, [state, wizard, fetchPersonas, selectPersona, onPersonaCreated, reviewTestCaseName]);
+  }, [state, wizard, fetchPersonas, selectPersona, onPersonaCreated, reviewTestCaseName, safetyScan]);
 
   /** Clean up all async state (for close / reset). */
   const cleanupAll = useCallback(async () => {
     const snapshotId = state.backgroundAdoptId || currentAdoptId;
     if (snapshotId) void clearTemplateAdoptSnapshot(snapshotId).catch(() => {});
-    try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
+    clearPersistedContext();
     void resetAdoptStream();
     setTemplateAdoptActive(false);
   }, [state.backgroundAdoptId, currentAdoptId, resetAdoptStream, setTemplateAdoptActive]);

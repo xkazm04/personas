@@ -8,6 +8,7 @@ import { getAuthMethods } from '@/lib/types/types';
 import { getAuthBadgeClasses, getAuthIcon } from '@/features/vault/utils/authMethodStyles';
 import { PURPOSE_GROUPS, getPurposeForConnector } from '@/lib/credentials/connectorRoles';
 import { getLicenseTier, LICENSE_TIER_META, type LicenseTier } from '@/lib/credentials/connectorLicensing';
+import { IS_MOBILE } from '@/lib/utils/platform';
 import { isDesktopBridge } from '@/lib/utils/connectors';
 
 interface CredentialPickerProps {
@@ -169,43 +170,47 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
   return (
     <div className="space-y-3">
       {/* Compact filter row */}
-      <div className="flex items-center gap-2">
-        <ThemedSelect
-          filterable
-          options={connectedOptions}
-          value={connectedFilter}
-          onValueChange={(v) => setConnectedFilter((v || 'all') as ConnectedFilter)}
-          placeholder="Status"
-          wrapperClassName="w-[150px]"
-          className="!py-1.5 !text-sm"
-        />
-        <ThemedSelect
-          filterable
-          options={purposeOptions}
-          value={activePurpose ?? ''}
-          onValueChange={(v) => setActivePurpose(v || null)}
-          placeholder="Purpose"
-          wrapperClassName="w-[195px]"
-          className="!py-1.5 !text-sm"
-        />
-        <ThemedSelect
-          filterable
-          options={categoryOptions}
-          value={activeCategory ?? ''}
-          onValueChange={(v) => setActiveCategory(v || null)}
-          placeholder="Category"
-          wrapperClassName="w-[175px]"
-          className="!py-1.5 !text-sm"
-        />
-        <ThemedSelect
-          filterable
-          options={licenseOptions}
-          value={activeLicense ?? ''}
-          onValueChange={(v) => setActiveLicense(v || null)}
-          placeholder="License"
-          wrapperClassName="w-[170px]"
-          className="!py-1.5 !text-sm"
-        />
+      <div className={`flex ${IS_MOBILE ? 'flex-col' : 'flex-row items-center'} gap-2`}>
+        <div className={`flex ${IS_MOBILE ? 'flex-wrap' : ''} gap-2`}>
+          <ThemedSelect
+            filterable
+            options={connectedOptions}
+            value={connectedFilter}
+            onValueChange={(v) => setConnectedFilter((v || 'all') as ConnectedFilter)}
+            placeholder="Status"
+            wrapperClassName={IS_MOBILE ? 'flex-1 min-w-[100px]' : 'w-[150px]'}
+            className="!py-1.5 !text-sm"
+          />
+          <ThemedSelect
+            filterable
+            options={purposeOptions}
+            value={activePurpose ?? ''}
+            onValueChange={(v) => setActivePurpose(v || null)}
+            placeholder="Purpose"
+            wrapperClassName={IS_MOBILE ? 'flex-1 min-w-[100px]' : 'w-[195px]'}
+            className="!py-1.5 !text-sm"
+          />
+        </div>
+        <div className={`flex ${IS_MOBILE ? 'flex-wrap' : ''} gap-2`}>
+          <ThemedSelect
+            filterable
+            options={categoryOptions}
+            value={activeCategory ?? ''}
+            onValueChange={(v) => setActiveCategory(v || null)}
+            placeholder="Category"
+            wrapperClassName={IS_MOBILE ? 'flex-1 min-w-[100px]' : 'w-[175px]'}
+            className="!py-1.5 !text-sm"
+          />
+          <ThemedSelect
+            filterable
+            options={licenseOptions}
+            value={activeLicense ?? ''}
+            onValueChange={(v) => setActiveLicense(v || null)}
+            placeholder="License"
+            wrapperClassName={IS_MOBILE ? 'flex-1 min-w-[100px]' : 'w-[170px]'}
+            className="!py-1.5 !text-sm"
+          />
+        </div>
       </div>
 
       {/* Responsive auto-fill grid */}

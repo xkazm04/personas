@@ -174,6 +174,11 @@ pub enum ProtocolMessage {
     ExecutionFlow {
         flows: serde_json::Value,
     },
+    KnowledgeAnnotation {
+        scope: String,
+        note: String,
+        confidence: Option<f64>,
+    },
 }
 
 // =============================================================================
@@ -363,6 +368,10 @@ impl EphemeralPersona {
             max_turns: Some(1),
             design_context: draft.design_context,
             group_id: None,
+            source_review_id: None,
+            trust_level: "verified".to_string(),
+            trust_origin: "builtin".to_string(),
+            trust_verified_at: None,
             created_at: now.clone(),
             updated_at: now,
         };

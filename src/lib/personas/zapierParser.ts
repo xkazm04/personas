@@ -1,9 +1,9 @@
 /**
  * Parser for Zapier Zap exports.
- * Converts Zapier workflow JSON into DesignAnalysisResult.
+ * Converts Zapier workflow JSON into AgentIR.
  */
 
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import { ZAPIER_DEFINITION, toServiceMap, classifyNodeRole } from './platformDefinitions';
 import { runExtractionPipeline, type NormalizedNode } from './workflowPipeline';
 
@@ -42,7 +42,7 @@ function isTriggerStep(step: ZapierStep): boolean {
   return false;
 }
 
-export function parseZapierWorkflow(json: unknown): DesignAnalysisResult {
+export function parseZapierWorkflow(json: unknown): AgentIR {
   if (!json || typeof json !== 'object') {
     throw new Error('Invalid Zapier export: expected an object');
   }

@@ -8,7 +8,7 @@ import { TestProgressPanel } from './TestProgressPanel';
 import { TestHistoryList } from './TestHistoryList';
 import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/UseCasesList';
 import { Listbox } from '@/features/shared/components/Listbox';
-import { ALL_MODELS } from '../libs/testModels';
+import { ALL_MODELS } from '@/lib/models/modelCatalog';
 import type { ModelTestConfig } from '@/api/tests';
 
 export function PersonaTestsTab() {

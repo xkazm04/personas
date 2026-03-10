@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, Trash2, Clock, GitBranch, AlertCircle } from 'lucide-react';
-import { statusBadge } from '../libs/labUtils';
+import { statusBadge } from '@/lib/eval/evalFramework';
 import { AbResultsView } from './AbResultsView';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';
 

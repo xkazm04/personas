@@ -1,22 +1,22 @@
 import { useMemo } from 'react';
-import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
+import type { UnifiedTrace } from '@/lib/execution/pipeline';
 import { formatDuration } from '@/lib/utils/formatters';
-import { Clock, DollarSign, Zap, AlertCircle, Activity } from 'lucide-react';
-import { SPAN_TYPE_CONFIG } from '../libs/traceHelpers';
+import { Clock, DollarSign, AlertCircle, Activity } from 'lucide-react';
+import { getSpanConfig } from '../libs/traceHelpers';
 
 // Trace summary cards
 
-export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
+export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
   const stats = useMemo(() => {
     const rootSpan = trace.spans.find(s => s.span_type === 'execution');
     const toolCalls = trace.spans.filter(s => s.span_type === 'tool_call');
     const totalCost = rootSpan?.cost_usd ?? 0;
-    const totalInput = rootSpan?.input_tokens ?? 0;
-    const totalOutput = rootSpan?.output_tokens ?? 0;
     const errors = trace.spans.filter(s => s.error != null);
 
-    return { totalCost, totalInput, totalOutput, toolCallCount: toolCalls.length, errorCount: errors.length };
+    return { totalCost, toolCallCount: toolCalls.length, errorCount: errors.length };
   }, [trace.spans]);
+
+  const totalMs = trace.completedAt ? trace.completedAt - trace.startedAt : 0;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-3 3xl:gap-4 4xl:gap-5">
@@ -26,7 +26,7 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
           Duration
         </div>
         <div className="text-sm font-mono text-foreground/90">
-          {formatDuration(trace.total_duration_ms)}
+          {formatDuration(totalMs)}
         </div>
       </div>
 
@@ -37,16 +37,6 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
         </div>
         <div className="text-sm font-mono text-foreground/90">
           {stats.totalCost > 0 ? `$${stats.totalCost.toFixed(4)}` : '-'}
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
-        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
-          <Zap className="w-2.5 h-2.5" />
-          Tokens
-        </div>
-        <div className="text-sm font-mono text-foreground/90">
-          {(stats.totalInput + stats.totalOutput).toLocaleString()}
         </div>
       </div>
 
@@ -75,7 +65,7 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
 
 // Trace error details section
 
-export function TraceErrors({ trace }: { trace: ExecutionTrace }) {
+export function TraceErrors({ trace }: { trace: UnifiedTrace }) {
   const errorSpans = trace.spans.filter(s => s.error);
   if (errorSpans.length === 0) return null;
 
@@ -86,7 +76,7 @@ export function TraceErrors({ trace }: { trace: ExecutionTrace }) {
         Errors
       </div>
       {errorSpans.map((span) => {
-        const config = SPAN_TYPE_CONFIG[span.span_type];
+        const config = getSpanConfig(span.span_type);
         return (
           <div key={span.span_id} className="p-3 bg-red-500/5 border border-red-500/15 rounded-lg">
             <div className="flex items-center gap-2 mb-1.5">

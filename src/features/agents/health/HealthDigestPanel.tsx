@@ -5,13 +5,13 @@ import {
   XCircle,
   Info,
   RefreshCw,
-  Loader2,
   ChevronRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import type { DryRunIssue, PersonaHealthCheck, HealthScore } from './types';
+import ContentLoader from '@/features/shared/components/ContentLoader';
 
 // ── Score ring (compact) ─────────────────────────────────────────────
 
@@ -140,12 +140,7 @@ export function HealthDigestPanel() {
   if (running) {
     return (
       <div className="rounded-xl border border-primary/15 bg-secondary/40 p-6">
-        <div className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 text-primary/60 animate-spin mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground/60">Running health digest across all agents...</p>
-          </div>
-        </div>
+        <ContentLoader variant="panel" label="Generating digest..." hint="health-digest" />
       </div>
     );
   }

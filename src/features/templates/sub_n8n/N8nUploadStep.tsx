@@ -77,6 +77,8 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
   const validatedContentRef = useRef<string | null>(null);
   const validatedUrlRef = useRef<{ content: string; sourceName: string } | null>(null);
 
+  const pasteDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Keep callback in a ref so setTimeout closures always call the latest version
   const onContentPasteRef = useRef(onContentPaste);
   useEffect(() => { onContentPasteRef.current = onContentPaste; });
@@ -97,6 +99,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
       if (activeReaderRef.current?.readyState === FileReader.LOADING) {
         activeReaderRef.current.abort();
       }
+      if (pasteDebounceRef.current) clearTimeout(pasteDebounceRef.current);
     };
   }, []);
 
@@ -238,7 +241,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
 
   // ── Paste JSON handlers ──
 
-  const validatePastedContent = useCallback((text: string) => {
+  const validatePastedContentImmediate = useCallback((text: string) => {
     if (!text.trim()) { setPastePreview(null); return; }
     if (text.length > MAX_PASTE_LENGTH) {
       setPastePreview({ kind: 'error', fileName: 'pasted', message: `Content too large (${formatFileSize(text.length)}). Maximum 5 MB.` });
@@ -264,6 +267,18 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
       workflowName, nodeCount: count, platform,
     });
   }, []);
+
+  // Debounce paste validation so JSON.parse doesn't fire on every keystroke
+  // for large content.  For small pastes (<50KB) validate immediately.
+  const validatePastedContent = useCallback((text: string) => {
+    if (pasteDebounceRef.current) clearTimeout(pasteDebounceRef.current);
+    // Immediate for empty/small or over-limit (cheap checks)
+    if (!text.trim() || text.length > MAX_PASTE_LENGTH || text.length < 50_000) {
+      validatePastedContentImmediate(text);
+      return;
+    }
+    pasteDebounceRef.current = setTimeout(() => validatePastedContentImmediate(text), 300);
+  }, [validatePastedContentImmediate]);
 
   const handlePasteImport = useCallback(() => {
     if (pastePreview?.kind !== 'valid' || !pasteText.trim()) return;

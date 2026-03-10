@@ -1,0 +1,22 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.personas.mobile",
+  "build": {
+    "frontendDist": "../dist",
+    "features": [],
+    "beforeBuildCommand": "npx vite build"
+  },
+  "app": {
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https://cdn.simpleicons.org data:; font-src 'self'; connect-src 'self' https://raw.githubusercontent.com https://gist.githubusercontent.com https://*.ingest.sentry.io; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self'",
+      "freezePrototype": false
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "android": {
+      "minSdkVersion": 24
+    }
+  }
+}

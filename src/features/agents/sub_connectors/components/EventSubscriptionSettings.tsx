@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Radio, Plus, Loader2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Radio, Plus, RotateCw } from 'lucide-react';
 import { listSubscriptions, createSubscription, updateSubscription, deleteSubscription } from '@/api/tauriApi';
 import { SectionCard } from '@/features/shared/components/SectionCard';
 import { SectionHeader } from '@/features/shared/components/SectionHeader';
@@ -7,6 +7,7 @@ import EmptyState from '@/features/shared/components/EmptyState';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import { AddSubscriptionForm } from './AddSubscriptionForm';
 import { SubscriptionRow, useConfirmDelete } from './SubscriptionForm';
+import ContentLoader from '@/features/shared/components/ContentLoader';
 
 interface EventSubscriptionSettingsProps {
   personaId: string;
@@ -15,21 +16,30 @@ interface EventSubscriptionSettingsProps {
 export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettingsProps) {
   const [subscriptions, setSubscriptions] = useState<PersonaEventSubscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadEpoch, setLoadEpoch] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { confirmingDeleteId, setConfirmingDeleteId } = useConfirmDelete();
 
   const activeCount = subscriptions.filter((s) => s.enabled).length;
 
+  const retryLoad = useCallback(() => setLoadEpoch((e) => e + 1), []);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setLoadError(null);
     listSubscriptions(personaId)
       .then((subs) => { if (!cancelled) setSubscriptions(subs); })
-      .catch((e) => { if (!cancelled) console.error('Failed to load subscriptions:', e); })
+      .catch((e) => {
+        if (!cancelled) {
+          setLoadError(`Failed to load subscriptions: ${e instanceof Error ? e.message : 'unknown error'}`);
+        }
+      })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [personaId]);
+  }, [personaId, loadEpoch]);
 
   const handleToggle = async (sub: PersonaEventSubscription) => {
     try {
@@ -62,13 +72,20 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
         trailing={<span className="text-sm text-muted-foreground/80">{activeCount} active</span>} />
       <div className="space-y-3">
         {error && <div className="px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">{error}</div>}
+        {loadError && (
+          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-red-500/20 bg-red-500/5">
+            <p className="flex-1 text-sm text-red-400/80">{loadError}</p>
+            <button onClick={retryLoad} className="flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-lg border border-red-500/20 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0">
+              <RotateCw className="w-3 h-3" /> Retry
+            </button>
+          </div>
+        )}
         {loading ? (
-          <div className="flex items-center justify-center py-4 text-muted-foreground/80"><Loader2 className="w-4 h-4 animate-spin" /></div>
+          <ContentLoader variant="panel" hint="subscriptions" />
         ) : (
           <>
             {subscriptions.length === 0 && !showAddForm && (
-              <EmptyState icon={Radio} title="No event subscriptions yet" subtitle="Add a subscription to trigger this persona when matching events arrive."
-                iconContainerClassName="bg-cyan-500/10 border-cyan-500/20" iconColor="text-cyan-400/75" className="py-4" />
+              <EmptyState variant="subscriptions-empty" className="py-4" />
             )}
             {subscriptions.map((sub) => (
               <SubscriptionRow key={sub.id} sub={sub} confirmingDeleteId={confirmingDeleteId}

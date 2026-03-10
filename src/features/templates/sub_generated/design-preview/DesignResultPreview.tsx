@@ -3,11 +3,11 @@ import { ConnectorsSection } from './ConnectorsSection';
 import { EventsSection } from './EventsSection';
 import { MessagesSection } from './MessagesSection';
 import { DesignTestResults } from './DesignTestResults';
-import type { DesignAnalysisResult, DesignTestResult, SuggestedConnector } from '@/lib/types/designTypes';
+import type { AgentIR, DesignTestResult, SuggestedConnector } from '@/lib/types/designTypes';
 import type { DbPersonaToolDefinition, DbPersonaTrigger, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 interface DesignResultPreviewProps {
-  result: DesignAnalysisResult;
+  result: AgentIR;
   allToolDefs: DbPersonaToolDefinition[];
   currentToolNames: string[];
   credentials: CredentialMetadata[];

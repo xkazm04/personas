@@ -4,9 +4,11 @@ import {
   Zap,
   Link,
   Info,
+  Boxes,
 } from 'lucide-react';
 import { SelectionCheckbox } from '../review/SelectionCheckbox';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
+import { getRoleForConnector } from '@/lib/credentials/connectorRoles';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { UseCaseRow } from './UseCaseRow';
@@ -102,9 +104,36 @@ export function ChooseStep() {
 
   // ── Flows-based layout ───────────────────────────────────────────
 
+  // Derive architectural components from connectors
+  const components = useMemo(() => {
+    const roles = new Map<string, { label: string; connectors: string[] }>();
+    for (const name of summary.connectorNames) {
+      const role = getRoleForConnector(name);
+      if (role) {
+        const existing = roles.get(role.role);
+        if (existing) {
+          existing.connectors.push(name);
+        } else {
+          roles.set(role.role, { label: role.label, connectors: [name] });
+        }
+      }
+    }
+    return Array.from(roles.values());
+  }, [summary.connectorNames]);
+
   if (hasFlows) {
     return (
       <div className="flex flex-col gap-3">
+        {/* Template intro */}
+        <div className="rounded-xl border border-primary/10 bg-secondary/10 px-4 py-3">
+          <h3 className="text-base font-semibold text-foreground">{state.templateName}</h3>
+          {designResult.summary && (
+            <p className="text-sm text-muted-foreground/70 mt-1 leading-relaxed">
+              {designResult.summary}
+            </p>
+          )}
+        </div>
+
         {/* Step header with context */}
         <div>
           <div className="flex items-center justify-between">
@@ -141,10 +170,29 @@ export function ChooseStep() {
 
         {/* Impact preview */}
         <div className="flex flex-col gap-2 py-2.5 border-t border-primary/10">
-          {/* Connector row */}
+          {/* Components row — architectural role groups */}
+          {components.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-muted-foreground/50 w-20 flex-shrink-0 flex items-center gap-1">
+                <Boxes className="w-3 h-3" /> Components
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {components.map((comp) => (
+                  <span
+                    key={comp.label}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded-md bg-violet-500/8 text-violet-400/80 border border-violet-500/12"
+                    title={comp.connectors.map((n) => getConnectorMeta(n).label).join(', ')}
+                  >
+                    {comp.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Examples row (connectors used by selected flows) */}
           {summary.connectorNames.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-muted-foreground/50 w-20 flex-shrink-0">Connectors</span>
+              <span className="text-sm text-muted-foreground/50 w-20 flex-shrink-0">Examples</span>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {summary.connectorNames.map((name) => {
                   const meta = getConnectorMeta(name);
@@ -181,7 +229,7 @@ export function ChooseStep() {
           )}
           {/* Empty state */}
           {summary.selected === 0 && (
-            <p className="text-sm text-muted-foreground/60 italic">No use cases selected</p>
+            <p className="text-sm text-muted-foreground/60 italic">No use cases selected — select at least one to continue</p>
           )}
         </div>
       </div>

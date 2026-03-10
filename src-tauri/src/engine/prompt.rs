@@ -241,6 +241,7 @@ pub fn assemble_prompt(
     prompt.push_str(PROTOCOL_AGENT_MEMORY);
     prompt.push_str(PROTOCOL_MANUAL_REVIEW);
     prompt.push_str(PROTOCOL_EXECUTION_FLOW);
+    prompt.push_str(PROTOCOL_KNOWLEDGE_ANNOTATION);
     prompt.push_str(PROTOCOL_OUTCOME_ASSESSMENT);
 
     // Canary instruction: structural prompt-injection defence
@@ -810,6 +811,28 @@ You MUST always output this assessment. Set accomplished to false if:
 - External services were unreachable or returned errors that prevented task completion
 - The task requirements could not be fulfilled with the available tools
 - You could not verify the task was completed correctly
+
+"#;
+
+const PROTOCOL_KNOWLEDGE_ANNOTATION: &str = r#"### Knowledge Annotation Protocol
+When you discover an important insight about a tool, API, connector, or general practice that would be valuable for future executions (by you or other personas), output a JSON object on its own line:
+```json
+{"knowledge_annotation": {"scope": "tool:tool_name", "note": "Important insight about this tool", "confidence": 0.8}}
+```
+Fields:
+- `scope` (required): What this knowledge applies to. Formats:
+  - `"tool:tool_name"` — insight about a specific tool (e.g., `"tool:http_request"`)
+  - `"connector:service_type"` — insight about a connector/API (e.g., `"connector:google_workspace"`)
+  - `"global"` — general insight applicable to any execution
+  - `"persona"` — insight specific to your current persona (default)
+- `note` (required): Clear, actionable description of the insight
+- `confidence` (optional): 0.0–1.0 confidence level (default: 0.5)
+
+Use this when you discover:
+- API quirks, required headers, rate limits, or authentication patterns
+- Tool-specific workarounds or best practices
+- Error patterns and their solutions
+- Performance tips for specific operations
 
 "#;
 

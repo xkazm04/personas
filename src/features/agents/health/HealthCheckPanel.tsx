@@ -7,7 +7,6 @@ import {
   Wrench,
   Activity,
   RefreshCw,
-  Loader2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -17,6 +16,7 @@ import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { DryRunIssue, DryRunResult, HealthScore } from './types';
 import type { DesignContextData } from '@/lib/types/frontendTypes';
 import type { UseHealthCheckReturn } from './useHealthCheck';
+import ContentLoader from '@/features/shared/components/ContentLoader';
 
 // ── Score display ────────────────────────────────────────────────────
 
@@ -250,14 +250,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
 
   // Running state
   if (phase === 'running') {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 text-primary/60 animate-spin mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground/60">Analyzing agent configuration...</p>
-        </div>
-      </div>
-    );
+    return <ContentLoader variant="panel" label="Running health check..." hint="health" />;
   }
 
   // Error state

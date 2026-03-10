@@ -101,7 +101,7 @@ export function useBackgroundPreview(): UseBackgroundPreviewReturn {
     error,
     reviewId,
     reviewName,
-    isActive: stream.phase === 'running',
+    isActive: hasStarted && reviewId !== null,
     hasStarted,
     startPreview,
     retryPreview,

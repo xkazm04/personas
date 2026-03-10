@@ -5,6 +5,7 @@ import { type PersonaDraft, draftChanged, SETTINGS_KEYS, MODEL_KEYS } from './Pe
 import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '../../sub_model_config/OllamaCloudPresets';
 import { getCopilotPreset } from '../../sub_model_config/CopilotPresets';
 import { useTabSection } from './useTabSection';
+import { useDebouncedSaveGroup } from './useDebouncedSaveGroup';
 
 interface UseEditorSaveOptions {
   draft: PersonaDraft;
@@ -16,8 +17,6 @@ interface UseEditorSaveOptions {
 export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }: UseEditorSaveOptions) {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
-  const settingsSaveInFlightRef = useRef<Promise<void> | null>(null);
-  const modelSaveInFlightRef = useRef<Promise<void> | null>(null);
 
   // Keep latest draft/baseline in refs so save callbacks never capture stale state
   const draftRef = useRef(draft);
@@ -28,15 +27,8 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
   const settingsDirty = draftChanged(draft, baseline, SETTINGS_KEYS);
   const modelDirty = draftChanged(draft, baseline, MODEL_KEYS);
 
-  const handleSaveSettings = useCallback(async () => {
-    while (settingsSaveInFlightRef.current) {
-      await settingsSaveInFlightRef.current;
-      if (!draftChanged(draftRef.current, baselineRef.current, SETTINGS_KEYS)) return;
-    }
-
-    const savePromise = (async () => {
+  const performSettingsSave = useCallback(async (d: PersonaDraft) => {
     if (!selectedPersona) return;
-    const d = draftRef.current;
     await applyPersonaOp(selectedPersona.id, {
       kind: 'UpdateSettings',
       name: d.name,
@@ -49,27 +41,10 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
       sensitive: d.sensitive,
     });
     setBaseline((prev) => ({ ...prev, name: d.name, description: d.description, icon: d.icon, color: d.color, maxConcurrent: d.maxConcurrent, timeout: d.timeout, enabled: d.enabled, sensitive: d.sensitive }));
-    })();
-
-    settingsSaveInFlightRef.current = savePromise;
-    try {
-      await savePromise;
-    } finally {
-      if (settingsSaveInFlightRef.current === savePromise) {
-        settingsSaveInFlightRef.current = null;
-      }
-    }
   }, [selectedPersona, applyPersonaOp, setBaseline]);
 
-  const saveModelSettings = useCallback(async () => {
-    while (modelSaveInFlightRef.current) {
-      await modelSaveInFlightRef.current;
-      if (!draftChanged(draftRef.current, baselineRef.current, MODEL_KEYS)) return;
-    }
-
-    const savePromise = (async () => {
+  const performModelSave = useCallback(async (d: PersonaDraft) => {
     if (!selectedPersona) return;
-    const d = draftRef.current;
 
     let profile: string | null;
     const ollamaPreset = getOllamaPreset(d.selectedModel);
@@ -107,17 +82,21 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
       max_turns: d.maxTurns === '' ? null : d.maxTurns,
     });
     setBaseline((prev) => ({ ...prev, selectedModel: d.selectedModel, selectedProvider: d.selectedProvider, baseUrl: d.baseUrl, authToken: d.authToken, customModelName: d.customModelName, maxBudget: d.maxBudget, maxTurns: d.maxTurns }));
-    })();
-
-    modelSaveInFlightRef.current = savePromise;
-    try {
-      await savePromise;
-    } finally {
-      if (modelSaveInFlightRef.current === savePromise) {
-        modelSaveInFlightRef.current = null;
-      }
-    }
   }, [selectedPersona, applyPersonaOp, setBaseline]);
+
+  const handleSaveSettings = useDebouncedSaveGroup({
+    draftRef,
+    baselineRef,
+    keys: SETTINGS_KEYS,
+    performSave: performSettingsSave,
+  });
+
+  const saveModelSettings = useDebouncedSaveGroup({
+    draftRef,
+    baselineRef,
+    keys: MODEL_KEYS,
+    performSave: performModelSave,
+  });
 
   const { isSaving: isSavingSettings } = useTabSection({
     tab: 'settings',

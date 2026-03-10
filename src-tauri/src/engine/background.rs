@@ -17,8 +17,11 @@ use crate::engine::scheduler as sched_logic;
 use crate::engine::subscription::{
     self, CleanupSubscription, EventBusSubscription, PollingSubscription,
     RotationSubscription, TriggerSchedulerSubscription,
-    FileWatcherSubscription, ClipboardSubscription, AppFocusSubscription,
     CompositeSubscription, OAuthRefreshSubscription,
+};
+#[cfg(feature = "desktop")]
+use crate::engine::subscription::{
+    FileWatcherSubscription, ClipboardSubscription, AppFocusSubscription,
 };
 use crate::engine::ExecutionEngine;
 
@@ -91,7 +94,7 @@ pub fn start_loops(
     tier_config: Arc<std::sync::Mutex<super::tier::TierConfig>>,
 ) -> tokio::sync::watch::Sender<bool> {
     scheduler.running.store(true, Ordering::Relaxed);
-    tracing::info!("Scheduler starting via unified subscription model: event_bus (2s) + trigger_scheduler (5s) + polling (10s) + cleanup (3600s) + rotation (60s) + file_watcher (2s) + clipboard (3s) + app_focus (3s) + composite (2s) + webhook server (port 9420)");
+    tracing::info!("Scheduler starting via unified subscription model");
 
     // Build the HTTP client for the polling subscription
     let http = reqwest::Client::builder()
@@ -100,11 +103,8 @@ pub fn start_loops(
         .build()
         .unwrap_or_default();
 
-    // File watcher state
-    let (fw_state, fw_tx, fw_rx) = super::file_watcher::create_file_watcher();
-
     // Assemble all reactive subscriptions
-    let subscriptions: Vec<Box<dyn subscription::ReactiveSubscription>> = vec![
+    let mut subscriptions: Vec<Box<dyn subscription::ReactiveSubscription>> = vec![
         Box::new(EventBusSubscription {
             scheduler: scheduler.clone(),
             app: app.clone(),
@@ -126,24 +126,6 @@ pub fn start_loops(
         Box::new(RotationSubscription {
             pool: pool.clone(),
         }),
-        Box::new(FileWatcherSubscription {
-            pool: pool.clone(),
-            state: fw_state,
-            tx: fw_tx,
-            rx: fw_rx,
-        }),
-        Box::new(ClipboardSubscription {
-            pool: pool.clone(),
-            state: Arc::new(tokio::sync::Mutex::new(
-                super::clipboard_monitor::ClipboardState::new(),
-            )),
-        }),
-        Box::new(AppFocusSubscription {
-            pool: pool.clone(),
-            state: Arc::new(tokio::sync::Mutex::new(
-                super::app_focus::AppFocusState::new(),
-            )),
-        }),
         Box::new(CompositeSubscription {
             pool: pool.clone(),
         }),
@@ -154,6 +136,30 @@ pub fn start_loops(
             pool: pool.clone(),
         }),
     ];
+
+    // Desktop-only subscriptions: file watcher, clipboard monitor, app focus
+    #[cfg(feature = "desktop")]
+    {
+        let (fw_state, fw_tx, fw_rx) = super::file_watcher::create_file_watcher();
+        subscriptions.push(Box::new(FileWatcherSubscription {
+            pool: pool.clone(),
+            state: fw_state,
+            tx: fw_tx,
+            rx: fw_rx,
+        }));
+        subscriptions.push(Box::new(ClipboardSubscription {
+            pool: pool.clone(),
+            state: Arc::new(tokio::sync::Mutex::new(
+                super::clipboard_monitor::ClipboardState::new(),
+            )),
+        }));
+        subscriptions.push(Box::new(AppFocusSubscription {
+            pool: pool.clone(),
+            state: Arc::new(tokio::sync::Mutex::new(
+                super::app_focus::AppFocusState::new(),
+            )),
+        }));
+    }
 
     // Spawn all subscriptions through the unified scheduler
     subscription::spawn_subscriptions(subscriptions, scheduler.clone());

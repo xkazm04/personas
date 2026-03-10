@@ -1,9 +1,9 @@
 /**
  * Parser for Make (Integromat) blueprint exports.
- * Converts Make scenario JSON into DesignAnalysisResult.
+ * Converts Make scenario JSON into AgentIR.
  */
 
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import { MAKE_DEFINITION, toServiceMap, classifyNodeRole } from './platformDefinitions';
 import { runExtractionPipeline, type NormalizedNode } from './workflowPipeline';
 
@@ -43,7 +43,7 @@ function extractServiceName(moduleId: string | undefined): string {
   return cleaned || 'unknown';
 }
 
-export function parseMakeWorkflow(json: unknown): DesignAnalysisResult {
+export function parseMakeWorkflow(json: unknown): AgentIR {
   if (!json || typeof json !== 'object') {
     throw new Error('Invalid Make blueprint: expected an object');
   }

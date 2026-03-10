@@ -1,27 +1,35 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Play, Square, ChevronDown, Filter, AlertCircle } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { LabProgress } from './LabProgress';
 import { ArenaHistory } from './ArenaHistory';
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';
 import { Listbox } from '@/features/shared/components/Listbox';
-import { ANTHROPIC_MODELS, OLLAMA_MODELS, ALL_MODELS, selectedModelsToConfigs } from '../libs/labModels';
+import { ANTHROPIC_MODELS, OLLAMA_MODELS, ALL_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { usePanelRunState } from '../libs/usePanelRunState';
 
 export function ArenaPanel() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const arenaRuns = usePersonaStore((s) => s.arenaRuns);
   const arenaResultsMap = usePersonaStore((s) => s.arenaResultsMap);
   const isLabRunning = usePersonaStore((s) => s.isLabRunning);
-  const fetchArenaRuns = usePersonaStore((s) => s.fetchArenaRuns);
   const startArena = usePersonaStore((s) => s.startArena);
   const cancelArena = usePersonaStore((s) => s.cancelArena);
+  const fetchArenaRuns = usePersonaStore((s) => s.fetchArenaRuns);
   const fetchArenaResults = usePersonaStore((s) => s.fetchArenaResults);
   const deleteArenaRun = usePersonaStore((s) => s.deleteArenaRun);
 
-  const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['haiku', 'sonnet']));
-  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
-  const [activeRunId, setActiveRunId] = useState<string | null>(null);
-  const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
+  const {
+    selectedPersona, selectedModels, setSelectedModels, toggleModel,
+    expandedRunId, setExpandedRunId,
+    setActiveRunId,
+    selectedUseCaseId, setSelectedUseCaseId,
+    handleCancel,
+  } = usePanelRunState({
+    fetchRuns: fetchArenaRuns,
+    fetchResults: fetchArenaResults,
+    cancelRun: cancelArena,
+    defaultModels: new Set(['haiku', 'sonnet']),
+  });
 
   const useCases = useMemo(() => parseDesignContext(selectedPersona?.design_context).useCases ?? [], [selectedPersona?.design_context]);
   const selectedUseCase = useMemo(() => useCases.find((uc) => uc.id === selectedUseCaseId) ?? null, [useCases, selectedUseCaseId]);
@@ -33,14 +41,7 @@ export function ArenaPanel() {
       const match = ALL_MODELS.find((m) => m.provider === override.provider && m.model === override.model);
       if (match) setSelectedModels(new Set([match.id]));
     }
-  }, [selectedUseCase]);
-
-  useEffect(() => { if (selectedPersona?.id) fetchArenaRuns(selectedPersona.id); }, [selectedPersona?.id, fetchArenaRuns]);
-  useEffect(() => { if (expandedRunId) fetchArenaResults(expandedRunId); }, [expandedRunId, fetchArenaResults]);
-
-  const toggleModel = useCallback((id: string) => {
-    setSelectedModels((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
-  }, []);
+  }, [selectedUseCase, setSelectedModels]);
 
   const handleStart = async () => {
     if (!selectedPersona || selectedModels.size === 0) return;
@@ -50,7 +51,6 @@ export function ArenaPanel() {
     if (runId) setActiveRunId(runId);
   };
 
-  const handleCancel = async () => { if (activeRunId) { await cancelArena(activeRunId); setActiveRunId(null); } };
   const handleDelete = async (runId: string) => { await deleteArenaRun(runId); if (expandedRunId === runId) setExpandedRunId(null); };
 
   const hasTools = (selectedPersona?.tools?.length ?? 0) > 0;

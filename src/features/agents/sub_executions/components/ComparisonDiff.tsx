@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getExecutionLog } from '@/api/executions';
 import { useToastStore } from '@/stores/toastStore';
 import { diffLines, jsonDiff } from '../libs/comparisonHelpers';
+import ContentLoader from '@/features/shared/components/ContentLoader';
 
 export function OutputDiffSection({
   leftId,
@@ -72,10 +73,7 @@ export function OutputDiffSection({
             className="mt-2 overflow-hidden"
           >
             {loading ? (
-              <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground/60">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Loading logs...
-              </div>
+              <ContentLoader variant="panel" hint="comparison" />
             ) : diff.length === 0 ? (
               <p className="text-sm text-muted-foreground/50 py-3">No log data available</p>
             ) : (

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, Plus, RefreshCw, ChevronDown, Star, Wrench, Zap, ListChecks } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import type { PersonaCredential } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
 import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
@@ -22,7 +22,7 @@ import {
 
 interface N8nEntitiesTabProps {
   draft: N8nPersonaDraft;
-  parsedResult: DesignAnalysisResult;
+  parsedResult: AgentIR;
   selectedToolIndices: Set<number>;
   selectedTriggerIndices: Set<number>;
   selectedConnectorNames: Set<string>;

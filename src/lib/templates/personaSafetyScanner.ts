@@ -252,6 +252,28 @@ const THREAT_PATTERNS: ThreatPattern[] = [
   },
 ];
 
+// ── Unicode Normalization ────────────────────────────────────────────
+
+/**
+ * Normalize text to defeat Unicode homoglyph bypasses.
+ *
+ * 1. NFKC normalization — collapses compatibility equivalences (e.g. Cyrillic
+ *    look-alikes, fullwidth Latin, styled math letters) into their canonical
+ *    ASCII counterparts where a mapping exists.
+ * 2. Strip non-ASCII whitespace (em-space, thin space, ideographic space, etc.)
+ *    and zero-width characters that could break pattern matching.
+ * 3. Collapse resulting whitespace runs into single spaces.
+ */
+function normalizeText(text: string): string {
+  // NFKC normalization handles most homoglyph cases
+  let normalized = text.normalize('NFKC');
+  // Strip zero-width characters and non-ASCII whitespace
+  normalized = normalized.replace(/[\u200B-\u200F\u2028-\u202F\u2060\uFEFF\u00A0\u1680\u180E\u2000-\u200A\u205F\u3000]/g, ' ');
+  // Collapse whitespace runs
+  normalized = normalized.replace(/  +/g, ' ');
+  return normalized;
+}
+
 // ── Text Extraction ──────────────────────────────────────────────────
 
 interface ExtractedText {
@@ -350,8 +372,6 @@ function extractMatchContext(text: string, pattern: RegExp): string {
 
 // ── Scanner ──────────────────────────────────────────────────────────
 
-let findingCounter = 0;
-
 /**
  * Scan a persona draft for safety threats.
  *
@@ -364,21 +384,22 @@ export function scanPersonaDraft(draft: N8nPersonaDraft): ScanResult {
   const findings: ScanFinding[] = [];
   const texts = extractDraftTexts(draft);
   const seenPatterns = new Set<string>();
+  let localCounter = 0;
 
-  for (const { source, text } of texts) {
+  for (const { source, text: rawText } of texts) {
+    // Normalize Unicode to defeat homoglyph bypasses before pattern matching
+    const text = normalizeText(rawText);
     for (const threat of THREAT_PATTERNS) {
       for (const pattern of threat.patterns) {
-        // Reset regex state for global patterns
-        const regex = new RegExp(pattern.source, pattern.flags);
-        if (regex.test(text)) {
+        if (pattern.test(text)) {
           // Deduplicate: same category + source = one finding
           const dedupeKey = `${threat.category}:${threat.title}:${source}`;
           if (seenPatterns.has(dedupeKey)) continue;
           seenPatterns.add(dedupeKey);
 
-          const context = extractMatchContext(text, new RegExp(pattern.source, pattern.flags));
+          const context = extractMatchContext(text, pattern);
           findings.push({
-            id: `scan-${++findingCounter}`,
+            id: `scan-${++localCounter}`,
             severity: threat.severity,
             category: threat.category,
             title: threat.title,
@@ -448,20 +469,24 @@ const TOOL_THREAT_PATTERNS: Array<{
  */
 export function scanToolDrafts(tools: N8nToolDraft[]): ScanFinding[] {
   const findings: ScanFinding[] = [];
+  let localCounter = 0;
 
   for (const tool of tools) {
-    const guide = tool.implementation_guide;
-    if (!guide) continue;
+    const rawGuide = tool.implementation_guide;
+    if (!rawGuide) continue;
+
+    // Normalize Unicode to defeat homoglyph bypasses
+    const guide = normalizeText(rawGuide);
 
     for (const threat of TOOL_THREAT_PATTERNS) {
       if (threat.pattern.test(guide)) {
         findings.push({
-          id: `tool-scan-${++findingCounter}`,
+          id: `tool-scan-${++localCounter}`,
           severity: threat.severity,
           category: 'dangerous_tool',
           title: threat.title,
           description: threat.description,
-          context: extractMatchContext(guide, new RegExp(threat.pattern.source, threat.pattern.flags)),
+          context: extractMatchContext(guide, threat.pattern),
           source: `tool.${tool.name}.implementation_guide`,
         });
       }

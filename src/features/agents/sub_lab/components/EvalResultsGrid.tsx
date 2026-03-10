@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState } from 'react';
 import { useMotion } from '@/hooks/utility/useMotion';
 import { Trophy } from 'lucide-react';
-import { scoreColor } from '../libs/labUtils';
+import { scoreColor } from '@/lib/eval/evalFramework';
 import { buildEvalGridData } from '../libs/evalAggregation';
 import { EvalVersionCards } from './EvalVersionCards';
 import { EvalRadarChart } from './EvalRadarChart';

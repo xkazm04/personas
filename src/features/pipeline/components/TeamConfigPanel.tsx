@@ -4,7 +4,7 @@ import { X, Trash2, AlertTriangle, Wrench, Zap, Link, Clock, ExternalLink, Cpu }
 import { TEAM_ROLES, PersonaAvatar } from '@/features/pipeline/sub_canvas';
 import { usePersonaStore } from '@/stores/personaStore';
 import { extractConnectorNames } from '@/lib/personas/utils';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 
 interface TeamConfigPanelProps {
   member: {
@@ -27,7 +27,7 @@ interface TeamConfigPanelProps {
 function extractToolCount(designResult: string | null): number {
   if (!designResult) return 0;
   try {
-    const dr = JSON.parse(designResult) as DesignAnalysisResult;
+    const dr = JSON.parse(designResult) as AgentIR;
     return dr.suggested_tools?.length ?? 0;
   } catch {
     // intentional: non-critical — JSON parse fallback

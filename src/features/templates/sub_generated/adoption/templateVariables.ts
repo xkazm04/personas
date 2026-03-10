@@ -1,10 +1,10 @@
-import type { AdoptionRequirement, ConnectorPipelineStep, DesignAnalysisResult, StructuredPromptSection, SuggestedTrigger } from '@/lib/types/designTypes';
+import type { AdoptionRequirement, ConnectorPipelineStep, AgentIR, StructuredPromptSection, SuggestedTrigger } from '@/lib/types/designTypes';
 import { sanitizeVariableValues, validateAllVariables } from '@/lib/utils/variableSanitizer';
 
 const VAR_PATTERN = /\{\{(\w+)\}\}/g;
 
-/** Extract adoption_requirements from a DesignAnalysisResult */
-export function getAdoptionRequirements(design: DesignAnalysisResult): AdoptionRequirement[] {
+/** Extract adoption_requirements from an AgentIR */
+export function getAdoptionRequirements(design: AgentIR): AdoptionRequirement[] {
   return design.adoption_requirements ?? [];
 }
 
@@ -56,7 +56,7 @@ function replaceVars(text: string, values: Record<string, string>): string {
 }
 
 /**
- * Filter a DesignAnalysisResult to only include user-selected entities.
+ * Filter an AgentIR to only include user-selected entities.
  *
  * **Connector swap contract**: `connectorSwaps` maps an original connector name
  * to a replacement name (e.g. `{ "Slack": "Discord" }`). When a swap is present,
@@ -68,7 +68,7 @@ function replaceVars(text: string, values: Record<string, string>): string {
  * links a connector name to a credential ID for authentication.
  */
 export function filterDesignResult(
-  design: DesignAnalysisResult,
+  design: AgentIR,
   selections: {
     selectedToolIndices: Set<number>;
     selectedTriggerIndices: Set<number>;
@@ -77,7 +77,7 @@ export function filterDesignResult(
     selectedEventIndices: Set<number>;
   },
   connectorSwaps?: Record<string, string>,
-): DesignAnalysisResult {
+): AgentIR {
   let filteredConnectors = design.suggested_connectors?.filter((c) => {
     // Keep if directly selected, or if its swap replacement is selected
     if (selections.selectedConnectorNames.has(c.name)) return true;
@@ -93,13 +93,21 @@ export function filterDesignResult(
     });
   }
 
-  // Apply connector swaps to service_flow pipeline steps
+  // Apply connector swaps to service_flow pipeline steps and filter out deselected connectors (Area #16)
+  const activeConnectorNames = new Set(filteredConnectors?.map((c) => c.name) ?? []);
   let filteredPipeline: ConnectorPipelineStep[] | undefined = design.service_flow;
-  if (connectorSwaps && Object.keys(connectorSwaps).length > 0 && filteredPipeline) {
-    filteredPipeline = filteredPipeline.map((step) => {
-      const replacement = connectorSwaps[step.connector_name];
-      return replacement ? { ...step, connector_name: replacement } : step;
-    });
+  if (filteredPipeline) {
+    // Apply swaps first
+    if (connectorSwaps && Object.keys(connectorSwaps).length > 0) {
+      filteredPipeline = filteredPipeline.map((step) => {
+        const replacement = connectorSwaps[step.connector_name];
+        return replacement ? { ...step, connector_name: replacement } : step;
+      });
+    }
+    // Then filter out steps whose connector was deselected
+    filteredPipeline = filteredPipeline.filter((step) =>
+      !step.connector_name || activeConnectorNames.has(step.connector_name),
+    );
   }
 
   return {
@@ -122,9 +130,9 @@ export function applyTriggerConfigs(
 }
 
 export function substituteVariables(
-  design: DesignAnalysisResult,
+  design: AgentIR,
   values: Record<string, string>,
-): DesignAnalysisResult {
+): AgentIR {
   // Sanitize all values before substitution to prevent prompt injection
   const requirements = design.adoption_requirements ?? [];
   const sanitized = sanitizeVariableValues(requirements, values);
@@ -133,6 +141,29 @@ export function substituteVariables(
   const substitutedSections: StructuredPromptSection[] = (sp.customSections ?? []).map((s) => ({
     ...s,
     content: replaceVars(s.content, sanitized),
+  }));
+
+  // Phase C (Area #8) — substitute variables in tool names, trigger descriptions/configs,
+  // connector setup instructions, and adoption questions
+  const substitutedTools = design.suggested_tools.map((t) => replaceVars(t, sanitized));
+
+  const substitutedTriggers = design.suggested_triggers.map((t) => ({
+    ...t,
+    description: replaceVars(t.description, sanitized),
+    config: Object.fromEntries(
+      Object.entries(t.config).map(([k, v]) => [k, typeof v === 'string' ? replaceVars(v, sanitized) : v]),
+    ),
+  }));
+
+  const substitutedConnectors = design.suggested_connectors?.map((c) => ({
+    ...c,
+    setup_instructions: c.setup_instructions ? replaceVars(c.setup_instructions, sanitized) : c.setup_instructions,
+  }));
+
+  const substitutedQuestions = design.adoption_questions?.map((q) => ({
+    ...q,
+    question: replaceVars(q.question, sanitized),
+    context: q.context ? replaceVars(q.context, sanitized) : q.context,
   }));
 
   return {
@@ -145,6 +176,10 @@ export function substituteVariables(
       errorHandling: replaceVars(sp.errorHandling, sanitized),
       customSections: substitutedSections,
     },
+    suggested_tools: substitutedTools,
+    suggested_triggers: substitutedTriggers,
+    suggested_connectors: substitutedConnectors,
+    adoption_questions: substitutedQuestions,
     full_prompt_markdown: replaceVars(design.full_prompt_markdown, sanitized),
     summary: replaceVars(design.summary, sanitized),
   };

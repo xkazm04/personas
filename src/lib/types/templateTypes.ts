@@ -60,6 +60,34 @@ export interface TemplateVerification {
   sandboxPolicy: SandboxPolicy | null;
 }
 
+// ── Persona Trust (extends template trust to personas) ──────────────
+
+/** Trust metadata on a persona (persisted in DB) */
+export interface PersonaTrustMetadata {
+  trustLevel: TemplateTrustLevel;
+  origin: TemplateOrigin | 'imported';
+  sourceReviewId: string | null;
+  verifiedAt: string | null;
+}
+
+/** Derive the effective sandbox policy for a persona based on its trust level */
+export function getPersonaSandboxPolicy(trustLevel: TemplateTrustLevel): SandboxPolicy | null {
+  switch (trustLevel) {
+    case 'verified':
+      return null; // no restrictions
+    case 'sandboxed':
+      return SANDBOX_POLICY;
+    case 'untrusted':
+      return {
+        ...SANDBOX_POLICY,
+        canUsePolling: false,
+        canEmitEvents: false,
+      };
+    default:
+      return SANDBOX_POLICY;
+  }
+}
+
 // ── Template Catalog ─────────────────────────────────────────────────
 
 export interface TemplateCatalogEntry {

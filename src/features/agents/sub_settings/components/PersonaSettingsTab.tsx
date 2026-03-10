@@ -1,4 +1,4 @@
-import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
+import type { PersonaDraft } from '@/features/agents/sub_editor';
 import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
 import { PopupIconSelector } from '@/features/shared/components/PopupIconSelector';
 import { PopupColorPicker } from '@/features/shared/components/PopupColorPicker';

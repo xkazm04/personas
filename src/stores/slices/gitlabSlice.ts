@@ -11,10 +11,17 @@ import {
   gitlabListAgents,
   gitlabUndeployAgent,
   gitlabRevokeCredentials,
+  gitlabTriggerPipeline,
+  gitlabGetPipeline,
+  gitlabListPipelines,
+  gitlabListPipelineJobs,
+  gitlabGetJobLog,
   type GitLabConfig,
   type GitLabProject,
   type GitLabAgent,
   type GitLabDeployResult,
+  type GitLabPipeline,
+  type GitLabJob,
 } from "@/api/gitlab";
 
 export interface GitLabSlice {
@@ -25,6 +32,14 @@ export interface GitLabSlice {
   gitlabAgents: GitLabAgent[];
   gitlabError: string | null;
   gitlabSelectedProjectId: number | null;
+
+  // Pipeline state
+  gitlabPipelines: GitLabPipeline[];
+  gitlabActivePipeline: GitLabPipeline | null;
+  gitlabPipelineJobs: GitLabJob[];
+  gitlabJobLog: string | null;
+  gitlabPipelineLoading: boolean;
+  gitlabTriggeringPipeline: boolean;
 
   // Actions
   gitlabInitialize: () => Promise<void>;
@@ -43,6 +58,14 @@ export interface GitLabSlice {
   gitlabFetchAgents: (projectId: number) => Promise<void>;
   gitlabUndeployAgent: (projectId: number, agentId: string) => Promise<void>;
   gitlabClearError: () => void;
+
+  // Pipeline actions
+  gitlabFetchPipelines: (projectId: number) => Promise<void>;
+  gitlabTriggerPipelineAction: (projectId: number, ref?: string) => Promise<GitLabPipeline | null>;
+  gitlabSelectPipeline: (projectId: number, pipelineId: number) => Promise<void>;
+  gitlabRefreshPipeline: (projectId: number, pipelineId: number) => Promise<void>;
+  gitlabFetchJobLog: (projectId: number, jobId: number) => Promise<void>;
+  gitlabClearPipelineState: () => void;
 }
 
 export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> = (set) => ({
@@ -52,6 +75,12 @@ export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> 
   gitlabAgents: [],
   gitlabError: null,
   gitlabSelectedProjectId: null,
+  gitlabPipelines: [],
+  gitlabActivePipeline: null,
+  gitlabPipelineJobs: [],
+  gitlabJobLog: null,
+  gitlabPipelineLoading: false,
+  gitlabTriggeringPipeline: false,
 
   gitlabInitialize: async () => {
     try {
@@ -153,5 +182,83 @@ export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> 
 
   gitlabClearError: () => {
     set({ gitlabError: null });
+  },
+
+  // ── Pipeline actions ──────────────────────────────────────────────────
+
+  gitlabFetchPipelines: async (projectId: number) => {
+    set({ gitlabPipelineLoading: true });
+    try {
+      const pipelines = await gitlabListPipelines(projectId, 20);
+      set({ gitlabPipelines: pipelines, gitlabPipelineLoading: false, gitlabError: null });
+    } catch (err) {
+      set({ gitlabPipelineLoading: false, gitlabError: translateGitLabError(err) });
+    }
+  },
+
+  gitlabTriggerPipelineAction: async (projectId: number, ref?: string) => {
+    set({ gitlabTriggeringPipeline: true, gitlabError: null });
+    try {
+      const pipeline = await gitlabTriggerPipeline(projectId, ref);
+      set((state) => ({
+        gitlabTriggeringPipeline: false,
+        gitlabActivePipeline: pipeline,
+        gitlabPipelines: [pipeline, ...state.gitlabPipelines],
+        gitlabError: null,
+      }));
+      return pipeline;
+    } catch (err) {
+      set({ gitlabTriggeringPipeline: false, gitlabError: translateGitLabError(err) });
+      return null;
+    }
+  },
+
+  gitlabSelectPipeline: async (projectId: number, pipelineId: number) => {
+    set({ gitlabPipelineLoading: true, gitlabJobLog: null });
+    try {
+      const [pipeline, jobs] = await Promise.all([
+        gitlabGetPipeline(projectId, pipelineId),
+        gitlabListPipelineJobs(projectId, pipelineId),
+      ]);
+      set({ gitlabActivePipeline: pipeline, gitlabPipelineJobs: jobs, gitlabPipelineLoading: false, gitlabError: null });
+    } catch (err) {
+      set({ gitlabPipelineLoading: false, gitlabError: translateGitLabError(err) });
+    }
+  },
+
+  gitlabRefreshPipeline: async (projectId: number, pipelineId: number) => {
+    try {
+      const [pipeline, jobs] = await Promise.all([
+        gitlabGetPipeline(projectId, pipelineId),
+        gitlabListPipelineJobs(projectId, pipelineId),
+      ]);
+      set((state) => ({
+        gitlabActivePipeline: pipeline,
+        gitlabPipelineJobs: jobs,
+        gitlabPipelines: state.gitlabPipelines.map((p) => (p.id === pipelineId ? pipeline : p)),
+        gitlabError: null,
+      }));
+    } catch (err) {
+      set({ gitlabError: translateGitLabError(err) });
+    }
+  },
+
+  gitlabFetchJobLog: async (projectId: number, jobId: number) => {
+    set({ gitlabJobLog: null });
+    try {
+      const log = await gitlabGetJobLog(projectId, jobId);
+      set({ gitlabJobLog: log, gitlabError: null });
+    } catch (err) {
+      set({ gitlabError: translateGitLabError(err) });
+    }
+  },
+
+  gitlabClearPipelineState: () => {
+    set({
+      gitlabPipelines: [],
+      gitlabActivePipeline: null,
+      gitlabPipelineJobs: [],
+      gitlabJobLog: null,
+    });
   },
 });

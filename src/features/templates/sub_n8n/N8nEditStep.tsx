@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Wrench, ListChecks, ChevronDown, ChevronRight } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { DraftEditStep, type DraftEditTab } from '@/features/shared/components/draft-editor';
 import { ExecutionTerminal } from '@/features/agents/sub_executions';
@@ -14,7 +14,7 @@ interface N8nEditStepProps {
   draft: N8nPersonaDraft;
   draftJson: string;
   draftJsonError: string | null;
-  parsedResult: DesignAnalysisResult;
+  parsedResult: AgentIR;
   selectedToolIndices: Set<number>;
   selectedTriggerIndices: Set<number>;
   selectedConnectorNames: Set<string>;

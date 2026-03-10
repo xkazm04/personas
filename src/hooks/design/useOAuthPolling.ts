@@ -105,6 +105,9 @@ export function useOAuthPolling<
     const gen = ++generationRef.current;
 
     let timer: number | null = null;
+    // 120 attempts × 1500ms = 3 minutes before giving up on a stuck session
+    const MAX_POLL_ATTEMPTS = 120;
+    let attempts = 0;
 
     const poll = async () => {
       if (controller.signal.aborted || gen !== generationRef.current) return;
@@ -114,6 +117,17 @@ export function useOAuthPolling<
         if (controller.signal.aborted || gen !== generationRef.current) return;
 
         if (result.status === 'pending') {
+          attempts++;
+          if (attempts >= MAX_POLL_ATTEMPTS) {
+            setSessionId(null);
+            setIsAuthorizing(false);
+            isAuthorizingRef.current = false;
+            setMessage({
+              success: false,
+              message: `${configRef.current.label} authorization timed out. Please try again.`,
+            });
+            return;
+          }
           timer = window.setTimeout(poll, 1500);
           return;
         }

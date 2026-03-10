@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useEditorDirty } from '@/features/agents/sub_editor/EditorDocument';
+import { useEditorDirty } from '@/features/agents/sub_editor';
 import { getUseCaseById } from './useCaseHelpers';
 import { mutateSingleUseCase } from '@/hooks/design/useDesignContextMutator';
 import type { UseCaseItem } from '@/features/shared/components/UseCasesList';

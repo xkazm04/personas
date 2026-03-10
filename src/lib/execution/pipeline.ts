@@ -8,9 +8,20 @@
  * Each stage is a typed transform from one payload shape to the next.
  * This module serves as both documentation and runtime schema for
  * pipeline-level concerns (tracing, middleware, error propagation).
+ *
+ * ## Unified Trace Model
+ *
+ * Pipeline stages and backend engine spans share a single span-based
+ * representation (`UnifiedSpan`). The 7 pipeline stages become root
+ * spans in the same tree, and backend `TraceSpan` objects (tool calls,
+ * prompt assembly, etc.) nest under the appropriate stage span.
+ * Both PipelineWaterfall and TraceInspector consume the same
+ * `UnifiedTrace` data.
  */
 
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
+import type { SpanType } from '@/lib/bindings/SpanType';
+import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 
 // =============================================================================
 // Stage definitions
@@ -77,7 +88,7 @@ export const STAGE_META: Record<
     label: 'Frontend Complete',
     boundary: 'Events -> Store',
     description:
-      'usePersonaExecution receives terminal status event, appends [SUMMARY] line, calls finishExecution to clear isExecuting and refresh history.',
+      'usePersonaExecution receives terminal status event, passes typed statusData to finishExecution to clear isExecuting and refresh history.',
   },
 };
 
@@ -150,72 +161,183 @@ export interface StagePayloadMap {
 }
 
 // =============================================================================
-// Pipeline tracing
+// Unified trace model
 // =============================================================================
 
-/** A single trace entry for pipeline observability. */
-export interface PipelineTraceEntry {
-  stage: PipelineStage;
-  timestamp: number;
-  durationMs?: number;
-  error?: string;
-  metadata?: Record<string, unknown>;
+/**
+ * Span type covering both pipeline stages and backend engine span types.
+ * Pipeline stages are frontend-only; SpanType values come from the Rust backend.
+ */
+export type UnifiedSpanType = SpanType | PipelineStage;
+
+/** Check whether a span type is a pipeline stage. */
+export function isPipelineStage(spanType: UnifiedSpanType): spanType is PipelineStage {
+  return (PIPELINE_STAGES as readonly string[]).includes(spanType);
 }
 
-/** Accumulated trace for one execution's pipeline journey. */
-export interface PipelineTrace {
+let _spanCounter = 0;
+
+/**
+ * A single span in the unified trace tree.
+ *
+ * Replaces the old `PipelineTraceEntry` (flat stage records) and unifies
+ * with the backend's `TraceSpan` (hierarchical engine spans). Pipeline
+ * stages and engine spans now share the same shape, enabling both
+ * PipelineWaterfall and TraceInspector to render from one data source.
+ */
+export interface UnifiedSpan {
+  span_id: string;
+  parent_span_id: string | null;
+  span_type: UnifiedSpanType;
+  name: string;
+  /** Milliseconds relative to trace startedAt. */
+  start_ms: number;
+  end_ms: number | null;
+  duration_ms: number | null;
+  cost_usd: number | null;
+  error: string | null;
+  metadata: Record<string, unknown> | null;
+}
+
+/**
+ * Unified trace for one execution, holding both pipeline stage spans
+ * and (optionally) backend engine spans in a single span list.
+ *
+ * Replaces the old `PipelineTrace` (flat entry list) and can absorb
+ * backend `ExecutionTrace` spans via `mergeBackendSpans()`.
+ */
+export interface UnifiedTrace {
   executionId: string;
-  entries: PipelineTraceEntry[];
+  spans: UnifiedSpan[];
+  /** Absolute timestamp (ms since epoch) when the trace started. */
   startedAt: number;
+  /** Absolute timestamp (ms since epoch) when the trace completed. */
   completedAt?: number;
 }
 
 /**
- * Create a new pipeline trace for an execution.
+ * @deprecated Use `UnifiedSpan` instead. Kept as alias for migration.
  */
-export function createPipelineTrace(executionId: string): PipelineTrace {
+export type PipelineTraceEntry = UnifiedSpan;
+
+/**
+ * @deprecated Use `UnifiedTrace` instead. Kept as alias for migration.
+ */
+export type PipelineTrace = UnifiedTrace;
+
+// =============================================================================
+// Trace lifecycle
+// =============================================================================
+
+/**
+ * Create a new unified trace for an execution.
+ */
+export function createPipelineTrace(executionId: string): UnifiedTrace {
   return {
     executionId,
-    entries: [],
+    spans: [],
     startedAt: Date.now(),
   };
 }
 
 /**
- * Record a stage entry in the trace.
+ * Record a pipeline stage span in the trace.
+ * Automatically finalizes the previous stage's end_ms/duration_ms.
  */
 export function traceStage(
-  trace: PipelineTrace,
+  trace: UnifiedTrace,
   stage: PipelineStage,
   metadata?: Record<string, unknown>,
   error?: string,
-): PipelineTrace {
+): UnifiedTrace {
   const now = Date.now();
-  const prevEntry = trace.entries[trace.entries.length - 1];
-  if (prevEntry && prevEntry.durationMs === undefined) {
-    prevEntry.durationMs = now - prevEntry.timestamp;
-  }
+  const relativeMs = now - trace.startedAt;
+
+  // Finalize previous pipeline stage span
+  const spans = trace.spans.map((s) => {
+    if (isPipelineStage(s.span_type) && s.end_ms === null) {
+      return { ...s, end_ms: relativeMs, duration_ms: relativeMs - s.start_ms };
+    }
+    return s;
+  });
+
+  const span: UnifiedSpan = {
+    span_id: `pipeline-${stage}-${++_spanCounter}`,
+    parent_span_id: null,
+    span_type: stage,
+    name: STAGE_META[stage].label,
+    start_ms: relativeMs,
+    end_ms: null,
+    duration_ms: null,
+    cost_usd: null,
+    error: error ?? null,
+    metadata: metadata ?? null,
+  };
 
   return {
     ...trace,
-    entries: [
-      ...trace.entries,
-      { stage, timestamp: now, metadata, error },
-    ],
+    spans: [...spans, span],
   };
 }
 
 /**
- * Mark the trace as complete.
+ * Mark the trace as complete. Finalizes any open spans.
  */
-export function completeTrace(trace: PipelineTrace): PipelineTrace {
+export function completeTrace(trace: UnifiedTrace): UnifiedTrace {
   const now = Date.now();
-  const entries = [...trace.entries];
-  const last = entries[entries.length - 1];
-  if (last && last.durationMs === undefined) {
-    last.durationMs = now - last.timestamp;
-  }
-  return { ...trace, entries, completedAt: now };
+  const relativeMs = now - trace.startedAt;
+
+  const spans = trace.spans.map((s) => {
+    if (s.end_ms === null) {
+      return { ...s, end_ms: relativeMs, duration_ms: relativeMs - s.start_ms };
+    }
+    return s;
+  });
+
+  return { ...trace, spans, completedAt: now };
+}
+
+// =============================================================================
+// Backend span merging
+// =============================================================================
+
+/**
+ * Merge backend TraceSpan objects into an existing UnifiedTrace.
+ *
+ * Backend spans are converted to UnifiedSpan and parented under the
+ * `stream_output` pipeline stage (since that's when engine work occurs).
+ * If no stream_output stage exists yet, spans are added as roots.
+ */
+export function mergeBackendSpans(
+  trace: UnifiedTrace,
+  backendSpans: TraceSpan[],
+): UnifiedTrace {
+  // Find the stream_output pipeline stage span to parent backend spans under
+  const streamSpan = trace.spans.find((s) => s.span_type === 'stream_output');
+  const parentId = streamSpan?.span_id ?? null;
+
+  const converted: UnifiedSpan[] = backendSpans.map((s) => ({
+    span_id: s.span_id,
+    // Root backend spans become children of stream_output; nested spans keep their parent
+    parent_span_id: s.parent_span_id ?? parentId,
+    span_type: s.span_type as UnifiedSpanType,
+    name: s.name,
+    start_ms: s.start_ms,
+    end_ms: s.end_ms,
+    duration_ms: s.duration_ms,
+    cost_usd: s.cost_usd,
+    error: s.error,
+    metadata: s.metadata as Record<string, unknown> | null,
+  }));
+
+  // Deduplicate by span_id — backend may re-send spans we already have
+  const existingIds = new Set(trace.spans.map((s) => s.span_id));
+  const newSpans = converted.filter((s) => !existingIds.has(s.span_id));
+
+  return {
+    ...trace,
+    spans: [...trace.spans, ...newSpans],
+  };
 }
 
 // =============================================================================
@@ -229,7 +351,7 @@ export function completeTrace(trace: PipelineTrace): PipelineTrace {
 export type PipelineMiddleware<S extends PipelineStage = PipelineStage> = (
   stage: S,
   payload: StagePayloadMap[S],
-  trace: PipelineTrace,
+  trace: UnifiedTrace,
 ) => StagePayloadMap[S] | Promise<StagePayloadMap[S]>;
 
 /**
@@ -263,7 +385,7 @@ export function removeMiddleware<S extends PipelineStage>(
 export async function runMiddleware<S extends PipelineStage>(
   stage: S,
   payload: StagePayloadMap[S],
-  trace: PipelineTrace,
+  trace: UnifiedTrace,
 ): Promise<StagePayloadMap[S]> {
   const list = middlewareRegistry.get(stage);
   if (!list || list.length === 0) return payload;
@@ -295,14 +417,27 @@ export function stageIndex(stage: PipelineStage): number {
 
 /** Check if an execution has passed a given stage based on its trace. */
 export function hasPassedStage(
-  trace: PipelineTrace,
+  trace: UnifiedTrace,
   stage: PipelineStage,
 ): boolean {
-  return trace.entries.some((e) => e.stage === stage);
+  return trace.spans.some((s) => s.span_type === stage);
 }
 
 /** Total pipeline duration from trace (if complete). */
-export function traceDuration(trace: PipelineTrace): number | null {
+export function traceDuration(trace: UnifiedTrace): number | null {
   if (!trace.completedAt) return null;
   return trace.completedAt - trace.startedAt;
+}
+
+/** Extract only pipeline stage spans from a unified trace (ordered). */
+export function pipelineSpans(trace: UnifiedTrace): UnifiedSpan[] {
+  const stageOrder = new Map(PIPELINE_STAGES.map((s, i) => [s as string, i]));
+  return trace.spans
+    .filter((s) => isPipelineStage(s.span_type))
+    .sort((a, b) => (stageOrder.get(a.span_type) ?? 0) - (stageOrder.get(b.span_type) ?? 0));
+}
+
+/** Extract backend engine spans (non-pipeline) from a unified trace. */
+export function engineSpans(trace: UnifiedTrace): UnifiedSpan[] {
+  return trace.spans.filter((s) => !isPipelineStage(s.span_type));
 }

@@ -24,6 +24,7 @@ pub async fn start_test_run(
     models: Vec<serde_json::Value>,
     use_case_filter: Option<String>,
     suite_id: Option<String>,
+    fixture_inputs: Option<String>,
 ) -> Result<PersonaTestRun, AppError> {
     require_auth(&state).await?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
@@ -91,6 +92,7 @@ pub async fn start_test_run(
             cancelled_clone,
             use_case_filter,
             preloaded_scenarios,
+            fixture_inputs,
         )
         .await;
 

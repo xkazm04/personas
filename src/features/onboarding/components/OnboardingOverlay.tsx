@@ -17,7 +17,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { listDesignReviews, getTrendingTemplates } from '@/api/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import { DimensionRadial } from '@/features/templates/sub_generated/shared/DimensionRadial';
 import AdoptionWizardModal from '@/features/templates/sub_generated/adoption/AdoptionWizardModal';
@@ -72,7 +72,7 @@ function TemplatePickerStep({
       </div>
       <div className="grid grid-cols-1 gap-3">
         {templates.map((review) => {
-          const designResult = parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null);
+          const designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
           const connectors = parseJsonSafe<string[]>(review.connectors_used, []);
           const isSelected = selectedId === review.id;
 

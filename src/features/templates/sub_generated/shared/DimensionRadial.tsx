@@ -1,7 +1,5 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
-import { useTemplateMotion } from '@/features/templates/animationPresets';
+import { useMemo } from 'react';
+import type { AgentIR } from '@/lib/types/designTypes';
 
 /** The 9 design dimensions scored in reviews.rs `score_design_result()`. */
 const DIMENSIONS = [
@@ -34,7 +32,7 @@ const DIMENSION_LABELS: Record<DimensionKey, string> = {
  * Evaluate which of the 9 design dimensions are filled, mirroring the Rust
  * `score_design_result()` logic in reviews.rs.
  */
-export function evaluateDimensions(designResult: DesignAnalysisResult | null): Record<DimensionKey, boolean> {
+export function evaluateDimensions(designResult: AgentIR | null): Record<DimensionKey, boolean> {
   const result: Record<DimensionKey, boolean> = {
     prompt: false,
     tools: false,
@@ -127,62 +125,12 @@ function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: nu
 // ── Component ────────────────────────────────────────────────────────────
 
 interface DimensionRadialProps {
-  designResult: DesignAnalysisResult | null;
+  designResult: AgentIR | null;
   size?: number;
   className?: string;
 }
 
-type TooltipPlacement = 'top' | 'bottom' | 'left' | 'right';
-
-/** Compute best placement by checking available space on each side. */
-function computePlacement(triggerRect: DOMRect): TooltipPlacement {
-  const spaceAbove = triggerRect.top;
-  const spaceBelow = window.innerHeight - triggerRect.bottom;
-  const spaceLeft = triggerRect.left;
-  const spaceRight = window.innerWidth - triggerRect.right;
-
-  // Prefer top, then bottom, then right, then left
-  const candidates: [TooltipPlacement, number][] = [
-    ['top', spaceAbove],
-    ['bottom', spaceBelow],
-    ['right', spaceRight],
-    ['left', spaceLeft],
-  ];
-
-  // Need at least 80px vertical or 160px horizontal for the tooltip to fit
-  const minVertical = 80;
-  const minHorizontal = 160;
-
-  for (const [dir, space] of candidates) {
-    if ((dir === 'top' || dir === 'bottom') && space >= minVertical) return dir;
-    if ((dir === 'left' || dir === 'right') && space >= minHorizontal) return dir;
-  }
-
-  // Fallback: pick whichever side has the most space
-  candidates.sort((a, b) => b[1] - a[1]);
-  return candidates[0]?.[0] ?? 'top';
-}
-
-/** CSS classes for positioning the tooltip relative to the trigger. */
-function placementClasses(placement: TooltipPlacement): string {
-  switch (placement) {
-    case 'top':
-      return 'bottom-full left-1/2 -translate-x-1/2 mb-2';
-    case 'bottom':
-      return 'top-full left-1/2 -translate-x-1/2 mt-2';
-    case 'left':
-      return 'right-full top-1/2 -translate-y-1/2 mr-2';
-    case 'right':
-      return 'left-full top-1/2 -translate-y-1/2 ml-2';
-  }
-}
-
 export function DimensionRadial({ designResult, size = 32, className = '' }: DimensionRadialProps) {
-  const { motion: MOTION } = useTemplateMotion();
-  const [hovered, setHovered] = useState(false);
-  const [placement, setPlacement] = useState<TooltipPlacement>('top');
-  const triggerRef = useRef<HTMLDivElement>(null);
-
   const dimensions = useMemo(() => evaluateDimensions(designResult), [designResult]);
   const filled = DIMENSIONS.filter((d) => dimensions[d]);
   const missing = DIMENSIONS.filter((d) => !dimensions[d]);
@@ -192,22 +140,14 @@ export function DimensionRadial({ designResult, size = 32, className = '' }: Dim
   const strokeWidth = size * 0.14;
   const r = (size - strokeWidth) / 2 - 1;
 
-  const handleMouseEnter = useCallback(() => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setPlacement(computePlacement(rect));
-    }
-    setHovered(true);
-  }, []);
-
-  const summaryLabel = `Design quality: ${filled.length} of ${SEGMENT_COUNT} dimensions met`;
+  const filledNames = filled.map((d) => DIMENSION_LABELS[d]).join(', ');
+  const missingNames = missing.map((d) => DIMENSION_LABELS[d]).join(', ');
+  const titleText = `${filled.length}/${SEGMENT_COUNT} dimensions — ${filledNames}${missing.length > 0 ? ` | Missing: ${missingNames}` : ''}`;
 
   return (
     <div
-      ref={triggerRef}
       className={`relative inline-flex ${className}`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={() => setHovered(false)}
+      title={titleText}
       data-testid="dimension-radial"
       data-filled={filled.length}
     >
@@ -216,12 +156,8 @@ export function DimensionRadial({ designResult, size = 32, className = '' }: Dim
         height={size}
         viewBox={`0 0 ${size} ${size}`}
         role="img"
-        tabIndex={0}
-        aria-label={summaryLabel}
-        onFocus={handleMouseEnter}
-        onBlur={() => setHovered(false)}
+        aria-label={titleText}
       >
-        <title>{summaryLabel}</title>
         {DIMENSIONS.map((dim, i) => {
           const startDeg = i * (SEGMENT_DEG + GAP_DEG);
           const endDeg = startDeg + SEGMENT_DEG;
@@ -259,34 +195,6 @@ export function DimensionRadial({ designResult, size = 32, className = '' }: Dim
           </li>
         ))}
       </ul>
-
-      {/* Tooltip — collision-aware placement with shared motion preset */}
-      <AnimatePresence>
-        {hovered && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={MOTION.snappy.framer}
-            className={`absolute ${placementClasses(placement)} z-50 px-3 py-2 rounded-xl bg-background border border-primary/20 shadow-xl text-sm whitespace-nowrap`}
-            data-testid="dimension-radial-tooltip"
-          >
-            {filled.length > 0 && (
-              <div className="text-emerald-400 mb-1">
-                {filled.map((d) => DIMENSION_LABELS[d]).join(', ')}
-              </div>
-            )}
-            {missing.length > 0 && (
-              <div className="text-muted-foreground/50">
-                Missing: {missing.map((d) => DIMENSION_LABELS[d]).join(', ')}
-              </div>
-            )}
-            <div className="text-foreground/60 mt-1 font-medium">
-              {filled.length}/{SEGMENT_COUNT} dimensions
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

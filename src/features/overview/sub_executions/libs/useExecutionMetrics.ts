@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
@@ -26,9 +26,8 @@ export function useExecutionMetrics() {
   }, [customDateRange, effectiveDays]);
   const activeRangeLabel = useMemo(() => resolveTimeRange(activeRange).label, [activeRange]);
 
+  // Lifecycle fetch is handled by useExecutionDashboardPipeline; load is for manual retry.
   const load = useCallback(() => fetchExecutionDashboard(fetchDays), [fetchExecutionDashboard, fetchDays]);
-
-  useEffect(() => { load(); }, [load]);
 
   const { chartData, personaCostData, personaNames } = useMemo(() => {
     if (!data) return { chartData: [], personaCostData: [], personaNames: [] as string[] };

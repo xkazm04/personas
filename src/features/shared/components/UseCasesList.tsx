@@ -18,22 +18,38 @@ export type { UseCaseSuggestedTrigger } from '@/lib/types/frontendTypes';
 
 // ── Parser ──────────────────────────────────────────────────────────
 
+// LRU(1) cache: avoids re-parsing the same design_context string across
+// multiple hooks/components in the same render cycle.
+let _cachedRaw: string | null | undefined;
+let _cachedResult: DesignContextData = {};
+
 /**
  * Parse a raw `design_context` JSON string into the typed envelope.
  * Handles both the new structured format (with camelCase keys) and
  * the legacy flat format (with snake_case keys like `use_cases`, `credential_links`).
+ *
+ * Results are cached (LRU-1) so repeated calls with the same string
+ * (e.g. from useConnectorStatuses, subscriptionLifecycle, etc.) skip parsing.
  */
 export function parseDesignContext(raw: string | null | undefined): DesignContextData {
-  if (!raw || !raw.trim()) return {};
+  if (raw === _cachedRaw) return _cachedResult;
+
+  const store = (r: DesignContextData): DesignContextData => {
+    _cachedRaw = raw;
+    _cachedResult = r;
+    return r;
+  };
+
+  if (!raw || !raw.trim()) return store({});
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return { summary: raw };
+      return store({ summary: raw });
     }
 
     // New format: check for camelCase envelope keys
     if ('designFiles' in parsed || 'credentialLinks' in parsed || 'useCases' in parsed) {
-      return parsed as unknown as DesignContextData;
+      return store(parsed as unknown as DesignContextData);
     }
 
     // Legacy format: snake_case top-level keys → migrate to camelCase envelope
@@ -62,10 +78,10 @@ export function parseDesignContext(raw: string | null | undefined): DesignContex
       result.summary = parsed.summary;
     }
 
-    return result;
+    return store(result);
   } catch {
     // intentional: non-critical — JSON parse fallback (treat raw text as summary)
-    return { summary: raw };
+    return store({ summary: raw });
   }
 }
 

@@ -1,34 +1,39 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Play, Square, ChevronDown, Filter, Check } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { LabProgress } from './LabProgress';
 import { EvalHistory } from './EvalHistory';
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';
 import { Listbox } from '@/features/shared/components/Listbox';
-import { ANTHROPIC_MODELS, selectedModelsToConfigs } from '../libs/labModels';
+import { ANTHROPIC_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { usePanelRunState } from '../libs/usePanelRunState';
 
 export function EvalPanel() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const promptVersions = usePersonaStore((s) => s.promptVersions);
   const evalRuns = usePersonaStore((s) => s.evalRuns);
   const evalResultsMap = usePersonaStore((s) => s.evalResultsMap);
   const isLabRunning = usePersonaStore((s) => s.isLabRunning);
   const fetchVersions = usePersonaStore((s) => s.fetchVersions);
-  const fetchEvalRuns = usePersonaStore((s) => s.fetchEvalRuns);
   const startEval = usePersonaStore((s) => s.startEval);
   const cancelEval = usePersonaStore((s) => s.cancelEval);
+  const fetchEvalRuns = usePersonaStore((s) => s.fetchEvalRuns);
   const fetchEvalResults = usePersonaStore((s) => s.fetchEvalResults);
   const deleteEvalRun = usePersonaStore((s) => s.deleteEvalRun);
 
-  const [selectedVersionIds, setSelectedVersionIds] = useState<Set<string>>(new Set());
-  const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['haiku']));
-  const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
-  const [testInput, setTestInput] = useState('');
-  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
-  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const {
+    selectedPersona, selectedModels, toggleModel,
+    expandedRunId, setExpandedRunId,
+    setActiveRunId,
+    selectedUseCaseId, setSelectedUseCaseId,
+    handleCancel,
+  } = usePanelRunState({
+    fetchRuns: (pid) => { fetchVersions(pid); fetchEvalRuns(pid); },
+    fetchResults: fetchEvalResults,
+    cancelRun: cancelEval,
+  });
 
-  useEffect(() => { if (selectedPersona?.id) { fetchVersions(selectedPersona.id); fetchEvalRuns(selectedPersona.id); } }, [selectedPersona?.id, fetchVersions, fetchEvalRuns]);
-  useEffect(() => { if (expandedRunId) fetchEvalResults(expandedRunId); }, [expandedRunId, fetchEvalResults]);
+  const [selectedVersionIds, setSelectedVersionIds] = useState<Set<string>>(new Set());
+  const [testInput, setTestInput] = useState('');
 
   const useCases = useMemo(() => parseDesignContext(selectedPersona?.design_context).useCases ?? [], [selectedPersona?.design_context]);
   const useCaseOptions = useMemo(() => [{ value: '__all__', label: 'All Use Cases' }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))], [useCases]);
@@ -42,8 +47,6 @@ export function EvalPanel() {
     const runId = await startEval(selectedPersona.id, [...selectedVersionIds], models, useCaseFilter, testInput.trim() || undefined);
     if (runId) setActiveRunId(runId);
   };
-
-  const handleCancel = async () => { if (activeRunId) { await cancelEval(activeRunId); setActiveRunId(null); } };
 
   return (
     <div className="space-y-6" data-testid="eval-panel">
@@ -71,7 +74,7 @@ export function EvalPanel() {
             <label className="text-sm font-medium text-muted-foreground/80">Models</label>
             <div className="flex flex-wrap gap-2" data-testid="eval-model-selector">
               {ANTHROPIC_MODELS.map((m) => (
-                <button key={m.id} onClick={() => setSelectedModels((prev) => { const next = new Set(prev); if (next.has(m.id)) next.delete(m.id); else next.add(m.id); return next; })} disabled={isLabRunning} data-testid={`eval-model-toggle-${m.id}`}
+                <button key={m.id} onClick={() => toggleModel(m.id)} disabled={isLabRunning} data-testid={`eval-model-toggle-${m.id}`}
                   className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                   {m.label}
                 </button>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Zap, Loader2 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { CredentialTemplateEvent, DbCredentialEvent } from '@/lib/types/types';
@@ -53,7 +53,11 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
     return myEvents.find(e => e.event_template_id === eventTemplateId);
   };
 
+  const toggleInFlightRef = useRef<Set<string>>(new Set());
+
   const handleToggleEvent = async (eventTemplateId: string, eventTemplateName: string) => {
+    if (toggleInFlightRef.current.has(eventTemplateId)) return;
+    toggleInFlightRef.current.add(eventTemplateId);
     const existing = getEventForTemplate(eventTemplateId);
     setSaving(eventTemplateId);
     try {
@@ -74,6 +78,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
     } catch (err) {
       console.error('Failed to toggle event:', err);
     } finally {
+      toggleInFlightRef.current.delete(eventTemplateId);
       setSaving(null);
     }
   };

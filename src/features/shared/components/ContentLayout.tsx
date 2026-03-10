@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { IS_MOBILE } from '@/lib/utils/platform';
 
 // ---------------------------------------------------------------------------
 // Icon color palette
@@ -47,7 +48,7 @@ export function ContentBox({ children, minWidth }: ContentBoxProps) {
   // Default: responsive min-width adjusted for 328px sidebar
   // xl 1280→952 available, 2xl 1536→1208, 3xl 1920→1592, 4xl 2560→2232
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]">
+    <div className={`flex-1 min-h-0 flex flex-col w-full overflow-hidden ${IS_MOBILE ? '' : 'min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]'}`}>
       {children}
     </div>
   );
@@ -76,7 +77,7 @@ export function ContentHeader({
 }: ContentHeaderProps) {
   const iconElement = iconColor ? (
     <div
-      className={`w-10 h-10 rounded-xl ${ICON_COLOR_MAP[iconColor].bg} border ${ICON_COLOR_MAP[iconColor].border} flex items-center justify-center`}
+      className={`${IS_MOBILE ? 'w-8 h-8' : 'w-10 h-10'} rounded-xl ${ICON_COLOR_MAP[iconColor].bg} border ${ICON_COLOR_MAP[iconColor].border} flex items-center justify-center`}
     >
       {icon}
     </div>
@@ -85,7 +86,7 @@ export function ContentHeader({
   );
 
   return (
-    <div className="px-4 md:px-6 xl:px-8 py-6 border-b border-primary/10 bg-primary/5 flex-shrink-0">
+    <div className={`${IS_MOBILE ? 'px-3 py-3' : 'px-4 md:px-6 xl:px-8 py-6'} border-b border-primary/10 bg-primary/5 flex-shrink-0`}>
       <div className="flex items-center gap-3">
         {iconElement}
         <div className="flex-1 min-w-0">
@@ -138,7 +139,7 @@ export function ContentBody({
       <div
         className={[
           'min-h-full w-full',
-          !noPadding && 'p-4 md:p-6 xl:p-8',
+          !noPadding && (IS_MOBILE ? 'p-2.5' : 'p-4 md:p-6 xl:p-8'),
           centered && 'mx-auto',
         ]
           .filter(Boolean)

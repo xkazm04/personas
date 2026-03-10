@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { Clock, AlertTriangle, Lightbulb, CheckCircle } from 'lucide-react';
+import { Clock, AlertTriangle, Lightbulb, CheckCircle, SkipForward } from 'lucide-react';
 import type { NegotiationPlan } from '@/hooks/design/useCredentialNegotiator';
+import type { StepNode } from '@/hooks/design/negotiatorStepGraph';
 import { NegotiatorStepCard } from './NegotiatorStepCard';
 
 interface NegotiatorGuidingPhaseProps {
@@ -10,6 +11,10 @@ interface NegotiatorGuidingPhaseProps {
   capturedValues: Record<string, string>;
   stepHelp: { answer: string; stepIndex: number } | null;
   isLoadingHelp: boolean;
+  /** Resolved visible steps from the step graph */
+  visibleSteps: StepNode[];
+  /** Steps that were skipped by the step graph */
+  skippedSteps: StepNode[];
   onCompleteStep: (index: number) => void;
   onSelectStep: (index: number) => void;
   onCaptureValue: (fieldKey: string, value: string) => void;
@@ -25,6 +30,8 @@ export function NegotiatorGuidingPhase({
   capturedValues,
   stepHelp,
   isLoadingHelp,
+  visibleSteps,
+  skippedSteps,
   onCompleteStep,
   onSelectStep,
   onCaptureValue,
@@ -32,9 +39,9 @@ export function NegotiatorGuidingPhase({
   onCancel,
   onFinish,
 }: NegotiatorGuidingPhaseProps) {
+  const totalSteps = visibleSteps.length;
   const completedCount = completedSteps.size;
-  const totalSteps = plan.steps.length;
-  const allDone = completedCount === totalSteps;
+  const allDone = totalSteps > 0 && completedCount >= totalSteps;
   const progressPercent = totalSteps > 0 ? (completedCount / totalSteps) * 100 : 0;
 
   return (
@@ -58,6 +65,15 @@ export function NegotiatorGuidingPhase({
           <span className="text-sm text-foreground/80 font-medium">
             {completedCount}/{totalSteps} steps
           </span>
+          {skippedSteps.length > 0 && (
+            <>
+              <div className="h-3 w-px bg-primary/10" />
+              <span className="inline-flex items-center gap-1 text-sm text-muted-foreground/60">
+                <SkipForward className="w-3 h-3" />
+                {skippedSteps.length} skipped
+              </span>
+            </>
+          )}
         </div>
 
         {/* Progress bar */}
@@ -70,6 +86,26 @@ export function NegotiatorGuidingPhase({
           />
         </div>
       </div>
+
+      {/* Skipped steps summary */}
+      {skippedSteps.length > 0 && (
+        <details className="group rounded-xl border border-primary/10 bg-secondary/15 px-4 py-2">
+          <summary className="cursor-pointer text-sm text-muted-foreground/70 hover:text-muted-foreground transition-colors flex items-center gap-1.5">
+            <SkipForward className="w-3 h-3" />
+            {skippedSteps.length} step{skippedSteps.length !== 1 ? 's' : ''} auto-skipped
+          </summary>
+          <ul className="mt-2 space-y-1 pl-5">
+            {skippedSteps.map((node) => (
+              <li key={node.originalIndex} className="text-sm text-muted-foreground/60">
+                <span className="line-through">{node.step.title}</span>
+                {node.skipReason && (
+                  <span className="ml-1.5 text-muted-foreground/40">— {node.skipReason}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
 
       {/* Prerequisites */}
       {plan.prerequisites.length > 0 && (
@@ -88,20 +124,20 @@ export function NegotiatorGuidingPhase({
         </div>
       )}
 
-      {/* Steps */}
+      {/* Steps — render only visible steps */}
       <div className="space-y-2">
-        {plan.steps.map((step, i) => (
+        {visibleSteps.map((node, visibleIndex) => (
           <NegotiatorStepCard
-            key={i}
-            step={step}
-            stepIndex={i}
-            isActive={activeStepIndex === i}
-            isCompleted={completedSteps.has(i)}
+            key={node.originalIndex}
+            step={node.step}
+            stepIndex={visibleIndex}
+            isActive={activeStepIndex === visibleIndex}
+            isCompleted={completedSteps.has(visibleIndex)}
             capturedValues={capturedValues}
-            onComplete={() => onCompleteStep(i)}
-            onSelect={() => onSelectStep(i)}
+            onComplete={() => onCompleteStep(visibleIndex)}
+            onSelect={() => onSelectStep(visibleIndex)}
             onCaptureValue={onCaptureValue}
-            onRequestHelp={(q) => onRequestHelp(i, q)}
+            onRequestHelp={(q) => onRequestHelp(visibleIndex, q)}
             stepHelp={stepHelp}
             isLoadingHelp={isLoadingHelp}
           />

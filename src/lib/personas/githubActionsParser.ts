@@ -1,9 +1,9 @@
 /**
  * Parser for GitHub Actions workflow YAML files.
- * Converts GitHub Actions workflow definitions into DesignAnalysisResult.
+ * Converts GitHub Actions workflow definitions into AgentIR.
  */
 
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import { runExtractionPipeline, type NormalizedNode } from './workflowPipeline';
 
 interface GHAStep {
@@ -134,7 +134,7 @@ function parseTriggers(onConfig: unknown): Array<{
   return triggers;
 }
 
-export function parseGithubActionsWorkflow(json: unknown): DesignAnalysisResult {
+export function parseGithubActionsWorkflow(json: unknown): AgentIR {
   if (!json || typeof json !== 'object') {
     throw new Error('Invalid GitHub Actions workflow: expected an object');
   }

@@ -4,13 +4,13 @@ import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import { deriveArchCategories, userHasCategoryCredential } from './architecturalCategories';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { DesignAnalysisResult, ConnectorReadinessStatus, ProtocolCapability } from '@/lib/types/designTypes';
+import type { AgentIR, ConnectorReadinessStatus, ProtocolCapability } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { LucideIcon } from 'lucide-react';
 
 interface ExpandedRowContentProps {
   review: PersonaDesignReview;
-  designResult: DesignAnalysisResult | null;
+  designResult: AgentIR | null;
   allConnectorsReady: boolean;
   readinessStatuses: ConnectorReadinessStatus[];
   credentialServiceTypes: Set<string>;

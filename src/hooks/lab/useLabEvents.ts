@@ -1,24 +1,10 @@
-import { useEffect, useRef } from "react";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { useMemo } from "react";
 import { usePersonaStore } from "@/stores/personaStore";
 import { sendAppNotification } from "@/api/system";
 import type { LabMode, LabRunProgress } from "@/stores/slices/labSlice";
+import { useRunEventListener, type RunStatusPayload, type RunEventBinding } from "@/hooks/realtime/useRunEventListener";
 
-interface LabStatusPayload {
-  run_id: string;
-  phase: string;
-  scenarios_count?: number;
-  current?: number;
-  total?: number;
-  model_id?: string;
-  scenario_name?: string;
-  status?: string;
-  scores?: { tool_accuracy?: number; output_quality?: number; protocol_compliance?: number };
-  summary?: Record<string, unknown>;
-  error?: string;
-}
-
-function mapPayload(p: LabStatusPayload, mode: LabMode): LabRunProgress {
+function mapPayload(p: RunStatusPayload, mode: LabMode): LabRunProgress {
   return {
     runId: p.run_id,
     mode,
@@ -34,8 +20,6 @@ function mapPayload(p: LabStatusPayload, mode: LabMode): LabRunProgress {
     error: p.error,
   };
 }
-
-const TERMINAL_PHASES = ["completed", "failed", "cancelled"];
 
 const MODE_LABELS: Record<LabMode, string> = {
   arena: "Arena",
@@ -57,54 +41,24 @@ function notifyTerminal(mode: LabMode, phase: string) {
 export function useLabEvents() {
   const setLabProgress = usePersonaStore((s) => s.setLabProgress);
   const finishLabRun = usePersonaStore((s) => s.finishLabRun);
-  const unlistenRef = useRef<UnlistenFn[]>([]);
 
-  useEffect(() => {
-    let active = true;
+  const bindings = useMemo((): RunEventBinding[] => {
+    const modes: { event: string; mode: LabMode }[] = [
+      { event: "lab-arena-status", mode: "arena" },
+      { event: "lab-ab-status", mode: "ab" },
+      { event: "lab-matrix-status", mode: "matrix" },
+      { event: "lab-eval-status", mode: "eval" },
+    ];
 
-    const setup = async () => {
-      const listeners: UnlistenFn[] = [];
-      const register = async (eventName: string, mode: LabMode) => {
-        const unlisten = await listen<LabStatusPayload>(eventName, (event) => {
-          const progress = mapPayload(event.payload, mode);
-          setLabProgress(progress);
-          if (TERMINAL_PHASES.includes(event.payload.phase)) {
-            finishLabRun();
-            notifyTerminal(mode, event.payload.phase);
-          }
-        });
-
-        if (!active) {
-          unlisten();
-          return;
-        }
-
-        listeners.push(unlisten);
-      };
-
-      // Use allSettled so a single listener registration failure doesn't
-      // prevent the remaining listeners from being set up.
-      await Promise.allSettled([
-        register("lab-arena-status", "arena"),
-        register("lab-ab-status", "ab"),
-        register("lab-matrix-status", "matrix"),
-        register("lab-eval-status", "eval"),
-      ]);
-
-      if (!active) {
-        listeners.forEach((unlisten) => unlisten());
-        return;
-      }
-
-      unlistenRef.current = listeners;
-    };
-
-    void setup();
-
-    return () => {
-      active = false;
-      unlistenRef.current.forEach((fn) => fn());
-      unlistenRef.current = [];
-    };
+    return modes.map(({ event, mode }) => ({
+      eventName: event,
+      onProgress: (p) => setLabProgress(mapPayload(p, mode)),
+      onTerminal: (p) => {
+        finishLabRun(mode);
+        notifyTerminal(mode, p.phase);
+      },
+    }));
   }, [setLabProgress, finishLabRun]);
+
+  useRunEventListener(bindings, [bindings]);
 }

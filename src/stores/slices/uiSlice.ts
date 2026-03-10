@@ -22,6 +22,8 @@ export interface AdoptionDraft {
   userAnswers?: Record<string, string>;
   /** Non-null when the user closed while a background transform was running. */
   backgroundAdoptId?: string | null;
+  /** Persisted entity selections (Phase C — Area #13) */
+  selectedUseCaseIds?: string[];
 }
 
 export interface UiSlice {

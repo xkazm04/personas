@@ -4,7 +4,7 @@ import {
   STANDARD_SECTION_KEYS,
   SECTION_LABELS,
 } from '@/lib/personas/promptMigration';
-import { diffStrings } from '@/features/agents/sub_lab_shared/labPrimitives';
+import { diffStrings } from '@/features/agents/sub_lab_shared';
 
 interface Props {
   currentPromptJson: string | null;

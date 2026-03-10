@@ -114,6 +114,10 @@ export interface N8nImportState {
   // Confirm
   confirming: boolean;
   created: boolean;
+
+  // Platform detection confidence
+  platformNeedsConfirmation: boolean;
+  detectedConfidence: 'high' | 'medium' | 'low';
 }
 
 const INITIAL_STATE: N8nImportState = {
@@ -126,7 +130,8 @@ const INITIAL_STATE: N8nImportState = {
 // ── Actions ──
 
 export type N8nImportAction =
-  | { type: 'FILE_PARSED'; workflowName: string; rawWorkflowJson: string; parsedResult: AgentIR; platform?: WorkflowPlatform }
+  | { type: 'FILE_PARSED'; workflowName: string; rawWorkflowJson: string; parsedResult: AgentIR; platform?: WorkflowPlatform; needsConfirmation?: boolean; detectedConfidence?: 'high' | 'medium' | 'low' }
+  | { type: 'CONFIRM_PLATFORM' }
   | { type: 'TOGGLE_TOOL'; index: number }
   | { type: 'TOGGLE_TRIGGER'; index: number }
   | { type: 'TOGGLE_CONNECTOR'; name: string }
@@ -230,6 +235,8 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
     selectedConnectorNames: state.selectedConnectorNames,
     confirming: state.confirming,
     created: state.created,
+    platformNeedsConfirmation: state.platformNeedsConfirmation,
+    detectedConfidence: state.detectedConfidence,
   }, action, state);
 
   return {

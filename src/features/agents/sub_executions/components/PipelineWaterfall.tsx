@@ -4,7 +4,8 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDuration } from '@/lib/utils/formatters';
-import { parseToolSteps, buildSyntheticTrace } from '../libs/waterfallHelpers';
+import { pipelineSpans } from '@/lib/execution/pipeline';
+import { parseToolSteps } from '../libs/waterfallHelpers';
 import { StageBar, SubSpanBar } from './WaterfallStage';
 import { CostAccrualOverlay, PipelineSummary, WaterfallErrors } from './WaterfallTimeline';
 
@@ -16,13 +17,13 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
   const liveTrace = usePersonaStore((s) => s.pipelineTrace);
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
 
-  // Use live trace if it matches this execution, otherwise build synthetic
+  // Use live trace if it matches this execution; no synthetic fallback needed
   const trace = useMemo(() => {
     if (liveTrace && liveTrace.executionId === execution.id) {
       return liveTrace;
     }
-    return buildSyntheticTrace(execution);
-  }, [liveTrace, execution]);
+    return null;
+  }, [liveTrace, execution.id]);
 
   const toolSteps = useMemo(() => parseToolSteps(execution.tool_steps ?? null), [execution.tool_steps]);
 
@@ -35,7 +36,10 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
     });
   };
 
-  if (!trace || trace.entries.length === 0) {
+  // Extract pipeline stage spans from the unified trace
+  const stageSpans = useMemo(() => trace ? pipelineSpans(trace) : [], [trace]);
+
+  if (!trace || stageSpans.length === 0) {
     return (
       <div className="text-center py-10">
         <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/15 flex items-center justify-center">
@@ -48,12 +52,12 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
   }
 
   const totalDurationMs = trace.completedAt ? trace.completedAt - trace.startedAt : (
-    trace.entries.reduce((max, e) => Math.max(max, (e.timestamp - trace.startedAt) + (e.durationMs ?? 0)), 0)
+    stageSpans.reduce((max, s) => Math.max(max, s.start_ms + (s.duration_ms ?? 0)), 0)
   );
   const isLive = liveTrace?.executionId === execution.id;
 
-  // Find stream_output entry for sub-span anchoring
-  const streamEntry = trace.entries.find(e => e.stage === 'stream_output');
+  // Find stream_output span for sub-span anchoring
+  const streamSpan = stageSpans.find(s => s.span_type === 'stream_output');
 
   return (
     <div className="space-y-4">
@@ -101,23 +105,22 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
 
         {/* Stage rows */}
         <div className="divide-y divide-primary/5">
-          {trace.entries.map((entry) => {
-            const hasSubSpans = entry.stage === 'stream_output' && toolSteps.length > 0;
-            const isExpanded = expandedStages.has(entry.stage);
+          {stageSpans.map((span) => {
+            const hasSubSpans = span.span_type === 'stream_output' && toolSteps.length > 0;
+            const isExpanded = expandedStages.has(span.span_type);
 
             return (
-              <div key={entry.stage}>
+              <div key={span.span_id}>
                 <StageBar
-                  entry={entry}
+                  entry={span}
                   totalDurationMs={totalDurationMs}
-                  pipelineStartMs={trace.startedAt}
                   isExpanded={isExpanded}
-                  onToggle={() => toggleStage(entry.stage)}
+                  onToggle={() => toggleStage(span.span_type)}
                   hasSubSpans={hasSubSpans}
                 />
 
                 <AnimatePresence>
-                  {hasSubSpans && isExpanded && streamEntry && (
+                  {hasSubSpans && isExpanded && streamSpan && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
@@ -129,9 +132,8 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
                         <SubSpanBar
                           key={step.step_index}
                           step={step}
-                          parentStartMs={streamEntry.timestamp}
+                          parentStartMs={streamSpan.start_ms}
                           totalDurationMs={totalDurationMs}
-                          pipelineStartMs={trace.startedAt}
                         />
                       ))}
                     </motion.div>
@@ -146,9 +148,8 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
         {execution.cost_usd > 0 && (
           <div className="border-t border-primary/10">
             <CostAccrualOverlay
-              entries={trace.entries}
+              entries={stageSpans}
               totalDurationMs={totalDurationMs}
-              pipelineStartMs={trace.startedAt}
               totalCostUsd={execution.cost_usd}
             />
           </div>
@@ -156,7 +157,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
       </div>
 
       {/* Error details */}
-      <WaterfallErrors entries={trace.entries} />
+      <WaterfallErrors entries={stageSpans} />
     </div>
   );
 }

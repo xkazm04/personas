@@ -396,7 +396,7 @@ pub async fn spawn_claude_and_collect(
                         .stderr(std::process::Stdio::null())
                         .status();
                 }
-                #[cfg(not(windows))]
+                #[cfg(all(not(windows), not(target_os = "android")))]
                 {
                     unsafe { libc::kill(pid as i32, libc::SIGTERM); }
                 }

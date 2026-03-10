@@ -10,6 +10,9 @@ import { seedMockManualReview } from '@/api/reviews';
 import { FILTER_LABELS, SOURCE_LABELS, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
 import { InboxItem } from './ReviewListItem';
 import { ConversationThread } from './ReviewDetailPanel';
+import { IS_MOBILE } from '@/lib/utils/platform';
+import { useFilteredCollection } from '@/hooks/utility/useFilteredCollection';
+import { usePolling, POLLING_CONFIG } from '@/hooks/utility/usePolling';
 
 export default function ManualReviewList() {
   const manualReviews = usePersonaStore((s) => s.manualReviews);
@@ -32,12 +35,11 @@ export default function ManualReviewList() {
 
   useEffect(() => { fetchManualReviews(); }, [fetchManualReviews]);
 
-  useEffect(() => {
-    if (!isCloudConnected) return;
-    fetchCloudReviews();
-    const interval = setInterval(fetchCloudReviews, 15_000);
-    return () => clearInterval(interval);
-  }, [isCloudConnected, fetchCloudReviews]);
+  usePolling(fetchCloudReviews, {
+    interval: POLLING_CONFIG.cloudReviews.interval,
+    enabled: isCloudConnected,
+    maxBackoff: POLLING_CONFIG.cloudReviews.maxBackoff,
+  });
 
   const allReviews = useMemo(() => {
     const local = manualReviews.map((r) => ({ ...r, source: 'local' as const }));
@@ -52,13 +54,13 @@ export default function ManualReviewList() {
     return counts;
   }, [allReviews]);
 
-  const filteredReviews = useMemo(() => {
-    let result = allReviews;
-    if (filter !== 'all') result = result.filter((r) => r.status === filter);
-    if (sourceFilter !== 'all') result = result.filter((r) => (r.source ?? 'local') === sourceFilter);
-    if (selectedPersonaId) result = result.filter((r) => r.persona_id === selectedPersonaId);
-    return result;
-  }, [allReviews, filter, sourceFilter, selectedPersonaId]);
+  const { filtered: filteredReviews } = useFilteredCollection(allReviews, {
+    exact: [
+      { field: 'status', value: filter === 'all' ? null : filter },
+      { field: 'source' as keyof typeof allReviews[0], value: sourceFilter === 'all' ? null : sourceFilter, fallback: 'local' },
+      { field: 'persona_id', value: selectedPersonaId || null },
+    ],
+  });
 
   const activeReview = useMemo(() => filteredReviews.find((r) => r.id === activeReviewId) ?? null, [filteredReviews, activeReviewId]);
 
@@ -156,7 +158,7 @@ export default function ManualReviewList() {
           </div>
         ) : (
           <div className="flex-1 flex overflow-hidden">
-            <div className="w-[340px] 2xl:w-[420px] flex-shrink-0 border-r border-primary/10 flex flex-col overflow-hidden">
+            <div className={`${IS_MOBILE ? 'w-full' : 'w-[340px] 2xl:w-[420px]'} flex-shrink-0 border-r border-primary/10 flex flex-col overflow-hidden`}>
               <div className="flex-1 overflow-y-auto">
                 {filteredReviews.map((review) => (
                   <div key={review.id} className="flex items-start">
@@ -172,15 +174,31 @@ export default function ManualReviewList() {
                 ))}
               </div>
             </div>
-            <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-              {activeReview ? (
-                <ConversationThread key={activeReview.id} review={activeReview} onAction={handleAction} isProcessing={isProcessing} />
-              ) : (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center"><MessageSquare className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" /><p className="text-sm text-muted-foreground/50">Select a review to view</p></div>
+            {IS_MOBILE ? (
+              activeReview && (
+                <div className="fixed inset-0 z-50 bg-background flex flex-col">
+                  <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 flex-shrink-0">
+                    <button onClick={() => setActiveReviewId(null)} className="p-2 rounded-lg hover:bg-secondary/50 text-muted-foreground">
+                      <X className="w-4 h-4" />
+                    </button>
+                    <span className="text-sm font-medium text-foreground/80 truncate">Review Detail</span>
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
+                    <ConversationThread key={activeReview.id} review={activeReview} onAction={handleAction} isProcessing={isProcessing} />
+                  </div>
                 </div>
-              )}
-            </div>
+              )
+            ) : (
+              <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+                {activeReview ? (
+                  <ConversationThread key={activeReview.id} review={activeReview} onAction={handleAction} isProcessing={isProcessing} />
+                ) : (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center"><MessageSquare className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" /><p className="text-sm text-muted-foreground/50">Select a review to view</p></div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </ContentBody>

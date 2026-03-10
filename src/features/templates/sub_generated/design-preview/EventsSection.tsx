@@ -1,12 +1,12 @@
 import { Zap, ToggleLeft, ToggleRight } from 'lucide-react';
 import { DesignCheckbox } from './DesignCheckbox';
 import { triggerIconMeta, SECTION_LABEL } from './helpers';
-import type { DesignAnalysisResult, SuggestedTrigger } from '@/lib/types/designTypes';
+import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
 import type { DbPersonaTrigger } from '@/lib/types/types';
 import { parseTriggerConfig } from '@/lib/utils/triggerConstants';
 
 interface EventsSectionProps {
-  result: DesignAnalysisResult;
+  result: AgentIR;
   selectedTriggerIndices: Set<number>;
   onTriggerToggle: (index: number) => void;
   suggestedSubscriptions?: Array<{ event_type: string; source_filter?: object; description: string }>;

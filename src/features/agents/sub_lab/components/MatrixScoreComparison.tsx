@@ -1,5 +1,5 @@
 import { Target, FileText, Shield, DollarSign, Clock, ArrowUp, ArrowDown } from 'lucide-react';
-import { scoreColor } from '../libs/labUtils';
+import { scoreColor } from '@/lib/eval/evalFramework';
 
 interface VariantScores {
   avgToolAccuracy: number;

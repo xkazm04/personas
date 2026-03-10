@@ -303,6 +303,7 @@ pub fn get_master_key() -> Result<&'static [u8; 32], CryptoError> {
 }
 
 /// Try to load or create the master key via OS keychain.
+#[cfg(feature = "desktop")]
 fn try_keychain() -> Result<[u8; 32], CryptoError> {
     let entry = keyring::Entry::new("personas-desktop", "credential-master-key")
         .map_err(|e| CryptoError::KeyManagement(format!("Keychain entry error: {e}")))?;
@@ -349,6 +350,12 @@ fn try_keychain() -> Result<[u8; 32], CryptoError> {
             "Keychain access failed: {e}"
         ))),
     }
+}
+
+/// On mobile, keychain is not available — always return an error to fall through to fallback.
+#[cfg(not(feature = "desktop"))]
+fn try_keychain() -> Result<[u8; 32], CryptoError> {
+    Err(CryptoError::KeyManagement("Keychain not available on this platform".into()))
 }
 
 /// Generate or load a random fallback key when the OS keychain is unavailable
@@ -621,6 +628,7 @@ fn repair_key_file_permissions(path: &std::path::Path) -> bool {
 /// The same key bytes are stored in the keychain — no credential re-encryption
 /// is needed because the encryption key itself doesn't change.
 #[allow(dead_code)]
+#[cfg(feature = "desktop")]
 pub fn try_upgrade_to_keychain() -> Result<bool, CryptoError> {
     if key_source() != Some(KeySource::LocalFallback) {
         return Ok(false); // Already on keychain or not initialised
@@ -640,6 +648,12 @@ pub fn try_upgrade_to_keychain() -> Result<bool, CryptoError> {
          All existing credentials remain valid (same key, different storage)."
     );
     Ok(true)
+}
+
+#[allow(dead_code)]
+#[cfg(not(feature = "desktop"))]
+pub fn try_upgrade_to_keychain() -> Result<bool, CryptoError> {
+    Ok(false)
 }
 
 // ---------------------------------------------------------------------------

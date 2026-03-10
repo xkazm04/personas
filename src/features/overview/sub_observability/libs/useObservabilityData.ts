@@ -6,6 +6,7 @@ import { useOverviewFilters } from '@/features/overview/components/OverviewFilte
 import type { ChartAnnotationRecord } from './chartAnnotations';
 import { toChartDate, useAnnotationComposer } from './chartAnnotations';
 import type { PieDataPoint } from '../components/MetricsCharts';
+import { usePolling, POLLING_CONFIG } from '@/hooks/utility/usePolling';
 
 const isDefined = <T,>(value: T | null | undefined): value is T => value != null;
 const ANNOTATION_FETCH_DEBOUNCE_MS = 250;
@@ -147,13 +148,20 @@ export function useObservabilityData() {
     return () => { controller.abort(); clearTimeout(timeoutId); };
   }, [credentials]);
 
+  const evaluateAlertRules = usePersonaStore((s) => s.evaluateAlertRules);
+
+  // Evaluate alert rules whenever metrics change
+  useEffect(() => {
+    if (observabilityMetrics) evaluateAlertRules();
+  }, [observabilityMetrics, evaluateAlertRules]);
+
   useEffect(() => { refreshAll(); }, [refreshAll]);
 
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const interval = setInterval(refreshAll, 30000);
-    return () => clearInterval(interval);
-  }, [autoRefresh, refreshAll]);
+  usePolling(refreshAll, {
+    interval: POLLING_CONFIG.dashboardRefresh.interval,
+    enabled: autoRefresh,
+    maxBackoff: POLLING_CONFIG.dashboardRefresh.maxBackoff,
+  });
 
   const summary = observabilityMetrics?.summary;
   const backendChartData = observabilityMetrics?.chartData;

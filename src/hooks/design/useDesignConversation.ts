@@ -10,7 +10,7 @@ import {
 import type {
   DesignConversation,
   DesignConversationMessage,
-  DesignAnalysisResult,
+  AgentIR,
   DesignQuestion,
 } from '@/lib/types/designTypes';
 import { parseConversationMessages } from '@/lib/types/designTypes';
@@ -194,7 +194,7 @@ export function useDesignConversation(personaId: string | null) {
   }, [enqueueAppend]);
 
   /** Record an AI result in the conversation. */
-  const addResultMessage = useCallback((result: DesignAnalysisResult) => {
+  const addResultMessage = useCallback((result: AgentIR) => {
     enqueueAppend(() => ({
       message: {
         role: 'assistant',

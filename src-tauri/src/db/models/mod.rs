@@ -26,6 +26,8 @@ mod team_memory;
 mod db_schema;
 mod recipe;
 mod automation;
+mod template_feedback;
+mod credential_recipe;
 
 pub use persona::*;
 pub use tool::*;
@@ -55,3 +57,5 @@ pub use team_memory::*;
 pub use db_schema::*;
 pub use recipe::*;
 pub use automation::*;
+pub use template_feedback::*;
+pub use credential_recipe::*;

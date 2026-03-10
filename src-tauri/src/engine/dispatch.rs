@@ -13,6 +13,7 @@ use crate::db::repos::communication::{
     events as event_repo, manual_reviews as review_repo, messages as msg_repo,
 };
 use crate::db::repos::core::memories as mem_repo;
+use crate::db::repos::execution::knowledge as knowledge_repo;
 use crate::db::DbPool;
 
 use super::logger::ExecutionLogger;
@@ -189,6 +190,42 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
         ProtocolMessage::ExecutionFlow { .. } => {
             // Execution flows are handled at the top level, not here
             ctx.logger.log("[FLOW] Execution flow captured (will be stored on completion)");
+        }
+        ProtocolMessage::KnowledgeAnnotation {
+            scope,
+            note,
+            confidence: _,
+        } => {
+            // Parse scope format: "tool:http_request", "connector:google", "global", or bare (persona)
+            let (scope_type, scope_id) = if let Some(rest) = scope.strip_prefix("tool:") {
+                ("tool", Some(rest.to_string()))
+            } else if let Some(rest) = scope.strip_prefix("connector:") {
+                ("connector", Some(rest.to_string()))
+            } else if scope == "global" {
+                ("global", None)
+            } else {
+                ("persona", None)
+            };
+
+            match knowledge_repo::upsert_annotation(
+                ctx.pool,
+                ctx.persona_id,
+                scope_type,
+                scope_id.as_deref(),
+                note,
+                "agent",
+                Some(ctx.execution_id),
+            ) {
+                Ok(entry) => {
+                    ctx.logger.log(&format!(
+                        "[KNOWLEDGE] Annotation stored: scope={}:{} ({})",
+                        scope_type,
+                        scope_id.as_deref().unwrap_or("_"),
+                        entry.id
+                    ));
+                }
+                Err(e) => ctx.logger.log(&format!("[KNOWLEDGE] Failed to store annotation: {e}")),
+            }
         }
     }
 }

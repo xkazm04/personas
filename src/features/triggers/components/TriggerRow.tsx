@@ -1,6 +1,7 @@
-import { ToggleLeft, ToggleRight, ChevronDown } from 'lucide-react';
+import { ToggleLeft, ToggleRight, ChevronDown, ShieldAlert } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { DbPersonaTrigger } from '@/lib/types/types';
+import { usePersonaStore } from '@/stores/personaStore';
 import { TriggerStatusSummary } from './TriggerStatusSummary';
 
 interface TriggerRowProps {
@@ -12,6 +13,8 @@ interface TriggerRowProps {
 
 /** Collapsed trigger row: always visible, shows type + config summary + toggle + expand. */
 export function TriggerRow({ trigger, expanded, onToggleExpand, onToggleEnabled }: TriggerRowProps) {
+  const budgetStatus = usePersonaStore((s) => s.getBudgetStatus(trigger.persona_id));
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -26,6 +29,13 @@ export function TriggerRow({ trigger, expanded, onToggleExpand, onToggleEnabled 
         <TriggerStatusSummary trigger={trigger} />
 
         <span className="ml-auto flex items-center gap-2">
+          {/* Budget-paused badge */}
+          {budgetStatus === 'exceeded' && trigger.enabled && (
+            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-red-500/20 bg-red-500/10 text-red-400/80" title="Monthly budget exceeded — trigger paused">
+              <ShieldAlert className="w-3 h-3" />
+              Budget
+            </span>
+          )}
           {/* Enabled toggle (stop propagation so it doesn't toggle expand) */}
           <span
             role="button"

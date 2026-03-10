@@ -6,7 +6,7 @@ import { DesignPhasePreview } from '../DesignPhasePreview';
 import { DesignPhaseApplying } from '../DesignPhaseApplying';
 import { DesignPhaseApplied } from '../DesignPhaseApplied';
 import { DesignPhaseError } from '../DesignPhaseError';
-import type { DesignAnalysisResult, IntentCompilationResult, DesignQuestion } from '@/lib/types/designTypes';
+import type { AgentIR, IntentCompilationResult, DesignQuestion } from '@/lib/types/designTypes';
 import type { DesignFilesSection } from '@/lib/types/frontendTypes';
 import type { PersonaWithDetails, DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { FailedOperation } from '@/hooks/design/applyDesignResult';
@@ -20,7 +20,7 @@ export interface PhaseRenderProps {
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];
   currentToolNames: string[];
-  savedDesignResult: DesignAnalysisResult | null;
+  savedDesignResult: AgentIR | null;
   instruction: string;
   onInstructionChange: (v: string) => void;
   designContext: DesignFilesSection;
@@ -33,7 +33,7 @@ export interface PhaseRenderProps {
   examplePairs: ExamplePair[];
   onExamplePairsChange: (pairs: ExamplePair[]) => void;
   outputLines: string[];
-  result: DesignAnalysisResult | null;
+  result: AgentIR | null;
   question: DesignQuestion | null;
   onCancel: () => void;
   onAnswerQuestion: (answer: string) => void;

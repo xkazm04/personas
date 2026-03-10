@@ -20,7 +20,7 @@ export interface WizardStep {
 export type WizardAnswers = Record<string, string | string[]>;
 
 // Re-export compiler functions so existing imports stay valid
-export { compileWizardInstruction, getAnswerSummary } from './wizardCompiler';
+export { compileWizardInstruction, compileWizardToAgentIR, getAnswerSummary } from './wizardCompiler';
 
 export const WIZARD_STEPS: WizardStep[] = [
   {

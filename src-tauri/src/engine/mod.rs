@@ -44,8 +44,11 @@ pub mod types;
 pub mod webhook;
 pub mod platform_rules;
 pub mod url_safety;
+#[cfg(feature = "desktop")]
 pub mod file_watcher;
+#[cfg(feature = "desktop")]
 pub mod clipboard_monitor;
+#[cfg(feature = "desktop")]
 pub mod app_focus;
 pub mod composite;
 pub mod db_query;
@@ -54,9 +57,13 @@ pub mod api_definition;
 pub mod mcp_tools;
 pub mod automation_runner;
 pub mod platforms;
+#[cfg(feature = "desktop")]
 pub mod desktop_bridges;
+#[cfg(feature = "desktop")]
 pub mod desktop_discovery;
+#[cfg(feature = "desktop")]
 pub mod desktop_runtime;
+#[cfg(feature = "desktop")]
 pub mod desktop_security;
 
 use std::collections::HashMap;
@@ -451,6 +458,7 @@ impl ExecutionEngine {
         let child_pids = self.child_pids.clone();
         let cancelled_flags = self.cancelled_flags.clone();
         let circuit_breaker = self.circuit_breaker.clone();
+        let circuit_breaker_for_drain = self.circuit_breaker.clone();
         let queued_contexts = self.queued_contexts.clone();
 
         // Clone log_dir for potential healing retries (log_dir is moved into run_execution)
@@ -529,10 +537,12 @@ impl ExecutionEngine {
                 tracker,
                 tasks.clone(),
                 queued_contexts,
+                cancelled_flags,
                 persona_id,
                 persona_max_concurrent,
                 app_for_drain,
                 pool_for_drain,
+                circuit_breaker_for_drain,
             )
             .await;
         });
@@ -867,10 +877,12 @@ fn drain_and_start_next(
     tracker: Arc<Mutex<ConcurrencyTracker>>,
     tasks: Arc<Mutex<HashMap<String, tokio::task::JoinHandle<()>>>>,
     queued_contexts: Arc<Mutex<HashMap<String, QueuedExecutionContext>>>,
+    cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     persona_id: String,
     max_concurrent: i32,
     app: AppHandle,
     pool: DbPool,
+    circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> {
     Box::pin(async move {
     let persona_id = persona_id.as_str();
@@ -942,8 +954,6 @@ fn drain_and_start_next(
             let app_for_drain = ctx.app.clone();
             let child_pids: Arc<Mutex<HashMap<String, u32>>> = Arc::new(Mutex::new(HashMap::new()));
             let cancelled = Arc::new(AtomicBool::new(false));
-            let cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>> =
-                Arc::new(Mutex::new(HashMap::new()));
             cancelled_flags
                 .lock()
                 .await
@@ -962,7 +972,9 @@ fn drain_and_start_next(
             let tracker_clone = tracker.clone();
             let tasks_clone = tasks.clone();
             let queued_contexts_clone = queued_contexts.clone();
-            let circuit_breaker = Arc::new(failover::ProviderCircuitBreaker::new());
+            let cancelled_flags_clone = cancelled_flags.clone();
+            let circuit_breaker = circuit_breaker.clone();
+            let circuit_breaker_for_drain = circuit_breaker.clone();
 
             let handle = tokio::spawn(async move {
                 let result = runner::run_execution(
@@ -1022,16 +1034,19 @@ fn drain_and_start_next(
                     .await
                     .remove_running(&persona_id_owned, &exec_id);
                 tasks_clone.lock().await.remove(&exec_id);
+                cancelled_flags.lock().await.remove(&exec_id);
 
                 // Recursively drain next (owned types for Send safety)
                 drain_and_start_next(
                     tracker_clone,
                     tasks_clone.clone(),
                     queued_contexts_clone,
+                    cancelled_flags_clone,
                     persona_id_owned,
                     persona_max_concurrent_inner,
                     app_for_drain,
                     pool_for_drain,
+                    circuit_breaker_for_drain,
                 )
                 .await;
             });
@@ -1158,6 +1173,7 @@ async fn handle_execution_result(
     }
 
     // Refresh system tray
+    #[cfg(feature = "desktop")]
     crate::tray::refresh_tray(app);
 }
 
@@ -1795,6 +1811,7 @@ fn spawn_healing_chain(
         // 12. Cleanup
         tracker.lock().await.remove_running(&persona_id, &exec_id);
         cancelled_flags.lock().await.remove(&exec_id);
+        #[cfg(feature = "desktop")]
         crate::tray::refresh_tray(&app);
     });
 }
@@ -2047,6 +2064,7 @@ fn spawn_delayed_retry(
         // 13. Cleanup
         tracker.lock().await.remove_running(&persona_id, &exec_id);
         cancelled_flags.lock().await.remove(&exec_id);
+        #[cfg(feature = "desktop")]
         crate::tray::refresh_tray(&app);
     });
 }

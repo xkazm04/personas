@@ -19,4 +19,4 @@ export const startScheduler = () =>
   invoke<SchedulerStats>("start_scheduler");
 
 export const stopScheduler = () =>
-  invoke<SchedulerStats>("stop_scheduler");
+  invoke<SchedulerStats>("stop_scheduler");2

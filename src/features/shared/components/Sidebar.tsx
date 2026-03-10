@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, Sparkles, HardDriveDownload, Shield, CalendarClock, type LucideIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useMemo, useState, useCallback, useRef, type ReactNode } from 'react';
+import { BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare, FlaskConical, Users, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu, Network, Database, Home, Compass, Sparkles, HardDriveDownload, Shield, CalendarClock, PanelLeftClose, PanelLeft, type LucideIcon } from 'lucide-react';
 import { SidebarIconStyles, SIDEBAR_ICONS } from './SidebarIcons';
 import { getVersion } from '@tauri-apps/api/app';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -11,6 +11,7 @@ import TeamDragPanel from '@/features/pipeline/components/TeamDragPanel';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 import OnboardingProgressBar from '@/features/onboarding/components/OnboardingProgressBar';
+import { IS_MOBILE, MOBILE_SECTIONS } from '@/lib/utils/platform';
 
 const sections: Array<{ id: SidebarSection; icon: typeof Bot; label: string; devOnly?: boolean }> = [
   { id: 'home', icon: Home, label: 'Home' },
@@ -114,6 +115,21 @@ function SidebarSubNav({
 // ---------------------------------------------------------------------------
 
 export default function Sidebar() {
+  const [collapsed, setCollapsed] = useState(() => {
+    if (IS_MOBILE) return true;
+    try { return localStorage.getItem('sidebar-collapsed') === '1'; } catch { return false; }
+  });
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem('sidebar-collapsed', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  }, []);
+
+  // Mobile: level-2 drawer opens as overlay when tapping an icon
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+
   const sidebarSection = usePersonaStore((s) => s.sidebarSection);
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
   const { currentKey: credentialView, navigate } = useCredentialNav();
@@ -146,6 +162,27 @@ export default function Sidebar() {
 
   const isDev = import.meta.env.DEV;
 
+  // Persist scroll position per section
+  const scrollPositions = useRef(new Map<string, number>());
+  const level2ScrollRef = useRef<HTMLDivElement>(null);
+  const prevSectionRef = useRef(sidebarSection);
+
+  // Save scroll position when section changes, restore for new section
+  useEffect(() => {
+    const el = level2ScrollRef.current;
+    if (prevSectionRef.current !== sidebarSection) {
+      // Save outgoing section's scroll position
+      if (el) scrollPositions.current.set(prevSectionRef.current, el.scrollTop);
+      prevSectionRef.current = sidebarSection;
+      // Restore incoming section's scroll position (deferred so content renders first)
+      requestAnimationFrame(() => {
+        if (level2ScrollRef.current) {
+          level2ScrollRef.current.scrollTop = scrollPositions.current.get(sidebarSection) ?? 0;
+        }
+      });
+    }
+  }, [sidebarSection]);
+
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const disabledSections = useMemo(() => {
     const disabled = new Set<SidebarSection>();
@@ -177,18 +214,22 @@ export default function Sidebar() {
   const setIsCreatingPersona = usePersonaStore((s) => s.setIsCreatingPersona);
   const [appVersion, setAppVersion] = useState('');
 
+  const fetchBudgetSpend = usePersonaStore((s) => s.fetchBudgetSpend);
+
   useEffect(() => {
     fetchPendingReviewCount();
     fetchUnreadMessageCount();
     fetchRecentEvents();
+    fetchBudgetSpend();
     getVersion().then(setAppVersion).catch(() => {});
 
-    // Poll for pending reviews periodically so users discover them promptly
+    // Poll for pending reviews and budget spend periodically
     const interval = setInterval(() => {
       fetchPendingReviewCount();
+      fetchBudgetSpend();
     }, 30_000);
     return () => clearInterval(interval);
-  }, [fetchPendingReviewCount, fetchUnreadMessageCount, fetchRecentEvents]);
+  }, [fetchPendingReviewCount, fetchUnreadMessageCount, fetchRecentEvents, fetchBudgetSpend]);
 
   const handleCreatePersona = () => {
     selectPersona(null);
@@ -386,9 +427,9 @@ export default function Sidebar() {
 
       {/* Level 1: Custom animated section icons */}
       <SidebarIconStyles />
-      <div className="w-[88px] bg-secondary/40 border-r border-primary/15 flex flex-col items-center py-3 gap-1">
+      <div className={`${collapsed ? 'w-[52px]' : 'w-[88px]'} bg-secondary/40 border-r border-primary/15 flex flex-col items-center py-3 gap-1 transition-all duration-200`}>
         {sections
-          .filter((s) => !s.devOnly || isDev)
+          .filter((s) => (!s.devOnly || isDev) && (!IS_MOBILE || MOBILE_SECTIONS.has(s.id)))
           .map((section) => {
           const CustomIcon = SIDEBAR_ICONS[section.id];
           const FallbackIcon = section.icon;
@@ -399,9 +440,21 @@ export default function Sidebar() {
           return (
             <button
               key={section.id}
-              onClick={() => !isDisabled && setSidebarSection(section.id)}
+              onClick={() => {
+                if (isDisabled) return;
+                if (IS_MOBILE) {
+                  if (sidebarSection === section.id) {
+                    setMobileDrawerOpen((o) => !o);
+                  } else {
+                    setSidebarSection(section.id);
+                    setMobileDrawerOpen(true);
+                  }
+                } else {
+                  setSidebarSection(section.id);
+                }
+              }}
               disabled={isDisabled}
-              className={`relative w-[76px] rounded-xl flex flex-col items-center justify-center py-2 transition-all group ${
+              className={`relative ${collapsed ? 'w-[40px]' : 'w-[76px]'} rounded-xl flex flex-col items-center justify-center py-2 transition-all group ${
                 isDisabled ? 'cursor-not-allowed opacity-40' : ''
               } ${isDevSection ? 'ring-1 ring-amber-500/40' : ''}`}
               title={isDisabled ? `${section.label} (${section.id === 'cloud' ? 'Sign in to unlock cloud features' : 'Coming soon'})` : section.label}
@@ -413,7 +466,7 @@ export default function Sidebar() {
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
-              <div className={`relative z-10 w-9 h-9 transition-colors ${
+              <div className={`relative z-10 ${collapsed ? 'w-6 h-6' : 'w-9 h-9'} transition-all ${
                 isDisabled
                   ? 'text-muted-foreground/50'
                   : isActive ? 'text-primary' : 'text-foreground/70 group-hover:text-foreground'
@@ -423,11 +476,13 @@ export default function Sidebar() {
                   : <FallbackIcon className="w-full h-full" />
                 }
               </div>
-              <span className={`relative z-10 text-[10px] leading-tight mt-1 font-semibold transition-colors ${
-                isActive ? 'text-primary' : 'text-foreground/60 group-hover:text-foreground/90'
-              }`}>
-                {section.label}
-              </span>
+              {!collapsed && (
+                <span className={`relative z-10 text-[10px] leading-tight mt-1 font-semibold transition-colors ${
+                  isActive ? 'text-primary' : 'text-foreground/60 group-hover:text-foreground/90'
+                }`}>
+                  {section.label}
+                </span>
+              )}
               {isDisabled && section.id !== 'cloud' && (
                 <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px text-sm font-semibold uppercase tracking-wider leading-none rounded bg-muted-foreground/15 text-muted-foreground/80 whitespace-nowrap">
                   soon
@@ -454,9 +509,19 @@ export default function Sidebar() {
           );
         })}
 
+        {!IS_MOBILE && (
+          <button
+            onClick={toggleCollapsed}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors mt-1"
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+          </button>
+        )}
+
         <div className="flex-1" />
-        {appVersion && (
-          <div className="pb-2 pt-1">
+        {!collapsed && appVersion && (
+          <div className="pb-1 pt-1">
             <span className="text-sm font-mono text-muted-foreground/80 block text-center">
               v{appVersion}
             </span>
@@ -471,18 +536,42 @@ export default function Sidebar() {
         {pendingEventCount > 0 && ` ${pendingEventCount} pending event${pendingEventCount !== 1 ? 's' : ''}.`}
       </div>
 
-      {/* Level 2: Item list */}
-      <div className="w-[240px] bg-secondary/30 border-r border-primary/15 flex flex-col overflow-hidden">
-        <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
-          <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-            {sections.find((s) => s.id === sidebarSection)?.label || 'Overview'}
-          </h2>
-        </div>
-        <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent">
-          {renderLevel2()}
-        </div>
-        <OnboardingProgressBar />
-      </div>
+      {/* Level 2: Item list — fixed panel on desktop, overlay drawer on mobile */}
+      {(IS_MOBILE ? mobileDrawerOpen : !collapsed) && (
+        <>
+          {IS_MOBILE && (
+            <div
+              className="fixed inset-0 bg-black/40 z-30"
+              onClick={() => setMobileDrawerOpen(false)}
+            />
+          )}
+          <div className={
+            IS_MOBILE
+              ? 'fixed left-[52px] top-0 bottom-0 z-40 w-[calc(100vw-64px)] max-w-[240px] bg-secondary/95 backdrop-blur-sm border-r border-primary/15 flex flex-col overflow-hidden shadow-2xl'
+              : 'w-[240px] bg-secondary/30 border-r border-primary/15 flex flex-col overflow-hidden'
+          }>
+            <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
+              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
+                {sections.find((s) => s.id === sidebarSection)?.label || 'Overview'}
+              </h2>
+            </div>
+            <div ref={level2ScrollRef} className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={sidebarSection}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                >
+                  {renderLevel2()}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+            {!IS_MOBILE && <OnboardingProgressBar />}
+          </div>
+        </>
+      )}
     </div>
   );
 }

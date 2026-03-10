@@ -1,11 +1,11 @@
-import type { TraceSpan } from '@/lib/bindings/TraceSpan';
+import type { UnifiedSpan } from '@/lib/execution/pipeline';
 import { formatDuration } from '@/lib/utils/formatters';
 import { ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
-import { SPAN_TYPE_CONFIG, type SpanNode } from '../libs/traceHelpers';
+import { getSpanConfig, type SpanNode } from '../libs/traceHelpers';
 
 // Waterfall bar component
 
-function WaterfallBar({ span, totalMs }: { span: TraceSpan; totalMs: number }) {
+function WaterfallBar({ span, totalMs }: { span: UnifiedSpan; totalMs: number }) {
   if (!totalMs || totalMs === 0) return null;
 
   const leftPct = (span.start_ms / totalMs) * 100;
@@ -13,7 +13,7 @@ function WaterfallBar({ span, totalMs }: { span: TraceSpan; totalMs: number }) {
     ? Math.max((span.duration_ms / totalMs) * 100, 0.5)
     : Math.max(((totalMs - span.start_ms) / totalMs) * 100, 0.5);
 
-  const config = SPAN_TYPE_CONFIG[span.span_type];
+  const config = getSpanConfig(span.span_type);
 
   return (
     <div className="relative h-5 w-full">
@@ -56,7 +56,7 @@ export function SpanRow({
   hasChildren,
 }: SpanRowProps) {
   const { span, depth } = node;
-  const config = SPAN_TYPE_CONFIG[span.span_type];
+  const config = getSpanConfig(span.span_type);
 
   return (
     <div

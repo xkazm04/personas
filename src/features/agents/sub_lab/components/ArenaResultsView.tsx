@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Trophy, DollarSign, Clock, Target, FileText, Shield } from 'lucide-react';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
-import { statusBadge, compositeScore, scoreColor } from '../libs/labUtils';
+import { statusBadge, compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 
 interface Props {
   results: LabArenaResult[];

@@ -142,6 +142,7 @@ export function useN8nWizard() {
     } catch (err) {
       transform.setAnalyzing(false);
       setN8nTransformActive(false);
+      clearPersistedContext();
       dispatch({
         type: 'TRANSFORM_FAILED',
         error: err instanceof Error ? err.message : 'Failed to generate transformation draft.',
@@ -316,6 +317,7 @@ export function useN8nWizard() {
       );
     } catch (err) {
       setN8nTransformActive(false);
+      clearPersistedContext();
       dispatch({
         type: 'TRANSFORM_FAILED',
         error: err instanceof Error ? err.message : 'Failed to continue transformation.',

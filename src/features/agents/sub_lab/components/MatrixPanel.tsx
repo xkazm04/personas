@@ -1,31 +1,37 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Square, ChevronDown, Filter, Wand2, AlertCircle } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { LabProgress } from './LabProgress';
 import { MatrixHistory } from './MatrixHistory';
 import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/UseCasesList';
 import { Listbox } from '@/features/shared/components/Listbox';
-import { ANTHROPIC_MODELS, selectedModelsToConfigs } from '../libs/labModels';
+import { ANTHROPIC_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { usePanelRunState } from '../libs/usePanelRunState';
 
 export function MatrixPanel() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const matrixRuns = usePersonaStore((s) => s.matrixRuns);
   const matrixResultsMap = usePersonaStore((s) => s.matrixResultsMap);
   const isLabRunning = usePersonaStore((s) => s.isLabRunning);
-  const fetchMatrixRuns = usePersonaStore((s) => s.fetchMatrixRuns);
   const startMatrix = usePersonaStore((s) => s.startMatrix);
   const cancelMatrix = usePersonaStore((s) => s.cancelMatrix);
+  const fetchMatrixRuns = usePersonaStore((s) => s.fetchMatrixRuns);
   const fetchMatrixResults = usePersonaStore((s) => s.fetchMatrixResults);
   const deleteMatrixRun = usePersonaStore((s) => s.deleteMatrixRun);
 
-  const [instruction, setInstruction] = useState('');
-  const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['haiku', 'sonnet']));
-  const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
-  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
-  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const {
+    selectedPersona, selectedModels, toggleModel,
+    expandedRunId, setExpandedRunId,
+    setActiveRunId,
+    selectedUseCaseId, setSelectedUseCaseId,
+    handleCancel,
+  } = usePanelRunState({
+    fetchRuns: fetchMatrixRuns,
+    fetchResults: fetchMatrixResults,
+    cancelRun: cancelMatrix,
+    defaultModels: new Set(['haiku', 'sonnet']),
+  });
 
-  useEffect(() => { if (selectedPersona?.id) fetchMatrixRuns(selectedPersona.id); }, [selectedPersona?.id, fetchMatrixRuns]);
-  useEffect(() => { if (expandedRunId) fetchMatrixResults(expandedRunId); }, [expandedRunId, fetchMatrixResults]);
+  const [instruction, setInstruction] = useState('');
 
   const useCases: UseCaseItem[] = useMemo(() => parseDesignContext(selectedPersona?.design_context).useCases ?? [], [selectedPersona?.design_context]);
   const useCaseOptions = useMemo(() => [{ value: '__all__', label: 'All Use Cases' }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))], [useCases]);
@@ -37,8 +43,6 @@ export function MatrixPanel() {
     const runId = await startMatrix(selectedPersona.id, instruction.trim(), models, useCaseFilter);
     if (runId) { setActiveRunId(runId); setInstruction(''); }
   };
-
-  const handleCancel = async () => { if (activeRunId) { await cancelMatrix(activeRunId); setActiveRunId(null); } };
 
   const hasPrompt = !!selectedPersona?.structured_prompt || !!selectedPersona?.system_prompt;
 
@@ -68,7 +72,7 @@ export function MatrixPanel() {
             <label className="text-sm font-medium text-muted-foreground/80">Models</label>
             <div className="flex flex-wrap gap-2">
               {ANTHROPIC_MODELS.map((m) => (
-                <button key={m.id} onClick={() => setSelectedModels((prev) => { const next = new Set(prev); if (next.has(m.id)) next.delete(m.id); else next.add(m.id); return next; })} disabled={isLabRunning}
+                <button key={m.id} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
                   className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                   {m.label}
                 </button>

@@ -1,4 +1,4 @@
-import { ANTHROPIC_MODELS, OLLAMA_MODELS, type ModelOption } from '../libs/testModels';
+import { ANTHROPIC_MODELS, OLLAMA_MODELS, type ModelOption } from '@/lib/models/modelCatalog';
 
 interface TestModelSelectorProps {
   selectedModels: Set<string>;

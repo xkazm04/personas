@@ -5,14 +5,14 @@ import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
 import { DesignPhasePanelSaved } from './DesignPhasePanelSaved';
 import { ExamplePairCollector } from './ExamplePairCollector';
 
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import type { DesignContext } from '@/lib/types/frontendTypes';
 import type { PersonaWithDetails, DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { ExamplePair } from './ExamplePairCollector';
-import type { DesignInputMode } from './useDesignTabState';
+import type { DesignInputMode } from './libs/useDesignTabState';
 
 export interface DesignPhasePanelProps {
-  savedDesignResult: DesignAnalysisResult | null;
+  savedDesignResult: AgentIR | null;
   selectedPersona: PersonaWithDetails;
   toolDefinitions: DbPersonaToolDefinition[];
   currentToolNames: string[];

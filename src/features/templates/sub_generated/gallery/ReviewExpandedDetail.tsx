@@ -4,7 +4,7 @@ import { PromptTabsPreview } from '@/features/shared/components/PromptTabsPrevie
 import { DesignConnectorGrid } from '@/features/shared/components/DesignConnectorGrid';
 
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
@@ -26,7 +26,7 @@ export function ReviewExpandedDetail({
 }) {
   const [showJson, setShowJson] = useState(false);
 
-  const designResult = parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null);
+  const designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
   const adjustment = parseJsonSafe<{
     suggestion: string;
     reason: string;

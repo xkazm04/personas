@@ -19,6 +19,10 @@ export interface SessionState {
   selectedConnectorNames: Set<string>;
   confirming: boolean;
   created: boolean;
+  /** True when platform was guessed and user should confirm */
+  platformNeedsConfirmation: boolean;
+  /** Confidence level of platform detection */
+  detectedConfidence: 'high' | 'medium' | 'low';
 }
 
 export const INITIAL_SESSION: SessionState = {
@@ -34,6 +38,8 @@ export const INITIAL_SESSION: SessionState = {
   selectedConnectorNames: new Set(),
   confirming: false,
   created: false,
+  platformNeedsConfirmation: false,
+  detectedConfidence: 'high',
 };
 
 // ── Helpers ──
@@ -73,9 +79,14 @@ export function sessionReducer(
         rawWorkflowJson: action.rawWorkflowJson,
         parsedResult: action.parsedResult,
         platform: action.platform ?? 'n8n',
+        platformNeedsConfirmation: action.needsConfirmation ?? false,
+        detectedConfidence: action.detectedConfidence ?? 'high',
         ...selections,
       };
     }
+
+    case 'CONFIRM_PLATFORM':
+      return { ...slice, platformNeedsConfirmation: false };
 
     case 'TOGGLE_TOOL':
       return { ...slice, selectedToolIndices: toggleInSet(slice.selectedToolIndices, action.index) };

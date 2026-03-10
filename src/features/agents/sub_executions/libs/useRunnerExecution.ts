@@ -76,8 +76,8 @@ export function useRunnerExecution({
       const lastToolLine = [...outputLines].reverse().find(l => l.startsWith('> Using tool:'));
       const lastTool = lastToolLine?.replace('> Using tool: ', '').trim() || null;
       const cancelSummary = JSON.stringify({ status: 'cancelled', duration_ms: elapsedMs, cost_usd: null, last_tool: lastTool });
-      disconnect();
       await cancelExecution(activeExecutionId);
+      disconnect();
       setOutputLines((prev) => [...prev, '', `[SUMMARY]${cancelSummary}`]);
     }
   };
@@ -88,9 +88,12 @@ export function useRunnerExecution({
     const hint = `Previous execution was cancelled${executionSummary?.duration_ms ? ` after ${formatElapsed(executionSummary.duration_ms)}` : ''}${lastTool ? ` while running tool "${lastTool}"` : ''}. Please continue from where the previous execution left off.`;
 
     let sessionId: string | null = null;
-    if (activeExecutionId) {
+    // activeExecutionId is null after cancel/finish — use lastExecutionId to
+    // fetch the session for true session resumption.
+    const resumeExecId = activeExecutionId ?? usePersonaStore.getState().lastExecutionId;
+    if (resumeExecId) {
       try {
-        const exec = await api.getExecution(activeExecutionId, selectedPersona.id);
+        const exec = await api.getExecution(resumeExecId, selectedPersona.id);
         sessionId = exec.claude_session_id ?? null;
       } catch { /* intentional */ }
     }
@@ -114,8 +117,28 @@ export function useRunnerExecution({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Enter' || isExecuting) return;
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
+
+      const target = e.target as HTMLElement;
+      const tag = target?.tagName;
+
+      // Skip interactive elements that use Enter for their own purposes
+      if (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        tag === 'BUTTON' ||
+        tag === 'SUMMARY' ||
+        tag === 'A' ||
+        target?.isContentEditable
+      ) return;
+
+      // Skip ARIA interactive roles (combobox dropdowns, custom textboxes, etc.)
+      const role = target?.getAttribute?.('role');
+      if (role === 'textbox' || role === 'combobox' || role === 'listbox' || role === 'option' || role === 'button' || role === 'menuitem') return;
+
+      // Skip when a modal/dialog is open — Enter likely confirms the dialog, not triggers execution
+      if (target?.closest?.('[role="dialog"], dialog, [data-radix-dialog-content]')) return;
+
       handleExecuteRef.current?.();
     };
     document.addEventListener('keydown', handleKeyDown);

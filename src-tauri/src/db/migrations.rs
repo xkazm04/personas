@@ -1931,6 +1931,104 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added headless column to personas for background cron agents");
     }
 
+    // ── Knowledge Annotations: scope, annotation, and verification columns ──
+    let has_ek_scope: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('execution_knowledge') WHERE name = 'scope_type'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_ek_scope {
+        conn.execute_batch(
+            "ALTER TABLE execution_knowledge ADD COLUMN scope_type TEXT NOT NULL DEFAULT 'persona';
+             ALTER TABLE execution_knowledge ADD COLUMN scope_id TEXT;
+             ALTER TABLE execution_knowledge ADD COLUMN annotation_text TEXT;
+             ALTER TABLE execution_knowledge ADD COLUMN annotation_source TEXT;
+             ALTER TABLE execution_knowledge ADD COLUMN is_verified INTEGER NOT NULL DEFAULT 0;"
+        )?;
+        conn.execute_batch(
+            "CREATE INDEX IF NOT EXISTS idx_ek_scope ON execution_knowledge(scope_type, scope_id);
+             CREATE INDEX IF NOT EXISTS idx_ek_annotation ON execution_knowledge(annotation_source);"
+        )?;
+        tracing::info!("Added knowledge annotation columns (scope_type, scope_id, annotation_text, annotation_source, is_verified)");
+    }
+
+    // Update CHECK constraint to allow new knowledge_type values
+    // SQLite doesn't support ALTER CHECK, so we add new types via a permissive approach:
+    // The original CHECK is on the table creation. For new rows we validate in application code.
+    // New types: 'agent_annotation', 'user_annotation'
+
+    // ── Template Feedback table ─────────────────────────────────────────
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS template_feedback (
+            id              TEXT PRIMARY KEY,
+            review_id       TEXT NOT NULL,
+            persona_id      TEXT NOT NULL,
+            execution_id    TEXT,
+            rating          TEXT NOT NULL CHECK(rating IN ('positive','negative','neutral')),
+            labels          TEXT NOT NULL DEFAULT '[]',
+            comment         TEXT,
+            source          TEXT NOT NULL DEFAULT 'system',
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (review_id) REFERENCES persona_design_reviews(id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_tf_review   ON template_feedback(review_id);
+        CREATE INDEX IF NOT EXISTS idx_tf_persona  ON template_feedback(persona_id);
+        CREATE INDEX IF NOT EXISTS idx_tf_rating   ON template_feedback(rating);"
+    )?;
+
+    // ── Credential recipes: shared discovery cache across Design / Negotiator / AutoCred ──
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS credential_recipes (
+            id                  TEXT PRIMARY KEY,
+            connector_name      TEXT NOT NULL UNIQUE,
+            connector_label     TEXT NOT NULL,
+            category            TEXT NOT NULL DEFAULT '',
+            color               TEXT NOT NULL DEFAULT '#888888',
+            oauth_type          TEXT,
+            fields_json         TEXT NOT NULL DEFAULT '[]',
+            healthcheck_json    TEXT,
+            setup_instructions  TEXT,
+            summary             TEXT,
+            docs_url            TEXT,
+            source              TEXT NOT NULL DEFAULT 'design',
+            usage_count         INTEGER NOT NULL DEFAULT 0,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_cred_recipes_name ON credential_recipes(connector_name);"
+    )?;
+
+    // ── Personas: source_review_id for template lineage tracking ────────
+    let has_source_review: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'source_review_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_source_review {
+        conn.execute_batch(
+            "ALTER TABLE personas ADD COLUMN source_review_id TEXT;"
+        )?;
+        tracing::info!("Added source_review_id to personas for template lineage tracking");
+    }
+
+    // ── Personas: trust_level and trust_origin columns ──────────────────
+    let has_trust_level: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'trust_level'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_trust_level {
+        conn.execute_batch(
+            "ALTER TABLE personas ADD COLUMN trust_level TEXT NOT NULL DEFAULT 'verified';
+             ALTER TABLE personas ADD COLUMN trust_origin TEXT NOT NULL DEFAULT 'builtin';
+             ALTER TABLE personas ADD COLUMN trust_verified_at TEXT;"
+        )?;
+        tracing::info!("Added trust_level, trust_origin, trust_verified_at to personas");
+    }
+
     Ok(())
 }
 

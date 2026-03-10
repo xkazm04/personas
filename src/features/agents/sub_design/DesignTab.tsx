@@ -1,5 +1,5 @@
-import { useDesignTabState } from './useDesignTabState';
-import { DesignTabPhaseContent } from './DesignTabPhaseContent';
+import { useDesignTabState } from './libs/useDesignTabState';
+import { DesignTabPhaseContent } from './components/DesignTabPhaseContent';
 
 export function DesignTab() {
   const {

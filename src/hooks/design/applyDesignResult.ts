@@ -1,7 +1,7 @@
 import { createTrigger } from '@/api/triggers';
 import { createSubscription } from '@/api/events';
 import type { PartialPersonaUpdate } from '@/api/personas';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 
 export interface ApplyDesignSelections {
   selectedTools?: Set<string>;
@@ -19,7 +19,7 @@ export interface FailedTriggerOp {
   kind: 'trigger';
   index: number;
   label: string;
-  trigger: DesignAnalysisResult['suggested_triggers'][number];
+  trigger: AgentIR['suggested_triggers'][number];
   error: string;
 }
 
@@ -27,7 +27,7 @@ export interface FailedSubscriptionOp {
   kind: 'subscription';
   index: number;
   label: string;
-  subscription: NonNullable<DesignAnalysisResult['suggested_event_subscriptions']>[number];
+  subscription: NonNullable<AgentIR['suggested_event_subscriptions']>[number];
   error: string;
 }
 
@@ -53,11 +53,11 @@ export interface ApplyDesignOutcome {
  */
 export async function applyDesignResult(
   personaId: string,
-  result: DesignAnalysisResult,
+  result: AgentIR,
   deps: ApplyDesignDeps,
   selections?: ApplyDesignSelections,
 ): Promise<ApplyDesignOutcome> {
-  const filteredResult: DesignAnalysisResult = {
+  const filteredResult: AgentIR = {
     ...result,
     suggested_tools: selections?.selectedTools
       ? result.suggested_tools.filter((t) => selections.selectedTools!.has(t))

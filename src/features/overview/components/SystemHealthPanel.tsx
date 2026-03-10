@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { healthCheckLocal, healthCheckAgents, healthCheckCloud, healthCheckAccount, getCrashLogs, clearCrashLogs } from '@/api/tauriApi';
+import { readCrashLogs, CRASH_STORAGE_KEY } from '@/lib/utils/crashPersistence';
 import type { HealthCheckSection, HealthCheckItem, CrashLogEntry } from '@/api/tauriApi';
 import { useAuthStore } from '@/stores/authStore';
 import { useAutoInstaller, type InstallState } from '@/hooks/utility/useAutoInstaller';
@@ -206,14 +207,7 @@ function CrashLogsSection() {
     getCrashLogs()
       .then(setBackendLogs)
       .catch(() => setBackendLogs([]));
-    try {
-      const raw = localStorage.getItem('__personas_frontend_crashes');
-      if (raw) setFrontendLogs(JSON.parse(raw));
-      else setFrontendLogs([]);
-    } catch {
-      // intentional: non-critical — JSON parse fallback
-      setFrontendLogs([]);
-    }
+    setFrontendLogs(readCrashLogs());
   }, []);
 
   useEffect(() => {
@@ -226,7 +220,7 @@ function CrashLogsSection() {
     setClearing(true);
     try {
       await clearCrashLogs();
-      localStorage.removeItem('__personas_frontend_crashes');
+      localStorage.removeItem(CRASH_STORAGE_KEY);
       setBackendLogs([]);
       setFrontendLogs([]);
       setSelectedLog(null);
@@ -399,47 +393,30 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
       { id: 'account', fn: healthCheckAccount },
     ];
 
-    let resolved = 0;
-    for (const check of checks) {
+    const order = ['local', 'agents', 'cloud', 'account'];
+    const sortSections = (arr: HealthCheckSection[]) =>
+      arr.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+
+    Promise.allSettled(checks.map((check) =>
       check.fn()
         .then((section) => {
-          setSections((prev) => {
-            const next = prev.filter((s) => s.id !== section.id);
-            next.push(section);
-            next.sort((a, b) => {
-              const order = ['local', 'agents', 'cloud', 'account'];
-              return order.indexOf(a.id) - order.indexOf(b.id);
-            });
-            return next;
-          });
+          setSections((prev) => sortSections([...prev.filter((s) => s.id !== section.id), section]));
         })
         .catch(() => {
           setIpcError(true);
-          setSections((prev) => {
-            const next = prev.filter((s) => s.id !== check.id);
-            next.push(ipcFallbacks[check.id]!);
-            next.sort((a, b) => {
-              const order = ['local', 'agents', 'cloud', 'account'];
-              return order.indexOf(a.id) - order.indexOf(b.id);
-            });
-            return next;
-          });
+          setSections((prev) => sortSections([...prev.filter((s) => s.id !== check.id), ipcFallbacks[check.id]!]));
           setHasIssues(true);
         })
-        .finally(() => {
-          resolved++;
-          if (resolved === checks.length) {
-            setSections((final_sections) => {
-              const allOk = final_sections.every((s) =>
-                s.items.every((i) => i.status === 'ok' || i.status === 'info' || i.status === 'inactive')
-              );
-              setHasIssues(!allOk);
-              return final_sections;
-            });
-            setLoading(false);
-          }
-        });
-    }
+    )).then(() => {
+      setSections((finalSections) => {
+        const allOk = finalSections.every((s) =>
+          s.items.every((i) => i.status === 'ok' || i.status === 'info' || i.status === 'inactive')
+        );
+        setHasIssues(!allOk);
+        return finalSections;
+      });
+      setLoading(false);
+    });
   }, []);
 
   useEffect(() => {

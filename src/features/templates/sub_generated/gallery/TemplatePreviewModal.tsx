@@ -4,15 +4,15 @@ import { TerminalBody } from '@/features/shared/components/TerminalBody';
 import { DimensionRadial } from '../shared/DimensionRadial';
 import { BaseModal } from '../shared/BaseModal';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 
 /**
- * Build a minimal draft JSON from a DesignAnalysisResult to pass to testN8nDraft.
+ * Build a minimal draft JSON from a AgentIR to pass to testN8nDraft.
  * The Rust side only requires `system_prompt` — everything else is optional.
  */
-function buildDraftJson(designResult: DesignAnalysisResult, name: string): string {
+function buildDraftJson(designResult: AgentIR, name: string): string {
   const sp = designResult.structured_prompt;
   const sections = [
     sp.identity,
@@ -66,7 +66,7 @@ export function TemplatePreviewModal({
   onRetryPreview,
 }: TemplatePreviewModalProps) {
   const designResult = useMemo(
-    () => review ? parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null) : null,
+    () => review ? parseJsonSafe<AgentIR | null>(review.design_result, null) : null,
     [review],
   );
 

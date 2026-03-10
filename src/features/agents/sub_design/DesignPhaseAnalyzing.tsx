@@ -2,12 +2,12 @@ import { Pencil, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TransformProgress } from '@/features/shared/components/TransformProgress';
 import { CompilationStepper } from './CompilationStepper';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 
 interface DesignPhaseAnalyzingProps {
   instruction: string;
   outputLines: string[];
-  savedDesignResult: DesignAnalysisResult | null;
+  savedDesignResult: AgentIR | null;
   onCancel: () => void;
 }
 

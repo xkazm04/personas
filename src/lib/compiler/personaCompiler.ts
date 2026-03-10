@@ -12,7 +12,7 @@
  */
 
 import type { CompilationStage } from '@/lib/bindings/CompilationStage';
-import type { DesignPhase, DesignAnalysisResult, DesignQuestion } from '@/lib/types/designTypes';
+import type { DesignPhase, AgentIR, DesignQuestion } from '@/lib/types/designTypes';
 
 // Re-export the binding type
 export type { CompilationStage };
@@ -108,7 +108,7 @@ export type CompilationMode = 'initial' | 'recompile';
  */
 export function getCompilationMode(
   phase: DesignPhase,
-  existingResult: DesignAnalysisResult | null,
+  existingResult: AgentIR | null,
 ): CompilationMode {
   if (phase === 'refining' || (existingResult && phase !== 'idle')) {
     return 'recompile';
@@ -120,7 +120,7 @@ export function getCompilationMode(
 
 /** The outcome of a compilation pass. */
 export type CompilationOutcome =
-  | { kind: 'success'; result: DesignAnalysisResult }
+  | { kind: 'success'; result: AgentIR }
   | { kind: 'question'; question: DesignQuestion }
   | { kind: 'error'; error: string };
 
@@ -130,7 +130,7 @@ export type CompilationOutcome =
  */
 export function deriveOutcome(
   phase: DesignPhase,
-  result: DesignAnalysisResult | null,
+  result: AgentIR | null,
   question: DesignQuestion | null,
   error: string | null,
 ): CompilationOutcome | null {

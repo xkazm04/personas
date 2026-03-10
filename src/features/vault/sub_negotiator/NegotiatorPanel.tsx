@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bot, X, Zap } from 'lucide-react';
-import { useCredentialNegotiator } from '@/hooks/design/useCredentialNegotiator';
+import { useCredentialNegotiator, type NegotiatorContext } from '@/hooks/design/useCredentialNegotiator';
 import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
 import { MOTION_TIMING } from '@/features/templates/animationPresets';
 import { NegotiatorPlanningPhase } from './NegotiatorPlanningPhase';
@@ -13,10 +14,19 @@ interface NegotiatorPanelProps {
   onComplete: (capturedValues: Record<string, string>) => void;
   /** Called when the user closes/cancels the negotiator */
   onClose: () => void;
+  /** Optional pre-filled values from autoCred or existing credentials */
+  prefilledValues?: Record<string, string>;
 }
 
-export function NegotiatorPanel({ designResult, onComplete, onClose }: NegotiatorPanelProps) {
-  const negotiator = useCredentialNegotiator();
+export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledValues }: NegotiatorPanelProps) {
+  // Derive step graph context from the connector's capabilities
+  const negotiatorContext = useMemo<NegotiatorContext>(() => ({
+    prefilledValues: prefilledValues ?? {},
+    hasOAuth: !!designResult.connector.oauth_type,
+    hasHealthcheck: !!designResult.connector.healthcheck_config,
+  }), [prefilledValues, designResult.connector.oauth_type, designResult.connector.healthcheck_config]);
+
+  const negotiator = useCredentialNegotiator(negotiatorContext);
 
   const handleStart = () => {
     const fieldKeys = designResult.connector.fields.map((f) => f.key);
@@ -120,6 +130,8 @@ export function NegotiatorPanel({ designResult, onComplete, onClose }: Negotiato
                 capturedValues={negotiator.capturedValues}
                 stepHelp={negotiator.stepHelp}
                 isLoadingHelp={negotiator.isLoadingHelp}
+                visibleSteps={negotiator.visibleSteps}
+                skippedSteps={negotiator.skippedSteps}
                 onCompleteStep={negotiator.completeStep}
                 onSelectStep={negotiator.goToStep}
                 onCaptureValue={negotiator.captureValue}

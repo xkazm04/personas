@@ -338,6 +338,29 @@ export function CreateStep() {
         )}
       </div>
 
+      {/* Safety critical override toggle */}
+      {(safetyScan?.critical.length ?? 0) > 0 && (
+        <div className="flex items-start gap-3 p-3 rounded-xl bg-red-500/8 border border-red-500/15">
+          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={state.safetyCriticalOverride}
+              onChange={(e) => wizard.setSafetyCriticalOverride(e.target.checked)}
+              disabled={confirming}
+              className="mt-0.5 rounded border-red-500/30 text-red-500 focus:ring-red-500/30"
+            />
+            <div>
+              <span className="text-sm font-medium text-red-300/90">
+                I acknowledge {safetyScan!.critical.length} critical safety finding{safetyScan!.critical.length !== 1 ? 's' : ''} and accept the risk
+              </span>
+              <p className="text-sm text-red-400/50 mt-0.5">
+                {safetyScan!.critical.map((f) => f.title).join(', ')}
+              </p>
+            </div>
+          </label>
+        </div>
+      )}
+
       {/* Edit Details */}
       <div>
         <button

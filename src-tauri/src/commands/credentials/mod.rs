@@ -12,8 +12,11 @@ pub(crate) mod shared;
 pub mod db_schema;
 pub mod api_proxy;
 pub mod mcp_tools;
+#[cfg(feature = "desktop")]
 pub mod desktop;
+#[cfg(feature = "desktop")]
 pub mod desktop_bridges;
 pub mod query_debug;
 pub mod schema_proposal;
 pub mod auth_detect;
+pub mod credential_recipes;

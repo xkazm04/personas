@@ -8,13 +8,14 @@ import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
 import { GitLabConnectionForm } from '@/features/gitlab/components/GitLabConnectionForm';
 import { GitLabAgentList } from '@/features/gitlab/components/GitLabAgentList';
 import { GitLabDeployModal } from '@/features/gitlab/components/GitLabDeployModal';
+import { GitLabPipelineViewer } from '@/features/gitlab/components/GitLabPipelineViewer';
 import type { CiCdTemplate } from '../data/cicdTemplates';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type TabId = 'connection' | 'agents' | 'deploy';
+type TabId = 'connection' | 'agents' | 'deploy' | 'pipelines';
 
 interface TabDef {
   id: TabId;
@@ -26,6 +27,7 @@ const TABS: TabDef[] = [
   { id: 'connection', label: 'Connection', disabledWhenOffline: false },
   { id: 'deploy', label: 'Deploy', disabledWhenOffline: true },
   { id: 'agents', label: 'Agents', disabledWhenOffline: true },
+  { id: 'pipelines', label: 'Pipelines', disabledWhenOffline: true },
 ];
 
 // ---------------------------------------------------------------------------
@@ -152,6 +154,9 @@ export default function GitLabPanel() {
               onFetchAgents={fetchAgents}
               onUndeploy={undeployAgent}
             />
+          )}
+          {activeTab === 'pipelines' && isConnected && (
+            <GitLabPipelineViewer projectId={selectedProjectId} />
           )}
         </div>
       </ContentBody>

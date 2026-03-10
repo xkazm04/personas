@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToggleSet } from '@/hooks/utility/useToggleSet';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';
 import { allIndices, buildChangeSummary } from '../DesignTabHelpers';
@@ -12,8 +12,8 @@ import type { PersonaWithDetails } from '@/lib/types/types';
  * Parsed saved design result with Google connector fixup.
  */
 export function useSavedDesignResult(selectedPersona: PersonaWithDetails | null) {
-  return useMemo<DesignAnalysisResult | null>(() => {
-    const parsed = parseJsonOrDefault<DesignAnalysisResult | null>(selectedPersona?.last_design_result, null);
+  return useMemo<AgentIR | null>(() => {
+    const parsed = parseJsonOrDefault<AgentIR | null>(selectedPersona?.last_design_result, null);
     if (!parsed) return null;
     const GOOGLE_CONNECTORS = new Set(['gmail', 'google_calendar', 'google_drive']);
     parsed.suggested_connectors?.forEach((c) => {
@@ -67,7 +67,7 @@ export function useSelectionState() {
  * Sync selections when result changes.
  */
 export function useResultSelectionSync(
-  result: DesignAnalysisResult | null,
+  result: AgentIR | null,
   setSelectedTools: (v: Set<string>) => void,
   setSelectedTriggerIndices: (v: Set<number>) => void,
   setSelectedChannelIndices: (v: Set<number>) => void,
@@ -90,7 +90,7 @@ export function useResultSelectionSync(
  * Build the change summary for the current state.
  */
 export function useChangeSummary(
-  result: DesignAnalysisResult | null,
+  result: AgentIR | null,
   selectedTools: Set<string>,
   selectedTriggerIndices: Set<number>,
   selectedChannelIndices: Set<number>,

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { IS_MOBILE } from '@/lib/utils/platform';
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -77,7 +78,7 @@ export function BaseModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center ${IS_MOBILE ? 'p-0' : 'p-4'}`}>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -93,7 +94,7 @@ export function BaseModal({
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-        className={`relative w-full ${maxWidthClass} ${panelClassName ?? 'max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden'}`}
+        className={`relative w-full ${IS_MOBILE ? 'max-w-full' : maxWidthClass} ${panelClassName ?? (IS_MOBILE ? 'h-full bg-background overflow-hidden' : 'max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden')}`}
       >
         {children}
       </motion.div>

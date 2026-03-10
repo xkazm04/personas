@@ -32,6 +32,7 @@ import type { ConnectorDefinition } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import * as api from '@/api/tauriApi';
 import type { VaultStatus } from '@/api/tauriApi';
+import { IS_MOBILE, IS_DESKTOP } from '@/lib/utils/platform';
 import { rotateCredentialNow } from '@/api/rotation';
 
 export function CredentialManager() {
@@ -473,7 +474,7 @@ export function CredentialManager() {
           />
         )}
 
-        {viewState.view === 'catalog-auto-setup' && (
+        {viewState.view === 'catalog-auto-setup' && IS_DESKTOP && (
           <CatalogAutoSetup
             connector={viewState.connector}
             onComplete={() => {
@@ -513,7 +514,7 @@ export function CredentialManager() {
           />
         )}
 
-        {viewState.view === 'add-desktop' && (
+        {viewState.view === 'add-desktop' && IS_DESKTOP && (
           <DesktopDiscoveryPanel
             onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
             onCredentialCreated={() => {
@@ -531,7 +532,7 @@ export function CredentialManager() {
           }} />
         )}
 
-        {viewState.view === 'foraging' && (
+        {viewState.view === 'foraging' && IS_DESKTOP && (
           <ForagingPanel
             onComplete={() => {
               void fetchCredentials();

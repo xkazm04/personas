@@ -1,5 +1,5 @@
-import type { N8nPersonaDraft } from '@/api/n8nTransform';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { N8nPersonaDraft, N8nToolDraft, N8nTriggerDraft, N8nConnectorRef } from '@/api/n8nTransform';
+import type { AgentIR } from '@/lib/types/designTypes';
 import type { WorkflowPlatform } from '@/lib/personas/workflowDetector';
 import {
   toEditableStructuredPrompt,
@@ -18,6 +18,44 @@ export const asNullableString = (value: unknown): string | null => {
 };
 export const asNullableNumber = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
+
+// ── Array element validators ────────────────────────────────────────
+
+function isValidTool(item: unknown): item is N8nToolDraft {
+  if (!item || typeof item !== 'object') return false;
+  const r = item as Record<string, unknown>;
+  return typeof r.name === 'string' && typeof r.category === 'string' && typeof r.description === 'string';
+}
+
+function isValidTrigger(item: unknown): item is N8nTriggerDraft {
+  if (!item || typeof item !== 'object') return false;
+  const r = item as Record<string, unknown>;
+  return typeof r.trigger_type === 'string';
+}
+
+function isValidConnector(item: unknown): item is N8nConnectorRef {
+  if (!item || typeof item !== 'object') return false;
+  const r = item as Record<string, unknown>;
+  return typeof r.name === 'string' && typeof r.n8n_credential_type === 'string';
+}
+
+function filterValidTools(value: unknown): N8nToolDraft[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const valid = value.filter(isValidTool);
+  return valid.length > 0 ? valid : undefined;
+}
+
+function filterValidTriggers(value: unknown): N8nTriggerDraft[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const valid = value.filter(isValidTrigger);
+  return valid.length > 0 ? valid : undefined;
+}
+
+function filterValidConnectors(value: unknown): N8nConnectorRef[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const valid = value.filter(isValidConnector);
+  return valid.length > 0 ? valid : undefined;
+}
 
 export function normalizeDraftFromUnknown(value: unknown): N8nPersonaDraft | null {
   if (!value || typeof value !== 'object') return null;
@@ -46,10 +84,10 @@ export function normalizeDraftFromUnknown(value: unknown): N8nPersonaDraft | nul
         ? record.max_turns
         : null,
     design_context: asNullableString(record.design_context),
-    // Pass through entity fields from Rust N8nPersonaOutput
-    tools: Array.isArray(record.tools) ? record.tools as N8nPersonaDraft['tools'] : undefined,
-    triggers: Array.isArray(record.triggers) ? record.triggers as N8nPersonaDraft['triggers'] : undefined,
-    required_connectors: Array.isArray(record.required_connectors) ? record.required_connectors as N8nPersonaDraft['required_connectors'] : undefined,
+    // Pass through entity fields — validate element shapes to reject corrupt data
+    tools: filterValidTools(record.tools),
+    triggers: filterValidTriggers(record.triggers),
+    required_connectors: filterValidConnectors(record.required_connectors),
   };
 }
 
@@ -73,7 +111,7 @@ export type PersistedTransformContext = {
   transformId: string;
   workflowName: string;
   rawWorkflowJson: string;
-  parsedResult: DesignAnalysisResult;
+  parsedResult: AgentIR;
   /** Detected source platform */
   platform?: WorkflowPlatform;
   /** Timestamp when context was persisted (ms since epoch) */

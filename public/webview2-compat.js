@@ -12,6 +12,13 @@
 // The getter returns the original built-in function for unmodified objects.
 
 (function () {
+  // Only apply this shim on Windows WebView2 — not needed on Android WebView (Chromium)
+  var isAndroid = /Android/i.test(navigator.userAgent);
+  if (isAndroid) {
+    console.log('[webview2-compat] skipped on Android (not needed)');
+    return;
+  }
+
   var dp = Object.defineProperty;
   var proto = Object.prototype;
   var props = ['toString', 'constructor', 'valueOf', 'toLocaleString'];

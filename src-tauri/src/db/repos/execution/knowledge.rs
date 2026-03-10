@@ -20,6 +20,11 @@ fn row_to_knowledge(row: &Row) -> rusqlite::Result<ExecutionKnowledge> {
         last_execution_id: row.get("last_execution_id")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
+        scope_type: row.get::<_, Option<String>>("scope_type")?.unwrap_or_else(|| "persona".to_string()),
+        scope_id: row.get("scope_id")?,
+        annotation_text: row.get("annotation_text")?,
+        annotation_source: row.get("annotation_source")?,
+        is_verified: row.get::<_, Option<bool>>("is_verified")?.unwrap_or(false),
     })
 }
 
@@ -87,6 +92,188 @@ pub fn upsert(
     )?;
 
     Ok(())
+}
+
+/// Upsert a knowledge annotation — cross-persona knowledge scoped to a tool, connector, or global.
+#[allow(clippy::too_many_arguments)]
+pub fn upsert_annotation(
+    pool: &DbPool,
+    persona_id: &str,
+    scope_type: &str,
+    scope_id: Option<&str>,
+    annotation_text: &str,
+    annotation_source: &str,
+    execution_id: Option<&str>,
+) -> Result<ExecutionKnowledge, AppError> {
+    let conn = pool.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+    let id = uuid::Uuid::new_v4().to_string();
+
+    // For annotations, the knowledge_type is based on source
+    let knowledge_type = match annotation_source {
+        "user" => "user_annotation",
+        _ => "agent_annotation",
+    };
+
+    // Pattern key: scope_type:scope_id:hash_of_text for dedup
+    let scope_key = scope_id.unwrap_or("_global");
+    let pattern_key = format!("{}:{}:{}", scope_type, scope_key,
+        &format!("{:x}", md5_simple(annotation_text))[..8]);
+
+    let pattern_data = serde_json::json!({
+        "scope_type": scope_type,
+        "scope_id": scope_id,
+    }).to_string();
+
+    conn.execute(
+        "INSERT INTO execution_knowledge
+            (id, persona_id, knowledge_type, pattern_key, pattern_data,
+             success_count, failure_count, avg_cost_usd, avg_duration_ms,
+             confidence, last_execution_id, created_at, updated_at,
+             scope_type, scope_id, annotation_text, annotation_source, is_verified)
+         VALUES (?1, ?2, ?3, ?4, ?5, 1, 0, 0.0, 0.0, 0.5, ?6, ?7, ?7,
+                 ?8, ?9, ?10, ?11, 0)
+         ON CONFLICT(persona_id, knowledge_type, pattern_key) DO UPDATE SET
+            annotation_text = ?10,
+            annotation_source = ?11,
+            success_count = success_count + 1,
+            confidence = CASE
+                WHEN is_verified = 1 THEN 1.0
+                ELSE MIN(0.9, confidence + 0.1)
+            END,
+            last_execution_id = ?6,
+            updated_at = ?7",
+        params![
+            id, persona_id, knowledge_type, pattern_key, pattern_data,
+            execution_id, now,
+            scope_type, scope_id, annotation_text, annotation_source,
+        ],
+    )?;
+
+    // Return the upserted row
+    let row = conn.query_row(
+        "SELECT * FROM execution_knowledge WHERE persona_id = ?1 AND knowledge_type = ?2 AND pattern_key = ?3",
+        params![persona_id, knowledge_type, pattern_key],
+        row_to_knowledge,
+    )?;
+    Ok(row)
+}
+
+/// Simple hash for deduplication (not cryptographic).
+fn md5_simple(input: &str) -> u64 {
+    let mut hash: u64 = 0xcbf29ce484222325;
+    for byte in input.bytes() {
+        hash ^= byte as u64;
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    hash
+}
+
+/// Mark a knowledge annotation as verified by a user.
+pub fn verify_annotation(pool: &DbPool, knowledge_id: &str) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+    conn.execute(
+        "UPDATE execution_knowledge SET is_verified = 1, confidence = 1.0, updated_at = ?1 WHERE id = ?2",
+        params![now, knowledge_id],
+    )?;
+    Ok(())
+}
+
+/// Dismiss (delete) a knowledge annotation.
+pub fn dismiss_annotation(pool: &DbPool, knowledge_id: &str) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute("DELETE FROM execution_knowledge WHERE id = ?1", params![knowledge_id])?;
+    Ok(())
+}
+
+/// List knowledge by scope (cross-persona). Returns entries from any persona
+/// that match the given scope type and optional scope ID.
+pub fn list_by_scope(
+    pool: &DbPool,
+    scope_type: &str,
+    scope_id: Option<&str>,
+    limit: Option<i64>,
+) -> Result<Vec<ExecutionKnowledge>, AppError> {
+    let conn = pool.get()?;
+    let limit = limit.unwrap_or(50);
+
+    if let Some(sid) = scope_id {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM execution_knowledge
+             WHERE scope_type = ?1 AND scope_id = ?2
+             ORDER BY is_verified DESC, confidence DESC, updated_at DESC
+             LIMIT ?3",
+        )?;
+        let rows = stmt.query_map(params![scope_type, sid, limit], row_to_knowledge)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    } else {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM execution_knowledge
+             WHERE scope_type = ?1
+             ORDER BY is_verified DESC, confidence DESC, updated_at DESC
+             LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![scope_type, limit], row_to_knowledge)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    }
+}
+
+/// Get cross-persona knowledge for prompt injection based on tool/connector assignments.
+/// Returns high-confidence, tool/connector/global scoped knowledge entries.
+pub fn get_shared_injection(
+    pool: &DbPool,
+    tool_names: &[&str],
+    connector_types: &[&str],
+) -> Result<Vec<ExecutionKnowledge>, AppError> {
+    let conn = pool.get()?;
+
+    let mut results = Vec::new();
+
+    // Tool-scoped knowledge
+    for tool_name in tool_names {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM execution_knowledge
+             WHERE scope_type = 'tool' AND scope_id = ?1
+               AND confidence >= 0.5
+               AND (success_count + failure_count) >= 2
+             ORDER BY is_verified DESC, confidence DESC
+             LIMIT 5",
+        )?;
+        let rows = stmt.query_map(params![tool_name], row_to_knowledge)?;
+        results.extend(rows.filter_map(|r| r.ok()));
+    }
+
+    // Connector-scoped knowledge
+    for svc in connector_types {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM execution_knowledge
+             WHERE scope_type = 'connector' AND scope_id = ?1
+               AND confidence >= 0.5
+               AND (success_count + failure_count) >= 2
+             ORDER BY is_verified DESC, confidence DESC
+             LIMIT 5",
+        )?;
+        let rows = stmt.query_map(params![svc], row_to_knowledge)?;
+        results.extend(rows.filter_map(|r| r.ok()));
+    }
+
+    // Global knowledge
+    let mut stmt = conn.prepare(
+        "SELECT * FROM execution_knowledge
+         WHERE scope_type = 'global'
+           AND confidence >= 0.6
+         ORDER BY is_verified DESC, confidence DESC
+         LIMIT 10",
+    )?;
+    let rows = stmt.query_map([], row_to_knowledge)?;
+    results.extend(rows.filter_map(|r| r.ok()));
+
+    // Dedup by pattern_key
+    let mut seen = std::collections::HashSet::new();
+    results.retain(|e| seen.insert(e.pattern_key.clone()));
+
+    Ok(results)
 }
 
 /// List knowledge entries for a persona, optionally filtered by type.
@@ -163,17 +350,19 @@ pub fn get_summary(
             COUNT(*) as total,
             SUM(CASE WHEN knowledge_type = 'tool_sequence' THEN 1 ELSE 0 END),
             SUM(CASE WHEN knowledge_type = 'failure_pattern' THEN 1 ELSE 0 END),
-            SUM(CASE WHEN knowledge_type = 'model_performance' THEN 1 ELSE 0 END)
+            SUM(CASE WHEN knowledge_type = 'model_performance' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN knowledge_type IN ('agent_annotation','user_annotation') THEN 1 ELSE 0 END)
          FROM execution_knowledge {where_clause}"
     );
 
-    let (total, tool_seq, fail_pat, model_perf) = if let Some(ref pid) = persona_filter {
+    let (total, tool_seq, fail_pat, model_perf, annotation_cnt) = if let Some(ref pid) = persona_filter {
         conn.query_row(&count_sql, params![pid], |row| {
             Ok((
                 row.get::<_, i64>(0)?,
                 row.get::<_, Option<i64>>(1)?.unwrap_or(0),
                 row.get::<_, Option<i64>>(2)?.unwrap_or(0),
                 row.get::<_, Option<i64>>(3)?.unwrap_or(0),
+                row.get::<_, Option<i64>>(4)?.unwrap_or(0),
             ))
         })?
     } else {
@@ -183,6 +372,7 @@ pub fn get_summary(
                 row.get::<_, Option<i64>>(1)?.unwrap_or(0),
                 row.get::<_, Option<i64>>(2)?.unwrap_or(0),
                 row.get::<_, Option<i64>>(3)?.unwrap_or(0),
+                row.get::<_, Option<i64>>(4)?.unwrap_or(0),
             ))
         })?
     };
@@ -224,6 +414,7 @@ pub fn get_summary(
         tool_sequence_count: tool_seq,
         failure_pattern_count: fail_pat,
         model_performance_count: model_perf,
+        annotation_count: annotation_cnt,
         top_patterns,
         recent_learnings,
     })

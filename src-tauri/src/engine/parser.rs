@@ -258,6 +258,7 @@ const PROTOCOL_KEYS: &[(&str, fn(&serde_json::Value) -> Option<ProtocolMessage>)
     ("agent_memory", parse_agent_memory),
     ("manual_review", parse_manual_review),
     ("execution_flow", parse_execution_flow),
+    ("knowledge_annotation", parse_knowledge_annotation),
 ];
 
 fn parse_user_message(msg: &serde_json::Value) -> Option<ProtocolMessage> {
@@ -307,6 +308,14 @@ fn parse_manual_review(msg: &serde_json::Value) -> Option<ProtocolMessage> {
 fn parse_execution_flow(msg: &serde_json::Value) -> Option<ProtocolMessage> {
     let flows = msg.get("flows").cloned().unwrap_or(serde_json::Value::Null);
     Some(ProtocolMessage::ExecutionFlow { flows })
+}
+
+fn parse_knowledge_annotation(msg: &serde_json::Value) -> Option<ProtocolMessage> {
+    Some(ProtocolMessage::KnowledgeAnnotation {
+        scope: str_field_or(msg, "scope", "persona"),
+        note: str_field_or(msg, "note", ""),
+        confidence: msg.get("confidence").and_then(|v| v.as_f64()),
+    })
 }
 
 /// Check if a trimmed line is a known protocol JSON message.

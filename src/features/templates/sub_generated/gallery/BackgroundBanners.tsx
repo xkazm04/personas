@@ -1,5 +1,6 @@
-import { Sparkles, RefreshCw, Play, FileEdit, X } from 'lucide-react';
+import { Sparkles, RefreshCw, Play, FileEdit, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { AdoptionDraft } from '@/stores/slices/uiSlice';
+import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { ADOPT_STEP_META } from '../adoption/useAdoptReducer';
 
 interface BackgroundBannersProps {
@@ -28,12 +29,16 @@ interface BackgroundBannersProps {
 
   /** Background preview state */
   previewIsActive: boolean;
+  /** Current phase of the preview execution */
+  previewPhase: CliRunPhase;
   /** Whether the preview modal is currently open */
   previewModalOpen: boolean;
   /** Name of the template being previewed */
   previewReviewName: string | null;
   /** Open the preview modal for the active preview */
   onResumePreview: () => void;
+  /** Dismiss the completed/failed preview banner */
+  onDismissPreview: () => void;
 }
 
 export function BackgroundBanners({
@@ -48,9 +53,11 @@ export function BackgroundBanners({
   rebuildReviewName,
   onResumeRebuild,
   previewIsActive,
+  previewPhase,
   previewModalOpen,
   previewReviewName,
   onResumePreview,
+  onDismissPreview,
 }: BackgroundBannersProps) {
   // Don't show draft banner if there's an active adoption or the modal is open
   const showDraftBanner = adoptionDraft && !templateAdoptActive && !adoptModalOpen;
@@ -128,26 +135,89 @@ export function BackgroundBanners({
         </div>
       )}
 
-      {/* Background preview banner */}
-      {previewIsActive && !previewModalOpen && (
-        <div className="mx-4 mt-3 mb-0">
-          <button
-            onClick={onResumePreview}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-cyan-500/8 border border-cyan-500/15 hover:bg-cyan-500/12 transition-colors text-left"
-          >
-            <div className="w-7 h-7 rounded-lg bg-cyan-500/15 flex items-center justify-center flex-shrink-0">
-              <Play className="w-4 h-4 text-cyan-400 animate-pulse" />
+      {/* Background preview banner — shows while running, completed, or failed */}
+      {previewIsActive && !previewModalOpen && (() => {
+        const isCompleted = previewPhase === 'completed';
+        const isFailed = previewPhase === 'failed';
+        const isDone = isCompleted || isFailed;
+
+        const bgClass = isFailed
+          ? 'bg-red-500/8 border-red-500/15 hover:bg-red-500/12'
+          : isCompleted
+            ? 'bg-emerald-500/8 border-emerald-500/15 hover:bg-emerald-500/12'
+            : 'bg-cyan-500/8 border-cyan-500/15 hover:bg-cyan-500/12';
+
+        const iconBgClass = isFailed
+          ? 'bg-red-500/15'
+          : isCompleted
+            ? 'bg-emerald-500/15'
+            : 'bg-cyan-500/15';
+
+        const textClass = isFailed
+          ? 'text-red-300'
+          : isCompleted
+            ? 'text-emerald-300'
+            : 'text-cyan-300';
+
+        const Icon = isFailed
+          ? AlertTriangle
+          : isCompleted
+            ? CheckCircle2
+            : Play;
+
+        const statusText = isFailed
+          ? 'Failed'
+          : isCompleted
+            ? 'Completed'
+            : 'Testing';
+
+        const subtitleText = isDone
+          ? 'Click to view result'
+          : 'Click to view output';
+
+        const iconColor = isFailed
+          ? 'text-red-400'
+          : isCompleted
+            ? 'text-emerald-400'
+            : 'text-cyan-400';
+
+        const dotColor = isFailed
+          ? 'bg-red-400'
+          : isCompleted
+            ? 'bg-emerald-400'
+            : 'bg-cyan-400';
+
+        return (
+          <div className="mx-4 mt-3 mb-0">
+            <div className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border ${bgClass}`}>
+              <button
+                onClick={onResumePreview}
+                className="flex-1 flex items-center gap-3 hover:opacity-80 transition-opacity text-left min-w-0"
+              >
+                <div className={`w-7 h-7 rounded-lg ${iconBgClass} flex items-center justify-center flex-shrink-0`}>
+                  <Icon className={`w-4 h-4 ${iconColor} ${!isDone ? 'animate-pulse' : ''}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className={`text-sm font-medium ${textClass} block truncate`}>
+                    {statusText}: {previewReviewName ?? 'template'}
+                  </span>
+                  <span className="text-sm text-muted-foreground/80">{subtitleText}</span>
+                </div>
+                <div className={`w-2 h-2 rounded-full ${dotColor} ${!isDone ? 'animate-pulse' : ''} flex-shrink-0`} />
+              </button>
+              {isDone && (
+                <button
+                  onClick={onDismissPreview}
+                  className="p-1 rounded-lg hover:bg-secondary/40 text-muted-foreground/50 hover:text-foreground/70 transition-colors flex-shrink-0"
+                  title="Dismiss"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium text-cyan-300 block">
-                Testing: {previewReviewName ?? 'template'}
-              </span>
-              <span className="text-sm text-muted-foreground/80">Click to view output</span>
-            </div>
-            <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
-          </button>
-        </div>
-      )}
+          </div>
+        );
+      })()}
     </>
   );
 }

@@ -13,14 +13,12 @@ import {
 } from 'lucide-react';
 import { PromptTabsPreview } from '@/features/shared/components/PromptTabsPreview';
 import { DesignConnectorGrid } from '@/features/shared/components/DesignConnectorGrid';
-import { DimensionRadial } from '../shared/DimensionRadial';
 import { BaseModal } from '../shared/BaseModal';
 import { TabTransition } from '../shared/TabTransition';
-import { AdoptionPrerequisitesPanel } from './AdoptionPrerequisitesPanel';
+import { PersonaMatrix } from './PersonaMatrix';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { DesignAnalysisResult, SuggestedConnector } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
-import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 
 type DetailTab = 'overview' | 'prompt' | 'connectors' | 'json';
@@ -28,7 +26,7 @@ type DetailTab = 'overview' | 'prompt' | 'connectors' | 'json';
 const TAB_CONFIG: { key: DetailTab; label: string }[] = [
   { key: 'overview', label: 'Overview' },
   { key: 'prompt', label: 'Prompt' },
-  { key: 'connectors', label: 'Connectors' },
+  { key: 'connectors', label: 'Features' },
   { key: 'json', label: 'Raw JSON' },
 ];
 
@@ -40,13 +38,6 @@ interface TemplateDetailModalProps {
   onDelete: (id: string) => void;
   onViewFlows: (review: PersonaDesignReview) => void;
   onTryIt: (review: PersonaDesignReview) => void;
-  credentials?: CredentialMetadata[];
-  connectorDefinitions?: ConnectorDefinition[];
-  onAddCredential?: (
-    connectorName: string,
-    suggestedConnector: SuggestedConnector | null,
-    connectorDefinition: ConnectorDefinition | null,
-  ) => void;
 }
 
 export function TemplateDetailModal({
@@ -57,15 +48,12 @@ export function TemplateDetailModal({
   onDelete,
   onViewFlows,
   onTryIt,
-  credentials = [],
-  connectorDefinitions = [],
-  onAddCredential,
 }: TemplateDetailModalProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
 
   if (!isOpen || !review) return null;
 
-  const designResult = parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null);
+  const designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
   const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
   const adjustment = parseJsonSafe<{
     suggestion: string;
@@ -80,8 +68,6 @@ export function TemplateDetailModal({
   }[review.status] || { Icon: Clock, color: 'text-muted-foreground bg-secondary/30 border-primary/10', label: review.status };
 
   const StatusIcon = statusBadge.Icon;
-
-  const hasPrerequisites = designResult?.suggested_connectors && designResult.suggested_connectors.length > 0;
 
   return (
     <BaseModal
@@ -105,7 +91,6 @@ export function TemplateDetailModal({
                 <StatusIcon className="w-3 h-3" />
                 {statusBadge.label}
               </span>
-              <DimensionRadial designResult={designResult} />
               {review.adoption_count > 0 && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-full bg-emerald-500/10 border border-emerald-500/15 text-emerald-400/70">
                   <Download className="w-3 h-3" />
@@ -161,7 +146,10 @@ export function TemplateDetailModal({
               <PromptTabsPreview designResult={designResult} />
             )}
             {activeTab === 'connectors' && designResult && (
-              <DesignConnectorGrid designResult={designResult} />
+              <div className="space-y-8">
+                <PersonaMatrix designResult={designResult} flows={flows} />
+                <DesignConnectorGrid designResult={designResult} hideConnectorsTools />
+              </div>
             )}
             {activeTab === 'json' && (
               <pre className="p-4 bg-secondary/30 rounded-xl border border-primary/10 text-sm text-muted-foreground/90 overflow-x-auto whitespace-pre-wrap">
@@ -176,79 +164,41 @@ export function TemplateDetailModal({
           </TabTransition>
         </div>
 
-        {/* Footer — Prerequisites panel or simple actions */}
+        {/* Footer — action buttons */}
         <div className="px-6 py-4 border-t border-primary/10 flex-shrink-0">
-          {hasPrerequisites && onAddCredential ? (
-            <div className="flex gap-6">
-              <div className="flex-1 min-w-0">
-                <AdoptionPrerequisitesPanel
-                  designResult={designResult}
-                  credentials={credentials}
-                  connectorDefinitions={connectorDefinitions}
-                  onAddCredential={onAddCredential}
-                  onAdopt={() => onAdopt(review)}
-                />
-              </div>
-              <div className="flex flex-col items-end gap-2 flex-shrink-0 pt-7">
-                {designResult && (
-                  <button
-                    onClick={() => {
-                      onClose();
-                      onTryIt(review);
-                    }}
-                    className="px-4 py-2 text-sm rounded-xl bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-2"
-                  >
-                    <Play className="w-4 h-4" />
-                    Try It
-                  </button>
-                )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onAdopt(review)}
+                className="px-4 py-2 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Adopt as Persona
+              </button>
+              {designResult && (
                 <button
                   onClick={() => {
-                    onDelete(review.id);
                     onClose();
+                    onTryIt(review);
                   }}
-                  className="px-3 py-2 text-sm rounded-xl text-red-400/70 hover:bg-red-500/10 transition-colors flex items-center gap-1.5"
+                  className="px-4 py-2 text-sm rounded-xl bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-2"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Delete
+                  <Play className="w-4 h-4" />
+                  Try It
                 </button>
-              </div>
+              )}
             </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onAdopt(review)}
-                  className="px-4 py-2 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Adopt as Persona
-                </button>
-                {designResult && (
-                  <button
-                    onClick={() => {
-                      onClose();
-                      onTryIt(review);
-                    }}
-                    className="px-4 py-2 text-sm rounded-xl bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-2"
-                  >
-                    <Play className="w-4 h-4" />
-                    Try It
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  onDelete(review.id);
-                  onClose();
-                }}
-                className="px-3 py-2 text-sm rounded-xl text-red-400/70 hover:bg-red-500/10 transition-colors flex items-center gap-1.5"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Delete
-              </button>
-            </div>
-          )}
+            <button
+              onClick={() => {
+                onDelete(review.id);
+                onClose();
+              }}
+              className="px-3 py-2 text-sm rounded-xl text-red-400/70 hover:bg-red-500/10 transition-colors flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </button>
+          </div>
         </div>
     </BaseModal>
   );
@@ -261,7 +211,7 @@ function OverviewTab({
   review,
   onViewFlows,
 }: {
-  designResult: DesignAnalysisResult | null;
+  designResult: AgentIR | null;
   flows: UseCaseFlow[];
   adjustment: { suggestion: string; reason: string; appliedFixes: string[] } | null;
   review: PersonaDesignReview;

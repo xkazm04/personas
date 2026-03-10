@@ -1,5 +1,6 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Loader2, RefreshCw, BarChart3, Bot, Inbox } from 'lucide-react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { Loader2, RefreshCw, BarChart3, Bot } from 'lucide-react';
+import EmptyState from '@/features/shared/components/EmptyState';
 import { useVirtualList } from '@/hooks/utility/useVirtualList';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
@@ -11,6 +12,10 @@ import { ExecutionDetail } from '@/features/agents/sub_executions';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import type { GlobalExecution } from '@/lib/types/types';
 import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import { IS_MOBILE } from '@/lib/utils/platform';
+import { useFilteredCollection } from '@/hooks/utility/useFilteredCollection';
+import ContentLoader from '@/features/shared/components/ContentLoader';
+import { usePolling, POLLING_CONFIG } from '@/hooks/utility/usePolling';
 
 type FilterStatus = 'all' | 'running' | 'completed' | 'failed';
 
@@ -33,10 +38,9 @@ export default function GlobalExecutionList() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
 
-  const personaFiltered = useMemo(() => {
-    if (!selectedPersonaId) return globalExecutions;
-    return globalExecutions.filter((e) => e.persona_id === selectedPersonaId);
-  }, [globalExecutions, selectedPersonaId]);
+  const { filtered: personaFiltered } = useFilteredCollection(globalExecutions, {
+    exact: [{ field: 'persona_id', value: selectedPersonaId || null }],
+  });
 
   const statusCounts = useMemo(() => {
     const counts: Record<FilterStatus, number> = { all: personaFiltered.length, running: 0, completed: 0, failed: 0 };
@@ -48,12 +52,13 @@ export default function GlobalExecutionList() {
     return counts;
   }, [personaFiltered]);
 
-  const filteredExecutions = useMemo(() => {
-    if (filter === 'all') return personaFiltered;
-    return personaFiltered.filter((e) =>
-      filter === 'running' ? e.status === 'running' || e.status === 'pending' : e.status === filter,
-    );
-  }, [personaFiltered, filter]);
+  const statusPredicate = useCallback((e: GlobalExecution) =>
+    filter === 'running' ? e.status === 'running' || e.status === 'pending' : e.status === filter,
+  [filter]);
+
+  const { filtered: filteredExecutions } = useFilteredCollection(personaFiltered, {
+    custom: [filter !== 'all' ? statusPredicate : null],
+  });
 
   useEffect(() => {
     let active = true;
@@ -72,14 +77,16 @@ export default function GlobalExecutionList() {
     [globalExecutions],
   );
 
-  useEffect(() => {
-    if (!hasRunning) return;
-    const id = setInterval(() => {
-      const statusParam = filter === 'all' ? undefined : filter;
-      fetchGlobalExecutions(true, statusParam);
-    }, 5000);
-    return () => clearInterval(id);
-  }, [hasRunning, filter, fetchGlobalExecutions]);
+  const pollFetch = useCallback(() => {
+    const statusParam = filter === 'all' ? undefined : filter;
+    return fetchGlobalExecutions(true, statusParam);
+  }, [filter, fetchGlobalExecutions]);
+
+  usePolling(pollFetch, {
+    interval: POLLING_CONFIG.runningExecutions.interval,
+    enabled: hasRunning,
+    maxBackoff: POLLING_CONFIG.runningExecutions.maxBackoff,
+  });
 
   const handleLoadMore = () => {
     const statusParam = filter === 'all' ? undefined : filter;
@@ -151,52 +158,39 @@ export default function GlobalExecutionList() {
 
           <ContentBody flex>
             {isLoading ? (
-              <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-                <div className="text-center">
-                  <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
-                    <Loader2 className="w-5 h-5 text-primary/70 animate-spin" />
-                  </div>
-                  <p className="text-sm text-muted-foreground/90">Loading executions...</p>
-                </div>
-              </div>
+              <ContentLoader variant="panel" hint="executions" />
             ) : filteredExecutions.length === 0 ? (
               <div className="flex-1 flex items-center justify-center p-4 md:p-6">
                 {personas.length === 0 ? (
-                  <div className="text-center">
-                    <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
-                      <Bot className="w-5 h-5 text-muted-foreground/60" />
-                    </div>
-                    <p className="text-sm text-muted-foreground/90">No agents created yet</p>
-                    <p className="text-sm text-muted-foreground/60 mt-1">Create your first agent to see execution activity here</p>
-                  </div>
+                  <EmptyState
+                    icon={Bot}
+                    title="No agents created yet"
+                    subtitle="Create your first agent to see execution activity here."
+                  />
                 ) : (
-                  <div className="text-center">
-                    <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
-                      <Inbox className="w-5 h-5 text-muted-foreground/60" />
-                    </div>
-                    <p className="text-sm text-muted-foreground/90">No executions yet</p>
-                    <p className="text-sm text-muted-foreground/60 mt-1">Run an agent to see execution activity here</p>
-                  </div>
+                  <EmptyState variant="dashboard-no-executions" />
                 )}
               </div>
             ) : (
               <div ref={parentRef} className="flex-1 overflow-y-auto">
-                <table className="w-full border-collapse">
-                  <thead className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
-                    <tr className="border-b border-primary/10">
-                      <th className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Persona</th>
-                      <th className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Status</th>
-                      <th className="text-right text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Duration</th>
-                      <th className="text-right text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Started</th>
-                      <th className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">ID</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr style={{ height: `${virtualizer.getTotalSize()}px` }} aria-hidden><td colSpan={5} className="p-0" /></tr>
-                  </tbody>
-                </table>
+                {!IS_MOBILE && (
+                  <table className="w-full border-collapse">
+                    <thead className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
+                      <tr className="border-b border-primary/10">
+                        <th className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Persona</th>
+                        <th className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Status</th>
+                        <th className="text-right text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Duration</th>
+                        <th className="text-right text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Started</th>
+                        <th className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">ID</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{ height: `${virtualizer.getTotalSize()}px` }} aria-hidden><td colSpan={5} className="p-0" /></tr>
+                    </tbody>
+                  </table>
+                )}
 
-                <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative', marginTop: `-${virtualizer.getTotalSize()}px` }}>
+                <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative', marginTop: IS_MOBILE ? undefined : `-${virtualizer.getTotalSize()}px` }}>
                   {virtualizer.getVirtualItems().map((virtualRow) => {
                     const exec = filteredExecutions[virtualRow.index]!;
                     const status = getStatusEntry(exec.status);
@@ -205,7 +199,31 @@ export default function GlobalExecutionList() {
                       : exec.status === 'completed' ? 'hover:border-l-emerald-400'
                       : exec.status === 'failed' ? 'hover:border-l-red-400'
                       : 'hover:border-l-amber-400';
-                    return (
+                    return IS_MOBILE ? (
+                      <div
+                        key={exec.id} role="row" tabIndex={0}
+                        onClick={() => setSelectedExec(exec)}
+                        style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px` }}
+                        className="px-3 py-2 border-b border-primary/[0.06] active:bg-white/[0.05]"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: (exec.persona_color || '#6366f1') + '15' }}>
+                              {exec.persona_icon || '?'}
+                            </div>
+                            <span className="text-sm font-medium text-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
+                          </div>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium flex-shrink-0 ${badgeClass(status)}`}>
+                            {status.pulse && (<span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" /></span>)}
+                            {status.label}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground/70">
+                          <span className="font-mono">{formatDuration(exec.duration_ms)}</span>
+                          <span>{formatRelativeTime(exec.started_at || exec.created_at)}</span>
+                        </div>
+                      </div>
+                    ) : (
                       <div
                         key={exec.id} role="row" tabIndex={0}
                         onClick={() => setSelectedExec(exec)}

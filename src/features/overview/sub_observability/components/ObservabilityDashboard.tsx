@@ -1,4 +1,5 @@
-import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, AlertTriangle } from 'lucide-react';
+import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, AlertTriangle, Bell } from 'lucide-react';
+import { useState } from 'react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
@@ -7,10 +8,15 @@ import { SummaryCard } from './SpendOverview';
 import IpcPerformancePanel from './IpcPerformancePanel';
 import HealingIssueModal from './HealingIssueModal';
 import { HealingIssuesPanel } from './HealingIssuesPanel';
+import { AlertRulesPanel } from './AlertRulesPanel';
+import { AlertHistoryPanel } from './AlertHistoryPanel';
 import { useObservabilityData } from '../libs/useObservabilityData';
+import { usePersonaStore } from '@/stores/personaStore';
 
 export default function ObservabilityDashboard() {
   const d = useObservabilityData();
+  const [showAlerts, setShowAlerts] = useState(false);
+  const activeAlertCount = usePersonaStore((s) => s.alertHistory.filter(a => !a.dismissed).length);
 
   return (
     <ContentBox>
@@ -21,6 +27,20 @@ export default function ObservabilityDashboard() {
         subtitle="Performance metrics, cost tracking, execution health"
         actions={
           <>
+            <button
+              onClick={() => setShowAlerts(!showAlerts)}
+              className={`relative p-1.5 rounded-lg border transition-colors ${
+                showAlerts ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-primary/15 text-muted-foreground/90 hover:bg-secondary/50'
+              }`}
+              title="Alert rules &amp; history"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              {activeAlertCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center">
+                  {activeAlertCount > 9 ? '9+' : activeAlertCount}
+                </span>
+              )}
+            </button>
             <button
               onClick={d.refreshAll}
               className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
@@ -73,6 +93,18 @@ export default function ObservabilityDashboard() {
         <SummaryCard icon={CheckCircle} label="Success Rate" numericValue={parseFloat(d.successRate)} format={(n) => `${n.toFixed(1)}%`} color="green" trend={d.trends.successRate} sparklineData={d.chartData.slice(-7).map((p) => { const total = p.success + p.failed; return total > 0 ? (p.success / total) * 100 : 0; })} />
         <SummaryCard icon={TrendingUp} label="Active Personas" numericValue={d.summary?.active_personas || 0} format={(n) => String(Math.round(n))} color="purple" trend={d.trends.personas} sparklineData={d.chartData.slice(-7).map((p) => p.active_personas)} />
       </div>
+
+      {/* Alert Rules & History */}
+      {showAlerts && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 rounded-xl border border-primary/10 bg-secondary/10">
+            <AlertRulesPanel />
+          </div>
+          <div className="p-4 rounded-xl border border-primary/10 bg-secondary/10">
+            <AlertHistoryPanel />
+          </div>
+        </div>
+      )}
 
       {/* Charts */}
       <MetricsCharts

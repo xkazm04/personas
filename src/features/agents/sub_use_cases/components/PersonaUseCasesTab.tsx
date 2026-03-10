@@ -7,13 +7,13 @@ import { UseCaseExecutionPanel } from '@/features/shared/components/UseCaseExecu
 import { DefaultModelSection } from './DefaultModelSection';
 import { UseCaseDetailPanel } from './UseCaseDetailPanel';
 import { UseCaseGeneralHistory } from './UseCaseTabHeader';
-import { ToolRunnerPanel } from '@/features/agents/sub_tool_runner/ToolRunnerPanel';
-import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
+import { ToolRunnerPanel } from '@/features/agents/sub_tool_runner';
+import type { PersonaDraft } from '@/features/agents/sub_editor';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { SectionHeader } from '@/features/shared/components/SectionHeader';
 import EmptyState from '@/features/shared/components/EmptyState';
 import { LinkedRecipesSection } from '@/features/recipes/sub_list/components/LinkedRecipesSection';
-import { ModelABCompare } from '@/features/agents/sub_model_config/ModelABCompare';
+import { ModelABCompare } from '@/features/agents/sub_model_config';
 import { useUseCasesTab } from '../libs/useUseCasesTab';
 
 const MemoUseCaseRow = memo(UseCaseRow);
@@ -67,13 +67,7 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
 
       {/* Use Cases Section */}
       {useCases.length === 0 ? (
-        <EmptyState
-          icon={ListChecks}
-          title="No use cases defined for this persona"
-          subtitle="Import from an n8n workflow or use the Design Wizard to generate use cases."
-          iconContainerClassName="bg-violet-500/10 border-violet-500/20"
-          iconColor="text-violet-400/75"
-        />
+        <EmptyState variant="use-cases-empty" />
       ) : (
         <div className="space-y-4">
           <SectionHeader

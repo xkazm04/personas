@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Wrench, ChevronDown, ChevronRight, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
-import { ToolRunnerPanel } from '@/features/agents/sub_tool_runner/ToolRunnerPanel';
+import { ToolRunnerPanel } from '@/features/agents/sub_tool_runner';
 
 interface ToolsSectionProps {
   tools: PersonaToolDefinition[];

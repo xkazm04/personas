@@ -3,7 +3,7 @@ import { Bell } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
-import { useEditorDirty } from '@/features/agents/sub_editor/EditorDocument';
+import { useEditorDirty } from '@/features/agents/sub_editor';
 import { SectionHeader } from '@/features/shared/components/SectionHeader';
 import { ChannelList, channelTypes } from './ChannelList';
 

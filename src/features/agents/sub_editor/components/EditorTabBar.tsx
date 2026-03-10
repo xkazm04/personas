@@ -3,6 +3,7 @@ import { ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Check, Activ
 import { usePersonaStore } from '@/stores/personaStore';
 import type { EditorTab } from '@/lib/types/types';
 import { isTabDirty } from '../libs/editorTabConstants';
+import { IS_MOBILE } from '@/lib/utils/platform';
 
 const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = [
   { id: 'use-cases', label: 'Use Cases', icon: ListChecks },
@@ -54,7 +55,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps
 
   return (
     <div className="border-b border-primary/10 bg-primary/5">
-      <div className="flex overflow-x-auto px-6 gap-1">
+      <div className={`flex overflow-x-auto ${IS_MOBILE ? 'px-1 gap-0' : 'px-6 gap-1'} scrollbar-none`}>
         {tabDefs.map((tab) => {
           const Icon = tab.icon;
           const isActive = editorTab === tab.id;
@@ -63,12 +64,13 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps
             <button
               key={tab.id}
               onClick={() => setEditorTab(tab.id)}
-              className={`relative flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${
+              title={tab.label}
+              className={`relative flex items-center gap-1.5 ${IS_MOBILE ? 'px-2.5 py-3' : 'px-3 py-2.5'} text-sm font-medium transition-colors whitespace-nowrap ${
                 isActive ? 'text-primary' : 'text-muted-foreground/90 hover:text-foreground/95'
               }`}
             >
-              <Icon className="w-4 h-4" />
-              {tab.label}
+              <Icon className="w-4 h-4 flex-shrink-0" />
+              {!IS_MOBILE && tab.label}
               {tab.id === 'connectors' && connectorsMissing > 0
                 ? <TabBadge variant="error" count={connectorsMissing} />
                 : tab.id === 'design' && showDesignNudge && !isActive

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { PipelineTraceEntry } from '@/lib/execution/pipeline';
-import { STAGE_META } from '@/lib/execution/pipeline';
+import type { UnifiedSpan, PipelineStage } from '@/lib/execution/pipeline';
+import { STAGE_META, isPipelineStage } from '@/lib/execution/pipeline';
 import { ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { STAGE_COLORS, type ToolCallStep } from '../libs/waterfallHelpers';
@@ -8,9 +8,8 @@ import { STAGE_COLORS, type ToolCallStep } from '../libs/waterfallHelpers';
 // Stage bar component
 
 interface StageBarProps {
-  entry: PipelineTraceEntry;
+  entry: UnifiedSpan;
   totalDurationMs: number;
-  pipelineStartMs: number;
   isExpanded: boolean;
   onToggle: () => void;
   hasSubSpans: boolean;
@@ -19,16 +18,18 @@ interface StageBarProps {
 export function StageBar({
   entry,
   totalDurationMs,
-  pipelineStartMs,
   isExpanded,
   onToggle,
   hasSubSpans,
 }: StageBarProps) {
   const [hovered, setHovered] = useState(false);
-  const config = STAGE_COLORS[entry.stage];
-  const meta = STAGE_META[entry.stage];
-  const offsetMs = entry.timestamp - pipelineStartMs;
-  const durationMs = entry.durationMs ?? 0;
+
+  if (!isPipelineStage(entry.span_type)) return null;
+  const stage = entry.span_type as PipelineStage;
+  const config = STAGE_COLORS[stage];
+  const meta = STAGE_META[stage];
+  const offsetMs = entry.start_ms;
+  const durationMs = entry.duration_ms ?? 0;
   const leftPct = totalDurationMs > 0 ? (offsetMs / totalDurationMs) * 100 : 0;
   const widthPct = totalDurationMs > 0 ? Math.max((durationMs / totalDurationMs) * 100, 0.5) : 0;
 
@@ -111,21 +112,19 @@ interface SubSpanBarProps {
   step: ToolCallStep;
   parentStartMs: number;
   totalDurationMs: number;
-  pipelineStartMs: number;
 }
 
 export function SubSpanBar({
   step,
   parentStartMs,
   totalDurationMs,
-  pipelineStartMs,
 }: SubSpanBarProps) {
   const [hovered, setHovered] = useState(false);
   const stepOffsetInParent = step.started_at_ms;
   const stepDuration = step.duration_ms ?? 0;
-  const absoluteStart = parentStartMs + stepOffsetInParent;
-  const offsetFromPipeline = absoluteStart - pipelineStartMs;
-  const leftPct = totalDurationMs > 0 ? (offsetFromPipeline / totalDurationMs) * 100 : 0;
+  // parentStartMs is relative to trace start (span.start_ms)
+  const absoluteOffset = parentStartMs + stepOffsetInParent;
+  const leftPct = totalDurationMs > 0 ? (absoluteOffset / totalDurationMs) * 100 : 0;
   const widthPct = totalDurationMs > 0 ? Math.max((stepDuration / totalDurationMs) * 100, 0.3) : 0;
 
   return (

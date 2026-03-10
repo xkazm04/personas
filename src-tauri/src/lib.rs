@@ -8,6 +8,7 @@ mod gitlab;
 pub mod ipc_auth;
 mod logging;
 mod notifications;
+#[cfg(feature = "desktop")]
 mod tray;
 mod utils;
 mod validation;
@@ -77,8 +78,10 @@ pub struct AppState {
     /// Current tier configuration (rate limits, queue depth).
     pub tier_config: Arc<Mutex<engine::tier::TierConfig>>,
     /// Desktop connector capability approvals.
+    #[cfg(feature = "desktop")]
     pub desktop_approvals: Arc<engine::desktop_security::DesktopApprovalStore>,
     /// Local agent runtime for cross-app desktop plan execution.
+    #[cfg(feature = "desktop")]
     pub desktop_runtime: Arc<engine::desktop_runtime::DesktopRuntime>,
 }
 
@@ -101,13 +104,21 @@ pub fn run() {
 
     tracing::info!("Starting Personas Desktop v{}", env!("CARGO_PKG_VERSION"));
 
-    tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {}))
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_window_state::Builder::new().build())
-        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_notification::init());
+
+    // Desktop-only plugins
+    #[cfg(feature = "desktop")]
+    {
+        builder = builder
+            .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {}))
+            .plugin(tauri_plugin_window_state::Builder::new().build())
+            .plugin(tauri_plugin_updater::Builder::new().build());
+    }
+
+    builder
         .plugin(
             tauri::plugin::Builder::<tauri::Wry, ()>::new("ipc-auth")
                 .js_init_script(ipc_auth::IPC_AUTH_SCRIPT.to_string())
@@ -237,17 +248,21 @@ pub fn run() {
                 rate_limiter: Arc::new(engine::rate_limiter::RateLimiter::new()),
                 session_key: Arc::new(engine::crypto::SessionKeyPair::generate()?),
                 tier_config: Arc::new(Mutex::new(engine::tier::TierConfig::default())),
+                #[cfg(feature = "desktop")]
                 desktop_approvals: Arc::new(engine::desktop_security::DesktopApprovalStore::new()),
+                #[cfg(feature = "desktop")]
                 desktop_runtime: Arc::new(engine::desktop_runtime::DesktopRuntime::new()),
             });
             app.manage(state_arc.clone());
 
             // Load desktop connector approvals from database
+            #[cfg(feature = "desktop")]
             if let Err(e) = state_arc.desktop_approvals.load_from_db(&state_arc.db) {
                 tracing::warn!("Failed to load desktop connector approvals: {}", e);
             }
 
             // System tray
+            #[cfg(feature = "desktop")]
             if let Err(e) = tray::setup_tray(app.handle()) {
                 tracing::warn!("Failed to set up system tray: {}", e);
             }
@@ -272,8 +287,8 @@ pub fn run() {
                     }
                 });
 
-                // Register protocol during development
-                #[cfg(debug_assertions)]
+                // Register protocol during development (desktop only)
+                #[cfg(all(debug_assertions, feature = "desktop"))]
                 {
                     let _ = app.deep_link().register_all();
                 }
@@ -295,7 +310,8 @@ pub fn run() {
                     startup_rate_limiter,
                     startup_tier_config,
                 );
-                tracing::info!("Scheduler auto-started (with webhook server on port 9420)");
+                tracing::info!("Scheduler auto-started");
+                #[cfg(feature = "desktop")]
                 tray::refresh_tray(&app_handle);
                 // Keep _webhook_shutdown alive for the lifetime of the app.
                 // When this task ends (app shutdown), the sender is dropped,
@@ -414,6 +430,11 @@ pub fn run() {
             commands::execution::knowledge::list_execution_knowledge,
             commands::execution::knowledge::get_knowledge_injection,
             commands::execution::knowledge::get_knowledge_summary,
+            commands::execution::knowledge::list_scoped_knowledge,
+            commands::execution::knowledge::upsert_knowledge_annotation,
+            commands::execution::knowledge::verify_knowledge_annotation,
+            commands::execution::knowledge::dismiss_knowledge_annotation,
+            commands::execution::knowledge::get_shared_knowledge_injection,
             // Design — Analysis
             commands::design::analysis::start_design_analysis,
             commands::design::analysis::refine_design,
@@ -456,6 +477,10 @@ pub fn run() {
             commands::design::template_adopt::clear_template_generate_snapshot,
             commands::design::template_adopt::cancel_template_generate,
             commands::design::template_adopt::save_custom_template,
+            // Design — Template Feedback
+            commands::design::template_feedback::create_template_feedback,
+            commands::design::template_feedback::list_template_feedback,
+            commands::design::template_feedback::get_template_performance,
             // Design — Team Synthesis
             commands::design::team_synthesis::synthesize_team_from_templates,
             // Design — Platform Definitions
@@ -581,20 +606,37 @@ pub fn run() {
             commands::credentials::mcp_tools::list_mcp_tools,
             commands::credentials::mcp_tools::execute_mcp_tool,
             commands::credentials::mcp_tools::healthcheck_mcp_preview,
-            // Credentials — Desktop Discovery & Security
+            // Credentials — Desktop Discovery & Security (desktop only)
+            #[cfg(feature = "desktop")]
             commands::credentials::desktop::discover_desktop_apps,
+            #[cfg(feature = "desktop")]
             commands::credentials::desktop::import_claude_mcp_servers,
+            #[cfg(feature = "desktop")]
             commands::credentials::desktop::get_desktop_connector_manifest,
+            #[cfg(feature = "desktop")]
             commands::credentials::desktop::get_pending_desktop_capabilities,
+            #[cfg(feature = "desktop")]
             commands::credentials::desktop::approve_desktop_capabilities,
+            #[cfg(feature = "desktop")]
             commands::credentials::desktop::revoke_desktop_approvals,
+            #[cfg(feature = "desktop")]
             commands::credentials::desktop::is_desktop_connector_approved,
+            #[cfg(feature = "desktop")]
             commands::credentials::desktop::register_imported_mcp_server,
-            // Credentials — Desktop Bridges & Runtime
+            // Credentials — Desktop Bridges & Runtime (desktop only)
+            #[cfg(feature = "desktop")]
             commands::credentials::desktop_bridges::execute_desktop_bridge,
+            #[cfg(feature = "desktop")]
             commands::credentials::desktop_bridges::execute_desktop_plan,
+            #[cfg(feature = "desktop")]
             commands::credentials::desktop_bridges::get_desktop_runtime_status,
+            #[cfg(feature = "desktop")]
             commands::credentials::desktop_bridges::get_desktop_plan_result,
+            // Credential Recipes — shared discovery cache
+            commands::credentials::credential_recipes::get_credential_recipe,
+            commands::credentials::credential_recipes::list_credential_recipes,
+            commands::credentials::credential_recipes::upsert_credential_recipe,
+            commands::credentials::credential_recipes::use_credential_recipe,
             // Recipes — CRUD & Linking
             commands::recipes::crud::list_recipes,
             commands::recipes::crud::get_recipe,

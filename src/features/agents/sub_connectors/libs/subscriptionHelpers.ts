@@ -2,6 +2,19 @@ import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import type { DesignUseCase } from '@/lib/types/frontendTypes';
 
+// ── Subscription ownership lifecycle ────────────────────────────────
+//
+// JSON suggestions (design_context.useCases[].event_subscriptions) are
+// *templates* that become DB subscriptions (PersonaEventSubscription) on
+// activation. Once activated, the JSON entry is marked `adopted: true`
+// so it never resurfaces — even if the DB record is later deleted.
+//
+//   JSON suggestion  ──activate──▶  DB record created  +  JSON marked adopted
+//                                   (source of truth)
+//
+// The DB is the sole authority for active/paused subscriptions.
+// JSON entries only serve as initial suggestions.
+
 // ── Lifecycle stages ────────────────────────────────────────────────
 
 export type SubscriptionStage = 'suggested' | 'activated' | 'paused' | 'retired';
@@ -108,6 +121,9 @@ export function mergeSubscriptions(
     const suggestedSubs = uc.event_subscriptions ?? [];
     for (let i = 0; i < suggestedSubs.length; i++) {
       const ss = suggestedSubs[i]!;
+      // Adopted suggestions have already been promoted to DB records and should
+      // never resurface, even if the DB record is later deleted.
+      if (ss.adopted) continue;
       const alreadyActivated = ucSubs.some(
         (s) => s.event_type === ss.event_type && (s.source_filter ?? '') === (ss.source_filter ?? ''),
       );

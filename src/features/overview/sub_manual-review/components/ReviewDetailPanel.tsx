@@ -23,6 +23,14 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isCloud = review.source === 'cloud';
 
+  // Local guard against double-submit — fires immediately before parent state updates
+  const actionFiredRef = useRef(false);
+  const handleAction = useCallback((status: ManualReviewStatus, notes?: string) => {
+    if (actionFiredRef.current || isProcessing) return;
+    actionFiredRef.current = true;
+    onAction(status, notes).finally(() => { actionFiredRef.current = false; });
+  }, [onAction, isProcessing]);
+
   useEffect(() => {
     if (isCloud) { setMessages([]); return; }
     let cancelled = false;
@@ -174,10 +182,10 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground/50">{isCloud ? 'Approve or reject this cloud review' : 'Enter to send · Shift+Enter for new line'}</span>
             <div className="flex items-center gap-2">
-              <button onClick={() => onAction('approved', input.trim() || undefined)} disabled={isProcessing} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <button onClick={() => handleAction('approved', input.trim() || undefined)} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 <Check className="w-3.5 h-3.5" />{isProcessing ? 'Processing...' : 'Approve'}
               </button>
-              <button onClick={() => onAction('rejected', input.trim() || undefined)} disabled={isProcessing} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <button onClick={() => handleAction('rejected', input.trim() || undefined)} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 <X className="w-3.5 h-3.5" />{isProcessing ? 'Processing...' : 'Reject'}
               </button>
             </div>

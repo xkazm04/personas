@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   GitBranch, ArrowLeftRight, Shield,
-  Loader2, RotateCcw,
+  RotateCcw,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { VersionItem, type VersionAction } from './VersionItem';
-import { DiffViewer } from './DiffViewer';
+import { VersionItem, DiffViewer, type VersionAction } from '@/features/agents/sub_lab_shared';
+import ContentLoader from '@/features/shared/components/ContentLoader';
 
 export function VersionsPanel() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
@@ -91,9 +91,7 @@ export function VersionsPanel() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-4 h-4 text-muted-foreground/60 animate-spin" />
-          </div>
+          <ContentLoader variant="panel" hint="versions" />
         ) : promptVersions.length === 0 ? (
           <div className="text-center py-8 space-y-2">
             <GitBranch className="w-8 h-8 text-muted-foreground/20 mx-auto" />

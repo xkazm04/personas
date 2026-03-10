@@ -270,6 +270,10 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         max_turns: row.get("max_turns")?,
         design_context: row.get("design_context")?,
         group_id: row.get("group_id")?,
+        source_review_id: row.get::<_, Option<String>>("source_review_id").unwrap_or(None),
+        trust_level: row.get::<_, Option<String>>("trust_level")?.unwrap_or_else(|| "verified".to_string()),
+        trust_origin: row.get::<_, Option<String>>("trust_origin")?.unwrap_or_else(|| "builtin".to_string()),
+        trust_verified_at: row.get::<_, Option<String>>("trust_verified_at").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })

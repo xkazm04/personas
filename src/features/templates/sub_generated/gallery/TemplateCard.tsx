@@ -24,7 +24,7 @@ import { DimensionRadial } from '../shared/DimensionRadial';
 import { TrustBadge } from '../shared/TrustBadge';
 import { verifyTemplate } from '@/lib/templates/templateVerification';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { DesignAnalysisResult, SuggestedTrigger } from '@/lib/types/designTypes';
+import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
@@ -81,7 +81,7 @@ export function TemplateCard({
   const parsedData = useMemo(() => {
     const connectors = parseJsonSafe<string[]>(review.connectors_used, []);
     const triggerTypes = parseJsonSafe<string[]>(review.trigger_types, []);
-    const designResult = parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null);
+    const designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
     const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
     const displayFlows = flows.length > 0
       ? flows

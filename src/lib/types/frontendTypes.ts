@@ -86,6 +86,9 @@ export interface NotificationChannel {
 }
 
 // ── Credential Templates ───────────────────────────────────────────────
+// Canonical field/event types live in types.ts — re-export to avoid duplicates.
+export type { CredentialTemplateField, CredentialTemplateEvent } from "./types";
+import type { CredentialTemplateField, CredentialTemplateEvent } from "./types";
 
 export interface CredentialTemplate {
   id: string;
@@ -104,26 +107,9 @@ export interface CredentialTemplate {
   events: CredentialTemplateEvent[];
 }
 
-export interface CredentialTemplateField {
-  key: string;
-  label: string;
-  type: "text" | "password" | "url" | "select";
-  placeholder?: string;
-  helpText?: string;
-  required?: boolean;
-  options?: string[];
-}
-
 export interface CredentialTemplateService {
   toolName: string;
   label: string;
-}
-
-export interface CredentialTemplateEvent {
-  id: string;
-  name: string;
-  description: string;
-  config_fields?: CredentialTemplateField[];
 }
 
 // ── Trigger Types ──────────────────────────────────────────────────────
@@ -228,10 +214,24 @@ export interface UseCaseSuggestedTrigger {
   description: string;
 }
 
+/**
+ * JSON-backed event subscription suggestion within a use case's design_context.
+ *
+ * Lifecycle:
+ * 1. **suggested** – Exists in JSON with `enabled: true`, no DB counterpart.
+ * 2. **activated** – User clicks Activate → a DB `PersonaEventSubscription` is created
+ *    and the JSON entry is marked `adopted: true`. The suggestion is then hidden.
+ * 3. **retired** – The DB record can be toggled/deleted independently.
+ *    The JSON entry stays `adopted: true` so it does NOT reappear as a suggestion.
+ *
+ * JSON entries are *suggestions*; DB records are the *source of truth* for active subscriptions.
+ */
 export interface UseCaseEventSubscription {
   event_type: string;
   source_filter?: string;
   enabled: boolean;
+  /** Set to true when this suggestion has been activated as a DB subscription. */
+  adopted?: boolean;
 }
 
 /**

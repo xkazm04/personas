@@ -1,7 +1,12 @@
 /**
  * Builtin connector definitions — committed to the repo so all users get the same catalog.
  * Each JSON file in scripts/connectors/builtin/ defines a single connector.
+ *
+ * BuiltinConnectorDef extends the shared ConnectorDefinitionBase so that builtin
+ * connectors and Rust-backed connectors share the same field/event types.
  */
+
+import type { ConnectorDefinitionBase } from '@/lib/types/types';
 
 import airtable from '../../../scripts/connectors/builtin/airtable.json';
 import asana from '../../../scripts/connectors/builtin/asana.json';
@@ -50,26 +55,12 @@ import googleSheets from '../../../scripts/connectors/builtin/google-sheets.json
 import gmail from '../../../scripts/connectors/builtin/gmail.json';
 import microsoftOutlook from '../../../scripts/connectors/builtin/microsoft-outlook.json';
 
-export interface BuiltinConnectorDef {
-  id: string;
-  name: string;
-  label: string;
-  color: string;
-  icon_url?: string;
-  category: string;
-  fields: Array<{
-    key: string;
-    label: string;
-    type: string;
-    required?: boolean;
-    placeholder?: string;
-    helpText?: string;
-  }>;
-  healthcheck_config: Record<string, unknown> | null;
-  services: unknown[];
-  events: unknown[];
-  metadata: Record<string, unknown> | null;
-}
+/**
+ * Builtin connector shape — extends the shared ConnectorDefinitionBase.
+ * JSON files use plain objects; the `as BuiltinConnectorDef[]` cast below
+ * coerces the loosely-typed JSON imports into the canonical shape.
+ */
+export interface BuiltinConnectorDef extends ConnectorDefinitionBase {}
 
 export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   airtable,

@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, Trash2, Clock, Trophy, AlertCircle, FlaskConical } from 'lucide-react';
-import { statusBadge } from '../libs/labUtils';
+import { statusBadge } from '@/lib/eval/evalFramework';
 import { ArenaResultsView } from './ArenaResultsView';
 import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';

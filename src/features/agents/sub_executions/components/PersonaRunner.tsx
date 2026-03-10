@@ -1,10 +1,11 @@
 import { usePersonaStore } from '@/stores/personaStore';
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizeUrl';
 import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
-import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench } from 'lucide-react';
+import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, ShieldAlert, Monitor, Wifi } from 'lucide-react';
+import { IS_MOBILE } from '@/lib/utils/platform';
 import { formatElapsed, getStatusEntry } from '@/lib/utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
-import { JsonEditor } from '@/features/shared/components/JsonEditor';
+import { KeyValueEditor } from '@/features/shared/components/KeyValueEditor';
 import { ExecutionTerminal } from './ExecutionTerminal';
 import { useRunnerState } from '../libs/useRunnerState';
 import { useRunnerExecution } from '../libs/useRunnerExecution';
@@ -19,6 +20,10 @@ export function PersonaRunner() {
   const cloudConfig = usePersonaStore((s) => s.cloudConfig);
   const queuePosition = usePersonaStore((s) => s.queuePosition);
   const queueDepth = usePersonaStore((s) => s.queueDepth);
+  const budgetStatus = usePersonaStore((s) => s.getBudgetStatus(selectedPersona?.id ?? ''));
+  const isBudgetBlocked = usePersonaStore((s) => s.isBudgetBlocked(selectedPersona?.id ?? ''));
+  const overrideBudgetPause = usePersonaStore((s) => s.overrideBudgetPause);
+  const budgetEntry = usePersonaStore((s) => s.budgetSpendMap.get(selectedPersona?.id ?? ''));
   const personaId = selectedPersona?.id || '';
 
   const state = useRunnerState(personaId);
@@ -61,16 +66,56 @@ export function PersonaRunner() {
           <AnimatePresence>
             {state.showInputEditor && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                <JsonEditor value={state.inputData} onChange={(v) => { state.setInputData(v); if (state.jsonError) state.setJsonError(null); }} placeholder='{"key": "value"}' />
+                <KeyValueEditor value={state.inputData} onChange={(v) => { state.setInputData(v); if (state.jsonError) state.setJsonError(null); }} placeholder='{"key": "value"}' />
                 {state.jsonError && <p className="text-red-400/80 text-sm mt-1">{state.jsonError}</p>}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-        <button data-testid="execute-persona-btn" onClick={isExecuting ? exec.handleStop : exec.handleExecute}
-          className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-medium text-sm transition-all ${isExecuting ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20' : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'}`}>
-          {isExecuting ? (<><Square className="w-5 h-5" />Stop Execution</>) : (<>{cloudConfig?.is_connected ? <Cloud className="w-5 h-5" /> : <Play className="w-5 h-5" />}{cloudConfig?.is_connected ? 'Execute on Cloud' : 'Execute Persona'}</>)}
-        </button>
+        {/* Budget enforcement banner */}
+        {budgetStatus === 'exceeded' && (
+          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-red-500/20 bg-red-500/5">
+            <ShieldAlert className="w-4 h-4 text-red-400 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-red-400/90 font-medium">Monthly budget exceeded</p>
+              {budgetEntry && (
+                <p className="text-sm text-red-400/60">${budgetEntry.spend.toFixed(2)} / ${budgetEntry.maxBudget?.toFixed(2)} ({Math.round(budgetEntry.ratio * 100)}%)</p>
+              )}
+            </div>
+            {isBudgetBlocked && (
+              <button
+                onClick={() => overrideBudgetPause(personaId)}
+                className="flex-shrink-0 px-2.5 py-1 text-sm rounded-lg border border-red-500/20 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              >
+                Override
+              </button>
+            )}
+          </div>
+        )}
+        {budgetStatus === 'warning' && (
+          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-amber-500/15 bg-amber-500/5">
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
+            <p className="text-sm text-amber-400/80">
+              Approaching budget limit
+              {budgetEntry && <span className="text-amber-400/60"> — ${budgetEntry.spend.toFixed(2)} / ${budgetEntry.maxBudget?.toFixed(2)} ({Math.round(budgetEntry.ratio * 100)}%)</span>}
+            </p>
+          </div>
+        )}
+        {IS_MOBILE ? (
+          <button
+            onClick={() => { try { window.open('https://claude.ai/code', '_blank'); } catch {} }}
+            className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-cyan-500/80 to-blue-500/80 hover:from-cyan-500 hover:to-blue-500 text-foreground shadow-lg shadow-cyan-500/20"
+          >
+            <Monitor className="w-5 h-5" />
+            Connect via Remote Control
+          </button>
+        ) : (
+          <button data-testid="execute-persona-btn" onClick={isExecuting ? exec.handleStop : exec.handleExecute}
+            disabled={isBudgetBlocked}
+            className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-medium text-sm transition-all ${isBudgetBlocked ? 'bg-secondary/40 text-muted-foreground/50 cursor-not-allowed' : isExecuting ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20' : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'}`}>
+            {isExecuting ? (<><Square className="w-5 h-5" />Stop Execution</>) : (<>{cloudConfig?.is_connected ? <Cloud className="w-5 h-5" /> : <Play className="w-5 h-5" />}{cloudConfig?.is_connected ? 'Execute on Cloud' : 'Execute Persona'}</>)}
+          </button>
+        )}
       </div>
 
       {/* Progress Indicator */}

@@ -116,20 +116,25 @@ export function useConnectorStatuses() {
     }
   }, [statuses, testConnector]);
 
+  const testAllActiveRef = useRef(false);
+
   const handleTestAll = async () => {
+    if (testAllActiveRef.current) return;
+    testAllActiveRef.current = true;
     setTestingAll(true);
     setConnectorTestActive(true);
     const testable = statuses.filter((s) => s.credentialId);
     try {
-      for (const status of testable) {
-        await testConnector(status.name, status.credentialId!);
-      }
+      await Promise.allSettled(
+        testable.map((status) => testConnector(status.name, status.credentialId!)),
+      );
       const persona = selectedPersona?.name ?? 'Persona';
       sendAppNotification(
         'Connector Tests Complete',
         `${persona}: All ${testable.length} connector tests finished.`,
       ).catch(() => {});
     } finally {
+      testAllActiveRef.current = false;
       setTestingAll(false);
       setConnectorTestActive(false);
     }

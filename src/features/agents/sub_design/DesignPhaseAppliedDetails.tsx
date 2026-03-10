@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Key, Zap, Play, FileText, ChevronRight, type LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 
 interface NextStep {
   id: string;
@@ -14,7 +14,7 @@ interface NextStep {
 }
 
 interface DesignPhaseAppliedDetailsProps {
-  result: DesignAnalysisResult | null;
+  result: AgentIR | null;
   onReset: () => void;
 }
 

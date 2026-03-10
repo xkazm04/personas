@@ -3,14 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/useMotion';
 import { usePersonaStore } from '@/stores/personaStore';
 import Sidebar from '@/features/shared/components/Sidebar';
+import { IS_MOBILE } from '@/lib/utils/platform';
 import HomePage from '@/features/home/components/HomePage';
-import PersonaEditor from '@/features/agents/sub_editor/PersonaEditor';
+import { PersonaEditor } from '@/features/agents/sub_editor';
 import PersonaOverviewPage from '@/features/agents/components/PersonaOverviewPage';
 import CreationWizard from '@/features/agents/components/CreationWizard';
 import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/ErrorBoundary';
 import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
+import ContentLoader from '@/features/shared/components/ContentLoader';
 
 const OverviewPage = lazy(() => import('@/features/overview/components/OverviewPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
@@ -96,12 +98,12 @@ export default function PersonasPage() {
 
     if (sidebarSection === 'home') return <ErrorBoundary name="Home"><HomePage /></ErrorBoundary>;
     if (sidebarSection === 'team') {
-      return <ErrorBoundary name="Teams"><Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}><TeamCanvas /></Suspense></ErrorBoundary>;
+      return <ErrorBoundary name="Teams"><Suspense fallback={<ContentLoader hint={sidebarSection} />}><TeamCanvas /></Suspense></ErrorBoundary>;
     }
     if (sidebarSection === 'cloud') {
       return (
         <ErrorBoundary name="Cloud">
-        <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}>
+        <Suspense fallback={<ContentLoader hint={sidebarSection} />}>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={cloudTab}
@@ -125,12 +127,12 @@ export default function PersonasPage() {
       );
     }
     if (sidebarSection === 'overview') {
-      return <ErrorBoundary name="Overview"><Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}><OverviewPage /></Suspense></ErrorBoundary>;
+      return <ErrorBoundary name="Overview"><Suspense fallback={<ContentLoader hint={sidebarSection} />}><OverviewPage /></Suspense></ErrorBoundary>;
     }
-    if (sidebarSection === 'credentials') return <ErrorBoundary name="Vault"><Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}><CredentialManager /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'events') return <ErrorBoundary name="Triggers"><Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}><EventsPage /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}><DesignReviewsPage /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'settings') return <ErrorBoundary name="Settings"><Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>}><SettingsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'credentials') return <ErrorBoundary name="Vault"><Suspense fallback={<ContentLoader hint={sidebarSection} />}><CredentialManager /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'events') return <ErrorBoundary name="Triggers"><Suspense fallback={<ContentLoader hint={sidebarSection} />}><EventsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={<ContentLoader hint={sidebarSection} />}><DesignReviewsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'settings') return <ErrorBoundary name="Settings"><Suspense fallback={<ContentLoader hint={sidebarSection} />}><SettingsPage /></Suspense></ErrorBoundary>;
     if (selectedPersonaId) return <ErrorBoundary name="Agent Editor"><PersonaEditor /></ErrorBoundary>;
     return <ErrorBoundary name="Agent Overview"><PersonaOverviewPage /></ErrorBoundary>;
   };
@@ -150,7 +152,7 @@ export default function PersonasPage() {
         <Sidebar />
 
         {/* Content area */}
-        <div className="flex-1 flex flex-col overflow-x-auto overflow-y-hidden">
+        <div className={`flex-1 flex flex-col ${IS_MOBILE ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-hidden`}>
           {error && (
             <ErrorBanner
               message={error}

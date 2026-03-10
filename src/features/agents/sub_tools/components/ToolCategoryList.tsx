@@ -1,4 +1,5 @@
 import { Search, Wrench } from 'lucide-react';
+import { IS_MOBILE } from '@/lib/utils/platform';
 import { ToolCard } from './ToolCard';
 import { ConnectorGroup } from './ConnectorGroup';
 import type { ToolDef } from './ToolCardItems';
@@ -55,7 +56,7 @@ export function ToolCategoryList({
   if (viewMode === 'grid') {
     return (
       <>
-        <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+        <div className="grid gap-2" style={{ gridTemplateColumns: IS_MOBILE ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))' }}>
           {filteredTools.map((tool) => {
             const isAssigned = assignedToolIds.includes(tool.id);
             const missingCredential = tool.requires_credential_type && !credentialTypeSet.has(tool.requires_credential_type);

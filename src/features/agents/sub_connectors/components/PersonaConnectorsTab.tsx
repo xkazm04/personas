@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
 import EmptyState from '@/features/shared/components/EmptyState';
@@ -91,7 +90,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
         onSwap={handleSwap}
       />
       {requiredCredTypes.length === 0 && tools.length === 0 && (selectedPersona?.automations ?? []).length === 0 && (
-        <EmptyState icon={Link} title="No tools or connectors configured" subtitle="Add tools to your persona or link connectors to unlock automations." iconContainerClassName="bg-cyan-500/10 border-cyan-500/20" iconColor="text-cyan-400/75" />
+        <EmptyState variant="connectors-empty" />
       )}
       <UseCaseSubscriptionsSection />
       <AutomationSetupModal open={automationModalOpen} personaId={selectedPersona.id} onClose={() => { setAutomationModalOpen(false); setEditingAutomationId(null); }} onComplete={() => { setAutomationModalOpen(false); setEditingAutomationId(null); }} editAutomationId={editingAutomationId} />

@@ -1077,7 +1077,7 @@ pub async fn cancel_auto_cred_browser(
                 .stderr(std::process::Stdio::null())
                 .status();
         }
-        #[cfg(not(windows))]
+        #[cfg(all(not(windows), not(target_os = "android")))]
         {
             unsafe { libc::kill(pid as i32, libc::SIGTERM); }
         }

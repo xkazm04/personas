@@ -1,31 +1,38 @@
 import { useI18nStore, type Language } from '@/stores/i18nStore';
+import { useThemeStore, THEMES } from '@/stores/themeStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Languages, X, Check } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
-const LANGUAGES: {
+// ── Language data ──────────────────────────────────────────────────────────
+
+interface LangEntry {
   code: Language;
   native: string;
   english: string;
-  illustration: string;
-}[] = [
-  { code: 'ar', native: 'العربية', english: 'Arabic', illustration: '/illustrations/languages/lang-ar.png' },
-  { code: 'bn', native: 'বাংলা', english: 'Bengali', illustration: '/illustrations/languages/lang-bn.png' },
-  { code: 'cs', native: 'Čeština', english: 'Czech', illustration: '/illustrations/languages/lang-cs.png' },
-  { code: 'de', native: 'Deutsch', english: 'German', illustration: '/illustrations/languages/lang-de.png' },
-  { code: 'en', native: 'English', english: 'English', illustration: '/illustrations/languages/lang-en.png' },
-  { code: 'es', native: 'Español', english: 'Spanish', illustration: '/illustrations/languages/lang-es.png' },
-  { code: 'fr', native: 'Français', english: 'French', illustration: '/illustrations/languages/lang-fr.png' },
-  { code: 'hi', native: 'हिन्दी', english: 'Hindi', illustration: '/illustrations/languages/lang-hi.png' },
-  { code: 'id', native: 'Bahasa Indonesia', english: 'Indonesian', illustration: '/illustrations/languages/lang-id.png' },
-  { code: 'ja', native: '日本語', english: 'Japanese', illustration: '/illustrations/languages/lang-ja.png' },
-  { code: 'ko', native: '한국어', english: 'Korean', illustration: '/illustrations/languages/lang-ko.png' },
-  { code: 'ru', native: 'Русский', english: 'Russian', illustration: '/illustrations/languages/lang-ru.png' },
-  { code: 'vi', native: 'Tiếng Việt', english: 'Vietnamese', illustration: '/illustrations/languages/lang-vi.png' },
-  { code: 'zh', native: '中文', english: 'Chinese', illustration: '/illustrations/languages/lang-zh.png' },
+  dark: string;
+  light: string;
+}
+
+const LANGUAGES: LangEntry[] = [
+  { code: 'ar', native: 'العربية', english: 'Arabic', dark: '/illustrations/languages/lang-ar.png', light: '/illustrations/languages/lang-ar-light.png' },
+  { code: 'bn', native: 'বাংলা', english: 'Bengali', dark: '/illustrations/languages/lang-bn.png', light: '/illustrations/languages/lang-bn-light.png' },
+  { code: 'cs', native: 'Čeština', english: 'Czech', dark: '/illustrations/languages/lang-cs.png', light: '/illustrations/languages/lang-cs-light.png' },
+  { code: 'de', native: 'Deutsch', english: 'German', dark: '/illustrations/languages/lang-de.png', light: '/illustrations/languages/lang-de-light.png' },
+  { code: 'en', native: 'English', english: 'English', dark: '/illustrations/languages/lang-en.png', light: '/illustrations/languages/lang-en-light.png' },
+  { code: 'es', native: 'Español', english: 'Spanish', dark: '/illustrations/languages/lang-es.png', light: '/illustrations/languages/lang-es-light.png' },
+  { code: 'fr', native: 'Français', english: 'French', dark: '/illustrations/languages/lang-fr.png', light: '/illustrations/languages/lang-fr-light.png' },
+  { code: 'hi', native: 'हिन्दी', english: 'Hindi', dark: '/illustrations/languages/lang-hi.png', light: '/illustrations/languages/lang-hi-light.png' },
+  { code: 'id', native: 'Bahasa Indonesia', english: 'Indonesian', dark: '/illustrations/languages/lang-id.png', light: '/illustrations/languages/lang-id-light.png' },
+  { code: 'ja', native: '日本語', english: 'Japanese', dark: '/illustrations/languages/lang-ja.png', light: '/illustrations/languages/lang-ja-light.png' },
+  { code: 'ko', native: '한국어', english: 'Korean', dark: '/illustrations/languages/lang-ko.png', light: '/illustrations/languages/lang-ko-light.png' },
+  { code: 'ru', native: 'Русский', english: 'Russian', dark: '/illustrations/languages/lang-ru.png', light: '/illustrations/languages/lang-ru-light.png' },
+  { code: 'vi', native: 'Tiếng Việt', english: 'Vietnamese', dark: '/illustrations/languages/lang-vi.png', light: '/illustrations/languages/lang-vi-light.png' },
+  { code: 'zh', native: '中文', english: 'Chinese', dark: '/illustrations/languages/lang-zh.png', light: '/illustrations/languages/lang-zh-light.png' },
 ];
 
-// ── Backdrop ───────────────────────────────────────────────────────────────
+// ── Animation variants ─────────────────────────────────────────────────────
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -52,11 +59,145 @@ const cardVariants = {
   }),
 };
 
-// ── Component ──────────────────────────────────────────────────────────────
+// ── Modal content (portalled) ──────────────────────────────────────────────
+
+function LanguageModal({
+  language,
+  isLight,
+  onPick,
+  onClose,
+}: {
+  language: Language;
+  isLight: boolean;
+  onPick: (code: Language) => void;
+  onClose: () => void;
+}) {
+  // Close on Escape
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      key="lang-modal-backdrop"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-6"
+      variants={backdropVariants}
+      initial="hidden"
+      animate="visible"
+      exit="hidden"
+    >
+      {/* Scrim */}
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <motion.div
+        variants={modalVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        className="relative w-full max-w-[860px] max-h-[calc(100vh-3rem)] overflow-y-auto rounded-2xl border border-border/60 bg-card/95 backdrop-blur-xl shadow-2xl"
+      >
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-border/40 bg-card/90 backdrop-blur-md rounded-t-2xl">
+          <div>
+            <h2 className="typo-heading-lg text-foreground">Choose Language</h2>
+            <p className="typo-caption text-muted-foreground mt-0.5">
+              Select your preferred display language
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-5">
+          {LANGUAGES.map((lang, i) => {
+            const isActive = language === lang.code;
+            const illustration = isLight ? lang.light : lang.dark;
+
+            return (
+              <motion.button
+                key={lang.code}
+                custom={i}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                onClick={() => onPick(lang.code)}
+                className={`group relative overflow-hidden rounded-xl border text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 ${
+                  isActive
+                    ? 'border-primary/60 bg-primary/[0.07] ring-1 ring-primary/30 shadow-[0_0_24px_-4px] shadow-primary/20'
+                    : 'border-border/40 bg-secondary/30 hover:border-border hover:bg-secondary/60'
+                }`}
+              >
+                {/* Illustration background */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <img
+                    src={illustration}
+                    alt=""
+                    loading="lazy"
+                    className={`w-full h-full object-cover transition-opacity duration-300 ${
+                      isActive
+                        ? 'opacity-[0.22]'
+                        : 'opacity-[0.10] group-hover:opacity-[0.18]'
+                    }`}
+                  />
+                  {/* Gradient overlay for text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-card/50 to-transparent" />
+                </div>
+
+                {/* Content */}
+                <div className="relative z-10 flex flex-col justify-end p-4 min-h-[120px]">
+                  {/* Active indicator */}
+                  {isActive && (
+                    <div className="absolute top-3 right-3">
+                      <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
+                        <Check className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Native name */}
+                  <span
+                    className={`text-lg font-bold leading-tight tracking-tight transition-colors ${
+                      isActive ? 'text-primary' : 'text-foreground group-hover:text-foreground'
+                    }`}
+                  >
+                    {lang.native}
+                  </span>
+
+                  {/* English name */}
+                  <span className="typo-caption text-muted-foreground mt-1">
+                    {lang.english}
+                  </span>
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ── Exported component ─────────────────────────────────────────────────────
 
 export default function LanguageSwitcher() {
   const { language, setLanguage } = useI18nStore();
+  const themeId = useThemeStore((s) => s.themeId);
   const [isOpen, setIsOpen] = useState(false);
+
+  const isLight = THEMES.find((t) => t.id === themeId)?.isLight ?? false;
 
   const pick = useCallback(
     (code: Language) => {
@@ -79,114 +220,20 @@ export default function LanguageSwitcher() {
         <span>{current?.native}</span>
       </button>
 
-      {/* Modal */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            key="lang-modal-backdrop"
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6"
-            variants={backdropVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-          >
-            {/* Scrim */}
-            <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-              onClick={() => setIsOpen(false)}
+      {/* Portal modal to document.body — escapes all stacking contexts */}
+      {createPortal(
+        <AnimatePresence>
+          {isOpen && (
+            <LanguageModal
+              language={language}
+              isLight={isLight}
+              onPick={pick}
+              onClose={() => setIsOpen(false)}
             />
-
-            {/* Panel */}
-            <motion.div
-              variants={modalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="relative w-full max-w-[860px] max-h-[calc(100vh-3rem)] overflow-y-auto rounded-2xl border border-border/60 bg-card/95 backdrop-blur-xl shadow-2xl"
-            >
-              {/* Header */}
-              <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-border/40 bg-card/90 backdrop-blur-md rounded-t-2xl">
-                <div>
-                  <h2 className="typo-heading-lg text-foreground">Choose Language</h2>
-                  <p className="typo-caption text-muted-foreground mt-0.5">
-                    Select your preferred display language
-                  </p>
-                </div>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-5">
-                {LANGUAGES.map((lang, i) => {
-                  const isActive = language === lang.code;
-                  return (
-                    <motion.button
-                      key={lang.code}
-                      custom={i}
-                      variants={cardVariants}
-                      initial="hidden"
-                      animate="visible"
-                      onClick={() => pick(lang.code)}
-                      className={`group relative overflow-hidden rounded-xl border text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 ${
-                        isActive
-                          ? 'border-primary/60 bg-primary/[0.07] ring-1 ring-primary/30 shadow-[0_0_24px_-4px] shadow-primary/20'
-                          : 'border-border/40 bg-secondary/30 hover:border-border hover:bg-secondary/60'
-                      }`}
-                    >
-                      {/* Illustration background */}
-                      <div className="absolute inset-0 pointer-events-none">
-                        <img
-                          src={lang.illustration}
-                          alt=""
-                          loading="lazy"
-                          className={`w-full h-full object-cover transition-opacity duration-300 ${
-                            isActive
-                              ? 'opacity-[0.18]'
-                              : 'opacity-[0.08] group-hover:opacity-[0.15]'
-                          }`}
-                        />
-                        {/* Gradient overlay to keep text readable */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-card/50 to-transparent" />
-                      </div>
-
-                      {/* Content */}
-                      <div className="relative z-10 flex flex-col justify-end p-4 min-h-[120px]">
-                        {/* Active indicator */}
-                        {isActive && (
-                          <div className="absolute top-3 right-3">
-                            <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
-                              <Check className="w-3.5 h-3.5 text-primary" />
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Native name — rendered in the language's own typography */}
-                        <span
-                          className={`text-lg font-bold leading-tight tracking-tight transition-colors ${
-                            isActive ? 'text-primary' : 'text-foreground group-hover:text-foreground'
-                          }`}
-                        >
-                          {lang.native}
-                        </span>
-
-                        {/* English name */}
-                        <span className="typo-caption text-muted-foreground mt-1">
-                          {lang.english}
-                        </span>
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </>
   );
 }

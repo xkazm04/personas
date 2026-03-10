@@ -55,8 +55,19 @@ export interface ConnectorPipelineStep {
   order: number;           // 0-based chronological position
 }
 
-/** The JSON output schema from Claude design analysis */
-export interface DesignAnalysisResult {
+/**
+ * Universal intermediate representation (IR) for agent specifications.
+ *
+ * Every creation and modification path in the system converges on this schema:
+ *   input modality → AgentIR → apply(AgentIR)
+ *
+ * Sources: design chat, wizard compilation, workflow import, template catalog,
+ * batch generation, intent compilation.
+ *
+ * Consumers: scoring, safety scan, variable substitution, adoption,
+ * diff/merge/version/rollback, and compilation to runtime drafts.
+ */
+export interface AgentIR {
   structured_prompt: {
     identity: string;
     instructions: string;
@@ -82,14 +93,8 @@ export interface DesignAnalysisResult {
   adoption_questions?: AdoptionQuestion[];
 }
 
-/**
- * Universal intermediate representation (IR) for agent specifications.
- *
- * Multiple frontends (design chat, workflow import, template catalog, batch generation)
- * converge on this schema, and downstream passes (scoring, safety scan, variable
- * substitution, adoption, and compilation to runtime drafts) operate over it.
- */
-export type AgentIR = DesignAnalysisResult;
+/** @deprecated Use {@link AgentIR} directly. Kept for backwards compatibility. */
+export type DesignAnalysisResult = AgentIR;
 
 /** A notification channel suggestion from design analysis */
 export interface SuggestedNotificationChannel {
@@ -205,8 +210,8 @@ export interface IntentTestScenario {
   assertions: string[];
 }
 
-/** Extended design result from the intent compiler (superset of DesignAnalysisResult) */
-export interface IntentCompilationResult extends DesignAnalysisResult {
+/** Extended design result from the intent compiler (superset of AgentIR) */
+export interface IntentCompilationResult extends AgentIR {
   intent_statement?: string;
   use_cases?: IntentUseCase[];
   model_recommendation?: IntentModelRecommendation;

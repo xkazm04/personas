@@ -17,6 +17,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { useMemo, useEffect } from 'react';
+import { useFilteredCollection } from '@/hooks/utility/useFilteredCollection';
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
@@ -27,6 +28,9 @@ import { useOverviewFilters } from '@/features/overview/components/OverviewFilte
 import DeployFirstAutomationCard from '@/features/overview/components/DeployFirstAutomationCard';
 import { HealthDigestPanel } from '@/features/agents/health';
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
+import { IS_MOBILE } from '@/lib/utils/platform';
+import RemoteControlCard from '@/features/overview/components/RemoteControlCard';
+import FleetOptimizationCard from '@/features/overview/components/FleetOptimizationCard';
 
 // ---------------------------------------------------------------------------
 // DashboardHome
@@ -49,7 +53,7 @@ export default function DashboardHome() {
 
   const { selectedPersonaId, setSelectedPersonaId } = useOverviewFilters();
   const executionDashboard = usePersonaStore((s) => s.executionDashboard);
-  const fetchExecutionDashboard = usePersonaStore((s) => s.fetchExecutionDashboard);
+  const fetchHealingIssues = usePersonaStore((s) => s.fetchHealingIssues);
 
   const dailyPoints = executionDashboard?.daily_points ?? [];
 
@@ -57,14 +61,15 @@ export default function DashboardHome() {
     fetchGlobalExecutions(true);
     fetchPendingReviewCount();
     fetchUnreadMessageCount();
-    fetchExecutionDashboard(14);
-  }, [fetchGlobalExecutions, fetchPendingReviewCount, fetchUnreadMessageCount, fetchExecutionDashboard]);
+    fetchHealingIssues();
+  }, [fetchGlobalExecutions, fetchPendingReviewCount, fetchUnreadMessageCount, fetchHealingIssues]);
+
+  const { filtered: personaExecs } = useFilteredCollection(globalExecutions, {
+    exact: [{ field: 'persona_id', value: selectedPersonaId || null }],
+  });
 
   const stats = useMemo(() => {
-    let execs = globalExecutions;
-    if (selectedPersonaId) {
-      execs = execs.filter(e => e.persona_id === selectedPersonaId);
-    }
+    const execs = personaExecs;
 
     const successCount = execs.filter(e => e.status === 'completed').length;
     const successRate = Math.round(resolveMetricPercent(
@@ -77,7 +82,7 @@ export default function DashboardHome() {
       activeAgents: personas.length,
       recentExecs: execs.slice(0, 12),
     };
-  }, [globalExecutions, personas, selectedPersonaId]);
+  }, [personaExecs, personas]);
 
   // Build chart data from execution dashboard daily points
   const chartData = useMemo(() => {
@@ -107,7 +112,7 @@ export default function DashboardHome() {
 
   // Header-level stat badges
   const headerBadges = (
-    <div className="flex items-center gap-2 flex-shrink-0">
+    <div className={`flex items-center gap-2 flex-shrink-0 ${IS_MOBILE ? 'flex-wrap' : ''}`}>
       <motion.button
         whileHover={{ scale: 1.05 }}
         onClick={() => setOverviewTab('messages')}
@@ -116,6 +121,7 @@ export default function DashboardHome() {
       >
         <Mail className="w-3 h-3" />
         {unreadMessageCount}
+        <span className="text-blue-300/60 font-medium">Msgs</span>
       </motion.button>
       <motion.button
         whileHover={{ scale: 1.05 }}
@@ -125,6 +131,7 @@ export default function DashboardHome() {
       >
         <ClipboardCheck className="w-3 h-3" />
         {pendingReviewCount}
+        <span className="text-amber-300/60 font-medium">Reviews</span>
       </motion.button>
       <div className="border-l border-primary/10 pl-2 ml-1 flex items-center gap-2">
         <motion.button
@@ -135,6 +142,7 @@ export default function DashboardHome() {
         >
           <Activity className="w-3 h-3" />
           {globalExecutionsTotal}
+          <span className="text-emerald-300/60 font-medium">Runs</span>
         </motion.button>
         <span
           title={`${stats.successRate}% success rate`}
@@ -142,6 +150,7 @@ export default function DashboardHome() {
         >
           <ShieldCheck className="w-3 h-3" />
           {stats.successRate}%
+          <span className="text-violet-300/60 font-medium">Success</span>
         </span>
         <span
           title={`${stats.activeAgents} active agents`}
@@ -149,6 +158,7 @@ export default function DashboardHome() {
         >
           <Cpu className="w-3 h-3" />
           {stats.activeAgents}
+          <span className="text-rose-300/60 font-medium">Agents</span>
         </span>
       </div>
     </div>
@@ -178,7 +188,7 @@ export default function DashboardHome() {
               <motion.h2
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent"
+                className={`${IS_MOBILE ? 'text-xl' : 'text-3xl'} font-bold bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent`}
               >
                 {greeting}, {displayName}
               </motion.h2>
@@ -194,8 +204,14 @@ export default function DashboardHome() {
             />
           </div>
 
+          {/* Remote Control — mobile only */}
+          {IS_MOBILE && <RemoteControlCard />}
+
           {/* Memory Insight Suggestions */}
           <MemoryActionsPanel actions={memoryActions} onDismiss={dismissMemoryAction} />
+
+          {/* Fleet Optimization Recommendation */}
+          <FleetOptimizationCard />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
 

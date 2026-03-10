@@ -2,6 +2,7 @@
 // Wizard Instruction Compiler & Summary Helper
 // ============================================================================
 
+import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
 import type { WizardAnswers } from './wizardSteps';
 
 type InstructionEntry =
@@ -97,6 +98,102 @@ export function compileWizardInstruction(answers: WizardAnswers): string {
   }
 
   return parts.join('\n\n');
+}
+
+// ── Wizard → AgentIR Compilation ────────────────────────────────
+// Produces a structured AgentIR directly from wizard answers,
+// enabling the path: wizard answers → AgentIR → apply(AgentIR).
+
+const TRIGGER_TYPE_MAP: Record<string, SuggestedTrigger['trigger_type']> = {
+  'Real-time (webhook / push)': 'webhook',
+  'Scheduled (cron)': 'schedule',
+  'Polling interval': 'polling',
+  'Manual only': 'manual',
+};
+
+const TOOL_MAP: Record<string, string[]> = {
+  'Create tasks in a project tool': ['task_create', 'project_management'],
+  'Send notifications': ['send_notification', 'messaging'],
+  'Update spreadsheets or databases': ['spreadsheet_update', 'database_write'],
+  'Draft responses for review': ['draft_response', 'manual_review'],
+};
+
+/**
+ * Compile wizard answers directly into an AgentIR structure.
+ *
+ * This produces a complete (though minimal) AgentIR that can be:
+ * - Applied directly to a persona via apply(AgentIR)
+ * - Passed to the LLM for enrichment
+ * - Diffed/merged with other AgentIR instances
+ * - Stored as a template payload
+ */
+export function compileWizardToAgentIR(answers: WizardAnswers): AgentIR {
+  const instruction = compileWizardInstruction(answers);
+  const mission = (answers['mission_type'] as string) || 'Custom Agent';
+  const autonomy = (answers['autonomy_level'] as string) || '';
+  const dataScope = (answers['data_scope'] as string) || '';
+  const reporting = (answers['reporting_style'] as string) || '';
+  const triggerChoice = (answers['trigger_type'] as string) || '';
+  const dataActions = (Array.isArray(answers['data_actions']) ? answers['data_actions'] : []) as string[];
+  const approvalActions = (Array.isArray(answers['approval_actions']) ? answers['approval_actions'] : []) as string[];
+
+  // Build identity from mission type
+  const identity = `You are a ${mission} agent.${dataScope ? ` ${ANSWER_TO_INSTRUCTION.data_scope?.map[dataScope] || ''}` : ''}`;
+
+  // Build instructions from autonomy + reporting
+  const instructionParts: string[] = [];
+  if (autonomy) instructionParts.push(ANSWER_TO_INSTRUCTION.autonomy_level?.map[autonomy] || '');
+  if (reporting) instructionParts.push(ANSWER_TO_INSTRUCTION.reporting_style?.map[reporting] || '');
+  if (approvalActions.length > 0) {
+    instructionParts.push(`Require human approval for: ${approvalActions.join('; ')}.`);
+  }
+  const instructions = instructionParts.filter(Boolean).join('\n\n');
+
+  // Derive tools from data actions
+  const tools: string[] = [];
+  for (const action of dataActions) {
+    const mapped = TOOL_MAP[action];
+    if (mapped) tools.push(...mapped);
+  }
+
+  // Build trigger from trigger type selection
+  const triggers: SuggestedTrigger[] = [];
+  if (triggerChoice) {
+    const triggerType = TRIGGER_TYPE_MAP[triggerChoice] || 'manual';
+    triggers.push({
+      trigger_type: triggerType,
+      config: triggerType === 'schedule' ? { cron: '0 9 * * *' } : {},
+      description: ANSWER_TO_INSTRUCTION.trigger_type?.map[triggerChoice] || triggerChoice,
+    });
+  }
+
+  // Build summary
+  const summaryParts = getAnswerSummary(answers);
+  const summary = summaryParts.map((s) => `${s.label}: ${s.value}`).join(' | ');
+
+  return {
+    structured_prompt: {
+      identity,
+      instructions,
+      toolGuidance: tools.length > 0 ? `Available tools: ${tools.join(', ')}` : '',
+      examples: '',
+      errorHandling: 'Log errors and continue processing remaining items. Report failures in the run summary.',
+      customSections: [],
+    },
+    suggested_tools: tools,
+    suggested_triggers: triggers,
+    full_prompt_markdown: instruction,
+    summary: summary || `${mission} agent`,
+    design_highlights: [
+      {
+        category: 'Mission',
+        icon: '🎯',
+        color: 'violet',
+        items: [mission],
+        section: 'identity',
+      },
+    ],
+  };
 }
 
 // ── Summary Helper ──────────────────────────────────────────────
