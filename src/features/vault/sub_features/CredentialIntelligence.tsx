@@ -5,7 +5,7 @@ import {
   getCredentialAuditLog,
   getCredentialUsageStats,
   getCredentialDependents,
-} from '@/api/credentials';
+} from '@/api/vault/credentials';
 import type { CredentialAuditEntry } from '@/lib/bindings/CredentialAuditEntry';
 import type { CredentialUsageStats } from '@/lib/bindings/CredentialUsageStats';
 import type { CredentialDependent } from '@/lib/bindings/CredentialDependent';

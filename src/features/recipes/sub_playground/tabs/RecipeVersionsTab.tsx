@@ -3,11 +3,11 @@ import { Sparkles, Loader2, Check, RotateCcw, Clock } from 'lucide-react';
 import { useToastStore } from '@/stores/toastStore';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import type { RecipeVersion } from '@/lib/bindings/RecipeVersion';
-import * as recipeApi from '@/api/recipes';
-import { useRecipeVersioning } from '@/hooks/design/useRecipeVersioning';
-import { EstimatedProgressBar } from '@/features/shared/components/EstimatedProgressBar';
-import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
-import { PromptTemplateRenderer } from '@/features/shared/components/PromptTemplateRenderer';
+import * as recipeApi from '@/api/templates/recipes';
+import { useRecipeVersioning } from '@/hooks/design/template/useRecipeVersioning';
+import { EstimatedProgressBar } from '@/features/shared/components/progress/EstimatedProgressBar';
+import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
+import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 
 interface RecipeVersionsTabProps {
   recipe: RecipeDefinition;

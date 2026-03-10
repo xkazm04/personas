@@ -18,7 +18,7 @@ import {
   Activity,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { TEMPLATE_CATALOG } from '@/lib/personas/templateCatalog';
+import { TEMPLATE_CATALOG } from '@/lib/personas/templates/templateCatalog';
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 
 const CATEGORY_LABELS: Record<string, string> = {

@@ -1,8 +1,8 @@
 import { listen } from '@tauri-apps/api/event';
 import type { PlaywrightAdapter } from './useAutoCredSession';
 import type { AutoCredConnectorContext, BrowserLogEntry, ExtractedValues } from './types';
-import { startAutoCredBrowser, getPlaywrightProcedure, cancelAutoCredBrowser } from '@/api/autoCredBrowser';
-import { openExternalUrl } from '@/api/system';
+import { startAutoCredBrowser, getPlaywrightProcedure, cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
+import { openExternalUrl } from '@/api/system/system';
 
 /**
  * Tauri-backed PlaywrightAdapter.

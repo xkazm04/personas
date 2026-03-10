@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
-import { getAppSetting, setAppSetting } from '@/api/settings';
+import { getAppSetting, setAppSetting } from '@/api/system/settings';
 import { usePersonaStore } from '@/stores/personaStore';
 
 const LAST_DIGEST_KEY = 'health_digest_last_run';
@@ -16,9 +16,10 @@ const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
  */
 export function useHealthDigestScheduler() {
   const ran = useRef(false);
+  const personasLoaded = usePersonaStore((s) => s.personas.length > 0);
 
   useEffect(() => {
-    if (ran.current) return;
+    if (ran.current || !personasLoaded) return;
     ran.current = true;
 
     (async () => {
@@ -33,10 +34,6 @@ export function useHealthDigestScheduler() {
         const now = Date.now();
 
         if (now - lastRunMs < ONE_WEEK_MS) return; // Not yet due
-
-        // Wait for personas to load
-        const { personas } = usePersonaStore.getState();
-        if (personas.length === 0) return;
 
         // Run the digest
         const digest = await usePersonaStore.getState().runFullHealthDigest();
@@ -60,5 +57,5 @@ export function useHealthDigestScheduler() {
         // intentional: non-critical — background scheduling
       }
     })();
-  }, []);
+  }, [personasLoaded]);
 }

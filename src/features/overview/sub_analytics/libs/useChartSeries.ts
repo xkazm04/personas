@@ -2,7 +2,7 @@ import { useMemo, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/libs/periodComparison';
 import { pivotToolUsageOverTime } from '@/features/overview/sub_usage/libs/pivotToolUsage';
-import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { formatToolName } from './analyticsHelpers';
 import type { PieDataPoint } from '@/features/overview/sub_observability/components/MetricsCharts';
 

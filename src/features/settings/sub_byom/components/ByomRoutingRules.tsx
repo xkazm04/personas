@@ -1,5 +1,5 @@
 import { Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
-import type { RoutingRule, TaskComplexity } from '@/api/byom';
+import type { RoutingRule, TaskComplexity } from '@/api/system/byom';
 import { PROVIDER_OPTIONS, COMPLEXITY_OPTIONS } from '../libs/byomHelpers';
 
 interface ByomRoutingRulesProps {

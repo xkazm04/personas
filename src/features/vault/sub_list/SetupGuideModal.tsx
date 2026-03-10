@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, Plug } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { openExternalUrl } from '@/api/tauriApi';
 import type { ConnectorDefinition } from '@/lib/types/types';
 

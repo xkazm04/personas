@@ -6,7 +6,7 @@ import { ModelSelector } from '@/features/agents/sub_model_config/ModelSelector'
 import type { CustomModelConfig } from '@/features/agents/sub_model_config/ModelSelector';
 import type { ModelProvider } from '@/lib/types/frontendTypes';
 import { isOllamaCloudValue, OLLAMA_CLOUD_PRESETS } from '@/features/agents/sub_model_config/OllamaCloudPresets';
-import { SectionHeader } from '@/features/shared/components/SectionHeader';
+import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 
 // ── Derive a human-readable label from the draft ────────────────────
 function resolveModelLabel(draft: PersonaDraft): { label: string; provider: string } {

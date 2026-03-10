@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { FlaskConical, Users } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { useDesignReviews } from '@/hooks/design/useDesignReviews';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { useDesignReviews } from '@/hooks/design/template/useDesignReviews';
 import { usePersonaStore } from '@/stores/personaStore';
 import { GeneratedReviewsTab, TeamSynthesisPanel } from '@/features/templates/sub_generated';
-import N8nImportTab from '@/features/templates/sub_n8n/N8nImportTab';
-import { ErrorBoundary } from '@/features/shared/components/ErrorBoundary';
-import ActivityDiagramModal from '@/features/triggers/components/ActivityDiagramModal';
+import N8nImportTab from '@/features/templates/sub_n8n/steps/N8nImportTab';
+import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
+import ActivityDiagramModal from '@/features/triggers/components/display/ActivityDiagramModal';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';

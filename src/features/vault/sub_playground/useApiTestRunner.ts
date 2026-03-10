@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { executeApiRequest, type ApiEndpoint, type ApiProxyResponse } from '@/api/apiProxy';
+import { executeApiRequest, type ApiEndpoint, type ApiProxyResponse } from '@/api/system/apiProxy';
 
 // ── Types ─────────────────────────────────────────────────────────────
 

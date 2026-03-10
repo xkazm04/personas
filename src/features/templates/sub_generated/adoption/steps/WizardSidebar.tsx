@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useMotion } from '@/hooks/utility/useMotion';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { Check } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AdoptWizardStep } from '../useAdoptReducer';

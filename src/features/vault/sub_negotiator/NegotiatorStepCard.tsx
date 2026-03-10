@@ -7,7 +7,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { openExternalUrl } from '@/api/tauriApi';
-import { sanitizeExternalUrl } from '@/lib/utils/sanitizeUrl';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import {
   ACTION_ICONS,
   ACTION_COLORS,

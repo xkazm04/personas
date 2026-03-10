@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Bot, Trash2, ExternalLink, RefreshCw, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
-import type { GitLabAgent } from '@/api/gitlab';
+import type { GitLabAgent } from '@/api/system/gitlab';
 import { usePersonaStore } from '@/stores/personaStore';
 
 interface GitLabAgentListProps {

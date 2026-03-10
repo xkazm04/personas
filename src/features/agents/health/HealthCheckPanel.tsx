@@ -16,7 +16,7 @@ import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { DryRunIssue, DryRunResult, HealthScore } from './types';
 import type { DesignContextData } from '@/lib/types/frontendTypes';
 import type { UseHealthCheckReturn } from './useHealthCheck';
-import ContentLoader from '@/features/shared/components/ContentLoader';
+import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 
 // â”€â”€ Score display â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 

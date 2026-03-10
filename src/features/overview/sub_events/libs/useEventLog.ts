@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
-import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import type { PersonaEvent } from '@/lib/types/types';
 
 export type EventFilter = 'all' | 'pending' | 'completed' | 'failed';

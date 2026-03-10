@@ -3,7 +3,7 @@ import { BookOpen, Plus, Search, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { RecipeList } from '@/features/recipes/sub_list/RecipeList';
 import { RecipeEditor } from '@/features/recipes/sub_editor/RecipeEditor';
 import { RecipePlaygroundModal } from '@/features/recipes/sub_playground/RecipePlaygroundModal';

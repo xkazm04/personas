@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot, Copy, Check } from 'lucide-react';
-import { UuidLabel } from '@/features/shared/components/UuidLabel';
+import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
 import { EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
 import type { PersonaEvent, Persona } from '@/lib/types/types';
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Send, MessageCircleQuestion } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { TransformProgress } from '@/features/shared/components/TransformProgress';
+import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
 
 export interface DesignQuestion {
   question: string;

@@ -1,4 +1,4 @@
-import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
+import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 
 /** Supported external secret sources */
 export type ImportSourceId = 'env_file' | '1password' | 'aws_secrets' | 'azure_keyvault' | 'doppler';

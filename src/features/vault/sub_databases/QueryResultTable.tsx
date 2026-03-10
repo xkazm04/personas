@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import type { QueryResult } from '@/api/dbSchema';
+import type { QueryResult } from '@/api/vault/database/dbSchema';
 import { AlertTriangle, Clock, Copy, Check } from 'lucide-react';
 
 interface QueryResultTableProps {

@@ -16,7 +16,7 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import type { N8nPersonaDraft } from '@/api/n8nTransform';
+import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { AgentIR, ConnectorReadinessStatus } from '@/lib/types/designTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';

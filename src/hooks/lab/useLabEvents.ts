@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { usePersonaStore } from "@/stores/personaStore";
-import { sendAppNotification } from "@/api/system";
-import type { LabMode, LabRunProgress } from "@/stores/slices/labSlice";
+import { sendAppNotification } from "@/api/system/system";
+import type { LabMode, LabRunProgress } from "@/stores/slices/agents/labSlice";
 import { useRunEventListener, type RunStatusPayload, type RunEventBinding } from "@/hooks/realtime/useRunEventListener";
 
 function mapPayload(p: RunStatusPayload, mode: LabMode): LabRunProgress {

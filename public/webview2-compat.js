@@ -12,7 +12,6 @@
 // The getter returns the original built-in function for unmodified objects.
 
 (function () {
-<<<<<<< HEAD
   // Only apply this shim on Windows WebView2 — not needed on Android WebView (Chromium)
   var isAndroid = /Android/i.test(navigator.userAgent);
   if (isAndroid) {
@@ -20,8 +19,6 @@
     return;
   }
 
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   var dp = Object.defineProperty;
   var proto = Object.prototype;
   var props = ['toString', 'constructor', 'valueOf', 'toLocaleString'];

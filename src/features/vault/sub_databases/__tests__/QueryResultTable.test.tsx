@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { QueryResultTable } from "../QueryResultTable";
-import type { QueryResult } from "@/api/dbSchema";
+import type { QueryResult } from "@/api/vault/database/dbSchema";
 
 function makeResult(overrides: Partial<QueryResult> = {}): QueryResult {
   return {

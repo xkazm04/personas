@@ -1,19 +1,19 @@
 // Components
 export { default as AlignmentGuides, computeAlignments } from './components/AlignmentGuides';
 export type { AlignmentLine } from './components/AlignmentGuides';
-export { default as CanvasAssistant } from './components/CanvasAssistant';
-export { default as ConnectionEdge } from './components/ConnectionEdge';
-export { default as ConnectionLegend } from './components/ConnectionLegend';
-export { default as DryRunDebugger } from './components/DryRunDebugger';
+export { default as CanvasAssistant } from './components/assistant/CanvasAssistant';
+export { default as ConnectionEdge } from './components/edges/ConnectionEdge';
+export { default as ConnectionLegend } from './components/edges/ConnectionLegend';
+export { default as DryRunDebugger } from './components/debugger/DryRunDebugger';
 export type { DryRunState, DryRunNodeData } from './libs/debuggerTypes';
-export { default as EdgeDeleteTooltip } from './components/EdgeDeleteTooltip';
-export { default as GhostEdge } from './components/GhostEdge';
-export { default as NodeContextMenu } from './components/NodeContextMenu';
+export { default as EdgeDeleteTooltip } from './components/edges/EdgeDeleteTooltip';
+export { default as GhostEdge } from './components/edges/GhostEdge';
+export { default as NodeContextMenu } from './components/nodes/NodeContextMenu';
 export { default as OptimizerPanel } from './components/OptimizerPanel';
-export { default as PersonaNode } from './components/PersonaNode';
+export { default as PersonaNode } from './components/nodes/PersonaNode';
 export { default as PipelineControls } from './components/PipelineControls';
-export { default as StickyNoteNode } from './components/StickyNoteNode';
-export type { StickyNoteCategory } from './components/StickyNoteNode';
+export { default as StickyNoteNode } from './components/nodes/StickyNoteNode';
+export type { StickyNoteCategory } from './components/nodes/StickyNoteNode';
 export { default as TeamToolbar } from './components/TeamToolbar';
 
 // Libs

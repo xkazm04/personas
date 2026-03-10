@@ -11,7 +11,7 @@
  * within a cooldown window), an action log for UI, and subscriber notification.
  */
 
-import type { Remediation, AnomalyScore } from '@/api/rotation';
+import type { Remediation, AnomalyScore } from '@/api/vault/rotation';
 
 // ── Event Types ─────────────────────────────────────────────────────
 

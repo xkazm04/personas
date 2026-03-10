@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   CalendarClock, Loader2, RefreshCw, Pause,
 } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { usePersonaStore } from '@/stores/personaStore';
 import {
   parseScheduleEntry,
@@ -13,8 +13,8 @@ import {
   type TimeGroup,
 } from '../libs/scheduleHelpers';
 import { useScheduleActions } from '../libs/useScheduleActions';
-import { getSchedulerStatus, startScheduler, stopScheduler } from '@/api/scheduler';
-import type { SchedulerStats } from '@/api/scheduler';
+import { getSchedulerStatus, startScheduler, stopScheduler } from '@/api/pipeline/scheduler';
+import type { SchedulerStats } from '@/api/pipeline/scheduler';
 import ScheduleRow from './ScheduleRow';
 import SkippedRecoveryPanel from './SkippedRecoveryPanel';
 

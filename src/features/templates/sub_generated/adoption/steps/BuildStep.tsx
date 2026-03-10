@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Sparkles, AlertCircle, RefreshCw, Trash2 } from 'lucide-react';
-import { TransformProgress } from '@/features/shared/components/TransformProgress';
+import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
 
 /** Parse transform lines to derive a user-friendly phase description. */

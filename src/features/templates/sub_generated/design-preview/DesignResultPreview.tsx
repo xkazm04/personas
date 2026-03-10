@@ -1,4 +1,4 @@
-import { PromptTabsPreview } from '@/features/shared/components/PromptTabsPreview';
+import { PromptTabsPreview } from '@/features/shared/components/editors/PromptTabsPreview';
 import { ConnectorsSection } from './ConnectorsSection';
 import { EventsSection } from './EventsSection';
 import { MessagesSection } from './MessagesSection';

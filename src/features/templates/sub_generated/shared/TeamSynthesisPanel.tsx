@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { X, Sparkles, Users, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
-import { synthesizeTeamFromTemplates } from '@/api/teamSynthesis';
-import type { TeamSynthesisResult } from '@/api/teamSynthesis';
+import { synthesizeTeamFromTemplates } from '@/api/overview/intelligence/teamSynthesis';
+import type { TeamSynthesisResult } from '@/api/overview/intelligence/teamSynthesis';
 import { BaseModal } from './BaseModal';
 
 interface TeamSynthesisPanelProps {

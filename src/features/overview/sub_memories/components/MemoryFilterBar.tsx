@@ -2,7 +2,7 @@ import { Search, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import type { DbPersona } from '@/lib/types/types';
-import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 
 export interface MemoryFilterBarProps {
   search: string;

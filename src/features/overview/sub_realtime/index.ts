@@ -1,4 +1,7 @@
 export { default as EventBusVisualization } from './components/EventBusVisualization';
+export { default as SwimLaneVisualization } from './components/SwimLaneVisualization';
+export { default as HeatmapVisualization } from './components/HeatmapVisualization';
+export { default as EventLogSidebar } from './components/EventLogSidebar';
 export { default as RealtimeStatsBar } from './components/RealtimeStatsBar';
 export { default as EventDetailDrawer } from './components/EventDetailDrawer';
 export { default as TimelinePlayer } from './components/TimelinePlayer';

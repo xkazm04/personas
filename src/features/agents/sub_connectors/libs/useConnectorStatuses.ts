@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { sendAppNotification } from '@/api/system';
-import { parseDesignContext } from '@/features/shared/components/UseCasesList';
-import { mutateCredentialLink } from '@/hooks/design/useDesignContextMutator';
+import { sendAppNotification } from '@/api/system/system';
+import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import type { ConnectorStatus, ConnectorReadiness } from './connectorTypes';
 import { deriveReadiness } from './connectorTypes';
 

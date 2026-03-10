@@ -4,7 +4,7 @@ import { Search, ArrowRight, Monitor } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { staggerContainer, staggerItem } from '@/features/templates/animationPresets';
-import { isDesktopBridge } from '@/lib/utils/connectors';
+import { isDesktopBridge } from '@/lib/utils/platform/connectors';
 
 interface WizardServiceSelectProps {
   onSelect: (connector: ConnectorDefinition) => void;

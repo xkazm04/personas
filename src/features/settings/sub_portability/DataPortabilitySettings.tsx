@@ -10,19 +10,19 @@ import {
   ShieldCheck,
   KeyRound,
 } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import {
   getExportStats,
   exportFull,
   importPortabilityBundle,
   exportCredentials,
   importCredentials,
-} from '@/api/dataPortability';
+} from '@/api/system/dataPortability';
 import type {
   ExportStats,
   PortabilityImportResult,
   CredentialImportResult,
-} from '@/api/dataPortability';
+} from '@/api/system/dataPortability';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 

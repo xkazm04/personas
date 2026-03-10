@@ -636,6 +636,8 @@ pub fn get_execution_dashboard(
             total_cost: 0.0,
             overall_success_rate: 0.0,
             avg_latency_ms: 0.0,
+            projected_monthly_cost: None,
+            burn_rate: None,
         });
     }
 
@@ -772,6 +774,60 @@ pub fn get_execution_dashboard(
         0.0
     };
 
+    use chrono::Datelike;
+    let (projected_monthly_cost, burn_rate) = {
+        let n_points = daily_points.len();
+        if n_points >= 2 {
+            let limit = n_points.min(7);
+            let recent_points: Vec<f64> = daily_points.iter().skip(n_points - limit).map(|p| p.total_cost).collect();
+            let n = recent_points.len() as f64;
+            
+            let sum_x = (0..recent_points.len()).map(|x| x as f64).sum::<f64>();
+            let sum_y = recent_points.iter().sum::<f64>();
+            let sum_xy = recent_points.iter().enumerate().map(|(x, &y)| x as f64 * y).sum::<f64>();
+            let sum_x2 = (0..recent_points.len()).map(|x| (x as f64).powi(2)).sum::<f64>();
+
+            let denominator = n * sum_x2 - sum_x * sum_x;
+            let slope = if denominator != 0.0 {
+                (n * sum_xy - sum_x * sum_y) / denominator
+            } else {
+                0.0
+            };
+            let intercept = (sum_y - slope * sum_x) / n;
+
+            let current_burn_rate = (slope * (n - 1.0) + intercept).max(0.0);
+
+            let now = chrono::Utc::now();
+            let year = now.year();
+            let month = now.month();
+            let next_month = if month == 12 { 1 } else { month + 1 };
+            let next_year = if month == 12 { year + 1 } else { year };
+            
+            let first_of_this = chrono::NaiveDate::from_ymd_opt(year, month, 1).unwrap();
+            let first_of_next = chrono::NaiveDate::from_ymd_opt(next_year, next_month, 1).unwrap();
+            let days_in_month = (first_of_next - first_of_this).num_days();
+            let current_day = now.day() as i64;
+
+            let current_month_prefix = format!("{:04}-{:02}", year, month);
+            let spent_this_month: f64 = daily_points.iter()
+                .filter(|p| p.date.starts_with(&current_month_prefix))
+                .map(|p| p.total_cost)
+                .sum();
+
+            let remaining_days = days_in_month - current_day;
+            let mut projected_remaining = 0.0;
+            for i in 1..=remaining_days {
+                let x_future = (n - 1.0) + i as f64;
+                let daily_proj = (slope * x_future + intercept).max(0.0);
+                projected_remaining += daily_proj;
+            }
+
+            (Some(spent_this_month + projected_remaining), Some(current_burn_rate))
+        } else {
+            (None, None)
+        }
+    };
+
     Ok(ExecutionDashboardData {
         daily_points,
         top_personas,
@@ -780,6 +836,8 @@ pub fn get_execution_dashboard(
         total_cost,
         overall_success_rate,
         avg_latency_ms,
+        projected_monthly_cost,
+        burn_rate,
     })
 }
 

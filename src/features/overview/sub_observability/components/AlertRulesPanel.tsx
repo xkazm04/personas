@@ -9,7 +9,7 @@ import {
   type AlertOperator,
   type AlertSeverity,
   type AlertRule,
-} from '@/stores/slices/alertSlice';
+} from '@/stores/slices/overview/alertSlice';
 
 // ── Rule Form ─────────────────────────────────────────────────────────
 

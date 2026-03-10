@@ -1,6 +1,6 @@
 import { Cpu, Bell, ListChecks } from 'lucide-react';
-import type { UseCaseItem } from '@/features/shared/components/UseCasesList';
-import EmptyState from '@/features/shared/components/EmptyState';
+import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
 
 const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
   notification:   { bg: 'bg-rose-500/10 border-rose-500/15',   text: 'text-rose-400/70' },

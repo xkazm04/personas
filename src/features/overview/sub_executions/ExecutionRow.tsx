@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, RotateCw } from 'lucide-react';
 import type { GlobalExecution } from '@/lib/types/types';
 import { formatDuration, formatRelativeTime, getStatusEntry } from '@/lib/utils/formatters';
-import { ExecutionDetail } from '@/features/agents/sub_executions/ExecutionDetail';
+import { ExecutionDetail } from '@/features/agents/sub_executions/detail/ExecutionDetail';
 
 interface ExecutionRowProps {
   execution: GlobalExecution;

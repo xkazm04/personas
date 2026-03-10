@@ -4,33 +4,33 @@
  */
 
 // Re-export slice interfaces (consumers can import PersonaStore from here)
-import type { PersonaSlice } from "./slices/personaSlice";
-import type { ToolSlice } from "./slices/toolSlice";
-import type { TriggerSlice } from "./slices/triggerSlice";
-import type { ExecutionSlice } from "./slices/executionSlice";
-import type { CredentialSlice } from "./slices/credentialSlice";
-import type { OverviewSlice } from "./slices/overviewSlice";
-import type { MessageSlice } from "./slices/messageSlice";
-import type { EventSlice } from "./slices/eventSlice";
-import type { HealingSlice } from "./slices/healingSlice";
-import type { TeamSlice } from "./slices/teamSlice";
-import type { GroupSlice } from "./slices/groupSlice";
-import type { MemorySlice } from "./slices/memorySlice";
-import type { UiSlice } from "./slices/uiSlice";
-import type { TestSlice } from "./slices/testSlice";
-import type { LabSlice } from "./slices/labSlice";
-import type { CloudSlice } from "./slices/cloudSlice";
-import type { GitLabSlice } from "./slices/gitlabSlice";
-import type { DatabaseSlice } from "./slices/databaseSlice";
-import type { RecipeSlice } from "./slices/recipeSlice";
-import type { AutomationSlice } from "./slices/automationSlice";
-import type { OnboardingSlice } from "./slices/onboardingSlice";
-import type { CronAgentsSlice } from "./slices/cronAgentsSlice";
-import type { MiniPlayerSlice } from "./slices/miniPlayerSlice";
-import type { HealthCheckSlice } from "./slices/healthCheckSlice";
-import type { TourSlice } from "./slices/tourSlice";
-import type { BudgetEnforcementSlice } from "./slices/budgetEnforcementSlice";
-import type { AlertSlice } from "./slices/alertSlice";
+import type { PersonaSlice } from "./slices/agents/personaSlice";
+import type { ToolSlice } from "./slices/agents/toolSlice";
+import type { TriggerSlice } from "./slices/pipeline/triggerSlice";
+import type { ExecutionSlice } from "./slices/agents/executionSlice";
+import type { CredentialSlice } from "./slices/vault/credentialSlice";
+import type { OverviewSlice } from "./slices/overview/overviewSlice";
+import type { MessageSlice } from "./slices/overview/messageSlice";
+import type { EventSlice } from "./slices/overview/eventSlice";
+import type { HealingSlice } from "./slices/overview/healingSlice";
+import type { TeamSlice } from "./slices/pipeline/teamSlice";
+import type { GroupSlice } from "./slices/pipeline/groupSlice";
+import type { MemorySlice } from "./slices/overview/memorySlice";
+import type { UiSlice } from "./slices/system/uiSlice";
+import type { TestSlice } from "./slices/agents/testSlice";
+import type { LabSlice } from "./slices/agents/labSlice";
+import type { CloudSlice } from "./slices/system/cloudSlice";
+import type { GitLabSlice } from "./slices/system/gitlabSlice";
+import type { DatabaseSlice } from "./slices/vault/databaseSlice";
+import type { RecipeSlice } from "./slices/pipeline/recipeSlice";
+import type { AutomationSlice } from "./slices/vault/automationSlice";
+import type { OnboardingSlice } from "./slices/system/onboardingSlice";
+import type { CronAgentsSlice } from "./slices/overview/cronAgentsSlice";
+import type { MiniPlayerSlice } from "./slices/agents/miniPlayerSlice";
+import type { HealthCheckSlice } from "./slices/agents/healthCheckSlice";
+import type { TourSlice } from "./slices/system/tourSlice";
+import type { BudgetEnforcementSlice } from "./slices/agents/budgetEnforcementSlice";
+import type { AlertSlice } from "./slices/overview/alertSlice";
 
 // â”€â”€ Shared helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function errMsg(err: unknown, fallback: string): string {

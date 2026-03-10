@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef } from 'react';
-import { testDesignFeasibility, type FeasibilityResult } from '@/api/design';
+import { useState, useCallback, useRef, useMemo } from 'react';
+import { testDesignFeasibility, type FeasibilityResult } from '@/api/templates/design';
 import { usePersonaStore } from '@/stores/personaStore';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -168,7 +168,7 @@ export interface UseHealthCheckReturn {
 export function useHealthCheck(): UseHealthCheckReturn {
   const [phase, setPhase] = useState<UseHealthCheckReturn['phase']>('idle');
   const [result, setResult] = useState<PersonaHealthCheck | null>(null);
-  const [score, setScore] = useState<HealthScore | null>(null);
+  const score = useMemo(() => result ? computeHealthScore(result.result.issues) : null, [result]);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef(false);
 
@@ -176,7 +176,6 @@ export function useHealthCheck(): UseHealthCheckReturn {
     abortRef.current = false;
     setPhase('running');
     setResult(null);
-    setScore(null);
     setError(null);
 
     try {
@@ -199,7 +198,6 @@ export function useHealthCheck(): UseHealthCheckReturn {
       const credentials = creds.map((c) => ({ id: c.id, service_type: c.service_type }));
 
       const dryRunResult = parseFeasibilityToHealthResult(raw, persona, credentials);
-      const healthScore = computeHealthScore(dryRunResult.issues);
 
       const check: PersonaHealthCheck = {
         personaId: persona.id,
@@ -211,7 +209,6 @@ export function useHealthCheck(): UseHealthCheckReturn {
       };
 
       setResult(check);
-      setScore(healthScore);
       setPhase('done');
       return check;
     } catch (err) {
@@ -232,7 +229,6 @@ export function useHealthCheck(): UseHealthCheckReturn {
           issues: prev.result.issues.map((i: DryRunIssue) => (i.id === issueId ? { ...i, resolved: true } : i)),
         },
       };
-      setScore(computeHealthScore(updated.result.issues));
       return updated;
     });
   }, []);
@@ -241,7 +237,6 @@ export function useHealthCheck(): UseHealthCheckReturn {
     abortRef.current = true;
     setPhase('idle');
     setResult(null);
-    setScore(null);
     setError(null);
   }, []);
 

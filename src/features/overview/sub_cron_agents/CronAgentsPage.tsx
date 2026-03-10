@@ -9,7 +9,7 @@ import {
   Pause,
   Bot,
 } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 

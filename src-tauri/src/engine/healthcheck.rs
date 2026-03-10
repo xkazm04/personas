@@ -120,11 +120,19 @@ fn resolve_connector_healthcheck(
                 });
 
             match provider.as_deref().and_then(resolve_oauth_provider_healthcheck) {
-                Some(hc) => hc,
+                Some(hc) => {
+                    return Ok((connector, hc));
+                }
                 None => {
-                    return Err(AppError::Validation(
-                        "No healthcheck configured for this connector".into(),
-                    ));
+                    // No healthcheck configured — return a skip-flagged config
+                    // so callers treat it as a non-error success.
+                    return Ok((connector, HealthcheckConfig {
+                        endpoint: String::new(),
+                        method: None,
+                        headers: HashMap::new(),
+                        body: None,
+                        skip: true,
+                    }));
                 }
             }
         }

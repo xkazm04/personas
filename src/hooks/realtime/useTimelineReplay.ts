@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { listEventsInRange } from '@/api/events';
+import { listEventsInRange } from '@/api/overview/events';
 import type { RealtimeEvent, AnimationPhase } from '@/hooks/realtime/useRealtimeEvents';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import { useEventPhaseProgressor } from '@/hooks/realtime/useEventPhaseProgressor';

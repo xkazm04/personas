@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { Hash, Send, Mail, Bell } from 'lucide-react';
 import type { SuggestedTrigger } from '@/lib/types/designTypes';
-import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META } from '@/lib/utils/triggerConstants';
+import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META } from '@/lib/utils/platform/triggerConstants';
 
 export function triggerIconMeta(type: SuggestedTrigger['trigger_type']): { Icon: LucideIcon; color: string } {
   const meta = TRIGGER_TYPE_META[type] || DEFAULT_TRIGGER_META;

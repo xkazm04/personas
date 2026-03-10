@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { useTriggerOperations } from './useTriggerOperations';
-import * as api from '@/api/executions';
+import * as api from '@/api/agents/executions';
 
 export interface TriggerHistoryStats {
   totalRuns: number;

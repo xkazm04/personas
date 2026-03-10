@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { usePersonaStore } from "../personaStore";
 import { mockInvokeMap, resetInvokeMocks, mockInvokeError } from "@/test/tauriMock";
-import type { DbSchemaTable, DbSavedQuery, QueryResult } from "@/api/dbSchema";
+import type { DbSchemaTable, DbSavedQuery, QueryResult } from "@/api/vault/database/dbSchema";
 
 // ── Fixtures ──
 

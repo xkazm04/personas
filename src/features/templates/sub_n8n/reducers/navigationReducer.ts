@@ -1,4 +1,4 @@
-import type { N8nImportState, N8nImportAction, N8nWizardStep } from '../useN8nImportReducer';
+import type { N8nImportState, N8nImportAction, N8nWizardStep } from '../hooks/useN8nImportReducer';
 
 // ── Navigation State Slice ──
 

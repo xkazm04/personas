@@ -3,7 +3,7 @@ import { DesignCheckbox } from './DesignCheckbox';
 import { triggerIconMeta, SECTION_LABEL } from './helpers';
 import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
 import type { DbPersonaTrigger } from '@/lib/types/types';
-import { parseTriggerConfig } from '@/lib/utils/triggerConstants';
+import { parseTriggerConfig } from '@/lib/utils/platform/triggerConstants';
 
 interface EventsSectionProps {
   result: AgentIR;

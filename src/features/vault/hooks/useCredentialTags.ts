@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import * as credApi from '@/api/credentials';
+import * as credApi from '@/api/vault/credentials';
 import { toCredentialMetadata, type CredentialMetadata } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
 import {

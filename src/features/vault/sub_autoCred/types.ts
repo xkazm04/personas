@@ -1,4 +1,4 @@
-import type { CredentialDesignResult, CredentialDesignConnector } from '@/hooks/design/useCredentialDesign';
+import type { CredentialDesignResult, CredentialDesignConnector } from '@/hooks/design/credential/useCredentialDesign';
 import type { CredentialTemplateField } from '@/lib/types/types';
 
 /** Phases the auto-credential session moves through */

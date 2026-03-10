@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ModelProvider } from '@/lib/types/frontendTypes';
 import { LiteLLMConfigField } from './LiteLLMConfigField';
-import { FieldHint } from '@/features/shared/components/FieldHint';
-import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import { FieldHint } from '@/features/shared/components/display/FieldHint';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { CustomModelConfig } from './ModelSelector';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 

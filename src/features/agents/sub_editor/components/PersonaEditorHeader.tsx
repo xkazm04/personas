@@ -1,11 +1,11 @@
 import { useState, useMemo, useCallback } from 'react';
-import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizeUrl';
+import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
-import { ContentHeader } from '@/features/shared/components/ContentLayout';
-import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
+import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import type { PersonaDraft } from '../libs/PersonaDraft';
 import { useEffectivePersona } from '../libs/useEffectivePersona';
 

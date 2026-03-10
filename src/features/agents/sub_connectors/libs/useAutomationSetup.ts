@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useAutomationDesign } from '@/hooks/design/useAutomationDesign';
+import { useAutomationDesign } from '@/hooks/design/core/useAutomationDesign';
 import type { AutomationPlatform, AutomationFallbackMode } from '@/lib/bindings/PersonaAutomation';
 import type { CredentialMetadata } from '@/lib/types/types';
-import { githubListRepos, githubCheckPermissions, zapierListZaps } from '@/api/automations';
-import type { GitHubRepo, GitHubPermissions, DeployAutomationResult, ZapierZap } from '@/api/automations';
+import { githubListRepos, githubCheckPermissions, zapierListZaps } from '@/api/agents/automations';
+import type { GitHubRepo, GitHubPermissions, DeployAutomationResult, ZapierZap } from '@/api/agents/automations';
 
 export type ModalPhase = 'idle' | 'analyzing' | 'preview' | 'deploying' | 'success' | 'error';
 

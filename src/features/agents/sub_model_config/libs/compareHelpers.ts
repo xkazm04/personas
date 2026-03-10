@@ -1,4 +1,4 @@
-import type { ModelTestConfig } from '@/api/tests';
+import type { ModelTestConfig } from '@/api/agents/tests';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import { compositeScore } from '@/lib/eval/evalFramework';
 import {

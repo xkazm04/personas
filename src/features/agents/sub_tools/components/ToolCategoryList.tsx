@@ -1,5 +1,5 @@
 import { Search, Wrench } from 'lucide-react';
-import { IS_MOBILE } from '@/lib/utils/platform';
+import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { ToolCard } from './ToolCard';
 import { ConnectorGroup } from './ConnectorGroup';
 import type { ToolDef } from './ToolCardItems';

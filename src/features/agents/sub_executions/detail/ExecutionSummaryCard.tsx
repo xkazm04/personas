@@ -1,0 +1,72 @@
+import { Timer, DollarSign, Wrench, RotateCw } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { getStatusEntry } from '@/lib/utils/formatters';
+import { StatusIcon } from '../runnerTypes';
+
+interface ExecutionSummaryCardProps {
+  executionSummary: {
+    status: string;
+    duration_ms?: number | null;
+    cost_usd?: number | null;
+    last_tool?: string | null;
+  };
+  onResume: () => void;
+}
+
+export function ExecutionSummaryCard({ executionSummary, onResume }: ExecutionSummaryCardProps) {
+  const summaryPresentation = getStatusEntry(executionSummary.status);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+      className={`rounded-xl border p-4 ${summaryPresentation.border} ${summaryPresentation.bg}`}
+    >
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-2">
+          <StatusIcon status={executionSummary.status} className="w-5 h-5" />
+          <span className={`text-sm font-semibold capitalize ${summaryPresentation.text}`}>
+            {executionSummary.status}
+          </span>
+        </div>
+
+        {executionSummary.duration_ms != null && (
+          <div className="flex items-center gap-1.5 text-muted-foreground/80">
+            <Timer className="w-3.5 h-3.5" />
+            <span className="text-sm font-mono">{(executionSummary.duration_ms / 1000).toFixed(1)}s</span>
+          </div>
+        )}
+
+        {executionSummary.cost_usd != null && (
+          <div className="flex items-center gap-1.5 text-muted-foreground/80">
+            <DollarSign className="w-3.5 h-3.5" />
+            <span className="text-sm font-mono">${executionSummary.cost_usd.toFixed(4)}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Cancelled-specific: last tool + resume */}
+      {executionSummary.status === 'cancelled' && (
+        <div className="mt-3 pt-3 border-t border-amber-500/15 space-y-3">
+          {executionSummary.last_tool && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground/90">
+              <Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
+              <span>Stopped while running</span>
+              <code className="px-1.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-300/80 font-mono text-sm">
+                {executionSummary.last_tool}
+              </code>
+            </div>
+          )}
+          <button
+            onClick={onResume}
+            className="flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"
+          >
+            <RotateCw className="w-3.5 h-3.5" />
+            Resume from here
+          </button>
+        </div>
+      )}
+    </motion.div>
+  );
+}

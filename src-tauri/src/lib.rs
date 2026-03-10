@@ -355,7 +355,7 @@ pub fn run() {
             // Core â€” Import/Export
             commands::core::import_export::export_persona,
             commands::core::import_export::import_persona,
-            // Core â€” Data Portability
+            // Core — Data Portability
             commands::core::data_portability::get_export_stats,
             commands::core::data_portability::export_full,
             commands::core::data_portability::export_selective,
@@ -363,7 +363,11 @@ pub fn run() {
             commands::core::data_portability::preview_competitive_import,
             commands::core::data_portability::export_credentials,
             commands::core::data_portability::import_credentials,
-            // Execution â€” Executions
+            // Core — Saved Views
+            commands::core::saved_views::create_saved_view,
+            commands::core::saved_views::list_saved_views,
+            commands::core::saved_views::delete_saved_view,
+            // Execution — Executions
             commands::execution::executions::list_executions,
             commands::execution::executions::list_all_executions,
             commands::execution::executions::get_execution,

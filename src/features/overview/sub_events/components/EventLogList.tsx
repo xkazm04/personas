@@ -1,14 +1,14 @@
 import { Zap, Activity, RefreshCw } from 'lucide-react';
-import EmptyState from '@/features/shared/components/EmptyState';
-import { useVirtualList } from '@/hooks/utility/useVirtualList';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { FilterBar } from '@/features/shared/components/FilterBar';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { AnimatePresence } from 'framer-motion';
-import DetailModal from '@/features/overview/components/DetailModal';
+import DetailModal from '@/features/overview/components/dashboard/DetailModal';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { useEventLog, type EventFilter } from '../libs/useEventLog';
 import { EventRow, EventDetailContent } from './EventLogItem';
-import ContentLoader from '@/features/shared/components/ContentLoader';
+import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 
 export default function EventLogList() {
   const {

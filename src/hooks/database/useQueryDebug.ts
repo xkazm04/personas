@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
-import { startQueryDebug, cancelQueryDebug } from '@/api/dbSchema';
-import type { QueryResult } from '@/api/dbSchema';
+import { startQueryDebug, cancelQueryDebug } from '@/api/vault/database/dbSchema';
+import type { QueryResult } from '@/api/vault/database/dbSchema';
 
 export function useQueryDebug() {
   const [result, setResult] = useState<QueryResult | null>(null);

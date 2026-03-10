@@ -10,7 +10,7 @@ import {
   type SyncConfig,
   type ImportPhase,
 } from './importTypes';
-import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
+import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 
 export interface CredentialImportState {
   phase: ImportPhase;

@@ -2,13 +2,13 @@ import { useEffect, useState, useMemo } from 'react';
 import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, ChevronDown, TrendingUp, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-import { getKnowledgeSummary, listExecutionKnowledge } from '@/api/knowledge';
+import { getKnowledgeSummary, listExecutionKnowledge } from '@/api/overview/intelligence/knowledge';
 import type { KnowledgeGraphSummary } from '@/lib/bindings/KnowledgeGraphSummary';
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { OverviewStatCard } from '@/features/overview/sub_observability/OverviewStatCard';
-import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 
 // ── Knowledge type config ─────────────────────────────────────────
 const KNOWLEDGE_TYPES: Record<string, { label: string; color: string; icon: typeof Network }> = {

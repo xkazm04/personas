@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Variants } from 'framer-motion';
-import { useMotion, type MotionConfig } from '@/hooks/utility/useMotion';
+import { useMotion, type MotionConfig } from '@/hooks/utility/interaction/useMotion';
 
 export { useMotion, type MotionConfig };
 

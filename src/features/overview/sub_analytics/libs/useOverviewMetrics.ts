@@ -1,8 +1,8 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { usePersonaStore, initHealingListener } from '@/stores/personaStore';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
-import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
-import { usePolling, POLLING_CONFIG } from '@/hooks/utility/usePolling';
+import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 
 /**
  * Owns the analytics data-fetch lifecycle (observability metrics, tool usage,

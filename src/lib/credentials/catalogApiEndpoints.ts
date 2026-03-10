@@ -1,4 +1,4 @@
-import type { ApiEndpoint } from '@/api/apiProxy';
+import type { ApiEndpoint } from '@/api/system/apiProxy';
 
 // â”€â”€ Catalog-bundled API endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Curated 5-10 most useful endpoints per connector, sourced from

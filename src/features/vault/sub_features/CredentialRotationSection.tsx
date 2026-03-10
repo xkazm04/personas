@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AlertTriangle, XCircle } from 'lucide-react';
-import type { RotationStatus } from '@/api/rotation';
+import type { RotationStatus } from '@/api/vault/rotation';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { AnomalyScorePanel } from '@/features/vault/sub_features/AnomalyScorePanel';
 import { RotationPolicyControls } from '@/features/vault/sub_features/RotationPolicyControls';

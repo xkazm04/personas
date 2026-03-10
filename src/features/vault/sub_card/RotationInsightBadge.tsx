@@ -1,5 +1,5 @@
 import { ShieldOff, AlertTriangle, TrendingDown, Timer, ArrowUp, ArrowDown, Minus } from 'lucide-react';
-import type { AnomalyScore, Remediation } from '@/api/rotation';
+import type { AnomalyScore, Remediation } from '@/api/vault/rotation';
 
 interface RotationInsightBadgeProps {
   anomalyScore: AnomalyScore;

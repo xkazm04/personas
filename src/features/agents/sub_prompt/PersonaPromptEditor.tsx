@@ -8,7 +8,7 @@ import {
   createEmptyStructuredPrompt,
 } from '@/lib/personas/promptMigration';
 import type { StructuredPrompt } from '@/lib/personas/promptMigration';
-import { SectionEditor } from '@/features/shared/components/draft-editor/SectionEditor';
+import { SectionEditor } from '@/features/shared/components/editors/draft-editor/SectionEditor';
 import { PromptSectionSidebar } from './PromptSectionSidebar';
 import { CustomSectionsPanel } from './CustomSectionsPanel';
 import type { SubTab, SidebarEntry } from './PromptSectionSidebar';

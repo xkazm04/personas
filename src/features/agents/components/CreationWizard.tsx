@@ -2,7 +2,7 @@ import { useState, useReducer, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Blocks, MessageCircle } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ContentBox } from '@/features/shared/components/ContentLayout';
+import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { ChatCreator } from '@/features/agents/components/ChatCreator';
 import { BuilderStep, IdentityStep, builderReducer, INITIAL_BUILDER_STATE } from './creation';
 import { TRANSITION_SLOW, TRANSITION_FAST } from '@/features/templates/animationPresets';

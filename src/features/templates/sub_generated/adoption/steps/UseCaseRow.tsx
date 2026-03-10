@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { SelectionCheckbox } from '../review/SelectionCheckbox';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
+import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import type { FlowNode, UseCaseFlow } from '@/lib/types/frontendTypes';
 
 function countNodeTypes(nodes: FlowNode[]): Record<string, number> {

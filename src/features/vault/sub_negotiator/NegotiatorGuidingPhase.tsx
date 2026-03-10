@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Clock, AlertTriangle, Lightbulb, CheckCircle, SkipForward } from 'lucide-react';
-import type { NegotiationPlan } from '@/hooks/design/useCredentialNegotiator';
-import type { StepNode } from '@/hooks/design/negotiatorStepGraph';
+import type { NegotiationPlan } from '@/hooks/design/credential/useCredentialNegotiator';
+import type { StepNode } from '@/hooks/design/credential/negotiatorStepGraph';
 import { NegotiatorStepCard } from './NegotiatorStepCard';
 
 interface NegotiatorGuidingPhaseProps {

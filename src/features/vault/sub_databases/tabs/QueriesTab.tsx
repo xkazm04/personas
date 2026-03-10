@@ -4,9 +4,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { SqlEditor } from '../SqlEditor';
 import { QueryResultTable } from '../QueryResultTable';
-import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
+import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import { useQueryDebug } from '@/hooks/database/useQueryDebug';
-import type { QueryResult } from '@/api/dbSchema';
+import type { QueryResult } from '@/api/vault/database/dbSchema';
 
 /** Extract a human-readable error message from a Tauri IPC error. */
 function extractErrorMessage(err: unknown): string {
@@ -101,7 +101,7 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
     setError(null);
     setResult(null);
     try {
-      const res = await executeDbQuery(credentialId, editorValue);
+      const res = await executeDbQuery(credentialId, editorValue, selectedId ?? undefined);
       setResult(res);
     } catch (err) {
       setError(extractErrorMessage(err));

@@ -5,7 +5,7 @@ import type { DbPersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { usePersonaStore } from '@/stores/personaStore';
-import { stripHtml } from '@/lib/utils/sanitizeHtml';
+import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 
 function parseTags(tagsJson: string | null): string[] {
   return parseJsonOrDefault<string[]>(tagsJson, []);

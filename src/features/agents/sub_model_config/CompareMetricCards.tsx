@@ -1,0 +1,111 @@
+import {
+  Clock, DollarSign, Target, FileText, Trophy,
+} from 'lucide-react';
+import { scoreColor } from '@/lib/eval/evalFramework';
+import type { ModelOption, ModelMetrics } from './compareModels';
+
+// ---------------------------------------------------------------------------
+// Metric card
+// ---------------------------------------------------------------------------
+
+export function MetricCard({
+  model,
+  metrics,
+  isWinner,
+  accent,
+}: {
+  model: ModelOption;
+  metrics: ModelMetrics;
+  isWinner: boolean;
+  accent: 'blue' | 'amber';
+}) {
+  const borderColor = isWinner
+    ? accent === 'blue' ? 'border-blue-500/30' : 'border-amber-500/30'
+    : 'border-primary/10';
+  const bgColor = isWinner
+    ? accent === 'blue' ? 'bg-blue-500/5' : 'bg-amber-500/5'
+    : 'bg-background/30';
+
+  return (
+    <div className={`px-3 py-2.5 rounded-xl border ${borderColor} ${bgColor} space-y-2`}>
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-foreground/90">{model.label}</span>
+        {isWinner && <Trophy className="w-3 h-3 text-primary" />}
+      </div>
+
+      <div className={`text-2xl font-bold tabular-nums ${scoreColor(metrics.composite)}`}>
+        {metrics.composite}
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+        <MetricRow icon={Clock} label="Latency" value={`${(metrics.avgDuration / 1000).toFixed(1)}s`} />
+        <MetricRow icon={DollarSign} label="Cost" value={`$${metrics.totalCost.toFixed(4)}`} />
+        <MetricRow icon={Target} label="Tokens In" value={metrics.totalInputTokens.toLocaleString()} />
+        <MetricRow icon={FileText} label="Tokens Out" value={metrics.totalOutputTokens.toLocaleString()} />
+      </div>
+    </div>
+  );
+}
+
+function MetricRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Clock;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-1 text-muted-foreground/70">
+      <Icon className="w-3 h-3 flex-shrink-0" />
+      <span className="truncate">{label}:</span>
+      <span className="text-foreground/80 font-mono ml-auto">{value}</span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Compare bar (horizontal dual bar)
+// ---------------------------------------------------------------------------
+
+export function CompareBar({
+  label,
+  labelIcon: Icon,
+  valueA,
+  valueB,
+}: {
+  label: string;
+  labelIcon: typeof Target;
+  valueA: number;
+  valueB: number;
+}) {
+  const max = Math.max(valueA, valueB, 1);
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+        <Icon className="w-3 h-3" />
+        {label}
+      </div>
+      <div className="flex items-center gap-1.5">
+        {/* A bar (right-aligned, blue) */}
+        <div className="flex-1 flex justify-end">
+          <div className="h-2.5 rounded-full bg-blue-500/30 overflow-hidden" style={{ width: `${(valueA / max) * 100}%` }}>
+            <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }} />
+          </div>
+        </div>
+        <div className="w-16 text-center text-xs font-mono tabular-nums">
+          <span className={scoreColor(valueA)}>{valueA}</span>
+          <span className="text-muted-foreground/40 mx-0.5">:</span>
+          <span className={scoreColor(valueB)}>{valueB}</span>
+        </div>
+        {/* B bar (left-aligned, amber) */}
+        <div className="flex-1">
+          <div className="h-2.5 rounded-full bg-amber-500/30 overflow-hidden" style={{ width: `${(valueB / max) * 100}%` }}>
+            <div className="h-full bg-amber-500 rounded-full" style={{ width: '100%' }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

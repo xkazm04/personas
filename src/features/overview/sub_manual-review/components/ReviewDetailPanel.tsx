@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Check, X, Send, Bot, User, Zap, Cloud, ExternalLink } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { listReviewMessages, addReviewMessage } from '@/api/reviews';
+import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { SEVERITY_LABELS, parseSuggestedActions } from '../libs/reviewHelpers';
 import { SeverityIndicator, ContextDataPreview } from './ReviewListItem';

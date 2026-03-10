@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useCredentialDesign, type CredentialDesignResult, type CredentialDesignPhase } from '@/hooks/design/useCredentialDesign';
-import { useOAuthConsent } from '@/hooks/design/useOAuthConsent';
-import { useUniversalOAuth } from '@/hooks/design/useUniversalOAuth';
-import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
+import { useCredentialDesign, type CredentialDesignResult, type CredentialDesignPhase } from '@/hooks/design/credential/useCredentialDesign';
+import { useOAuthConsent } from '@/hooks/design/oauth/useOAuthConsent';
+import { useUniversalOAuth } from '@/hooks/design/oauth/useUniversalOAuth';
+import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import {
   extractFirstUrl,

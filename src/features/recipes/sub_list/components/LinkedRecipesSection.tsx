@@ -4,7 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
-import { SectionHeader } from '@/features/shared/components/SectionHeader';
+import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { RecipePicker } from './RecipePicker';
 import { RecipePlaygroundModal } from '../../sub_playground/components/RecipePlaygroundModal';
 

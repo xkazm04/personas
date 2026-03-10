@@ -2029,6 +2029,32 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added trust_level, trust_origin, trust_verified_at to personas");
     }
 
+    // â”€â”€ Saved Views for Analytics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    let has_saved_views: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='saved_views'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_saved_views {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS saved_views (
+                id                  TEXT PRIMARY KEY,
+                name                TEXT NOT NULL,
+                persona_id          TEXT,
+                day_range           INTEGER NOT NULL DEFAULT 30,
+                custom_start_date   TEXT,
+                custom_end_date     TEXT,
+                compare_enabled     INTEGER NOT NULL DEFAULT 0,
+                is_smart            INTEGER NOT NULL DEFAULT 0,
+                created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_saved_views_created ON saved_views(created_at DESC);"
+        )?;
+        tracing::info!("Created saved_views table");
+    }
+
     Ok(())
 }
 

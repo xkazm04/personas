@@ -1,15 +1,15 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Plug, User, CreditCard, Building2, Monitor } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
-import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
-import type { ThemedSelectOption } from '@/features/shared/components/ThemedSelect';
+import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import type { ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import { getAuthBadgeClasses, getAuthIcon } from '@/features/vault/utils/authMethodStyles';
 import { PURPOSE_GROUPS, getPurposeForConnector } from '@/lib/credentials/connectorRoles';
 import { getLicenseTier, LICENSE_TIER_META, type LicenseTier } from '@/lib/credentials/connectorLicensing';
-import { IS_MOBILE } from '@/lib/utils/platform';
-import { isDesktopBridge } from '@/lib/utils/connectors';
+import { IS_MOBILE } from '@/lib/utils/platform/platform';
+import { isDesktopBridge } from '@/lib/utils/platform/connectors';
 
 interface CredentialPickerProps {
   connectors: ConnectorDefinition[];

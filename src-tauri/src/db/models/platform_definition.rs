@@ -1,5 +1,12 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum PlatformFormat {
+    Json,
+    Yaml,
+}
+
 // ============================================================================
 // Platform Definition — config-driven platform rules for workflow import
 // ============================================================================
@@ -14,7 +21,7 @@ pub struct PlatformDefinition {
     /// Display label (e.g., "n8n", "Zapier", "Make (Integromat)")
     pub label: String,
     /// File format for import (json, yaml)
-    pub format: String,
+    pub format: PlatformFormat,
     /// Node-type to connector service mapping
     pub node_type_map: Vec<NodeTypeMapping>,
     /// Credential consolidation rules (many-to-one mapping)
@@ -83,7 +90,7 @@ pub struct ProtocolMapRule {
 pub struct PlatformDefinitionRow {
     pub id: String,
     pub label: String,
-    pub format: String,
+    pub format: PlatformFormat,
     pub definition_json: String,
     pub is_builtin: bool,
     pub created_at: String,
@@ -94,7 +101,7 @@ pub struct PlatformDefinitionRow {
 pub struct CreatePlatformDefinitionInput {
     pub id: String,
     pub label: String,
-    pub format: String,
+    pub format: PlatformFormat,
     pub definition_json: String,
 }
 

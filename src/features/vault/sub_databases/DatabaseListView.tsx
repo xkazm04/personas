@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Database, Search } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { usePersonaStore } from '@/stores/personaStore';
 import { DatabaseCard } from './DatabaseCard';
 import { SchemaManagerModal } from './SchemaManagerModal';

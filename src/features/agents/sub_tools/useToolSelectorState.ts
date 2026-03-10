@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
+import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { useCredentialNav } from '@/features/vault/hooks/CredentialNavContext';
 
 export function useToolSelectorState() {

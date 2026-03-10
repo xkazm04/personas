@@ -1,15 +1,15 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Plug, ArrowLeft, Bot, MessageSquare, Monitor } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
-import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
-import { useCredentialDesign } from '@/hooks/design/useCredentialDesign';
+import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
+import { useCredentialDesign } from '@/hooks/design/credential/useCredentialDesign';
 import { AutoCredPanel } from './AutoCredPanel';
-import { AnalyzingPhase } from '@/features/vault/sub_design/AnalyzingPhase';
+import { AnalyzingPhase } from '@/features/vault/sub_design/phases/AnalyzingPhase';
 import { usePersonaStore } from '@/stores/personaStore';
-import { checkPlaywrightAvailable } from '@/api/autoCredBrowser';
-import { isDesktopBridge } from '@/lib/utils/connectors';
+import { checkPlaywrightAvailable } from '@/api/vault/autoCredBrowser';
+import { isDesktopBridge } from '@/lib/utils/platform/connectors';
 import { lookupRecipeAsDesignResult } from '@/lib/credentials/credentialRecipeRegistry';
 import type { AutoCredMode } from './types';
 

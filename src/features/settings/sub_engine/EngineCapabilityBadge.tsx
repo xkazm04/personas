@@ -1,6 +1,6 @@
 import { AlertTriangle, Check } from 'lucide-react';
-import { useEngineCapabilities } from '@/hooks/utility/useEngineCapabilities';
-import { useAppSetting } from '@/hooks/utility/useAppSetting';
+import { useEngineCapabilities } from '@/hooks/utility/data/useEngineCapabilities';
+import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
 import { PROVIDERS } from './engineCapabilities';
 import type { CliOperation } from './engineCapabilities';
 import type { CliEngine } from '@/lib/types/types';

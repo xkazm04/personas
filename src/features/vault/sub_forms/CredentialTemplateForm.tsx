@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react';
 import { Plug, Server, Bot, Monitor, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { McpPrefilledForm } from '@/features/vault/sub_schemas/McpPrefilledForm';
 import type { ConnectorDefinition, CredentialTemplateField, ConnectorAuthMethod } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import { getAuthBadgeClasses } from '@/features/vault/utils/authMethodStyles';
-import { isDesktopBridge } from '@/lib/utils/connectors';
+import { isDesktopBridge } from '@/lib/utils/platform/connectors';
 
 interface AuthVariant {
   id: string;

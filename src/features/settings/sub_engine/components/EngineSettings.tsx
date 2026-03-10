@@ -1,6 +1,6 @@
 import { Cpu, RotateCcw, AlertTriangle, Check, Minus, Lock } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { useEngineCapabilities } from '@/hooks/utility/useEngineCapabilities';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { useEngineCapabilities } from '@/hooks/utility/data/useEngineCapabilities';
 import { CLI_OPERATIONS, PROVIDERS } from '../libs/engineCapabilities';
 import { OperationRow } from './OperationRow';
 

@@ -1,6 +1,6 @@
 import { Check, GitMerge, ChevronDown, Bot, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { stripHtml } from '@/lib/utils/sanitizeHtml';
+import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import type { MemoryConflict, ConflictResolution } from '../libs/memoryConflicts';
 import { kindBadge, similarityBadge, VARIANT_STYLES } from '../libs/conflictHelpers';

@@ -7,7 +7,7 @@ import {
   Boxes,
 } from 'lucide-react';
 import { SelectionCheckbox } from '../review/SelectionCheckbox';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
+import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { getRoleForConnector } from '@/lib/credentials/connectorRoles';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';

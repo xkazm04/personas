@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Workflow, Loader2, Terminal, RefreshCw } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useToastStore } from '@/stores/toastStore';
-import { getWorkflowsOverview, cancelWorkflowJob } from '@/api/workflows';
-import type { WorkflowsOverview, WorkflowJob } from '@/api/workflows';
+import { getWorkflowsOverview, cancelWorkflowJob } from '@/api/pipeline/workflows';
+import type { WorkflowsOverview, WorkflowJob } from '@/api/pipeline/workflows';
 import { STATUS_FILTER_OPTIONS, JOB_TYPE_LABELS, type StatusFilter } from '../libs/workflowHelpers';
 import { SummaryCards, JobRow } from './WorkflowCard';
 

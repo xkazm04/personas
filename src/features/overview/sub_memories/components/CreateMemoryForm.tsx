@@ -4,7 +4,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
-import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 
 // -- Interactive Importance Dots (clickable) ----------------------------------
 function InteractiveImportanceDots({ value, onChange }: { value: number; onChange: (v: number) => void }) {

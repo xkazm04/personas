@@ -14,7 +14,7 @@ import {
   PinOff,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useElapsedTimer } from '@/hooks/utility/useElapsedTimer';
+import { useElapsedTimer } from '@/hooks/utility/timing/useElapsedTimer';
 import { formatElapsed } from '@/lib/utils/formatters';
 import {
   PIPELINE_STAGES,
@@ -24,7 +24,7 @@ import {
   type UnifiedTrace,
 } from '@/lib/execution/pipeline';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
-import { Tooltip } from '@/features/shared/components/Tooltip';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 // â”€â”€ Pipeline stage dot visualisation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 

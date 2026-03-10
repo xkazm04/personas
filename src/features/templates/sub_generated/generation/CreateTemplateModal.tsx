@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -9,288 +9,40 @@ import {
   Check,
   Wand2,
 } from 'lucide-react';
-import { listen } from '@tauri-apps/api/event';
-import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import {
-  generateTemplateBackground,
-  getTemplateGenerateSnapshot,
-  clearTemplateGenerateSnapshot,
-  cancelTemplateGenerate,
-  saveCustomTemplate,
-} from '@/api/templateAdopt';
-import { TransformProgress } from '@/features/shared/components/TransformProgress';
-import { DraftEditStep } from '@/features/shared/components/draft-editor/DraftEditStep';
-import { normalizeDraftFromUnknown } from '@/features/templates/sub_n8n/n8nTypes';
-import { useBackgroundSnapshot } from '@/hooks/utility/useBackgroundSnapshot';
-import { usePersistedContext } from '@/hooks/utility/usePersistedContext';
-import {
-  useCreateTemplateReducer,
-  CREATE_TEMPLATE_CONTEXT_KEY,
-  CREATE_TEMPLATE_CONTEXT_MAX_AGE_MS,
   CREATE_TEMPLATE_STEPS,
   CREATE_TEMPLATE_STEP_META,
 } from './useCreateTemplateReducer';
-import type { PersistedCreateTemplateContext } from './useCreateTemplateReducer';
-import { WizardStepper } from '@/features/shared/components/WizardStepper';
+import { WizardStepper } from '@/features/shared/components/progress/WizardStepper';
 import { BaseModal } from '../shared/BaseModal';
+import type { CreateTemplateModalProps } from './createTemplateTypes';
+import { useCreateTemplateActions } from './useCreateTemplateActions';
+import { DescribeStep, GenerateStep, ReviewStep } from './CreateTemplateSteps';
 
-// ── Helpers ──
-
-function persistContext(ctx: PersistedCreateTemplateContext) {
-  window.localStorage.setItem(CREATE_TEMPLATE_CONTEXT_KEY, JSON.stringify(ctx));
-}
-
-function clearPersistedContext() {
-  window.localStorage.removeItem(CREATE_TEMPLATE_CONTEXT_KEY);
-}
-
-// ── Props ──
-
-interface CreateTemplateModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onTemplateCreated: () => void;
-}
-
-// ── Component ──
+export type { CreateTemplateModalProps } from './createTemplateTypes';
 
 export function CreateTemplateModal({
   isOpen,
   onClose,
   onTemplateCreated,
 }: CreateTemplateModalProps) {
-  const reducer = useCreateTemplateReducer();
-  const { state } = reducer;
-  const genIdRef = useRef<string | null>(null);
-
-  // ── Persisted context (restore on open) ──
-  usePersistedContext<PersistedCreateTemplateContext>({
-    key: CREATE_TEMPLATE_CONTEXT_KEY,
-    maxAge: CREATE_TEMPLATE_CONTEXT_MAX_AGE_MS,
-    enabled: isOpen,
-    validate: (parsed) => parsed.genId || null,
-    getSavedAt: (parsed) => parsed.savedAt,
-    onRestore: useCallback((ctx: PersistedCreateTemplateContext) => {
-      genIdRef.current = ctx.genId;
-      reducer.restoreContext(ctx.templateName, ctx.description, ctx.genId);
-    }, [reducer]),
-  });
-
-  // ── Background snapshot polling ──
-  const snapshotGetFn = useCallback(async (id: string) => {
-    const snap = await getTemplateGenerateSnapshot(id);
-    let draft: N8nPersonaDraft | null = null;
-    if (snap.status === 'completed' && snap.result_json) {
-      try {
-        const parsed = JSON.parse(snap.result_json);
-        draft = normalizeDraftFromUnknown(parsed?.persona ?? parsed);
-      } catch { /* intentional: non-critical — JSON parse fallback */ }
-    }
-    return {
-      status: snap.status as 'idle' | 'running' | 'completed' | 'failed',
-      error: snap.error,
-      lines: snap.lines,
-      draft,
-    };
-  }, []);
-
-  const onSnapshotLines = useCallback((lines: string[]) => {
-    reducer.generateLines(lines);
-  }, [reducer]);
-
-  const onSnapshotPhase = useCallback((phase: 'running' | 'completed' | 'failed') => {
-    reducer.generatePhase(phase);
-  }, [reducer]);
-
-  const onSnapshotDraft = useCallback((draft: N8nPersonaDraft) => {
-    reducer.generateCompleted(draft, '');
-    clearPersistedContext();
-  }, [reducer]);
-
-  const onSnapshotCompletedNoDraft = useCallback(async () => {
-    if (genIdRef.current) {
-      try {
-        const snap = await getTemplateGenerateSnapshot(genIdRef.current);
-        if (snap.result_json) {
-          const parsed = JSON.parse(snap.result_json);
-          const draft = normalizeDraftFromUnknown(parsed?.persona ?? parsed);
-          if (draft) {
-            reducer.generateCompleted(draft, snap.result_json);
-            clearPersistedContext();
-            return;
-          }
-        }
-      } catch { /* intentional: non-critical — JSON parse fallback */ }
-    }
-    reducer.generateFailed('Generation completed but no valid persona draft was found.');
-    clearPersistedContext();
-  }, [reducer]);
-
-  const onSnapshotFailed = useCallback((error: string) => {
-    reducer.generateFailed(error);
-    clearPersistedContext();
-  }, [reducer]);
-
-  const onSnapshotSessionLost = useCallback(() => {
-    reducer.generateFailed('Lost connection to background generation job.');
-    clearPersistedContext();
-  }, [reducer]);
-
-  useBackgroundSnapshot({
-    snapshotId: state.backgroundGenId,
-    getSnapshot: snapshotGetFn,
-    onLines: onSnapshotLines,
-    onPhase: onSnapshotPhase,
-    onDraft: onSnapshotDraft,
-    onCompletedNoDraft: onSnapshotCompletedNoDraft,
-    onFailed: onSnapshotFailed,
-    onSessionLost: onSnapshotSessionLost,
-    interval: 1500,
-  });
-
-  // ── Event listeners for streaming lines ──
-  useEffect(() => {
-    if (!state.backgroundGenId) return;
-    const currentGenId = state.backgroundGenId;
-
-    const unlistenPromise = listen<{ gen_id: string; line: string }>(
-      'template-generate-output',
-      (event) => {
-        if (event.payload.gen_id === currentGenId) {
-          reducer.appendGenerateLine(event.payload.line);
-        }
-      },
-    );
-
-    return () => {
-      unlistenPromise.then((unlisten) => unlisten()).catch(() => {});
-    };
-  }, [state.backgroundGenId, reducer.appendGenerateLine]);
-
-  // ── Actions ──
-
-  const handleStartGenerate = useCallback(async () => {
-    if (!state.templateName.trim() || !state.description.trim()) return;
-
-    const genId = `tpl-gen-${Date.now()}`;
-    genIdRef.current = genId;
-    reducer.generateStarted(genId);
-
-    persistContext({
-      genId,
-      templateName: state.templateName,
-      description: state.description,
-      savedAt: Date.now(),
-    });
-
-    try {
-      await generateTemplateBackground(genId, state.templateName.trim(), state.description.trim());
-    } catch (err) {
-      reducer.generateFailed(err instanceof Error ? err.message : String(err));
-      clearPersistedContext();
-    }
-  }, [state.templateName, state.description, reducer]);
-
-  const handleCancel = useCallback(async () => {
-    if (state.backgroundGenId) {
-      try {
-        await cancelTemplateGenerate(state.backgroundGenId);
-      } catch { /* intentional: non-critical — best-effort cancellation */ }
-    }
-    reducer.generateCancelled();
-    clearPersistedContext();
-  }, [state.backgroundGenId, reducer]);
-
-  const handleRetry = useCallback(() => {
-    reducer.generateCancelled();
-    clearPersistedContext();
-    setTimeout(() => {
-      void handleStartGenerate();
-    }, 100);
-  }, [reducer, handleStartGenerate]);
-
-  const handleSaveTemplate = useCallback(async () => {
-    if (!state.draft) return;
-    reducer.saveStarted();
-
-    try {
-      const designResultJson = state.designResultJson || JSON.stringify({
-        structured_prompt: state.draft.structured_prompt,
-        full_prompt_markdown: state.draft.system_prompt,
-        summary: state.draft.description || '',
-        persona_meta: {
-          name: state.draft.name,
-          icon: state.draft.icon,
-          color: state.draft.color,
-          model_profile: state.draft.model_profile,
-        },
-      });
-
-      await saveCustomTemplate(
-        state.templateName || state.draft.name || 'Custom Template',
-        state.description,
-        designResultJson,
-      );
-
-      reducer.saveCompleted();
-      clearPersistedContext();
-
-      if (genIdRef.current) {
-        try {
-          await clearTemplateGenerateSnapshot(genIdRef.current);
-        } catch { /* intentional: non-critical — snapshot cleanup */ }
-      }
-
-      onTemplateCreated();
-    } catch (err) {
-      reducer.saveFailed(err instanceof Error ? err.message : String(err));
-    }
-  }, [state.draft, state.designResultJson, state.templateName, state.description, reducer, onTemplateCreated]);
-
-  // ── Draft update helpers ──
-
-  const updateDraft = useCallback((updater: (current: N8nPersonaDraft) => N8nPersonaDraft) => {
-    if (!state.draft) return;
-    const updated = updater(state.draft);
-    reducer.draftUpdated(updated);
-  }, [state.draft, reducer]);
-
-  const handleApplyAdjustment = useCallback(async () => {
-    if (!state.adjustmentRequest.trim() || !state.draft) return;
-
-    const genId = `tpl-gen-${Date.now()}`;
-    genIdRef.current = genId;
-
-    const enrichedDescription = `${state.description}\n\nAdditional requirements: ${state.adjustmentRequest}`;
-
-    reducer.generateStarted(genId);
-    persistContext({
-      genId,
-      templateName: state.templateName,
-      description: enrichedDescription,
-      savedAt: Date.now(),
-    });
-
-    try {
-      await generateTemplateBackground(genId, state.templateName.trim(), enrichedDescription);
-    } catch (err) {
-      reducer.generateFailed(err instanceof Error ? err.message : String(err));
-      clearPersistedContext();
-    }
-  }, [state.adjustmentRequest, state.draft, state.description, state.templateName, reducer]);
+  const {
+    state,
+    reducer,
+    handleStartGenerate,
+    handleCancel,
+    handleRetry,
+    handleSaveTemplate,
+    updateDraft,
+    handleApplyAdjustment,
+    handleClose: actionClose,
+  } = useCreateTemplateActions(isOpen, onTemplateCreated);
 
   // ── Close handler ──
   const handleClose = useCallback(() => {
-    if (state.generating) {
-      onClose();
-      return;
-    }
-    if (!state.saved) {
-      clearPersistedContext();
-    }
-    reducer.reset();
+    actionClose();
     onClose();
-  }, [state.generating, state.saved, reducer, onClose]);
+  }, [actionClose, onClose]);
 
   // ── Navigation ──
   const canGoBack = state.step !== 'describe' && !state.generating && !state.saving;
@@ -350,98 +102,38 @@ export function CreateTemplateModal({
         {/* Content */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           <AnimatePresence mode="wait">
-            {/* ── Step 1: Describe ── */}
             {state.step === 'describe' && (
-              <motion.div
-                key="describe"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-                className="p-6 space-y-6"
-              >
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider">
-                    Template Name
-                  </label>
-                  <input
-                    type="text"
-                    value={state.templateName}
-                    onChange={(e) => reducer.setTemplateName(e.target.value)}
-                    placeholder="e.g., Email Manager, Code Reviewer, Daily Reporter..."
-                    className="w-full px-4 py-3 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground/75 placeholder-muted-foreground/30 focus:outline-none focus:border-violet-500/40 transition-colors"
-                    autoFocus
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider">
-                    Description
-                  </label>
-                  <textarea
-                    value={state.description}
-                    onChange={(e) => reducer.setDescription(e.target.value)}
-                    placeholder={'Describe what this persona should do, what services it connects to, and how it should behave. Be specific about tools, triggers, and integrations needed.\n\nExample: A persona that monitors a Gmail inbox for important emails, classifies them by priority, sends Slack notifications for urgent ones, and creates a daily digest summary.'}
-                    className="w-full h-48 px-4 py-3 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground/75 placeholder-muted-foreground/30 resize-none focus:outline-none focus:border-violet-500/40 transition-colors"
-                  />
-                  <p className="text-sm text-muted-foreground/80">
-                    The AI will generate a full persona template including system prompt, tools, triggers, connectors, and template variables.
-                  </p>
-                </div>
-
-                {state.error && (
-                  <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400">
-                    {state.error}
-                  </div>
-                )}
-              </motion.div>
+              <DescribeStep
+                templateName={state.templateName}
+                description={state.description}
+                error={state.error}
+                reducer={reducer}
+              />
             )}
 
-            {/* ── Step 2: Generate ── */}
             {state.step === 'generate' && (
-              <motion.div
-                key="generate"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-                className="p-6"
-              >
-                <TransformProgress
-                  lines={state.generateLines}
-                  mode="transform"
-                  phase={state.generatePhase}
-                  runId={state.backgroundGenId}
-                  onRetry={handleRetry}
-                  onCancel={handleCancel}
-                />
-              </motion.div>
+              <GenerateStep
+                generateLines={state.generateLines}
+                generatePhase={state.generatePhase}
+                backgroundGenId={state.backgroundGenId}
+                onRetry={handleRetry}
+                onCancel={handleCancel}
+              />
             )}
 
-            {/* ── Step 3: Review ── */}
             {state.step === 'review' && state.draft && (
-              <motion.div
-                key="review"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-                className="p-6 h-[60vh]"
-              >
-                <DraftEditStep
-                  draft={state.draft}
-                  draftJson={state.draftJson}
-                  draftJsonError={state.draftJsonError}
-                  adjustmentRequest={state.adjustmentRequest}
-                  transforming={state.transforming}
-                  disabled={state.saving || state.saved}
-                  updateDraft={updateDraft}
-                  onDraftUpdated={(draft) => reducer.draftUpdated(draft)}
-                  onJsonEdited={(json, draft, error) => reducer.draftJsonEdited(json, draft, error)}
-                  onAdjustmentChange={(text) => reducer.setAdjustment(text)}
-                  onApplyAdjustment={handleApplyAdjustment}
-                />
-              </motion.div>
+              <ReviewStep
+                draft={state.draft}
+                draftJson={state.draftJson}
+                draftJsonError={state.draftJsonError}
+                adjustmentRequest={state.adjustmentRequest}
+                transforming={state.transforming}
+                saving={state.saving}
+                saved={state.saved}
+                updateDraft={updateDraft}
+                reducer={reducer}
+                onApplyAdjustment={handleApplyAdjustment}
+              />
             )}
           </AnimatePresence>
         </div>

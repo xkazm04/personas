@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { CredentialCardHeader } from '@/features/vault/sub_card/CredentialCardHeader';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
+import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import { useRotationTicker, formatCountdown } from '@/features/vault/hooks/useRotationTicker';
-import type { RotationStatus } from '@/api/rotation';
-import { getRotationStatus } from '@/api/rotation';
+import type { RotationStatus } from '@/api/vault/rotation';
+import { getRotationStatus } from '@/api/vault/rotation';
 
 interface CredentialCardProps {
   credential: CredentialMetadata;

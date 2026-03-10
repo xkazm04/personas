@@ -1,7 +1,7 @@
 import { Server, Link, Database } from 'lucide-react';
 import type { SchemaFormConfig } from './schemaFormTypes';
 import { buildEnvMap, buildCustomHealthcheck } from './schemaFormTypes';
-import { healthcheckMcpPreview } from '@/api/mcpTools';
+import { healthcheckMcpPreview } from '@/api/agents/mcpTools';
 
 export const MCP_SCHEMA: SchemaFormConfig = {
   headerIcon: (

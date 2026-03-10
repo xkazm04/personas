@@ -1,7 +1,7 @@
-export { PersonaConnectorsTab } from './components/PersonaConnectorsTab';
-export { NotificationChannelSettings } from './components/NotificationChannelSettings';
-export { ConnectorStatusCard } from './components/ConnectorStatusCard';
-export { CredentialPicker } from './components/CredentialPicker';
+export { PersonaConnectorsTab } from './components/connectors/PersonaConnectorsTab';
+export { NotificationChannelSettings } from './components/channels/NotificationChannelSettings';
+export { ConnectorStatusCard } from './components/connectors/ConnectorStatusCard';
+export { CredentialPicker } from './components/connectors/CredentialPicker';
 export { useConnectorStatuses } from './libs/useConnectorStatuses';
 export { useUnfulfilledCredentials, useGlobalUnfulfilledCredentials } from './libs/useUnfulfilledCredentials';
 export type { UnfulfilledCredential, CredentialDemandSummary } from './libs/useUnfulfilledCredentials';

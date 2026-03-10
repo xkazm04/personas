@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::engine::platform_rules;
-use crate::db::models::PlatformDefinition;
+use crate::db::models::{PlatformDefinition, PlatformFormat};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
@@ -15,7 +15,7 @@ use serde::Serialize;
 pub struct PlatformDefinitionSummary {
     pub id: String,
     pub label: String,
-    pub format: String,
+    pub format: PlatformFormat,
     pub is_builtin: bool,
     pub node_type_count: usize,
     pub credential_rule_count: usize,

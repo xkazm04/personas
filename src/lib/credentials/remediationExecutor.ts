@@ -10,8 +10,8 @@
  * Each action is idempotent and updates the bus event outcome on completion.
  */
 
-import { rotateCredentialNow, listRotationPolicies, updateRotationPolicy } from '@/api/rotation';
-import { sendOsNotification } from '@/lib/utils/osNotification';
+import { rotateCredentialNow, listRotationPolicies, updateRotationPolicy } from '@/api/vault/rotation';
+import { sendOsNotification } from '@/lib/utils/platform/osNotification';
 import { remediationBus, type RemediationEvent, type RemediationAction } from './remediationBus';
 
 // ── Action Handlers ─────────────────────────────────────────────────

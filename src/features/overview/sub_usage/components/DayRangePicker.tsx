@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, forwardRef } from 'react';
 import { Calendar } from 'lucide-react';
-import type { OverviewDayRange, CustomDateRange } from '@/features/overview/components/OverviewFilterContext';
+import type { OverviewDayRange, CustomDateRange } from '@/features/overview/components/dashboard/OverviewFilterContext';
 
 export type DayRange = OverviewDayRange;
 

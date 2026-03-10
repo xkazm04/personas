@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
-import { ContentBox } from '@/features/shared/components/ContentLayout';
+import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { type PersonaDraft, buildDraft } from '../libs/PersonaDraft';
 import { useEditorDirtyState, TabSaveError } from '../libs/EditorDocument';
 import { tabIdsToLabels } from '../libs/editorTabConstants';
@@ -11,7 +11,7 @@ import { UnsavedChangesBanner, DesignNudgeBanner, CloudNudgeBanner } from './Edi
 import { OnboardingBanner } from '@/features/agents/components/onboarding/OnboardingChecklist';
 import { EditorTabBar } from './EditorTabBar';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
-import PanelSkeleton from '@/features/shared/components/PanelSkeleton';
+import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 import {
   PersonaPromptEditor, PersonaSettingsTab, PersonaUseCasesTab,
   PersonaConnectorsTab, DesignTab, LabTab, PromptPerformanceCard, HealthTab,

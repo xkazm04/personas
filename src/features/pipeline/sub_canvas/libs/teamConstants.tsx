@@ -1,4 +1,4 @@
-import { sanitizeIconUrl } from '@/lib/utils/sanitizeUrl';
+import { sanitizeIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
 export interface ConnectionTypeStyle {
   stroke: string;

@@ -1,5 +1,5 @@
 import type { CliEngine } from '@/lib/types/types';
-import type { TaskComplexity } from '@/api/byom';
+import type { TaskComplexity } from '@/api/system/byom';
 
 export const PROVIDER_OPTIONS: { id: CliEngine; label: string }[] = [
   { id: 'claude_code', label: 'Claude Code' },

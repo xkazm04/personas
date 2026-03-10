@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { IS_MOBILE } from '@/lib/utils/platform';
+import { IS_MOBILE } from '@/lib/utils/platform/platform';
 
 interface BaseModalProps {
   isOpen: boolean;

@@ -3,7 +3,7 @@ import { GitCompareArrows, Plus, Minus, TrendingUp, TrendingDown, Loader2, Arrow
 import { motion } from 'framer-motion';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
-import { listTeamMemoriesByRun } from '@/api/teamMemories';
+import { listTeamMemoriesByRun } from '@/api/pipeline/teamMemories';
 import { computeMemoryDiff, type MemoryRunDiff } from './memoryDiff';
 
 const CATEGORY_COLORS: Record<string, string> = {

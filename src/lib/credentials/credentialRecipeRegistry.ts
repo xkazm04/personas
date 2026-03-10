@@ -11,8 +11,8 @@ import {
   upsertCredentialRecipe,
   useCredentialRecipe,
   type CredentialRecipe,
-} from '@/api/credentialRecipes';
-import type { CredentialDesignResult, CredentialDesignConnector } from '@/hooks/design/useCredentialDesign';
+} from '@/api/vault/credentialRecipes';
+import type { CredentialDesignResult, CredentialDesignConnector } from '@/hooks/design/credential/useCredentialDesign';
 
 // ── In-memory cache ─────────────────────────────────────────────────────
 // Avoids redundant IPC round-trips for the same connector within a session.

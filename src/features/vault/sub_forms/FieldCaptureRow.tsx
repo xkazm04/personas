@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Copy, ClipboardPaste, Eye, EyeOff, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 
 type FieldCaptureSource = 'schema' | 'negotiator' | 'auto';
 type FieldCaptureMode = 'readonly' | 'editable' | 'confirming';

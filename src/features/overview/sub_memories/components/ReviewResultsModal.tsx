@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Sparkles, X, CheckCircle2, Trash2, AlertCircle } from 'lucide-react';
-import type { MemoryReviewResult } from '@/api/memories';
+import type { MemoryReviewResult } from '@/api/overview/memories';
 
 interface ReviewResultsModalProps {
   reviewResult: MemoryReviewResult | null;

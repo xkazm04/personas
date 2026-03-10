@@ -2,7 +2,7 @@ import { Wrench, Zap, Link, Bell, Radio, Workflow } from 'lucide-react';
 import { SelectionCheckbox } from './SelectionCheckbox';
 import { ConnectorReadiness } from '../../shared/ConnectorReadiness';
 import { DimensionRadial } from '../../shared/DimensionRadial';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import type { AgentIR, ConnectorReadinessStatus } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { MOTION } from '@/features/templates/animationPresets';

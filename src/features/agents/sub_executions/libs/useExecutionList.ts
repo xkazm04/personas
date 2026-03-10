@@ -1,4 +1,4 @@
-import { TEMPLATE_CATALOG } from '@/lib/personas/templateCatalog';
+import { TEMPLATE_CATALOG } from '@/lib/personas/templates/templateCatalog';
 
 export const TEMPLATE_SAMPLE_INPUT: Record<string, object> = {
   'gmail-maestro': { mode: 'process_inbox', max_emails: 5, labels: ['inbox', 'unread'] },

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { invokeToolDirect, type ToolInvocationResult } from '@/api/tools';
+import { invokeToolDirect, type ToolInvocationResult } from '@/api/agents/tools';
 
 interface ToolRunState {
   isRunning: boolean;

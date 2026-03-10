@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react';
-import { createModuleCache } from '@/hooks/utility/useModuleSubscription';
+import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 
 /**
  * Module-level shared ticker that fires every 60 seconds.

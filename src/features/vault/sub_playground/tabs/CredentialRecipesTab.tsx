@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BookOpen, Plus, Settings, Trash2, Loader2, Sparkles, X, Save, ChevronDown, ChevronRight } from 'lucide-react';
-import { PromptTemplateRenderer } from '@/features/shared/components/PromptTemplateRenderer';
+import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
-import * as recipeApi from '@/api/recipes';
+import * as recipeApi from '@/api/templates/recipes';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
-import { useRecipeGenerator } from '@/hooks/design/useRecipeGenerator';
-import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
-import { EstimatedProgressBar } from '@/features/shared/components/EstimatedProgressBar';
+import { useRecipeGenerator } from '@/hooks/design/template/useRecipeGenerator';
+import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
+import { EstimatedProgressBar } from '@/features/shared/components/progress/EstimatedProgressBar';
 import { RecipePlaygroundModal } from '@/features/recipes/sub_playground/components/RecipePlaygroundModal';
 
 interface CredentialRecipesTabProps {

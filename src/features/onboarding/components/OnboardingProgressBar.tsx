@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Sparkles, Check } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import type { OnboardingStep } from '@/stores/slices/onboardingSlice';
+import type { OnboardingStep } from '@/stores/slices/system/onboardingSlice';
 
 const STEP_LABELS: Record<OnboardingStep, string> = {
   'pick-template': 'Pick template',

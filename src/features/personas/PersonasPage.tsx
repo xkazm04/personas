@@ -1,25 +1,25 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useMotion } from '@/hooks/utility/useMotion';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { usePersonaStore } from '@/stores/personaStore';
-import Sidebar from '@/features/shared/components/Sidebar';
-import { IS_MOBILE } from '@/lib/utils/platform';
+import Sidebar from '@/features/shared/components/layout/sidebar/Sidebar';
+import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import HomePage from '@/features/home/components/HomePage';
 import { PersonaEditor } from '@/features/agents/sub_editor';
 import PersonaOverviewPage from '@/features/agents/components/PersonaOverviewPage';
 import CreationWizard from '@/features/agents/components/CreationWizard';
 import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavContext';
-import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
-import { ErrorBoundary } from '@/features/shared/components/ErrorBoundary';
+import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
+import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
 
-const OverviewPage = lazy(() => import('@/features/overview/components/OverviewPage'));
+const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
 const DesignReviewsPage = lazy(() => import('@/features/templates/components/DesignReviewsPage'));
 const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage'));
-const EventsPage = lazy(() => import('@/features/triggers/components/EventsPage').then(m => ({ default: m.EventsPage })));
-const CloudDeployPanel = lazy(() => import('@/features/deployment/components/CloudDeployPanel'));
+const EventsPage = lazy(() => import('@/features/triggers/components/display/EventsPage').then(m => ({ default: m.EventsPage })));
+const CloudDeployPanel = lazy(() => import('@/features/deployment/components/cloud/CloudDeployPanel'));
 const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
 
@@ -88,7 +88,7 @@ export default function PersonasPage() {
   useEffect(() => {
     if (!personasFetched) return;
     const id = requestIdleCallback(() => {
-      import('@/features/overview/components/OverviewPage').catch(() => {});
+      import('@/features/overview/components/dashboard/OverviewPage').catch(() => {});
       import('@/features/vault/sub_manager/CredentialManager').catch(() => {});
       import('@/features/settings/components/SettingsPage').catch(() => {});
     });

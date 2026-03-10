@@ -1,17 +1,17 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, X, Plus, MessageSquare } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { getKnowledgeSummary, listExecutionKnowledge, upsertKnowledgeAnnotation } from '@/api/knowledge';
+import { getKnowledgeSummary, listExecutionKnowledge, upsertKnowledgeAnnotation } from '@/api/overview/intelligence/knowledge';
 import type { KnowledgeGraphSummary } from '@/lib/bindings/KnowledgeGraphSummary';
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { OverviewStatCard } from '@/features/overview/sub_observability/components/OverviewStatCard';
-import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { KNOWLEDGE_TYPES, SCOPE_TYPES } from '../libs/knowledgeHelpers';
 import { KnowledgeRow } from './KnowledgeRow';
-import { useFilteredCollection } from '@/hooks/utility/useFilteredCollection';
-import ContentLoader from '@/features/shared/components/ContentLoader';
+import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
+import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 
 export default function KnowledgeGraphDashboard() {
   const personas = usePersonaStore((s) => s.personas);

@@ -1,5 +1,5 @@
 import { Network, Shield, Route, ScrollText, ToggleLeft, ToggleRight } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useByomSettings } from '../libs/useByomSettings';
 import type { ByomSection } from '../libs/useByomSettings';
 import { ByomProviderList } from './ByomProviderList';

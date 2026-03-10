@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Clock, Copy, Check } from 'lucide-react';
-import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
-import type { ApiProxyResponse } from '@/api/apiProxy';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import type { ApiProxyResponse } from '@/api/system/apiProxy';
 
 // ── Status styling ───────────────────────────────────────────────
 

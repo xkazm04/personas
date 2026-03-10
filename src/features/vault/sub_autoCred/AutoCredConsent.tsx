@@ -1,11 +1,11 @@
 import { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Globe, Shield, ArrowRight, ExternalLink, MessageSquare, LogIn } from 'lucide-react';
-import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
+import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { AutoCredMode } from './types';
-import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { buildConnectorContext } from './types';
-import { openExternalUrl } from '@/api/system';
+import { openExternalUrl } from '@/api/system/system';
 
 interface AutoCredConsentProps {
   designResult: CredentialDesignResult;

@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Calendar } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
-import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
-import type { OverviewDayRange, CustomDateRange } from '@/features/overview/components/OverviewFilterContext';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import type { OverviewDayRange, CustomDateRange } from '@/features/overview/components/dashboard/OverviewFilterContext';
 
 // ---------------------------------------------------------------------------
 // DayRangePicker

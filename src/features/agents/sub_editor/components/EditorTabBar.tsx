@@ -3,7 +3,7 @@ import { ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Check, Activ
 import { usePersonaStore } from '@/stores/personaStore';
 import type { EditorTab } from '@/lib/types/types';
 import { isTabDirty } from '../libs/editorTabConstants';
-import { IS_MOBILE } from '@/lib/utils/platform';
+import { IS_MOBILE } from '@/lib/utils/platform/platform';
 
 const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = [
   { id: 'use-cases', label: 'Use Cases', icon: ListChecks },

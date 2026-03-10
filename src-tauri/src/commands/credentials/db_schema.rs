@@ -163,26 +163,22 @@ pub async fn execute_db_query(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
     query_text: String,
+    saved_query_id: Option<String>,
 ) -> Result<QueryResult, AppError> {
     require_privileged(&state, "execute_db_query").await?;
-    let result = crate::engine::db_query::execute_query(&state.db, &credential_id, &query_text, Some(&state.user_db)).await?;
+    let result = crate::engine::db_query::execute_query(&state.db, &credential_id, &query_text, Some(&state.user_db)).await;
 
-    // Update last_run stats if we can find a matching saved query
+    // Update last_run stats if we have a saved query ID
     // (fire-and-forget — don't fail the execution if this errors)
-    let duration_ms = result.duration_ms as i64;
-    let success = true;
-    let db = state.db.clone();
-    let cred_id = credential_id.clone();
-    tokio::spawn(async move {
-        if let Ok(queries) = repo::list_queries(&db, &cred_id) {
-            for q in queries {
-                if q.query_text.trim() == query_text.trim() {
-                    let _ = repo::update_query_run(&db, &q.id, success, duration_ms);
-                    break;
-                }
-            }
-        }
-    });
+    if let Some(id) = saved_query_id {
+        let db = state.db.clone();
+        let success = result.is_ok();
+        let duration_ms = result.as_ref().map(|r| r.duration_ms as i64).unwrap_or(0);
+        
+        tokio::spawn(async move {
+            let _ = repo::update_query_run(&db, &id, success, duration_ms);
+        });
+    }
 
-    Ok(result)
+    result
 }

@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import type { DryRunIssue, PersonaHealthCheck, HealthScore } from './types';
-import ContentLoader from '@/features/shared/components/ContentLoader';
+import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 
 // â”€â”€ Score ring (compact) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 

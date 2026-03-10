@@ -1,8 +1,8 @@
-import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/UseCasesList';
+import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 import type { DesignContextData, DesignUseCase } from '@/lib/types/frontendTypes';
 
 // Re-export the shared mutation queue so existing imports continue to work
-export { applyDesignContextMutation } from '@/hooks/design/useDesignContextMutator';
+export { applyDesignContextMutation } from '@/hooks/design/core/useDesignContextMutator';
 
 // Re-export UseCaseItem alias for backward compat
 export type { DesignUseCase as UseCaseItem } from '@/lib/types/frontendTypes';

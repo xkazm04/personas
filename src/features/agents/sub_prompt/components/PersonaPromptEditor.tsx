@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useTabSection } from '@/features/agents/sub_editor';
 import type { StructuredPrompt } from '@/lib/personas/promptMigration';
-import { SectionEditor } from '@/features/shared/components/draft-editor/SectionEditor';
+import { SectionEditor } from '@/features/shared/components/editors/draft-editor/SectionEditor';
 import { PromptSectionSidebar } from './PromptSectionSidebar';
 import { CustomSectionsPanel } from './CustomSectionsPanel';
 import type { SubTab } from './PromptSectionSidebar';

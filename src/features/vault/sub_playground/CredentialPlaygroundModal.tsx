@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Eye, RotateCw, Globe, Server, Plug, Key, BookOpen, Plus } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { OverviewTab } from './tabs/OverviewTab';
 import { ApiExplorerTab } from './tabs/ApiExplorerTab';
 import { McpToolsTab } from './tabs/McpToolsTab';
@@ -9,15 +9,15 @@ import { CredentialRotationSection } from '@/features/vault/sub_features/Credent
 import { getCredentialTags, getTagStyle, buildMetadataWithTags, SUGGESTED_TAGS } from '@/features/vault/utils/credentialTags';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
-import * as credApi from '@/api/credentials';
+import * as credApi from '@/api/vault/credentials';
 import { CredentialRecipesTab } from './tabs/CredentialRecipesTab';
-import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
+import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import { useGoogleOAuth } from '@/features/vault/hooks/useGoogleOAuth';
 import { useRotationTicker, formatCountdown } from '@/features/vault/hooks/useRotationTicker';
-import { isGoogleOAuthConnector } from '@/lib/utils/connectors';
+import { isGoogleOAuthConnector } from '@/lib/utils/platform/connectors';
 import { CATALOG_API_ENDPOINTS } from '@/lib/credentials/catalogApiEndpoints';
-import { getRotationStatus } from '@/api/rotation';
-import type { RotationStatus } from '@/api/rotation';
+import { getRotationStatus } from '@/api/vault/rotation';
+import type { RotationStatus } from '@/api/vault/rotation';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 // ── Tab types ────────────────────────────────────────────────────

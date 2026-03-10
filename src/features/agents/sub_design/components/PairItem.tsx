@@ -1,6 +1,6 @@
 import { Trash2, ArrowRight, FileInput, FileOutput } from 'lucide-react';
 import { motion } from 'framer-motion';
-import type { ExamplePair } from '../ExamplePairCollector';
+import type { ExamplePair } from '../wizard/ExamplePairCollector';
 
 interface PairItemProps {
   pair: ExamplePair;

@@ -1,11 +1,11 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Play, Loader2, Copy, Check, Download, Save, Database } from 'lucide-react';
-import { PromptTemplateRenderer } from '@/features/shared/components/PromptTemplateRenderer';
-import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
-import { EstimatedProgressBar } from '@/features/shared/components/EstimatedProgressBar';
-import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
+import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { EstimatedProgressBar } from '@/features/shared/components/progress/EstimatedProgressBar';
+import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
-import { updateRecipe } from '@/api/recipes';
+import { updateRecipe } from '@/api/templates/recipes';
 import { useRecipeTestRunner } from '../libs/useRecipeTestRunner';
 
 interface RecipeTestRunnerTabProps {

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Check, Palette, Type } from 'lucide-react';
 import { useThemeStore, THEMES, TEXT_SCALES } from '@/stores/themeStore';
 import type { ThemeId, ThemeDefinition, TextScale } from '@/stores/themeStore';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 
 function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
   const { backgroundSample, foregroundSample, primaryColor, accentColor } = theme;

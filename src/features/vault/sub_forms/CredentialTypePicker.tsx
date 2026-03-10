@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Sparkles, Server, Link, Database, ArrowLeft, Radar, Monitor, Bot, Globe } from 'lucide-react';
-import { IS_MOBILE } from '@/lib/utils/platform';
+import { IS_MOBILE } from '@/lib/utils/platform/platform';
 
 interface CredentialTypePickerProps {
   onSelectApiTool: () => void;

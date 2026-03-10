@@ -1,0 +1,183 @@
+import type { PipelineTemplate } from './pipelineTemplateTypes';
+
+// ============================================================================
+// Template Definitions
+// ============================================================================
+
+export const PIPELINE_TEMPLATES: PipelineTemplate[] = [
+  {
+    id: 'code-review-chain',
+    name: 'Code Review Chain',
+    description: 'Linear review pipeline: code, review, merge',
+    icon: '🔍',
+    color: '#3b82f6',
+    tags: ['development', 'review'],
+    nodes: [
+      { id: 'coder', label: 'Coder', role: 'worker', x: 20, y: 50 },
+      { id: 'reviewer', label: 'Reviewer', role: 'reviewer', x: 50, y: 50 },
+      { id: 'merger', label: 'Merger', role: 'worker', x: 80, y: 50 },
+    ],
+    edges: [
+      { source: 'coder', target: 'reviewer', type: 'sequential' },
+      { source: 'reviewer', target: 'merger', type: 'sequential' },
+      { source: 'reviewer', target: 'coder', type: 'feedback' },
+    ],
+  },
+  {
+    id: 'content-pipeline',
+    name: 'Content Pipeline',
+    description: 'End-to-end content production flow',
+    icon: '📝',
+    color: '#8b5cf6',
+    tags: ['content', 'writing'],
+    nodes: [
+      { id: 'researcher', label: 'Researcher', role: 'worker', x: 10, y: 50 },
+      { id: 'writer', label: 'Writer', role: 'worker', x: 37, y: 50 },
+      { id: 'editor', label: 'Editor', role: 'reviewer', x: 63, y: 50 },
+      { id: 'publisher', label: 'Publisher', role: 'worker', x: 90, y: 50 },
+    ],
+    edges: [
+      { source: 'researcher', target: 'writer', type: 'sequential' },
+      { source: 'writer', target: 'editor', type: 'sequential' },
+      { source: 'editor', target: 'publisher', type: 'sequential' },
+      { source: 'editor', target: 'writer', type: 'feedback' },
+    ],
+  },
+  {
+    id: 'support-triage',
+    name: 'Support Triage',
+    description: 'Route requests to specialist agents',
+    icon: '🎯',
+    color: '#f59e0b',
+    tags: ['support', 'routing'],
+    nodes: [
+      { id: 'router', label: 'Router', role: 'router', x: 20, y: 50 },
+      { id: 'specialist-a', label: 'Specialist A', role: 'worker', x: 75, y: 18 },
+      { id: 'specialist-b', label: 'Specialist B', role: 'worker', x: 75, y: 50 },
+      { id: 'escalation', label: 'Escalation', role: 'worker', x: 75, y: 82 },
+    ],
+    edges: [
+      { source: 'router', target: 'specialist-a', type: 'conditional' },
+      { source: 'router', target: 'specialist-b', type: 'conditional' },
+      { source: 'router', target: 'escalation', type: 'conditional' },
+    ],
+  },
+  {
+    id: 'etl-pipeline',
+    name: 'Data Processing (ETL)',
+    description: 'Collect, transform, validate, and load data',
+    icon: '🔄',
+    color: '#10b981',
+    tags: ['data', 'etl'],
+    nodes: [
+      { id: 'collector', label: 'Collector', role: 'worker', x: 10, y: 50 },
+      { id: 'transformer', label: 'Transformer', role: 'worker', x: 37, y: 50 },
+      { id: 'validator', label: 'Validator', role: 'reviewer', x: 63, y: 50 },
+      { id: 'loader', label: 'Loader', role: 'worker', x: 90, y: 50 },
+    ],
+    edges: [
+      { source: 'collector', target: 'transformer', type: 'sequential' },
+      { source: 'transformer', target: 'validator', type: 'sequential' },
+      { source: 'validator', target: 'loader', type: 'sequential' },
+    ],
+  },
+  {
+    id: 'orchestrated-team',
+    name: 'Orchestrated Team',
+    description: 'Central coordinator with parallel workers',
+    icon: '🎪',
+    color: '#ec4899',
+    tags: ['orchestration', 'parallel'],
+    nodes: [
+      { id: 'orchestrator', label: 'Orchestrator', role: 'orchestrator', x: 20, y: 50 },
+      { id: 'worker-a', label: 'Worker A', role: 'worker', x: 70, y: 18 },
+      { id: 'worker-b', label: 'Worker B', role: 'worker', x: 70, y: 50 },
+      { id: 'worker-c', label: 'Worker C', role: 'worker', x: 70, y: 82 },
+    ],
+    edges: [
+      { source: 'orchestrator', target: 'worker-a', type: 'parallel' },
+      { source: 'orchestrator', target: 'worker-b', type: 'parallel' },
+      { source: 'orchestrator', target: 'worker-c', type: 'parallel' },
+    ],
+  },
+  {
+    id: 'quality-gate',
+    name: 'Quality Gate',
+    description: 'Build-test-review-deploy with feedback loop',
+    icon: '🛡️',
+    color: '#06b6d4',
+    tags: ['ci-cd', 'quality'],
+    nodes: [
+      { id: 'developer', label: 'Developer', role: 'worker', x: 10, y: 50 },
+      { id: 'tester', label: 'Tester', role: 'worker', x: 37, y: 50 },
+      { id: 'reviewer', label: 'Reviewer', role: 'reviewer', x: 63, y: 50 },
+      { id: 'deployer', label: 'Deployer', role: 'worker', x: 90, y: 50 },
+    ],
+    edges: [
+      { source: 'developer', target: 'tester', type: 'sequential' },
+      { source: 'tester', target: 'reviewer', type: 'sequential' },
+      { source: 'reviewer', target: 'deployer', type: 'sequential' },
+      { source: 'reviewer', target: 'developer', type: 'feedback' },
+    ],
+  },
+  {
+    id: 'research-synthesis',
+    name: 'Research & Report',
+    description: 'Parallel research with synthesis and review',
+    icon: '🔬',
+    color: '#6366f1',
+    tags: ['research', 'analysis'],
+    nodes: [
+      { id: 'researcher-a', label: 'Researcher A', role: 'worker', x: 15, y: 25 },
+      { id: 'researcher-b', label: 'Researcher B', role: 'worker', x: 15, y: 75 },
+      { id: 'analyst', label: 'Analyst', role: 'worker', x: 50, y: 50 },
+      { id: 'reviewer', label: 'Reviewer', role: 'reviewer', x: 85, y: 50 },
+    ],
+    edges: [
+      { source: 'researcher-a', target: 'analyst', type: 'parallel' },
+      { source: 'researcher-b', target: 'analyst', type: 'parallel' },
+      { source: 'analyst', target: 'reviewer', type: 'sequential' },
+      { source: 'reviewer', target: 'analyst', type: 'feedback' },
+    ],
+  },
+  {
+    id: 'creative-studio',
+    name: 'Creative Studio',
+    description: 'Ideate, design, critique, and refine iteratively',
+    icon: '🎨',
+    color: '#f43f5e',
+    tags: ['creative', 'design'],
+    nodes: [
+      { id: 'brainstormer', label: 'Brainstormer', role: 'worker', x: 10, y: 50 },
+      { id: 'designer', label: 'Designer', role: 'worker', x: 37, y: 50 },
+      { id: 'critic', label: 'Critic', role: 'reviewer', x: 63, y: 50 },
+      { id: 'refiner', label: 'Refiner', role: 'worker', x: 90, y: 50 },
+    ],
+    edges: [
+      { source: 'brainstormer', target: 'designer', type: 'sequential' },
+      { source: 'designer', target: 'critic', type: 'sequential' },
+      { source: 'critic', target: 'refiner', type: 'sequential' },
+      { source: 'critic', target: 'designer', type: 'feedback' },
+    ],
+  },
+  {
+    id: 'approval-workflow',
+    name: 'Approval Workflow',
+    description: 'Multi-level approval with escalation path',
+    icon: '✅',
+    color: '#22c55e',
+    tags: ['approval', 'governance'],
+    nodes: [
+      { id: 'submitter', label: 'Submitter', role: 'worker', x: 10, y: 50 },
+      { id: 'reviewer-l1', label: 'Reviewer L1', role: 'reviewer', x: 40, y: 30 },
+      { id: 'reviewer-l2', label: 'Reviewer L2', role: 'reviewer', x: 70, y: 30 },
+      { id: 'escalation', label: 'Escalation', role: 'orchestrator', x: 55, y: 75 },
+    ],
+    edges: [
+      { source: 'submitter', target: 'reviewer-l1', type: 'sequential' },
+      { source: 'reviewer-l1', target: 'reviewer-l2', type: 'sequential' },
+      { source: 'reviewer-l1', target: 'escalation', type: 'conditional' },
+      { source: 'escalation', target: 'reviewer-l2', type: 'sequential' },
+    ],
+  },
+];

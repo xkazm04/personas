@@ -5,7 +5,7 @@ import {
   getPromptVersions,
   tagPromptVersion,
   rollbackPromptVersion,
-} from '@/api/observability';
+} from '@/api/overview/observability';
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import { filterSortGroup, type TagFilter, type SortOrder, type DateGroup } from './promptLabUtils';
 import type { VersionAction } from '@/features/agents/sub_lab_shared';

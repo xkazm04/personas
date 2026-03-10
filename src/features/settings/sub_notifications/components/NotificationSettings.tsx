@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Bell, ShieldAlert, Activity } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { useAppSetting } from '@/hooks/utility/useAppSetting';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
 
 const SETTINGS_KEY = 'notification_prefs';
 

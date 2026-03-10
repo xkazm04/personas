@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { introspectDbTables, introspectDbColumns } from '@/api/dbSchema';
+import { introspectDbTables, introspectDbColumns } from '@/api/vault/database/dbSchema';
 import { getConnectorFamily } from '@/features/vault/sub_databases/introspectionQueries';
 import { errMsg } from '@/stores/storeTypes';
-import type { QueryResult } from '@/api/dbSchema';
+import type { QueryResult } from '@/api/vault/database/dbSchema';
 
 // ── Types ──────────────────────────────────────────────────────────────
 

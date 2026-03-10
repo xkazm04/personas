@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { DryRunResult } from '@/api/triggers';
+import type { DryRunResult } from '@/api/pipeline/triggers';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { useTriggerOperations } from './useTriggerOperations';
-import { getWebhookUrl } from '@/lib/utils/triggerConstants';
+import { getWebhookUrl } from '@/lib/utils/platform/triggerConstants';
 import { useToastStore } from '@/stores/toastStore';
 
 /**

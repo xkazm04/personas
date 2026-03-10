@@ -1,5 +1,5 @@
 import { Activity, AlertTriangle, Clock, ChevronDown, ChevronUp, Zap, TrendingUp, TrendingDown, Wrench } from 'lucide-react';
-import type { PersonaSlaStats } from '@/api/sla';
+import type { PersonaSlaStats } from '@/api/overview/sla';
 import { formatPercent, formatDuration, formatMtbf } from '../libs/slaHelpers';
 
 export function SlaCard({ label, value, sub, color, icon }: {

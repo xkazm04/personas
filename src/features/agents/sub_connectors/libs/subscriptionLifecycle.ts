@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { parseDesignContext } from '@/features/shared/components/UseCasesList';
-import { mutateSingleUseCase } from '@/hooks/design/useDesignContextMutator';
-import { listTriggers, createTrigger, deleteTrigger } from '@/api/triggers';
-import { listSubscriptions, createSubscription, deleteSubscription } from '@/api/events';
+import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { mutateSingleUseCase } from '@/hooks/design/core/useDesignContextMutator';
+import { listTriggers, createTrigger, deleteTrigger } from '@/api/pipeline/triggers';
+import { listSubscriptions, createSubscription, deleteSubscription } from '@/api/overview/events';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import type { UseCaseEventSubscription } from '@/lib/types/frontendTypes';

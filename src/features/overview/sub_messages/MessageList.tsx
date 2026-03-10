@@ -1,68 +1,15 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { MessageSquare, CheckCheck, RefreshCw, Trash2, Send, AlertCircle, Clock, CheckCircle2, Loader2, ExternalLink, Check, X, Copy } from 'lucide-react';
+import { MessageSquare, CheckCheck, RefreshCw, Send, Loader2 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { FilterBar } from '@/features/shared/components/FilterBar';
-import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
-import DetailModal from '@/features/overview/components/DetailModal';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
 import { useMessageCreatedListener } from '@/hooks/realtime/useMessageCreatedListener';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
-import type { PersonaMessageDelivery } from '@/lib/bindings/PersonaMessageDelivery';
-import { getMessageDeliveries } from '@/api/tauriApi';
-import { formatRelativeTime } from '@/lib/utils/formatters';
-import { useVirtualList } from '@/hooks/utility/useVirtualList';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const priorityConfig: Record<string, { color: string; bgColor: string; borderColor: string; label: string }> = {
-  high: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', label: 'High' },
-  normal: { color: 'text-foreground/80', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' },
-  low: { color: 'text-muted-foreground/90', bgColor: 'bg-muted/20', borderColor: 'border-muted-foreground/20', label: 'Low' },
-};
-
-type FilterType = 'all' | 'unread' | 'high';
-
-const FILTER_LABELS: Record<FilterType, string> = {
-  all: 'All',
-  unread: 'Unread',
-  high: 'High Priority',
-};
-
-const COLUMN_WIDTHS = {
-  persona: '180px',
-  priority: '90px',
-  status: '70px',
-  created: '100px',
-} as const;
-
-const GRID_TEMPLATE_COLUMNS = `${COLUMN_WIDTHS.persona} minmax(0,1fr) ${COLUMN_WIDTHS.priority} ${COLUMN_WIDTHS.status} ${COLUMN_WIDTHS.created}`;
-
-// ---------------------------------------------------------------------------
-// Delivery status config
-// ---------------------------------------------------------------------------
-
-const deliveryStatusConfig: Record<string, { icon: typeof CheckCircle2; color: string; bgColor: string; borderColor: string; label: string }> = {
-  delivered: { icon: CheckCircle2, color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30', label: 'Delivered' },
-  failed: { icon: AlertCircle, color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', label: 'Failed' },
-  pending: { icon: Clock, color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30', label: 'Pending' },
-  queued: { icon: Loader2, color: 'text-blue-400', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30', label: 'Queued' },
-};
-
-const channelLabels: Record<string, string> = {
-  email: 'Email',
-  slack: 'Slack',
-  telegram: 'Telegram',
-  desktop: 'Desktop',
-};
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+import { type FilterType, FILTER_LABELS } from './messageListConstants';
+import { MessageTable } from './MessageTable';
+import { MessageDetailModal } from './MessageDetailModal';
 
 export default function MessageList() {
   const messages = usePersonaStore((s) => s.messages);
@@ -72,7 +19,6 @@ export default function MessageList() {
   const fetchUnreadMessageCount = usePersonaStore((s) => s.fetchUnreadMessageCount);
   const markMessageAsRead = usePersonaStore((s) => s.markMessageAsRead);
   const markAllMessagesAsRead = usePersonaStore((s) => s.markAllMessagesAsRead);
-  const deleteMessage = usePersonaStore((s) => s.deleteMessage);
   const personas = usePersonaStore((s) => s.personas);
 
   const [filter, setFilter] = useState<FilterType>('all');
@@ -81,20 +27,8 @@ export default function MessageList() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Modal-local state
-  const [deliveries, setDeliveries] = useState<PersonaMessageDelivery[]>([]);
-  const [deliveriesLoading, setDeliveriesLoading] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [copiedId, setCopiedId] = useState(false);
-  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchUnreadMessageCountRef = useRef(fetchUnreadMessageCount);
   fetchUnreadMessageCountRef.current = fetchUnreadMessageCount;
-
-  useEffect(() => {
-    return () => {
-      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
-    };
-  }, []);
 
   // Initial fetch
   useEffect(() => {
@@ -104,9 +38,7 @@ export default function MessageList() {
       try {
         await fetchMessages(true);
       } finally {
-        if (active) {
-          setIsLoading(false);
-        }
+        if (active) setIsLoading(false);
       }
     };
     loadInitial();
@@ -135,7 +67,7 @@ export default function MessageList() {
 
   useMessageCreatedListener(handleMessageCreated);
 
-  // Client-side filtering (filter + persona)
+  // Client-side filtering
   const filteredMessages = useMemo(() => {
     let result = messages;
     if (selectedPersonaId) {
@@ -148,63 +80,26 @@ export default function MessageList() {
     }
   }, [messages, filter, selectedPersonaId]);
 
-  const handleLoadMore = () => {
-    fetchMessages(false);
-  };
+  const handleLoadMore = () => fetchMessages(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    try {
-      await fetchMessages(true);
-    } finally {
-      setIsRefreshing(false);
-    }
+    try { await fetchMessages(true); }
+    finally { setIsRefreshing(false); }
   };
 
-  // Open modal: mark as read + fetch deliveries
   const handleRowClick = useCallback((msg: PersonaMessage) => {
     setSelectedMsg(msg);
-    setConfirmingDelete(false);
-    setCopiedId(false);
-
-    // Mark as read
-    if (!msg.is_read) {
-      markMessageAsRead(msg.id);
-    }
-
-    // Fetch deliveries
-    setDeliveriesLoading(true);
-    getMessageDeliveries(msg.id)
-      .then((result) => setDeliveries(result))
-      .catch(() => setDeliveries([]))
-      .finally(() => setDeliveriesLoading(false));
+    if (!msg.is_read) markMessageAsRead(msg.id);
   }, [markMessageAsRead]);
 
-  const handleCloseModal = useCallback(() => {
-    setSelectedMsg(null);
-    setDeliveries([]);
-    setDeliveriesLoading(false);
-    setConfirmingDelete(false);
-    setCopiedId(false);
-  }, []);
-
-  const handleDelete = useCallback(() => {
-    if (!selectedMsg) return;
-    deleteMessage(selectedMsg.id);
-    handleCloseModal();
-  }, [selectedMsg, deleteMessage, handleCloseModal]);
-
   const remaining = messagesTotal - messages.length;
-
-  const { parentRef, virtualizer } = useVirtualList(filteredMessages, 40);
 
   const badgeCounts: Record<FilterType, number> = useMemo(() => ({
     all: 0,
     unread: unreadMessageCount,
     high: messages.filter((m) => m.priority === 'high').length,
   }), [messages, unreadMessageCount]);
-
-  const defaultPriority = { color: 'text-foreground/80', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
 
   return (
     <ContentBox>
@@ -234,7 +129,6 @@ export default function MessageList() {
         }
       />
 
-      {/* Filter bar + persona select */}
       <FilterBar<FilterType>
         options={(['all', 'unread', 'high'] as FilterType[]).map((id) => ({
           id,
@@ -254,7 +148,6 @@ export default function MessageList() {
         }
       />
 
-      {/* Message table */}
       <ContentBody flex>
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center p-4 md:p-6">
@@ -301,245 +194,19 @@ export default function MessageList() {
             </div>
           </div>
         ) : (
-          <div ref={parentRef} className="flex-1 overflow-y-auto">
-            <div role="grid" aria-rowcount={filteredMessages.length} aria-colcount={5} className="w-full">
-              <div
-                role="row"
-                className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid"
-                style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}
-              >
-                <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Persona</div>
-                <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Title</div>
-                <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Priority</div>
-                <div role="columnheader" className="text-center text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Status</div>
-                <div role="columnheader" className="text-right text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Created</div>
-              </div>
-
-              <div role="rowgroup" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-                {virtualizer.getVirtualItems().map((virtualRow) => {
-                  const message = filteredMessages[virtualRow.index]!;
-                  const priority = priorityConfig[message.priority] ?? defaultPriority;
-                  return (
-                    <div
-                      key={message.id}
-                      role="row"
-                      tabIndex={0}
-                      onClick={() => handleRowClick(message)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          handleRowClick(message);
-                        }
-                      }}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        transform: `translateY(${virtualRow.start}px)`,
-                        width: '100%',
-                        height: `${virtualRow.size}px`,
-                        gridTemplateColumns: GRID_TEMPLATE_COLUMNS,
-                      }}
-                      className="grid items-center hover:bg-white/[0.03] cursor-pointer transition-colors border-b border-primary/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-                    >
-                      <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
-                        <div
-                          className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
-                          style={{ backgroundColor: (message.persona_color || '#6366f1') + '15' }}
-                        >
-                          {message.persona_icon || '?'}
-                        </div>
-                        <span className="text-sm text-muted-foreground/80 truncate">
-                          {message.persona_name || 'Unknown'}
-                        </span>
-                      </div>
-
-                      <div role="gridcell" className="px-4 min-w-0">
-                        <span className={`text-sm truncate block ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>
-                          {message.title || message.content.slice(0, 80)}
-                        </span>
-                      </div>
-
-                      <div role="gridcell" className="px-4">
-                        <span className={`inline-flex px-2 py-0.5 rounded-lg text-sm font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>
-                          {priority.label}
-                        </span>
-                      </div>
-
-                      <div role="gridcell" className="px-4 flex justify-center">
-                        {!message.is_read ? (
-                          <div className="w-2.5 h-2.5 rounded-full bg-blue-500" title="Unread" aria-label="Unread message" />
-                        ) : (
-                          <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title="Read" aria-hidden="true" />
-                        )}
-                      </div>
-
-                      <div role="gridcell" className="px-4 text-right">
-                        <span className="text-sm text-muted-foreground/80">
-                          {formatRelativeTime(message.created_at)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Load More */}
-            {remaining > 0 && (
-              <div className="p-4">
-                <button
-                  onClick={handleLoadMore}
-                  className="w-full py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-xl border border-primary/15 transition-all"
-                >
-                  Load More ({remaining} remaining)
-                </button>
-              </div>
-            )}
-          </div>
+          <MessageTable
+            filteredMessages={filteredMessages}
+            onRowClick={handleRowClick}
+            remaining={remaining}
+            onLoadMore={handleLoadMore}
+          />
         )}
       </ContentBody>
 
-      {/* Detail Modal */}
-      <AnimatePresence>
-        {selectedMsg && (
-          <DetailModal
-            title={selectedMsg.title || 'Message'}
-            subtitle={`From ${selectedMsg.persona_name || 'Unknown'} \u00b7 ${formatRelativeTime(selectedMsg.created_at)}`}
-            onClose={handleCloseModal}
-            actions={
-              <>
-                {/* Metadata */}
-                <div className="flex items-center gap-4 text-sm text-muted-foreground/80 mr-auto">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigator.clipboard.writeText(selectedMsg.id).then(() => {
-                        setCopiedId(true);
-                        setTimeout(() => setCopiedId(false), 2000);
-                      }).catch(() => {});
-                    }}
-                    className="inline-flex items-center gap-1 hover:text-muted-foreground transition-colors"
-                    title={selectedMsg.id}
-                  >
-                    ID: <span className="font-mono">{selectedMsg.id.slice(0, 8)}</span>
-                    {copiedId ? (
-                      <Check className="w-3 h-3 text-emerald-400" />
-                    ) : (
-                      <Copy className="w-3 h-3" />
-                    )}
-                  </button>
-                  {selectedMsg.execution_id && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const store = usePersonaStore.getState();
-                        store.selectPersona(selectedMsg.persona_id);
-                        store.setEditorTab('use-cases');
-                      }}
-                      className="inline-flex items-center gap-1 text-blue-400/70 hover:text-blue-400 transition-colors"
-                      title={selectedMsg.execution_id}
-                    >
-                      View Execution
-                      <ExternalLink className="w-3 h-3" />
-                    </button>
-                  )}
-                  <span>Type: {selectedMsg.content_type}</span>
-                </div>
-
-                {/* Delete */}
-                {confirmingDelete ? (
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={handleDelete}
-                      className="p-1.5 bg-red-500/15 hover:bg-red-500/25 rounded-lg transition-colors"
-                      title="Confirm delete"
-                    >
-                      <Check className="w-4 h-4 text-red-400" />
-                    </button>
-                    <button
-                      onClick={() => setConfirmingDelete(false)}
-                      className="p-1.5 hover:bg-secondary/60 rounded-lg transition-colors"
-                      title="Cancel"
-                    >
-                      <X className="w-4 h-4 text-muted-foreground/90" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setConfirmingDelete(true);
-                      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
-                      confirmTimerRef.current = setTimeout(() => setConfirmingDelete(false), 3000);
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Delete
-                  </button>
-                )}
-              </>
-            }
-          >
-            {/* Content section */}
-            <div className="space-y-6">
-              <div>
-                <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-2">Content</div>
-                <MarkdownRenderer content={selectedMsg.content} className="text-sm" />
-              </div>
-
-              {/* Delivery Status section */}
-              <div>
-                <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-2 flex items-center gap-1.5">
-                  <Send className="w-3 h-3" />
-                  Delivery Status
-                </div>
-                {deliveriesLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground/80 py-1">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Loading...
-                  </div>
-                ) : deliveries.length === 0 ? (
-                  <div className="text-sm text-muted-foreground/80 py-1">
-                    No delivery channels configured
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    {deliveries.map((d) => {
-                      const defaultStatus = deliveryStatusConfig.pending!;
-                      const statusCfg = deliveryStatusConfig[d.status] ?? defaultStatus;
-                      const StatusIcon = statusCfg.icon;
-                      return (
-                        <div
-                          key={d.id}
-                          className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl border ${statusCfg.bgColor} ${statusCfg.borderColor}`}
-                        >
-                          <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${statusCfg.color}`} />
-                          <span className="text-sm font-medium text-foreground/90 min-w-[60px]">
-                            {channelLabels[d.channel_type] ?? d.channel_type}
-                          </span>
-                          <span className={`text-sm font-medium ${statusCfg.color}`}>
-                            {statusCfg.label}
-                          </span>
-                          {d.delivered_at && (
-                            <span className="text-sm text-muted-foreground/80 ml-auto">
-                              {formatRelativeTime(d.delivered_at)}
-                            </span>
-                          )}
-                          {d.error_message && (
-                            <span className="text-sm text-red-400/80 ml-auto truncate max-w-[200px]" title={d.error_message}>
-                              {d.error_message}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </DetailModal>
-        )}
-      </AnimatePresence>
+      <MessageDetailModal
+        message={selectedMsg}
+        onClose={() => setSelectedMsg(null)}
+      />
     </ContentBox>
   );
 }

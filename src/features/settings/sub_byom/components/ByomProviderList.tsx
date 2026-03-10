@@ -1,4 +1,4 @@
-import type { ByomPolicy, ProviderUsageStats } from '@/api/byom';
+import type { ByomPolicy, ProviderUsageStats } from '@/api/system/byom';
 import { PROVIDER_OPTIONS, ENGINE_LABELS } from '../libs/byomHelpers';
 
 interface ByomProviderListProps {

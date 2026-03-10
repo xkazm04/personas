@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Shield, Map, RotateCcw, Play, Trash2, Check, AlertTriangle } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { usePersonaStore } from '@/stores/personaStore';
-import { TOUR_STEPS } from '@/stores/slices/tourSlice';
+import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
 
 export default function AdminSettings() {
   const tourActive = usePersonaStore((s) => s.tourActive);

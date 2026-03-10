@@ -1,5 +1,5 @@
 import { Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
-import type { ComplianceRule } from '@/api/byom';
+import type { ComplianceRule } from '@/api/system/byom';
 import { PROVIDER_OPTIONS } from '../libs/byomHelpers';
 
 interface ByomComplianceRulesProps {

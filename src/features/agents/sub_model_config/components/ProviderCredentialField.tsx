@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useAppSetting } from '@/hooks/utility/useAppSetting';
+import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
 import { SaveConfigButton } from './SaveConfigButton';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 

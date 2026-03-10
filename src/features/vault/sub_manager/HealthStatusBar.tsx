@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { HeartPulse, Loader2, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
 import type { CredentialMetadata } from '@/lib/types/types';
-import type { useBulkHealthcheck } from '@/features/vault/hooks/useBulkHealthcheck';
+import type { useBulkHealthcheck } from '@/features/vault/hooks/health/useBulkHealthcheck';
 
 interface HealthStatusBarProps {
   credentials: CredentialMetadata[];

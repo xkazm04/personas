@@ -48,6 +48,7 @@ pub async fn start_schema_proposal(
     template_name: String,
     template_context: String,
     existing_tables: Vec<String>,
+    database_type: Option<String>,
 ) -> Result<(), AppError> {
     require_privileged(&state, "start_schema_proposal").await?;
     SCHEMA_PROPOSAL_JOBS.ensure_not_running(&proposal_id)?;
@@ -72,6 +73,7 @@ pub async fn start_schema_proposal(
             template_name,
             template_context,
             existing_tables,
+            database_type,
             cancel_token,
         })
         .await;
@@ -176,6 +178,7 @@ struct RunParams {
     template_name: String,
     template_context: String,
     existing_tables: Vec<String>,
+    database_type: Option<String>,
     cancel_token: CancellationToken,
 }
 
@@ -188,6 +191,7 @@ async fn run_schema_proposal(params: RunParams) {
         template_name,
         template_context,
         existing_tables,
+        database_type,
         cancel_token,
     } = params;
 
@@ -208,11 +212,12 @@ async fn run_schema_proposal(params: RunParams) {
     );
 
     // Build the AI prompt
-    let prompt_text = build_prompt(
+    let system_prompt = build_prompt(
         &template_name,
         &template_context,
         &existing_tables,
         &schema_context,
+        database_type.as_deref().unwrap_or("sqlite"),
     );
 
     // Build CLI args (no persona, default provider, fast model)
@@ -231,7 +236,7 @@ async fn run_schema_proposal(params: RunParams) {
     emit_line(&app, &proposal_id, "> Generating schema with AI...");
 
     let cli_result = run_claude_prompt_text_inner(
-        prompt_text,
+        system_prompt,
         &cli_args,
         Some(&on_line),
         None,
@@ -325,9 +330,10 @@ fn build_prompt(
     template_context: &str,
     existing_tables: &[String],
     schema_context: &str,
+    database_type: &str,
 ) -> String {
     let mut prompt = format!(
-        "You are a database schema architect. Design the SQLite database tables needed \
+        "You are a database schema architect. Design the {database_type} database tables needed \
          for the \"{template_name}\" persona template.\n\n"
     );
 
@@ -349,19 +355,19 @@ fn build_prompt(
         prompt.push_str("\n\n");
     }
 
-    prompt.push_str(
+    prompt.push_str(&format!(
         "## Instructions\n\
          1. Analyze the template context to determine what data the agent needs to persist\n\
-         2. Design SQLite CREATE TABLE statements with appropriate columns, types, and constraints\n\
-         3. Use `IF NOT EXISTS` on all CREATE TABLE statements\n\
+         2. Design {database_type} CREATE TABLE statements with appropriate columns, types, and constraints\n\
+         3. Use `IF NOT EXISTS` on all CREATE TABLE statements (or the {database_type} equivalent)\n\
          4. Include useful indexes for common query patterns\n\
          5. Use snake_case for all table and column names\n\
-         6. Include `created_at TEXT DEFAULT (datetime('now'))` and `updated_at TEXT` timestamps\n\
+         6. Include `created_at` and `updated_at` timestamps appropriate for {database_type}\n\
          7. Output ALL SQL in a single ```sql code block\n\
          8. After the SQL block, briefly explain each table's purpose (2-3 sentences per table)\n\
          9. Do NOT recreate any tables that already exist\n\
-         10. Keep the schema minimal — only create tables the agent actually needs\n",
-    );
+         10. Keep the schema minimal — only create tables the agent actually needs\n"
+    ));
 
     prompt
 }

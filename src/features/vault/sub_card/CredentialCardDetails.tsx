@@ -6,8 +6,8 @@ import { CredentialIntelligence } from '@/features/vault/sub_features/Credential
 import { CredentialRotationSection } from '@/features/vault/sub_features/CredentialRotationSection';
 import { getTagStyle } from '@/features/vault/utils/credentialTags';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-import type { RotationStatus } from '@/api/rotation';
-import type { HealthResult } from '@/features/vault/hooks/useCredentialHealth';
+import type { RotationStatus } from '@/api/vault/rotation';
+import type { HealthResult } from '@/features/vault/hooks/health/useCredentialHealth';
 import { useCredentialTags } from '@/features/vault/hooks/useCredentialTags';
 
 type ExpandedSection = 'services' | 'events' | 'intelligence' | 'rotation' | null;

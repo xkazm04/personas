@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Loader2, Rocket, Check, ExternalLink, ShieldCheck, KeyRound } from 'lucide-react';
-import type { GitLabProject, GitLabDeployResult } from '@/api/gitlab';
-import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import type { GitLabProject, GitLabDeployResult } from '@/api/system/gitlab';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { CiCdTemplatesPicker } from './CiCdTemplatesPicker';
 import type { CiCdTemplate, GitLabTierId } from '../data/cicdTemplates';
 

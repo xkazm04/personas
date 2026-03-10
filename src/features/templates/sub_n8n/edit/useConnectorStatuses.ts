@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { mergeCredentialLink } from '@/features/shared/components/UseCasesList';
+import { mergeCredentialLink } from '@/features/shared/components/use-cases/UseCasesList';
 import { matchCredentialToConnector } from './connectorMatching';
 import { buildConnectorRailItems } from './connectorHealth';
-import type { N8nPersonaDraft } from '@/api/n8nTransform';
+import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { CredentialMetadata } from '@/lib/types/types';
 
 // â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

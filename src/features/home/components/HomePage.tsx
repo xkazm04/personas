@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-import { SystemHealthPanel } from '@/features/overview/components/SystemHealthPanel';
+import { SystemHealthPanel } from '@/features/overview/components/health/SystemHealthPanel';
 import HomeWelcome from '@/features/home/components/HomeWelcome';
 
 export default function HomePage() {

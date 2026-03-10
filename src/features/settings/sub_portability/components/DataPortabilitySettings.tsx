@@ -1,5 +1,5 @@
 import { HardDriveDownload, Loader2, AlertTriangle } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useDataPortability } from '../libs/useDataPortability';
 import { ExportSection } from './ExportSection';
 import { CredentialPortability } from './CredentialPortability';

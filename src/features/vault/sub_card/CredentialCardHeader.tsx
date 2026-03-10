@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, Key, Plug, RotateCw, Lock } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { RotationInsightBadge } from '@/features/vault/sub_card/RotationInsightBadge';
 import { OAuthActivityBadge } from '@/features/vault/sub_card/OAuthActivityBadge';
 import type { CredentialMetadata, ConnectorDefinition, ConnectorAuthMethod } from '@/lib/types/types';
@@ -9,8 +9,8 @@ import { getAuthMethods } from '@/lib/types/types';
 import { getAuthBadgeClasses } from '@/features/vault/utils/authMethodStyles';
 import { getCredentialTags, getTagStyle } from '@/features/vault/utils/credentialTags';
 import { formatTimestamp } from '@/lib/utils/formatters';
-import type { RotationStatus } from '@/api/rotation';
-import type { HealthResult } from '@/features/vault/hooks/useCredentialHealth';
+import type { RotationStatus } from '@/api/vault/rotation';
+import type { HealthResult } from '@/features/vault/hooks/health/useCredentialHealth';
 import { computeHealthScore, getTierStyle } from '@/features/vault/utils/credentialHealthScore';
 
 /** Determine the single auth method actually used for this credential. */

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { RotateCcw, Shield, Activity } from 'lucide-react';
-import { getPromptErrorRate } from '@/api/observability';
+import { getPromptErrorRate } from '@/api/overview/observability';
 
 interface AutoRollbackSettingsProps {
   personaId: string;

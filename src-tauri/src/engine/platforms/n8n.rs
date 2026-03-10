@@ -164,6 +164,20 @@ impl N8nClient {
 
     /// Trigger a webhook URL with a JSON body.
     pub async fn trigger_webhook(&self, webhook_url: &str, body: &Value) -> Result<Value, AppError> {
+        let parsed_webhook = url::Url::parse(webhook_url)
+            .map_err(|e| AppError::Validation(format!("Invalid webhook URL: {e}")))?;
+        let parsed_base = url::Url::parse(&self.base_url)
+            .map_err(|e| AppError::Validation(format!("Invalid base URL: {e}")))?;
+
+        let scheme = parsed_webhook.scheme();
+        if scheme != "https" && !(scheme == "http" && parsed_webhook.host_str() == Some("localhost")) {
+            return Err(AppError::Validation("Webhook URL must use https (or http for localhost)".into()));
+        }
+
+        if parsed_webhook.host_str() != parsed_base.host_str() {
+            return Err(AppError::Validation("Webhook URL host must match the n8n instance base URL".into()));
+        }
+
         let resp = self
             .http
             .post(webhook_url)

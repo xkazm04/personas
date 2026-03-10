@@ -6,11 +6,11 @@ import {
 import { VersionItem, DiffViewer } from '@/features/agents/sub_lab_shared';
 import { AbTestPanel } from './AbTestPanel';
 import { AutoRollbackSettings } from './AutoRollbackSettings';
-import { PromptPerformanceDashboard } from './PromptPerformanceDashboard';
+import { PromptPerformanceDashboard } from './performance/PromptPerformanceDashboard';
 import { usePromptVersions } from '../libs/usePromptVersions';
 import { useState } from 'react';
-import { IS_MOBILE } from '@/lib/utils/platform';
-import ContentLoader from '@/features/shared/components/ContentLoader';
+import { IS_MOBILE } from '@/lib/utils/platform/platform';
+import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 
 export function PromptLabTab() {
   const pv = usePromptVersions();

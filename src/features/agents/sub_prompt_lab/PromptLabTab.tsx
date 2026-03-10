@@ -7,7 +7,7 @@ import { VersionItem } from './VersionItem';
 import { DiffViewer } from './DiffViewer';
 import { AbTestPanel } from './AbTestPanel';
 import { AutoRollbackSettings } from './AutoRollbackSettings';
-import { PromptPerformanceDashboard } from './PromptPerformanceDashboard';
+import { PromptPerformanceDashboard } from './performance/PromptPerformanceDashboard';
 import { usePromptVersions } from './usePromptVersions';
 import { useState } from 'react';
 

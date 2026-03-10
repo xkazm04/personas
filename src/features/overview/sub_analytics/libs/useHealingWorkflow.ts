@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 
 /**

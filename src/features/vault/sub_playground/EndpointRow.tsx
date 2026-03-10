@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Play, CheckCircle2, XCircle, Loader2, MinusCircle, Clock } from 'lucide-react';
-import type { ApiEndpoint } from '@/api/apiProxy';
+import type { ApiEndpoint } from '@/api/system/apiProxy';
 import type { EndpointTestResult } from './useApiTestRunner';
 
 // ── Method badge colors ──────────────────────────────────────────

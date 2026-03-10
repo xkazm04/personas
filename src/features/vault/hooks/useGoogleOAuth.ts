@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import * as api from '@/api/tauriApi';
 import type { GoogleCredentialOAuthStatusResult } from '@/api/tauriApi';
-import { useOAuthProtocol } from '@/hooks/design/useOAuthProtocol';
+import { useOAuthProtocol } from '@/hooks/design/oauth/useOAuthProtocol';
 
 export interface GoogleOAuthTokenData {
   refresh_token: string;

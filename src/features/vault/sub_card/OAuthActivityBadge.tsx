@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { RefreshCw, Clock, Loader2 } from 'lucide-react';
 import { formatTimestamp } from '@/lib/utils/formatters';
-import { refreshCredentialOAuthNow } from '@/api/rotation';
+import { refreshCredentialOAuthNow } from '@/api/vault/rotation';
 
 interface OAuthActivityBadgeProps {
   credentialId: string;

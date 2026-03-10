@@ -1,0 +1,136 @@
+import { motion } from 'framer-motion';
+import { PanelLeftClose, PanelLeft } from 'lucide-react';
+import { SidebarIconStyles, SIDEBAR_ICONS } from './SidebarIcons';
+import { usePersonaStore } from '@/stores/personaStore';
+import type { SidebarSection } from '@/lib/types/types';
+import { IS_MOBILE, MOBILE_SECTIONS } from '@/lib/utils/platform/platform';
+import { sections } from './sidebarData';
+
+interface SidebarLevel1Props {
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+  disabledSections: Set<SidebarSection>;
+  onMobileDrawerToggle: (section: SidebarSection) => void;
+  appVersion: string;
+}
+
+export default function SidebarLevel1({
+  collapsed,
+  onToggleCollapsed,
+  disabledSections,
+  onMobileDrawerToggle,
+  appVersion,
+}: SidebarLevel1Props) {
+  const sidebarSection = usePersonaStore((s) => s.sidebarSection);
+  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const pendingReviewCount = usePersonaStore((s) => s.pendingReviewCount);
+  const n8nTransformActive = usePersonaStore((s) => s.n8nTransformActive);
+  const templateAdoptActive = usePersonaStore((s) => s.templateAdoptActive);
+  const rebuildActive = usePersonaStore((s) => s.rebuildActive);
+  const templateTestActive = usePersonaStore((s) => s.templateTestActive);
+  const isLabRunning = usePersonaStore((s) => s.isLabRunning);
+  const connectorTestActive = usePersonaStore((s) => s.connectorTestActive);
+  const isDev = import.meta.env.DEV;
+
+  return (
+    <>
+      <SidebarIconStyles />
+      <div className={`${collapsed ? 'w-[52px]' : 'w-[88px]'} bg-secondary/40 border-r border-primary/15 flex flex-col items-center py-3 gap-1 transition-all duration-200`}>
+        {sections
+          .filter((s) => (!s.devOnly || isDev) && (!IS_MOBILE || MOBILE_SECTIONS.has(s.id)))
+          .map((section) => {
+          const CustomIcon = SIDEBAR_ICONS[section.id];
+          const FallbackIcon = section.icon;
+          const isActive = sidebarSection === section.id;
+          const isDisabled = disabledSections.has(section.id);
+          const isDevSection = section.devOnly;
+
+          return (
+            <button
+              key={section.id}
+              onClick={() => {
+                if (isDisabled) return;
+                if (IS_MOBILE) {
+                  onMobileDrawerToggle(section.id);
+                } else {
+                  setSidebarSection(section.id);
+                }
+              }}
+              disabled={isDisabled}
+              className={`relative ${collapsed ? 'w-[40px]' : 'w-[76px]'} rounded-xl flex flex-col items-center justify-center py-2 transition-all group ${
+                isDisabled ? 'cursor-not-allowed opacity-40' : ''
+              } ${isDevSection ? 'ring-1 ring-amber-500/40' : ''}`}
+              title={isDisabled ? `${section.label} (${section.id === 'cloud' ? 'Sign in to unlock cloud features' : 'Coming soon'})` : section.label}
+            >
+              {isActive && !isDisabled && (
+                <motion.div
+                  layoutId="sidebarSectionIndicator"
+                  className="absolute inset-0 rounded-xl bg-primary/15 border border-primary/30 shadow-[0_0_12px_rgba(59,130,246,0.15)]"
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              )}
+              <div className={`relative z-10 ${collapsed ? 'w-6 h-6' : 'w-9 h-9'} transition-all ${
+                isDisabled
+                  ? 'text-muted-foreground/50'
+                  : isActive ? 'text-primary' : 'text-foreground/70 group-hover:text-foreground'
+              }`}>
+                {CustomIcon
+                  ? <CustomIcon active={isActive} className="w-full h-full" />
+                  : <FallbackIcon className="w-full h-full" />
+                }
+              </div>
+              {!collapsed && (
+                <span className={`relative z-10 text-[10px] leading-tight mt-1 font-semibold transition-colors ${
+                  isActive ? 'text-primary' : 'text-foreground/60 group-hover:text-foreground/90'
+                }`}>
+                  {section.label}
+                </span>
+              )}
+              {isDisabled && section.id !== 'cloud' && (
+                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px text-sm font-semibold uppercase tracking-wider leading-none rounded bg-muted-foreground/15 text-muted-foreground/80 whitespace-nowrap">
+                  soon
+                </span>
+              )}
+              {section.id === 'overview' && pendingReviewCount > 0 && (
+                <span className="absolute top-0.5 right-0.5 z-20 min-w-[16px] h-4 px-1 flex items-center justify-center text-sm font-bold leading-none rounded-full bg-amber-500 text-white shadow-sm shadow-amber-500/30">
+                  {pendingReviewCount > 99 ? '99+' : pendingReviewCount}
+                </span>
+              )}
+              {section.id === 'design-reviews' && (n8nTransformActive || templateAdoptActive || rebuildActive || templateTestActive) && (
+                <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-amber-500/40 animate-ping" />
+                  <span className="relative w-2.5 h-2.5 rounded-full bg-amber-500 border border-amber-600/50" />
+                </span>
+              )}
+              {section.id === 'personas' && (isLabRunning || connectorTestActive) && (
+                <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-cyan-500/40 animate-ping" />
+                  <span className="relative w-2.5 h-2.5 rounded-full bg-cyan-500 border border-cyan-600/50" />
+                </span>
+              )}
+            </button>
+          );
+        })}
+
+        {!IS_MOBILE && (
+          <button
+            onClick={onToggleCollapsed}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors mt-1"
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+          </button>
+        )}
+
+        <div className="flex-1" />
+        {!collapsed && appVersion && (
+          <div className="pb-1 pt-1">
+            <span className="text-sm font-mono text-muted-foreground/80 block text-center">
+              v{appVersion}
+            </span>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}

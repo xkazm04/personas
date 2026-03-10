@@ -2,8 +2,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import { listen } from "@tauri-apps/api/event";
-import type { AuthUser, AuthStateResponse } from "@/api/auth";
-import { clearCryptoCache } from "@/lib/utils/crypto";
+import type { AuthUser, AuthStateResponse } from "@/api/auth/auth";
+import { clearCryptoCache } from "@/lib/utils/platform/crypto";
 
 // Re-export so existing consumers can still import from authStore
 export type { AuthUser, AuthStateResponse };

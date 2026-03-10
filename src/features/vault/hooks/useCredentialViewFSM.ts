@@ -1,7 +1,7 @@
 import { useReducer, useCallback, useMemo, useEffect } from 'react';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
-import { isGoogleOAuthConnector } from '@/lib/utils/connectors';
+import { isGoogleOAuthConnector } from '@/lib/utils/platform/connectors';
 import { useCredentialNav, type CredentialNavKey } from './CredentialNavContext';
 
 // â”€â”€ View names (the finite states) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

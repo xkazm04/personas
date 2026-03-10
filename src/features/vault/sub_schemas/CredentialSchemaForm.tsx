@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
-import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
+import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { SchemaFormConfig } from './schemaFormTypes';
 import { sanitize } from './schemaFormTypes';

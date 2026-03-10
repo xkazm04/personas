@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Shield, AlertTriangle, Clock, Loader2, Wrench } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { getSlaDashboard } from '@/api/sla';
-import type { SlaDashboardData } from '@/api/sla';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { getSlaDashboard } from '@/api/overview/sla';
+import type { SlaDashboardData } from '@/api/overview/sla';
 import { DAY_OPTIONS, formatPercent, formatDuration, slaColor } from '../libs/slaHelpers';
 import { SlaCard, PersonaRow, DailyTrendChart } from './SLACard';
 

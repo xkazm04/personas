@@ -8,7 +8,7 @@
  * cost-quality tradeoffs.
  */
 
-import { getKnowledgeInjection } from '@/api/knowledge';
+import { getKnowledgeInjection } from '@/api/overview/intelligence/knowledge';
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import {
   addMiddleware,

@@ -12,7 +12,7 @@ import {
   AlertTriangle,
   Shield,
 } from 'lucide-react';
-import type { N8nPersonaDraft } from '@/api/n8nTransform';
+import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
 import { extractProtocolCapabilities } from '@/features/templates/sub_n8n/edit/protocolParser';

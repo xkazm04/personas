@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { ArrowRight, type LucideIcon } from 'lucide-react';
-import { SIDEBAR_ICONS, SidebarIconStyles } from '@/features/shared/components/SidebarIcons';
+import { SIDEBAR_ICONS, SidebarIconStyles } from '@/features/shared/components/layout/sidebar/SidebarIcons';
 
 export interface NavCard {
   id: string;

@@ -1,4 +1,4 @@
-import type { MemoryReviewDetail } from '@/api/memories';
+import type { MemoryReviewDetail } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 
 export type MemoryActionKind = 'throttle' | 'schedule' | 'alert' | 'config' | 'routing';

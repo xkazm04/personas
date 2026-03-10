@@ -2,13 +2,13 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Brain, Plus, ChevronDown, ChevronUp, Sparkles, Loader2, CheckCircle2, Trash2, AlertCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { MemoryRow } from '@/features/overview/sub_memories/MemoryCard';
 import { InlineAddMemoryForm } from '@/features/overview/sub_memories/CreateMemoryForm';
 import { MemoryFilterBar } from '@/features/overview/sub_memories/MemoryFilterBar';
 import { MemoryConflictReview } from '@/features/overview/sub_memories/MemoryConflictReview';
-import { useVirtualList } from '@/hooks/utility/useVirtualList';
-import type { MemoryReviewResult } from '@/api/memories';
+import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
+import type { MemoryReviewResult } from '@/api/overview/memories';
 
 type SortColumn = 'importance' | 'created_at';
 type SortDirection = 'asc' | 'desc';

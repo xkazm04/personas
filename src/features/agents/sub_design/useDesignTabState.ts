@@ -1,17 +1,17 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { usePersonaCompiler } from '@/hooks/design/usePersonaCompiler';
-import { useDesignConversation } from '@/hooks/design/useDesignConversation';
-import { useToggleSet } from '@/hooks/utility/useToggleSet';
+import { usePersonaCompiler } from '@/hooks/design/core/usePersonaCompiler';
+import { useDesignConversation } from '@/hooks/design/core/useDesignConversation';
+import { useToggleSet } from '@/hooks/utility/interaction/useToggleSet';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { DesignFilesSection } from '@/lib/types/frontendTypes';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
-import { parseDesignContext } from '@/features/shared/components/UseCasesList';
-import { mutateDesignFiles } from '@/hooks/design/useDesignContextMutator';
+import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { mutateDesignFiles } from '@/hooks/design/core/useDesignContextMutator';
 import { parseConversationMessages } from '@/lib/types/designTypes';
 import { allIndices, buildChangeSummary } from './DesignTabHelpers';
-import type { ExamplePair } from './ExamplePairCollector';
-import { formatExamplePairsAsIntent } from './ExamplePairCollector';
+import type { ExamplePair } from './wizard/ExamplePairCollector';
+import { formatExamplePairsAsIntent } from './wizard/ExamplePairCollector';
 
 export type DesignInputMode = 'design' | 'intent' | 'example';
 

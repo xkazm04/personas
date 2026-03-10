@@ -159,7 +159,7 @@ export function stringifyStructuredPrompt(sp: StructuredPrompt): string {
 
 // ── Rendering ──────────────────────────────────────────────────
 
-import { previewPrompt as tauriPreviewPrompt } from '@/api/design';
+import { previewPrompt as tauriPreviewPrompt } from '@/api/templates/design';
 
 /**
  * Local-only rendering of structured prompt sections to markdown.

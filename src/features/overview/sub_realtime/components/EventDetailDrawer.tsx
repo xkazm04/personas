@@ -4,7 +4,7 @@ import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { usePersonaStore } from '@/stores/personaStore';
-import { UuidLabel } from '@/features/shared/components/UuidLabel';
+import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
 
 interface Props {
   event: RealtimeEvent;

@@ -2,11 +2,11 @@ import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Radar, CheckCircle2, Loader2, Sparkles, Monitor } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
-import { detectAuthenticatedServices, type AuthDetection } from '@/api/authDetect';
+import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { detectAuthenticatedServices, type AuthDetection } from '@/api/auth/authDetect';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { staggerContainer, staggerItem } from '@/features/templates/animationPresets';
-import { isDesktopBridge } from '@/lib/utils/connectors';
+import { isDesktopBridge } from '@/lib/utils/platform/connectors';
 
 interface WizardDetectPhaseProps {
   onSelect: (connectors: ConnectorDefinition[]) => void;

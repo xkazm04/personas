@@ -14,7 +14,7 @@ import {
   GitBranch,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import type { GitLabPipeline, GitLabJob } from '@/api/gitlab';
+import type { GitLabPipeline, GitLabJob } from '@/api/system/gitlab';
 
 // ---------------------------------------------------------------------------
 // Helpers

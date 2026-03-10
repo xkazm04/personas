@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
-import type { ToolInvocationResult } from '@/api/tools';
+import type { ToolInvocationResult } from '@/api/agents/tools';
 
 interface ToolInvocationCardProps {
   tool: PersonaToolDefinition;

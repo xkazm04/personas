@@ -1,7 +1,7 @@
 import { Copy, AlertTriangle, ArrowRight } from 'lucide-react';
 import type { ConflictKind } from './memoryConflicts';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
-import { stripHtml } from '@/lib/utils/sanitizeHtml';
+import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 
 // ---------------------------------------------------------------------------
 // Visual config

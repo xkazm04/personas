@@ -14,7 +14,7 @@ interface ScheduleRowProps {
   onManualExecute: () => void;
   onToggleEnabled: () => void;
   onUpdateFrequency: (cron: string | null, intervalSeconds: number | null) => void;
-  onPreviewCron: (expression: string) => Promise<import('@/api/triggers').CronPreview | null>;
+  onPreviewCron: (expression: string) => Promise<import('@/api/pipeline/triggers').CronPreview | null>;
 }
 
 const HEALTH_CONFIG = {

@@ -1,21 +1,21 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Loader2, RefreshCw, BarChart3, Bot } from 'lucide-react';
-import EmptyState from '@/features/shared/components/EmptyState';
-import { useVirtualList } from '@/hooks/utility/useVirtualList';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { FilterBar } from '@/features/shared/components/FilterBar';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
-import DetailModal from '@/features/overview/components/DetailModal';
+import DetailModal from '@/features/overview/components/dashboard/DetailModal';
 import { ExecutionDetail } from '@/features/agents/sub_executions';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import type { GlobalExecution } from '@/lib/types/types';
-import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
-import { IS_MOBILE } from '@/lib/utils/platform';
-import { useFilteredCollection } from '@/hooks/utility/useFilteredCollection';
-import ContentLoader from '@/features/shared/components/ContentLoader';
-import { usePolling, POLLING_CONFIG } from '@/hooks/utility/usePolling';
+import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { IS_MOBILE } from '@/lib/utils/platform/platform';
+import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
+import ContentLoader from '@/features/shared/components/progress/ContentLoader';
+import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 
 type FilterStatus = 'all' | 'running' | 'completed' | 'failed';
 

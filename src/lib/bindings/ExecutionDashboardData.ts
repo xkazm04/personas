@@ -11,4 +11,6 @@ export interface ExecutionDashboardData {
   total_cost: number;
   overall_success_rate: number;
   avg_latency_ms: number;
+  projected_monthly_cost: number | null;
+  burn_rate: number | null;
 }

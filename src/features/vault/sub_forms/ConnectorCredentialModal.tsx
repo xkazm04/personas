@@ -1,8 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { X, Plug, ExternalLink, Check } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
-import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
+import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import type { SuggestedConnector } from '@/lib/types/designTypes';
 import type { ConnectorDefinition, CredentialMetadata, CredentialTemplateField } from '@/lib/types/types';
 

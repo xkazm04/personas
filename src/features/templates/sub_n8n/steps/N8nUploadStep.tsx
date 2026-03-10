@@ -1,0 +1,299 @@
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Upload, FileJson, ChevronRight, ClipboardPaste, Link2, Loader2,
+} from 'lucide-react';
+import { getAcceptedExtensions } from '@/lib/personas/parsers/workflowDetector';
+
+import type { ImportMode } from './n8nUploadTypes';
+import { formatFileSize, getFileIcon } from './n8nUploadTypes';
+import { PlatformLabels } from './PlatformLabels';
+import { PreviewCard } from './PreviewCard';
+import { useFileUpload } from './useFileUpload';
+import { usePasteImport } from './usePasteImport';
+import { useUrlImport } from './useUrlImport';
+
+interface N8nUploadStepProps {
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  onFileDrop?: (file: File) => void;
+  onContentPaste?: (content: string, sourceName: string) => void;
+}
+
+export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepProps) {
+  const [mode, setMode] = useState<ImportMode>('file');
+
+  const {
+    isDragging, preview,
+    handleDragOver, handleDragEnter, handleDragLeave, handleDrop,
+    handleFileInputChange, handleManualProceed, mountedRef,
+  } = useFileUpload(onContentPaste);
+
+  const {
+    pasteText, setPasteText, pastePreview,
+    validatePastedContent, handlePasteImport,
+  } = usePasteImport(onContentPaste);
+
+  const {
+    urlValue, setUrlValue, urlFetching, urlPreview, setUrlPreview,
+    handleUrlFetch, handleUrlImport,
+  } = useUrlImport(onContentPaste, mountedRef);
+
+  const FileIcon = preview?.kind === 'valid' ? getFileIcon(preview.fileName) : FileJson;
+
+  const modes: { id: ImportMode; label: string; icon: React.ReactNode }[] = [
+    { id: 'file', label: 'Upload File', icon: <Upload className="w-3.5 h-3.5" /> },
+    { id: 'paste', label: 'Paste JSON', icon: <ClipboardPaste className="w-3.5 h-3.5" /> },
+    { id: 'url', label: 'From URL', icon: <Link2 className="w-3.5 h-3.5" /> },
+  ];
+
+  return (
+    <div>
+      {/* Mode tabs */}
+      <div className="flex items-center gap-1 mb-4 p-1 rounded-lg bg-secondary/30 border border-primary/8">
+        {modes.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => setMode(m.id)}
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+              mode === m.id
+                ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25 shadow-sm'
+                : 'text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/40 border border-transparent'
+            }`}
+          >
+            {m.icon}
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      <AnimatePresence mode="wait">
+        {mode === 'file' && (
+          <FileUploadTab
+            fileInputRef={fileInputRef}
+            isDragging={isDragging}
+            preview={preview}
+            FileIcon={FileIcon}
+            handleDragOver={handleDragOver}
+            handleDragEnter={handleDragEnter}
+            handleDragLeave={handleDragLeave}
+            handleDrop={handleDrop}
+            handleFileInputChange={handleFileInputChange}
+            handleManualProceed={handleManualProceed}
+          />
+        )}
+
+        {mode === 'paste' && (
+          <PasteTab
+            pasteText={pasteText}
+            setPasteText={setPasteText}
+            pastePreview={pastePreview}
+            validatePastedContent={validatePastedContent}
+            handlePasteImport={handlePasteImport}
+          />
+        )}
+
+        {mode === 'url' && (
+          <UrlTab
+            urlValue={urlValue}
+            setUrlValue={setUrlValue}
+            urlFetching={urlFetching}
+            urlPreview={urlPreview}
+            setUrlPreview={setUrlPreview}
+            handleUrlFetch={handleUrlFetch}
+            handleUrlImport={handleUrlImport}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// -- Inline tab wrappers (thin, just JSX) --
+
+function FileUploadTab({
+  fileInputRef, isDragging, preview, FileIcon,
+  handleDragOver, handleDragEnter, handleDragLeave, handleDrop,
+  handleFileInputChange, handleManualProceed,
+}: {
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  isDragging: boolean;
+  preview: ReturnType<typeof useFileUpload>['preview'];
+  FileIcon: React.ComponentType<{ className?: string }>;
+  handleDragOver: (e: React.DragEvent) => void;
+  handleDragEnter: (e: React.DragEvent) => void;
+  handleDragLeave: (e: React.DragEvent) => void;
+  handleDrop: (e: React.DragEvent) => void;
+  handleFileInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleManualProceed: () => void;
+}) {
+  return (
+    <motion.div key="file" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }}>
+      <motion.div
+        onClick={() => fileInputRef.current?.click()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        role="button"
+        tabIndex={0}
+        aria-label="Drop workflow file or click to browse"
+        data-testid="n8n-upload-dropzone"
+        className={`relative flex flex-col items-center justify-center gap-4 p-12 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 ${
+          isDragging
+            ? 'border-violet-400/60 bg-violet-500/10 scale-[1.01]'
+            : 'border-primary/15 bg-secondary/20 hover:border-primary/30 hover:bg-secondary/30'
+        } focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+      >
+        <motion.div
+          animate={isDragging ? { scale: 1.1, y: -4 } : { scale: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          className={`w-16 h-16 rounded-xl border flex items-center justify-center transition-colors duration-200 ${
+            isDragging ? 'bg-violet-500/25 border-violet-400/40' : 'bg-violet-500/15 border-violet-500/25'
+          }`}
+        >
+          <Upload className={`w-8 h-8 transition-colors duration-200 ${isDragging ? 'text-violet-300' : 'text-violet-400'}`} />
+        </motion.div>
+        <div className="text-center">
+          <p className="text-sm font-medium text-foreground/80">
+            {isDragging ? 'Drop your workflow file here' : 'Import a workflow from any platform'}
+          </p>
+          <p className="text-sm text-muted-foreground/90 mt-1">
+            Click to browse or drag and drop your exported workflow
+          </p>
+        </div>
+        <PlatformLabels />
+        <input ref={fileInputRef} type="file" accept={getAcceptedExtensions()} onChange={handleFileInputChange} className="hidden" data-testid="n8n-file-input" />
+      </motion.div>
+      <PreviewCard preview={preview} FileIcon={FileIcon} onClick={preview?.kind === 'valid' ? handleManualProceed : undefined} />
+      {preview?.kind === 'valid' && (
+        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex flex-col items-start gap-1.5">
+          <button onClick={handleManualProceed} className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors">
+            Continue
+          </button>
+          <p className="text-sm text-muted-foreground/60">Press Enter or click to continue</p>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+}
+
+function PasteTab({
+  pasteText, setPasteText, pastePreview, validatePastedContent, handlePasteImport,
+}: {
+  pasteText: string;
+  setPasteText: (v: string) => void;
+  pastePreview: ReturnType<typeof usePasteImport>['pastePreview'];
+  validatePastedContent: (text: string) => void;
+  handlePasteImport: () => void;
+}) {
+  return (
+    <motion.div key="paste" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }}>
+      <div className="rounded-xl border border-primary/15 bg-secondary/20 overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-primary/8 flex items-center gap-2">
+          <ClipboardPaste className="w-4 h-4 text-violet-400" />
+          <span className="text-sm font-medium text-foreground/80">Paste workflow JSON</span>
+          <span className="text-sm text-muted-foreground/60 ml-auto">
+            {pasteText.length > 0 && formatFileSize(pasteText.length)}
+          </span>
+        </div>
+        <textarea
+          value={pasteText}
+          onChange={(e) => { setPasteText(e.target.value); validatePastedContent(e.target.value); }}
+          aria-label="Workflow JSON content"
+          placeholder='Paste your exported workflow JSON here...\n\nExample: {"nodes": [...], "connections": {...}}'
+          className="w-full h-48 px-4 py-3 bg-transparent text-sm font-mono text-foreground/80 placeholder:text-muted-foreground/40 resize-none outline-none"
+          spellCheck={false}
+          data-testid="paste-json-textarea"
+        />
+        <div className="px-4 py-2.5 border-t border-primary/8 flex items-center justify-between">
+          <PlatformLabels />
+          <button
+            onClick={handlePasteImport}
+            disabled={pastePreview?.kind !== 'valid'}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-medium transition-all ${
+              pastePreview?.kind === 'valid'
+                ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
+                : 'bg-secondary/40 text-muted-foreground/40 border border-primary/10 cursor-not-allowed'
+            }`}
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+            Import
+          </button>
+        </div>
+      </div>
+      <PreviewCard preview={pastePreview} FileIcon={FileJson} onClick={pastePreview?.kind === 'valid' ? handlePasteImport : undefined} />
+    </motion.div>
+  );
+}
+
+function UrlTab({
+  urlValue, setUrlValue, urlFetching, urlPreview, setUrlPreview,
+  handleUrlFetch, handleUrlImport,
+}: {
+  urlValue: string;
+  setUrlValue: (v: string) => void;
+  urlFetching: boolean;
+  urlPreview: ReturnType<typeof useUrlImport>['urlPreview'];
+  setUrlPreview: (v: null) => void;
+  handleUrlFetch: () => Promise<void>;
+  handleUrlImport: () => void;
+}) {
+  return (
+    <motion.div key="url" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }}>
+      <div className="rounded-xl border border-primary/15 bg-secondary/20 p-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <Link2 className="w-4 h-4 text-violet-400 flex-shrink-0" />
+          <span className="text-sm font-medium text-foreground/80">Import from URL</span>
+        </div>
+        <p className="text-sm text-muted-foreground/70">
+          Paste a URL to a raw workflow JSON file. Supports GitHub raw URLs, Gist links, and direct JSON endpoints.
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={urlValue}
+            onChange={(e) => { setUrlValue(e.target.value); setUrlPreview(null); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !urlFetching) void handleUrlFetch(); }}
+            aria-label="Workflow URL"
+            placeholder="https://raw.githubusercontent.com/.../workflow.json"
+            className="flex-1 px-3 py-2 rounded-xl bg-background/50 border border-primary/15 text-sm text-foreground/80 placeholder:text-muted-foreground/40 outline-none focus:border-violet-500/40 transition-colors"
+            data-testid="url-input"
+          />
+          <button
+            onClick={() => void handleUrlFetch()}
+            disabled={urlFetching || !urlValue.trim()}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              urlFetching || !urlValue.trim()
+                ? 'bg-secondary/40 text-muted-foreground/40 border border-primary/10 cursor-not-allowed'
+                : 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
+            }`}
+          >
+            {urlFetching ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Fetching</>
+            ) : (
+              <><ChevronRight className="w-3.5 h-3.5" /> Fetch</>
+            )}
+          </button>
+        </div>
+        <div className="flex items-center gap-3 text-sm text-muted-foreground/50">
+          <span>Accepts:</span>
+          <span className="font-mono text-sm">github.com/*/blob/*</span>
+          <span className="text-primary/20">|</span>
+          <span className="font-mono text-sm">gist.github.com/*</span>
+          <span className="text-primary/20">|</span>
+          <span className="font-mono text-sm">raw JSON endpoint</span>
+        </div>
+      </div>
+      <PreviewCard preview={urlPreview} FileIcon={FileJson} onClick={urlPreview?.kind === 'valid' ? handleUrlImport : undefined} />
+      {urlPreview?.kind === 'valid' && (
+        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex flex-col items-start gap-1.5">
+          <button onClick={handleUrlImport} className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors">
+            Continue
+          </button>
+          <p className="text-sm text-muted-foreground/60">Press Enter or click to continue</p>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+}

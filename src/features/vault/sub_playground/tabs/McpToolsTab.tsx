@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { RefreshCw, Play, Loader2, Server, ChevronDown, ChevronRight, AlertCircle, Clock, Check } from 'lucide-react';
-import { listMcpTools, executeMcpTool } from '@/api/mcpTools';
-import type { McpTool, McpToolResult } from '@/api/mcpTools';
+import { listMcpTools, executeMcpTool } from '@/api/agents/mcpTools';
+import type { McpTool, McpToolResult } from '@/api/agents/mcpTools';
 
 // ── Component ────────────────────────────────────────────────────
 

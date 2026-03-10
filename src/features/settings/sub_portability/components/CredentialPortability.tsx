@@ -7,7 +7,7 @@ import {
   Loader2,
   Check,
 } from 'lucide-react';
-import type { CredentialImportResult } from '@/api/dataPortability';
+import type { CredentialImportResult } from '@/api/system/dataPortability';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 

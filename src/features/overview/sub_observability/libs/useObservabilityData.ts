@@ -1,15 +1,9 @@
 import { useEffect, useMemo, useCallback, useState } from 'react';
 import { usePersonaStore, initHealingListener } from '@/stores/personaStore';
-import { getPromptVersions } from '@/api/observability';
-import { getRotationHistory } from '@/api/rotation';
-import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
-import type { ChartAnnotationRecord } from './chartAnnotations';
-import { toChartDate, useAnnotationComposer } from './chartAnnotations';
+import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import type { PieDataPoint } from '../components/MetricsCharts';
-import { usePolling, POLLING_CONFIG } from '@/hooks/utility/usePolling';
-
-const isDefined = <T,>(value: T | null | undefined): value is T => value != null;
-const ANNOTATION_FETCH_DEBOUNCE_MS = 250;
+import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
+import { useAnnotationData } from './useAnnotationData';
 
 export function useObservabilityData() {
   const fetchObservabilityMetrics = usePersonaStore((s) => s.fetchObservabilityMetrics);
@@ -21,7 +15,6 @@ export function useObservabilityData() {
   const fetchHealingIssues = usePersonaStore((s) => s.fetchHealingIssues);
   const triggerHealing = usePersonaStore((s) => s.triggerHealing);
   const resolveHealingIssue = usePersonaStore((s) => s.resolveHealingIssue);
-  const credentials = usePersonaStore((s) => s.credentials);
   const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
   const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
 
@@ -45,8 +38,6 @@ export function useObservabilityData() {
     auto_fixed: number;
   } | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [promptAnnotations, setPromptAnnotations] = useState<ChartAnnotationRecord[]>([]);
-  const [rotationAnnotations, setRotationAnnotations] = useState<ChartAnnotationRecord[]>([]);
 
   const refreshAll = useCallback(() => {
     return Promise.all([
@@ -72,81 +63,6 @@ export function useObservabilityData() {
 
   useEffect(() => { initHealingListener(); }, []);
   useEffect(() => { void fetchCredentials(); }, [fetchCredentials]);
-
-  // Load prompt annotations
-  useEffect(() => {
-    const controller = new AbortController();
-    const { signal } = controller;
-    const timeoutId = setTimeout(() => {
-      const loadPromptAnnotations = async () => {
-        const personaIds = selectedPersonaId ? [selectedPersonaId] : personas.map((p) => p.id).slice(0, 8);
-        if (personaIds.length === 0) {
-          if (!signal.aborted) setPromptAnnotations([]);
-          return;
-        }
-        try {
-          const byPersona = await Promise.all(
-            personaIds.map(async (personaId) => {
-              if (signal.aborted) return [];
-              const versions = await getPromptVersions(personaId, 8);
-              if (signal.aborted) return [];
-              return versions.map((version) => {
-                const date = toChartDate(version.created_at);
-                if (!date) return null;
-                return {
-                  timestamp: version.created_at, date,
-                  label: `Prompt v${version.version_number} (${version.tag})`,
-                  type: 'prompt' as const, personaId,
-                };
-              }).filter(isDefined);
-            }),
-          );
-          if (!signal.aborted) setPromptAnnotations(byPersona.flat());
-        } catch {
-          if (!signal.aborted) setPromptAnnotations([]);
-        }
-      };
-      void loadPromptAnnotations();
-    }, ANNOTATION_FETCH_DEBOUNCE_MS);
-    return () => { controller.abort(); clearTimeout(timeoutId); };
-  }, [selectedPersonaId, personas]);
-
-  // Load rotation annotations
-  useEffect(() => {
-    const controller = new AbortController();
-    const { signal } = controller;
-    const timeoutId = setTimeout(() => {
-      const loadRotationAnnotations = async () => {
-        if (credentials.length === 0) {
-          if (!signal.aborted) setRotationAnnotations([]);
-          return;
-        }
-        try {
-          const byCredential = await Promise.all(
-            credentials.slice(0, 20).map(async (credential) => {
-              if (signal.aborted) return [];
-              const history = await getRotationHistory(credential.id, 3);
-              if (signal.aborted) return [];
-              return history.map((entry) => {
-                const date = toChartDate(entry.created_at);
-                if (!date) return null;
-                return {
-                  timestamp: entry.created_at, date,
-                  label: `Rotation ${entry.status}${credential.name ? ` · ${credential.name}` : ''}`,
-                  type: 'rotation' as const, personaId: null,
-                };
-              }).filter(isDefined);
-            }),
-          );
-          if (!signal.aborted) setRotationAnnotations(byCredential.flat());
-        } catch {
-          if (!signal.aborted) setRotationAnnotations([]);
-        }
-      };
-      void loadRotationAnnotations();
-    }, ANNOTATION_FETCH_DEBOUNCE_MS);
-    return () => { controller.abort(); clearTimeout(timeoutId); };
-  }, [credentials]);
 
   const evaluateAlertRules = usePersonaStore((s) => s.evaluateAlertRules);
 
@@ -225,25 +141,7 @@ export function useObservabilityData() {
     return { issueCounts: counts, sortedFilteredIssues: sorted };
   }, [healingIssues, issueFilter]);
 
-  const healingAnnotations = useMemo<ChartAnnotationRecord[]>(() =>
-    healingIssues
-      .map((issue) => {
-        const date = toChartDate(issue.created_at);
-        if (!date) return null;
-        return {
-          timestamp: issue.created_at, date,
-          label: issue.is_circuit_breaker ? `Circuit breaker: ${issue.title}` : issue.title,
-          type: issue.is_circuit_breaker ? 'incident' as const : 'healing' as const,
-          personaId: issue.persona_id,
-        };
-      })
-      .filter(isDefined),
-  [healingIssues]);
-
-  const chartAnnotations = useAnnotationComposer(
-    [promptAnnotations, rotationAnnotations, healingAnnotations],
-    { filterPersonaId: selectedPersonaId },
-  );
+  const chartAnnotations = useAnnotationData({ selectedPersonaId, healingIssues });
 
   return {
     // Filter state

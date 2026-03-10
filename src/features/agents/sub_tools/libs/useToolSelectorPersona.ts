@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
+import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 
 /**
  * Persona-scoped data for the tool selector: tool definitions,

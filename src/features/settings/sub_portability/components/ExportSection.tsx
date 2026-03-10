@@ -5,7 +5,7 @@ import {
   Loader2,
   Check,
 } from 'lucide-react';
-import type { PortabilityImportResult } from '@/api/dataPortability';
+import type { PortabilityImportResult } from '@/api/system/dataPortability';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 

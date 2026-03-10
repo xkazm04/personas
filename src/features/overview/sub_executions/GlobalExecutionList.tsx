@@ -1,16 +1,16 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Loader2, RefreshCw, BarChart3, Bot, Inbox } from 'lucide-react';
-import { useVirtualList } from '@/hooks/utility/useVirtualList';
+import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { FilterBar } from '@/features/shared/components/FilterBar';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
 import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
-import DetailModal from '@/features/overview/components/DetailModal';
-import { ExecutionDetail } from '@/features/agents/sub_executions/ExecutionDetail';
+import DetailModal from '@/features/overview/components/dashboard/DetailModal';
+import { ExecutionDetail } from '@/features/agents/sub_executions/detail/ExecutionDetail';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import type { GlobalExecution } from '@/lib/types/types';
-import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 
 // ---------------------------------------------------------------------------
 // Helpers

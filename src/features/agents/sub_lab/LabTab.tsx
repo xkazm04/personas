@@ -2,12 +2,12 @@ import { useEffect } from 'react';
 import { FlaskConical, GitBranch, Wand2, ArrowLeftRight, Grid3X3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ArenaPanel } from './ArenaPanel';
-import { AbPanel } from './AbPanel';
-import { MatrixPanel } from './MatrixPanel';
-import { EvalPanel } from './EvalPanel';
-import { VersionsPanel } from './VersionsPanel';
-import type { LabMode } from '@/stores/slices/labSlice';
+import { ArenaPanel } from './panels/ArenaPanel';
+import { AbPanel } from './panels/AbPanel';
+import { MatrixPanel } from './panels/MatrixPanel';
+import { EvalPanel } from './panels/EvalPanel';
+import { VersionsPanel } from './panels/VersionsPanel';
+import type { LabMode } from '@/stores/slices/agents/labSlice';
 
 const LAB_MODE_KEY = 'dac-lab-mode';
 

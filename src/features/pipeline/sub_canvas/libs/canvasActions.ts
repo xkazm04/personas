@@ -3,7 +3,7 @@ import type { DryRunState } from './debuggerTypes';
 import type { AlignmentLine } from '../components/AlignmentGuides';
 import type { PipelineAnalytics } from '@/lib/bindings/PipelineAnalytics';
 import type { PipelineNodeStatus } from './useDerivedCanvasState';
-import type { StickyNoteCategory } from '../components/StickyNoteNode';
+import type { StickyNoteCategory } from '../components/nodes/StickyNoteNode';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 
 export interface MemberWithPersonaInfo extends PersonaTeamMember {

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
-import { ContentBox } from '@/features/shared/components/ContentLayout';
+import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { type PersonaDraft, buildDraft } from '@/features/agents/sub_editor/PersonaDraft';
 import { EditorDirtyProvider, useEditorDirtyState, TabSaveError } from '@/features/agents/sub_editor/EditorDocument';
 import { tabIdsToLabels } from '@/features/agents/sub_editor/editorTabConstants';
@@ -11,7 +11,7 @@ import { UnsavedChangesBanner, DesignNudgeBanner, CloudNudgeBanner } from '@/fea
 import { OnboardingBanner } from '@/features/agents/components/onboarding/OnboardingChecklist';
 import { EditorTabBar } from '@/features/agents/sub_editor/EditorTabBar';
 import { PersonaEditorHeader } from '@/features/agents/sub_editor/PersonaEditorHeader';
-import PanelSkeleton from '@/features/shared/components/PanelSkeleton';
+import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 
 const PersonaPromptEditor = lazy(() =>
   import('@/features/agents/sub_prompt/PersonaPromptEditor').then((m) => ({ default: m.PersonaPromptEditor })),
@@ -23,7 +23,7 @@ const PersonaUseCasesTab = lazy(() =>
   import('@/features/agents/sub_use_cases/PersonaUseCasesTab').then((m) => ({ default: m.PersonaUseCasesTab })),
 );
 const PersonaConnectorsTab = lazy(() =>
-  import('@/features/agents/sub_connectors/PersonaConnectorsTab').then((m) => ({ default: m.PersonaConnectorsTab })),
+  import('@/features/agents/sub_connectors/status/PersonaConnectorsTab').then((m) => ({ default: m.PersonaConnectorsTab })),
 );
 const DesignTab = lazy(() =>
   import('@/features/agents/sub_design/DesignTab').then((m) => ({ default: m.DesignTab })),
@@ -32,7 +32,7 @@ const LabTab = lazy(() =>
   import('@/features/agents/sub_lab/LabTab').then((m) => ({ default: m.LabTab })),
 );
 const PromptPerformanceCard = lazy(() =>
-  import('@/features/agents/sub_prompt_lab/PromptPerformanceCard').then((m) => ({ default: m.PromptPerformanceCard })),
+  import('@/features/agents/sub_prompt_lab/performance/PromptPerformanceCard').then((m) => ({ default: m.PromptPerformanceCard })),
 );
 const HealthTab = lazy(() =>
   import('@/features/agents/sub_health/HealthTab').then((m) => ({ default: m.HealthTab })),

@@ -1,6 +1,6 @@
 import { Chrome, LogOut, User } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 
 export default function AccountSettings() {
   const user = useAuthStore((s) => s.user);

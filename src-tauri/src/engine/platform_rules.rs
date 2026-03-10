@@ -5,7 +5,7 @@
 //! Make) is defined as a JSON config that can be loaded from the database
 //! or from built-in defaults.
 
-use crate::db::models::PlatformDefinition;
+use crate::db::models::{PlatformDefinition, PlatformFormat};
 
 // ============================================================================
 // Built-in platform definitions
@@ -16,7 +16,7 @@ pub fn builtin_n8n() -> PlatformDefinition {
     PlatformDefinition {
         id: "n8n".into(),
         label: "n8n".into(),
-        format: "json".into(),
+        format: PlatformFormat::Json,
         node_type_map: vec![
             nt("gmail", "gmail"),
             nt("slack", "slack"),
@@ -127,7 +127,7 @@ pub fn builtin_zapier() -> PlatformDefinition {
     PlatformDefinition {
         id: "zapier".into(),
         label: "Zapier".into(),
-        format: "json".into(),
+        format: PlatformFormat::Json,
         node_type_map: vec![
             nt("gmail", "gmail"),
             nt("google-mail", "gmail"),
@@ -218,7 +218,7 @@ pub fn builtin_make() -> PlatformDefinition {
     PlatformDefinition {
         id: "make".into(),
         label: "Make (Integromat)".into(),
-        format: "json".into(),
+        format: PlatformFormat::Json,
         node_type_map: vec![
             nt("google", "google"),
             nt("gmail", "gmail"),

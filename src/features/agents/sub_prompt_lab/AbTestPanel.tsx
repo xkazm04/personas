@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Loader2, Play, FlaskConical, XCircle, ArrowDown } from 'lucide-react';
-import { runPromptAbTest } from '@/api/observability';
+import { runPromptAbTest } from '@/api/overview/observability';
 import { useToastStore } from '@/stores/toastStore';
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import type { PromptAbTestResult } from '@/lib/bindings/PromptAbTestResult';

@@ -8,7 +8,7 @@
  *
  * Follows the same pattern as protocolParser.ts but focused on security threats.
  */
-import type { N8nPersonaDraft, N8nToolDraft } from '@/api/n8nTransform';
+import type { N8nPersonaDraft, N8nToolDraft } from '@/api/templates/n8nTransform';
 
 // â”€â”€ Severity & Finding Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 

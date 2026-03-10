@@ -1,4 +1,4 @@
-import type { ProviderAuditEntry } from '@/api/byom';
+import type { ProviderAuditEntry } from '@/api/system/byom';
 import { ENGINE_LABELS } from '../libs/byomHelpers';
 
 interface ByomAuditLogProps {

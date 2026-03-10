@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { usePersonaStore } from '@/stores/personaStore';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { extractConnectorNames } from '@/lib/personas/utils';

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Info, XCircle, X } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import type { FiredAlert } from '@/stores/slices/alertSlice';
+import type { FiredAlert } from '@/stores/slices/overview/alertSlice';
 
 const SEVERITY_STYLES: Record<string, { border: string; bg: string; icon: typeof Info; iconColor: string }> = {
   info: { border: 'border-blue-500/30', bg: 'bg-blue-500/10', icon: Info, iconColor: 'text-blue-400' },

@@ -5,7 +5,7 @@ import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 import { usePersonaStore } from '@/stores/personaStore';
 import { WizardDetectPhase } from './WizardDetectPhase';
 import { WizardBatchPhase } from './WizardBatchPhase';
-import { cancelAutoCredBrowser } from '@/api/autoCredBrowser';
+import { cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
 import type { ConnectorDefinition } from '@/lib/types/types';
 
 interface ProvisioningWizardProps {

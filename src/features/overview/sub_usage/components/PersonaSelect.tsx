@@ -1,5 +1,5 @@
 import type { Persona } from '@/lib/bindings/Persona';
-import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 
 // ---------------------------------------------------------------------------
 // CompareToggle

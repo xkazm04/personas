@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronDown, ChevronRight, Globe, Settings, UserPlus, KeyRound,
   ShieldCheck, Copy, HelpCircle, Loader2 } from 'lucide-react';
-import type { NegotiationStep } from '@/hooks/design/useCredentialNegotiator';
+import type { NegotiationStep } from '@/hooks/design/credential/useCredentialNegotiator';
 import { MOTION_TIMING } from '@/features/templates/animationPresets';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { FieldCaptureRow } from '@/features/vault/sub_forms/FieldCaptureRow';

@@ -1,5 +1,5 @@
 import { DollarSign } from 'lucide-react';
-import { FieldHint } from '@/features/shared/components/FieldHint';
+import { FieldHint } from '@/features/shared/components/display/FieldHint';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 interface BudgetControlsProps {

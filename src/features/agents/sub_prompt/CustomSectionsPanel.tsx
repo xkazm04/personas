@@ -1,5 +1,5 @@
 import { Plus, X } from 'lucide-react';
-import { SectionEditor } from '@/features/shared/components/draft-editor/SectionEditor';
+import { SectionEditor } from '@/features/shared/components/editors/draft-editor/SectionEditor';
 
 interface CustomSection {
   title: string;

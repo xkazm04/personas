@@ -5,7 +5,7 @@ export { OllamaApiKeyField } from './components/OllamaApiKeyField';
 export { LiteLLMConfigField } from './components/LiteLLMConfigField';
 export { ProviderCredentialField } from './components/ProviderCredentialField';
 export { SaveConfigButton } from './components/SaveConfigButton';
-export { ModelABCompare } from './components/ModelABCompare';
+export { ModelABCompare } from './components/compare/ModelABCompare';
 export {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,

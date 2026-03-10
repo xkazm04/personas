@@ -10,7 +10,7 @@ import {
   Shield,
   Terminal,
 } from "lucide-react";
-import type { ForagedCredential, ForageSource } from "@/api/foraging";
+import type { ForagedCredential, ForageSource } from "@/api/vault/foraging";
 
 interface ForagingResultCardProps {
   credential: ForagedCredential;

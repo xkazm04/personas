@@ -5,9 +5,9 @@
  * Extracted from AdoptionWizardContext to isolate action/handler concerns.
  */
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
-import type { N8nPersonaDraft } from '@/api/n8nTransform';
+import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import { usePersonaStore } from '@/stores/personaStore';
-import { getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
+import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { validateVariables, getAdoptionRequirements } from './templateVariables';
 import type { RequiredConnector } from './steps/ConnectStep';
 import {

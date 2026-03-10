@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useClickOutside } from '@/hooks/utility/useClickOutside';
-import { useViewportClampFixed } from '@/hooks/utility/useViewportClamp';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
+import { useViewportClampFixed } from '@/hooks/utility/interaction/useViewportClamp';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cpu, Copy, Power, PowerOff, Trash2, ChevronRight, Check, AlertTriangle } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';

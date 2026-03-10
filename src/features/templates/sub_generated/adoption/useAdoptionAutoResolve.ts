@@ -7,8 +7,8 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { AdoptionDraft } from '@/stores/slices/uiSlice';
-import { getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
+import type { AdoptionDraft } from '@/stores/slices/system/uiSlice';
+import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import type { RequiredConnector } from './steps/ConnectStep';
 import type { useAdoptReducer } from './useAdoptReducer';
 import type { AdoptState } from './useAdoptReducer';

@@ -1,6 +1,6 @@
 import { Clock, Trash2 } from 'lucide-react';
-import { PromptTemplateRenderer } from '@/features/shared/components/PromptTemplateRenderer';
-import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
+import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { RecipeExecutionResult } from '@/lib/bindings/RecipeExecutionResult';
 
 interface RecipeHistoryTabProps {

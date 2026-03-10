@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Table2, Code2, Terminal } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { TablesTab } from './tabs/TablesTab';

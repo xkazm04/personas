@@ -1,23 +1,24 @@
 import { useEffect, useState } from "react";
 import { MotionConfig } from "framer-motion";
 import PersonasPage from "@/features/personas/PersonasPage";
-import UpdateBanner from "@/features/shared/components/UpdateBanner";
-import { HealingToast } from "@/features/shared/components/HealingToast";
-import { ToastContainer } from "@/features/shared/components/ToastContainer";
-import { FirstUseConsentModal, hasUserConsented } from "@/features/shared/components/FirstUseConsentModal";
+import UpdateBanner from "@/features/shared/components/feedback/UpdateBanner";
+import { HealingToast } from "@/features/shared/components/feedback/HealingToast";
+import { ToastContainer } from "@/features/shared/components/feedback/ToastContainer";
+import { FirstUseConsentModal, hasUserConsented } from "@/features/shared/components/overlays/FirstUseConsentModal";
 import { initAuthListener, useAuthStore } from "@/stores/authStore";
 import { registerKnowledgeMiddleware } from "@/lib/execution/knowledgeMiddleware";
 import { useLabEvents } from "@/hooks/lab/useLabEvents";
 import { useHealthDigestScheduler } from "@/features/agents/health";
-import { useCredentialRemediation } from "@/features/vault/hooks/useCredentialRemediation";
+import { useCredentialRemediation } from "@/features/vault/hooks/health/useCredentialRemediation";
 import OnboardingOverlay from "@/features/onboarding/components/OnboardingOverlay";
 import GuidedTour from "@/features/onboarding/components/GuidedTour";
 import ExecutionMiniPlayer from "@/features/execution/components/ExecutionMiniPlayer";
-import VibeThemeProvider from "@/features/shared/components/VibeThemeProvider";
-import CommandPalette from "@/features/shared/components/CommandPalette";
+import VibeThemeProvider from "@/features/shared/components/layout/VibeThemeProvider";
+import CommandPalette from "@/features/shared/components/overlays/CommandPalette";
 import { AlertToastContainer } from "@/features/overview/sub_observability/components/AlertToastContainer";
-import { toggleMobilePreview } from "@/lib/utils/platform";
-import { useMobilePreview } from "@/hooks/utility/useMobilePreview";
+import { toggleMobilePreview } from "@/lib/utils/platform/platform";
+import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
+import TitleBar from "@/features/shared/components/layout/TitleBar";
 
 // Register pipeline middleware once at module load
 registerKnowledgeMiddleware();
@@ -59,6 +60,7 @@ export default function App() {
     <MotionConfig reducedMotion="user">
       <VibeThemeProvider>
         <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
+          <TitleBar />
           {!consented && <FirstUseConsentModal onAccept={() => setConsented(true)} />}
           <UpdateBanner />
           <div className="flex flex-1 overflow-hidden">

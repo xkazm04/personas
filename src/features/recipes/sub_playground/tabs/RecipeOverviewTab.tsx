@@ -1,5 +1,5 @@
 import { Tag, Cpu, FileText } from 'lucide-react';
-import { PromptTemplateRenderer } from '@/features/shared/components/PromptTemplateRenderer';
+import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 
 interface RecipeOverviewTabProps {

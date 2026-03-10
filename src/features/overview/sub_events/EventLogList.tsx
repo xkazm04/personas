@@ -1,18 +1,18 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot, Copy, Check } from 'lucide-react';
-import EmptyState from '@/features/shared/components/EmptyState';
-import { useVirtualList } from '@/hooks/utility/useVirtualList';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { FilterBar } from '@/features/shared/components/FilterBar';
-import { UuidLabel } from '@/features/shared/components/UuidLabel';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
+import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
 import { AnimatePresence } from 'framer-motion';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
-import DetailModal from '@/features/overview/components/DetailModal';
+import DetailModal from '@/features/overview/components/dashboard/DetailModal';
 import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
 import type { PersonaEvent } from '@/lib/types/types';
-import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 
 type EventFilter = 'all' | 'pending' | 'completed' | 'failed';
 

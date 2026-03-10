@@ -1,9 +1,9 @@
 import { Trash2, AlertTriangle, Loader2, Check } from 'lucide-react';
 import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
-import { AccessibleToggle } from '@/features/shared/components/AccessibleToggle';
-import { PopupIconSelector } from '@/features/shared/components/PopupIconSelector';
-import { PopupColorPicker } from '@/features/shared/components/PopupColorPicker';
-import { FieldHint } from '@/features/shared/components/FieldHint';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { PopupIconSelector } from '@/features/shared/components/forms/PopupIconSelector';
+import { PopupColorPicker } from '@/features/shared/components/forms/PopupColorPicker';
+import { FieldHint } from '@/features/shared/components/display/FieldHint';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 

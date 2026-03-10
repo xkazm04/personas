@@ -3,8 +3,8 @@ import {
   startSchemaProposal,
   getSchemaProposalSnapshot,
   cancelSchemaProposal,
-} from '@/api/schemaProposal';
-import { executeDbQuery } from '@/api/dbSchema';
+} from '@/api/vault/database/schemaProposal';
+import { executeDbQuery } from '@/api/vault/database/dbSchema';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -21,6 +21,7 @@ interface UseSchemaProposalOptions {
   templateName: string;
   templateContext: string;
   existingTables: string[];
+  databaseType?: string;
 }
 
 interface UseSchemaProposalReturn {
@@ -49,6 +50,7 @@ export function useSchemaProposal({
   templateName,
   templateContext,
   existingTables,
+  databaseType,
 }: UseSchemaProposalOptions): UseSchemaProposalReturn {
   const [phase, setPhase] = useState<SchemaPhase>('idle');
   const [proposedSQL, setProposedSQL] = useState<string | null>(null);
@@ -124,6 +126,7 @@ export function useSchemaProposal({
         templateName,
         templateContext,
         existingTables,
+        databaseType,
       );
       startPolling(proposalId);
     } catch (err) {

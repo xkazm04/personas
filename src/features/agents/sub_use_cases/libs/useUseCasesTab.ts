@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { parseDesignContext } from '@/features/shared/components/UseCasesList';
+import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 import type { DesignUseCase as UseCaseItem } from '@/lib/types/frontendTypes';
 
 export function useUseCasesTab() {

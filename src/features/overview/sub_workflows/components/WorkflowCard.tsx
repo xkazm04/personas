@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { CheckCircle2, XCircle, Loader2, ChevronDown, ChevronUp, Square, Clock } from 'lucide-react';
-import { getWorkflowJobOutput } from '@/api/workflows';
-import type { WorkflowJob } from '@/api/workflows';
+import { getWorkflowJobOutput } from '@/api/pipeline/workflows';
+import type { WorkflowJob } from '@/api/pipeline/workflows';
 import { JOB_TYPE_LABELS, formatElapsed, statusBadgeClass } from '../libs/workflowHelpers';
 
 function StatusIcon({ status }: { status: string }) {

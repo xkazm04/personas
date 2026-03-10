@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Sparkles, ShieldCheck, Bell, Brain, Radio, Play, Info, ListChecks } from 'lucide-react';
-import type { N8nPersonaDraft } from '@/api/n8nTransform';
-import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/UseCasesList';
+import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
+import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
 import { extractProtocolCapabilities, type ProtocolType } from './protocolParser';
 
 const CAPABILITY_STYLES: Record<ProtocolType, { Icon: React.ComponentType<{ className?: string }>; bg: string; text: string }> = {

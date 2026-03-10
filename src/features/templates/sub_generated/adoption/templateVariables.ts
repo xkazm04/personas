@@ -1,5 +1,5 @@
 import type { AdoptionRequirement, ConnectorPipelineStep, AgentIR, StructuredPromptSection, SuggestedTrigger } from '@/lib/types/designTypes';
-import { sanitizeVariableValues, validateAllVariables } from '@/lib/utils/variableSanitizer';
+import { sanitizeVariableValues, validateAllVariables } from '@/lib/utils/sanitizers/variableSanitizer';
 
 const VAR_PATTERN = /\{\{(\w+)\}\}/g;
 

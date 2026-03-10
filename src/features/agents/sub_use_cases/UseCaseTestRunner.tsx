@@ -2,11 +2,11 @@ import { useState, useCallback, useMemo } from 'react';
 import { FlaskConical, Play, Square, Loader2, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-import type { UseCaseItem } from '@/features/shared/components/UseCasesList';
+import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
 import type { TestFixture } from '@/lib/types/frontendTypes';
-import { resolveEffectiveModel } from './useCaseDetailHelpers';
-import { mutateSingleUseCase } from '@/hooks/design/useDesignContextMutator';
-import { UseCaseFixtureDropdown } from './UseCaseFixtureDropdown';
+import { resolveEffectiveModel } from './detail/useCaseDetailHelpers';
+import { mutateSingleUseCase } from '@/hooks/design/core/useDesignContextMutator';
+import { UseCaseFixtureDropdown } from './detail/UseCaseFixtureDropdown';
 
 interface UseCaseTestRunnerProps {
   useCaseId: string;

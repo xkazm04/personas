@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Clock, Timer, ShieldAlert, CalendarClock } from 'lucide-react';
 import type { CredentialTemplateEvent } from '@/lib/types/types';
-import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 
 export function safeParseConfig(json: string | null | undefined): Record<string, unknown> {
   if (!json) return {};

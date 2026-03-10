@@ -14,7 +14,9 @@
         if (err && err.stack) console.error('[GLOBAL ERROR] Stack: ' + err.stack);
       };
       window.addEventListener('unhandledrejection', function(e) {
-        console.error('[UNHANDLED PROMISE] ' + (e.reason && e.reason.message || e.reason));
+        var r = e.reason;
+        var msg = r instanceof Error ? r.message : (r && typeof r === 'object' ? (r.message || r.error || JSON.stringify(r)) : String(r));
+        console.error('[UNHANDLED PROMISE] ' + msg);
       });
     </script>
   </head>

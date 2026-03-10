@@ -12,9 +12,9 @@ import {
   TrendingUp,
   TrendingDown,
 } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { getSlaDashboard } from '@/api/sla';
-import type { SlaDashboardData, PersonaSlaStats } from '@/api/sla';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { getSlaDashboard } from '@/api/overview/sla';
+import type { SlaDashboardData, PersonaSlaStats } from '@/api/overview/sla';
 
 const DAY_OPTIONS = [7, 14, 30, 60, 90] as const;
 

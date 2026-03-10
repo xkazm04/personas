@@ -11,10 +11,10 @@ import {
   Terminal,
   RefreshCw,
 } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useToastStore } from '@/stores/toastStore';
-import { getWorkflowsOverview, getWorkflowJobOutput, cancelWorkflowJob } from '@/api/workflows';
-import type { WorkflowsOverview, WorkflowJob } from '@/api/workflows';
+import { getWorkflowsOverview, getWorkflowJobOutput, cancelWorkflowJob } from '@/api/pipeline/workflows';
+import type { WorkflowsOverview, WorkflowJob } from '@/api/pipeline/workflows';
 
 const JOB_TYPE_LABELS: Record<string, string> = {
   n8n_transform: 'N8n Transform',

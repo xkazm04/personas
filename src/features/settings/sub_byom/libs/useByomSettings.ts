@@ -5,14 +5,14 @@ import {
   deleteByomPolicy,
   listProviderAuditLog,
   getProviderUsageStats,
-} from '@/api/byom';
+} from '@/api/system/byom';
 import type {
   ByomPolicy,
   RoutingRule,
   ComplianceRule,
   ProviderAuditEntry,
   ProviderUsageStats,
-} from '@/api/byom';
+} from '@/api/system/byom';
 
 function defaultPolicy(): ByomPolicy {
   return {

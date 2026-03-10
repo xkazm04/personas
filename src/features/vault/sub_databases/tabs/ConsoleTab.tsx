@@ -3,7 +3,7 @@ import { Play, Loader2 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { SqlEditor } from '../SqlEditor';
 import { QueryResultTable } from '../QueryResultTable';
-import type { QueryResult } from '@/api/dbSchema';
+import type { QueryResult } from '@/api/vault/database/dbSchema';
 
 /** Extract a human-readable error message from a Tauri IPC error. */
 function extractErrorMessage(err: unknown): string {

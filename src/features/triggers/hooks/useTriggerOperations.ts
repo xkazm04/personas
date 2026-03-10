@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { usePersonaStore } from "@/stores/personaStore";
 import * as api from "@/api/tauriApi";
-import type { DryRunResult } from "@/api/triggers";
+import type { DryRunResult } from "@/api/pipeline/triggers";
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 
 // ─── Result types ────────────────────────────────────────────────────────

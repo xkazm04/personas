@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Trash2, Pencil, RotateCw, ShieldCheck, Clock, Plus, Loader2 } from 'lucide-react';
 import * as api from '@/api/tauriApi';
-import type { RotationStatus } from '@/api/rotation';
-import { createRotationPolicy, updateRotationPolicy, rotateCredentialNow, deleteRotationPolicy } from '@/api/rotation';
+import type { RotationStatus } from '@/api/vault/rotation';
+import { createRotationPolicy, updateRotationPolicy, rotateCredentialNow, deleteRotationPolicy } from '@/api/vault/rotation';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 
 const ROTATION_STATUS = STATUS_COLORS.rotation!;

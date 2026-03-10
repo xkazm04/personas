@@ -9,8 +9,8 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
-import CliOutputPanel from '@/features/shared/components/CliOutputPanel';
+import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
+import CliOutputPanel from '@/features/shared/components/terminal/CliOutputPanel';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import {
   CLAUDE_EXECUTION_LINES,

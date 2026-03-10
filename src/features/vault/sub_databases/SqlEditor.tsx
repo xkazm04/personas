@@ -262,11 +262,10 @@ function tokenize(text: string, language: string): Token[] {
   switch (language) {
     case 'json':
     case 'convex':
+    case 'mongodb':
       return tokenizeJson(text);
     case 'redis':
       return tokenizeRedis(text);
-    case 'mongodb':
-      return tokenizeSql(text);
     default:
       return tokenizeSql(text);
   }

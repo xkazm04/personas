@@ -1,7 +1,7 @@
-import type { N8nPersonaDraft, StreamingSection } from '@/api/n8nTransform';
+import type { N8nPersonaDraft, StreamingSection } from '@/api/templates/n8nTransform';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
-import type { N8nImportAction, TransformQuestion, TransformSubPhase } from '../useN8nImportReducer';
-import { normalizeDraftFromUnknown } from '../n8nTypes';
+import type { N8nImportAction, TransformQuestion, TransformSubPhase } from '../hooks/useN8nImportReducer';
+import { normalizeDraftFromUnknown } from '../hooks/n8nTypes';
 
 // ── Transform State Slice ──
 

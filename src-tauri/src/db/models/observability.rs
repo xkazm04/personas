@@ -204,6 +204,8 @@ pub struct ExecutionDashboardData {
     pub total_cost: f64,
     pub overall_success_rate: f64,
     pub avg_latency_ms: f64,
+    pub projected_monthly_cost: Option<f64>,
+    pub burn_rate: Option<f64>,
 }
 
 // ============================================================================

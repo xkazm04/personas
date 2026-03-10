@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 
 /**
  * Single canonical fetch lifecycle for the execution dashboard.

@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Trash2, Loader2, ExternalLink, Check, X, Copy } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
-import DetailModal from '@/features/overview/components/DetailModal';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import DetailModal from '@/features/overview/components/dashboard/DetailModal';
 import { getMessageDeliveries } from '@/api/tauriApi';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { deliveryStatusConfig, channelLabels } from '../libs/messageHelpers';

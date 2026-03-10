@@ -7,8 +7,8 @@ import { CredentialIntelligence } from '@/features/vault/sub_features/Credential
 import { VaultErrorBanner } from '@/features/vault/sub_card/VaultErrorBanner';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
-import type { RotationStatus } from '@/api/rotation';
-import type { HealthResult } from '@/features/vault/hooks/useCredentialHealth';
+import type { RotationStatus } from '@/api/vault/rotation';
+import type { HealthResult } from '@/features/vault/hooks/health/useCredentialHealth';
 import type { GoogleOAuthState } from '@/features/vault/hooks/useGoogleOAuth';
 
 export interface OverviewTabProps {

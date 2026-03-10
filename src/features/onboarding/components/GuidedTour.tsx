@@ -14,7 +14,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { usePersonaStore } from "@/stores/personaStore";
-import { TOUR_STEPS, type TourStepId } from "@/stores/slices/tourSlice";
+import { TOUR_STEPS, type TourStepId } from "@/stores/slices/system/tourSlice";
 import type { SidebarSection } from "@/lib/types/types";
 
 // ── Step icon mapping ─────────────────────────────────────────────────

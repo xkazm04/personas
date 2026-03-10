@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GitBranch } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { ConnectionStatusBadge } from '@/features/shared/components/ConnectionStatusBadge';
-import { PanelTabBar } from '@/features/shared/components/PanelTabBar';
-import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ConnectionStatusBadge } from '@/features/shared/components/feedback/ConnectionStatusBadge';
+import { PanelTabBar } from '@/features/shared/components/layout/PanelTabBar';
+import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { GitLabConnectionForm } from '@/features/gitlab/components/GitLabConnectionForm';
 import { GitLabAgentList } from '@/features/gitlab/components/GitLabAgentList';
 import { GitLabDeployModal } from '@/features/gitlab/components/GitLabDeployModal';

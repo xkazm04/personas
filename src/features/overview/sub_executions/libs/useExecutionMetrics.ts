@@ -1,7 +1,7 @@
 import { useMemo, useCallback } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
-import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/libs/periodComparison';
 import { resolveTimeRange, type TimeRange } from '@/lib/types/timeRange';
 import { fmtDate } from './executionMetricsHelpers';

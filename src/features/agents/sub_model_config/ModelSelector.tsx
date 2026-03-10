@@ -2,8 +2,8 @@ import { Cpu, Check, Settings2 } from 'lucide-react';
 import type { ModelProvider } from '@/lib/types/frontendTypes';
 import { OLLAMA_CLOUD_PRESETS, isOllamaCloudValue } from './OllamaCloudPresets';
 import { COPILOT_PRESETS, isCopilotValue } from './CopilotPresets';
-import { OllamaApiKeyField } from './OllamaApiKeyField';
-import { CopilotTokenField } from './CopilotTokenField';
+import { OllamaApiKeyField } from './credentials/OllamaApiKeyField';
+import { CopilotTokenField } from './credentials/CopilotTokenField';
 import { CustomModelConfigForm } from './CustomModelConfigForm';
 import { BudgetControls } from './BudgetControls';
 

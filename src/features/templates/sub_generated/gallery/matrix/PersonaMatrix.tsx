@@ -1,0 +1,254 @@
+import { useMemo } from 'react';
+import { deriveArchCategories, type ArchCategory } from './architecturalCategories';
+import {
+  UseCasesIcon, ConnectorsIcon, TriggersIcon, HumanReviewIcon,
+  MessagesIcon, MemoryIcon, ErrorsIcon, EventsIcon,
+} from './MatrixIcons';
+import type { AgentIR, SuggestedTrigger, SuggestedEventSubscription, ProtocolCapability } from '@/lib/types/designTypes';
+import type { UseCaseFlow } from '@/lib/types/frontendTypes';
+import type { CredentialMetadata } from '@/lib/types/types';
+import type { RequiredConnector } from '../../adoption/steps/ConnectStep';
+import type { MatrixEditState, MatrixEditCallbacks } from './EditableMatrixCells';
+import { ConnectorEditCell, TriggerEditCell, ReviewEditCell, MemoryEditCell, MessagesEditCell } from './EditableMatrixCells';
+import { MatrixCommandCenter } from './MatrixCommandCenter';
+
+/** @deprecated Single theme — kept for backward compatibility */
+export type MatrixTheme = 'neon';
+/** @deprecated */
+export type MatrixLayout = 'orbit';
+
+interface MatrixCell {
+  key: string;
+  label: string;
+  watermark: React.ComponentType<{ className?: string }>;
+  watermarkColor: string;
+  borderTint: string;
+  render: () => React.ReactNode;
+  editRender?: () => React.ReactNode;
+}
+
+interface PersonaMatrixBaseProps {
+  designResult: AgentIR | null;
+  flows?: UseCaseFlow[];
+  hideHeader?: boolean;
+  /** @deprecated Ignored */ theme?: MatrixTheme;
+  /** @deprecated Ignored */ layout?: MatrixLayout;
+  onLaunch?: () => void;
+  launchDisabled?: boolean;
+  launchLabel?: string;
+  isRunning?: boolean;
+  lastLine?: string;
+  cliLines?: string[];
+  missingConnectorTypes?: string[];
+  onNavigateCatalog?: () => void;
+}
+
+interface PersonaMatrixViewProps extends PersonaMatrixBaseProps { mode?: 'view'; }
+interface PersonaMatrixEditProps extends PersonaMatrixBaseProps {
+  mode: 'edit';
+  editState: MatrixEditState;
+  editCallbacks: MatrixEditCallbacks;
+  requiredConnectors: RequiredConnector[];
+  credentials: CredentialMetadata[];
+}
+
+export type PersonaMatrixProps = PersonaMatrixViewProps | PersonaMatrixEditProps;
+
+// ── Extraction helpers ───────────────────────────────────────────────
+
+function describeCron(cron: string): string {
+  const p = cron.trim().split(/\s+/);
+  if (p.length < 5) return cron;
+  const [min, hour, , , dow] = p as [string, string, string, string, string];
+  if (min === '*' && hour === '*') return 'Every minute';
+  if (min !== '*' && hour === '*') return `Every hour at :${min.padStart(2, '0')}`;
+  if (min === '0' && hour === '0') return 'Daily at midnight';
+  if (min === '0' && /^\d+$/.test(hour)) return `Daily at ${hour}:00`;
+  if (min === '*/5') return 'Every 5 minutes';
+  if (min === '*/10') return 'Every 10 minutes';
+  if (min === '*/15') return 'Every 15 minutes';
+  if (min === '*/30') return 'Every 30 minutes';
+  if (dow === '1-5') return `Weekdays at ${hour}:${min.padStart(2, '0')}`;
+  return cron;
+}
+
+function extractTriggers(triggers: SuggestedTrigger[]): { type: string; label: string }[] {
+  return triggers.map((t) => {
+    const cfg = t.config as Record<string, unknown> | undefined;
+    if (t.trigger_type === 'schedule' && cfg) {
+      const cron = typeof cfg.cron === 'string' ? cfg.cron : null;
+      if (cron) return { type: t.trigger_type, label: describeCron(cron) };
+      const interval = cfg.interval ?? cfg.every ?? cfg.frequency;
+      if (typeof interval === 'string') return { type: t.trigger_type, label: `Every ${interval}` };
+      if (typeof interval === 'number') return { type: t.trigger_type, label: `Every ${interval}m` };
+    }
+    if (t.trigger_type === 'polling' && cfg) {
+      const interval = cfg.interval ?? cfg.every ?? cfg.frequency ?? cfg.poll_interval;
+      if (typeof interval === 'string') return { type: t.trigger_type, label: `Poll every ${interval}` };
+      if (typeof interval === 'number') return { type: t.trigger_type, label: `Poll every ${interval}m` };
+    }
+    if (t.description.length > 3 && t.description.length <= 45) return { type: t.trigger_type, label: t.description };
+    return { type: t.trigger_type, label: TRIGGER_LABELS[t.trigger_type] ?? t.trigger_type };
+  });
+}
+
+function extractHumanReview(capabilities: ProtocolCapability[] | undefined) {
+  const review = capabilities?.find((c) => c.type === 'manual_review');
+  if (!review) return { level: 'none' as const, label: 'Autonomous', context: 'No human approval gates' };
+  const ctx = review.context?.toLowerCase() ?? '';
+  if (ctx.includes('always') || ctx.includes('required'))
+    return { level: 'required' as const, label: 'Required', context: review.context || 'Approval before every action' };
+  return { level: 'optional' as const, label: 'Conditional', context: review.context || 'Review on flagged items' };
+}
+
+function extractMemory(capabilities: ProtocolCapability[] | undefined) {
+  const memory = capabilities?.find((c) => c.type === 'agent_memory');
+  if (!memory) return { active: false, label: 'Stateless', context: 'No cross-run memory' };
+  return { active: true, label: 'Persistent', context: memory.context || 'Retains context across runs' };
+}
+
+function extractErrorStrategies(errorHandling: string): string[] {
+  if (!errorHandling) return ['Default error handling'];
+  const s: string[] = [];
+  const t = errorHandling.toLowerCase();
+  if (t.includes('retry') || t.includes('backoff')) s.push('Retry with backoff');
+  if (t.includes('timeout')) s.push('Timeout protection');
+  if (t.includes('fallback') || t.includes('graceful')) s.push('Graceful fallback');
+  if (t.includes('rate') && t.includes('limit')) s.push('Rate limit handling');
+  if (t.includes('auth') || t.includes('credential') || t.includes('401')) s.push('Auth recovery');
+  if (t.includes('log') || t.includes('report')) s.push('Error logging');
+  if (t.includes('escalat') || t.includes('notify')) s.push('Escalation alerts');
+  if (t.includes('skip') || t.includes('ignore')) s.push('Skip & continue');
+  if (t.includes('circuit') && t.includes('break')) s.push('Circuit breaker');
+  if (t.includes('idempoten')) s.push('Idempotent retries');
+  return s.length > 0 ? s.slice(0, 3) : ['Default error handling'];
+}
+
+function CellBullets({ items, color = 'text-foreground/70' }: { items: string[]; color?: string }) {
+  return (
+    <ul className="space-y-1.5">
+      {items.map((item, i) => (
+        <li key={i} className="flex items-start gap-2 leading-tight">
+          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-40 mt-[7px] flex-shrink-0" />
+          <span className={`text-[13px] ${color} leading-snug`}>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const TRIGGER_LABELS: Record<string, string> = {
+  schedule: 'Runs on a schedule', polling: 'Polls for changes', webhook: 'Listens for webhooks',
+  manual: 'Manually triggered', event: 'Reacts to events',
+};
+
+// ── Cell renderer (Neon, dark+light aware) ───────────────────────────
+
+function MatrixCellRenderer({ cell, isEditMode }: { cell: MatrixCell; isEditMode: boolean }) {
+  const Watermark = cell.watermark;
+  const useEditRender = isEditMode && cell.editRender;
+  const boostedTint = cell.borderTint.replace('/15', '/30');
+
+  return (
+    <div className={[
+      'relative rounded-xl border p-4 transition-all duration-150 shadow-md',
+      useEditRender
+        ? `${boostedTint} dark:bg-black/40 bg-white/80 dark:hover:bg-black/50 hover:bg-white/90 ring-1 ring-inset ring-primary/10`
+        : `${boostedTint} dark:bg-black/30 bg-white/70 dark:hover:bg-black/40 hover:bg-white/80`,
+    ].join(' ')}>
+      <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
+        <div className={`absolute -right-1 -top-1 ${useEditRender ? 'opacity-[0.15]' : 'opacity-[0.25]'}`}>
+          <Watermark className={`w-22 h-22 ${cell.watermarkColor}`} />
+        </div>
+      </div>
+      <div className="mb-2.5">
+        <span className="text-[13px] font-bold uppercase tracking-[0.15em] text-foreground/60">{cell.label}</span>
+      </div>
+      <div className="relative min-h-[52px] flex items-start">
+        {useEditRender ? cell.editRender!() : cell.render()}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Component ───────────────────────────────────────────────────
+
+export function PersonaMatrix(props: PersonaMatrixProps) {
+  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, lastLine, cliLines, missingConnectorTypes, onNavigateCatalog } = props;
+  const isEditMode = props.mode === 'edit';
+
+  const cells = useMemo<MatrixCell[]>(() => {
+    if (!designResult) return [];
+    const connectorNames = designResult.suggested_connectors?.map((c) => c.name) ?? [];
+    const archCategories = deriveArchCategories(connectorNames);
+    const triggers = extractTriggers(designResult.suggested_triggers ?? []);
+    const review = extractHumanReview(designResult.protocol_capabilities);
+    const memory = extractMemory(designResult.protocol_capabilities);
+    const channels = designResult.suggested_notification_channels ?? [];
+    const errorStrategies = extractErrorStrategies(designResult.structured_prompt?.errorHandling ?? '');
+    const events: SuggestedEventSubscription[] = designResult.suggested_event_subscriptions ?? [];
+    const editProps = isEditMode ? props as PersonaMatrixEditProps : null;
+
+    return [
+      { key: 'use-cases', label: 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400', borderTint: 'border-violet-500/15',
+        render: () => flows.length === 0 ? <CellBullets items={['General-purpose agent']} color="text-muted-foreground/50" /> : <CellBullets items={flows.slice(0, 3).map((f) => f.name)} color="text-foreground/70" /> },
+      { key: 'connectors', label: 'Connectors', watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', borderTint: 'border-cyan-500/15',
+        render: () => {
+          if (archCategories.length === 0) return <CellBullets items={['No external services']} color="text-muted-foreground/50" />;
+          return (<div className="space-y-1.5">{archCategories.slice(0, 3).map((cat: ArchCategory) => { const CatIcon = cat.icon; return (<div key={cat.key} className="flex items-center gap-2"><CatIcon className="w-3.5 h-3.5 flex-shrink-0 opacity-70" style={{ color: cat.color }} /><span className="text-sm text-foreground/70 leading-snug">{cat.label}</span></div>); })}{archCategories.length > 3 && <span className="text-sm text-muted-foreground/40 pl-[22px]">+{archCategories.length - 3} more</span>}</div>);
+        },
+        editRender: editProps ? () => (<ConnectorEditCell requiredConnectors={editProps.requiredConnectors} credentials={editProps.credentials} editState={editProps.editState} callbacks={editProps.editCallbacks} missingConnectorTypes={missingConnectorTypes} onNavigateCatalog={onNavigateCatalog} />) : undefined },
+      { key: 'triggers', label: 'Triggers', watermark: TriggersIcon, watermarkColor: 'text-amber-400', borderTint: 'border-amber-500/15',
+        render: () => triggers.length === 0 ? <CellBullets items={['Manual execution only']} color="text-muted-foreground/50" /> : <CellBullets items={triggers.slice(0, 3).map((t) => t.label)} color="text-foreground/70" />,
+        editRender: editProps ? () => (<TriggerEditCell designResult={designResult} editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
+      { key: 'human-review', label: 'Human Review', watermark: HumanReviewIcon,
+        watermarkColor: review.level === 'required' ? 'text-rose-400' : review.level === 'optional' ? 'text-amber-400' : 'text-emerald-400',
+        borderTint: review.level === 'required' ? 'border-rose-500/15' : review.level === 'optional' ? 'border-amber-500/15' : 'border-emerald-500/15',
+        render: () => { const dotColor = review.level === 'required' ? 'bg-rose-400' : review.level === 'optional' ? 'bg-amber-400' : 'bg-emerald-400'; return (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} /><span className="text-sm font-medium text-foreground/80">{review.label}</span></div><p className="text-sm text-muted-foreground/60 leading-snug pl-[16px]">{review.context.length > 55 ? review.context.slice(0, 53) + '\u2026' : review.context}</p></div>); },
+        editRender: editProps ? () => (<ReviewEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
+      { key: 'messages', label: 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400', borderTint: 'border-blue-500/15',
+        render: () => { if (channels.length === 0) return <CellBullets items={['In-app notifications only']} color="text-muted-foreground/50" />; const bullets = channels.slice(0, 3).map((ch) => { const prefix = ch.type.charAt(0).toUpperCase() + ch.type.slice(1); return ch.description.length > 3 && ch.description.length <= 40 ? `${prefix}: ${ch.description}` : `${prefix} channel`; }); return <CellBullets items={bullets} color="text-foreground/70" />; },
+        editRender: editProps ? () => (<MessagesEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
+      { key: 'memory', label: 'Memory', watermark: MemoryIcon,
+        watermarkColor: memory.active ? 'text-purple-400' : 'text-zinc-400',
+        borderTint: memory.active ? 'border-purple-500/15' : 'border-zinc-500/15',
+        render: () => (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${memory.active ? 'bg-purple-400' : 'bg-zinc-500'} flex-shrink-0`} /><span className="text-sm font-medium text-foreground/80">{memory.label}</span></div><p className="text-sm text-muted-foreground/60 leading-snug pl-[16px]">{memory.context}</p></div>),
+        editRender: editProps ? () => (<MemoryEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
+      { key: 'error-handling', label: 'Errors', watermark: ErrorsIcon, watermarkColor: 'text-orange-400', borderTint: 'border-orange-500/15',
+        render: () => <CellBullets items={errorStrategies} color="text-foreground/70" /> },
+      { key: 'events', label: 'Events', watermark: EventsIcon,
+        watermarkColor: events.length > 0 ? 'text-teal-400' : 'text-muted-foreground',
+        borderTint: events.length > 0 ? 'border-teal-500/15' : 'border-primary/5',
+        render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [designResult, flows, isEditMode, missingConnectorTypes, onNavigateCatalog,
+    ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
+
+  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={isEditMode} isRunning={isRunning} lastLine={lastLine} cliLines={cliLines} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} />);
+
+  if (!designResult || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
+
+  const firstFour = cells.slice(0, 4);
+  const lastFour = cells.slice(4);
+
+  return (
+    <div className="space-y-3 w-full">
+      {!hideHeader && (
+        <div className="flex items-center gap-2.5">
+          <div className="w-6 h-6 rounded bg-violet-500/20 dark:bg-violet-500/25 flex items-center justify-center border border-violet-500/25 dark:border-violet-500/30 shadow-sm dark:shadow-violet-500/20">
+            <span className="text-[10px] font-bold text-foreground/60">M</span>
+          </div>
+          <h4 className="text-base font-bold text-foreground/80 uppercase tracking-wider">Persona Matrix</h4>
+        </div>
+      )}
+      <div className="grid grid-cols-[1fr_1.3fr_1fr] gap-2.5">
+        {firstFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} />))}
+        <div className="relative rounded-xl border-2 border-violet-500/30 dark:border-violet-500/35 bg-gradient-to-br from-violet-600/10 dark:from-violet-600/15 via-white/50 dark:via-black/50 to-cyan-600/10 dark:to-cyan-600/15 p-5 ring-2 ring-violet-500/15 dark:ring-violet-500/20 shadow-2xl shadow-violet-500/5 dark:shadow-violet-500/10">
+          {commandCenter}
+        </div>
+        {lastFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} />))}
+      </div>
+    </div>
+  );
+}

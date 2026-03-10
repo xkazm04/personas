@@ -2,7 +2,7 @@ import {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
 } from '@/features/agents/sub_model_config/OllamaCloudPresets';
-import type { ModelTestConfig } from '@/api/tests';
+import type { ModelTestConfig } from '@/api/agents/tests';
 
 export interface ModelOption {
   id: string;

@@ -15,7 +15,7 @@ import {
   RotateCcw,
   FileText,
 } from 'lucide-react';
-import { useClickOutside } from '@/hooks/utility/useClickOutside';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { DraggablePersonaCard } from './DraggablePersonaCard';
 import type { DbPersona, DbPersonaGroup } from '@/lib/types/types';
 import type { DragPayload, DropPayload } from '@/lib/types/frontendTypes';

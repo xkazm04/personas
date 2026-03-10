@@ -1,6 +1,6 @@
 import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, AlertTriangle, Bell } from 'lucide-react';
 import { useState } from 'react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { MetricsCharts } from './MetricsCharts';

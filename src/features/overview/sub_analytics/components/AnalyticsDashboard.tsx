@@ -1,7 +1,7 @@
 import { RefreshCw, BarChart3, AlertTriangle } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import HealingIssueModal from '@/features/overview/sub_observability/components/HealingIssueModal';
-import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
+import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useOverviewMetrics } from '../libs/useOverviewMetrics';
 import { useChartSeries } from '../libs/useChartSeries';

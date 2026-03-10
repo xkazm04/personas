@@ -2,17 +2,17 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { MessageSquare, CheckCheck, RefreshCw, Send } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
-import { FilterBar } from '@/features/shared/components/FilterBar';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { useMessageCreatedListener } from '@/hooks/realtime/useMessageCreatedListener';
-import { useVirtualList } from '@/hooks/utility/useVirtualList';
+import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
 import { priorityConfig, FILTER_LABELS, GRID_TEMPLATE_COLUMNS, type FilterType } from '../libs/messageHelpers';
 import { MessageDetailModal } from './MessageDetailModal';
-import ContentLoader from '@/features/shared/components/ContentLoader';
+import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 
 export default function MessageList() {
   const messages = usePersonaStore((s) => s.messages);

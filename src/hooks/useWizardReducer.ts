@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { N8nPersonaDraft } from '@/api/n8nTransform';
+import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 
 // ── Base constraint for wizard state ──
 

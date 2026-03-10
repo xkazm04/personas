@@ -1,6 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import type { CredentialTemplateField } from '@/lib/types/types';
-import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
+import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { CredentialFlow } from './CredentialDesignHelpers';
 
 // ── Context value ────────────────────────────────────────────────

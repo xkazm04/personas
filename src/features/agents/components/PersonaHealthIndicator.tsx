@@ -1,5 +1,5 @@
 import { Bot, Check, Minus, X } from 'lucide-react';
-import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizeUrl';
+import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import type { DbPersona } from '@/lib/types/types';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 

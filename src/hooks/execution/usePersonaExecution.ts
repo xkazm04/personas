@@ -4,7 +4,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { useCorrelatedCliStream } from './useCorrelatedCliStream';
 import { traceStage, runMiddleware, type FinalizeStatusPayload } from '@/lib/execution/pipeline';
 import { isTerminalState } from '@/lib/execution/executionState';
-import type { QueueStatusPayload } from '@/stores/slices/executionSlice';
+import type { QueueStatusPayload } from '@/stores/slices/agents/executionSlice';
 
 export function usePersonaExecution() {
   const clearOutput = usePersonaStore((s) => s.clearExecutionOutput);

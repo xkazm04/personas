@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useAnimatedNumber } from '@/hooks/utility/useAnimatedNumber';
+import { useAnimatedNumber } from '@/hooks/utility/timing/useAnimatedNumber';
 
 export interface TrendData {
   pct: number;

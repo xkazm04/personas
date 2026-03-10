@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Activity } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { ContentBox, ContentHeader } from '@/features/shared/components/ContentLayout';
+import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useRealtimeEvents } from '@/hooks/realtime/useRealtimeEvents';
 import { useTimelineReplay } from '@/hooks/realtime/useTimelineReplay';
 import RealtimeStatsBar from '@/features/overview/sub_realtime/RealtimeStatsBar';

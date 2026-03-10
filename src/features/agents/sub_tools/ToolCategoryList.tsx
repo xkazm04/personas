@@ -1,5 +1,5 @@
 import { Check, CheckCircle, AlertCircle, Search, Wrench } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { ToolCard, GroupedToolRow } from './ToolCardItems';
 import type { ToolDef } from './ToolCardItems';
 import type { ToolImpactData } from './useToolImpactData';

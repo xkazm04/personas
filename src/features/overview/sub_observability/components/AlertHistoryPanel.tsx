@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, CheckCircle2, Trash2, AlertTriangle, Info, XCircle } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import type { FiredAlert } from '@/stores/slices/alertSlice';
+import type { FiredAlert } from '@/stores/slices/overview/alertSlice';
 
 const SEVERITY_CONFIG: Record<string, { icon: typeof Info; color: string }> = {
   info: { icon: Info, color: '#3b82f6' },

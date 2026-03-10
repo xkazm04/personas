@@ -6,10 +6,10 @@ import { TestSuiteManager } from './TestSuiteManager';
 import { TestModelSelector } from './TestModelSelector';
 import { TestProgressPanel } from './TestProgressPanel';
 import { TestHistoryList } from './TestHistoryList';
-import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/UseCasesList';
-import { Listbox } from '@/features/shared/components/Listbox';
+import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
+import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { ALL_MODELS } from '@/lib/models/modelCatalog';
-import type { ModelTestConfig } from '@/api/tests';
+import type { ModelTestConfig } from '@/api/agents/tests';
 
 export function PersonaTestsTab() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);

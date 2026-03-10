@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Loader2, SkipForward, Plug } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { CatalogAutoSetup } from '@/features/vault/sub_autoCred/CatalogAutoSetup';
-import { cancelAutoCredBrowser } from '@/api/autoCredBrowser';
+import { cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
 import type { ConnectorDefinition } from '@/lib/types/types';
 
 type ItemStatus = 'pending' | 'running' | 'done' | 'failed' | 'skipped';

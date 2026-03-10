@@ -4,7 +4,7 @@ import {
   ChevronDown, ChevronRight, MoreHorizontal, GripVertical,
   Pencil, Trash2, X, Check, Settings2,
 } from 'lucide-react';
-import { useClickOutside } from '@/hooks/utility/useClickOutside';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { DbPersonaGroup } from '@/lib/types/types';
 
 interface GroupHeaderProps {

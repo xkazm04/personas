@@ -3,7 +3,7 @@ import { Network, ChevronDown, CheckCircle, X, ShieldCheck } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import { KNOWLEDGE_TYPES, SCOPE_TYPES, COLOR_MAP, formatDuration, formatCost } from '../libs/knowledgeHelpers';
-import { verifyKnowledgeAnnotation, dismissKnowledgeAnnotation } from '@/api/knowledge';
+import { verifyKnowledgeAnnotation, dismissKnowledgeAnnotation } from '@/api/overview/intelligence/knowledge';
 
 interface KnowledgeRowProps {
   entry: ExecutionKnowledge;

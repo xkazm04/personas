@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import * as api from '@/api/tauriApi';
-import type { CronPreview } from '@/api/triggers';
+import type { CronPreview } from '@/api/pipeline/triggers';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';

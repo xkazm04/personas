@@ -5,9 +5,9 @@ import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import type { RecipeExecutionResult } from '@/lib/bindings/RecipeExecutionResult';
 import { RecipeCard } from './RecipeCard';
 import { useToastStore } from '@/stores/toastStore';
-import { PromptTemplateRenderer } from '@/features/shared/components/PromptTemplateRenderer';
-import EmptyState from '@/features/shared/components/EmptyState';
-import * as recipeApi from '@/api/recipes';
+import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import * as recipeApi from '@/api/templates/recipes';
 
 interface RecipeListProps {
   recipes: RecipeDefinition[];

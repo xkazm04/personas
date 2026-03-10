@@ -1,5 +1,5 @@
 import { Activity, TrendingDown } from 'lucide-react';
-import type { AnomalyScore } from '@/api/rotation';
+import type { AnomalyScore } from '@/api/vault/rotation';
 
 const REMEDIATION_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   healthy: { label: 'Healthy', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },

@@ -2,8 +2,8 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useEditorDirty } from '@/features/agents/sub_editor';
 import { getUseCaseById } from './useCaseHelpers';
-import { mutateSingleUseCase } from '@/hooks/design/useDesignContextMutator';
-import type { UseCaseItem } from '@/features/shared/components/UseCasesList';
+import { mutateSingleUseCase } from '@/hooks/design/core/useDesignContextMutator';
+import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
 import type { NotificationChannelType, ModelProfile, ModelProvider, TestFixture } from '@/lib/types/frontendTypes';
 import { resolveEffectiveModel, type ModelOption } from './useCaseDetailHelpers';
 

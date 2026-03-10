@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useClickOutside } from '@/hooks/utility/useClickOutside';
-import { useViewportClampFixed } from '@/hooks/utility/useViewportClamp';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
+import { useViewportClampFixed } from '@/hooks/utility/interaction/useViewportClamp';
 import { motion } from 'framer-motion';
 import type { DbPersona } from '@/lib/types/types';
 import { useContextMenuActions } from './ContextMenuActions';

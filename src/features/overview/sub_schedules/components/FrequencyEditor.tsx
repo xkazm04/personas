@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Clock, Check } from 'lucide-react';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
-import type { CronPreview } from '@/api/triggers';
+import type { CronPreview } from '@/api/pipeline/triggers';
 import { CRON_PRESETS } from '../libs/scheduleHelpers';
 
 interface FrequencyEditorProps {

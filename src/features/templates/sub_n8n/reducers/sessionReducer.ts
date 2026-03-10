@@ -1,7 +1,7 @@
 import type { AgentIR } from '@/lib/types/designTypes';
-import type { WorkflowPlatform } from '@/lib/personas/workflowDetector';
-import type { N8nImportAction, N8nImportState } from '../useN8nImportReducer';
-import { normalizeDraftFromUnknown } from '../n8nTypes';
+import type { WorkflowPlatform } from '@/lib/personas/parsers/workflowDetector';
+import type { N8nImportAction, N8nImportState } from '../hooks/useN8nImportReducer';
+import { normalizeDraftFromUnknown } from '../hooks/n8nTypes';
 import { checkStepPrecondition } from './navigationReducer';
 
 // â”€â”€ Session / Upload State Slice â”€â”€

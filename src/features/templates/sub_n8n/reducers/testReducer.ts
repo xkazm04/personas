@@ -1,5 +1,5 @@
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
-import type { N8nImportAction } from '../useN8nImportReducer';
+import type { N8nImportAction } from '../hooks/useN8nImportReducer';
 
 // ── Test State Slice ──
 

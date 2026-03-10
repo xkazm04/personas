@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, CheckCircle2, Clock, HeartPulse, X, XCircle } from 'lucide-react';
-import type { BulkSummary } from '@/features/vault/hooks/useBulkHealthcheck';
+import type { BulkSummary } from '@/features/vault/hooks/health/useBulkHealthcheck';
 
 interface BulkHealthcheckSummaryProps {
   summary: BulkSummary | null;

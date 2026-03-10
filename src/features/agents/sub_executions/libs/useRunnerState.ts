@@ -5,7 +5,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
 import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
 import { classifyLine, parseSummaryLine } from '@/lib/utils/terminalColors';
-import type { TerminalEmptyState } from '@/features/shared/components/TerminalBody';
+import type { TerminalEmptyState } from '@/features/shared/components/terminal/TerminalBody';
 import * as api from '@/api/tauriApi';
 import type { HealingEventPayload, PhaseEntry } from './runnerHelpers';
 import { detectPhaseFromLine, PHASE_META } from './runnerHelpers';

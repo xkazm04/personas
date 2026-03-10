@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, RefreshCw, Loader2, Save, Database, Plug, AlertTriangle } from 'lucide-react';
-import type { CredentialDesignResult } from '@/hooks/design/useCredentialDesign';
+import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { ExtractedValues, ExtractionCompleteness } from './types';
 import { buildConnectorContext } from './types';
-import { savePlaywrightProcedure } from '@/api/autoCredBrowser';
+import { savePlaywrightProcedure } from '@/api/vault/autoCredBrowser';
 import { FieldCaptureRow } from '@/features/vault/sub_forms/FieldCaptureRow';
 
 interface AutoCredReviewProps {

@@ -28,6 +28,7 @@ mod recipe;
 mod automation;
 mod template_feedback;
 mod credential_recipe;
+mod saved_views;
 
 pub use persona::*;
 pub use tool::*;
@@ -59,3 +60,4 @@ pub use recipe::*;
 pub use automation::*;
 pub use template_feedback::*;
 pub use credential_recipe::*;
+pub use saved_views::*;

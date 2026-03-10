@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Play, Loader2, Plus, Trash2 } from 'lucide-react';
 import { SqlEditor } from '@/features/vault/sub_databases/SqlEditor';
-import type { ApiEndpoint, ApiParameter } from '@/api/apiProxy';
+import type { ApiEndpoint, ApiParameter } from '@/api/system/apiProxy';
 
 // ── Types ────────────────────────────────────────────────────────
 

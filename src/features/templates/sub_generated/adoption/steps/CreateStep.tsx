@@ -14,7 +14,7 @@ import {
   Workflow,
   ExternalLink,
 } from 'lucide-react';
-import { DraftEditStep } from '@/features/shared/components/draft-editor/DraftEditStep';
+import { DraftEditStep } from '@/features/shared/components/editors/draft-editor/DraftEditStep';
 import { extractProtocolCapabilities } from '@/features/templates/sub_n8n/edit/protocolParser';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
 import { SandboxWarningBanner } from '../../shared/SandboxWarningBanner';

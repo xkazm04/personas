@@ -9,7 +9,7 @@ import {
   Download,
   Sparkles,
 } from "lucide-react";
-import { useCredentialForaging } from "@/hooks/design/useCredentialForaging";
+import { useCredentialForaging } from "@/hooks/design/credential/useCredentialForaging";
 import { ForagingResultCard } from "./ForagingResultCard";
 
 interface ForagingPanelProps {

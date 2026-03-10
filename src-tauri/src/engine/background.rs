@@ -356,6 +356,30 @@ pub(crate) fn trigger_scheduler_tick(scheduler: &SchedulerState, pool: &DbPool) 
         // 2. Parse config once; reuse for event_type, payload, and next schedule time
         let cfg = trigger.parse_config();
 
+        // Check if persona is over budget for scheduled triggers
+        if trigger.trigger_type == "schedule" {
+            let over_budget: bool = pool.get().map_err(|e| e.to_string()).and_then(|conn| {
+                conn.query_row(
+                    "SELECT COALESCE((
+                        SELECT SUM(cost_usd)
+                        FROM persona_executions
+                        WHERE persona_id = ?1 AND created_at >= datetime('now', 'start of month')
+                    ), 0.0) >= max_budget_usd
+                    FROM personas
+                    WHERE id = ?1 AND max_budget_usd IS NOT NULL",
+                    rusqlite::params![trigger.persona_id],
+                    |row| row.get(0)
+                ).map_err(|e| e.to_string())
+            }).unwrap_or(false);
+
+            if over_budget {
+                tracing::warn!(persona_id = %trigger.persona_id, "Cron agent paused due to exceeded budget");
+                let next = sched_logic::compute_next_from_config(&cfg, now);
+                let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
+                continue;
+            }
+        }
+
         // 3. Compute next trigger time first
         let next = sched_logic::compute_next_from_config(&cfg, now);
 

@@ -1,5 +1,5 @@
-import type { AnomalyScore, Remediation, RotationStatus } from '@/api/rotation';
-import type { HealthResult } from '@/features/vault/hooks/useCredentialHealth';
+import type { AnomalyScore, Remediation, RotationStatus } from '@/api/vault/rotation';
+import type { HealthResult } from '@/features/vault/hooks/health/useCredentialHealth';
 
 // ── Score tiers ──────────────────────────────────────────────────────
 
