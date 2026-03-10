@@ -156,7 +156,11 @@
             "key": "pat",
             "label": "Personal Access Token",
             "type": "password",
+<<<<<<< HEAD
             "placeholder": "github_pat_EXAMPLE_TOKEN_REPLACE_ME",
+=======
+            "placeholder": "github_pat_xxxxxxxxxxxxx",
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Needs 'Issues: Read and write' and 'Metadata: Read' permissions.",
             "required": true
           },
@@ -207,7 +211,11 @@
             "key": "client_secret",
             "label": "OAuth Client Secret",
             "type": "password",
+<<<<<<< HEAD
             "placeholder": "GOCSPX-EXAMPLE_SECRET_REPLACE_ME",
+=======
+            "placeholder": "GOCSPX-xxxxxxxxxxxxx",
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "From Google Cloud Console → APIs & Services → Credentials",
             "required": true
           },

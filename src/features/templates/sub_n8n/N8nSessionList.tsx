@@ -4,7 +4,11 @@ import { Clock, Trash2, ChevronRight, RefreshCw, RotateCcw } from 'lucide-react'
 import { listN8nSessions, deleteN8nSession, getN8nSession } from '@/api/n8nTransform';
 import type { N8nTransformSession } from '@/lib/bindings/N8nTransformSession';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
+<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
+=======
+import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { N8nWizardStep, TransformQuestion, TransformSubPhase, SessionLoadedPayload } from './useN8nImportReducer';
 import { STEP_META, WIZARD_STEPS } from './useN8nImportReducer';
 
@@ -98,7 +102,11 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         }
       };
 
+<<<<<<< HEAD
       const parsedResult = parseJsonField<AgentIR>(full.parser_result, 'parser results');
+=======
+      const parsedResult = parseJsonField<DesignAnalysisResult>(full.parser_result, 'parser results');
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       const draft = parseJsonField<N8nPersonaDraft>(full.draft_json, 'draft');
       const questions = parseJsonField<TransformQuestion[]>(full.questions_json, 'questions');
       const rawUserAnswers = parseJsonField<Record<string, string>>(full.user_answers, 'saved answers');

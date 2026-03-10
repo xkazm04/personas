@@ -125,10 +125,13 @@ pub struct Persona {
     pub max_turns: Option<i32>,
     pub design_context: Option<String>,
     pub group_id: Option<String>,
+<<<<<<< HEAD
     pub source_review_id: Option<String>,
     pub trust_level: String,
     pub trust_origin: String,
     pub trust_verified_at: Option<String>,
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     pub created_at: String,
     pub updated_at: String,
 }

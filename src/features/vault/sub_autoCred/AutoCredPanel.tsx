@@ -36,6 +36,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
   const adapter = mode === 'guided' ? tauriGuidedAdapter : tauriPlaywrightAdapter;
   const session = useAutoCredSession({ adapter });
 
+<<<<<<< HEAD
   // Kill running browser session on unmount (e.g. wizard closed, navigated away).
   // Store cancelBrowser in a ref so the cleanup always targets the current session,
   // not the stale closure captured at mount time.
@@ -47,6 +48,15 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
     return () => {
       if (sessionPhaseRef.current === 'browser') {
         cancelBrowserRef.current();
+=======
+  // Kill running browser session on unmount (e.g. wizard closed, navigated away)
+  const sessionPhaseRef = useRef(session.phase);
+  sessionPhaseRef.current = session.phase;
+  useEffect(() => {
+    return () => {
+      if (sessionPhaseRef.current === 'browser') {
+        session.cancelBrowser();
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       }
     };
   }, []);

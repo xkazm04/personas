@@ -685,6 +685,7 @@
         "label": "Emits events: item created, escalation triggered",
         "context": "2 event subscription(s) configured — agent participates in event bus"
       }
+<<<<<<< HEAD
     ],
     "adoption_questions": [
       {
@@ -749,6 +750,8 @@
         ],
         "category": "human_in_the_loop"
       }
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     ]
   }
 }

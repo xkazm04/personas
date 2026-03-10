@@ -18,6 +18,7 @@ import { listen } from '@tauri-apps/api/event';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox } from '@/features/shared/components/ContentLayout';
 import * as api from '@/api/tauriApi';
+<<<<<<< HEAD
 import {
   useDerivedCanvasState,
   useCanvasReducer,
@@ -44,6 +45,29 @@ import type { DryRunState } from '@/features/pipeline/sub_canvas';
 import TeamList from '@/features/pipeline/components/TeamList';
 import TeamConfigPanel from '@/features/pipeline/components/TeamConfigPanel';
 import { TeamMemoryPanel, TeamMemoryBadge } from '@/features/pipeline/sub_teamMemory';
+=======
+import { useDerivedCanvasState, type PipelineNodeStatus } from '@/features/pipeline/sub_canvas/useDerivedCanvasState';
+import { useCanvasReducer } from '@/features/pipeline/sub_canvas/useCanvasReducer';
+import TeamList from '@/features/pipeline/components/TeamList';
+import PersonaNode from '@/features/pipeline/sub_canvas/PersonaNode';
+import StickyNoteNode, { type StickyNoteCategory } from '@/features/pipeline/sub_canvas/StickyNoteNode';
+import ConnectionEdge from '@/features/pipeline/sub_canvas/ConnectionEdge';
+import GhostEdge from '@/features/pipeline/sub_canvas/GhostEdge';
+import TeamToolbar from '@/features/pipeline/sub_canvas/TeamToolbar';
+import TeamConfigPanel from '@/features/pipeline/components/TeamConfigPanel';
+import NodeContextMenu from '@/features/pipeline/sub_canvas/NodeContextMenu';
+import EdgeDeleteTooltip from '@/features/pipeline/sub_canvas/EdgeDeleteTooltip';
+import PipelineControls from '@/features/pipeline/sub_canvas/PipelineControls';
+import OptimizerPanel from '@/features/pipeline/sub_canvas/OptimizerPanel';
+import CanvasAssistant from '@/features/pipeline/sub_canvas/CanvasAssistant';
+import DryRunDebugger, { type DryRunState } from '@/features/pipeline/sub_canvas/DryRunDebugger';
+import AlignmentGuides, { computeAlignments } from '@/features/pipeline/sub_canvas/AlignmentGuides';
+import ConnectionLegend from '@/features/pipeline/sub_canvas/ConnectionLegend';
+import TeamMemoryPanel from '@/features/pipeline/sub_teamMemory/TeamMemoryPanel';
+import TeamMemoryBadge from '@/features/pipeline/sub_teamMemory/TeamMemoryBadge';
+import { useCanvasDragRef } from '@/features/pipeline/sub_canvas/CanvasDragContext';
+import { buildTeamGraph } from '@/features/pipeline/sub_canvas/teamGraph';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';

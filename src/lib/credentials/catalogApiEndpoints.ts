@@ -904,6 +904,7 @@ const google_sheets: EP[] = [
   ], ['Spreadsheets'], jsonBody(), 'Body: { "requests": [{ "addSheet": { "properties": { "title": "New Sheet" } } }] }'),
 ];
 
+<<<<<<< HEAD
 // ── Microsoft Outlook (Graph API) ───────────────────────────────────
 
 const microsoft_outlook: EP[] = [
@@ -934,6 +935,8 @@ const microsoft_outlook: EP[] = [
   ], ['Contacts']),
 ];
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 // ── LinkedIn ────────────────────────────────────────────────────────
 
 const linkedin: EP[] = [
@@ -992,5 +995,8 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   linkedin,
   google_sheets,
   gmail,
+<<<<<<< HEAD
   microsoft_outlook,
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 };

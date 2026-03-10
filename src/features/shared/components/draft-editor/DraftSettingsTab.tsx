@@ -3,10 +3,17 @@ import type { N8nPersonaDraft } from '@/api/n8nTransform';
 import type { ModelProfile, NotificationChannel } from '@/lib/types/frontendTypes';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { profileToDropdownValue, getOllamaPreset, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_model_config/OllamaCloudPresets';
+<<<<<<< HEAD
 import { ModelSelector } from '@/features/agents/sub_model_config';
 import { IconSelector } from '@/features/shared/components/IconSelector';
 import { ColorPicker } from '@/features/shared/components/ColorPicker';
 import { NotificationChannelSettings } from '@/features/agents/sub_connectors/components/NotificationChannelSettings';
+=======
+import { ModelSelector } from '@/features/agents/sub_model_config/ModelSelector';
+import { IconSelector } from '@/features/shared/components/IconSelector';
+import { ColorPicker } from '@/features/shared/components/ColorPicker';
+import { NotificationChannelSettings } from '@/features/agents/sub_connectors/NotificationChannelSettings';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 // ── model_profile ↔ dropdown value helpers ────────────────────────────
 

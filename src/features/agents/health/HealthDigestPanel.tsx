@@ -5,13 +5,20 @@ import {
   XCircle,
   Info,
   RefreshCw,
+<<<<<<< HEAD
+=======
+  Loader2,
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   ChevronRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import type { DryRunIssue, PersonaHealthCheck, HealthScore } from './types';
+<<<<<<< HEAD
 import ContentLoader from '@/features/shared/components/ContentLoader';
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 // ── Score ring (compact) ─────────────────────────────────────────────
 
@@ -140,7 +147,16 @@ export function HealthDigestPanel() {
   if (running) {
     return (
       <div className="rounded-xl border border-primary/15 bg-secondary/40 p-6">
+<<<<<<< HEAD
         <ContentLoader variant="panel" label="Generating digest..." hint="health-digest" />
+=======
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 text-primary/60 animate-spin mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground/60">Running health digest across all agents...</p>
+          </div>
+        </div>
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       </div>
     );
   }

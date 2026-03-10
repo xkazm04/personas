@@ -102,7 +102,11 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
       {tab === 'overview' && stats && (
         <div className="space-y-3">
           {/* Stats grid */}
+<<<<<<< HEAD
           <div className="grid grid-cols-4 3xl:grid-cols-6 4xl:grid-cols-8 gap-2">
+=======
+          <div className="grid grid-cols-4 gap-2">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             <StatCard
               icon={<Activity className={`w-3.5 h-3.5 ${INFO_STATUS.color}`} />}
               label="Total Accesses"

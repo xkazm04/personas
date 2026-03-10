@@ -87,7 +87,10 @@ pub struct RotationSubscription {
 }
 
 /// File watcher subscription: monitor file system for changes.
+<<<<<<< HEAD
 #[cfg(feature = "desktop")]
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 pub struct FileWatcherSubscription {
     pub pool: DbPool,
     pub state: Arc<tokio::sync::Mutex<super::file_watcher::FileWatcherState>>,
@@ -96,14 +99,20 @@ pub struct FileWatcherSubscription {
 }
 
 /// Clipboard monitor subscription: detect clipboard content changes.
+<<<<<<< HEAD
 #[cfg(feature = "desktop")]
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 pub struct ClipboardSubscription {
     pub pool: DbPool,
     pub state: Arc<tokio::sync::Mutex<super::clipboard_monitor::ClipboardState>>,
 }
 
 /// App focus subscription: detect foreground application changes.
+<<<<<<< HEAD
 #[cfg(feature = "desktop")]
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 pub struct AppFocusSubscription {
     pub pool: DbPool,
     pub state: Arc<tokio::sync::Mutex<super::app_focus::AppFocusState>>,
@@ -220,7 +229,10 @@ impl ReactiveSubscription for RotationSubscription {
     }
 }
 
+<<<<<<< HEAD
 #[cfg(feature = "desktop")]
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 #[async_trait::async_trait]
 impl ReactiveSubscription for FileWatcherSubscription {
     fn name(&self) -> &'static str {
@@ -240,7 +252,10 @@ impl ReactiveSubscription for FileWatcherSubscription {
     }
 }
 
+<<<<<<< HEAD
 #[cfg(feature = "desktop")]
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 #[async_trait::async_trait]
 impl ReactiveSubscription for ClipboardSubscription {
     fn name(&self) -> &'static str {
@@ -260,7 +275,10 @@ impl ReactiveSubscription for ClipboardSubscription {
     }
 }
 
+<<<<<<< HEAD
 #[cfg(feature = "desktop")]
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 #[async_trait::async_trait]
 impl ReactiveSubscription for AppFocusSubscription {
     fn name(&self) -> &'static str {

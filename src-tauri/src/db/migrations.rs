@@ -1931,6 +1931,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added headless column to personas for background cron agents");
     }
 
+<<<<<<< HEAD
     // ── Knowledge Annotations: scope, annotation, and verification columns ──
     let has_ek_scope: bool = conn
         .prepare("SELECT COUNT(*) FROM pragma_table_info('execution_knowledge') WHERE name = 'scope_type'")?
@@ -2029,6 +2030,8 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added trust_level, trust_origin, trust_verified_at to personas");
     }
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     Ok(())
 }
 

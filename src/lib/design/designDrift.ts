@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
+=======
+import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -36,7 +40,11 @@ interface PersonaDesignContext {
   personaName: string;
   timeoutMs: number;
   maxBudgetUsd: number | null;
+<<<<<<< HEAD
   lastDesignResult: AgentIR | null;
+=======
+  lastDesignResult: DesignAnalysisResult | null;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   recentFailureCount: number;
 }
 

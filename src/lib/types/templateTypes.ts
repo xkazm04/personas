@@ -60,6 +60,7 @@ export interface TemplateVerification {
   sandboxPolicy: SandboxPolicy | null;
 }
 
+<<<<<<< HEAD
 // ── Persona Trust (extends template trust to personas) ──────────────
 
 /** Trust metadata on a persona (persisted in DB) */
@@ -88,6 +89,8 @@ export function getPersonaSandboxPolicy(trustLevel: TemplateTrustLevel): Sandbox
   }
 }
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 // ── Template Catalog ─────────────────────────────────────────────────
 
 export interface TemplateCatalogEntry {

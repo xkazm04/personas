@@ -3,11 +3,19 @@ import { ConnectorsSection } from './ConnectorsSection';
 import { EventsSection } from './EventsSection';
 import { MessagesSection } from './MessagesSection';
 import { DesignTestResults } from './DesignTestResults';
+<<<<<<< HEAD
 import type { AgentIR, DesignTestResult, SuggestedConnector } from '@/lib/types/designTypes';
 import type { DbPersonaToolDefinition, DbPersonaTrigger, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 interface DesignResultPreviewProps {
   result: AgentIR;
+=======
+import type { DesignAnalysisResult, DesignTestResult, SuggestedConnector } from '@/lib/types/designTypes';
+import type { DbPersonaToolDefinition, DbPersonaTrigger, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+
+interface DesignResultPreviewProps {
+  result: DesignAnalysisResult;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   allToolDefs: DbPersonaToolDefinition[];
   currentToolNames: string[];
   credentials: CredentialMetadata[];

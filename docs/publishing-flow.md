@@ -36,9 +36,15 @@ Developer merges PR to master
 
 ## Trigger
 
+<<<<<<< HEAD
 The release pipeline runs when a pull request is **merged** to the `master` branch.
 
 The bump-version job only runs when `github.event.pull_request.merged == true`, preventing accidental triggers on closed-but-not-merged PRs.
+=======
+The release pipeline runs on every push to the `master` branch.
+
+Commits starting with `chore: bump version` are skipped to prevent infinite loops (since the pipeline itself creates a version bump commit).
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 ---
 
@@ -259,10 +265,16 @@ Then update the `tauri-action` step in `release.yml` to pass these as environmen
 | `scripts/bump-version.mjs` | Patch version bumper (3 files) |
 | `src-tauri/tauri.conf.json` | Updater pubkey, bundle config, endpoints |
 | `src-tauri/capabilities/default.json` | Tauri permissions (includes `core:app:default`) |
+<<<<<<< HEAD
 | `src/hooks/utility/useAutoUpdater.ts` | Frontend update checking logic |
 | `src/features/shared/components/UpdateBanner.tsx` | Update notification UI |
 | `src/features/shared/components/Sidebar.tsx` | Version display |
 | `.env.example` | Environment variable documentation |
+=======
+| `src/hooks/useAutoUpdater.ts` | Frontend update checking logic |
+| `src/features/personas/components/UpdateBanner.tsx` | Update notification UI |
+| `src/features/personas/components/Sidebar.tsx` | Version display |
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 ---
 

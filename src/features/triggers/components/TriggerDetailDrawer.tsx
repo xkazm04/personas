@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Trash2, Zap, X, Check, Copy, CheckCircle2, Play, Loader2, Terminal, FlaskConical, ArrowRight, Radio, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DbPersonaTrigger } from '@/lib/types/types';
@@ -7,6 +8,16 @@ import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetai
 import type { TriggerRateLimitState } from '@/stores/slices/triggerSlice';
 import { RateLimitControls } from './RateLimitControls';
 import { TriggerExecutionHistory } from './TriggerExecutionHistory';
+=======
+import { Trash2, Zap, X, Check, Copy, CheckCircle2, Play, Loader2, Terminal, ChevronDown, ChevronRight, History, FlaskConical, ArrowRight, Radio, AlertTriangle, RefreshCw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { DbPersonaTrigger } from '@/lib/types/types';
+import { parseTriggerConfig, getWebhookUrl, IS_WEBHOOK_LOCALHOST, type TriggerRateLimitConfig } from '@/lib/utils/triggerConstants';
+import { formatInterval, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
+import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
+import type { TriggerRateLimitState } from '@/stores/slices/triggerSlice';
+import { RateLimitControls } from './RateLimitControls';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { TRANSITION_NORMAL } from '@/features/templates/animationPresets';
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -252,6 +263,75 @@ function DryRunResultView({ detail }: { detail: ReturnType<typeof useTriggerDeta
   );
 }
 
+<<<<<<< HEAD
+=======
+// ─── Activity Log ───────────────────────────────────────────────────────
+
+function ActivitySection({ detail }: { detail: ReturnType<typeof useTriggerDetail> }) {
+  return (
+    <>
+      <button
+        onClick={detail.toggleActivityLog}
+        className="flex items-center gap-1.5 pt-1 border-t border-primary/5 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors w-full"
+      >
+        {detail.activityOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        <History className="w-3 h-3" />
+        Activity log
+      </button>
+
+      <AnimatePresence>
+        {detail.activityOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-1">
+              {detail.activityLoading ? (
+                <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground/80">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Loading...
+                </div>
+              ) : detail.activityError ? (
+                <div className="flex items-center gap-2 py-2 text-sm text-amber-400/90">
+                  <AlertTriangle className="w-3 h-3 shrink-0" />
+                  Could not load activity
+                  <button
+                    onClick={detail.retryActivityLog}
+                    className="ml-auto flex items-center gap-1 text-sm text-muted-foreground/80 hover:text-foreground transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Retry
+                  </button>
+                </div>
+              ) : detail.activityLog.length === 0 ? (
+                <div className="py-2 text-sm text-muted-foreground/80">
+                  No runs recorded for this trigger yet
+                </div>
+              ) : (
+                detail.activityLog.map((exec) => (
+                  <div key={exec.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-background/30 border border-primary/5 text-sm">
+                    <span className={`px-1.5 py-0.5 rounded text-sm font-medium ${badgeClass(getStatusEntry(exec.status))}`}>
+                      {getStatusEntry(exec.status).label}
+                    </span>
+                    <span className="text-muted-foreground/90 font-mono">
+                      {formatDuration(exec.duration_ms)}
+                    </span>
+                    <span className="text-muted-foreground/80 ml-auto">
+                      {formatRelativeTime(exec.started_at)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 // ─── Main Drawer ────────────────────────────────────────────────────────
 
@@ -363,8 +443,13 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, detail, onD
           )}
         </div>
 
+<<<<<<< HEAD
         {/* Execution History */}
         <TriggerExecutionHistory triggerId={trigger.id} personaId={trigger.persona_id} />
+=======
+        {/* Activity Log */}
+        <ActivitySection detail={detail} />
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       </div>
     </motion.div>
   );

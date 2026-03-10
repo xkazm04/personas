@@ -161,12 +161,15 @@ export interface ConnectorDefinitionBase {
   services: { toolName: string; label: string }[];
   events: CredentialTemplateEvent[];
   metadata: Record<string, unknown> | null;
+<<<<<<< HEAD
 }
 
 /** Parsed frontend connector definition (JSON fields pre-parsed) */
 export interface ConnectorDefinition extends ConnectorDefinitionBase {
   /** Narrowed healthcheck with typed description field. */
   healthcheck_config: { description: string; endpoint?: string; method?: string } | null;
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   is_builtin: boolean;
   created_at: string;
   updated_at: string;
@@ -250,7 +253,11 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 export type SidebarSection = "home" | "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "settings";
 export type HomeTab = "welcome" | "system-check";
 export type EditorTab = "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "design" | "health";
+<<<<<<< HEAD
 export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "cron-agents" | "schedules";
+=======
+export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "cron-agents";
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 export type TemplateTab = "n8n" | "generated";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "admin";

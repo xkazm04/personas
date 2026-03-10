@@ -79,7 +79,10 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   google_workspace_oauth_template: 'personal',
   google_sheets:                   'personal',
   gmail:                           'personal',
+<<<<<<< HEAD
   microsoft_outlook:               'personal',
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   linkedin:                        'personal',
   n8n:                             'personal',
 

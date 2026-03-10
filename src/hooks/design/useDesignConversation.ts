@@ -10,7 +10,11 @@ import {
 import type {
   DesignConversation,
   DesignConversationMessage,
+<<<<<<< HEAD
   AgentIR,
+=======
+  DesignAnalysisResult,
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   DesignQuestion,
 } from '@/lib/types/designTypes';
 import { parseConversationMessages } from '@/lib/types/designTypes';
@@ -194,7 +198,11 @@ export function useDesignConversation(personaId: string | null) {
   }, [enqueueAppend]);
 
   /** Record an AI result in the conversation. */
+<<<<<<< HEAD
   const addResultMessage = useCallback((result: AgentIR) => {
+=======
+  const addResultMessage = useCallback((result: DesignAnalysisResult) => {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     enqueueAppend(() => ({
       message: {
         role: 'assistant',

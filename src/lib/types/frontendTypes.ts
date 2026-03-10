@@ -214,6 +214,7 @@ export interface UseCaseSuggestedTrigger {
   description: string;
 }
 
+<<<<<<< HEAD
 /**
  * JSON-backed event subscription suggestion within a use case's design_context.
  *
@@ -226,12 +227,17 @@ export interface UseCaseSuggestedTrigger {
  *
  * JSON entries are *suggestions*; DB records are the *source of truth* for active subscriptions.
  */
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 export interface UseCaseEventSubscription {
   event_type: string;
   source_filter?: string;
   enabled: boolean;
+<<<<<<< HEAD
   /** Set to true when this suggestion has been activated as a DB subscription. */
   adopted?: boolean;
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 /**

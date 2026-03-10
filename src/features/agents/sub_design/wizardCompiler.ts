@@ -2,7 +2,10 @@
 // Wizard Instruction Compiler & Summary Helper
 // ============================================================================
 
+<<<<<<< HEAD
 import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { WizardAnswers } from './wizardSteps';
 
 type InstructionEntry =
@@ -100,6 +103,7 @@ export function compileWizardInstruction(answers: WizardAnswers): string {
   return parts.join('\n\n');
 }
 
+<<<<<<< HEAD
 // ── Wizard → AgentIR Compilation ────────────────────────────────
 // Produces a structured AgentIR directly from wizard answers,
 // enabling the path: wizard answers → AgentIR → apply(AgentIR).
@@ -196,6 +200,8 @@ export function compileWizardToAgentIR(answers: WizardAnswers): AgentIR {
   };
 }
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 // ── Summary Helper ──────────────────────────────────────────────
 
 export function getAnswerSummary(answers: WizardAnswers): Array<{ label: string; value: string }> {

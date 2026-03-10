@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+<<<<<<< HEAD
 export type Language = 'en' | 'zh' | 'ar' | 'hi' | 'ru' | 'id' | 'es' | 'fr' | 'bn' | 'ja' | 'vi' | 'de' | 'ko' | 'cs';
+=======
+export type Language = 'en' | 'zh' | 'ar' | 'hi' | 'ru' | 'id';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface I18nState {
   language: Language;

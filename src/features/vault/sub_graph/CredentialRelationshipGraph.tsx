@@ -137,7 +137,11 @@ export function CredentialRelationshipGraph() {
   return (
     <div className="space-y-4">
       {/* Summary stats */}
+<<<<<<< HEAD
       <div className="grid grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-6 gap-2">
+=======
+      <div className="grid grid-cols-3 gap-2">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         {(Object.keys(KIND_LABELS) as GraphNodeKind[]).map((kind) => {
           const Icon = KIND_ICONS[kind];
           const active = filterKind === kind;
@@ -163,9 +167,15 @@ export function CredentialRelationshipGraph() {
       </div>
 
       {/* Main graph area */}
+<<<<<<< HEAD
       <div className="grid grid-cols-1 lg:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5 gap-3">
         {/* Left: credential list / filtered node list */}
         <div className="lg:col-span-2 3xl:col-span-3 4xl:col-span-4 space-y-2">
+=======
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {/* Left: credential list / filtered node list */}
+        <div className="lg:col-span-2 space-y-2">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           {/* Credential list */}
           {(filterKind === 'all' || filterKind === 'credential') && (
             <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">

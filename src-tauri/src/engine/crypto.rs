@@ -352,12 +352,15 @@ fn try_keychain() -> Result<[u8; 32], CryptoError> {
     }
 }
 
+<<<<<<< HEAD
 /// On mobile, keychain is not available — always return an error to fall through to fallback.
 #[cfg(not(feature = "desktop"))]
 fn try_keychain() -> Result<[u8; 32], CryptoError> {
     Err(CryptoError::KeyManagement("Keychain not available on this platform".into()))
 }
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 /// Generate or load a random fallback key when the OS keychain is unavailable
 /// (e.g., in CI, headless environments, or tests).
 fn derive_fallback_key() -> [u8; 32] {
@@ -628,7 +631,10 @@ fn repair_key_file_permissions(path: &std::path::Path) -> bool {
 /// The same key bytes are stored in the keychain — no credential re-encryption
 /// is needed because the encryption key itself doesn't change.
 #[allow(dead_code)]
+<<<<<<< HEAD
 #[cfg(feature = "desktop")]
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 pub fn try_upgrade_to_keychain() -> Result<bool, CryptoError> {
     if key_source() != Some(KeySource::LocalFallback) {
         return Ok(false); // Already on keychain or not initialised
@@ -650,12 +656,15 @@ pub fn try_upgrade_to_keychain() -> Result<bool, CryptoError> {
     Ok(true)
 }
 
+<<<<<<< HEAD
 #[allow(dead_code)]
 #[cfg(not(feature = "desktop"))]
 pub fn try_upgrade_to_keychain() -> Result<bool, CryptoError> {
     Ok(false)
 }
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 // ---------------------------------------------------------------------------
 // Platform-specific key protection (DPAPI on Windows, passthrough elsewhere)
 // ---------------------------------------------------------------------------

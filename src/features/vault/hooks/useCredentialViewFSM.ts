@@ -80,7 +80,11 @@ const GLOBAL_ACTIONS: ActionType[] = ['GO_LIST', 'GO_CATALOG', 'GO_ADD_NEW', 'GO
 const VIEW_TRANSITIONS: Record<ViewName, readonly ActionType[]> = {
   'list':               [],
   'catalog-browse':     ['PICK_CONNECTOR', 'SET_CATALOG_SEARCH'],
+<<<<<<< HEAD
   'catalog-form':       ['CANCEL_FORM', 'GO_AUTO_SETUP', 'GO_ADD_DESKTOP', 'SET_CREDENTIAL_NAME'],
+=======
+  'catalog-form':       ['CANCEL_FORM', 'GO_AUTO_SETUP', 'SET_CREDENTIAL_NAME'],
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   'catalog-auto-setup': ['CANCEL_FORM'],
   'add-new':            ['GO_ADD_API_TOOL', 'GO_ADD_MCP', 'GO_ADD_CUSTOM', 'GO_ADD_DATABASE', 'GO_ADD_DESKTOP', 'GO_ADD_WIZARD', 'GO_WORKSPACE_CONNECT', 'GO_FORAGING'],
   'add-api-tool':       [],

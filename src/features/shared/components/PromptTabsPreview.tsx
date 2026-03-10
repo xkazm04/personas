@@ -12,7 +12,11 @@ import {
   Eye,
 } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
+<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
+=======
+import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface PromptTab {
   key: string;
@@ -24,7 +28,11 @@ interface PromptTab {
 export function PromptTabsPreview({
   designResult,
 }: {
+<<<<<<< HEAD
   designResult: AgentIR;
+=======
+  designResult: DesignAnalysisResult;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }) {
   const tabs = useMemo<PromptTab[]>(() => {
     const sp = designResult.structured_prompt;

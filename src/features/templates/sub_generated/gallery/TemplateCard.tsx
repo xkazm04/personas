@@ -24,7 +24,11 @@ import { DimensionRadial } from '../shared/DimensionRadial';
 import { TrustBadge } from '../shared/TrustBadge';
 import { verifyTemplate } from '@/lib/templates/templateVerification';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+<<<<<<< HEAD
 import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
+=======
+import type { DesignAnalysisResult, SuggestedTrigger } from '@/lib/types/designTypes';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
@@ -81,7 +85,11 @@ export function TemplateCard({
   const parsedData = useMemo(() => {
     const connectors = parseJsonSafe<string[]>(review.connectors_used, []);
     const triggerTypes = parseJsonSafe<string[]>(review.trigger_types, []);
+<<<<<<< HEAD
     const designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
+=======
+    const designResult = parseJsonSafe<DesignAnalysisResult | null>(review.design_result, null);
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
     const displayFlows = flows.length > 0
       ? flows
@@ -215,7 +223,11 @@ export function TemplateCard({
         </div>
 
         {/* 3-Column Body */}
+<<<<<<< HEAD
         <div className="hidden md:grid px-4 py-4 md:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 gap-4 border-t border-primary/5">
+=======
+        <div className="hidden md:grid px-4 py-4 md:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-primary/5">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           {/* Use Cases */}
           <div className="min-w-0">
             <h4 className="text-sm uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">

@@ -4,12 +4,21 @@ import { useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, LayoutGrid, FolderPlus, X, Check } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+<<<<<<< HEAD
 import { SidebarPersonaCard } from '@/features/agents/components/sub_sidebar/components/DraggablePersonaCard';
 import { DroppableGroup } from '@/features/agents/components/sub_sidebar/components/DroppableGroup';
 import { UngroupedZone } from '@/features/agents/components/sub_sidebar/components/UngroupedZone';
 import { PersonaContextMenu, type ContextMenuState } from '@/features/agents/components/sub_sidebar/components/PersonaContextMenu';
 import { SearchFilterBar } from '@/features/agents/components/sub_sidebar/components/SearchFilterBar';
 import { usePersonaFilters } from '@/features/agents/components/sub_sidebar/libs/usePersonaFilters';
+=======
+import { SidebarPersonaCard } from '@/features/agents/components/sub_sidebar/DraggablePersonaCard';
+import { DroppableGroup } from '@/features/agents/components/sub_sidebar/DroppableGroup';
+import { UngroupedZone } from '@/features/agents/components/sub_sidebar/UngroupedZone';
+import { PersonaContextMenu, type ContextMenuState } from '@/features/agents/components/sub_sidebar/PersonaContextMenu';
+import { SearchFilterBar } from '@/features/agents/components/sub_sidebar/SearchFilterBar';
+import { usePersonaFilters } from '@/features/agents/components/sub_sidebar/usePersonaFilters';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { buildSidebarTree, type DragPayload, type DropPayload } from '@/lib/types/frontendTypes';
 import type { DbPersona } from '@/lib/types/types';
 

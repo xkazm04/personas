@@ -4,10 +4,17 @@
  * Each platform parser defines a small adapter that normalizes its
  * platform-specific JSON into a common intermediate form. This pipeline
  * then runs the identical classification → tool naming → connector
+<<<<<<< HEAD
  * building → prompt assembly algorithm, producing a AgentIR.
  */
 
 import type { AgentIR } from '@/lib/types/designTypes';
+=======
+ * building → prompt assembly algorithm, producing a DesignAnalysisResult.
+ */
+
+import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { PlatformDefinition, ProtocolMapRule } from './platformDefinitions';
 import { extractProtocolsFromNodes } from './platformDefinitions';
 
@@ -67,7 +74,11 @@ export interface AdapterResult {
  * This is the single algorithm that all parsers share. Each parser
  * calls its adapter to produce an `AdapterResult`, then passes it here.
  */
+<<<<<<< HEAD
 export function runExtractionPipeline(adapter: AdapterResult): AgentIR {
+=======
+export function runExtractionPipeline(adapter: AdapterResult): DesignAnalysisResult {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const { platformLabel, platformNoun, elementNoun, workflowName, nodes } = adapter;
   const excludedServices = new Set(adapter.excludedServices ?? []);
 

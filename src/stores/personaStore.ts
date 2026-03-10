@@ -35,8 +35,11 @@ import { createCronAgentsSlice } from "./slices/cronAgentsSlice";
 import { createMiniPlayerSlice } from "./slices/miniPlayerSlice";
 import { createHealthCheckSlice } from "./slices/healthCheckSlice";
 import { createTourSlice } from "./slices/tourSlice";
+<<<<<<< HEAD
 import { createBudgetEnforcementSlice } from "./slices/budgetEnforcementSlice";
 import { createAlertSlice } from "./slices/alertSlice";
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { AUTH_LOGIN_EVENT } from "./authStore";
 
 // ── Store ──────────────────────────────────────────────────────────────
@@ -69,8 +72,11 @@ export const usePersonaStore = create<PersonaStore>()(
         ...createMiniPlayerSlice(...a),
         ...createHealthCheckSlice(...a),
         ...createTourSlice(...a),
+<<<<<<< HEAD
         ...createBudgetEnforcementSlice(...a),
         ...createAlertSlice(...a),
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       }),
       {
         name: "persona-ui-state",

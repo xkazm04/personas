@@ -57,6 +57,7 @@ export function TerminalBody({
   const lastSeenLineCount = useRef(0);
   const [unseenCount, setUnseenCount] = useState(0);
 
+<<<<<<< HEAD
   // Incrementally classify lines — only process newly appended entries
   const classifiedCache = useRef<{ line: string; style: TerminalLineStyle }[]>([]);
   const classified = useMemo(() => {
@@ -81,6 +82,13 @@ export function TerminalBody({
     classifiedCache.current = fresh;
     return fresh;
   }, [lines]);
+=======
+  // Pre-classify lines so we don't re-classify inside the render loop
+  const classified = useMemo(
+    () => lines.map((line) => ({ line, style: classifyLine(line) })),
+    [lines],
+  );
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   // Total item count: lines + optional cursor row at the end
   const itemCount = classified.length + (showCursor && isRunning ? 1 : 0);

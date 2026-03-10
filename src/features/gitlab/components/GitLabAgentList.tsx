@@ -1,7 +1,12 @@
 import { useEffect } from 'react';
+<<<<<<< HEAD
 import { Bot, Trash2, ExternalLink, RefreshCw, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
 import type { GitLabAgent } from '@/api/gitlab';
 import { usePersonaStore } from '@/stores/personaStore';
+=======
+import { Bot, Trash2, ExternalLink, RefreshCw } from 'lucide-react';
+import type { GitLabAgent } from '@/api/gitlab';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface GitLabAgentListProps {
   projectId: number | null;
@@ -77,7 +82,10 @@ export function GitLabAgentList({
             )}
           </div>
           <div className="flex items-center gap-1.5">
+<<<<<<< HEAD
             <PipelineStatusBadge projectId={projectId} />
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             {agent.webUrl && (
               <a
                 href={agent.webUrl}
@@ -102,6 +110,7 @@ export function GitLabAgentList({
     </div>
   );
 }
+<<<<<<< HEAD
 
 // ---------------------------------------------------------------------------
 // Pipeline status badge (reads latest pipeline from store)
@@ -159,3 +168,5 @@ function PipelineStatusBadge({ projectId }: { projectId: number }) {
     </span>
   );
 }
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989

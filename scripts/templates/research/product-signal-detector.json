@@ -169,7 +169,11 @@
             "key": "api_key",
             "label": "Personal API Key",
             "type": "password",
+<<<<<<< HEAD
             "placeholder": "lin_api_EXAMPLE_KEY_REPLACE_ME",
+=======
+            "placeholder": "lin_api_xxxxxxxxxxxx",
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "From Linear → Settings → API → Personal API keys → Create key. The key needs permission to create and update issues.",
             "required": true
           },
@@ -678,6 +682,7 @@
         ]
       }
     ],
+<<<<<<< HEAD
     "adoption_questions": [
       {
         "id": "slack_product_channel",
@@ -716,6 +721,8 @@
         "category": "configuration"
       }
     ],
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     "protocol_capabilities": [
       {
         "type": "manual_review",

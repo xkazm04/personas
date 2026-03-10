@@ -17,20 +17,32 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/ContentLayout';
 import { useMemo, useEffect } from 'react';
+<<<<<<< HEAD
 import { useFilteredCollection } from '@/hooks/utility/useFilteredCollection';
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
 import { GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/libs/chartConstants';
+=======
+import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
+import { ChartErrorBoundary } from '@/features/overview/sub_usage/charts/ChartErrorBoundary';
+import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
+import { ChartTooltip } from '@/features/overview/sub_usage/charts/ChartTooltip';
+import { GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilters } from '@/features/overview/components/OverviewFilterContext';
 import DeployFirstAutomationCard from '@/features/overview/components/DeployFirstAutomationCard';
 import { HealthDigestPanel } from '@/features/agents/health';
+<<<<<<< HEAD
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
 import { IS_MOBILE } from '@/lib/utils/platform';
 import RemoteControlCard from '@/features/overview/components/RemoteControlCard';
 import FleetOptimizationCard from '@/features/overview/components/FleetOptimizationCard';
+=======
+import { MemoryActionsPanel } from '@/features/overview/sub_memories/MemoryActionCard';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 // ---------------------------------------------------------------------------
 // DashboardHome
@@ -53,7 +65,11 @@ export default function DashboardHome() {
 
   const { selectedPersonaId, setSelectedPersonaId } = useOverviewFilters();
   const executionDashboard = usePersonaStore((s) => s.executionDashboard);
+<<<<<<< HEAD
   const fetchHealingIssues = usePersonaStore((s) => s.fetchHealingIssues);
+=======
+  const fetchExecutionDashboard = usePersonaStore((s) => s.fetchExecutionDashboard);
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   const dailyPoints = executionDashboard?.daily_points ?? [];
 
@@ -61,6 +77,7 @@ export default function DashboardHome() {
     fetchGlobalExecutions(true);
     fetchPendingReviewCount();
     fetchUnreadMessageCount();
+<<<<<<< HEAD
     fetchHealingIssues();
   }, [fetchGlobalExecutions, fetchPendingReviewCount, fetchUnreadMessageCount, fetchHealingIssues]);
 
@@ -70,6 +87,16 @@ export default function DashboardHome() {
 
   const stats = useMemo(() => {
     const execs = personaExecs;
+=======
+    fetchExecutionDashboard(14);
+  }, [fetchGlobalExecutions, fetchPendingReviewCount, fetchUnreadMessageCount, fetchExecutionDashboard]);
+
+  const stats = useMemo(() => {
+    let execs = globalExecutions;
+    if (selectedPersonaId) {
+      execs = execs.filter(e => e.persona_id === selectedPersonaId);
+    }
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
     const successCount = execs.filter(e => e.status === 'completed').length;
     const successRate = Math.round(resolveMetricPercent(
@@ -82,7 +109,11 @@ export default function DashboardHome() {
       activeAgents: personas.length,
       recentExecs: execs.slice(0, 12),
     };
+<<<<<<< HEAD
   }, [personaExecs, personas]);
+=======
+  }, [globalExecutions, personas, selectedPersonaId]);
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   // Build chart data from execution dashboard daily points
   const chartData = useMemo(() => {
@@ -112,7 +143,11 @@ export default function DashboardHome() {
 
   // Header-level stat badges
   const headerBadges = (
+<<<<<<< HEAD
     <div className={`flex items-center gap-2 flex-shrink-0 ${IS_MOBILE ? 'flex-wrap' : ''}`}>
+=======
+    <div className="flex items-center gap-2 flex-shrink-0">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       <motion.button
         whileHover={{ scale: 1.05 }}
         onClick={() => setOverviewTab('messages')}
@@ -121,7 +156,10 @@ export default function DashboardHome() {
       >
         <Mail className="w-3 h-3" />
         {unreadMessageCount}
+<<<<<<< HEAD
         <span className="text-blue-300/60 font-medium">Msgs</span>
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       </motion.button>
       <motion.button
         whileHover={{ scale: 1.05 }}
@@ -131,7 +169,10 @@ export default function DashboardHome() {
       >
         <ClipboardCheck className="w-3 h-3" />
         {pendingReviewCount}
+<<<<<<< HEAD
         <span className="text-amber-300/60 font-medium">Reviews</span>
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       </motion.button>
       <div className="border-l border-primary/10 pl-2 ml-1 flex items-center gap-2">
         <motion.button
@@ -142,7 +183,10 @@ export default function DashboardHome() {
         >
           <Activity className="w-3 h-3" />
           {globalExecutionsTotal}
+<<<<<<< HEAD
           <span className="text-emerald-300/60 font-medium">Runs</span>
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         </motion.button>
         <span
           title={`${stats.successRate}% success rate`}
@@ -150,7 +194,10 @@ export default function DashboardHome() {
         >
           <ShieldCheck className="w-3 h-3" />
           {stats.successRate}%
+<<<<<<< HEAD
           <span className="text-violet-300/60 font-medium">Success</span>
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         </span>
         <span
           title={`${stats.activeAgents} active agents`}
@@ -158,7 +205,10 @@ export default function DashboardHome() {
         >
           <Cpu className="w-3 h-3" />
           {stats.activeAgents}
+<<<<<<< HEAD
           <span className="text-rose-300/60 font-medium">Agents</span>
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         </span>
       </div>
     </div>
@@ -188,7 +238,11 @@ export default function DashboardHome() {
               <motion.h2
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
+<<<<<<< HEAD
                 className={`${IS_MOBILE ? 'text-xl' : 'text-3xl'} font-bold bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent`}
+=======
+                className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent"
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
               >
                 {greeting}, {displayName}
               </motion.h2>
@@ -204,6 +258,7 @@ export default function DashboardHome() {
             />
           </div>
 
+<<<<<<< HEAD
           {/* Remote Control — mobile only */}
           {IS_MOBILE && <RemoteControlCard />}
 
@@ -217,6 +272,15 @@ export default function DashboardHome() {
 
             {/* Recent Activity */}
             <div className="lg:col-span-2 2xl:col-span-3 space-y-4">
+=======
+          {/* Memory Insight Suggestions */}
+          <MemoryActionsPanel actions={memoryActions} onDismiss={dismissMemoryAction} />
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+            {/* Recent Activity */}
+            <div className="lg:col-span-2 space-y-4">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
               <div className="flex items-center justify-between px-1">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
                   <Clock className="w-4 h-4" />

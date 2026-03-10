@@ -9,7 +9,11 @@ import { useToastStore } from '@/stores/toastStore';
 import { useRecipeGenerator } from '@/hooks/design/useRecipeGenerator';
 import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
 import { EstimatedProgressBar } from '@/features/shared/components/EstimatedProgressBar';
+<<<<<<< HEAD
 import { RecipePlaygroundModal } from '@/features/recipes/sub_playground/components/RecipePlaygroundModal';
+=======
+import { RecipePlaygroundModal } from '@/features/recipes/sub_playground/RecipePlaygroundModal';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface CredentialRecipesTabProps {
   credentialId: string;

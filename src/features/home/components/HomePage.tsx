@@ -12,7 +12,11 @@ export default function HomePage() {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+<<<<<<< HEAD
       className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
+=======
+      className="flex-1 min-h-0 flex flex-col overflow-hidden"
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     >
       {homeTab === 'system-check' ? <SystemHealthPanel /> : <HomeWelcome />}
     </motion.div>

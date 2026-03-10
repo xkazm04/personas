@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
+<<<<<<< HEAD
 import { Key, Zap, Bot, Play, Radio, Link, ListChecks, type LucideIcon } from 'lucide-react';
 
 // ── Scenario Variants ────────────────────────────────────────────
@@ -82,6 +83,13 @@ const SCENARIO_CONFIGS: Record<EmptyStateVariant, ScenarioConfig> = {
 interface EmptyStateProps {
   icon?: LucideIcon;
   title?: string;
+=======
+import type { LucideIcon } from 'lucide-react';
+
+interface EmptyStateProps {
+  icon: LucideIcon;
+  title: string;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   subtitle?: string;
   description?: string;
   action?: { label: string; onClick: () => void };
@@ -89,16 +97,24 @@ interface EmptyStateProps {
   iconContainerClassName?: string;
   className?: string;
   children?: ReactNode;
+<<<<<<< HEAD
   /** Select a predefined scenario template. Explicit props override scenario defaults. */
   variant?: EmptyStateVariant;
 }
 
 export default function EmptyState({
   icon,
+=======
+}
+
+export default function EmptyState({
+  icon: Icon,
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   title,
   subtitle,
   description,
   action,
+<<<<<<< HEAD
   iconColor,
   iconContainerClassName,
   className,
@@ -113,6 +129,14 @@ export default function EmptyState({
   const resolvedIconColor = iconColor ?? scenario?.iconColor ?? 'text-muted-foreground/80';
   const resolvedContainerClass = iconContainerClassName ?? scenario?.iconContainerClassName ?? 'bg-secondary/35 border-primary/15';
   const steps = scenario?.steps;
+=======
+  iconColor = 'text-muted-foreground/80',
+  iconContainerClassName = 'bg-secondary/35 border-primary/15',
+  className,
+  children,
+}: EmptyStateProps) {
+  const detailText = subtitle ?? description;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   return (
     <motion.div
@@ -120,6 +144,7 @@ export default function EmptyState({
       animate={{ opacity: 1, y: 0 }}
       className={`py-8 flex flex-col items-center justify-center text-center gap-2.5 ${className ?? ''}`}
     >
+<<<<<<< HEAD
       {Icon && (
         <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${resolvedContainerClass}`}>
           <Icon className={`w-4 h-4 ${resolvedIconColor}`} />
@@ -148,6 +173,13 @@ export default function EmptyState({
         </div>
       )}
 
+=======
+      <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${iconContainerClassName}`}>
+        <Icon className={`w-4 h-4 ${iconColor}`} />
+      </div>
+      <h3 className="text-sm font-medium text-foreground/90">{title}</h3>
+      {detailText && <p className="text-sm text-muted-foreground/60 max-w-[34ch]">{detailText}</p>}
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       {children ? <div className="pt-1">{children}</div> : null}
       {action && (
         <button

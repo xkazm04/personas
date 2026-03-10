@@ -6,7 +6,11 @@ import { EstimatedProgressBar } from '@/features/shared/components/EstimatedProg
 import { TerminalStrip } from '@/features/shared/components/TerminalStrip';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { updateRecipe } from '@/api/recipes';
+<<<<<<< HEAD
 import { useRecipeTestRunner } from '../libs/useRecipeTestRunner';
+=======
+import { useRecipeTestRunner } from '../useRecipeTestRunner';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface RecipeTestRunnerTabProps {
   recipe: RecipeDefinition;

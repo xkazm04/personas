@@ -238,7 +238,11 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
   }, [canGenerate, draftPersonaId, state.intent, state.components, createPersona, createGroup, movePersonaToGroup, setDraftPersonaId, design]);
 
   return (
+<<<<<<< HEAD
     <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] 3xl:grid-cols-[1fr_340px] 4xl:grid-cols-[1fr_400px] gap-6 w-full">
+=======
+    <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-6 w-full">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       {/* Left column: builder sections */}
       <div className="space-y-3 min-w-0" style={{ minWidth: 900 }}>
         <SectionHeader

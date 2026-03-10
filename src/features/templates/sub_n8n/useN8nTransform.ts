@@ -74,10 +74,14 @@ export function useN8nTransform(
     outputEvent: 'n8n-transform-output',
     statusEvent: 'n8n-transform-status',
     idField: 'transform_id',
+<<<<<<< HEAD
     onFailed: (message) => {
       clearPersistedContext();
       dispatch({ type: 'TRANSFORM_FAILED', error: message });
     },
+=======
+    onFailed: (message) => dispatch({ type: 'TRANSFORM_FAILED', error: message }),
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   });
 
   // ── Restore persisted context on mount ──

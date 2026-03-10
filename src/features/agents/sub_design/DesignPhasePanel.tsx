@@ -5,6 +5,7 @@ import { ErrorBanner } from '@/features/shared/components/ErrorBanner';
 import { DesignPhasePanelSaved } from './DesignPhasePanelSaved';
 import { ExamplePairCollector } from './ExamplePairCollector';
 
+<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { DesignContext } from '@/lib/types/frontendTypes';
 import type { PersonaWithDetails, DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
@@ -13,6 +14,16 @@ import type { DesignInputMode } from './libs/useDesignTabState';
 
 export interface DesignPhasePanelProps {
   savedDesignResult: AgentIR | null;
+=======
+import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { DesignContext } from '@/lib/types/frontendTypes';
+import type { PersonaWithDetails, DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import type { ExamplePair } from './ExamplePairCollector';
+import type { DesignInputMode } from './useDesignTabState';
+
+export interface DesignPhasePanelProps {
+  savedDesignResult: DesignAnalysisResult | null;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   selectedPersona: PersonaWithDetails;
   toolDefinitions: DbPersonaToolDefinition[];
   currentToolNames: string[];

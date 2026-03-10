@@ -33,6 +33,7 @@ mobile = []
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-notification = "2"
+<<<<<<< HEAD
 tauri-plugin-dialog = "2"
 tauri-plugin-deep-link = "2"
 
@@ -41,6 +42,10 @@ tauri-plugin-window-state = { version = "2", optional = true }
 tauri-plugin-updater = { version = "2", optional = true }
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"], optional = true }
 
+=======
+tauri-plugin-window-state = "2"
+tauri-plugin-updater = "2"
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 async-trait = "0.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -57,7 +62,10 @@ r2d2_sqlite = "0.32"
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 ts-rs = { version = "10", features = ["serde-compat", "chrono-impl", "serde-json-impl"] }
+<<<<<<< HEAD
 dirs = "6"
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 aes-gcm = "0.10"
 base64 = "0.22"
 pbkdf2 = { version = "0.12", features = ["simple"] }
@@ -68,6 +76,12 @@ futures-util = "0.3"
 axum = "0.8"
 hmac = "0.12"
 hex = "0.4"
+<<<<<<< HEAD
+=======
+tauri-plugin-dialog = "2"
+tauri-plugin-deep-link = "2"
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 open = "5"
 url = "2"
 urlencoding = "2"
@@ -80,6 +94,7 @@ dotenvy = "0.15"
 rsa = "0.9"
 rand = "0.8"
 regex = "1"
+<<<<<<< HEAD
 tempfile = "3"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 jsonschema = { version = "0.28", default-features = false }
@@ -93,6 +108,14 @@ which = { version = "8.0.1", optional = true }
 [[bin]]
 name = "personas-mcp"
 path = "src/mcp_bin.rs"
+=======
+notify = { version = "7", default-features = false, features = ["macos_kqueue"] }
+arboard = "3"
+tempfile = "3"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+jsonschema = { version = "0.28", default-features = false }
+which = "8.0.1"
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [

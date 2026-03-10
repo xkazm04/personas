@@ -1,6 +1,10 @@
 import type { NotificationChannel } from '@/lib/types/frontendTypes';
 import type { DesignContextData, DesignUseCase } from '@/lib/types/frontendTypes';
+<<<<<<< HEAD
 import type { ConnectorPipelineStep, AgentIR } from '@/lib/types/designTypes';
+=======
+import type { ConnectorPipelineStep, DesignAnalysisResult } from '@/lib/types/designTypes';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { BuilderState, BuilderUseCase, BuilderComponent, TriggerPreset, ComponentRole, CredentialCoverage, CoverageStatus } from './types';
 import { INITIAL_BUILDER_STATE, TRIGGER_PRESETS, ERROR_STRATEGIES, REVIEW_POLICIES } from './types';
 
@@ -23,7 +27,11 @@ export type BuilderAction =
   | { type: 'SET_ERROR_STRATEGY'; payload: string }
   | { type: 'SET_REVIEW_POLICY'; payload: string }
   | { type: 'SET_WATCHED_TABLES'; payload: { componentId: string; tables: string[] } }
+<<<<<<< HEAD
   | { type: 'APPLY_DESIGN_RESULT'; payload: AgentIR }
+=======
+  | { type: 'APPLY_DESIGN_RESULT'; payload: DesignAnalysisResult }
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   | { type: 'RESET' };
 
 let nextId = 1;
@@ -56,7 +64,11 @@ function inferRole(sc: { role?: string; category?: string; name: string }): Comp
   return 'act'; // default
 }
 
+<<<<<<< HEAD
 function applyDesignResult(state: BuilderState, result: AgentIR): BuilderState {
+=======
+function applyDesignResult(state: BuilderState, result: DesignAnalysisResult): BuilderState {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   let next = { ...state };
 
   // Use cases

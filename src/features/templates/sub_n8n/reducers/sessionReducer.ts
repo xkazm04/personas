@@ -19,10 +19,13 @@ export interface SessionState {
   selectedConnectorNames: Set<string>;
   confirming: boolean;
   created: boolean;
+<<<<<<< HEAD
   /** True when platform was guessed and user should confirm */
   platformNeedsConfirmation: boolean;
   /** Confidence level of platform detection */
   detectedConfidence: 'high' | 'medium' | 'low';
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 export const INITIAL_SESSION: SessionState = {
@@ -38,8 +41,11 @@ export const INITIAL_SESSION: SessionState = {
   selectedConnectorNames: new Set(),
   confirming: false,
   created: false,
+<<<<<<< HEAD
   platformNeedsConfirmation: false,
   detectedConfidence: 'high',
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 };
 
 // ── Helpers ──
@@ -79,15 +85,21 @@ export function sessionReducer(
         rawWorkflowJson: action.rawWorkflowJson,
         parsedResult: action.parsedResult,
         platform: action.platform ?? 'n8n',
+<<<<<<< HEAD
         platformNeedsConfirmation: action.needsConfirmation ?? false,
         detectedConfidence: action.detectedConfidence ?? 'high',
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         ...selections,
       };
     }
 
+<<<<<<< HEAD
     case 'CONFIRM_PLATFORM':
       return { ...slice, platformNeedsConfirmation: false };
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     case 'TOGGLE_TOOL':
       return { ...slice, selectedToolIndices: toggleInSet(slice.selectedToolIndices, action.index) };
 

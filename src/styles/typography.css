@@ -15,7 +15,11 @@
    ══════════════════════════════════════════════════════════════════════════════ */
 
 /* ── Font Loading ──────────────────────────────────────────────────────────── */
+<<<<<<< HEAD
 /* Google Fonts @import moved to top of globals.css (CSS spec requires @import before all rules) */
+=======
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 /* ── Language Font Stacks ────────────────────────────────────────────────────
    Driven by [data-lang] on <html>, set by useTypography() hook.
@@ -26,6 +30,7 @@
 }
 
 [data-lang="en"]  { --font-lang: var(--font-sans); }
+<<<<<<< HEAD
 [data-lang="es"]  { --font-lang: var(--font-sans); }
 [data-lang="fr"]  { --font-lang: var(--font-sans); }
 [data-lang="de"]  { --font-lang: var(--font-sans); }
@@ -39,6 +44,13 @@
 [data-lang="ar"]  { --font-lang: 'Noto Sans Arabic', var(--font-sans); }
 [data-lang="hi"]  { --font-lang: 'Noto Sans Devanagari', var(--font-sans); }
 [data-lang="bn"]  { --font-lang: 'Noto Sans Bengali', var(--font-sans); }
+=======
+[data-lang="ru"]  { --font-lang: var(--font-sans); }
+[data-lang="id"]  { --font-lang: var(--font-sans); }
+[data-lang="zh"]  { --font-lang: 'Noto Sans SC', var(--font-sans); }
+[data-lang="ar"]  { --font-lang: 'Noto Sans Arabic', var(--font-sans); }
+[data-lang="hi"]  { --font-lang: 'Noto Sans Devanagari', var(--font-sans); }
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 /* Apply language font to body — everything inherits */
 body {
@@ -58,28 +70,40 @@ body {
 
 /* Script-aware line height adjustments — complex scripts need more breathing room */
 [data-lang="zh"] .typo-body,
+<<<<<<< HEAD
 [data-lang="ja"] .typo-body,
 [data-lang="ko"] .typo-body,
 [data-lang="hi"] .typo-body,
 [data-lang="bn"] .typo-body,
+=======
+[data-lang="hi"] .typo-body,
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 [data-lang="ar"] .typo-body {
   line-height: 1.85;
 }
 
 [data-lang="zh"] .typo-hero,
+<<<<<<< HEAD
 [data-lang="ja"] .typo-hero,
 [data-lang="ko"] .typo-hero,
 [data-lang="hi"] .typo-hero,
 [data-lang="bn"] .typo-hero,
+=======
+[data-lang="hi"] .typo-hero,
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 [data-lang="ar"] .typo-hero {
   line-height: 1.3;
 }
 
 [data-lang="zh"] .typo-heading,
+<<<<<<< HEAD
 [data-lang="ja"] .typo-heading,
 [data-lang="ko"] .typo-heading,
 [data-lang="hi"] .typo-heading,
 [data-lang="bn"] .typo-heading,
+=======
+[data-lang="hi"] .typo-heading,
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 [data-lang="ar"] .typo-heading {
   line-height: 1.45;
 }
@@ -90,18 +114,25 @@ body {
 }
 
 /* CJK doesn't benefit from uppercase or wide tracking */
+<<<<<<< HEAD
 [data-lang="zh"] .typo-label,
 [data-lang="ja"] .typo-label,
 [data-lang="ko"] .typo-label {
+=======
+[data-lang="zh"] .typo-label {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   text-transform: none;
   letter-spacing: 0.05em;
 }
 
+<<<<<<< HEAD
 /* Bengali inherits Devanagari-style tuning — similar Indic script needs */
 [data-lang="bn"] .typo-label {
   letter-spacing: 0.04em;
 }
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 /* ── Semantic Typography Classes ─────────────────────────────────────────────
    Use these instead of raw Tailwind combos. Each class defines a complete
    text role: size, weight, line-height, tracking, and features. */

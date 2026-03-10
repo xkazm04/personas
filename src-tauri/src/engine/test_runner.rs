@@ -97,7 +97,10 @@ pub async fn run_test(
     cancelled: Arc<std::sync::atomic::AtomicBool>,
     use_case_filter: Option<String>,
     preloaded_scenarios: Option<Vec<TestScenario>>,
+<<<<<<< HEAD
     fixture_inputs: Option<String>,
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 ) {
     let persona = &ephemeral.persona;
     let tools = &ephemeral.tools;
@@ -112,7 +115,11 @@ pub async fn run_test(
     } else {
         emit_status(&app, &run_id, "generating", None);
 
+<<<<<<< HEAD
         match generate_scenarios(persona, tools, use_case_filter.as_deref(), fixture_inputs.as_deref()).await {
+=======
+        match generate_scenarios(persona, tools, use_case_filter.as_deref()).await {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             Ok(s) if s.is_empty() => {
                 finish_with_error(&app, &pool, &run_id, "No test scenarios were generated");
                 return;
@@ -351,9 +358,14 @@ async fn generate_scenarios(
     persona: &Persona,
     tools: &[PersonaToolDefinition],
     use_case_filter: Option<&str>,
+<<<<<<< HEAD
     fixture_inputs: Option<&str>,
 ) -> Result<Vec<TestScenario>, String> {
     let coordinator_prompt = build_coordinator_prompt(persona, tools, use_case_filter, fixture_inputs);
+=======
+) -> Result<Vec<TestScenario>, String> {
+    let coordinator_prompt = build_coordinator_prompt(persona, tools, use_case_filter);
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
     let mut cli_args = prompt::build_cli_args(None, None);
     // Limit to 1 turn — we just want the JSON output
@@ -366,7 +378,11 @@ async fn generate_scenarios(
     parse_scenarios_from_output(&output)
 }
 
+<<<<<<< HEAD
 fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], use_case_filter: Option<&str>, fixture_inputs: Option<&str>) -> String {
+=======
+fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], use_case_filter: Option<&str>) -> String {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     let mut p = String::new();
 
     p.push_str("# Test Scenario Generator\n\n");
@@ -478,6 +494,7 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
         }
     }
 
+<<<<<<< HEAD
     // Include fixture inputs when provided — these are user-defined test inputs
     // that should be used as the input_data for at least one generated scenario
     if let Some(inputs_json) = fixture_inputs {
@@ -490,6 +507,8 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
         p.push_str("and additional scenarios that are realistic variations.\n");
     }
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     p
 }
 
@@ -960,7 +979,11 @@ pub async fn run_arena_test(
     let tools = &ephemeral.tools;
     emit_lab_status(&app, "lab-arena-status", &run_id, "generating", None);
 
+<<<<<<< HEAD
     let scenarios = match generate_scenarios(persona, tools, use_case_filter.as_deref(), None).await {
+=======
+    let scenarios = match generate_scenarios(persona, tools, use_case_filter.as_deref()).await {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         Ok(s) if s.is_empty() => {
             let now = chrono::Utc::now().to_rfc3339();
             let _ = arena_repo::update_run_status(&pool, &run_id, "failed", None, None, Some("No test scenarios were generated"), Some(&now));
@@ -1090,7 +1113,11 @@ pub async fn run_ab_test(
 
     // Generate scenarios from the first variant (primary)
     let primary_persona = &variants[0].2;
+<<<<<<< HEAD
     let scenarios = match generate_scenarios(primary_persona, &tools, use_case_filter.as_deref(), None).await {
+=======
+    let scenarios = match generate_scenarios(primary_persona, &tools, use_case_filter.as_deref()).await {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         Ok(s) if s.is_empty() => {
             let now = chrono::Utc::now().to_rfc3339();
             let _ = ab_repo::update_run_status(&pool, &run_id, "failed", None, None, Some("No test scenarios were generated"), Some(&now));
@@ -1249,7 +1276,11 @@ pub async fn run_eval_test(
 
     // Generate scenarios from the first variant (primary)
     let primary_persona = &variants[0].2;
+<<<<<<< HEAD
     let scenarios = match generate_scenarios(primary_persona, &tools, use_case_filter.as_deref(), None).await {
+=======
+    let scenarios = match generate_scenarios(primary_persona, &tools, use_case_filter.as_deref()).await {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         Ok(s) if s.is_empty() => {
             let now = chrono::Utc::now().to_rfc3339();
             let _ = eval_repo::update_run_status(&pool, &run_id, "failed", None, None, Some("No test scenarios were generated"), Some(&now));
@@ -1448,7 +1479,11 @@ pub async fn run_matrix_test(
     // Now run the same flow as A/B but with "current" and "draft" variants
     emit_lab_status(&app, "lab-matrix-status", &run_id, "generating", None);
 
+<<<<<<< HEAD
     let scenarios = match generate_scenarios(persona, tools, use_case_filter.as_deref(), None).await {
+=======
+    let scenarios = match generate_scenarios(persona, tools, use_case_filter.as_deref()).await {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         Ok(s) if s.is_empty() => {
             let now = chrono::Utc::now().to_rfc3339();
             let _ = matrix_repo::update_run_status(&pool, &run_id, "failed", None, None, Some("No test scenarios were generated"), Some(&now));

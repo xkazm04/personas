@@ -673,6 +673,7 @@
         ]
       }
     ],
+<<<<<<< HEAD
     "adoption_questions": [
       {
         "id": "notion_database_id",
@@ -724,6 +725,8 @@
         "use_case_ids": ["flow_friday_archival"]
       }
     ],
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     "protocol_capabilities": [
       {
         "type": "manual_review",

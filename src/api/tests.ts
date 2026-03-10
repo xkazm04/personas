@@ -11,8 +11,13 @@ export interface ModelTestConfig {
   auth_token?: string;
 }
 
+<<<<<<< HEAD
 export const startTestRun = (personaId: string, models: ModelTestConfig[], useCaseFilter?: string, suiteId?: string, fixtureInputs?: Record<string, unknown>) =>
   invoke<PersonaTestRun>("start_test_run", { personaId, models, useCaseFilter: useCaseFilter ?? null, suiteId: suiteId ?? null, fixtureInputs: fixtureInputs ? JSON.stringify(fixtureInputs) : null });
+=======
+export const startTestRun = (personaId: string, models: ModelTestConfig[], useCaseFilter?: string, suiteId?: string) =>
+  invoke<PersonaTestRun>("start_test_run", { personaId, models, useCaseFilter: useCaseFilter ?? null, suiteId: suiteId ?? null });
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 export const listTestRuns = (personaId: string, limit?: number) =>
   invoke<PersonaTestRun[]>("list_test_runs", {

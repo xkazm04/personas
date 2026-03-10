@@ -2,27 +2,18 @@ import { Undo2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ToolSearchFilter } from './ToolSearchFilter';
 import { ToolCategoryList } from './ToolCategoryList';
-import { useToolSelectorState } from '../libs/useToolSelectorState';
+import { useToolSelectorPersona } from '../libs/useToolSelectorPersona';
+import { useToolSelectorSearch } from '../libs/useToolSelectorSearch';
+import { useToolSelectorActions } from '../libs/useToolSelectorActions';
 import { useToolImpactData } from '../libs/useToolImpactData';
 
 export function ToolSelector() {
-  const {
-    selectedPersona, toolDefinitions,
-    credentialLabel, credentialTypeSet, usageByTool,
-    assignedToolIds, assignedTools,
-    categories, categoryCounts,
-    selectedCategory, setSelectedCategory,
-    searchQuery, setSearchQuery,
-    justToggledId, undoToast,
-    viewMode, setViewMode,
-    isSearching, filteredTools, connectorGroups,
-    handleToggleTool, handleUndo, handleClearAll,
-    handleBulkToggle, handleAddCredential,
-  } = useToolSelectorState();
-
+  const persona = useToolSelectorPersona();
+  const search = useToolSelectorSearch();
+  const actions = useToolSelectorActions(persona.personaId, persona.assignedToolIds, persona.assignedTools);
   const impactDataMap = useToolImpactData();
 
-  if (!selectedPersona) {
+  if (!persona.selectedPersona) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground/80">
         No persona selected
@@ -33,42 +24,42 @@ export function ToolSelector() {
   return (
     <div className="space-y-4">
       <ToolSearchFilter
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        categories={categories}
-        categoryCounts={categoryCounts}
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
-        isSearching={isSearching}
-        assignedTools={assignedTools}
-        totalToolCount={toolDefinitions.length}
-        onClearAll={handleClearAll}
+        searchQuery={search.searchQuery}
+        onSearchChange={search.setSearchQuery}
+        viewMode={search.viewMode}
+        onViewModeChange={search.setViewMode}
+        categories={search.categories}
+        categoryCounts={search.categoryCounts}
+        selectedCategory={search.selectedCategory}
+        onCategoryChange={search.setSelectedCategory}
+        isSearching={search.isSearching}
+        assignedTools={persona.assignedTools}
+        totalToolCount={persona.toolDefinitions.length}
+        onClearAll={actions.handleClearAll}
       />
 
       <ToolCategoryList
-        viewMode={viewMode}
-        filteredTools={filteredTools}
-        connectorGroups={connectorGroups}
-        assignedToolIds={assignedToolIds}
-        assignedCount={assignedTools.length}
-        credentialTypeSet={credentialTypeSet}
-        credentialLabel={credentialLabel}
-        usageByTool={usageByTool}
+        viewMode={search.viewMode}
+        filteredTools={search.filteredTools}
+        connectorGroups={search.connectorGroups}
+        assignedToolIds={persona.assignedToolIds}
+        assignedCount={persona.assignedTools.length}
+        credentialTypeSet={persona.credentialTypeSet}
+        credentialLabel={persona.credentialLabel}
+        usageByTool={persona.usageByTool}
         impactDataMap={impactDataMap}
-        justToggledId={justToggledId}
-        isSearching={isSearching}
-        searchQuery={searchQuery}
-        onClearSearch={() => setSearchQuery('')}
-        onBrowseTools={() => setViewMode('grouped')}
-        onToggleTool={handleToggleTool}
-        onBulkToggle={handleBulkToggle}
-        onAddCredential={handleAddCredential}
+        justToggledId={actions.justToggledId}
+        isSearching={search.isSearching}
+        searchQuery={search.searchQuery}
+        onClearSearch={() => search.setSearchQuery('')}
+        onBrowseTools={() => search.setViewMode('grouped')}
+        onToggleTool={actions.handleToggleTool}
+        onBulkToggle={actions.handleBulkToggle}
+        onAddCredential={actions.handleAddCredential}
       />
 
       <AnimatePresence>
-        {undoToast && (
+        {actions.undoToast && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -77,10 +68,10 @@ export function ToolSelector() {
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 bg-secondary/95 backdrop-blur-sm border border-primary/20 rounded-xl shadow-xl"
           >
             <span className="text-sm text-foreground/80">
-              Removed <span className="font-medium text-foreground/90">{undoToast.toolName}</span>
+              Removed <span className="font-medium text-foreground/90">{actions.undoToast.toolName}</span>
             </span>
             <button
-              onClick={handleUndo}
+              onClick={actions.handleUndo}
               className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 transition-colors"
             >
               <Undo2 className="w-3 h-3" />

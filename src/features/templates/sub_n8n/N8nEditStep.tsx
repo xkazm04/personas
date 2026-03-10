@@ -1,10 +1,17 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Wrench, ListChecks, ChevronDown, ChevronRight } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
+<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { DraftEditStep, type DraftEditTab } from '@/features/shared/components/draft-editor';
 import { ExecutionTerminal } from '@/features/agents/sub_executions';
+=======
+import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
+import { DraftEditStep, type DraftEditTab } from '@/features/shared/components/draft-editor';
+import { ExecutionTerminal } from '@/features/agents/sub_executions/ExecutionTerminal';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { N8nEntitiesTab } from './edit/N8nEntitiesTab';
 import { N8nUseCasesTab } from './edit/N8nUseCasesTab';
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';
@@ -14,7 +21,11 @@ interface N8nEditStepProps {
   draft: N8nPersonaDraft;
   draftJson: string;
   draftJsonError: string | null;
+<<<<<<< HEAD
   parsedResult: AgentIR;
+=======
+  parsedResult: DesignAnalysisResult;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   selectedToolIndices: Set<number>;
   selectedTriggerIndices: Set<number>;
   selectedConnectorNames: Set<string>;

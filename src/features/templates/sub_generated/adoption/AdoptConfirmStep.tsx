@@ -13,14 +13,22 @@ import {
   Shield,
 } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
+<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
+=======
+import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
 import { extractProtocolCapabilities } from '@/features/templates/sub_n8n/edit/protocolParser';
 import { MOTION } from '@/features/templates/animationPresets';
 
 interface AdoptConfirmStepProps {
   draft: N8nPersonaDraft;
+<<<<<<< HEAD
   designResult: AgentIR | null;
+=======
+  designResult: DesignAnalysisResult | null;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   readinessStatuses: ConnectorReadinessStatus[];
   created: boolean;
   onReset: () => void;

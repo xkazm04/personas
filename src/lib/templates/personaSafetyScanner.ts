@@ -252,6 +252,7 @@ const THREAT_PATTERNS: ThreatPattern[] = [
   },
 ];
 
+<<<<<<< HEAD
 // ── Unicode Normalization ────────────────────────────────────────────
 
 /**
@@ -274,6 +275,8 @@ function normalizeText(text: string): string {
   return normalized;
 }
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 // ── Text Extraction ──────────────────────────────────────────────────
 
 interface ExtractedText {
@@ -372,6 +375,11 @@ function extractMatchContext(text: string, pattern: RegExp): string {
 
 // ── Scanner ──────────────────────────────────────────────────────────
 
+<<<<<<< HEAD
+=======
+let findingCounter = 0;
+
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 /**
  * Scan a persona draft for safety threats.
  *
@@ -384,6 +392,7 @@ export function scanPersonaDraft(draft: N8nPersonaDraft): ScanResult {
   const findings: ScanFinding[] = [];
   const texts = extractDraftTexts(draft);
   const seenPatterns = new Set<string>();
+<<<<<<< HEAD
   let localCounter = 0;
 
   for (const { source, text: rawText } of texts) {
@@ -392,14 +401,29 @@ export function scanPersonaDraft(draft: N8nPersonaDraft): ScanResult {
     for (const threat of THREAT_PATTERNS) {
       for (const pattern of threat.patterns) {
         if (pattern.test(text)) {
+=======
+
+  for (const { source, text } of texts) {
+    for (const threat of THREAT_PATTERNS) {
+      for (const pattern of threat.patterns) {
+        // Reset regex state for global patterns
+        const regex = new RegExp(pattern.source, pattern.flags);
+        if (regex.test(text)) {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           // Deduplicate: same category + source = one finding
           const dedupeKey = `${threat.category}:${threat.title}:${source}`;
           if (seenPatterns.has(dedupeKey)) continue;
           seenPatterns.add(dedupeKey);
 
+<<<<<<< HEAD
           const context = extractMatchContext(text, pattern);
           findings.push({
             id: `scan-${++localCounter}`,
+=======
+          const context = extractMatchContext(text, new RegExp(pattern.source, pattern.flags));
+          findings.push({
+            id: `scan-${++findingCounter}`,
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             severity: threat.severity,
             category: threat.category,
             title: threat.title,
@@ -469,6 +493,7 @@ const TOOL_THREAT_PATTERNS: Array<{
  */
 export function scanToolDrafts(tools: N8nToolDraft[]): ScanFinding[] {
   const findings: ScanFinding[] = [];
+<<<<<<< HEAD
   let localCounter = 0;
 
   for (const tool of tools) {
@@ -477,16 +502,30 @@ export function scanToolDrafts(tools: N8nToolDraft[]): ScanFinding[] {
 
     // Normalize Unicode to defeat homoglyph bypasses
     const guide = normalizeText(rawGuide);
+=======
+
+  for (const tool of tools) {
+    const guide = tool.implementation_guide;
+    if (!guide) continue;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
     for (const threat of TOOL_THREAT_PATTERNS) {
       if (threat.pattern.test(guide)) {
         findings.push({
+<<<<<<< HEAD
           id: `tool-scan-${++localCounter}`,
+=======
+          id: `tool-scan-${++findingCounter}`,
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           severity: threat.severity,
           category: 'dangerous_tool',
           title: threat.title,
           description: threat.description,
+<<<<<<< HEAD
           context: extractMatchContext(guide, threat.pattern),
+=======
+          context: extractMatchContext(guide, new RegExp(threat.pattern.source, threat.pattern.flags)),
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           source: `tool.${tool.name}.implementation_guide`,
         });
       }

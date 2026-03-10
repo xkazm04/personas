@@ -8,7 +8,10 @@ import { SchemaManagerModal } from '@/features/vault/sub_databases/SchemaManager
 import { collectAllTags, getCredentialTags, getTagStyle } from '@/features/vault/utils/credentialTags';
 import { computeHealthScore } from '@/features/vault/utils/credentialHealthScore';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+<<<<<<< HEAD
 import { IS_MOBILE } from '@/lib/utils/platform';
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 /** Well-known service names for quick-start buttons. Matched by connector `name`. */
 const QUICK_START_SERVICES = ['openai', 'slack', 'github', 'linear'] as const;
@@ -328,7 +331,11 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
               {capitalize(category)}
             </p>
           )}
+<<<<<<< HEAD
           <div className="grid gap-2" style={{ gridTemplateColumns: IS_MOBILE ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+=======
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             {items.map(({ credential, connector }) => (
               <CredentialCard
                 key={credential.id}
@@ -364,7 +371,11 @@ export function CredentialList({ credentials, connectorDefinitions, searchTerm, 
           </div>
 
           {/* Two pathway cards */}
+<<<<<<< HEAD
           <div className="grid gap-3" style={{ gridTemplateColumns: IS_MOBILE ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+=======
+          <div className="grid grid-cols-2 gap-3">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             {/* Catalog path */}
             <button
               onClick={() => onGoToCatalog?.()}

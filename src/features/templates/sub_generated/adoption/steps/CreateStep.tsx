@@ -338,6 +338,7 @@ export function CreateStep() {
         )}
       </div>
 
+<<<<<<< HEAD
       {/* Safety critical override toggle */}
       {(safetyScan?.critical.length ?? 0) > 0 && (
         <div className="flex items-start gap-3 p-3 rounded-xl bg-red-500/8 border border-red-500/15">
@@ -361,6 +362,8 @@ export function CreateStep() {
         </div>
       )}
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       {/* Edit Details */}
       <div>
         <button

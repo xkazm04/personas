@@ -25,7 +25,11 @@ export function MessagesSection({
         <span className="text-sm font-normal text-muted-foreground/80 ml-1">How this persona communicates</span>
       </div>
 
+<<<<<<< HEAD
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+=======
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         {channels.map((channel, chIdx) => {
           const isSelected = selectedChannelIndices.has(chIdx);
           return (

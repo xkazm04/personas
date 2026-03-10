@@ -1,5 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
+<<<<<<< HEAD
 import { Plug, User, CreditCard, Building2, Monitor } from 'lucide-react';
+=======
+import { Plug, User, CreditCard, Building2 } from 'lucide-react';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
 import type { ThemedSelectOption } from '@/features/shared/components/ThemedSelect';
@@ -8,8 +12,11 @@ import { getAuthMethods } from '@/lib/types/types';
 import { getAuthBadgeClasses, getAuthIcon } from '@/features/vault/utils/authMethodStyles';
 import { PURPOSE_GROUPS, getPurposeForConnector } from '@/lib/credentials/connectorRoles';
 import { getLicenseTier, LICENSE_TIER_META, type LicenseTier } from '@/lib/credentials/connectorLicensing';
+<<<<<<< HEAD
 import { IS_MOBILE } from '@/lib/utils/platform';
 import { isDesktopBridge } from '@/lib/utils/connectors';
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface CredentialPickerProps {
   connectors: ConnectorDefinition[];
@@ -170,6 +177,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
   return (
     <div className="space-y-3">
       {/* Compact filter row */}
+<<<<<<< HEAD
       <div className={`flex ${IS_MOBILE ? 'flex-col' : 'flex-row items-center'} gap-2`}>
         <div className={`flex ${IS_MOBILE ? 'flex-wrap' : ''} gap-2`}>
           <ThemedSelect
@@ -211,6 +219,45 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
             className="!py-1.5 !text-sm"
           />
         </div>
+=======
+      <div className="flex items-center gap-2">
+        <ThemedSelect
+          filterable
+          options={connectedOptions}
+          value={connectedFilter}
+          onValueChange={(v) => setConnectedFilter((v || 'all') as ConnectedFilter)}
+          placeholder="Status"
+          wrapperClassName="w-[150px]"
+          className="!py-1.5 !text-sm"
+        />
+        <ThemedSelect
+          filterable
+          options={purposeOptions}
+          value={activePurpose ?? ''}
+          onValueChange={(v) => setActivePurpose(v || null)}
+          placeholder="Purpose"
+          wrapperClassName="w-[195px]"
+          className="!py-1.5 !text-sm"
+        />
+        <ThemedSelect
+          filterable
+          options={categoryOptions}
+          value={activeCategory ?? ''}
+          onValueChange={(v) => setActiveCategory(v || null)}
+          placeholder="Category"
+          wrapperClassName="w-[175px]"
+          className="!py-1.5 !text-sm"
+        />
+        <ThemedSelect
+          filterable
+          options={licenseOptions}
+          value={activeLicense ?? ''}
+          onValueChange={(v) => setActiveLicense(v || null)}
+          placeholder="License"
+          wrapperClassName="w-[170px]"
+          className="!py-1.5 !text-sm"
+        />
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       </div>
 
       {/* Responsive auto-fill grid */}
@@ -256,6 +303,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
                 <TierIcon className={`w-3 h-3 ${tierMeta.textClass}`} />
               </span>
 
+<<<<<<< HEAD
               {/* Desktop bridge badge */}
               {isDesktopBridge(connector) && (
                 <span
@@ -266,6 +314,8 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
                 </span>
               )}
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
               {/* Large icon */}
               <div
                 className="w-14 h-14 min-w-14 min-h-14 rounded-xl flex items-center justify-center border"

@@ -227,7 +227,11 @@ export function UnifiedDeploymentDashboard() {
   const gitlabConnected = !!gitlabConfig?.isConnected;
 
   return (
+<<<<<<< HEAD
     <div className="h-full w-full flex flex-col overflow-hidden">
+=======
+    <div className="h-full flex flex-col overflow-hidden">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       {/* Header */}
       <div className="px-6 py-4 border-b border-primary/10 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
@@ -251,7 +255,11 @@ export function UnifiedDeploymentDashboard() {
         </div>
 
         {/* Summary cards */}
+<<<<<<< HEAD
         <div className="grid grid-cols-5 3xl:grid-cols-10 gap-3">
+=======
+        <div className="grid grid-cols-5 gap-3">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           <SummaryCard icon={Activity} label="Total" value={unified.length} />
           <SummaryCard icon={CheckCircle2} label="Active" value={activeCount} color="text-emerald-400" />
           <SummaryCard icon={PauseCircle} label="Paused" value={pausedCount} color="text-amber-400" />

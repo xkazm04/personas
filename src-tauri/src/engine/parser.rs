@@ -258,7 +258,10 @@ const PROTOCOL_KEYS: &[(&str, fn(&serde_json::Value) -> Option<ProtocolMessage>)
     ("agent_memory", parse_agent_memory),
     ("manual_review", parse_manual_review),
     ("execution_flow", parse_execution_flow),
+<<<<<<< HEAD
     ("knowledge_annotation", parse_knowledge_annotation),
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 ];
 
 fn parse_user_message(msg: &serde_json::Value) -> Option<ProtocolMessage> {
@@ -310,6 +313,7 @@ fn parse_execution_flow(msg: &serde_json::Value) -> Option<ProtocolMessage> {
     Some(ProtocolMessage::ExecutionFlow { flows })
 }
 
+<<<<<<< HEAD
 fn parse_knowledge_annotation(msg: &serde_json::Value) -> Option<ProtocolMessage> {
     Some(ProtocolMessage::KnowledgeAnnotation {
         scope: str_field_or(msg, "scope", "persona"),
@@ -318,6 +322,8 @@ fn parse_knowledge_annotation(msg: &serde_json::Value) -> Option<ProtocolMessage
     })
 }
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 /// Check if a trimmed line is a known protocol JSON message.
 ///
 /// Returns the parsed protocol message, or None if not a protocol message

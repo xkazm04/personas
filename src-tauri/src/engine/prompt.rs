@@ -241,7 +241,10 @@ pub fn assemble_prompt(
     prompt.push_str(PROTOCOL_AGENT_MEMORY);
     prompt.push_str(PROTOCOL_MANUAL_REVIEW);
     prompt.push_str(PROTOCOL_EXECUTION_FLOW);
+<<<<<<< HEAD
     prompt.push_str(PROTOCOL_KNOWLEDGE_ANNOTATION);
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     prompt.push_str(PROTOCOL_OUTCOME_ASSESSMENT);
 
     // Canary instruction: structural prompt-injection defence
@@ -814,6 +817,7 @@ You MUST always output this assessment. Set accomplished to false if:
 
 "#;
 
+<<<<<<< HEAD
 const PROTOCOL_KNOWLEDGE_ANNOTATION: &str = r#"### Knowledge Annotation Protocol
 When you discover an important insight about a tool, API, connector, or general practice that would be valuable for future executions (by you or other personas), output a JSON object on its own line:
 ```json
@@ -836,6 +840,8 @@ Use this when you discover:
 
 "#;
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------

@@ -1,5 +1,9 @@
 import { useState, useMemo } from 'react';
+<<<<<<< HEAD
 import { Plug, Server, Bot, Monitor, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
+=======
+import { Plug, Server, Bot, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { ThemedConnectorIcon } from '@/features/shared/components/ConnectorMeta';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
@@ -7,7 +11,10 @@ import { McpPrefilledForm } from '@/features/vault/sub_schemas/McpPrefilledForm'
 import type { ConnectorDefinition, CredentialTemplateField, ConnectorAuthMethod } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import { getAuthBadgeClasses } from '@/features/vault/utils/authMethodStyles';
+<<<<<<< HEAD
 import { isDesktopBridge } from '@/lib/utils/connectors';
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface AuthVariant {
   id: string;
@@ -35,7 +42,10 @@ export interface CredentialTemplateFormProps {
   onValuesChanged: (key: string, value: string) => void;
   onMcpComplete?: () => void;
   onAutoSetup?: () => void;
+<<<<<<< HEAD
   onDesktopDetect?: () => void;
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   // Healthcheck props
   onHealthcheck?: (values: Record<string, string>) => void;
   isHealthchecking?: boolean;
@@ -59,7 +69,10 @@ export function CredentialTemplateForm({
   onValuesChanged,
   onMcpComplete,
   onAutoSetup,
+<<<<<<< HEAD
   onDesktopDetect,
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   onHealthcheck,
   isHealthchecking,
   healthcheckResult,
@@ -160,6 +173,7 @@ export function CredentialTemplateForm({
               : selectedConnector.healthcheck_config?.description || 'Configure credential fields'}
           </p>
         </div>
+<<<<<<< HEAD
         {isDesktopBridge(selectedConnector) ? (
           onDesktopDetect && (
             <button
@@ -180,6 +194,16 @@ export function CredentialTemplateForm({
               Auto Add
             </button>
           )
+=======
+        {onAutoSetup && activeMethod?.type !== 'mcp' && (
+          <button
+            onClick={onAutoSetup}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-cyan-500/20 bg-cyan-500/8 hover:bg-cyan-500/15 text-cyan-300 text-sm font-medium transition-colors"
+          >
+            <Bot className="w-3.5 h-3.5" />
+            Auto Add
+          </button>
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         )}
       </div>
 

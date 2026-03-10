@@ -29,8 +29,11 @@ import type { CronAgentsSlice } from "./slices/cronAgentsSlice";
 import type { MiniPlayerSlice } from "./slices/miniPlayerSlice";
 import type { HealthCheckSlice } from "./slices/healthCheckSlice";
 import type { TourSlice } from "./slices/tourSlice";
+<<<<<<< HEAD
 import type { BudgetEnforcementSlice } from "./slices/budgetEnforcementSlice";
 import type { AlertSlice } from "./slices/alertSlice";
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 // ── Shared helper ──────────────────────────────────────────────────────
 export function errMsg(err: unknown, fallback: string): string {
@@ -65,6 +68,10 @@ export type PersonaStore = PersonaSlice &
   CronAgentsSlice &
   MiniPlayerSlice &
   HealthCheckSlice &
+<<<<<<< HEAD
   TourSlice &
   BudgetEnforcementSlice &
   AlertSlice;
+=======
+  TourSlice;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989

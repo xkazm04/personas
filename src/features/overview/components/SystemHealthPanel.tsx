@@ -24,7 +24,10 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { healthCheckLocal, healthCheckAgents, healthCheckCloud, healthCheckAccount, getCrashLogs, clearCrashLogs } from '@/api/tauriApi';
+<<<<<<< HEAD
 import { readCrashLogs, CRASH_STORAGE_KEY } from '@/lib/utils/crashPersistence';
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { HealthCheckSection, HealthCheckItem, CrashLogEntry } from '@/api/tauriApi';
 import { useAuthStore } from '@/stores/authStore';
 import { useAutoInstaller, type InstallState } from '@/hooks/utility/useAutoInstaller';
@@ -207,7 +210,18 @@ function CrashLogsSection() {
     getCrashLogs()
       .then(setBackendLogs)
       .catch(() => setBackendLogs([]));
+<<<<<<< HEAD
     setFrontendLogs(readCrashLogs());
+=======
+    try {
+      const raw = localStorage.getItem('__personas_frontend_crashes');
+      if (raw) setFrontendLogs(JSON.parse(raw));
+      else setFrontendLogs([]);
+    } catch {
+      // intentional: non-critical — JSON parse fallback
+      setFrontendLogs([]);
+    }
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }, []);
 
   useEffect(() => {
@@ -220,7 +234,11 @@ function CrashLogsSection() {
     setClearing(true);
     try {
       await clearCrashLogs();
+<<<<<<< HEAD
       localStorage.removeItem(CRASH_STORAGE_KEY);
+=======
+      localStorage.removeItem('__personas_frontend_crashes');
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       setBackendLogs([]);
       setFrontendLogs([]);
       setSelectedLog(null);
@@ -393,6 +411,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
       { id: 'account', fn: healthCheckAccount },
     ];
 
+<<<<<<< HEAD
     const order = ['local', 'agents', 'cloud', 'account'];
     const sortSections = (arr: HealthCheckSection[]) =>
       arr.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
@@ -417,6 +436,49 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
       });
       setLoading(false);
     });
+=======
+    let resolved = 0;
+    for (const check of checks) {
+      check.fn()
+        .then((section) => {
+          setSections((prev) => {
+            const next = prev.filter((s) => s.id !== section.id);
+            next.push(section);
+            next.sort((a, b) => {
+              const order = ['local', 'agents', 'cloud', 'account'];
+              return order.indexOf(a.id) - order.indexOf(b.id);
+            });
+            return next;
+          });
+        })
+        .catch(() => {
+          setIpcError(true);
+          setSections((prev) => {
+            const next = prev.filter((s) => s.id !== check.id);
+            next.push(ipcFallbacks[check.id]!);
+            next.sort((a, b) => {
+              const order = ['local', 'agents', 'cloud', 'account'];
+              return order.indexOf(a.id) - order.indexOf(b.id);
+            });
+            return next;
+          });
+          setHasIssues(true);
+        })
+        .finally(() => {
+          resolved++;
+          if (resolved === checks.length) {
+            setSections((final_sections) => {
+              const allOk = final_sections.every((s) =>
+                s.items.every((i) => i.status === 'ok' || i.status === 'info' || i.status === 'inactive')
+              );
+              setHasIssues(!allOk);
+              return final_sections;
+            });
+            setLoading(false);
+          }
+        });
+    }
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }, []);
 
   useEffect(() => {
@@ -485,7 +547,11 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
       <ContentBody centered>
         <div className="space-y-4">
           {/* 2x2 Grid — cards render immediately, items populate when data arrives */}
+<<<<<<< HEAD
           <div className="grid gap-4 items-stretch" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+=======
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             {SKELETON_SECTIONS.map((stub, stubIdx) => {
               const loaded = sectionMap.get(stub.id);
               const SectionIcon = SECTION_ICONS[stub.id] || Monitor;

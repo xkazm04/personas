@@ -1,5 +1,9 @@
 import { useMemo } from 'react';
+<<<<<<< HEAD
 import { Sparkles, AlertCircle, RefreshCw, Trash2 } from 'lucide-react';
+=======
+import { Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { TransformProgress } from '@/features/shared/components/TransformProgress';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
 
@@ -24,7 +28,10 @@ export function BuildStep() {
     isRestoring,
     startTransform,
     cancelTransform,
+<<<<<<< HEAD
     discardDraft,
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     requiredConnectors,
   } = useAdoptionWizard();
 
@@ -106,6 +113,7 @@ export function BuildStep() {
           />
         </div>
       )}
+<<<<<<< HEAD
 
       {/* Discard draft */}
       {!state.transforming && !state.confirming && (
@@ -118,6 +126,8 @@ export function BuildStep() {
           Discard draft and start over
         </button>
       )}
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     </div>
   );
 }

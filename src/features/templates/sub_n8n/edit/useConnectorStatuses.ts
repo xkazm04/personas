@@ -180,6 +180,7 @@ export function useConnectorStatuses({
     }
   }, [statuses, testConnector]);
 
+<<<<<<< HEAD
   const testAllActiveRef = useRef(false);
 
   const handleTestAll = useCallback(async () => {
@@ -195,6 +196,14 @@ export function useConnectorStatuses({
       testAllActiveRef.current = false;
       setTestingAll(false);
     }
+=======
+  const handleTestAll = useCallback(async () => {
+    setTestingAll(true);
+    for (const status of statuses.filter((s) => s.credentialId)) {
+      await testConnector(status.name, status.credentialId!);
+    }
+    setTestingAll(false);
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }, [statuses, testConnector]);
 
   const handleAddCredential = useCallback((connectorName: string, n8nType: string) => {

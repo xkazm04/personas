@@ -8,9 +8,14 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { extractConnectorNames } from '@/lib/personas/utils';
 import PersonaHoverPreview from './PersonaHoverPreview';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
+<<<<<<< HEAD
 import { IS_MOBILE } from '@/lib/utils/platform';
 import { PersonaHealthIndicator } from './PersonaHealthIndicator';
 import { WeeklyPerformanceReport } from '@/features/agents/sub_prompt_lab';
+=======
+import { PersonaHealthIndicator } from './PersonaHealthIndicator';
+import { WeeklyPerformanceReport } from '@/features/agents/sub_prompt_lab/WeeklyPerformanceReport';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { useRelevanceSort, type ScoredPersona } from './useRelevanceSort';
 
 const SECTION_META = {
@@ -162,7 +167,11 @@ export default function PersonaOverviewPage() {
               <span className="text-sm text-muted-foreground/50">({items.length})</span>
             </div>
 
+<<<<<<< HEAD
             <div role="listbox" aria-label={`${meta.label} agents`} className={`grid gap-3 ${IS_MOBILE ? '[grid-template-columns:1fr]' : '[grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] 3xl:[grid-template-columns:repeat(auto-fill,minmax(320px,1fr))] 4xl:[grid-template-columns:repeat(auto-fill,minmax(360px,1fr))]'}`}>
+=======
+            <div className={`grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]`}>
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
               {items.map((sp) => {
                 const persona = sp.persona;
                 const i = flatIndex++;
@@ -187,9 +196,13 @@ export default function PersonaOverviewPage() {
                     onMouseEnter={() => handleMouseEnter(persona.id)}
                     onMouseLeave={handleMouseLeave}
                     tabIndex={i === activeIndex ? 0 : -1}
+<<<<<<< HEAD
                     role="option"
                     aria-selected={i === activeIndex}
                     aria-label={`${persona.name}, ${persona.enabled ? 'active' : 'inactive'}${lastRun ? `, last run ${formatRelativeTime(lastRun)}` : ''}${triggerCount ? `, ${triggerCount} trigger${triggerCount !== 1 ? 's' : ''}` : ''}`}
+=======
+                    role="gridcell"
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                     data-testid={`persona-card-${persona.id}`}
                     className={`text-left p-4 rounded-xl border ${
                       key === 'attention'
@@ -197,7 +210,11 @@ export default function PersonaOverviewPage() {
                         : key === 'active'
                         ? 'border-emerald-500/10 bg-secondary/30 hover:bg-secondary/50 hover:border-emerald-500/20'
                         : 'border-primary/5 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/15'
+<<<<<<< HEAD
                     } transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background`}
+=======
+                    } transition-all group`}
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                     style={groupColor ? {
                       borderLeftWidth: 3,
                       borderImage: `linear-gradient(to bottom, ${groupColor}, transparent) 1`,

@@ -105,9 +105,12 @@ export function useOAuthPolling<
     const gen = ++generationRef.current;
 
     let timer: number | null = null;
+<<<<<<< HEAD
     // 120 attempts × 1500ms = 3 minutes before giving up on a stuck session
     const MAX_POLL_ATTEMPTS = 120;
     let attempts = 0;
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
     const poll = async () => {
       if (controller.signal.aborted || gen !== generationRef.current) return;
@@ -117,6 +120,7 @@ export function useOAuthPolling<
         if (controller.signal.aborted || gen !== generationRef.current) return;
 
         if (result.status === 'pending') {
+<<<<<<< HEAD
           attempts++;
           if (attempts >= MAX_POLL_ATTEMPTS) {
             setSessionId(null);
@@ -128,6 +132,8 @@ export function useOAuthPolling<
             });
             return;
           }
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           timer = window.setTimeout(poll, 1500);
           return;
         }

@@ -179,7 +179,11 @@
             "key": "bot_token",
             "label": "Bot User OAuth Token",
             "type": "password",
+<<<<<<< HEAD
             "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
+=======
+            "placeholder": "xoxb-XXXXXXXXXXXX-XXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX",
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             "helpText": "From your Slack App → OAuth & Permissions → Bot User OAuth Token. Requires chat:write scope.",
             "required": true
           },
@@ -658,6 +662,7 @@
         ]
       }
     ],
+<<<<<<< HEAD
     "adoption_questions": [
       {
         "id": "airtable_base_id",
@@ -706,6 +711,8 @@
         "use_case_ids": ["flow_2"]
       }
     ],
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     "protocol_capabilities": [
       {
         "type": "manual_review",

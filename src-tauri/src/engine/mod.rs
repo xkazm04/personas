@@ -44,11 +44,16 @@ pub mod types;
 pub mod webhook;
 pub mod platform_rules;
 pub mod url_safety;
+<<<<<<< HEAD
 #[cfg(feature = "desktop")]
 pub mod file_watcher;
 #[cfg(feature = "desktop")]
 pub mod clipboard_monitor;
 #[cfg(feature = "desktop")]
+=======
+pub mod file_watcher;
+pub mod clipboard_monitor;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 pub mod app_focus;
 pub mod composite;
 pub mod db_query;
@@ -57,6 +62,7 @@ pub mod api_definition;
 pub mod mcp_tools;
 pub mod automation_runner;
 pub mod platforms;
+<<<<<<< HEAD
 #[cfg(feature = "desktop")]
 pub mod desktop_bridges;
 #[cfg(feature = "desktop")]
@@ -64,6 +70,11 @@ pub mod desktop_discovery;
 #[cfg(feature = "desktop")]
 pub mod desktop_runtime;
 #[cfg(feature = "desktop")]
+=======
+pub mod desktop_bridges;
+pub mod desktop_discovery;
+pub mod desktop_runtime;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 pub mod desktop_security;
 
 use std::collections::HashMap;
@@ -458,7 +469,10 @@ impl ExecutionEngine {
         let child_pids = self.child_pids.clone();
         let cancelled_flags = self.cancelled_flags.clone();
         let circuit_breaker = self.circuit_breaker.clone();
+<<<<<<< HEAD
         let circuit_breaker_for_drain = self.circuit_breaker.clone();
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         let queued_contexts = self.queued_contexts.clone();
 
         // Clone log_dir for potential healing retries (log_dir is moved into run_execution)
@@ -537,12 +551,18 @@ impl ExecutionEngine {
                 tracker,
                 tasks.clone(),
                 queued_contexts,
+<<<<<<< HEAD
                 cancelled_flags,
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                 persona_id,
                 persona_max_concurrent,
                 app_for_drain,
                 pool_for_drain,
+<<<<<<< HEAD
                 circuit_breaker_for_drain,
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             )
             .await;
         });
@@ -877,12 +897,18 @@ fn drain_and_start_next(
     tracker: Arc<Mutex<ConcurrencyTracker>>,
     tasks: Arc<Mutex<HashMap<String, tokio::task::JoinHandle<()>>>>,
     queued_contexts: Arc<Mutex<HashMap<String, QueuedExecutionContext>>>,
+<<<<<<< HEAD
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     persona_id: String,
     max_concurrent: i32,
     app: AppHandle,
     pool: DbPool,
+<<<<<<< HEAD
     circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> {
     Box::pin(async move {
     let persona_id = persona_id.as_str();
@@ -954,6 +980,11 @@ fn drain_and_start_next(
             let app_for_drain = ctx.app.clone();
             let child_pids: Arc<Mutex<HashMap<String, u32>>> = Arc::new(Mutex::new(HashMap::new()));
             let cancelled = Arc::new(AtomicBool::new(false));
+<<<<<<< HEAD
+=======
+            let cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>> =
+                Arc::new(Mutex::new(HashMap::new()));
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             cancelled_flags
                 .lock()
                 .await
@@ -972,9 +1003,13 @@ fn drain_and_start_next(
             let tracker_clone = tracker.clone();
             let tasks_clone = tasks.clone();
             let queued_contexts_clone = queued_contexts.clone();
+<<<<<<< HEAD
             let cancelled_flags_clone = cancelled_flags.clone();
             let circuit_breaker = circuit_breaker.clone();
             let circuit_breaker_for_drain = circuit_breaker.clone();
+=======
+            let circuit_breaker = Arc::new(failover::ProviderCircuitBreaker::new());
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
             let handle = tokio::spawn(async move {
                 let result = runner::run_execution(
@@ -1034,19 +1069,28 @@ fn drain_and_start_next(
                     .await
                     .remove_running(&persona_id_owned, &exec_id);
                 tasks_clone.lock().await.remove(&exec_id);
+<<<<<<< HEAD
                 cancelled_flags.lock().await.remove(&exec_id);
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
                 // Recursively drain next (owned types for Send safety)
                 drain_and_start_next(
                     tracker_clone,
                     tasks_clone.clone(),
                     queued_contexts_clone,
+<<<<<<< HEAD
                     cancelled_flags_clone,
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                     persona_id_owned,
                     persona_max_concurrent_inner,
                     app_for_drain,
                     pool_for_drain,
+<<<<<<< HEAD
                     circuit_breaker_for_drain,
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
                 )
                 .await;
             });
@@ -1173,7 +1217,10 @@ async fn handle_execution_result(
     }
 
     // Refresh system tray
+<<<<<<< HEAD
     #[cfg(feature = "desktop")]
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     crate::tray::refresh_tray(app);
 }
 
@@ -1811,7 +1858,10 @@ fn spawn_healing_chain(
         // 12. Cleanup
         tracker.lock().await.remove_running(&persona_id, &exec_id);
         cancelled_flags.lock().await.remove(&exec_id);
+<<<<<<< HEAD
         #[cfg(feature = "desktop")]
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         crate::tray::refresh_tray(&app);
     });
 }
@@ -2064,7 +2114,10 @@ fn spawn_delayed_retry(
         // 13. Cleanup
         tracker.lock().await.remove_running(&persona_id, &exec_id);
         cancelled_flags.lock().await.remove(&exec_id);
+<<<<<<< HEAD
         #[cfg(feature = "desktop")]
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         crate::tray::refresh_tray(&app);
     });
 }

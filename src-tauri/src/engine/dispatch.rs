@@ -13,7 +13,10 @@ use crate::db::repos::communication::{
     events as event_repo, manual_reviews as review_repo, messages as msg_repo,
 };
 use crate::db::repos::core::memories as mem_repo;
+<<<<<<< HEAD
 use crate::db::repos::execution::knowledge as knowledge_repo;
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 use crate::db::DbPool;
 
 use super::logger::ExecutionLogger;
@@ -191,6 +194,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             // Execution flows are handled at the top level, not here
             ctx.logger.log("[FLOW] Execution flow captured (will be stored on completion)");
         }
+<<<<<<< HEAD
         ProtocolMessage::KnowledgeAnnotation {
             scope,
             note,
@@ -227,6 +231,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 Err(e) => ctx.logger.log(&format!("[KNOWLEDGE] Failed to store annotation: {e}")),
             }
         }
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     }
 }
 

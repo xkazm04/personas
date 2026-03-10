@@ -12,7 +12,11 @@ export interface ConnectorRole {
  */
 export const CONNECTOR_ROLES: ConnectorRole[] = [
   // ── Communication ─────────────────────────────────────────────
+<<<<<<< HEAD
   { role: 'chat_messaging',      label: 'Chat & Messaging',     members: ['slack', 'discord', 'telegram', 'gmail', 'microsoft_outlook', 'personas_messages'] },
+=======
+  { role: 'chat_messaging',      label: 'Chat & Messaging',     members: ['slack', 'discord', 'telegram', 'gmail', 'personas_messages'] },
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   { role: 'email_delivery',      label: 'Email Delivery',       members: ['sendgrid', 'resend', 'mailchimp'] },
   { role: 'sms',                 label: 'SMS',                  members: ['twilio_sms', 'twilio'] },
 

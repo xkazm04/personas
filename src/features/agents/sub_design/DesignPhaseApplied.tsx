@@ -1,12 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 import { Check, AlertTriangle, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
+<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
+=======
+import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { FailedOperation } from '@/hooks/design/applyDesignResult';
 import { DesignPhaseAppliedDetails } from './DesignPhaseAppliedDetails';
 
 interface DesignPhaseAppliedProps {
+<<<<<<< HEAD
   result: AgentIR | null;
+=======
+  result: DesignAnalysisResult | null;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   warnings?: string[];
   failedOperations?: FailedOperation[];
   onRetryFailed?: () => void;

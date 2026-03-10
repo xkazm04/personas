@@ -1,10 +1,19 @@
+<<<<<<< HEAD
 import type { AdoptionRequirement, ConnectorPipelineStep, AgentIR, StructuredPromptSection, SuggestedTrigger } from '@/lib/types/designTypes';
+=======
+import type { AdoptionRequirement, ConnectorPipelineStep, DesignAnalysisResult, StructuredPromptSection, SuggestedTrigger } from '@/lib/types/designTypes';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { sanitizeVariableValues, validateAllVariables } from '@/lib/utils/variableSanitizer';
 
 const VAR_PATTERN = /\{\{(\w+)\}\}/g;
 
+<<<<<<< HEAD
 /** Extract adoption_requirements from an AgentIR */
 export function getAdoptionRequirements(design: AgentIR): AdoptionRequirement[] {
+=======
+/** Extract adoption_requirements from a DesignAnalysisResult */
+export function getAdoptionRequirements(design: DesignAnalysisResult): AdoptionRequirement[] {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   return design.adoption_requirements ?? [];
 }
 
@@ -56,7 +65,11 @@ function replaceVars(text: string, values: Record<string, string>): string {
 }
 
 /**
+<<<<<<< HEAD
  * Filter an AgentIR to only include user-selected entities.
+=======
+ * Filter a DesignAnalysisResult to only include user-selected entities.
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
  *
  * **Connector swap contract**: `connectorSwaps` maps an original connector name
  * to a replacement name (e.g. `{ "Slack": "Discord" }`). When a swap is present,
@@ -68,7 +81,11 @@ function replaceVars(text: string, values: Record<string, string>): string {
  * links a connector name to a credential ID for authentication.
  */
 export function filterDesignResult(
+<<<<<<< HEAD
   design: AgentIR,
+=======
+  design: DesignAnalysisResult,
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   selections: {
     selectedToolIndices: Set<number>;
     selectedTriggerIndices: Set<number>;
@@ -77,7 +94,11 @@ export function filterDesignResult(
     selectedEventIndices: Set<number>;
   },
   connectorSwaps?: Record<string, string>,
+<<<<<<< HEAD
 ): AgentIR {
+=======
+): DesignAnalysisResult {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   let filteredConnectors = design.suggested_connectors?.filter((c) => {
     // Keep if directly selected, or if its swap replacement is selected
     if (selections.selectedConnectorNames.has(c.name)) return true;
@@ -93,6 +114,7 @@ export function filterDesignResult(
     });
   }
 
+<<<<<<< HEAD
   // Apply connector swaps to service_flow pipeline steps and filter out deselected connectors (Area #16)
   const activeConnectorNames = new Set(filteredConnectors?.map((c) => c.name) ?? []);
   let filteredPipeline: ConnectorPipelineStep[] | undefined = design.service_flow;
@@ -108,6 +130,15 @@ export function filterDesignResult(
     filteredPipeline = filteredPipeline.filter((step) =>
       !step.connector_name || activeConnectorNames.has(step.connector_name),
     );
+=======
+  // Apply connector swaps to service_flow pipeline steps
+  let filteredPipeline: ConnectorPipelineStep[] | undefined = design.service_flow;
+  if (connectorSwaps && Object.keys(connectorSwaps).length > 0 && filteredPipeline) {
+    filteredPipeline = filteredPipeline.map((step) => {
+      const replacement = connectorSwaps[step.connector_name];
+      return replacement ? { ...step, connector_name: replacement } : step;
+    });
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }
 
   return {
@@ -130,9 +161,15 @@ export function applyTriggerConfigs(
 }
 
 export function substituteVariables(
+<<<<<<< HEAD
   design: AgentIR,
   values: Record<string, string>,
 ): AgentIR {
+=======
+  design: DesignAnalysisResult,
+  values: Record<string, string>,
+): DesignAnalysisResult {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   // Sanitize all values before substitution to prevent prompt injection
   const requirements = design.adoption_requirements ?? [];
   const sanitized = sanitizeVariableValues(requirements, values);
@@ -143,6 +180,7 @@ export function substituteVariables(
     content: replaceVars(s.content, sanitized),
   }));
 
+<<<<<<< HEAD
   // Phase C (Area #8) — substitute variables in tool names, trigger descriptions/configs,
   // connector setup instructions, and adoption questions
   const substitutedTools = design.suggested_tools.map((t) => replaceVars(t, sanitized));
@@ -166,6 +204,8 @@ export function substituteVariables(
     context: q.context ? replaceVars(q.context, sanitized) : q.context,
   }));
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   return {
     ...design,
     structured_prompt: {
@@ -176,10 +216,13 @@ export function substituteVariables(
       errorHandling: replaceVars(sp.errorHandling, sanitized),
       customSections: substitutedSections,
     },
+<<<<<<< HEAD
     suggested_tools: substitutedTools,
     suggested_triggers: substitutedTriggers,
     suggested_connectors: substitutedConnectors,
     adoption_questions: substitutedQuestions,
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     full_prompt_markdown: replaceVars(design.full_prompt_markdown, sanitized),
     summary: replaceVars(design.summary, sanitized),
   };

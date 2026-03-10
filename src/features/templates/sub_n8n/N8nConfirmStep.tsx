@@ -2,7 +2,11 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, Wrench, Zap, Link, ChevronDown, ChevronRight, RefreshCw, AlertTriangle, Brain, Activity, ShieldCheck, XCircle } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
+<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
+=======
+import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { MarkdownRenderer } from '@/features/shared/components/MarkdownRenderer';
 import { parseDesignContext } from '@/features/shared/components/UseCasesList';
 import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
@@ -26,7 +30,11 @@ export interface ConfirmResult {
 
 interface N8nConfirmStepProps {
   draft: N8nPersonaDraft;
+<<<<<<< HEAD
   parsedResult: AgentIR;
+=======
+  parsedResult: DesignAnalysisResult;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   selectedToolIndices: Set<number>;
   selectedTriggerIndices: Set<number>;
   selectedConnectorNames: Set<string>;

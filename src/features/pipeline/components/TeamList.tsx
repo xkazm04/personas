@@ -100,7 +100,11 @@ export default function TeamList() {
     <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
       <div className="flex-1 overflow-y-auto">
       <div className="min-h-full p-6">
+<<<<<<< HEAD
       <div className="max-w-4xl 2xl:max-w-6xl 3xl:max-w-7xl 4xl:max-w-[1800px] mx-auto">
+=======
+      <div className="max-w-4xl mx-auto">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -189,7 +193,11 @@ export default function TeamList() {
         )}
 
         {/* Team Grid */}
+<<<<<<< HEAD
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+=======
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           {teams.map((team: PersonaTeam, i: number) => (
             <motion.div
               key={team.id}

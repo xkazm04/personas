@@ -46,6 +46,16 @@ export interface SuggestedConnector {
   role?: string;
   /** Connector catalog category (e.g., "messaging", "development") */
   category?: string;
+<<<<<<< HEAD
+=======
+}
+
+/** A step in the connector pipeline showing chronological service interactions */
+export interface ConnectorPipelineStep {
+  connector_name: string;  // matches suggested_connectors[].name
+  action_label: string;    // e.g. "Watch alerts", "Notify group"
+  order: number;           // 0-based chronological position
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 /** A step in the connector pipeline showing chronological service interactions */
@@ -89,12 +99,25 @@ export interface AgentIR {
   service_flow?: ConnectorPipelineStep[];
   /** Protocol capabilities detected from workflow node types (structured) */
   protocol_capabilities?: ProtocolCapability[];
+<<<<<<< HEAD
   /** Pre-defined use-case-specific questions for template adoption */
   adoption_questions?: AdoptionQuestion[];
 }
 
 /** @deprecated Use {@link AgentIR} directly. Kept for backwards compatibility. */
 export type DesignAnalysisResult = AgentIR;
+=======
+}
+
+/**
+ * Universal intermediate representation (IR) for agent specifications.
+ *
+ * Multiple frontends (design chat, workflow import, template catalog, batch generation)
+ * converge on this schema, and downstream passes (scoring, safety scan, variable
+ * substitution, adoption, and compilation to runtime drafts) operate over it.
+ */
+export type AgentIR = DesignAnalysisResult;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 /** A notification channel suggestion from design analysis */
 export interface SuggestedNotificationChannel {
@@ -153,6 +176,7 @@ export interface AdoptionRequirement {
   source: "connector" | "trigger" | "channel";
 }
 
+<<<<<<< HEAD
 /** A pre-defined question for template adoption, tied to specific use cases or connectors */
 export interface AdoptionQuestion {
   id: string;
@@ -169,6 +193,8 @@ export interface AdoptionQuestion {
   category?: string;
 }
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 /** Readiness status for a connector in a template */
 export interface ConnectorReadinessStatus {
   connector_name: string;
@@ -210,8 +236,13 @@ export interface IntentTestScenario {
   assertions: string[];
 }
 
+<<<<<<< HEAD
 /** Extended design result from the intent compiler (superset of AgentIR) */
 export interface IntentCompilationResult extends AgentIR {
+=======
+/** Extended design result from the intent compiler (superset of DesignAnalysisResult) */
+export interface IntentCompilationResult extends DesignAnalysisResult {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   intent_statement?: string;
   use_cases?: IntentUseCase[];
   model_recommendation?: IntentModelRecommendation;

@@ -142,7 +142,10 @@ export function useN8nWizard() {
     } catch (err) {
       transform.setAnalyzing(false);
       setN8nTransformActive(false);
+<<<<<<< HEAD
       clearPersistedContext();
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       dispatch({
         type: 'TRANSFORM_FAILED',
         error: err instanceof Error ? err.message : 'Failed to generate transformation draft.',
@@ -317,7 +320,10 @@ export function useN8nWizard() {
       );
     } catch (err) {
       setN8nTransformActive(false);
+<<<<<<< HEAD
       clearPersistedContext();
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       dispatch({
         type: 'TRANSFORM_FAILED',
         error: err instanceof Error ? err.message : 'Failed to continue transformation.',

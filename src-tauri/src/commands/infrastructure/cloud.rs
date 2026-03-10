@@ -459,6 +459,10 @@ pub async fn cloud_deploy_persona(
         "maxTurns": persona.max_turns,
         "designContext": persona.design_context,
         "groupId": persona.group_id,
+<<<<<<< HEAD
+=======
+        "permissionPolicy": persona.permission_policy,
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     });
 
     client.upsert_persona(&persona_body).await?;

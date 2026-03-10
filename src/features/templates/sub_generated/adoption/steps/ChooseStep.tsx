@@ -4,11 +4,17 @@ import {
   Zap,
   Link,
   Info,
+<<<<<<< HEAD
   Boxes,
 } from 'lucide-react';
 import { SelectionCheckbox } from '../review/SelectionCheckbox';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
 import { getRoleForConnector } from '@/lib/credentials/connectorRoles';
+=======
+} from 'lucide-react';
+import { SelectionCheckbox } from '../review/SelectionCheckbox';
+import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { useAdoptionWizard } from '../AdoptionWizardContext';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { UseCaseRow } from './UseCaseRow';
@@ -104,6 +110,7 @@ export function ChooseStep() {
 
   // ── Flows-based layout ───────────────────────────────────────────
 
+<<<<<<< HEAD
   // Derive architectural components from connectors
   const components = useMemo(() => {
     const roles = new Map<string, { label: string; connectors: string[] }>();
@@ -134,6 +141,11 @@ export function ChooseStep() {
           )}
         </div>
 
+=======
+  if (hasFlows) {
+    return (
+      <div className="flex flex-col gap-3">
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
         {/* Step header with context */}
         <div>
           <div className="flex items-center justify-between">
@@ -170,6 +182,7 @@ export function ChooseStep() {
 
         {/* Impact preview */}
         <div className="flex flex-col gap-2 py-2.5 border-t border-primary/10">
+<<<<<<< HEAD
           {/* Components row — architectural role groups */}
           {components.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
@@ -193,6 +206,12 @@ export function ChooseStep() {
           {summary.connectorNames.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm text-muted-foreground/50 w-20 flex-shrink-0">Examples</span>
+=======
+          {/* Connector row */}
+          {summary.connectorNames.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-muted-foreground/50 w-20 flex-shrink-0">Connectors</span>
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
               <div className="flex items-center gap-1.5 flex-wrap">
                 {summary.connectorNames.map((name) => {
                   const meta = getConnectorMeta(name);
@@ -229,7 +248,11 @@ export function ChooseStep() {
           )}
           {/* Empty state */}
           {summary.selected === 0 && (
+<<<<<<< HEAD
             <p className="text-sm text-muted-foreground/60 italic">No use cases selected — select at least one to continue</p>
+=======
+            <p className="text-sm text-muted-foreground/60 italic">No use cases selected</p>
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           )}
         </div>
       </div>

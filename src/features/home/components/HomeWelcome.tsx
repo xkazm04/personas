@@ -19,7 +19,13 @@ const NAV_CARDS: any[] = [
 export default function HomeWelcome() {
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
   const user = useAuthStore((s) => s.user);
+<<<<<<< HEAD
   const { t } = useHomeTranslation();
+=======
+  const personas = usePersonaStore((s) => s.personas);
+  const credentials = usePersonaStore((s) => s.credentials);
+  const { t, language } = useHomeTranslation();
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -30,10 +36,26 @@ export default function HomeWelcome() {
 
   const displayName = user?.display_name || user?.email?.split('@')[0] || t.operator;
 
+<<<<<<< HEAD
+=======
+  const summary = useMemo(() => {
+    if (personas.length === 0) return t.summary_empty;
+    return t.summary_stats
+      .replace('{personasCount}', String(personas.length))
+      .replace('{personasPlural}', personas.length !== 1 ? (language === 'en' ? 's' : '') : '')
+      .replace('{credentialsCount}', String(credentials.length))
+      .replace('{credentialsPlural}', credentials.length !== 1 ? (language === 'en' ? 's' : '') : '');
+  }, [personas.length, credentials.length, t, language]);
+
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   return (
     <WelcomeLayout
       greeting={greeting}
       displayName={displayName}
+<<<<<<< HEAD
+=======
+      summary={summary}
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       quickNavLabel={t.quick_navigation}
       platformLabel={t.platform_label}
       navCards={NAV_CARDS}

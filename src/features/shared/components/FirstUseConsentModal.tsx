@@ -38,13 +38,20 @@ function persistConsent() {
 interface SectionProps {
   icon: React.ReactNode;
   title: string;
+<<<<<<< HEAD
   tldr: string;
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   items: string[];
   color: string;
   defaultOpen?: boolean;
 }
 
+<<<<<<< HEAD
 function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false }: SectionProps) {
+=======
+function ConsentSection({ icon, title, items, color, defaultOpen = false }: SectionProps) {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className={`border rounded-xl overflow-hidden transition-colors ${open ? `border-${color}/25 bg-${color}/5` : 'border-primary/10 bg-secondary/20'}`}
@@ -55,11 +62,16 @@ function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false }
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-secondary/30 transition-colors"
       >
         <span className="shrink-0">{icon}</span>
+<<<<<<< HEAD
         <div className="flex-1 min-w-0">
           <span className="text-sm font-medium text-foreground">{title}</span>
           <p className="text-xs text-muted-foreground/70 mt-0.5">{tldr}</p>
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
+=======
+        <span className="flex-1 text-sm font-medium text-foreground">{title}</span>
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
       </button>
       <AnimatePresence>
         {open && (
@@ -127,7 +139,10 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
           <ConsentSection
             icon={<Brain className="w-4 h-4 text-violet-400" />}
             title="AI Provider Communication"
+<<<<<<< HEAD
             tldr="Your prompts are sent to your chosen AI service using your own API key."
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             color="violet"
             defaultOpen
             items={[
@@ -141,7 +156,10 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
           <ConsentSection
             icon={<Database className="w-4 h-4 text-emerald-400" />}
             title="Local Data Storage"
+<<<<<<< HEAD
             tldr="Your passwords are encrypted and all your data stays on your computer."
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             color="emerald"
             items={[
               'All data (personas, execution history, logs, memories) is stored in a local SQLite database on your machine.',
@@ -154,7 +172,10 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
           <ConsentSection
             icon={<Globe className="w-4 h-4 text-cyan-400" />}
             title="Third-Party Service Connections"
+<<<<<<< HEAD
             tldr="Agents can connect to services like Slack or GitHub using credentials you provide."
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             color="cyan"
             items={[
               'Personas can make authenticated API calls to 40+ services (Slack, GitHub, Linear, Discord, Jira, Notion, databases, etc.) using credentials you provide.',
@@ -167,7 +188,10 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
           <ConsentSection
             icon={<Eye className="w-4 h-4 text-amber-400" />}
             title="System Monitoring Capabilities"
+<<<<<<< HEAD
             tldr="Agents can watch your clipboard, files, or schedule to trigger actions automatically."
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             color="amber"
             items={[
               'Clipboard Monitor: When enabled for a persona, the app polls your system clipboard (~500ms interval) to detect text changes matching configured regex patterns. Clipboard content is hashed for change detection and is not stored unless it triggers an execution.',
@@ -180,7 +204,10 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
           <ConsentSection
             icon={<Terminal className="w-4 h-4 text-orange-400" />}
             title="Process Execution"
+<<<<<<< HEAD
             tldr="The app runs AI tools and scripts on your machine to carry out agent tasks."
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             color="orange"
             items={[
               'The app spawns AI provider CLI processes (e.g., claude, codex, gemini) as child processes on your machine.',
@@ -193,7 +220,10 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
           <ConsentSection
             icon={<Clipboard className="w-4 h-4 text-rose-400" />}
             title="Error Reporting & Telemetry"
+<<<<<<< HEAD
             tldr="Anonymous crash reports may be sent to help fix bugs — no personal data included."
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             color="rose"
             items={[
               'Crash reports may be sent to Sentry for error tracking. IP addresses, email addresses, and request bodies are stripped before transmission.',
@@ -205,7 +235,10 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
           <ConsentSection
             icon={<FolderSearch className="w-4 h-4 text-teal-400" />}
             title="Deployment (Optional)"
+<<<<<<< HEAD
             tldr="You can optionally run agents in the cloud — nothing is uploaded unless you choose to."
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             color="teal"
             items={[
               'You may optionally deploy personas to a cloud orchestrator, GitHub Actions, or GitLab CI/CD. This sends persona configuration (not credentials) to the selected platform.',

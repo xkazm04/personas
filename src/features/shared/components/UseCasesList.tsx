@@ -18,15 +18,19 @@ export type { UseCaseSuggestedTrigger } from '@/lib/types/frontendTypes';
 
 // ── Parser ──────────────────────────────────────────────────────────
 
+<<<<<<< HEAD
 // LRU(1) cache: avoids re-parsing the same design_context string across
 // multiple hooks/components in the same render cycle.
 let _cachedRaw: string | null | undefined;
 let _cachedResult: DesignContextData = {};
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 /**
  * Parse a raw `design_context` JSON string into the typed envelope.
  * Handles both the new structured format (with camelCase keys) and
  * the legacy flat format (with snake_case keys like `use_cases`, `credential_links`).
+<<<<<<< HEAD
  *
  * Results are cached (LRU-1) so repeated calls with the same string
  * (e.g. from useConnectorStatuses, subscriptionLifecycle, etc.) skip parsing.
@@ -45,11 +49,24 @@ export function parseDesignContext(raw: string | null | undefined): DesignContex
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
       return store({ summary: raw });
+=======
+ */
+export function parseDesignContext(raw: string | null | undefined): DesignContextData {
+  if (!raw || !raw.trim()) return {};
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return { summary: raw };
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     }
 
     // New format: check for camelCase envelope keys
     if ('designFiles' in parsed || 'credentialLinks' in parsed || 'useCases' in parsed) {
+<<<<<<< HEAD
       return store(parsed as unknown as DesignContextData);
+=======
+      return parsed as unknown as DesignContextData;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     }
 
     // Legacy format: snake_case top-level keys → migrate to camelCase envelope
@@ -78,10 +95,17 @@ export function parseDesignContext(raw: string | null | undefined): DesignContex
       result.summary = parsed.summary;
     }
 
+<<<<<<< HEAD
     return store(result);
   } catch {
     // intentional: non-critical — JSON parse fallback (treat raw text as summary)
     return store({ summary: raw });
+=======
+    return result;
+  } catch {
+    // intentional: non-critical — JSON parse fallback (treat raw text as summary)
+    return { summary: raw };
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   }
 }
 

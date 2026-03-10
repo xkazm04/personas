@@ -27,12 +27,19 @@ import { useUndoDelete } from '@/features/vault/hooks/useUndoDelete';
 import { useCredentialViewFSM } from '@/features/vault/hooks/useCredentialViewFSM';
 import { useCredentialHealth } from '@/features/vault/hooks/useCredentialHealth';
 import { useBulkHealthcheck } from '@/features/vault/hooks/useBulkHealthcheck';
+<<<<<<< HEAD
 import { isUniversalOAuthConnector, getOAuthProviderId, getOAuthScopes, isDesktopBridge } from '@/lib/utils/connectors';
+=======
+import { isUniversalOAuthConnector, getOAuthProviderId, getOAuthScopes } from '@/lib/utils/connectors';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import * as api from '@/api/tauriApi';
 import type { VaultStatus } from '@/api/tauriApi';
+<<<<<<< HEAD
 import { IS_MOBILE, IS_DESKTOP } from '@/lib/utils/platform';
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import { rotateCredentialNow } from '@/api/rotation';
 
 export function CredentialManager() {
@@ -255,10 +262,13 @@ export function CredentialManager() {
     dispatch({ type: 'GO_AUTO_SETUP', connector: catalogFormData.connector });
   }, [catalogFormData, dispatch]);
 
+<<<<<<< HEAD
   const handleDesktopDetect = useCallback(() => {
     dispatch({ type: 'GO_ADD_DESKTOP' });
   }, [dispatch]);
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   // Determine which credentials support real rotation (OAuth with refresh tokens)
   const isCredentialRotatable = useCallback((serviceType: string): boolean => {
     const connector = connectorDefinitions.find((c) => c.name === serviceType);
@@ -445,7 +455,10 @@ export function CredentialManager() {
             onCreateCredential={handleCreateCredential}
             onOAuthConsent={handleTemplateOAuthConsent}
             onAutoSetup={handleAutoSetup}
+<<<<<<< HEAD
             onDesktopDetect={isDesktopBridge(viewState.connector) ? handleDesktopDetect : undefined}
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             onBack={() => {
               dispatch({ type: 'CANCEL_FORM' });
               oauth.reset();
@@ -474,7 +487,11 @@ export function CredentialManager() {
           />
         )}
 
+<<<<<<< HEAD
         {viewState.view === 'catalog-auto-setup' && IS_DESKTOP && (
+=======
+        {viewState.view === 'catalog-auto-setup' && (
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           <CatalogAutoSetup
             connector={viewState.connector}
             onComplete={() => {
@@ -514,7 +531,11 @@ export function CredentialManager() {
           />
         )}
 
+<<<<<<< HEAD
         {viewState.view === 'add-desktop' && IS_DESKTOP && (
+=======
+        {viewState.view === 'add-desktop' && (
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           <DesktopDiscoveryPanel
             onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
             onCredentialCreated={() => {
@@ -532,7 +553,11 @@ export function CredentialManager() {
           }} />
         )}
 
+<<<<<<< HEAD
         {viewState.view === 'foraging' && IS_DESKTOP && (
+=======
+        {viewState.view === 'foraging' && (
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           <ForagingPanel
             onComplete={() => {
               void fetchCredentials();

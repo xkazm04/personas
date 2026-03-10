@@ -8,9 +8,12 @@ import {
   Star,
   Box,
   Plus,
+<<<<<<< HEAD
   Database,
   Table2,
   RefreshCw,
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 } from 'lucide-react';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/ConnectorMeta';
 import { ThemedSelect } from '@/features/shared/components/ThemedSelect';
@@ -18,7 +21,10 @@ import { ConnectorPipeline } from '../../shared/ConnectorPipeline';
 import { useAdoptionWizard } from '../AdoptionWizardContext';
 import type { ConnectorPipelineStep } from '@/lib/types/designTypes';
 import { InlineCredentialPanel } from './InlineCredentialPanel';
+<<<<<<< HEAD
 import { useTableIntrospection } from '@/hooks/database/useTableIntrospection';
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { CredentialMetadata } from '@/lib/types/types';
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -154,6 +160,33 @@ function ConnectorDropdown({
   );
 }
 
+<<<<<<< HEAD
+=======
+// ── Resolved connector (compact row) ────────────────────────────────
+
+function ResolvedConnectorRow({
+  connector,
+  credentialName,
+}: {
+  connector: RequiredConnector;
+  credentialName: string;
+}) {
+  const meta = getConnectorMeta(connector.activeName);
+  const builtIn = isVirtual(connector.activeName);
+
+  return (
+    <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-emerald-500/15 bg-emerald-500/5">
+      <ConnectorIcon meta={meta} size="w-4 h-4" />
+      <span className="text-sm font-medium text-foreground/80 flex-1 truncate">{meta.label}</span>
+      <span className="text-sm text-muted-foreground/50 truncate max-w-[180px]">
+        {builtIn ? 'Built-in' : credentialName}
+      </span>
+      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+    </div>
+  );
+}
+
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 // ── Unresolved Component Card ───────────────────────────────────────
 
 function UnresolvedComponentCard({
@@ -264,6 +297,7 @@ function UnresolvedComponentCard({
   );
 }
 
+<<<<<<< HEAD
 // ── Database Setup Card (inline in Connect step) ──────────────────────
 
 function DatabaseSetupCard() {
@@ -402,6 +436,8 @@ function DatabaseSetupCard() {
   );
 }
 
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 // ── Main Component ─────────────────────────────────────────────────────
 
 export function ConnectStep() {
@@ -430,14 +466,22 @@ export function ConnectStep() {
     onSetInlineConnector(name);
   }, [onSetInlineConnector]);
 
+<<<<<<< HEAD
   // Derive configured count and missing names directly from connectors
   const { configuredCount, missingNames } = useMemo(() => {
     let configured = 0;
+=======
+  // Classify connectors as resolved vs unresolved
+  const { resolved, unresolved, missingNames } = useMemo(() => {
+    const res: Array<{ connector: RequiredConnector; credName: string }> = [];
+    const unres: RequiredConnector[] = [];
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     const missing: string[] = [];
 
     for (const c of requiredConnectors) {
       const builtIn = isVirtual(c.activeName);
       const credId = connectorCredentialMap[c.activeName];
+<<<<<<< HEAD
       if (builtIn || credId) {
         configured++;
       } else {
@@ -446,6 +490,22 @@ export function ConnectStep() {
     }
     return { configuredCount: configured, missingNames: missing };
   }, [requiredConnectors, connectorCredentialMap]);
+=======
+      if (builtIn) {
+        res.push({ connector: c, credName: 'Built-in' });
+      } else if (credId) {
+        const cred = credentials.find((cr) => cr.id === credId);
+        res.push({ connector: c, credName: cred?.name ?? 'Configured' });
+      } else {
+        unres.push(c);
+        missing.push(getConnectorMeta(c.activeName).label);
+      }
+    }
+    return { resolved: res, unresolved: unres, missingNames: missing };
+  }, [requiredConnectors, connectorCredentialMap, credentials]);
+
+  const configuredCount = resolved.length;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   const totalCount = requiredConnectors.length;
   const progressPercent = totalCount > 0 ? (configuredCount / totalCount) * 100 : 0;
 
@@ -529,6 +589,7 @@ export function ConnectStep() {
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* All connectors — editable cards */}
       <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
         {requiredConnectors.map((connector) => (
@@ -548,6 +609,44 @@ export function ConnectStep() {
 
       {/* Database setup (inline when template uses DB connectors) */}
       {ctx.hasDatabaseConnector && <DatabaseSetupCard />}
+=======
+      {/* Unresolved connectors — expanded cards */}
+      {unresolved.length > 0 && (
+        <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+          {unresolved.map((connector) => (
+            <UnresolvedComponentCard
+              key={connector.name}
+              connector={connector}
+              credentials={credentials}
+              selectedCredentialId={connectorCredentialMap[connector.activeName]}
+              onSetCredential={onSetCredential}
+              onClearCredential={onClearCredential}
+              onOpenInlineForm={handleOpenInlineForm}
+              onOpenDesign={handleOpenDesign}
+              onSwapConnector={onSwapConnector!}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Resolved connectors — compact rows */}
+      {resolved.length > 0 && (
+        <div>
+          {unresolved.length > 0 && (
+            <p className="text-sm text-muted-foreground/60 mb-1.5">Configured</p>
+          )}
+          <div className="flex flex-col gap-1">
+            {resolved.map(({ connector, credName }) => (
+              <ResolvedConnectorRow
+                key={connector.name}
+                connector={connector}
+                credentialName={credName}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
       {/* Inline credential panel */}
       <AnimatePresence initial={false}>

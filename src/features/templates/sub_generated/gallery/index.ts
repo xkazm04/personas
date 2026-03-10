@@ -3,8 +3,11 @@ export type { ViewMode } from './GeneratedReviewsTab';
 export { TemplateSearchBar } from './TemplateSearchBar';
 export { TemplateCard } from './TemplateCard';
 export { TemplateDetailModal } from './TemplateDetailModal';
+<<<<<<< HEAD
 export { PersonaMatrix, type PersonaMatrixProps } from './PersonaMatrix';
 export type { MatrixEditState, MatrixEditCallbacks } from './EditableMatrixCells';
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 export { TemplatePreviewModal } from './TemplatePreviewModal';
 export { RebuildModal } from './RebuildModal';
 export { ReviewExpandedDetail } from './ReviewExpandedDetail';

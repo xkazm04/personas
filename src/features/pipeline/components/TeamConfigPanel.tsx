@@ -1,10 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, AlertTriangle, Wrench, Zap, Link, Clock, ExternalLink, Cpu } from 'lucide-react';
+<<<<<<< HEAD
 import { TEAM_ROLES, PersonaAvatar } from '@/features/pipeline/sub_canvas';
 import { usePersonaStore } from '@/stores/personaStore';
 import { extractConnectorNames } from '@/lib/personas/utils';
 import type { AgentIR } from '@/lib/types/designTypes';
+=======
+import { TEAM_ROLES, PersonaAvatar } from '@/features/pipeline/sub_canvas/teamConstants';
+import { usePersonaStore } from '@/stores/personaStore';
+import { extractConnectorNames } from '@/lib/personas/utils';
+import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 interface TeamConfigPanelProps {
   member: {
@@ -27,7 +34,11 @@ interface TeamConfigPanelProps {
 function extractToolCount(designResult: string | null): number {
   if (!designResult) return 0;
   try {
+<<<<<<< HEAD
     const dr = JSON.parse(designResult) as AgentIR;
+=======
+    const dr = JSON.parse(designResult) as DesignAnalysisResult;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     return dr.suggested_tools?.length ?? 0;
   } catch {
     // intentional: non-critical — JSON parse fallback

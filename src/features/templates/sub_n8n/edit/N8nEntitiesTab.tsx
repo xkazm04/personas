@@ -2,7 +2,11 @@ import { useMemo } from 'react';
 import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, Plus, RefreshCw, ChevronDown, Star, Wrench, Zap, ListChecks } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { N8nPersonaDraft } from '@/api/n8nTransform';
+<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
+=======
+import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 import type { PersonaCredential } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
 import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
@@ -22,7 +26,11 @@ import {
 
 interface N8nEntitiesTabProps {
   draft: N8nPersonaDraft;
+<<<<<<< HEAD
   parsedResult: AgentIR;
+=======
+  parsedResult: DesignAnalysisResult;
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   selectedToolIndices: Set<number>;
   selectedTriggerIndices: Set<number>;
   selectedConnectorNames: Set<string>;

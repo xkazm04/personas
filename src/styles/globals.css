@@ -93,10 +93,13 @@
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+<<<<<<< HEAD
 
   /* Ultra-wide breakpoints */
   --breakpoint-3xl: 1920px;
   --breakpoint-4xl: 2560px;
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 }
 
 /* ── Base Styles ── */

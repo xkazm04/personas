@@ -676,6 +676,7 @@
         "content": "Required properties for the tracking database:\n| Property | Type | Description |\n|----------|------|-------------|\n| Date | Date | The usage date |\n| Total Cost | Number (USD) | Total spend for the day |\n| Total Tokens | Number | Combined input + output tokens |\n| Model Breakdown | Rich Text | Per-model cost and token summary |\n| Daily Budget % | Number | Percentage of daily budget consumed |\n| 7-Day Average | Number (USD) | Rolling 7-day average cost |\n| Projected Monthly | Number (USD) | Projected monthly spend |\n| Status | Select | Normal / Warning / Critical / Exceeded |\n| Type | Select | Daily / Monthly Summary |"
       }
     ],
+<<<<<<< HEAD
     "adoption_questions": [
       {
         "id": "slack_alert_channel",
@@ -714,6 +715,8 @@
         "category": "configuration"
       }
     ],
+=======
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
     "protocol_capabilities": [
       {
         "type": "manual_review",

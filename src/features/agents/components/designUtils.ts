@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import type { AgentIR } from '@/lib/types/designTypes';
+=======
+import type { DesignAnalysisResult } from '@/lib/types/designTypes';
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
 /** Derive a short agent name from the user's intent. */
 export function deriveName(intent: string): string {
@@ -11,7 +15,11 @@ export function deriveName(intent: string): string {
 }
 
 /** Calculate persona completeness based on design result fields. */
+<<<<<<< HEAD
 export function calcCompleteness(result: AgentIR | null): number {
+=======
+export function calcCompleteness(result: DesignAnalysisResult | null): number {
+>>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
   if (!result) return 0;
   let filled = 0;
   const total = 6;
