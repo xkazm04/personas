@@ -55,6 +55,9 @@ Rust backend                          React frontend
 | Rust `tracing::error!` events | Yes | Backend error reporting |
 | Rust `tracing::warn!` events | Yes | Stored as breadcrumbs for context |
 | App sessions | Yes | Active user counts per release (Release Health) |
+| Feature visits (section + tab) | Yes | Identify popular and underused features |
+| Session summary (visit counts) | Yes | Aggregate usage per session |
+| Interaction events (key actions) | Yes | Track adoption of specific workflows |
 
 ## What Is Never Collected
 
@@ -194,8 +197,9 @@ No code changes are required to disable monitoring.
 |------|------|
 | `src-tauri/src/main.rs` | Sentry guard initialization, Rust `before_send` PII filter |
 | `src-tauri/src/logging.rs` | `sentry-tracing` layer in subscriber registry |
-| `src/lib/sentry.ts` | Frontend Sentry init, JS `beforeSend` PII filter |
-| `src/main.tsx` | Error Boundary, global error handlers, bootstrap |
+| `src/lib/sentry.ts` | Frontend Sentry init, JS `beforeSend` PII filter, `trackFeature`/`trackInteraction` |
+| `src/lib/analytics.ts` | Zustand navigation subscriber, session summary, analytics init |
+| `src/main.tsx` | Error Boundary, global error handlers, analytics bootstrap |
 | `vite.config.ts` | Hidden source map generation |
 | `.github/workflows/release.yml` | DSN injection + source map upload step |
 
@@ -222,6 +226,80 @@ In Sentry: **Releases** > select a version > **Release Health** tab.
 - **Frontend**: `autoSessionTracking: true` in `src/lib/sentry.ts`. The JS SDK tracks page visibility — a session starts on load and ends after inactivity.
 
 Both sides report independently. Sentry deduplicates by device ID, so one app launch = one session in the dashboard.
+
+---
+
+## Feature Usage Tracking
+
+Anonymous feature usage events are sent alongside error events to help identify which features are popular and which are underused. No PII, persona content, or credentials are included — only section and tab name strings.
+
+### Architecture
+
+```
+Zustand store (state change)
+  └─ analytics.ts subscriber
+       ├─ trackFeature("overview", "executions", "tab_switch")
+       │    └─ Sentry.captureMessage("feature_visit: overview.executions", "info")
+       │         tags: event_type=feature_visit, feature.section=overview, feature.tab=executions
+       │
+       └─ beforeunload → session_summary event
+            extras: { visit.home: 3, visit.overview.executions: 7, ... }
+```
+
+### Event Types
+
+| Event | Sentry Tag | When Fired |
+|-------|-----------|------------|
+| `feature_visit` | `event_type: feature_visit` | User navigates to a section or switches a tab |
+| `interaction` | `event_type: interaction` | User performs a key action (create, execute, deploy, etc.) |
+| `session_summary` | `event_type: session_summary` | Once on app close — aggregated visit counts for the session |
+
+### Deduplication & Sampling
+
+- **Deduplication**: Identical `feature_visit` events within 5 seconds are suppressed (prevents tab-bouncing noise)
+- **Sampling**: Configurable `FEATURE_SAMPLE_RATE` in `sentry.ts` (default 1.0 = 100%). Reduce to lower Sentry quota usage on large install bases
+
+### Sentry Discover Queries
+
+To view feature usage data in Sentry:
+
+1. **Most visited features**: Discover → `event_type:feature_visit` → Group by `feature.section` → Count
+2. **Tab usage within a section**: Discover → `event_type:feature_visit AND feature.section:overview` → Group by `feature.tab`
+3. **Session depth**: Discover → `event_type:session_summary` → Avg of `visit.*` extras
+4. **Feature adoption over time**: Discover → `event_type:feature_visit` → Group by `feature.section`, Time series
+
+### Auto-Tracked Navigation
+
+The following state changes are tracked automatically via the Zustand subscriber in `analytics.ts`:
+
+| Store Field | Section | Tracked As |
+|---|---|---|
+| `sidebarSection` | (value itself) | `feature_visit: {section}` |
+| `homeTab` | `home` | `feature_visit: home.{tab}` |
+| `editorTab` | `personas` | `feature_visit: personas.{tab}` |
+| `overviewTab` | `overview` | `feature_visit: overview.{tab}` |
+| `templateTab` | `design-reviews` | `feature_visit: design-reviews.{tab}` |
+| `cloudTab` | `cloud` | `feature_visit: cloud.{tab}` |
+| `settingsTab` | `settings` | `feature_visit: settings.{tab}` |
+
+### Manual Interaction Tracking
+
+For key actions beyond navigation, use `trackInteraction` from `src/lib/analytics.ts`:
+
+```typescript
+import { trackInteraction } from "@/lib/analytics";
+
+// When a persona is created
+trackInteraction("persona", "create", "from-template");
+
+// When an execution starts
+trackInteraction("execution", "start", personaId ? "manual" : "trigger");
+
+// When a credential is added
+trackInteraction("credential", "create", connectorType);
+```
+
+These fire `interaction` events in Sentry with `ix.category`, `ix.action`, and `ix.label` tags.
 
 ---
 

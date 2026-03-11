@@ -197,7 +197,8 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
             color="rose"
             items={[
               'Crash reports may be sent to Sentry for error tracking. IP addresses, email addresses, and request bodies are stripped before transmission.',
-              'No personal data, credential values, or execution content is included in error reports.',
+              'Anonymous feature usage data (which sections and tabs you visit) is sent to Sentry to help prioritize development. No personal data, credential values, or execution content is included.',
+              'No personal data, credential values, or execution content is included in any telemetry.',
               'The app checks for updates via GitHub Releases.',
             ]}
           />

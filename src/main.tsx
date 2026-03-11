@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/react";
 import { getVersion } from "@tauri-apps/api/app";
 import App from "./App";
 import { initSentry } from "./lib/sentry";
+import { initAnalytics } from "./lib/analytics";
 import { persistCrash } from "./lib/utils/crashPersistence";
 import "./styles/globals.css";
 
@@ -94,6 +95,14 @@ if (root) {
     initSentry(appVersion);
   } catch (e) {
     console.warn("[main] Sentry init failed:", e);
+  }
+
+  // Feature usage analytics — subscribes to Zustand store navigation changes
+  try {
+    const { usePersonaStore } = await import("./stores/personaStore");
+    initAnalytics(usePersonaStore.subscribe);
+  } catch (e) {
+    console.warn("[main] Analytics init failed:", e);
   }
 
   window.onerror = (_message, _source, _lineno, _colno, error) => {
