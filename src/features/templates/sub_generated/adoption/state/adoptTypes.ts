@@ -110,6 +110,8 @@ export interface AdoptState {
   // Database setup (inline in Connect step)
   databaseMode: 'create' | 'existing';
   selectedTableNames: string[];
+  databaseTable: string;
+  databaseSchema: string;
 
   // Auto-adoption
   autoResolved: boolean;

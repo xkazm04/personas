@@ -1,5 +1,6 @@
 import { Trash2, Key, Plug } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { Button } from '@/features/shared/components/buttons';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { formatTimestamp } from '@/lib/utils/formatters';
 import type { RotationStatus } from '@/api/vault/rotation';
@@ -85,17 +86,17 @@ export function CredentialCardHeader({
         </div>
 
         <div className="flex items-center gap-1">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            icon={<Trash2 className="w-4 h-4 text-red-400/70" />}
             onClick={(e) => {
               e.stopPropagation();
               onDelete(credential.id);
             }}
-            className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors"
+            className="hover:bg-red-500/10"
             title="Delete credential"
-          >
-            <Trash2 className="w-4 h-4 text-red-400/70" />
-          </button>
+          />
         </div>
       </div>
     </div>

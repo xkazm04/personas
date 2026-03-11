@@ -51,7 +51,10 @@ export function QuickAdoptConfirm() {
     memoryEnabled: state.memoryEnabled,
     memoryScope: state.memoryScope,
     messagePreset,
-  }), [state.connectorCredentialMap, state.connectorSwaps, state.triggerConfigs, state.requireApproval, state.autoApproveSeverity, state.reviewTimeout, state.memoryEnabled, state.memoryScope, messagePreset]);
+    databaseMode: state.databaseMode,
+    databaseTable: state.databaseTable,
+    databaseSchema: state.databaseSchema,
+  }), [state.connectorCredentialMap, state.connectorSwaps, state.triggerConfigs, state.requireApproval, state.autoApproveSeverity, state.reviewTimeout, state.memoryEnabled, state.memoryScope, messagePreset, state.databaseMode, state.databaseTable, state.databaseSchema]);
 
   const editCallbacks = useMemo<MatrixEditCallbacks>(() => ({
     onCredentialSelect: (connectorName: string, credentialId: string) => { setConnectorCredential(connectorName, credentialId); },
@@ -61,47 +64,41 @@ export function QuickAdoptConfirm() {
     onToggleMemory: (value: boolean) => { wizard.updatePreference('memoryEnabled', value); },
     onPreferenceChange: (key: string, value: unknown) => {
       if (key === 'messagePreset') { setMessagePreset(value as string); }
+      else if (key === 'databaseMode') { wizard.setDatabaseMode(value as 'create' | 'existing'); }
       else { wizard.updatePreference(key, value); }
     },
   }), [setConnectorCredential, wizard]);
 
   const handleQuickAdopt = useCallback(() => { quickAdopt(); }, [quickAdopt]);
   const handleNavigateCatalog = useCallback(() => { setSidebarSection('credentials'); }, [setSidebarSection]);
+  const hasMissing = matchSummary.missingConnectorTypes.length > 0;
 
   return (
     <div className="flex flex-col gap-4 px-6 py-5 w-full h-full">
-      {/* Header */}
-      <div className="flex items-center gap-4">
+      {/* Centered header with connector status */}
+      <div className="flex flex-col items-center gap-2 text-center">
         <DimensionRadial designResult={designResult} size={44} />
-        <div className="flex-1 min-w-0">
-          <h2 className="text-base font-semibold text-foreground/90 truncate">{state.templateName}</h2>
-          <div className="flex items-center gap-2 mt-0.5">
-            {matchSummary.allMatched ? (
-              <span className="text-sm text-emerald-400/80 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />All connectors matched</span>
-            ) : (
-              <span className="text-sm text-amber-400/80 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />{matchSummary.matched}/{matchSummary.total} connectors linked</span>
-            )}
-          </div>
+        <h2 className="text-base font-semibold text-foreground/90 truncate max-w-full">{state.templateName}</h2>
+        <div className="flex items-center gap-1.5">
+          {matchSummary.allMatched ? (
+            <span className="text-sm text-emerald-400/80 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />All connectors matched</span>
+          ) : (
+            <span className="text-sm text-amber-400/80 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />{matchSummary.matched}/{matchSummary.total} connectors linked</span>
+          )}
         </div>
-      </div>
-
-      {/* Missing connector alert */}
-      {matchSummary.missingConnectorTypes.length > 0 && (
-        <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.06]">
-          <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-foreground/80">
-              {'Missing credentials for '}
-              {matchSummary.missingConnectorTypes.map((t, i) => (
-                <span key={t}>{i > 0 && ', '}<strong className="font-medium">{getConnectorMeta(t).label}</strong></span>
-              ))}
-            </p>
-            <button type="button" onClick={handleNavigateCatalog} className="mt-1 text-sm text-violet-400 hover:text-violet-300 transition-colors inline-flex items-center gap-1">
-              Add in Keys Catalog<ExternalLink className="w-3 h-3" />
+        {hasMissing && (
+          <p className="text-[12px] text-muted-foreground/50 leading-snug">
+            {'Missing: '}
+            {matchSummary.missingConnectorTypes.map((t, i) => (
+              <span key={t}>{i > 0 && ', '}{getConnectorMeta(t).label}</span>
+            ))}
+            {' — '}
+            <button type="button" onClick={handleNavigateCatalog} className="text-primary/70 hover:text-primary transition-colors inline-flex items-center gap-0.5">
+              add in Keys Catalog<ExternalLink className="w-2.5 h-2.5" />
             </button>
-          </div>
-        </div>
-      )}
+          </p>
+        )}
+      </div>
 
       {/* Matrix */}
       <div className="flex-1 min-h-0 overflow-y-auto">
@@ -118,7 +115,6 @@ export function QuickAdoptConfirm() {
           launchDisabled={state.transforming || state.confirming || !matchSummary.allMatched}
           launchLabel="Build Persona"
           isRunning={state.transforming}
-          missingConnectorTypes={matchSummary.missingConnectorTypes}
           onNavigateCatalog={handleNavigateCatalog}
         />
       </div>

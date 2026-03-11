@@ -13,6 +13,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { useCredentialDesign, type CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import { AutoCredPanel } from '@/features/vault/sub_autoCred/steps/AutoCredPanel';
@@ -137,24 +138,27 @@ export function InlineCredentialPanel({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {mode !== 'pick' && mode !== initialMode && (
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                icon={<ArrowLeft className="w-4 h-4" />}
                 onClick={handleBack}
-                className="p-1 rounded hover:bg-secondary/50 transition-colors"
-              >
-                <ArrowLeft className="w-3.5 h-3.5 text-muted-foreground/60" />
-              </button>
+                className="text-muted-foreground/60"
+              />
             )}
             <ConnectorIcon meta={meta} size="w-4 h-4" />
             <span className="text-sm font-medium text-foreground/80">
               {initialMode === 'design-query' ? 'Custom Connector' : `New ${meta.label} Credential`}
             </span>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="text-sm text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+            className="text-muted-foreground/50 hover:text-foreground/70"
           >
             Cancel
-          </button>
+          </Button>
         </div>
 
         <AnimatePresence mode="wait">

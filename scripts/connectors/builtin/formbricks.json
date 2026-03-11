@@ -1,0 +1,48 @@
+{
+  "id": "builtin-formbricks",
+  "name": "formbricks",
+  "label": "Formbricks",
+  "color": "#00C4B8",
+  "icon_url": "/icons/connectors/formbricks.svg",
+  "category": "forms",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Go to Formbricks → Settings → API Keys → Add API Key"
+    },
+    {
+      "key": "base_url",
+      "label": "Instance URL",
+      "type": "url",
+      "required": false,
+      "placeholder": "https://app.formbricks.com",
+      "helpText": "Your Formbricks instance URL (defaults to formbricks.com cloud)"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{base_url|https://app.formbricks.com}}/api/v1/me",
+    "method": "GET",
+    "headers": {
+      "x-api-key": "{{api_key}}"
+    },
+    "description": "Validates API key via Formbricks /me endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Formbricks open-source survey and feedback platform for in-app surveys, links, and website pop-ups.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://formbricks.com/docs/api/overview",
+    "setup_guide": "1. Log in to Formbricks (app.formbricks.com or self-hosted).\n2. Go to Settings → API Keys.\n3. Click 'Add API Key' and copy the key.\n4. Paste the key here. If self-hosted, also enter your instance URL.",
+    "pricing_tier": "free",
+    "auth_methods": [
+      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}
+    ]
+  }
+}

@@ -11,6 +11,7 @@ import {
   PinOff,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { Button } from '@/features/shared/components/buttons';
 import { useElapsedTimer } from '@/hooks/utility/timing/useElapsedTimer';
 import { formatElapsed } from '@/lib/utils/formatters';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
@@ -152,29 +153,33 @@ export default function ExecutionMiniPlayer() {
           )}
           {isExecuting && activeExecutionId && (
             <Tooltip content="Stop execution">
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={handleStop}
-                className="p-1 rounded-md hover:bg-red-500/15 text-red-400/70 hover:text-red-400 transition-colors"
+                className="text-red-400/70 hover:text-red-400 hover:bg-red-500/15"
               >
                 <Square className="w-3 h-3" />
-              </button>
+              </Button>
             </Tooltip>
           )}
           <Tooltip content={miniPlayerExpanded ? 'Collapse' : 'Expand'}>
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={toggleMiniPlayerExpanded}
-              className="p-1 rounded-md hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/80 transition-colors"
             >
               {miniPlayerExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Unpin mini-player">
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={unpinMiniPlayer}
-              className="p-1 rounded-md hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/80 transition-colors"
             >
               <PinOff className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </Tooltip>
         </div>
 

@@ -171,27 +171,43 @@
         "category": "messaging"
       },
       {
-        "name": "google_workspace",
-        "label": "Google Workspace (Gmail)",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
-            "key": "oauth2_token",
-            "label": "OAuth2 Credentials",
+            "key": "client_id",
+            "label": "OAuth Client ID",
+            "type": "text",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
+            "required": true
+          },
+          {
+            "key": "client_secret",
+            "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "Configured via OAuth2 flow",
-            "helpText": "OAuth2 credentials from Google Cloud Console. Enable the Gmail API in your project.",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console (console.cloud.google.com)\n2. Create or select a project\n3. Navigate to APIs & Services → Library\n4. Search for and enable the Gmail API\n5. Go to APIs & Services → Credentials\n6. Create OAuth 2.0 Client ID credentials (type: Desktop or Web application)\n7. Configure the OAuth consent screen with appropriate scopes (gmail.send)\n8. Complete the OAuth2 authorization flow in the Personas connector setup\n9. The agent will use these credentials to send welcome and confirmation emails",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_send"
         ],
-        "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        "related_triggers": []
       }
     ],
     "suggested_notification_channels": [
@@ -212,7 +228,7 @@
       {
         "type": "email",
         "description": "Outbound email channel for welcome sequences and order confirmations sent via Gmail",
-        "required_connector": "google_workspace",
+        "required_connector": "gmail",
         "config_hints": {
           "from_name": "Your Product Team",
           "reply_to": "support@yourdomain.com"
@@ -301,7 +317,7 @@
             "type": "connector",
             "label": "Send welcome email",
             "detail": "gmail_send with personalized HTML body, plan-specific onboarding links",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "ns11",
@@ -471,7 +487,7 @@
             "type": "connector",
             "label": "Send confirmation email",
             "detail": "gmail_send order confirmation with order details, items, and total to customer email",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "no13",

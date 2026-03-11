@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Paperclip, Link } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import type { DesignFileType, DesignFile, DesignContext } from '@/lib/types/frontendTypes';
 import { ACCEPTED_EXTENSIONS, detectFileType } from './designInputHelpers';
 import { TypeSelectorModal, AttachedFilesRow, ReferencesTextarea } from './DesignInputAttachments';
@@ -170,16 +171,17 @@ export function DesignInput({
 
         {/* Action bar */}
         <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1.5 px-2">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
+            icon={<Paperclip className="w-3.5 h-3.5" />}
+            className="text-muted-foreground/80 hover:text-foreground/95"
             title="Attach file (API spec, schema, MCP config)"
           >
-            <Paperclip className="w-3.5 h-3.5" />
-            <span>Attach</span>
-          </button>
+            Attach
+          </Button>
           <input
             ref={fileInputRef}
             type="file"
@@ -188,20 +190,20 @@ export function DesignInput({
             className="hidden"
           />
 
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setShowReferences(!showReferences)}
             disabled={disabled}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm transition-colors ${
-              showReferences
-                ? 'text-indigo-400 bg-indigo-500/10'
-                : 'text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/50'
-            }`}
+            icon={<Link className="w-3.5 h-3.5" />}
+            className={showReferences
+              ? 'text-indigo-400 bg-indigo-500/10'
+              : 'text-muted-foreground/80 hover:text-foreground/95'
+            }
             title="Add reference URLs or connection strings"
           >
-            <Link className="w-3.5 h-3.5" />
-            <span>References</span>
-          </button>
+            References
+          </Button>
 
           {(designContext?.files?.length ?? 0) > 0 && (
             <span className="ml-auto text-sm text-muted-foreground/80">

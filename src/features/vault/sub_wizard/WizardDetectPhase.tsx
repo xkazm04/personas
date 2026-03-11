@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Search, Radar, Loader2, Sparkles } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { usePersonaStore } from '@/stores/personaStore';
 import { detectAuthenticatedServices, type AuthDetection } from '@/api/auth/authDetect';
 import type { ConnectorDefinition } from '@/lib/types/types';
@@ -119,23 +120,18 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
 
       {/* Scan button */}
       {!hasDetected && (
-        <button
-          onClick={handleDetect}
+        <Button
+          variant="accent"
+          accentColor="cyan"
+          size="md"
+          block
+          icon={isDetecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radar className="w-4 h-4" />}
+          loading={isDetecting}
           disabled={isDetecting}
-          className="w-full flex items-center justify-center gap-2.5 px-4 py-3 bg-cyan-500/10 hover:bg-cyan-500/15 border border-cyan-500/20 rounded-xl text-sm font-medium text-cyan-300 transition-colors disabled:opacity-60"
+          onClick={handleDetect}
         >
-          {isDetecting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Scanning CLI tools and browser sessions...
-            </>
-          ) : (
-            <>
-              <Radar className="w-4 h-4" />
-              Scan for authenticated services
-            </>
-          )}
-        </button>
+          {isDetecting ? 'Scanning CLI tools and browser sessions...' : 'Scan for authenticated services'}
+        </Button>
       )}
 
       {/* Detection results banner */}
@@ -173,19 +169,23 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
       {/* Action bar */}
       {selected.size > 0 && (
         <div className="flex items-center justify-between pt-2 border-t border-primary/10">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setSelected(new Set())}
-            className="text-sm text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+            className="text-muted-foreground/60 hover:text-foreground/80"
           >
             Clear selection
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="accent"
+            accentColor="violet"
+            size="md"
+            icon={<Sparkles className="w-3.5 h-3.5" />}
             onClick={handleSetup}
-            className="flex items-center gap-2 px-5 py-2.5 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-300 rounded-xl text-sm font-medium transition-colors"
           >
-            <Sparkles className="w-3.5 h-3.5" />
             Set up {selected.size} service{selected.size !== 1 ? 's' : ''}
-          </button>
+          </Button>
         </div>
       )}
     </div>

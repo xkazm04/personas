@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { CheckCircle2, Download } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import type { CategoryWithCount } from '@/api/overview/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -56,10 +57,12 @@ export function ExploreView({
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2">
             {readyTemplates.map((t) => (
-              <button
+              <Button
                 key={t.id}
+                variant="ghost"
+                size="sm"
                 onClick={() => onSelectTemplate(t)}
-                className="flex-shrink-0 w-52 bg-secondary/20 border border-emerald-500/15 rounded-xl p-3 text-left hover:border-emerald-500/30 hover:bg-secondary/30 transition-all"
+                className="flex-shrink-0 w-52 bg-secondary/20 border border-emerald-500/15 p-3 text-left hover:border-emerald-500/30 hover:bg-secondary/30"
               >
                 <div className="text-sm font-medium text-foreground/80 truncate">{t.test_case_name}</div>
                 <div className="text-sm text-muted-foreground/50 truncate mt-0.5">
@@ -71,7 +74,7 @@ export function ExploreView({
                     {t.adoption_count} adoption{t.adoption_count !== 1 ? 's' : ''}
                   </div>
                 )}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

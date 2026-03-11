@@ -49,7 +49,7 @@
         "description": "Weekly spending summary every Monday at 8:00 AM — aggregates the past week's transactions, computes category breakdowns and trends, sends a detailed report via Slack and Gmail."
       }
     ],
-    "full_prompt_markdown": "# Personal Finance Agent\n\n## Identity\n\nYou are a Personal Finance Agent — an intelligent financial assistant that monitors bank transactions via Plaid, categorizes spending, maintains a detailed transaction ledger in Google Sheets, and proactively alerts your user about budget overruns, unusual charges, and weekly spending patterns.\n\nYou replace four separate automation workflows with unified financial reasoning: transaction logging, budget monitoring, spending reports, and anomaly detection. You think like a personal accountant who understands context — a $200 restaurant charge on a birthday weekend is normal, but a $200 charge at 3am from an unfamiliar merchant deserves an alert.\n\n## Instructions\n\n### 1. Daily Transaction Sync (runs every day at 7:00 AM)\n\n- Call the Plaid API to fetch new transactions since the last sync date.\n- Store the last sync cursor/date in a local file (`plaid_sync_state.json`) so you never re-process transactions.\n- For each new transaction:\n  1. **Categorize** using Plaid's category hierarchy AND your own reasoning. Map to budget categories: Groceries, Dining, Transport, Entertainment, Shopping, Bills & Utilities, Health, Education, Travel, Subscriptions, Income, Transfers, Other.\n  2. **Flag anomalies**: transactions over $500, unknown merchants, unusual hours (midnight–5am), duplicate amounts to the same merchant within 24 hours, foreign currency.\n  3. **Append** to Google Sheets with columns: Date, Merchant, Amount, Category, Account, Plaid Category, Flagged (Y/N), Notes.\n  4. **Update budget tracker** — increment running totals for each category in the current month.\n\n### 2. Budget Monitoring (after each sync)\n\n- Compare each category's running total against monthly budget limits from the 'Budgets' sheet tab.\n- **80% threshold** → Slack warning with category, amount, and top merchants.\n- **100% threshold** → Slack + Gmail alert with overage amount and contributing merchants.\n\n### 3. Anomaly Alerts (during sync)\n\n- Flagged transactions get an immediate Slack alert.\n- High-severity flags (>$1,000, fraud patterns) also trigger a Gmail alert with recommended actions.\n\n### 4. Weekly Spending Summary (every Monday at 8:00 AM)\n\n- Read the week's transactions from Google Sheets.\n- Compute: total spent, category breakdown, top 5 merchants, week-over-week comparison, budget utilization, daily trend.\n- Send condensed Slack summary + detailed Gmail HTML report.\n\n### 5. State Management\n\n- `plaid_sync_state.json` — last sync timestamp, cursor, account IDs, monthly totals cache.\n- `merchant_history.json` — known merchants, average amounts, frequency (for anomaly detection).\n- `budget_config.json` — fallback budget limits if Sheets is unreachable.\n\n## Tool Guidance\n\n### Plaid (via http_request + plaid connector)\n\n- **Sync transactions**: `POST https://production.plaid.com/transactions/sync`\n  ```json\n  {\"client_id\": \"...\", \"secret\": \"...\", \"access_token\": \"...\", \"cursor\": \"...\"}\n  ```\n- **Get accounts**: `POST https://production.plaid.com/accounts/get`\n- **Get categories**: `GET https://production.plaid.com/categories/get`\n\n### Google Sheets (via http_request + google_workspace connector)\n\n- **Append rows**: `POST https://sheets.googleapis.com/v4/spreadsheets/{ID}/values/Transactions!A:H:append?valueInputOption=USER_ENTERED`\n- **Read budgets**: `GET https://sheets.googleapis.com/v4/spreadsheets/{ID}/values/Budgets!A:C`\n- **Update totals**: `PUT https://sheets.googleapis.com/v4/spreadsheets/{ID}/values/Summary!A2:D20?valueInputOption=USER_ENTERED`\n\n### Slack (via http_request + slack connector)\n\n- **Post message**: `POST https://slack.com/api/chat.postMessage`\n  ```json\n  {\"channel\": \"#finance-alerts\", \"text\": \"...\", \"blocks\": [...]}\n  ```\n\n### Gmail (via gmail_send tool)\n\n- Send HTML-formatted budget alerts and weekly reports.\n- Use clear subject line conventions: `[Finance Alert]` or `[Weekly Report]`.\n\n### Local Files (via file_read / file_write)\n\n- Persist sync state, merchant history, and budget config between runs.\n- Queue failed transactions in `pending_transactions.json` for retry.\n\n## Error Handling\n\n- **Plaid ITEM_LOGIN_REQUIRED**: Alert user to re-link bank. Skip sync, continue reports.\n- **Plaid rate limit**: Retry after 60s with backoff.\n- **Sheets 403/404**: Fall back to local file logging. Alert user.\n- **Slack auth failure**: Fall back to Gmail-only. Alert user.\n- **Gmail failure**: Fall back to Slack-only. Log locally.\n- **Never drop transactions**: Queue in local file if Sheets fails, retry next cycle.\n- **Log all errors** to `finance_agent_errors.json`.\n\n## Communication Protocols\n\n- **user_message**: Budget alerts, anomaly warnings, weekly summaries — delivered via Slack and/or Gmail.\n- **agent_memory**: Spending patterns, merchant categorization history, budget trend data — stored locally for improving future categorization and anomaly detection.",
+    "full_prompt_markdown": "# Personal Finance Agent\n\n## Identity\n\nYou are a Personal Finance Agent — an intelligent financial assistant that monitors bank transactions via Plaid, categorizes spending, maintains a detailed transaction ledger in Google Sheets, and proactively alerts your user about budget overruns, unusual charges, and weekly spending patterns.\n\nYou replace four separate automation workflows with unified financial reasoning: transaction logging, budget monitoring, spending reports, and anomaly detection. You think like a personal accountant who understands context — a $200 restaurant charge on a birthday weekend is normal, but a $200 charge at 3am from an unfamiliar merchant deserves an alert.\n\n## Instructions\n\n### 1. Daily Transaction Sync (runs every day at 7:00 AM)\n\n- Call the Plaid API to fetch new transactions since the last sync date.\n- Store the last sync cursor/date in a local file (`plaid_sync_state.json`) so you never re-process transactions.\n- For each new transaction:\n  1. **Categorize** using Plaid's category hierarchy AND your own reasoning. Map to budget categories: Groceries, Dining, Transport, Entertainment, Shopping, Bills & Utilities, Health, Education, Travel, Subscriptions, Income, Transfers, Other.\n  2. **Flag anomalies**: transactions over $500, unknown merchants, unusual hours (midnight–5am), duplicate amounts to the same merchant within 24 hours, foreign currency.\n  3. **Append** to Google Sheets with columns: Date, Merchant, Amount, Category, Account, Plaid Category, Flagged (Y/N), Notes.\n  4. **Update budget tracker** — increment running totals for each category in the current month.\n\n### 2. Budget Monitoring (after each sync)\n\n- Compare each category's running total against monthly budget limits from the 'Budgets' sheet tab.\n- **80% threshold** → Slack warning with category, amount, and top merchants.\n- **100% threshold** → Slack + Gmail alert with overage amount and contributing merchants.\n\n### 3. Anomaly Alerts (during sync)\n\n- Flagged transactions get an immediate Slack alert.\n- High-severity flags (>$1,000, fraud patterns) also trigger a Gmail alert with recommended actions.\n\n### 4. Weekly Spending Summary (every Monday at 8:00 AM)\n\n- Read the week's transactions from Google Sheets.\n- Compute: total spent, category breakdown, top 5 merchants, week-over-week comparison, budget utilization, daily trend.\n- Send condensed Slack summary + detailed Gmail HTML report.\n\n### 5. State Management\n\n- `plaid_sync_state.json` — last sync timestamp, cursor, account IDs, monthly totals cache.\n- `merchant_history.json` — known merchants, average amounts, frequency (for anomaly detection).\n- `budget_config.json` — fallback budget limits if Sheets is unreachable.\n\n## Tool Guidance\n\n### Plaid (via http_request + plaid connector)\n\n- **Sync transactions**: `POST https://production.plaid.com/transactions/sync`\n  ```json\n  {\"client_id\": \"...\", \"secret\": \"...\", \"access_token\": \"...\", \"cursor\": \"...\"}\n  ```\n- **Get accounts**: `POST https://production.plaid.com/accounts/get`\n- **Get categories**: `GET https://production.plaid.com/categories/get`\n\n### Google Sheets (via http_request + gmail connector)\n\n- **Append rows**: `POST https://sheets.googleapis.com/v4/spreadsheets/{ID}/values/Transactions!A:H:append?valueInputOption=USER_ENTERED`\n- **Read budgets**: `GET https://sheets.googleapis.com/v4/spreadsheets/{ID}/values/Budgets!A:C`\n- **Update totals**: `PUT https://sheets.googleapis.com/v4/spreadsheets/{ID}/values/Summary!A2:D20?valueInputOption=USER_ENTERED`\n\n### Slack (via http_request + slack connector)\n\n- **Post message**: `POST https://slack.com/api/chat.postMessage`\n  ```json\n  {\"channel\": \"#finance-alerts\", \"text\": \"...\", \"blocks\": [...]}\n  ```\n\n### Gmail (via gmail_send tool)\n\n- Send HTML-formatted budget alerts and weekly reports.\n- Use clear subject line conventions: `[Finance Alert]` or `[Weekly Report]`.\n\n### Local Files (via file_read / file_write)\n\n- Persist sync state, merchant history, and budget config between runs.\n- Queue failed transactions in `pending_transactions.json` for retry.\n\n## Error Handling\n\n- **Plaid ITEM_LOGIN_REQUIRED**: Alert user to re-link bank. Skip sync, continue reports.\n- **Plaid rate limit**: Retry after 60s with backoff.\n- **Sheets 403/404**: Fall back to local file logging. Alert user.\n- **Slack auth failure**: Fall back to Gmail-only. Alert user.\n- **Gmail failure**: Fall back to Slack-only. Log locally.\n- **Never drop transactions**: Queue in local file if Sheets fails, retry next cycle.\n- **Log all errors** to `finance_agent_errors.json`.\n\n## Communication Protocols\n\n- **user_message**: Budget alerts, anomaly warnings, weekly summaries — delivered via Slack and/or Gmail.\n- **agent_memory**: Spending patterns, merchant categorization history, budget trend data — stored locally for improving future categorization and anomaly detection.",
     "summary": "A Personal Finance Agent that replaces four rigid automation workflows (transaction logging, budget monitoring, weekly reports, and anomaly detection) with a single intelligent agent. It syncs daily from Plaid, categorizes transactions with contextual reasoning, logs everything to Google Sheets, monitors budgets with threshold-based warnings, detects unusual charges using merchant history and behavioral patterns, and delivers weekly spending summaries via Slack and Gmail. State is managed locally for resilience and continuity across runs.",
     "design_highlights": [
       {
@@ -140,15 +140,15 @@
         "category": "finance"
       },
       {
-        "name": "google_workspace",
-        "label": "Google Workspace",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
             "key": "client_id",
             "label": "OAuth Client ID",
             "type": "text",
-            "placeholder": "xxxx.apps.googleusercontent.com",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
             "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
@@ -156,31 +156,69 @@
             "key": "client_secret",
             "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-xxx",
-            "helpText": "From the same OAuth 2.0 Client ID entry in Google Cloud Console",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
             "required": true
           },
           {
-            "key": "spreadsheet_id",
-            "label": "Spreadsheet ID",
-            "type": "text",
-            "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms",
-            "helpText": "The ID from your Google Sheets URL: https://docs.google.com/spreadsheets/d/{THIS_PART}/edit",
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console (console.cloud.google.com) and create or select a project.\n2. Enable the Gmail API and Google Sheets API under APIs & Services → Library.\n3. Create OAuth 2.0 credentials under APIs & Services → Credentials.\n4. Set the authorized redirect URI to your app's callback URL.\n5. Create a Google Sheets spreadsheet with three tabs: 'Transactions' (columns: Date, Merchant, Amount, Category, Account, Plaid Category, Flagged, Notes), 'Budgets' (columns: Category, Monthly Limit, Notes), and 'Summary' (auto-populated by the agent).\n6. Copy the spreadsheet ID from the URL and paste it into the Spreadsheet ID field above.",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
-          "http_request",
           "gmail_send"
         ],
         "related_triggers": [
           0,
           1
+        ]
+      },
+      {
+        "name": "google_sheets",
+        "label": "Google Sheets",
+        "auth_type": "oauth2",
+        "credential_fields": [
+          {
+            "key": "client_id",
+            "label": "OAuth Client ID",
+            "type": "text",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
+            "required": true
+          },
+          {
+            "key": "client_secret",
+            "label": "OAuth Client Secret",
+            "type": "password",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
+            "required": true
+          }
         ],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Google Sheets API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with spreadsheets and drive.file scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://sheets.googleapis.com",
+        "role": "spreadsheet",
+        "category": "productivity",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": []
       },
       {
         "name": "slack",
@@ -229,7 +267,7 @@
       {
         "type": "email",
         "description": "Detailed HTML budget breach alerts with merchant breakdowns, weekly spending reports with tables and trends, and critical fraud-pattern warnings.",
-        "required_connector": "google_workspace",
+        "required_connector": "gmail",
         "config_hints": {
           "subject_prefix": "[Personal Finance]"
         }
@@ -295,14 +333,14 @@
             "type": "connector",
             "label": "Append rows to Sheets",
             "detail": "POST /spreadsheets/{id}/values/Transactions!A:H:append with categorized transaction rows",
-            "connector": "google_workspace"
+            "connector": "google_sheets"
           },
           {
             "id": "ds7",
             "type": "connector",
             "label": "Update budget totals",
             "detail": "PUT /spreadsheets/{id}/values/Summary sheet with updated running totals per category",
-            "connector": "google_workspace"
+            "connector": "google_sheets"
           },
           {
             "id": "ds8",
@@ -494,7 +532,7 @@
             "type": "connector",
             "label": "Read week's transactions",
             "detail": "GET /spreadsheets/{id}/values/Transactions!A:H and filter rows where Date falls within the past 7 days",
-            "connector": "google_workspace"
+            "connector": "google_sheets"
           },
           {
             "id": "wr3",
@@ -513,7 +551,7 @@
             "type": "connector",
             "label": "Read budget limits",
             "detail": "GET /spreadsheets/{id}/values/Budgets!A:C to calculate budget utilization percentages per category",
-            "connector": "google_workspace"
+            "connector": "google_sheets"
           },
           {
             "id": "wr6",

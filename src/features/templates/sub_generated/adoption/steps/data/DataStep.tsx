@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Plus,
 } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
 import { useTableIntrospection } from '@/hooks/database/useTableIntrospection';
 import { useSchemaProposal } from '@/hooks/database/useSchemaProposal';
@@ -115,24 +116,28 @@ export function DataStep() {
 
       {!tablesAlreadyExist && (
         <div className="flex gap-2">
-          <button
-            type="button" onClick={() => setMode('create')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              mode === 'create' ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
-                : 'bg-secondary/20 text-muted-foreground/60 border border-primary/10 hover:border-primary/20'
-            }`}
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Plus className="w-4 h-4" />}
+            onClick={() => setMode('create')}
+            className={mode === 'create'
+              ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
+              : 'bg-secondary/20 text-muted-foreground/60 border border-primary/10 hover:border-primary/20'}
           >
-            <Plus className="w-3.5 h-3.5" />Create New Tables
-          </button>
-          <button
-            type="button" onClick={() => setMode('existing')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              mode === 'existing' ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
-                : 'bg-secondary/20 text-muted-foreground/60 border border-primary/10 hover:border-primary/20'
-            }`}
+            Create New Tables
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Table2 className="w-4 h-4" />}
+            onClick={() => setMode('existing')}
+            className={mode === 'existing'
+              ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
+              : 'bg-secondary/20 text-muted-foreground/60 border border-primary/10 hover:border-primary/20'}
           >
-            <Table2 className="w-3.5 h-3.5" />Use Existing Tables
-          </button>
+            Use Existing Tables
+          </Button>
         </div>
       )}
 

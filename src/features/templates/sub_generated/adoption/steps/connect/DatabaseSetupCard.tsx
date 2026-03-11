@@ -10,6 +10,7 @@ import {
   Table2,
   RefreshCw,
 } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
 import { useTableIntrospection } from '@/hooks/database/useTableIntrospection';
 
@@ -45,30 +46,28 @@ export function DatabaseSetupCard() {
 
       {/* Mode toggle */}
       <div className="flex gap-2">
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Plus className="w-4 h-4" />}
           onClick={() => wizard.setDatabaseMode('create')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            databaseMode === 'create'
-              ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/25'
-              : 'bg-secondary/20 text-muted-foreground/60 border border-primary/10 hover:border-primary/20'
-          }`}
+          className={databaseMode === 'create'
+            ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/25'
+            : 'bg-secondary/20 text-muted-foreground/60 border border-primary/10 hover:border-primary/20'}
         >
-          <Plus className="w-3 h-3" />
           Create New
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Table2 className="w-4 h-4" />}
           onClick={() => wizard.setDatabaseMode('existing')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            databaseMode === 'existing'
-              ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/25'
-              : 'bg-secondary/20 text-muted-foreground/60 border border-primary/10 hover:border-primary/20'
-          }`}
+          className={databaseMode === 'existing'
+            ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/25'
+            : 'bg-secondary/20 text-muted-foreground/60 border border-primary/10 hover:border-primary/20'}
         >
-          <Table2 className="w-3 h-3" />
           Use Existing
-        </button>
+        </Button>
       </div>
 
       {databaseMode === 'create' && (
@@ -81,15 +80,17 @@ export function DatabaseSetupCard() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground/70">Select tables to use:</span>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="xs"
+              icon={<RefreshCw className="w-4 h-4" />}
               onClick={() => void fetchTables(true)}
               disabled={tablesLoading}
-              className="flex items-center gap-1 text-[11px] text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
+              loading={tablesLoading}
+              className="text-[11px] text-muted-foreground/50 hover:text-muted-foreground/70"
             >
-              <RefreshCw className={`w-3 h-3 ${tablesLoading ? 'animate-spin' : ''}`} />
               Refresh
-            </button>
+            </Button>
           </div>
 
           {tablesLoading && (
@@ -117,20 +118,19 @@ export function DatabaseSetupCard() {
               {visibleTables.map((table) => {
                 const selected = selectedTableNames.includes(table.table_name);
                 return (
-                  <button
+                  <Button
                     key={table.table_name}
-                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    icon={<Table2 className="w-4 h-4" />}
                     onClick={() => wizard.toggleTableName(table.table_name)}
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm transition-colors ${
-                      selected
-                        ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/25'
-                        : 'bg-secondary/20 text-muted-foreground/60 border border-primary/10 hover:border-primary/20'
-                    }`}
+                    className={selected
+                      ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/25'
+                      : 'bg-secondary/20 text-muted-foreground/60 border border-primary/10 hover:border-primary/20'}
                   >
-                    <Table2 className="w-2.5 h-2.5" />
                     {table.table_name}
                     {selected && <CheckCircle2 className="w-2.5 h-2.5 text-cyan-400" />}
-                  </button>
+                  </Button>
                 );
               })}
             </div>

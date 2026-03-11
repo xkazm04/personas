@@ -1,0 +1,46 @@
+{
+  "id": "builtin-ntfy",
+  "name": "ntfy",
+  "label": "ntfy",
+  "color": "#317F6E",
+  "icon_url": "/icons/connectors/ntfy.svg",
+  "category": "notifications",
+  "fields": [
+    {
+      "key": "base_url",
+      "label": "Server URL",
+      "type": "url",
+      "required": false,
+      "placeholder": "https://ntfy.sh",
+      "helpText": "Your ntfy server URL (defaults to ntfy.sh public server)"
+    },
+    {
+      "key": "access_token",
+      "label": "Access Token",
+      "type": "password",
+      "required": false,
+      "placeholder": "tk_...",
+      "helpText": "Optional — only needed for access-controlled topics"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{base_url|https://ntfy.sh}}/v1/health",
+    "method": "GET",
+    "headers": {},
+    "description": "Validates ntfy server availability via health endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "ntfy open-source push notification service for sending notifications to phones and desktops via simple HTTP.",
+    "auth_type": "pat",
+    "auth_type_label": "Access Token",
+    "docs_url": "https://docs.ntfy.sh/",
+    "setup_guide": "1. Go to ntfy.sh (or your self-hosted instance).\n2. Optionally create an account for access-controlled topics.\n3. Generate an access token under Account → Access Tokens.\n4. Paste the token and server URL here.",
+    "pricing_tier": "free",
+    "auth_methods": [
+      {"id": "pat", "label": "Access Token", "type": "credential", "is_default": true}
+    ]
+  }
+}

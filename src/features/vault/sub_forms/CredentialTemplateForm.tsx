@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { McpPrefilledForm } from '@/features/vault/sub_schemas/McpPrefilledForm';
+import { Button } from '@/features/shared/components/buttons';
 import type { ConnectorDefinition, CredentialTemplateField, ConnectorAuthMethod } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import { SetupGuideSection } from './SetupGuideSection';
@@ -148,17 +149,17 @@ export function CredentialTemplateForm({
           {variants && variants.length > 1 && (
             <div className="flex gap-1.5 p-1 bg-secondary/15 border border-primary/8 rounded-lg">
               {variants.map((v) => (
-                <button
+                <Button
                   key={v.id}
+                  variant="ghost"
+                  size="sm"
                   onClick={() => handleVariantChange(v.id)}
-                  className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${
-                    activeVariantId === v.id
-                      ? 'bg-primary/10 text-primary border border-primary/20'
-                      : 'text-muted-foreground/80 hover:bg-secondary/40 border border-transparent'
-                  }`}
+                  className={activeVariantId === v.id
+                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    : 'text-muted-foreground/80 hover:bg-secondary/40 border border-transparent'}
                 >
                   {v.label}
-                </button>
+                </Button>
               ))}
             </div>
           )}

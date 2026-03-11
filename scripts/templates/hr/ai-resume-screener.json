@@ -99,36 +99,39 @@
     ],
     "suggested_connectors": [
       {
-        "name": "google_workspace",
-        "label": "Google Workspace (Gmail)",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
             "key": "client_id",
-            "label": "OAuth2 Client ID",
+            "label": "OAuth Client ID",
             "type": "text",
-            "placeholder": "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
-            "helpText": "From Google Cloud Console -> APIs & Services -> Credentials -> OAuth 2.0 Client IDs",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "OAuth2 Client Secret",
+            "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-EXAMPLE_SECRET_REPLACE_ME",
-            "helpText": "Displayed when creating the OAuth2 client in Google Cloud Console",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
             "required": true
           },
           {
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//0EXAMPLE_REFRESH_TOKEN_REPLACE_ME",
-            "helpText": "Obtained during the OAuth2 consent flow. Use the OAuth Playground or your app's auth callback. Requires Gmail read, send, and modify scopes.",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable both the Gmail API and Google Sheets API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app' or 'Web application'.\n5. Complete the OAuth consent screen configuration.\n6. Copy the Client ID and Client Secret.\n7. Complete the OAuth flow to obtain a refresh token with scopes: gmail.readonly, gmail.send, gmail.modify, spreadsheets.",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_search",
           "gmail_read",
@@ -136,44 +139,46 @@
         ],
         "related_triggers": [
           0
-        ],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        ]
       },
       {
         "name": "google_sheets",
-        "label": "Google Sheets API",
-        "auth_type": "api_key",
+        "label": "Google Sheets",
+        "auth_type": "oauth2",
         "credential_fields": [
           {
-            "key": "spreadsheet_id",
-            "label": "Spreadsheet ID",
+            "key": "client_id",
+            "label": "OAuth Client ID",
             "type": "text",
-            "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms",
-            "helpText": "The ID from your Google Sheets URL: https://docs.google.com/spreadsheets/d/{THIS_PART}/edit. Create a new spreadsheet for your hiring pipeline or use an existing one.",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
-            "key": "sheet_name",
-            "label": "Sheet Tab Name",
-            "type": "text",
-            "placeholder": "Candidates",
-            "helpText": "The name of the sheet tab where candidate data will be logged. Defaults to 'Candidates' if not specified.",
-            "required": false
+            "key": "client_secret",
+            "label": "OAuth Client Secret",
+            "type": "password",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
+            "required": true
           }
         ],
-        "setup_instructions": "1. Create a new Google Spreadsheet or open an existing one for your hiring pipeline.\n2. Copy the Spreadsheet ID from the URL (the long string between /d/ and /edit).\n3. Ensure the Google Workspace OAuth credentials above have the spreadsheets scope enabled.\n4. Share the spreadsheet with the service account email if using service account auth.\n5. The screener will automatically create column headers on first run.",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Google Sheets API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with spreadsheets and drive.file scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://sheets.googleapis.com",
+        "role": "spreadsheet",
+        "category": "productivity",
         "related_tools": [
           "http_request"
         ],
-        "related_triggers": [
-          0,
-          1
-        ],
-        "api_base_url": "https://sheets.googleapis.com/v4",
-        "role": "data_storage",
-        "category": "productivity"
+        "related_triggers": []
       },
       {
         "name": "slack",
@@ -357,30 +362,147 @@
           }
         ],
         "edges": [
-          { "id": "re1", "source": "r1", "target": "r2" },
-          { "id": "re2", "source": "r2", "target": "r3" },
-          { "id": "re3", "source": "r3", "target": "r4" },
-          { "id": "re4", "source": "r4", "target": "r5", "label": "Yes", "variant": "yes" },
-          { "id": "re5", "source": "r4", "target": "r20", "label": "No new emails", "variant": "no" },
-          { "id": "re6", "source": "r5", "target": "r6" },
-          { "id": "re7", "source": "r6", "target": "r7", "label": "Valid attachment", "variant": "yes" },
-          { "id": "re8", "source": "r6", "target": "r20", "label": "No valid attachment", "variant": "no" },
-          { "id": "re9", "source": "r7", "target": "r8" },
-          { "id": "re10", "source": "r8", "target": "r9", "label": "Success", "variant": "yes" },
-          { "id": "re11", "source": "r8", "target": "r19", "label": "Failed", "variant": "no" },
-          { "id": "re12", "source": "r9", "target": "r10" },
-          { "id": "re13", "source": "r10", "target": "r11" },
-          { "id": "re14", "source": "r11", "target": "r12" },
-          { "id": "re15", "source": "r12", "target": "r13" },
-          { "id": "re16", "source": "r13", "target": "r14" },
-          { "id": "re17", "source": "r14", "target": "r15", "label": "Qualified/Strong", "variant": "yes" },
-          { "id": "re18", "source": "r14", "target": "r16", "label": "Below threshold", "variant": "no" },
-          { "id": "re19", "source": "r15", "target": "r16" },
-          { "id": "re20", "source": "r16", "target": "r17", "label": "Real application", "variant": "yes" },
-          { "id": "re21", "source": "r16", "target": "r18", "label": "Spam/not resume", "variant": "no" },
-          { "id": "re22", "source": "r17", "target": "r18" },
-          { "id": "re23", "source": "r18", "target": "r20" },
-          { "id": "re24", "source": "r19", "target": "r16", "variant": "error" }
+          {
+            "id": "re1",
+            "source": "r1",
+            "target": "r2"
+          },
+          {
+            "id": "re2",
+            "source": "r2",
+            "target": "r3"
+          },
+          {
+            "id": "re3",
+            "source": "r3",
+            "target": "r4"
+          },
+          {
+            "id": "re4",
+            "source": "r4",
+            "target": "r5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "re5",
+            "source": "r4",
+            "target": "r20",
+            "label": "No new emails",
+            "variant": "no"
+          },
+          {
+            "id": "re6",
+            "source": "r5",
+            "target": "r6"
+          },
+          {
+            "id": "re7",
+            "source": "r6",
+            "target": "r7",
+            "label": "Valid attachment",
+            "variant": "yes"
+          },
+          {
+            "id": "re8",
+            "source": "r6",
+            "target": "r20",
+            "label": "No valid attachment",
+            "variant": "no"
+          },
+          {
+            "id": "re9",
+            "source": "r7",
+            "target": "r8"
+          },
+          {
+            "id": "re10",
+            "source": "r8",
+            "target": "r9",
+            "label": "Success",
+            "variant": "yes"
+          },
+          {
+            "id": "re11",
+            "source": "r8",
+            "target": "r19",
+            "label": "Failed",
+            "variant": "no"
+          },
+          {
+            "id": "re12",
+            "source": "r9",
+            "target": "r10"
+          },
+          {
+            "id": "re13",
+            "source": "r10",
+            "target": "r11"
+          },
+          {
+            "id": "re14",
+            "source": "r11",
+            "target": "r12"
+          },
+          {
+            "id": "re15",
+            "source": "r12",
+            "target": "r13"
+          },
+          {
+            "id": "re16",
+            "source": "r13",
+            "target": "r14"
+          },
+          {
+            "id": "re17",
+            "source": "r14",
+            "target": "r15",
+            "label": "Qualified/Strong",
+            "variant": "yes"
+          },
+          {
+            "id": "re18",
+            "source": "r14",
+            "target": "r16",
+            "label": "Below threshold",
+            "variant": "no"
+          },
+          {
+            "id": "re19",
+            "source": "r15",
+            "target": "r16"
+          },
+          {
+            "id": "re20",
+            "source": "r16",
+            "target": "r17",
+            "label": "Real application",
+            "variant": "yes"
+          },
+          {
+            "id": "re21",
+            "source": "r16",
+            "target": "r18",
+            "label": "Spam/not resume",
+            "variant": "no"
+          },
+          {
+            "id": "re22",
+            "source": "r17",
+            "target": "r18"
+          },
+          {
+            "id": "re23",
+            "source": "r18",
+            "target": "r20"
+          },
+          {
+            "id": "re24",
+            "source": "r19",
+            "target": "r16",
+            "variant": "error"
+          }
         ]
       },
       {
@@ -464,18 +586,68 @@
           }
         ],
         "edges": [
-          { "id": "we1", "source": "w1", "target": "w2" },
-          { "id": "we2", "source": "w2", "target": "w3" },
-          { "id": "we3", "source": "w3", "target": "w4" },
-          { "id": "we4", "source": "w4", "target": "w5" },
-          { "id": "we5", "source": "w5", "target": "w6" },
-          { "id": "we6", "source": "w6", "target": "w10" },
-          { "id": "we7", "source": "w10", "target": "w7" },
-          { "id": "we8", "source": "w7", "target": "w8" },
-          { "id": "we9", "source": "w8", "target": "w9" },
-          { "id": "we10", "source": "w9", "target": "w12" },
-          { "id": "we11", "source": "w2", "target": "w11", "variant": "error" },
-          { "id": "we12", "source": "w11", "target": "w12", "variant": "error" }
+          {
+            "id": "we1",
+            "source": "w1",
+            "target": "w2"
+          },
+          {
+            "id": "we2",
+            "source": "w2",
+            "target": "w3"
+          },
+          {
+            "id": "we3",
+            "source": "w3",
+            "target": "w4"
+          },
+          {
+            "id": "we4",
+            "source": "w4",
+            "target": "w5"
+          },
+          {
+            "id": "we5",
+            "source": "w5",
+            "target": "w6"
+          },
+          {
+            "id": "we6",
+            "source": "w6",
+            "target": "w10"
+          },
+          {
+            "id": "we7",
+            "source": "w10",
+            "target": "w7"
+          },
+          {
+            "id": "we8",
+            "source": "w7",
+            "target": "w8"
+          },
+          {
+            "id": "we9",
+            "source": "w8",
+            "target": "w9"
+          },
+          {
+            "id": "we10",
+            "source": "w9",
+            "target": "w12"
+          },
+          {
+            "id": "we11",
+            "source": "w2",
+            "target": "w11",
+            "variant": "error"
+          },
+          {
+            "id": "we12",
+            "source": "w11",
+            "target": "w12",
+            "variant": "error"
+          }
         ]
       },
       {
@@ -567,21 +739,93 @@
           }
         ],
         "edges": [
-          { "id": "ce1", "source": "c1", "target": "c2" },
-          { "id": "ce2", "source": "c2", "target": "c3" },
-          { "id": "ce3", "source": "c3", "target": "c4" },
-          { "id": "ce4", "source": "c4", "target": "c5" },
-          { "id": "ce5", "source": "c5", "target": "c6", "label": "Yes", "variant": "yes" },
-          { "id": "ce6", "source": "c5", "target": "c12", "label": "All done", "variant": "no" },
-          { "id": "ce7", "source": "c6", "target": "c7" },
-          { "id": "ce8", "source": "c7", "target": "c8", "label": "Yes", "variant": "yes" },
-          { "id": "ce9", "source": "c7", "target": "c5", "label": "No significant change", "variant": "no" },
-          { "id": "ce10", "source": "c8", "target": "c9" },
-          { "id": "ce11", "source": "c9", "target": "c10", "label": "Newly qualified", "variant": "yes" },
-          { "id": "ce12", "source": "c9", "target": "c11", "label": "Not newly qualified", "variant": "no" },
-          { "id": "ce13", "source": "c10", "target": "c11" },
-          { "id": "ce14", "source": "c11", "target": "c5" },
-          { "id": "ce15", "source": "c12", "target": "c13" }
+          {
+            "id": "ce1",
+            "source": "c1",
+            "target": "c2"
+          },
+          {
+            "id": "ce2",
+            "source": "c2",
+            "target": "c3"
+          },
+          {
+            "id": "ce3",
+            "source": "c3",
+            "target": "c4"
+          },
+          {
+            "id": "ce4",
+            "source": "c4",
+            "target": "c5"
+          },
+          {
+            "id": "ce5",
+            "source": "c5",
+            "target": "c6",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "ce6",
+            "source": "c5",
+            "target": "c12",
+            "label": "All done",
+            "variant": "no"
+          },
+          {
+            "id": "ce7",
+            "source": "c6",
+            "target": "c7"
+          },
+          {
+            "id": "ce8",
+            "source": "c7",
+            "target": "c8",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "ce9",
+            "source": "c7",
+            "target": "c5",
+            "label": "No significant change",
+            "variant": "no"
+          },
+          {
+            "id": "ce10",
+            "source": "c8",
+            "target": "c9"
+          },
+          {
+            "id": "ce11",
+            "source": "c9",
+            "target": "c10",
+            "label": "Newly qualified",
+            "variant": "yes"
+          },
+          {
+            "id": "ce12",
+            "source": "c9",
+            "target": "c11",
+            "label": "Not newly qualified",
+            "variant": "no"
+          },
+          {
+            "id": "ce13",
+            "source": "c10",
+            "target": "c11"
+          },
+          {
+            "id": "ce14",
+            "source": "c11",
+            "target": "c5"
+          },
+          {
+            "id": "ce15",
+            "source": "c12",
+            "target": "c13"
+          }
         ]
       }
     ],

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { RefreshCw, Monitor } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useAuthStore } from '@/stores/authStore';
 import { useAutoInstaller } from '@/hooks/utility/data/useAutoInstaller';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -69,13 +70,14 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
         subtitle="Verifying your environment is ready"
         actions={
           !loading ? (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={runChecks}
-              className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+              icon={<RefreshCw className="w-3.5 h-3.5" />}
+              className="text-muted-foreground/80 hover:text-muted-foreground"
               title="Re-run checks"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
+            />
           ) : undefined
         }
       />

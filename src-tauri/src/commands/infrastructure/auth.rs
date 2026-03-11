@@ -294,16 +294,21 @@ fn parse_url_fragment(url_str: &str) -> HashMap<String, String> {
 // IPC Commands
 // ---------------------------------------------------------------------------
 
-/// Open system browser to Supabase Google OAuth.
+/// Open an in-app popup for Google OAuth sign-in.
 ///
-/// Generates a cryptographic random `state` parameter (RFC 6749 §10.12) and
-/// stores it in `AuthStateInner` so that the deep-link callback can verify
-/// the response originated from this OAuth flow.
+/// Creates a Tauri WebView window that loads the Supabase authorize URL.
+/// Supabase immediately 302-redirects to Google's consent screen, so the
+/// user only ever sees the Google sign-in page.
+///
+/// The `on_navigation` handler intercepts the final `personas://auth/callback`
+/// redirect, extracts tokens, processes authentication, and closes the popup.
 #[tauri::command]
 pub async fn login_with_google(
+    app: tauri::AppHandle,
     state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
     use rand::Rng;
+    use tauri::WebviewWindowBuilder;
 
     // Generate 32-byte cryptographic random state nonce
     let mut buf = [0u8; 32];
@@ -326,10 +331,46 @@ pub async fn login_with_google(
         urlencoding::encode(&anon_key),
     );
 
-    open::that(&oauth_url)
-        .map_err(|e| AppError::Auth(format!("Failed to open browser: {e}")))?;
+    // Close any existing OAuth window from a previous attempt
+    if let Some(existing) = app.get_webview_window("oauth") {
+        let _ = existing.close();
+    }
 
-    tracing::info!("Opened browser for Google OAuth (with state parameter)");
+    let nav_handle = app.clone();
+    WebviewWindowBuilder::new(&app, "oauth", tauri::WebviewUrl::External(
+        oauth_url.parse().map_err(|e| AppError::Auth(format!("Invalid OAuth URL: {e}")))?,
+    ))
+    .title("Personas — Sign in with Google")
+    .inner_size(480.0, 680.0)
+    .center()
+    .resizable(false)
+    .minimizable(false)
+    .closable(true)
+    .on_navigation(move |url| {
+        let url_str = url.as_str();
+        if url_str.starts_with("personas://auth/callback") {
+            tracing::info!("OAuth popup intercepted callback redirect");
+            let callback_url = url_str.to_string();
+            let handle = nav_handle.clone();
+
+            tauri::async_runtime::spawn(async move {
+                // Close the popup first for immediate visual feedback
+                if let Some(win) = handle.get_webview_window("oauth") {
+                    let _ = win.close();
+                }
+                if let Err(e) = handle_auth_callback(&handle, &callback_url).await {
+                    tracing::error!("OAuth callback failed: {}", e);
+                }
+            });
+
+            return false; // Block navigation to personas:// scheme
+        }
+        true // Allow Supabase → Google → consent redirects
+    })
+    .build()
+    .map_err(|e| AppError::Auth(format!("Failed to open sign-in window: {e}")))?;
+
+    tracing::info!("Opened OAuth sign-in window");
     Ok(())
 }
 

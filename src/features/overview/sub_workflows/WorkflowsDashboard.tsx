@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Workflow, Loader2, Terminal, RefreshCw } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { Button } from '@/features/shared/components/buttons';
 import { useToastStore } from '@/stores/toastStore';
 import { getWorkflowsOverview, cancelWorkflowJob } from '@/api/pipeline/workflows';
 import type { WorkflowsOverview, WorkflowJob } from '@/api/pipeline/workflows';
@@ -63,13 +64,14 @@ export default function WorkflowsDashboard() {
         title="Workflows"
         subtitle="Active and recent background operations across your workspace"
         actions={
-          <button
+          <Button
+            variant="secondary"
+            size="xs"
+            icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
             onClick={load}
-            className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-xl bg-secondary/60 text-muted-foreground hover:text-foreground border border-primary/10 hover:border-primary/20 transition-colors"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
-          </button>
+          </Button>
         }
       />
 
@@ -95,17 +97,19 @@ export default function WorkflowsDashboard() {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1">
                 {STATUS_FILTER_OPTIONS.map((f) => (
-                  <button
+                  <Button
                     key={f}
+                    variant="ghost"
+                    size="xs"
                     onClick={() => setStatusFilter(f)}
-                    className={`text-[11px] px-2.5 py-1 rounded-xl border transition-colors capitalize ${
+                    className={`capitalize ${
                       statusFilter === f
-                        ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
-                        : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 hover:text-foreground'
+                        ? 'bg-violet-500/15 text-violet-400 border-violet-500/25 border'
+                        : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 border hover:text-foreground'
                     }`}
                   >
                     {f}
-                  </button>
+                  </Button>
                 ))}
               </div>
 
@@ -113,28 +117,30 @@ export default function WorkflowsDashboard() {
                 <>
                   <div className="w-px h-4 bg-primary/10" />
                   <div className="flex items-center gap-1">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="xs"
                       onClick={() => setTypeFilter('all')}
-                      className={`text-[11px] px-2.5 py-1 rounded-xl border transition-colors ${
-                        typeFilter === 'all'
-                          ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
-                          : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 hover:text-foreground'
-                      }`}
+                      className={typeFilter === 'all'
+                        ? 'bg-violet-500/15 text-violet-400 border-violet-500/25 border'
+                        : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 border hover:text-foreground'
+                      }
                     >
                       All types
-                    </button>
+                    </Button>
                     {jobTypes.map((t) => (
-                      <button
+                      <Button
                         key={t}
+                        variant="ghost"
+                        size="xs"
                         onClick={() => setTypeFilter(t)}
-                        className={`text-[11px] px-2.5 py-1 rounded-xl border transition-colors ${
-                          typeFilter === t
-                            ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
-                            : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 hover:text-foreground'
-                        }`}
+                        className={typeFilter === t
+                          ? 'bg-violet-500/15 text-violet-400 border-violet-500/25 border'
+                          : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 border hover:text-foreground'
+                        }
                       >
                         {JOB_TYPE_LABELS[t] || t}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { LayoutDashboard, BarChart3, Radio } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import DashboardHome from '@/features/overview/components/dashboard/DashboardHome';
 import AnalyticsDashboard from '@/features/overview/sub_analytics/components/AnalyticsDashboard';
 import RealtimeVisualizerPage from '@/features/overview/sub_realtime/components/views/RealtimeVisualizerPage';
@@ -23,18 +24,18 @@ export default function DashboardWithSubtabs() {
           const Icon = tab.icon;
           const isActive = subtab === tab.id;
           return (
-            <button
+            <Button
               key={tab.id}
+              variant={isActive ? 'secondary' : 'ghost'}
+              size="sm"
+              icon={<Icon className="w-3.5 h-3.5" />}
               onClick={() => setSubtab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
-                isActive
-                  ? 'bg-primary/10 text-foreground border border-primary/20 shadow-sm'
-                  : 'text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/40'
-              }`}
+              className={isActive
+                ? 'bg-primary/10 text-foreground border border-primary/20 shadow-sm'
+                : 'text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/40'}
             >
-              <Icon className="w-3.5 h-3.5" />
               {tab.label}
-            </button>
+            </Button>
           );
         })}
       </div>

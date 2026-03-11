@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Plug, ChevronDown } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { ConnectorPipeline } from '../../../shared/ConnectorPipeline';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
@@ -127,14 +128,15 @@ export function ConnectStep() {
       {/* Collapsible pipeline diagram */}
       {pipelineSteps.length > 0 && (
         <div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setShowPipeline(!showPipeline)}
-            className="text-sm text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors flex items-center gap-1"
+            className="text-muted-foreground/50 hover:text-muted-foreground/70 flex items-center gap-1"
           >
             <ChevronDown className={`w-3 h-3 transition-transform ${showPipeline ? '' : '-rotate-90'}`} />
             Service flow
-          </button>
+          </Button>
           {showPipeline && (
             <div className="mt-2">
               <ConnectorPipeline steps={pipelineSteps} className="justify-center" />

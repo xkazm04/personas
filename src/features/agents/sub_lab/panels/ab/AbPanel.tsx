@@ -10,6 +10,7 @@ import { Listbox } from '@/features/shared/components/forms/Listbox';
 import type { ModelTestConfig } from '@/api/agents/tests';
 import { ANTHROPIC_MODELS, ALL_MODELS } from './abModels';
 import { AbHistory } from './AbHistory';
+import { Button } from '@/features/shared/components/buttons';
 
 export function AbPanel() {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
@@ -98,30 +99,34 @@ export function AbPanel() {
         }}
         ariaLabel={`Select ${label.toLowerCase()}`}
         renderTrigger={({ isOpen, toggle }) => (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={toggle}
             disabled={isLabRunning}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${
+            className={`w-full justify-between px-3 py-2 border ${
               isOpen ? `bg-${color}-500/10 border-${color}-500/30` : 'bg-background/30 border-primary/10 hover:border-primary/20'
             } ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <span className="text-foreground/80">{versionOptions.find((o) => o.value === value)?.label ?? 'Select version'}</span>
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-          </button>
+          </Button>
         )}
       >
         {({ close, focusIndex }) => (
           <div className="py-1 bg-background border border-primary/15 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
             {versionOptions.map((opt, i) => (
-              <button
+              <Button
                 key={opt.value}
+                variant="ghost"
+                size="sm"
                 onClick={() => { setValue(opt.value); close(); }}
-                className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                className={`w-full justify-start text-left px-3 py-1.5 ${
                   focusIndex === i ? 'bg-primary/15 text-foreground' : ''
-                } ${value === opt.value ? `text-${color}-400 font-medium` : 'text-muted-foreground/90 hover:bg-secondary/30'}`}
+                } ${value === opt.value ? `text-${color}-400` : 'text-muted-foreground/90 hover:bg-secondary/30'}`}
               >
                 {opt.label}
-              </button>
+              </Button>
             ))}
           </div>
         )}
@@ -151,8 +156,10 @@ export function AbPanel() {
             <label className="text-sm font-medium text-muted-foreground/80">Models</label>
             <div className="flex flex-wrap gap-2">
               {ANTHROPIC_MODELS.map((m) => (
-                <button
+                <Button
                   key={m.id}
+                  variant={selectedModels.has(m.id) ? 'secondary' : 'ghost'}
+                  size="sm"
                   onClick={() => {
                     setSelectedModels((prev) => {
                       const next = new Set(prev);
@@ -162,14 +169,14 @@ export function AbPanel() {
                     });
                   }}
                   disabled={isLabRunning}
-                  className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
+                  className={`border ${
                     selectedModels.has(m.id)
                       ? 'bg-primary/15 text-primary border-primary/30'
                       : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'
                   } ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   {m.label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -189,30 +196,34 @@ export function AbPanel() {
                 }}
                 ariaLabel="Filter by use case"
                 renderTrigger={({ isOpen, toggle }) => (
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={toggle}
                     disabled={isLabRunning}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${
+                    className={`w-full justify-between px-3 py-2 border ${
                       isOpen ? 'bg-primary/10 border-primary/30' : 'bg-background/30 border-primary/10 hover:border-primary/20'
                     } ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? 'All Use Cases'}</span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                  </button>
+                  </Button>
                 )}
               >
                 {({ close, focusIndex }) => (
                   <div className="py-1 bg-background border border-primary/15 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
                     {useCaseOptions.map((opt, i) => (
-                      <button
+                      <Button
                         key={opt.value}
+                        variant="ghost"
+                        size="sm"
                         onClick={() => { setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); close(); }}
-                        className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                        className={`w-full justify-start text-left px-3 py-1.5 ${
                           focusIndex === i ? 'bg-primary/15 text-foreground' : ''
-                        } ${(selectedUseCaseId ?? '__all__') === opt.value ? 'text-primary font-medium' : 'text-muted-foreground/90 hover:bg-secondary/30'}`}
+                        } ${(selectedUseCaseId ?? '__all__') === opt.value ? 'text-primary' : 'text-muted-foreground/90 hover:bg-secondary/30'}`}
                       >
                         {opt.label}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
@@ -234,22 +245,28 @@ export function AbPanel() {
 
           {/* Run / Cancel */}
           {isLabRunning ? (
-            <button
+            <Button
+              variant="danger"
+              size="lg"
+              icon={<Square className="w-4 h-4" />}
+              block
               onClick={() => void handleCancel()}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20"
+              className="bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20"
             >
-              <Square className="w-4 h-4" />
               Cancel A/B Test
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
+              variant="primary"
+              size="lg"
+              icon={<Play className="w-4 h-4" />}
+              block
               onClick={() => void handleStart()}
               disabled={!versionAId || !versionBId || selectedModels.size === 0}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:hover:scale-100"
             >
-              <Play className="w-4 h-4" />
               Run A/B Test
-            </button>
+            </Button>
           )}
 
           <LabProgress />

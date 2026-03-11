@@ -1,5 +1,6 @@
 import { Loader2, CheckCircle2, XCircle, RefreshCw, Download, ExternalLink } from 'lucide-react';
 import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
+import { Button } from '@/features/shared/components/buttons';
 
 const CLAUDE_DOWNLOAD_URL = 'https://docs.anthropic.com/en/docs/claude-code/overview';
 
@@ -67,13 +68,14 @@ export function InstallButton({
           </div>
         )}
         <div className="flex items-center gap-2 flex-wrap">
-          <button
+          <Button
+            variant="secondary"
+            size="xs"
             onClick={onInstall}
-            className="inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-lg border border-primary/20 text-foreground/90 hover:bg-secondary/60 transition-colors"
+            iconRight={<RefreshCw className="w-3 h-3" />}
           >
             Retry
-            <RefreshCw className="w-3 h-3" />
-          </button>
+          </Button>
           {checkId === 'claude_cli' && (
             <a
               href={CLAUDE_DOWNLOAD_URL}
@@ -92,23 +94,25 @@ export function InstallButton({
 
   return (
     <div className="mt-2 flex items-center gap-2 flex-wrap">
-      <button
+      <Button
+        variant="accent"
+        accentColor="violet"
+        size="xs"
         onClick={onInstall}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
+        icon={<Download className="w-3 h-3" />}
       >
-        <Download className="w-3 h-3" />
         {label}
-      </button>
+      </Button>
       {checkId === 'claude_cli' && (
-        <a
-          href={CLAUDE_DOWNLOAD_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl border border-muted-foreground/20 text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
+        <Button
+          variant="ghost"
+          size="xs"
+          className="border border-muted-foreground/20 text-muted-foreground hover:text-foreground"
+          icon={<ExternalLink className="w-3 h-3" />}
+          onClick={() => window.open(CLAUDE_DOWNLOAD_URL, '_blank', 'noopener,noreferrer')}
         >
-          <ExternalLink className="w-3 h-3" />
           Official page
-        </a>
+        </Button>
       )}
     </div>
   );

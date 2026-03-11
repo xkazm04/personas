@@ -1,6 +1,7 @@
 import { X, Play, Square, Clock, Timer } from 'lucide-react';
 import { ExecutionTerminal } from '@/features/agents/sub_executions';
 import { JsonEditor } from '@/features/shared/components/editors/JsonEditor';
+import { Button } from '@/features/shared/components/buttons';
 import { formatElapsed } from '@/lib/utils/formatters';
 import type { UseCaseItem } from './UseCasesList';
 import { StructuredField } from './StructuredField';
@@ -42,9 +43,9 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
             </div>
           )}
         </div>
-        <button onClick={onClose} className="p-1 rounded hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground/80 transition-colors">
+        <Button variant="ghost" size="icon-sm" onClick={onClose} className="text-muted-foreground/60 hover:text-foreground/80">
           <X className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       {/* Input editor */}
@@ -79,21 +80,20 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
 
       {/* Execute/Stop button */}
       <div className="p-3 border-b border-primary/10">
-        <button
+        <Button
+          variant={exec.isExecuting && exec.isThisUseCaseExecution ? 'danger' : 'accent'}
+          size="md"
+          block
+          icon={exec.isExecuting && exec.isThisUseCaseExecution ? <Square className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           onClick={exec.isExecuting && exec.isThisUseCaseExecution ? exec.handleStop : exec.handleExecute}
-          className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
-            exec.isExecuting && exec.isThisUseCaseExecution
-              ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/10'
-              : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/10'
-          }`}
           disabled={exec.isExecuting && !exec.isThisUseCaseExecution}
+          className={exec.isExecuting && exec.isThisUseCaseExecution
+            ? 'shadow-lg shadow-red-500/10'
+            : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg shadow-primary/10'
+          }
         >
-          {exec.isExecuting && exec.isThisUseCaseExecution ? (
-            <><Square className="w-4 h-4" />Stop Execution</>
-          ) : (
-            <><Play className="w-4 h-4" />Execute Use Case</>
-          )}
-        </button>
+          {exec.isExecuting && exec.isThisUseCaseExecution ? 'Stop Execution' : 'Execute Use Case'}
+        </Button>
       </div>
 
       {/* Terminal */}

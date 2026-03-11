@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { ChevronDown, Check, Shield } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -92,10 +93,11 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
   return (
     <div className="mx-4 md:mx-6">
       {/* Toggle bar */}
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => setExpanded((p) => !p)}
-        className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
+        className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-left cursor-pointer ${
           expanded
             ? 'bg-amber-500/8 border-amber-500/25'
             : 'bg-amber-500/5 border-amber-500/15 hover:border-amber-500/25 hover:bg-amber-500/10'
@@ -126,7 +128,7 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
         </div>
 
         <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-      </button>
+      </Button>
 
       {/* Conflict list */}
       <AnimatePresence>

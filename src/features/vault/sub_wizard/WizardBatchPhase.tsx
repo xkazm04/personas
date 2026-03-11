@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Loader2, SkipForward, Plug } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { CatalogAutoSetup } from '@/features/vault/sub_autoCred/steps/CatalogAutoSetup';
 import { cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
@@ -125,12 +126,14 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
         </div>
 
         <div className="flex justify-center">
-          <button
+          <Button
+            variant="accent"
+            accentColor="emerald"
+            size="md"
             onClick={onDone}
-            className="px-6 py-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-xl text-sm font-medium transition-colors"
           >
             Done
-          </button>
+          </Button>
         </div>
       </motion.div>
     );
@@ -148,14 +151,16 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
             {activeItem?.connector.label}
           </p>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<SkipForward className="w-3.5 h-3.5" />}
           onClick={handleSkip}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+          className="text-muted-foreground/60 hover:text-foreground/80"
           title="Skip this service"
         >
-          <SkipForward className="w-3.5 h-3.5" />
           Skip
-        </button>
+        </Button>
       </div>
 
       {/* Queue */}

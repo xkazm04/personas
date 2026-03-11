@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BookOpen, Save } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { Button } from '@/features/shared/components/buttons';
 import { SaveFromRunForm } from './SaveFromRunForm';
 import { SuiteListItem } from './SuiteListItem';
 
@@ -51,15 +52,16 @@ export function TestSuiteManager({
           Saved Test Suites
         </h4>
         {canSave && (
-          <button
+          <Button
             onClick={() => setSavingFromRun(true)}
             disabled={disabled || savingFromRun}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            variant="primary"
+            size="sm"
+            icon={<Save className="w-3.5 h-3.5" />}
             data-testid="save-suite-from-run-btn"
           >
-            <Save className="w-3.5 h-3.5" />
             Save Scenarios
-          </button>
+          </Button>
         )}
       </div>
 

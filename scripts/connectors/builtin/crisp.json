@@ -1,0 +1,49 @@
+{
+  "id": "builtin-crisp",
+  "name": "crisp",
+  "label": "Crisp",
+  "color": "#4B60F5",
+  "icon_url": "/icons/connectors/crisp.svg",
+  "category": "support",
+  "fields": [
+    {
+      "key": "token_id",
+      "label": "Token ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Crisp → Settings → API Tokens → Token Identifier"
+    },
+    {
+      "key": "token_key",
+      "label": "Token Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Crisp → Settings → API Tokens → Token Key"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.crisp.chat/v1/website",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Basic {{base64(token_id:token_key)}}",
+      "X-Crisp-Tier": "plugin"
+    },
+    "description": "Validates API token via Crisp website list endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Crisp customer messaging platform for live chat, helpdesk, and knowledge base via the Crisp REST API.",
+    "auth_type": "basic",
+    "auth_type_label": "Token Pair",
+    "docs_url": "https://docs.crisp.chat/references/rest-api/v1/",
+    "setup_guide": "1. Log in to Crisp.\n2. Go to Settings → API Tokens (or visit app.crisp.chat/settings/token/).\n3. Create a new token pair.\n4. Copy the Token Identifier and Token Key.\n5. Paste both values here.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "basic", "label": "Token Pair", "type": "credential", "is_default": true}
+    ]
+  }
+}

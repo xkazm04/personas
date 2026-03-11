@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useAutoTeam } from './useAutoTeam';
 import { BlueprintPreview, EXAMPLE_PROMPTS } from './BlueprintPreview';
 
@@ -88,12 +89,13 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
             </div>
           </div>
           {!isWorking && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground transition-colors"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           )}
         </div>
 
@@ -112,13 +114,15 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 className="w-full px-4 py-3 rounded-xl bg-secondary/30 border border-primary/15 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/25 disabled:opacity-60 pr-10"
               />
               {at.phase === 'idle' && at.query.trim() && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => at.suggest()}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25"
                   title="Generate team"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               )}
               {at.phase === 'suggesting' && (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 animate-spin" />
@@ -129,13 +133,15 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
             {at.phase === 'idle' && !at.query && (
               <div className="flex flex-wrap gap-1.5">
                 {EXAMPLE_PROMPTS.map((prompt) => (
-                  <button
+                  <Button
                     key={prompt}
+                    variant="ghost"
+                    size="xs"
                     onClick={() => { at.setQuery(prompt); }}
-                    className="text-xs px-2.5 py-1 rounded-lg bg-secondary/40 border border-primary/10 text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/60 transition-colors"
+                    className="text-xs px-2.5 py-1 bg-secondary/40 border border-primary/10 text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/60"
                   >
                     {prompt}
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -168,19 +174,23 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 <BlueprintPreview blueprint={at.blueprint} />
 
                 <div className="flex gap-2">
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={at.reset}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground hover:bg-secondary/60 transition-colors"
+                    className="flex-1"
                   >
                     Try different
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={at.apply}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 transition-all"
+                    iconRight={<ArrowRight className="w-3.5 h-3.5" />}
+                    className="flex-1 bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30"
                   >
                     Create Team
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </div>
               </motion.div>
             )}
@@ -245,12 +255,15 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                   </div>
                 </div>
 
-                <button
+                <Button
+                  variant="primary"
+                  size="sm"
+                  block
                   onClick={handleDone}
-                  className="w-full py-2.5 rounded-xl text-sm font-medium bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 transition-all"
+                  className="bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30"
                 >
                   Open Team Canvas
-                </button>
+                </Button>
               </motion.div>
             )}
 
@@ -267,12 +280,14 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                   <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
                   <p className="text-sm text-red-400">{at.error}</p>
                 </div>
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  block
                   onClick={at.reset}
-                  className="w-full py-2 rounded-xl text-sm font-medium bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground hover:bg-secondary/60 transition-colors"
                 >
                   Try again
-                </button>
+                </Button>
               </motion.div>
             )}
           </AnimatePresence>

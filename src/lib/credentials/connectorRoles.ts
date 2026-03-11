@@ -12,7 +12,7 @@ export interface ConnectorRole {
  */
 export const CONNECTOR_ROLES: ConnectorRole[] = [
   // â”€â”€ Communication â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  { role: 'chat_messaging',      label: 'Chat & Messaging',     members: ['slack', 'discord', 'telegram', 'gmail', 'microsoft_outlook', 'personas_messages'] },
+  { role: 'chat_messaging',      label: 'Chat & Messaging',     members: ['slack', 'discord', 'telegram', 'microsoft_teams', 'gmail', 'microsoft_outlook', 'personas_messages'] },
   { role: 'email_delivery',      label: 'Email Delivery',       members: ['sendgrid', 'resend', 'mailchimp'] },
   { role: 'sms',                 label: 'SMS',                  members: ['twilio_sms', 'twilio'] },
 
@@ -21,14 +21,14 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   { role: 'ci_cd',               label: 'CI/CD',                members: ['circleci', 'gitlab', 'azure_devops'] },
   { role: 'project_tracking',    label: 'Project Tracking',     members: ['jira', 'linear', 'clickup', 'monday_com', 'asana', 'trello', 'todoist'] },
   { role: 'knowledge_base',      label: 'Knowledge Base',       members: ['confluence', 'airtable', 'coda'] },
-  { role: 'design',              label: 'Design',               members: ['figma'] },
+  { role: 'design',              label: 'Design',               members: ['figma', 'canva', 'penpot'] },
   { role: 'feature_flags',       label: 'Feature Flags',        members: ['launchdarkly', 'posthog'] },
 
   // â”€â”€ Infrastructure â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   { role: 'hosting',             label: 'Hosting & Deploy',     members: ['vercel', 'netlify', 'cloudflare'] },
   { role: 'cloud_infra',         label: 'Cloud Infrastructure', members: ['aws', 'firebase', 'kubernetes'] },
   { role: 'database',            label: 'Database',             members: ['personas_database', 'supabase', 'neon', 'convex', 'planetscale', 'upstash', 'postgres_proxy', 'postgres', 'mongodb', 'redis', 'duckdb', 'notion', 'google_sheets'] },
-  { role: 'cloud_storage',       label: 'Cloud Storage',        members: ['dropbox'] },
+  { role: 'cloud_storage',       label: 'Cloud Storage',        members: ['dropbox', 'onedrive', 'aws_s3', 'cloudflare_r2', 'backblaze_b2'] },
 
   // â”€â”€ Monitoring & Security â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   { role: 'error_monitoring',    label: 'Error Monitoring',     members: ['sentry', 'betterstack'] },
@@ -38,11 +38,11 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
 
   // â”€â”€ Analytics & Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   { role: 'analytics',           label: 'Product Analytics',    members: ['mixpanel', 'posthog', 'twilio_segment', 'amplitude', 'google_analytics', 'segment'] },
-  { role: 'spreadsheet',         label: 'Spreadsheets',         members: ['google_sheets', 'airtable'] },
+  { role: 'spreadsheet',         label: 'Spreadsheets',         members: ['google_sheets', 'microsoft_excel', 'airtable'] },
 
   // â”€â”€ Customer-Facing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  { role: 'crm',                 label: 'CRM',                  members: ['hubspot', 'intercom'] },
-  { role: 'support_ticketing',   label: 'Support Ticketing',    members: ['zendesk', 'freshdesk', 'intercom'] },
+  { role: 'crm',                 label: 'CRM',                  members: ['hubspot', 'intercom', 'pipedrive', 'attio'] },
+  { role: 'support_ticketing',   label: 'Support Ticketing',    members: ['zendesk', 'freshdesk', 'intercom', 'crisp'] },
   { role: 'social_media',        label: 'Social Media',         members: ['buffer', 'linkedin', 'twitter'] },
 
   // â”€â”€ Content & CMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -54,11 +54,12 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   { role: 'payment_processing',  label: 'Payment Processing',   members: ['stripe', 'paddle'] },
   { role: 'accounting',          label: 'Accounting',           members: ['quickbooks', 'xero'] },
   { role: 'banking_fintech',     label: 'Banking & Fintech',    members: ['plaid'] },
-  { role: 'e_commerce',          label: 'E-Commerce',           members: ['shopify', 'shipstation'] },
+  { role: 'e_commerce',          label: 'E-Commerce',           members: ['shopify', 'shipstation', 'woocommerce', 'lemonsqueezy'] },
 
   // â”€â”€ Scheduling & Forms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  { role: 'scheduling',          label: 'Scheduling',           members: ['calendly', 'cal_com'] },
-  { role: 'form_survey',         label: 'Forms & Surveys',      members: ['typeform'] },
+  { role: 'scheduling',          label: 'Scheduling',           members: ['calendly', 'cal_com', 'google_calendar', 'microsoft_calendar'] },
+  { role: 'form_survey',         label: 'Forms & Surveys',      members: ['typeform', 'tally', 'formbricks'] },
+  { role: 'notifications',       label: 'Notifications',        members: ['novu', 'knock', 'ntfy'] },
 
   // â”€â”€ Specialty â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   { role: 'auth_identity',       label: 'Auth & Identity',      members: ['clerk'] },
@@ -84,7 +85,7 @@ export interface PurposeGroup {
 }
 
 export const PURPOSE_GROUPS: PurposeGroup[] = [
-  { purpose: 'communication',        label: 'Communication',        roles: ['chat_messaging', 'email_delivery', 'sms'] },
+  { purpose: 'communication',        label: 'Communication',        roles: ['chat_messaging', 'email_delivery', 'sms', 'notifications'] },
   { purpose: 'development',          label: 'Development',          roles: ['source_control', 'ci_cd', 'project_tracking', 'knowledge_base', 'design', 'feature_flags'] },
   { purpose: 'infrastructure',       label: 'Infrastructure',       roles: ['hosting', 'cloud_infra', 'cloud_storage'] },
   { purpose: 'data',                 label: 'Data',                 roles: ['database'] },

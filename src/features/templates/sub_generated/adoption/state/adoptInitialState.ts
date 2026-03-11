@@ -40,6 +40,8 @@ export const INITIAL_STATE: AdoptState = {
   error: null,
   databaseMode: 'create',
   selectedTableNames: [],
+  databaseTable: '',
+  databaseSchema: '',
   autoResolved: false,
   safetyCriticalOverride: false,
 };

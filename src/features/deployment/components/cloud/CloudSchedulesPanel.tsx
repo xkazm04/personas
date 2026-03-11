@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Plus } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { Button } from '@/features/shared/components/buttons';
 import {
   cloudListTriggers,
   cloudUpdateTrigger,
@@ -96,21 +97,24 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
           Cloud Triggers ({triggers.length})
         </h3>
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Plus className="w-3.5 h-3.5" />}
             onClick={() => setShowCreate(!showCreate)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/25 hover:bg-indigo-500/20 transition-colors"
+            accentColor="indigo"
           >
-            <Plus className="w-3.5 h-3.5" />
             Add Trigger
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
             onClick={() => { fetchTriggers(); onRefresh(); }}
             disabled={isLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
-          </button>
+          </Button>
         </div>
       </div>
 

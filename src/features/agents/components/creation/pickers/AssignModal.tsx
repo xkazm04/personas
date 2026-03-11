@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { X, Search, Key } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Button } from '@/features/shared/components/buttons';
 import { usePersonaStore } from '@/stores/personaStore';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import type { ComponentRole } from '../steps/builder/types';
@@ -84,35 +85,35 @@ export function AssignModal({
               <p className="text-sm text-muted-foreground/65">{roleDef?.description}</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="p-1 text-muted-foreground/60 hover:text-foreground transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <Button variant="ghost" size="icon-sm" icon={<X className="w-4 h-4" />} onClick={onClose} />
         </div>
 
         {/* Tabs */}
         <div className="flex border-b border-primary/8 px-4">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setTab('credentials')}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-3 py-2 border-b-2 ${
               tab === 'credentials'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground/70 hover:text-muted-foreground'
             }`}
           >
             Saved Credentials ({credentials.length})
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setTab('connectors')}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-3 py-2 border-b-2 ${
               tab === 'connectors'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground/70 hover:text-muted-foreground'
             }`}
           >
             All Connectors ({connectorDefinitions.length})
-          </button>
+          </Button>
         </div>
 
         {/* Search */}
@@ -148,11 +149,12 @@ export function AssignModal({
                 {filteredCredentials.map((cred) => {
                   const meta = getConnectorMeta(cred.service_type);
                   return (
-                    <button
+                    <Button
                       key={cred.id}
-                      type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => { onAssign(cred.service_type, cred.id); onClose(); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-transparent hover:bg-secondary/40 hover:border-primary/10 transition-all text-left"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-transparent hover:bg-secondary/40 hover:border-primary/10 text-left"
                     >
                       <ConnectorIcon meta={meta} size="w-5 h-5" />
                       <div className="flex-1 min-w-0">
@@ -160,7 +162,7 @@ export function AssignModal({
                         <p className="text-sm text-muted-foreground/60">{cred.service_type}</p>
                       </div>
                       <Key className="w-3 h-3 text-muted-foreground/50 shrink-0" />
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -181,15 +183,16 @@ export function AssignModal({
                       {connectors.map((c) => {
                         const meta = getConnectorMeta(c.name);
                         return (
-                          <button
+                          <Button
                             key={c.name}
-                            type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => { onAssign(c.name, null); onClose(); }}
-                            className="flex items-center gap-2 px-2.5 py-2 text-sm rounded-xl border border-transparent hover:bg-secondary/40 hover:border-primary/10 text-muted-foreground/80 hover:text-foreground/90 transition-all"
+                            className="flex items-center gap-2 px-2.5 py-2 rounded-xl border border-transparent hover:bg-secondary/40 hover:border-primary/10 text-muted-foreground/80 hover:text-foreground/90"
                           >
                             <ConnectorIcon meta={meta} size="w-4 h-4" />
                             <span className="truncate">{meta.label}</span>
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>

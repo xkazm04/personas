@@ -6,6 +6,7 @@ import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/l
 import { usePersonaStore } from '@/stores/personaStore';
 import { isTerminalState } from '@/lib/execution/executionState';
 import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
+import { Button } from '@/features/shared/components/buttons';
 import { HighlightedJsonBlock } from './inspector/HighlightedJsonBlock';
 import { ErrorExplanationCard } from './ErrorExplanationCard';
 import { ExecutionMemories } from './views/ExecutionMemories';
@@ -77,18 +78,19 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
       {/* Masked / Raw toggle */}
       {(execution.error_message || hasInputData || hasOutputData) && (
         <div className="flex justify-end">
-          <button
+          <Button
             onClick={() => setShowRaw(!showRaw)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border transition-colors ${
-              showRaw
-                ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                : 'bg-secondary/30 text-muted-foreground/60 border-primary/10 hover:text-muted-foreground/80'
-            }`}
+            variant="ghost"
+            size="sm"
+            icon={<Shield className="w-3 h-3" />}
+            className={showRaw
+              ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+              : 'bg-secondary/30 text-muted-foreground/60 border-primary/10 hover:text-muted-foreground/80'
+            }
             title={showRaw ? 'Sensitive values are visible' : 'Sensitive values are masked'}
           >
-            <Shield className="w-3 h-3" />
             {showRaw ? 'Raw' : 'Masked'}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -103,25 +105,28 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
 
       {/* Re-run Button */}
       {isTerminalState(execution.status) && (
-        <button
+        <Button
           onClick={() => setRerunInputData(execution.input_data || '{}')}
-          className="flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors"
+          variant="primary"
+          size="sm"
+          icon={<RotateCw className="w-3.5 h-3.5" />}
         >
-          <RotateCw className="w-3.5 h-3.5" />
           {execution.status === 'cancelled' ? 'Re-run execution' : 'Re-run with same input'}
-        </button>
+        </Button>
       )}
 
       {/* Input Data */}
       {hasInputData && (
         <div>
-          <button
+          <Button
             onClick={() => setShowInputData(!showInputData)}
-            className="flex items-center gap-2 text-sm text-foreground/90 hover:text-foreground transition-colors mb-2"
+            variant="ghost"
+            size="sm"
+            icon={showInputData ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            className="mb-2 text-foreground/90 hover:text-foreground"
           >
-            {showInputData ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             Input Data
-          </button>
+          </Button>
           <AnimatePresence>
             {showInputData && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
@@ -135,13 +140,15 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
       {/* Output Data */}
       {hasOutputData && (
         <div>
-          <button
+          <Button
             onClick={() => setShowOutputData(!showOutputData)}
-            className="flex items-center gap-2 text-sm text-foreground/90 hover:text-foreground transition-colors mb-2"
+            variant="ghost"
+            size="sm"
+            icon={showOutputData ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            className="mb-2 text-foreground/90 hover:text-foreground"
           >
-            {showOutputData ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             Output Data
-          </button>
+          </Button>
           <AnimatePresence>
             {showOutputData && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>

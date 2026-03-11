@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, X, MapPin, Sparkles } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { Button } from '@/features/shared/components/buttons';
 import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
 import type { SidebarSection } from '@/lib/types/types';
 import { STEP_COLORS } from './tourConstants';
@@ -109,12 +110,12 @@ export default function GuidedTour() {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <button onClick={() => setIsMinimized(true)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/40 hover:text-foreground/70" title="Minimize">
+              <Button variant="ghost" size="icon-sm" onClick={() => setIsMinimized(true)} title="Minimize">
                 <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={dismissTour} className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/40 hover:text-foreground/70" title="End tour">
+              </Button>
+              <Button variant="ghost" size="icon-sm" onClick={dismissTour} title="End tour">
                 <X className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </div>
           </div>
           <TourPanelBody

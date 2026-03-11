@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, RotateCw, Globe, Server, BookOpen } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import { useGoogleOAuth } from '@/features/vault/hooks/useGoogleOAuth';
 import { useRotationTicker, formatCountdown } from '@/features/vault/hooks/useRotationTicker';
@@ -86,12 +87,13 @@ export function CredentialPlaygroundModal({ credential, connector, onClose, onDe
             {tabs.map((tab) => {
               const Icon = tab.icon; const isActive = tab.id === activeTab;
               return (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors ${isActive ? 'text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}>
-                  <Icon className="w-3.5 h-3.5" />
+                <Button key={tab.id} variant="ghost" size="sm"
+                  icon={<Icon className="w-3.5 h-3.5" />}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative ${isActive ? 'text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}>
                   {tab.label}
                   {isActive && <motion.div layoutId="playgroundTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary/60 rounded-full" transition={{ type: 'spring', stiffness: 500, damping: 30 }} />}
-                </button>
+                </Button>
               );
             })}
           </div>

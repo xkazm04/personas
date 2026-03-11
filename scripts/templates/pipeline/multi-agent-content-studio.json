@@ -142,55 +142,85 @@
         "category": "productivity"
       },
       {
-        "name": "google_workspace",
-        "label": "Google Workspace (Gmail + Sheets)",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
             "key": "client_id",
-            "label": "OAuth2 Client ID",
+            "label": "OAuth Client ID",
             "type": "text",
-            "placeholder": "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
             "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "OAuth2 Client Secret",
+            "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-EXAMPLE_SECRET_REPLACE_ME",
-            "helpText": "Displayed when creating the OAuth2 client in Google Cloud Console",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
             "required": true
           },
           {
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//0EXAMPLE_REFRESH_TOKEN_REPLACE_ME",
-            "helpText": "Obtained during the OAuth2 consent flow. Use the OAuth Playground or your app's auth callback.",
-            "required": true
-          },
-          {
-            "key": "spreadsheet_id",
-            "label": "Content Metrics Spreadsheet ID",
-            "type": "text",
-            "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms",
-            "helpText": "Create a Google Sheet for content metrics. Copy the spreadsheet ID from the URL (between /d/ and /edit).",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API and Google Sheets API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app' or 'Web application'.\n5. Complete the OAuth consent screen configuration.\n6. Copy the Client ID and Client Secret.\n7. Complete the OAuth flow to obtain a refresh token with Gmail send/read and Sheets edit scopes.\n8. Create a Google Sheet with columns: Content ID, Title, Publish Date, Platforms, Editor Score, Revisions, Production Time, Views, Clicks, Shares, Comments.\n9. Copy the spreadsheet ID from the URL.",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_send",
-          "gmail_search",
-          "http_request"
+          "gmail_search"
         ],
         "related_triggers": [
           2
+        ]
+      },
+      {
+        "name": "google_sheets",
+        "label": "Google Sheets",
+        "auth_type": "oauth2",
+        "credential_fields": [
+          {
+            "key": "client_id",
+            "label": "OAuth Client ID",
+            "type": "text",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
+            "required": true
+          },
+          {
+            "key": "client_secret",
+            "label": "OAuth Client Secret",
+            "type": "password",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
+            "required": true
+          }
         ],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Google Sheets API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with spreadsheets and drive.file scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://sheets.googleapis.com",
+        "role": "spreadsheet",
+        "category": "productivity",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": []
       },
       {
         "name": "slack",
@@ -372,7 +402,7 @@
             "type": "connector",
             "label": "Log metrics to Sheets",
             "detail": "POST /v4/spreadsheets/{id}/values:append — content ID, title, date, platforms, scores, timing",
-            "connector": "google_workspace"
+            "connector": "google_sheets"
           },
           {
             "id": "c14",
@@ -394,23 +424,102 @@
           }
         ],
         "edges": [
-          { "id": "ce1", "source": "c1", "target": "c2" },
-          { "id": "ce2", "source": "c2", "target": "c3", "label": "Valid", "variant": "yes" },
-          { "id": "ce3", "source": "c2", "target": "c15", "label": "Incomplete", "variant": "no" },
-          { "id": "ce4", "source": "c3", "target": "c4" },
-          { "id": "ce5", "source": "c4", "target": "c5" },
-          { "id": "ce6", "source": "c5", "target": "c6" },
-          { "id": "ce7", "source": "c6", "target": "c7" },
-          { "id": "ce8", "source": "c7", "target": "c8" },
-          { "id": "ce9", "source": "c8", "target": "c9", "label": "Approved", "variant": "yes" },
-          { "id": "ce10", "source": "c9", "target": "c10" },
-          { "id": "ce11", "source": "c10", "target": "c11", "label": "Approved", "variant": "yes" },
-          { "id": "ce12", "source": "c10", "target": "c7", "label": "Changes requested", "variant": "no" },
-          { "id": "ce13", "source": "c11", "target": "c12" },
-          { "id": "ce14", "source": "c12", "target": "c13" },
-          { "id": "ce15", "source": "c13", "target": "c14" },
-          { "id": "ce16", "source": "c14", "target": "c16" },
-          { "id": "ce17", "source": "c15", "target": "c1", "variant": "error" }
+          {
+            "id": "ce1",
+            "source": "c1",
+            "target": "c2"
+          },
+          {
+            "id": "ce2",
+            "source": "c2",
+            "target": "c3",
+            "label": "Valid",
+            "variant": "yes"
+          },
+          {
+            "id": "ce3",
+            "source": "c2",
+            "target": "c15",
+            "label": "Incomplete",
+            "variant": "no"
+          },
+          {
+            "id": "ce4",
+            "source": "c3",
+            "target": "c4"
+          },
+          {
+            "id": "ce5",
+            "source": "c4",
+            "target": "c5"
+          },
+          {
+            "id": "ce6",
+            "source": "c5",
+            "target": "c6"
+          },
+          {
+            "id": "ce7",
+            "source": "c6",
+            "target": "c7"
+          },
+          {
+            "id": "ce8",
+            "source": "c7",
+            "target": "c8"
+          },
+          {
+            "id": "ce9",
+            "source": "c8",
+            "target": "c9",
+            "label": "Approved",
+            "variant": "yes"
+          },
+          {
+            "id": "ce10",
+            "source": "c9",
+            "target": "c10"
+          },
+          {
+            "id": "ce11",
+            "source": "c10",
+            "target": "c11",
+            "label": "Approved",
+            "variant": "yes"
+          },
+          {
+            "id": "ce12",
+            "source": "c10",
+            "target": "c7",
+            "label": "Changes requested",
+            "variant": "no"
+          },
+          {
+            "id": "ce13",
+            "source": "c11",
+            "target": "c12"
+          },
+          {
+            "id": "ce14",
+            "source": "c12",
+            "target": "c13"
+          },
+          {
+            "id": "ce15",
+            "source": "c13",
+            "target": "c14"
+          },
+          {
+            "id": "ce16",
+            "source": "c14",
+            "target": "c16"
+          },
+          {
+            "id": "ce17",
+            "source": "c15",
+            "target": "c1",
+            "variant": "error"
+          }
         ]
       },
       {
@@ -495,18 +604,74 @@
           }
         ],
         "edges": [
-          { "id": "re1", "source": "r1", "target": "r2" },
-          { "id": "re2", "source": "r2", "target": "r3" },
-          { "id": "re3", "source": "r3", "target": "r4", "label": "Yes", "variant": "yes" },
-          { "id": "re4", "source": "r3", "target": "r9", "label": "Max rounds hit", "variant": "no" },
-          { "id": "re5", "source": "r4", "target": "r5" },
-          { "id": "re6", "source": "r5", "target": "r6" },
-          { "id": "re7", "source": "r6", "target": "r7" },
-          { "id": "re8", "source": "r7", "target": "r8", "label": "Yes", "variant": "yes" },
-          { "id": "re9", "source": "r7", "target": "r1", "label": "Still below 8", "variant": "no" },
-          { "id": "re10", "source": "r8", "target": "r11" },
-          { "id": "re11", "source": "r9", "target": "r10" },
-          { "id": "re12", "source": "r10", "target": "r12" }
+          {
+            "id": "re1",
+            "source": "r1",
+            "target": "r2"
+          },
+          {
+            "id": "re2",
+            "source": "r2",
+            "target": "r3"
+          },
+          {
+            "id": "re3",
+            "source": "r3",
+            "target": "r4",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "re4",
+            "source": "r3",
+            "target": "r9",
+            "label": "Max rounds hit",
+            "variant": "no"
+          },
+          {
+            "id": "re5",
+            "source": "r4",
+            "target": "r5"
+          },
+          {
+            "id": "re6",
+            "source": "r5",
+            "target": "r6"
+          },
+          {
+            "id": "re7",
+            "source": "r6",
+            "target": "r7"
+          },
+          {
+            "id": "re8",
+            "source": "r7",
+            "target": "r8",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "re9",
+            "source": "r7",
+            "target": "r1",
+            "label": "Still below 8",
+            "variant": "no"
+          },
+          {
+            "id": "re10",
+            "source": "r8",
+            "target": "r11"
+          },
+          {
+            "id": "re11",
+            "source": "r9",
+            "target": "r10"
+          },
+          {
+            "id": "re12",
+            "source": "r10",
+            "target": "r12"
+          }
         ]
       },
       {
@@ -602,7 +767,7 @@
             "type": "connector",
             "label": "Log to Google Sheets",
             "detail": "POST /v4/spreadsheets/{id}/values:append — content ID, title, date, platforms, scores, production time",
-            "connector": "google_workspace"
+            "connector": "google_sheets"
           },
           {
             "id": "p15",
@@ -618,21 +783,81 @@
           }
         ],
         "edges": [
-          { "id": "pe1", "source": "p1", "target": "p2" },
-          { "id": "pe2", "source": "p2", "target": "p3" },
-          { "id": "pe3", "source": "p3", "target": "p4" },
-          { "id": "pe4", "source": "p4", "target": "p5" },
-          { "id": "pe5", "source": "p5", "target": "p6" },
-          { "id": "pe6", "source": "p6", "target": "p7" },
-          { "id": "pe7", "source": "p7", "target": "p8" },
-          { "id": "pe8", "source": "p8", "target": "p9" },
-          { "id": "pe9", "source": "p9", "target": "p10" },
-          { "id": "pe10", "source": "p10", "target": "p11" },
-          { "id": "pe11", "source": "p11", "target": "p12" },
-          { "id": "pe12", "source": "p12", "target": "p13" },
-          { "id": "pe13", "source": "p13", "target": "p14" },
-          { "id": "pe14", "source": "p14", "target": "p15" },
-          { "id": "pe15", "source": "p15", "target": "p16" }
+          {
+            "id": "pe1",
+            "source": "p1",
+            "target": "p2"
+          },
+          {
+            "id": "pe2",
+            "source": "p2",
+            "target": "p3"
+          },
+          {
+            "id": "pe3",
+            "source": "p3",
+            "target": "p4"
+          },
+          {
+            "id": "pe4",
+            "source": "p4",
+            "target": "p5"
+          },
+          {
+            "id": "pe5",
+            "source": "p5",
+            "target": "p6"
+          },
+          {
+            "id": "pe6",
+            "source": "p6",
+            "target": "p7"
+          },
+          {
+            "id": "pe7",
+            "source": "p7",
+            "target": "p8"
+          },
+          {
+            "id": "pe8",
+            "source": "p8",
+            "target": "p9"
+          },
+          {
+            "id": "pe9",
+            "source": "p9",
+            "target": "p10"
+          },
+          {
+            "id": "pe10",
+            "source": "p10",
+            "target": "p11"
+          },
+          {
+            "id": "pe11",
+            "source": "p11",
+            "target": "p12"
+          },
+          {
+            "id": "pe12",
+            "source": "p12",
+            "target": "p13"
+          },
+          {
+            "id": "pe13",
+            "source": "p13",
+            "target": "p14"
+          },
+          {
+            "id": "pe14",
+            "source": "p14",
+            "target": "p15"
+          },
+          {
+            "id": "pe15",
+            "source": "p15",
+            "target": "p16"
+          }
         ]
       }
     ],
@@ -672,7 +897,13 @@
         "purpose": "Determines which Platform Adapter outputs to generate and which publishing integrations to configure",
         "required": true,
         "type": "multi_select",
-        "options": ["Blog (Notion)", "Email Newsletter (Gmail)", "LinkedIn", "Twitter/X", "Telegram"]
+        "options": [
+          "Blog (Notion)",
+          "Email Newsletter (Gmail)",
+          "LinkedIn",
+          "Twitter/X",
+          "Telegram"
+        ]
       },
       {
         "id": "approval_channel",

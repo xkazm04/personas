@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Shield, AlertTriangle, Clock, Loader2, Wrench } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { Button } from '@/features/shared/components/buttons';
 import { getSlaDashboard } from '@/api/overview/sla';
 import type { SlaDashboardData } from '@/api/overview/sla';
 import { formatPercent, formatDuration, slaColor } from './slaFormatters';
@@ -38,17 +39,15 @@ export default function SLADashboard() {
         actions={
           <div className="flex items-center gap-1.5">
             {DAY_OPTIONS.map((d) => (
-              <button
+              <Button
                 key={d}
+                variant={days === d ? 'secondary' : 'ghost'}
+                size="xs"
                 onClick={() => setDays(d)}
-                className={`px-2.5 py-1 text-xs rounded-xl transition-colors ${
-                  days === d
-                    ? 'bg-primary/15 text-primary border border-primary/30'
-                    : 'text-muted-foreground/70 hover:text-foreground/80 hover:bg-primary/5 border border-transparent'
-                }`}
+                className={days === d ? 'bg-primary/15 text-primary border border-primary/30' : ''}
               >
                 {d}d
-              </button>
+              </Button>
             ))}
           </div>
         }

@@ -4,10 +4,10 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Loader2,
   Sparkles,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { IconSelector } from '@/features/shared/components/forms/IconSelector';
 import { ColorPicker } from '@/features/shared/components/forms/ColorPicker';
@@ -104,9 +104,9 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
     >
       {/* Header */}
       <div className="mb-6">
-        <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm text-muted-foreground/70 hover:text-muted-foreground mb-2 transition-colors">
-          <ChevronLeft className="w-3.5 h-3.5" />Back
-        </button>
+        <Button variant="ghost" size="sm" icon={<ChevronLeft className="w-3.5 h-3.5" />} onClick={onBack} className="mb-2">
+          Back
+        </Button>
         <h2 className="text-lg font-semibold text-foreground/90">New Agent</h2>
         <p className="text-sm text-muted-foreground/90 mt-1">Set a name and identity for your agent.</p>
       </div>
@@ -129,10 +129,9 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
 
           {/* Appearance */}
           <div className="space-y-3">
-            <button type="button" onClick={() => setShowAdvanced(!showAdvanced)} className="flex items-center gap-1.5 text-sm text-muted-foreground/70 hover:text-muted-foreground transition-colors">
-              {showAdvanced ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            <Button variant="ghost" size="sm" icon={showAdvanced ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />} onClick={() => setShowAdvanced(!showAdvanced)}>
               Customize appearance <span className="text-muted-foreground/60">(optional)</span>
-            </button>
+            </Button>
 
             <AnimatePresence>
               {showAdvanced && (
@@ -164,12 +163,9 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
           </div>
 
           {/* Submit */}
-          <button type="button" onClick={handleCreate} disabled={!canSubmit || isCreating}
-            className={`btn-lg w-full flex items-center justify-center gap-2.5 font-medium transition-all ${canSubmit && !isCreating ? 'bg-btn-primary hover:bg-btn-primary/90 text-white shadow-lg shadow-btn-primary/20 hover:shadow-btn-primary/30 hover:scale-[1.01] active:scale-[0.99]' : 'bg-secondary/40 text-muted-foreground/50 cursor-not-allowed'}`}
-          >
-            {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          <Button variant="primary" size="lg" block icon={<Sparkles className="w-4 h-4" />} loading={isCreating} disabled={!canSubmit || isCreating} onClick={handleCreate}>
             {isCreating ? 'Creating...' : 'Create Agent'}
-          </button>
+          </Button>
           {!canSubmit && !isCreating && (
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }} className="text-muted-foreground text-xs mt-1.5 text-center">
               Enter a name to continue

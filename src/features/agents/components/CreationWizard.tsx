@@ -1,14 +1,14 @@
 import { useState, useReducer, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Blocks, MessageCircle } from 'lucide-react';
+import { Blocks, MessageCircle, LayoutGrid } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { ChatCreator } from '@/features/agents/components/ChatCreator';
-import { BuilderStep, IdentityStep, builderReducer, INITIAL_BUILDER_STATE } from './creation';
+import { BuilderStep, IdentityStep, MatrixCreator, builderReducer, INITIAL_BUILDER_STATE } from './creation';
 import { TRANSITION_SLOW, TRANSITION_FAST } from '@/features/templates/animationPresets';
 
 type WizardStep = 'entry' | 'identity';
-type EntryMode = 'build' | 'chat';
+type EntryMode = 'build' | 'chat' | 'matrix';
 
 interface CreationWizardProps {
   canCancel?: boolean;
@@ -108,6 +108,26 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                       Chat
                     </span>
                   </button>
+                  <button
+                    onClick={() => setEntryMode('matrix')}
+                    className={`relative flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                      entryMode === 'matrix'
+                        ? 'text-foreground/90'
+                        : 'text-muted-foreground/70 hover:text-muted-foreground'
+                    }`}
+                  >
+                    {entryMode === 'matrix' && (
+                      <motion.div
+                        layoutId="wizard-mode-pill"
+                        className="absolute inset-0 bg-primary/10 rounded-xl"
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-2">
+                      <LayoutGrid className="w-3.5 h-3.5" />
+                      Matrix
+                    </span>
+                  </button>
                 </div>
               </div>
 
@@ -126,6 +146,21 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                       onCancel={canCancel ? () => { void handleCancel(); } : undefined}
                       onCreated={(id) => setDraftPersonaId(id)}
                       onActivated={() => setIsCreatingPersona(false)}
+                    />
+                  </motion.div>
+                ) : entryMode === 'matrix' ? (
+                  <motion.div
+                    key="matrix-creator"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={TRANSITION_FAST}
+                  >
+                    <MatrixCreator
+                      state={builderState}
+                      dispatch={dispatch}
+                      onContinue={handleContinue}
+                      onCancel={canCancel ? () => { void handleCancel(); } : undefined}
                     />
                   </motion.div>
                 ) : (

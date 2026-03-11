@@ -1,4 +1,5 @@
 import { Key, Zap, Users, Sparkles } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
@@ -123,13 +124,15 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
                 <Key className="w-5 h-5 text-emerald-400/60" />
               </div>
               <p className="text-sm text-muted-foreground/80">No credentials yet</p>
-              <button
+              <Button
+                variant="accent"
+                accentColor="violet"
+                size="md"
+                icon={<Sparkles className="w-3 h-3" />}
                 onClick={() => useProvisioningWizardStore.getState().open(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border border-violet-500/25 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors"
               >
-                <Sparkles className="w-3 h-3" />
                 AI Setup Wizard
-              </button>
+              </Button>
             </div>
           )}
         </SidebarSubNav>

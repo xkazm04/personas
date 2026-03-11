@@ -9,7 +9,9 @@ export type ThemeId =
   | 'dark-purple'
   | 'dark-pink'
   | 'dark-red'
-  | 'light';
+  | 'light'
+  | 'light-ice'
+  | 'light-news';
 
 export type TextScale = 'large' | 'larger';
 
@@ -32,6 +34,8 @@ export const THEMES: ThemeDefinition[] = [
   { id: 'dark-pink', label: 'Pink', primaryColor: '#ec4899', accentColor: '#f472b6', backgroundSample: '#140a10', foregroundSample: '#fce7f3', isLight: false },
   { id: 'dark-red', label: 'Red', primaryColor: '#cc0000', accentColor: '#e60000', backgroundSample: '#080808', foregroundSample: '#ededed', isLight: false },
   { id: 'light', label: 'Light', primaryColor: '#2554b0', accentColor: '#3568c7', backgroundSample: '#f0ede6', foregroundSample: '#1c1c28', isLight: true },
+  { id: 'light-ice', label: 'Ice', primaryColor: '#2563eb', accentColor: '#38bdf8', backgroundSample: '#f0f5fa', foregroundSample: '#0f172a', isLight: true },
+  { id: 'light-news', label: 'News', primaryColor: '#1a1a1a', accentColor: '#555555', backgroundSample: '#e8e6e1', foregroundSample: '#111111', isLight: true },
 ];
 
 export const TEXT_SCALES: { id: TextScale; label: string; description: string }[] = [
@@ -53,6 +57,13 @@ function applyTheme(id: ThemeId) {
     el.removeAttribute('data-theme');
   } else {
     el.setAttribute('data-theme', id);
+  }
+
+  // Toggle dark class for Tailwind compatibility
+  if (id.startsWith('light')) {
+    el.classList.remove('dark');
+  } else {
+    el.classList.add('dark');
   }
 }
 

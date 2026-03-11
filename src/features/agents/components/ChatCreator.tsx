@@ -3,6 +3,7 @@ import {
   MessageCircle,
   Send,
 } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { CompletenessRing } from './persona/CompletenessRing';
 import { PreviewPanel } from './preview/PreviewPanel';
 import { ChatThread } from './ChatThread';
@@ -75,17 +76,13 @@ export function ChatCreator({ onCancel, onCreated, onActivated }: ChatCreatorPro
                 className="flex-1 min-h-[44px] max-h-[100px] bg-secondary/30 border border-primary/15 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground/30 resize-y focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all disabled:opacity-50"
                 autoFocus
               />
-              <button
+              <Button
+                variant="secondary"
+                size="icon-md"
+                icon={<Send className="w-3.5 h-3.5" />}
                 onClick={handleSend}
                 disabled={!input.trim() || isThinking}
-                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  !input.trim() || isThinking
-                    ? 'bg-secondary/30 text-muted-foreground/50 cursor-not-allowed'
-                    : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'
-                }`}
-              >
-                <Send className="w-3.5 h-3.5" />
-              </button>
+              />
             </div>
             {!input.trim() && !isThinking && messages.length === 0 && (
               <motion.p
@@ -117,12 +114,9 @@ export function ChatCreator({ onCancel, onCreated, onActivated }: ChatCreatorPro
       {/* Cancel */}
       {onCancel && (
         <div className="px-4 py-2 border-t border-primary/10">
-          <button
-            onClick={onCancel}
-            className="text-sm text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-          >
+          <Button variant="link" size="sm" onClick={onCancel}>
             Cancel
-          </button>
+          </Button>
         </div>
       )}
     </div>

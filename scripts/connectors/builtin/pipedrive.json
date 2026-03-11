@@ -1,0 +1,46 @@
+{
+  "id": "builtin-pipedrive",
+  "name": "pipedrive",
+  "label": "Pipedrive",
+  "color": "#017737",
+  "icon_url": "/icons/connectors/pipedrive.svg",
+  "category": "crm",
+  "fields": [
+    {
+      "key": "api_token",
+      "label": "API Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Go to Pipedrive → Settings → Personal preferences → API → Your personal API token"
+    },
+    {
+      "key": "domain",
+      "label": "Company Domain",
+      "type": "text",
+      "required": true,
+      "placeholder": "yourcompany",
+      "helpText": "Your Pipedrive subdomain (e.g., 'yourcompany' from yourcompany.pipedrive.com)"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://{{domain}}.pipedrive.com/api/v1/users/me?api_token={{api_token}}",
+    "method": "GET",
+    "headers": {},
+    "description": "Validates API token via Pipedrive /users/me endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Pipedrive CRM for managing deals, contacts, activities, and sales pipelines via the Pipedrive REST API.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://developers.pipedrive.com/docs/api/v1",
+    "setup_guide": "1. Log in to Pipedrive.\n2. Go to Settings → Personal preferences → API.\n3. Copy your personal API token.\n4. Note your company domain (from the URL: yourcompany.pipedrive.com).\n5. Paste both values here.",
+    "pricing_tier": "paid",
+    "auth_methods": [
+      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}
+    ]
+  }
+}

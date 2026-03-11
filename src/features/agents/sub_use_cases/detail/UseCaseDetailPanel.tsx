@@ -1,4 +1,5 @@
 import { Play, Square, Loader2, ArrowRight } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { UseCaseModelDropdown } from './UseCaseModelDropdown';
 import { UseCaseChannelDropdown } from './UseCaseChannelDropdown';
@@ -90,31 +91,37 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
             currentInputs={selectedFixture?.inputs ?? useCase.sample_input ?? undefined}
           />
           {isTestRunning ? (
-            <button
+            <Button
               onClick={handleCancelTest}
               disabled={!canCancel}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              variant="danger"
+              size="sm"
+              icon={<Square className="w-3.5 h-3.5" />}
               title={!canCancel ? 'Waiting for test to start...' : 'Stop test'}
             >
-              <Square className="w-3.5 h-3.5" /> Stop
-            </button>
+              Stop
+            </Button>
           ) : (
-            <button
+            <Button
               onClick={handleRunTest}
               disabled={!hasPrompt || !modelConfig}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              variant="primary"
+              size="sm"
+              icon={<Play className="w-3.5 h-3.5" />}
               title={!hasPrompt ? 'No prompt configured' : 'Test this use case'}
             >
-              <Play className="w-3.5 h-3.5" /> Test
-            </button>
+              Test
+            </Button>
           )}
-          <button
+          <Button
             onClick={() => setEditorTab('lab')}
-            className="flex items-center gap-1 text-sm text-muted-foreground/40 hover:text-primary/70 transition-colors"
+            variant="link"
+            size="sm"
+            className="text-muted-foreground/40 hover:text-primary/70"
             title="View full test history"
           >
             Tests <ArrowRight className="w-3 h-3" />
-          </button>
+          </Button>
         </div>
       </div>
 

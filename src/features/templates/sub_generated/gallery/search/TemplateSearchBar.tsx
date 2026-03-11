@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Sparkles } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { AiSearchStatusBar } from './suggestions/AiSearchStatusBar';
 import { useStructuredQuery } from './suggestions/useStructuredQuery';
 import { TemplateSearchControls, TemplateSearchFilterRow } from './TemplateSearchFilterRow';
@@ -32,11 +33,13 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
     <div className="border-b border-primary/10 flex-shrink-0">
       <div className="px-4 py-2.5 flex items-center gap-2">
         {onAiSearchToggle && (
-          <button onClick={onAiSearchToggle}
-            className={`p-2 rounded-xl border transition-all flex-shrink-0 ${aiSearchMode ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300' : 'border-primary/10 text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-secondary/40'}`}
+          <Button onClick={onAiSearchToggle}
+            variant="ghost"
+            size="icon-sm"
+            className={`border flex-shrink-0 ${aiSearchMode ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300' : 'border-primary/10 text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-secondary/40'}`}
             title={aiSearchMode ? 'Switch to keyword search' : 'Switch to AI search'}>
             <Sparkles className="w-4 h-4" />
-          </button>
+          </Button>
         )}
 
         <SearchChipInput
@@ -64,10 +67,12 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
             <Sparkles className="w-3.5 h-3.5 text-indigo-400/60 flex-shrink-0" />
             <span className="text-sm text-indigo-300/70 flex-1">Few results found</span>
-            <button onClick={() => onAiSearchSubmit(search.trim())}
-              className="text-sm px-2.5 py-1 rounded-xl bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 hover:bg-indigo-500/25 transition-colors">
+            <Button onClick={() => onAiSearchSubmit(search.trim())}
+              variant="secondary"
+              size="xs"
+              className="bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 hover:bg-indigo-500/25">
               Try AI search
-            </button>
+            </Button>
           </div>
         </div>
       )}

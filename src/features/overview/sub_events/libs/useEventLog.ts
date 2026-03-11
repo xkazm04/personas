@@ -4,7 +4,9 @@ import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import type { PersonaEvent } from '@/lib/types/types';
 
-export type EventFilter = 'all' | 'pending' | 'completed' | 'failed';
+export type SortDirection = 'desc' | 'asc';
+
+const PAGE_SIZE = 20;
 
 export function useEventLog() {
   const recentEvents = usePersonaStore((s) => s.recentEvents);
@@ -13,12 +15,14 @@ export function useEventLog() {
   const pushRecentEvent = usePersonaStore((s) => s.pushRecentEvent);
   const personas = usePersonaStore((s) => s.personas);
 
-  const [filter, setFilter] = useState<EventFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [page, setPage] = useState(1);
   const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
-  const { selectedPersonaId, setSelectedPersonaId } = useOverviewFilters();
+  const { selectedPersonaId, setSelectedPersonaId: setPersonaId } = useOverviewFilters();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [copiedPayload, setCopiedPayload] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -39,16 +43,47 @@ export function useEventLog() {
   }, [pushRecentEvent]);
   useEventBusListener(handleBusEvent);
 
+  // Derive available event types from the data
+  const availableTypes = useMemo(() => {
+    const types = new Set<string>();
+    for (const e of recentEvents) {
+      if (e.event_type) types.add(e.event_type);
+    }
+    return Array.from(types).sort();
+  }, [recentEvents]);
+
+  // Filter + sort
   const filteredEvents = useMemo(() => {
     let events = recentEvents;
-    if (filter !== 'all') {
-      events = events.filter((e: PersonaEvent) => e.status === filter);
+    if (statusFilter !== 'all') {
+      events = events.filter((e: PersonaEvent) => e.status === statusFilter);
+    }
+    if (typeFilter !== 'all') {
+      events = events.filter((e: PersonaEvent) => e.event_type === typeFilter);
     }
     if (selectedPersonaId) {
       events = events.filter((e: PersonaEvent) => e.target_persona_id === selectedPersonaId);
     }
-    return events;
-  }, [recentEvents, filter, selectedPersonaId]);
+    // Sort by created_at
+    const sorted = [...events].sort((a, b) => {
+      const ta = new Date(a.created_at).getTime();
+      const tb = new Date(b.created_at).getTime();
+      return sortDirection === 'desc' ? tb - ta : ta - tb;
+    });
+    return sorted;
+  }, [recentEvents, statusFilter, typeFilter, selectedPersonaId, sortDirection]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, typeFilter, selectedPersonaId, sortDirection]);
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filteredEvents.length / PAGE_SIZE));
+  const paginatedEvents = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filteredEvents.slice(start, start + PAGE_SIZE);
+  }, [filteredEvents, page]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -64,14 +99,19 @@ export function useEventLog() {
     return personas.find((persona) => persona.id === id) ?? null;
   };
 
+  const toggleSortDirection = () => {
+    setSortDirection((d) => (d === 'desc' ? 'asc' : 'desc'));
+  };
+
   return {
-    recentEvents, pendingEventCount, personas,
-    filter, setFilter,
+    recentEvents, pendingEventCount, personas, availableTypes,
+    statusFilter, setStatusFilter, typeFilter, setTypeFilter,
+    sortDirection, toggleSortDirection,
+    page, setPage, totalPages, pageSize: PAGE_SIZE,
     selectedEvent, setSelectedEvent,
-    selectedPersonaId, setSelectedPersonaId,
+    selectedPersonaId, setSelectedPersonaId: setPersonaId,
     isLoading, isRefreshing,
-    copiedPayload, setCopiedPayload,
-    filteredEvents,
+    filteredEvents, paginatedEvents,
     handleRefresh, getPersona,
   };
 }

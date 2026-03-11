@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Users, Zap } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { usePersonaStore } from '@/stores/personaStore';
 import { getTeamCounts, updateTeam } from '@/api/tauriApi';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
@@ -104,20 +105,24 @@ export default function TeamList() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="accent"
+              size="sm"
+              icon={<Zap className="w-4 h-4" />}
               onClick={() => setShowAutoTeam(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-500/15 to-indigo-500/15 border border-violet-500/25 text-violet-300 hover:from-violet-500/25 hover:to-indigo-500/25 transition-all group"
+              className="bg-gradient-to-r from-violet-500/15 to-indigo-500/15 border border-violet-500/25 text-violet-300 hover:from-violet-500/25 hover:to-indigo-500/25"
             >
-              <Zap className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span className="text-sm font-medium">Auto-Team</span>
-            </button>
-            <button
+              Auto-Team
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Plus className="w-4 h-4" />}
               onClick={() => setShowCreate(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 transition-all group"
+              className="bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25"
             >
-              <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span className="text-sm font-medium">New Team</span>
-            </button>
+              New Team
+            </Button>
           </div>
         </div>
 
@@ -160,20 +165,24 @@ export default function TeamList() {
               Start from a template below or create a blank team
             </p>
             <div className="flex items-center justify-center gap-3">
-              <button
+              <Button
+                variant="accent"
+                size="sm"
+                icon={<Zap className="w-4 h-4" />}
                 onClick={() => setShowAutoTeam(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-500/15 to-indigo-500/15 border border-violet-500/25 text-violet-300 hover:from-violet-500/25 hover:to-indigo-500/25 transition-all"
+                className="bg-gradient-to-r from-violet-500/15 to-indigo-500/15 border border-violet-500/25 text-violet-300 hover:from-violet-500/25 hover:to-indigo-500/25"
               >
-                <Zap className="w-4 h-4" />
-                <span className="text-sm font-medium">Auto-Team</span>
-              </button>
-              <button
+                Auto-Team
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<Plus className="w-4 h-4" />}
                 onClick={() => setShowCreate(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 transition-all"
+                className="bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25"
               >
-                <Plus className="w-4 h-4" />
-                <span className="text-sm font-medium">Create Blank Team</span>
-              </button>
+                Create Blank Team
+              </Button>
             </div>
           </motion.div>
         )}

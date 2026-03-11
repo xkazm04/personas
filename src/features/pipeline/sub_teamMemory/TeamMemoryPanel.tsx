@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, ChevronDown, ChevronUp, Search, Loader2, List, GitCommitVertical, GitCompareArrows, X } from 'lucide-react';
+import { Brain, ChevronDown, ChevronUp, Search, List, GitCommitVertical, GitCompareArrows, X } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
 import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput';
@@ -107,49 +108,53 @@ export default function TeamMemoryPanel({
           {/* View mode toggle */}
           {hasRunData && (
             <div className="flex items-center rounded-lg border border-primary/10 overflow-hidden mr-1">
-              <button
+              <Button
                 onClick={() => { setViewMode('list'); handleFilterByRun(null); }}
-                className={`p-1 transition-colors ${
+                variant="ghost"
+                size="xs"
+                className={`p-1 rounded-none ${
                   viewMode === 'list'
                     ? 'bg-violet-500/20 text-violet-400'
                     : 'text-muted-foreground/40 hover:text-muted-foreground/60'
                 }`}
                 title="List view"
-              >
-                <List className="w-3 h-3" />
-              </button>
-              <button
+                icon={<List className="w-3 h-3" />}
+              />
+              <Button
                 onClick={() => setViewMode('timeline')}
-                className={`p-1 transition-colors ${
+                variant="ghost"
+                size="xs"
+                className={`p-1 rounded-none ${
                   viewMode === 'timeline'
                     ? 'bg-violet-500/20 text-violet-400'
                     : 'text-muted-foreground/40 hover:text-muted-foreground/60'
                 }`}
                 title="Timeline view"
-              >
-                <GitCommitVertical className="w-3 h-3" />
-              </button>
+                icon={<GitCommitVertical className="w-3 h-3" />}
+              />
               {stats?.run_counts && stats.run_counts.length >= 2 && (
-                <button
+                <Button
                   onClick={() => setViewMode('diff')}
-                  className={`p-1 transition-colors ${
+                  variant="ghost"
+                  size="xs"
+                  className={`p-1 rounded-none ${
                     viewMode === 'diff'
                       ? 'bg-violet-500/20 text-violet-400'
                       : 'text-muted-foreground/40 hover:text-muted-foreground/60'
                   }`}
                   title="Compare runs"
-                >
-                  <GitCompareArrows className="w-3 h-3" />
-                </button>
+                  icon={<GitCompareArrows className="w-3 h-3" />}
+                />
               )}
             </div>
           )}
-          <button
-            className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/60"
+          <Button
+            variant="ghost"
+            size="xs"
+            className="p-1 rounded-lg text-muted-foreground/60"
             onClick={onClose}
-          >
-            <ChevronDown className="w-4 h-4" />
-          </button>
+            icon={<ChevronDown className="w-4 h-4" />}
+          />
         </div>
       </div>
 
@@ -157,9 +162,11 @@ export default function TeamMemoryPanel({
       {viewMode === 'list' && (
         <div className="flex gap-1 px-3 py-2 overflow-x-auto scrollbar-hide">
           {CATEGORY_FILTERS.map((cat) => (
-            <button
+            <Button
               key={cat}
-              className={`text-sm px-2 py-0.5 rounded-full capitalize whitespace-nowrap transition-colors ${
+              variant="ghost"
+              size="xs"
+              className={`px-2 py-0.5 rounded-full capitalize whitespace-nowrap ${
                 activeCategory === cat
                   ? 'bg-violet-500/20 text-violet-400 font-medium'
                   : 'bg-primary/5 text-muted-foreground/60 hover:bg-primary/10'
@@ -167,7 +174,7 @@ export default function TeamMemoryPanel({
               onClick={() => handleCategoryChange(cat)}
             >
               {cat}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -190,13 +197,14 @@ export default function TeamMemoryPanel({
               <span className="text-sm text-violet-400 font-mono truncate flex-1">
                 Run {activeRunFilter.length > 8 ? activeRunFilter.slice(0, 8) : activeRunFilter}
               </span>
-              <button
+              <Button
                 onClick={() => handleFilterByRun(null)}
-                className="p-0.5 rounded text-violet-400/60 hover:text-violet-400 transition-colors flex-shrink-0"
+                variant="ghost"
+                size="xs"
+                className="p-0.5 rounded text-violet-400/60 hover:text-violet-400 flex-shrink-0"
                 title="Clear run filter"
-              >
-                <X className="w-3 h-3" />
-              </button>
+                icon={<X className="w-3 h-3" />}
+              />
             </div>
           )}
         </div>
@@ -235,20 +243,17 @@ export default function TeamMemoryPanel({
               />
             ))}
             {hasMore && !activeRunFilter && (
-              <button
+              <Button
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="w-full py-1.5 text-sm text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+                loading={loadingMore}
+                variant="ghost"
+                size="sm"
+                block
+                className="py-1.5 text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 rounded-lg"
               >
-                {loadingMore ? (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  <>Load more</>
-                )}
-              </button>
+                {loadingMore ? 'Loading...' : 'Load more'}
+              </Button>
             )}
             {!activeRunFilter && total > memories.length && (
               <div className="text-center text-sm text-muted-foreground/60 py-1">
@@ -267,15 +272,18 @@ export default function TeamMemoryPanel({
       {/* Stats footer */}
       {stats && stats.total > 0 && (
         <div className="border-t border-primary/10 px-3 py-2">
-          <button
-            className="flex items-center justify-between w-full text-sm text-muted-foreground/50 hover:text-muted-foreground/70"
+          <Button
+            variant="ghost"
+            size="sm"
+            block
+            className="flex items-center justify-between w-full text-muted-foreground/50 hover:text-muted-foreground/70"
             onClick={() => setStatsExpanded(!statsExpanded)}
+            iconRight={statsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           >
             <span>
               Avg importance: {stats.avg_importance.toFixed(1)} | {stats.category_counts.length} categories
             </span>
-            {statsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </button>
+          </Button>
           {statsExpanded && (
             <div className="mt-1.5 space-y-0.5">
               {stats.category_counts.map(([cat, count]) => (

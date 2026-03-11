@@ -1,4 +1,5 @@
 import { Upload, FileText, Globe, Loader2, Search, X, PlayCircle, Square } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { EndpointRow } from '../EndpointRow';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import type { ApiEndpoint } from '@/api/system/apiProxy';
@@ -56,32 +57,36 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
         {/* Run All / Stop */}
         {state.endpoints.length > 0 && (
           state.testRunner.isRunning ? (
-            <button
+            <Button
+              variant="danger"
+              size="sm"
+              icon={<Square className="w-3 h-3" />}
               onClick={state.testRunner.cancel}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
             >
-              <Square className="w-3 h-3" />
               Stop
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<PlayCircle className="w-3 h-3" />}
               onClick={() => { state.testRunner.runAll(state.endpoints, credentialId); state.setShowLogPanel(true); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
+              className="bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20"
             >
-              <PlayCircle className="w-3 h-3" />
               Run All
-            </button>
+            </Button>
           )
         )}
 
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={<Upload className="w-3 h-3" />}
           onClick={() => state.fileInputRef.current?.click()}
           disabled={state.isParsing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
         >
-          <Upload className="w-3 h-3" />
           Upload Spec
-        </button>
+        </Button>
         <input
           ref={state.fileInputRef}
           type="file"
@@ -89,22 +94,23 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
           onChange={state.handleFileInputChange}
           className="hidden"
         />
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={<FileText className="w-3 h-3" />}
           onClick={() => state.setShowPasteModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-secondary/30 border border-primary/10 text-foreground/70 hover:bg-secondary/50 transition-colors"
         >
-          <FileText className="w-3 h-3" />
           Paste OpenAPI
-        </button>
+        </Button>
       </div>
 
       {/* Parse error */}
       {state.parseError && (
         <div className="mx-4 mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 flex items-start gap-2">
           <span className="flex-1">{state.parseError}</span>
-          <button onClick={() => state.setParseError(null)} className="text-red-400/50 hover:text-red-400">
+          <Button variant="ghost" size="icon-sm" onClick={() => state.setParseError(null)} className="text-red-400/50 hover:text-red-400">
             <X className="w-3 h-3" />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -160,12 +166,14 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
                         Request Builder
                       </span>
                       <div className="flex-1" />
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={state.closeRequestPanel}
-                        className="text-sm text-muted-foreground/60 hover:text-muted-foreground/80"
+                        className="text-muted-foreground/60 hover:text-muted-foreground/80"
                       >
                         Close
-                      </button>
+                      </Button>
                     </div>
                     <RequestBuilder
                       endpoint={state.selectedEndpoint}

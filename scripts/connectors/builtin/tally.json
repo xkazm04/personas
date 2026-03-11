@@ -1,0 +1,40 @@
+{
+  "id": "builtin-tally",
+  "name": "tally",
+  "label": "Tally",
+  "color": "#3CCF91",
+  "icon_url": "/icons/connectors/tally.svg",
+  "category": "forms",
+  "fields": [
+    {
+      "key": "access_token",
+      "label": "Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Go to tally.so → Settings → Integrations → API → Generate access token"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.tally.so/me",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
+    "description": "Validates access token via Tally /me endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Tally free-first form builder for creating forms, surveys, and collecting responses via the Tally API.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://tally.so/help/developer-resources",
+    "setup_guide": "1. Log in to tally.so.\n2. Go to Settings → Integrations → API.\n3. Generate a new access token.\n4. Copy the token and paste it here.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "pat", "label": "PAT", "type": "credential", "is_default": true}
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "builtin-attio",
+  "name": "attio",
+  "label": "Attio",
+  "color": "#4F46E5",
+  "icon_url": "/icons/connectors/attio.svg",
+  "category": "crm",
+  "fields": [
+    {
+      "key": "access_token",
+      "label": "Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Go to Attio → Settings → Developers → API Access → Generate a new token"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.attio.com/v2/self",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
+    "description": "Validates access token via Attio /v2/self endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Attio next-gen CRM for managing people, companies, deals, and custom objects via the Attio API v2.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://developers.attio.com/reference",
+    "setup_guide": "1. Log in to Attio.\n2. Go to Settings → Developers → API Access.\n3. Click 'Generate a new token'.\n4. Select the required scopes (read/write for records, lists, objects).\n5. Copy the token and paste it here.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "pat", "label": "PAT", "type": "credential", "is_default": true}
+    ]
+  }
+}

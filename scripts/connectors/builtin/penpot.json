@@ -1,0 +1,48 @@
+{
+  "id": "builtin-penpot",
+  "name": "penpot",
+  "label": "Penpot",
+  "color": "#0D1117",
+  "icon_url": "/icons/connectors/penpot.svg",
+  "category": "design",
+  "fields": [
+    {
+      "key": "access_token",
+      "label": "Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Generate at your Penpot instance → Profile → Access Tokens"
+    },
+    {
+      "key": "base_url",
+      "label": "Instance URL",
+      "type": "url",
+      "required": false,
+      "placeholder": "https://design.penpot.app",
+      "helpText": "Your Penpot instance URL (defaults to penpot.app cloud)"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{base_url|https://design.penpot.app}}/api/rpc/command/get-profile",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Token {{access_token}}"
+    },
+    "description": "Validates access token via Penpot get-profile endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Penpot open-source design platform for prototyping, components, and design tokens.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://penpot.app/developers",
+    "setup_guide": "1. Log in to your Penpot instance (design.penpot.app or self-hosted).\n2. Go to Profile → Access Tokens.\n3. Create a new token and copy it.\n4. Paste the token here. If self-hosted, also enter your instance URL.",
+    "pricing_tier": "free",
+    "auth_methods": [
+      {"id": "pat", "label": "PAT", "type": "credential", "is_default": true}
+    ]
+  }
+}

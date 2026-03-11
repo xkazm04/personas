@@ -1,0 +1,48 @@
+{
+  "id": "builtin-backblaze-b2",
+  "name": "backblaze_b2",
+  "label": "Backblaze B2",
+  "color": "#E21E29",
+  "icon_url": "/icons/connectors/backblaze-b2.svg",
+  "category": "storage",
+  "fields": [
+    {
+      "key": "application_key_id",
+      "label": "Application Key ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Backblaze → App Keys → Add a New Application Key"
+    },
+    {
+      "key": "application_key",
+      "label": "Application Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Shown once when creating the key — copy immediately"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.backblazeb2.com/b2api/v3/b2_authorize_account",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Basic {{base64(application_key_id:application_key)}}"
+    },
+    "description": "Validates credentials via B2 authorize_account endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Backblaze B2 affordable S3-compatible cloud object storage for backups, archives, and media.",
+    "auth_type": "basic",
+    "auth_type_label": "Application Key",
+    "docs_url": "https://www.backblaze.com/docs/cloud-storage",
+    "setup_guide": "1. Log in to Backblaze.\n2. Go to App Keys.\n3. Click 'Add a New Application Key'.\n4. Name it and select bucket permissions.\n5. Copy the Application Key ID and Application Key (shown only once).\n6. Paste both values here.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "basic", "label": "Application Key", "type": "credential", "is_default": true}
+    ]
+  }
+}

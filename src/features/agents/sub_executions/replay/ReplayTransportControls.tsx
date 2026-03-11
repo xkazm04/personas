@@ -10,6 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import { SPEED_OPTIONS } from './ReplayHelpers';
+import { Button } from '@/features/shared/components/buttons';
 
 interface ReplayTransportControlsProps {
   isPlaying: boolean;
@@ -40,60 +41,66 @@ export function ReplayTransportControls({
 }: ReplayTransportControlsProps) {
   return (
     <div className="flex items-center gap-1.5">
-      <button
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        icon={<ChevronsLeft className="w-3.5 h-3.5" />}
         onClick={onJumpToStart}
-        className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
         title="Jump to start (Home)"
-      >
-        <ChevronsLeft className="w-3.5 h-3.5" />
-      </button>
-      <button
+        className="text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50"
+      />
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        icon={<SkipBack className="w-3.5 h-3.5" />}
         onClick={onStepBackward}
-        className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
         title="Previous step (Shift+Left)"
-      >
-        <SkipBack className="w-3.5 h-3.5" />
-      </button>
-      <button
+        className="text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50"
+      />
+      <Button
+        variant={isPlaying ? 'accent' : 'secondary'}
+        size="icon-md"
+        icon={isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         onClick={onTogglePlay}
-        className={`p-2 rounded-xl border transition-all ${
-          isPlaying
-            ? 'bg-blue-500/15 border-blue-500/25 text-blue-400'
-            : 'bg-primary/10 border-primary/20 text-foreground/80 hover:bg-primary/15'
-        }`}
         title="Play/Pause (Space)"
-      >
-        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-      </button>
-      <button
+        className={isPlaying
+          ? 'bg-blue-500/15 border-blue-500/25 text-blue-400'
+          : 'bg-primary/10 border-primary/20 text-foreground/80 hover:bg-primary/15'
+        }
+      />
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        icon={<SkipForward className="w-3.5 h-3.5" />}
         onClick={onStepForward}
-        className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
         title="Next step (Shift+Right)"
-      >
-        <SkipForward className="w-3.5 h-3.5" />
-      </button>
-      <button
+        className="text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50"
+      />
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        icon={<ChevronsRight className="w-3.5 h-3.5" />}
         onClick={onJumpToEnd}
-        className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
         title="Jump to end (End)"
-      >
-        <ChevronsRight className="w-3.5 h-3.5" />
-      </button>
+        className="text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50"
+      />
 
       {/* Speed selector */}
       <div className="ml-3 flex items-center gap-0.5 bg-secondary/30 rounded-lg border border-primary/10 p-0.5">
         {SPEED_OPTIONS.map((s) => (
-          <button
+          <Button
             key={s}
+            variant={speed === s ? 'secondary' : 'ghost'}
+            size="xs"
             onClick={() => onSetSpeed(s)}
-            className={`px-2 py-0.5 text-sm font-mono rounded-lg transition-colors ${
+            className={`font-mono ${
               speed === s
                 ? 'bg-primary/15 text-foreground/90 border border-primary/20'
                 : 'text-muted-foreground/50 hover:text-muted-foreground/80 border border-transparent'
             }`}
           >
             {s}x
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -106,20 +113,23 @@ export function ReplayTransportControls({
             exit={{ opacity: 0, scale: 0.9, x: -8 }}
             className="ml-auto flex items-center gap-2"
           >
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              icon={<X className="w-3 h-3" />}
               onClick={onClearFork}
-              className="p-1 rounded-lg hover:bg-secondary/50 text-muted-foreground/40 hover:text-muted-foreground"
               title="Clear fork point"
-            >
-              <X className="w-3 h-3" />
-            </button>
-            <button
+              className="text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary/50"
+            />
+            <Button
+              variant="accent"
+              size="sm"
+              icon={<GitFork className="w-3 h-3" />}
               onClick={onFork}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
+              className="bg-amber-500/15 text-amber-400 border-amber-500/25 hover:bg-amber-500/25"
             >
-              <GitFork className="w-3 h-3" />
               Fork after step {forkPoint + 1}
-            </button>
+            </Button>
           </motion.div>
         )}
       </AnimatePresence>

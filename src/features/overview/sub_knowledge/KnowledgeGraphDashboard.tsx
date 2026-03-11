@@ -5,6 +5,7 @@ import { getKnowledgeSummary, listExecutionKnowledge } from '@/api/overview/inte
 import type { KnowledgeGraphSummary } from '@/lib/bindings/KnowledgeGraphSummary';
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { OverviewStatCard } from '@/features/overview/sub_observability/OverviewStatCard';
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
@@ -86,13 +87,14 @@ export default function KnowledgeGraphDashboard() {
         title="Knowledge Graph"
         subtitle={`${summary?.total_entries ?? 0} patterns learned from execution history`}
         actions={
-          <button
+          <Button
+            variant="secondary"
+            size="xs"
+            icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
             onClick={() => { void fetchData(); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/40 border border-primary/10 text-sm text-foreground/70 hover:text-foreground/90 hover:bg-secondary/60 transition-colors"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
-          </button>
+          </Button>
         }
       />
 
@@ -141,9 +143,9 @@ export default function KnowledgeGraphDashboard() {
                     {allEntries.length === 0 && !loading && ' No matching patterns found — try selecting a specific persona above.'}
                   </p>
                 </div>
-                <button onClick={dismissDrilldown} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
-                  <X className="w-3 h-3" /> Clear
-                </button>
+                <Button variant="danger" size="xs" icon={<X className="w-3 h-3" />} onClick={dismissDrilldown} className="bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25">
+                  Clear
+                </Button>
               </div>
             </div>
           )}
@@ -157,9 +159,9 @@ export default function KnowledgeGraphDashboard() {
                   <p className="text-sm font-medium text-red-300">Knowledge data unavailable</p>
                   <p className="text-sm text-red-400/70 mt-0.5">{fetchError}</p>
                 </div>
-                <button onClick={() => { void fetchData(); }} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
-                  <RefreshCw className="w-3 h-3" /> Retry
-                </button>
+                <Button variant="danger" size="xs" icon={<RefreshCw className="w-3 h-3" />} onClick={() => { void fetchData(); }} className="bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25">
+                  Retry
+                </Button>
               </div>
             </div>
           ) : loading ? (

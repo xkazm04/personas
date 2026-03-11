@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Play, RefreshCw, ExternalLink, FileText, Loader2 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { Button } from '@/features/shared/components/buttons';
 import { StatusIcon, statusColor } from './pipelineHelpers';
 import { PipelineRow } from './PipelineRow';
 import { JobRow } from './JobRow';
@@ -72,26 +73,26 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
           {pipelines.length > 0 ? `${pipelines.length} pipeline(s)` : 'No pipelines'}
         </p>
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="ghost"
+            size="xs"
+            icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
             onClick={() => fetchPipelines(projectId)}
             disabled={loading}
-            className="flex items-center gap-1.5 px-2 py-1 text-sm rounded-lg text-muted-foreground/60 hover:text-foreground/80 transition-colors disabled:opacity-40"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={triggering ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+            loading={triggering}
             onClick={handleTrigger}
             disabled={triggering}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40"
+            accentColor="orange"
           >
-            {triggering ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Play className="w-3.5 h-3.5" />
-            )}
             Trigger Pipeline
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -150,13 +151,14 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
                       <ExternalLink className="w-4 h-4" />
                     </a>
                   )}
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => refreshPipeline(projectId, activePipeline.id)}
-                    className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
                     title="Refresh pipeline"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </div>
               </div>
 

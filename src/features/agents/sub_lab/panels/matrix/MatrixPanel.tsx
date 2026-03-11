@@ -4,6 +4,7 @@ import {
   Filter, Wand2, AlertCircle,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { Button } from '@/features/shared/components/buttons';
 import { LabProgress } from '../../shared/LabProgress';
 import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
@@ -95,7 +96,7 @@ export function MatrixPanel() {
             <label className="text-sm font-medium text-muted-foreground/80">Models</label>
             <div className="flex flex-wrap gap-2">
               {ANTHROPIC_MODELS.map((m) => (
-                <button
+                <Button
                   key={m.id}
                   onClick={() => {
                     setSelectedModels((prev) => {
@@ -106,14 +107,16 @@ export function MatrixPanel() {
                     });
                   }}
                   disabled={isLabRunning}
-                  className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
+                  variant="ghost"
+                  size="sm"
+                  className={`px-3 py-1.5 rounded-xl border ${
                     selectedModels.has(m.id)
                       ? 'bg-primary/15 text-primary border-primary/30'
                       : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'
-                  } ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  }`}
                 >
                   {m.label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -133,30 +136,36 @@ export function MatrixPanel() {
                 }}
                 ariaLabel="Filter by use case"
                 renderTrigger={({ isOpen, toggle }) => (
-                  <button
+                  <Button
                     onClick={toggle}
                     disabled={isLabRunning}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${
+                    variant="ghost"
+                    size="md"
+                    block
+                    iconRight={<ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl border ${
                       isOpen ? 'bg-primary/10 border-primary/30' : 'bg-background/30 border-primary/10 hover:border-primary/20'
-                    } ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    }`}
                   >
                     <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? 'All Use Cases'}</span>
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                  </button>
+                  </Button>
                 )}
               >
                 {({ close, focusIndex }) => (
                   <div className="py-1 bg-background border border-primary/15 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
                     {useCaseOptions.map((opt, i) => (
-                      <button
+                      <Button
                         key={opt.value}
                         onClick={() => { setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); close(); }}
-                        className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                        variant="ghost"
+                        size="sm"
+                        block
+                        className={`w-full text-left px-3 py-1.5 rounded-none ${
                           focusIndex === i ? 'bg-primary/15 text-foreground' : ''
                         } ${(selectedUseCaseId ?? '__all__') === opt.value ? 'text-primary font-medium' : 'text-muted-foreground/90 hover:bg-secondary/30'}`}
                       >
                         {opt.label}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
@@ -166,22 +175,28 @@ export function MatrixPanel() {
 
           {/* Run / Cancel */}
           {isLabRunning ? (
-            <button
+            <Button
               onClick={() => void handleCancel()}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20"
+              variant="danger"
+              size="lg"
+              block
+              icon={<Square className="w-4 h-4" />}
+              className="shadow-lg shadow-red-500/20"
             >
-              <Square className="w-4 h-4" />
               Cancel Matrix Test
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               onClick={() => void handleStart()}
               disabled={!instruction.trim() || selectedModels.size === 0 || !hasPrompt}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-500/90 hover:to-purple-500/90 text-foreground shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+              variant="primary"
+              size="lg"
+              block
+              icon={<Wand2 className="w-4 h-4" />}
+              className="bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-500/90 hover:to-purple-500/90 shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.01] active:scale-[0.99]"
             >
-              <Wand2 className="w-4 h-4" />
               Generate & Test Draft
-            </button>
+            </Button>
           )}
 
           <LabProgress />

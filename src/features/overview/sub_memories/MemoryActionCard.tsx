@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lightbulb, X, Gauge, Clock, AlertTriangle, Settings, GitBranch } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import type { MemoryAction, MemoryActionKind } from './hooks/memoryActions';
 import { ACTION_KIND_META } from './hooks/memoryActions';
 
@@ -28,13 +29,15 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
       exit={{ opacity: 0, x: -20, height: 0 }}
       className={`group relative rounded-xl border ${meta.borderClass} ${meta.bgClass} p-3 transition-colors hover:border-opacity-40`}
     >
-      <button
+      <Button
+        variant="ghost"
+        size="icon-sm"
         onClick={() => onDismiss(action.id)}
-        className="absolute top-2 right-2 p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-white/10 text-muted-foreground/60 hover:text-foreground/80 transition-all"
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100"
         title="Dismiss suggestion"
       >
         <X className="w-3 h-3" />
-      </button>
+      </Button>
 
       <div className="flex items-start gap-2.5">
         <div className={`w-7 h-7 rounded-lg ${meta.bgClass} border ${meta.borderClass} flex items-center justify-center flex-shrink-0 mt-0.5`}>

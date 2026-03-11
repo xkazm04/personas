@@ -38,7 +38,6 @@ interface PersonaMatrixBaseProps {
   isRunning?: boolean;
   lastLine?: string;
   cliLines?: string[];
-  missingConnectorTypes?: string[];
   onNavigateCatalog?: () => void;
 }
 
@@ -129,7 +128,7 @@ function CellBullets({ items, color = 'text-foreground/70' }: { items: string[];
       {items.map((item, i) => (
         <li key={i} className="flex items-start gap-2 leading-tight">
           <span className="w-1.5 h-1.5 rounded-full bg-current opacity-40 mt-[7px] flex-shrink-0" />
-          <span className={`text-[13px] ${color} leading-snug`}>{item}</span>
+          <span className={`text-sm ${color} leading-snug`}>{item}</span>
         </li>
       ))}
     </ul>
@@ -152,7 +151,7 @@ function MatrixCellRenderer({ cell, isEditMode }: { cell: MatrixCell; isEditMode
       'relative rounded-xl border border-card-border p-4 transition-all duration-150 shadow-md',
       useEditRender
         ? 'bg-card-bg hover:bg-foreground/[0.06] ring-1 ring-inset ring-primary/10'
-        : 'bg-card-bg hover:bg-foreground/[0.04]',
+        : 'bg-card-bg',
     ].join(' ')}>
       <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
         <div className={`absolute -right-1 -top-1 ${useEditRender ? 'opacity-[0.15]' : 'opacity-[0.25]'}`}>
@@ -172,7 +171,7 @@ function MatrixCellRenderer({ cell, isEditMode }: { cell: MatrixCell; isEditMode
 // ── Main Component ───────────────────────────────────────────────────
 
 export function PersonaMatrix(props: PersonaMatrixProps) {
-  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, lastLine, cliLines, missingConnectorTypes, onNavigateCatalog } = props;
+  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, lastLine, cliLines, onNavigateCatalog } = props;
   const isEditMode = props.mode === 'edit';
 
   const cells = useMemo<MatrixCell[]>(() => {
@@ -193,7 +192,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
           if (archCategories.length === 0) return <CellBullets items={['No external services']} color="text-muted-foreground/50" />;
           return (<div className="space-y-1.5">{archCategories.slice(0, 3).map((cat: ArchCategory) => { const CatIcon = cat.icon; return (<div key={cat.key} className="flex items-center gap-2"><CatIcon className="w-3.5 h-3.5 flex-shrink-0 opacity-70" style={{ color: cat.color }} /><span className="text-sm text-foreground/70 leading-snug">{cat.label}</span></div>); })}{archCategories.length > 3 && <span className="text-sm text-muted-foreground/40 pl-[22px]">+{archCategories.length - 3} more</span>}</div>);
         },
-        editRender: editProps ? () => (<ConnectorEditCell requiredConnectors={editProps.requiredConnectors} credentials={editProps.credentials} editState={editProps.editState} callbacks={editProps.editCallbacks} missingConnectorTypes={missingConnectorTypes} onNavigateCatalog={onNavigateCatalog} />) : undefined },
+        editRender: editProps ? () => (<ConnectorEditCell requiredConnectors={editProps.requiredConnectors} credentials={editProps.credentials} editState={editProps.editState} callbacks={editProps.editCallbacks} onNavigateCatalog={onNavigateCatalog} />) : undefined },
       { key: 'triggers', label: 'Triggers', watermark: TriggersIcon, watermarkColor: 'text-amber-400',        render: () => triggers.length === 0 ? <CellBullets items={['Manual execution only']} color="text-muted-foreground/50" /> : <CellBullets items={triggers.slice(0, 3).map((t) => t.label)} color="text-foreground/70" />,
         editRender: editProps ? () => (<TriggerEditCell designResult={designResult} editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'human-review', label: 'Human Review', watermark: HumanReviewIcon,
@@ -214,7 +213,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [designResult, flows, isEditMode, missingConnectorTypes, onNavigateCatalog,
+  }, [designResult, flows, isEditMode, onNavigateCatalog,
     ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
 
   const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={isEditMode} isRunning={isRunning} lastLine={lastLine} cliLines={cliLines} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} />);
@@ -236,8 +235,11 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
       )}
       <div className="grid grid-cols-[1fr_1.3fr_1fr] gap-2.5">
         {firstFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} />))}
-        <div className="relative rounded-xl border border-primary/30 bg-card-bg p-5 ring-1 ring-primary/10 shadow-2xl shadow-primary/5">
-          {commandCenter}
+        <div className="relative rounded-xl border border-primary/30 p-5 ring-1 ring-primary/10 shadow-2xl shadow-primary/5 overflow-hidden">
+          {/* Neon background — theme-colored radial glow */}
+          <div className="absolute inset-0 bg-card-bg" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_70%)] opacity-[0.07]" />
+          <div className="relative z-10">{commandCenter}</div>
         </div>
         {lastFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} />))}
       </div>

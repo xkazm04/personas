@@ -4,6 +4,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { getKnowledgeSummary, listExecutionKnowledge } from '@/api/overview/intelligence/knowledge';
 import type { KnowledgeGraphSummary } from '@/lib/bindings/KnowledgeGraphSummary';
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
+import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { OverviewStatCard } from '@/features/overview/sub_observability/components/OverviewStatCard';
@@ -91,15 +92,23 @@ export default function KnowledgeGraphDashboard() {
         subtitle={`${summary?.total_entries ?? 0} patterns learned${summary?.annotation_count ? ` · ${summary.annotation_count} annotations` : ''}`}
         actions={
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
               onClick={() => setShowAnnotateModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-sm text-cyan-400 hover:bg-cyan-500/20 transition-colors"
+              className="bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20"
             >
-              <Plus className="w-3.5 h-3.5" /> Annotate
-            </button>
-            <button onClick={() => { void fetchData(); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/40 border border-primary/10 text-sm text-foreground/70 hover:text-foreground/90 hover:bg-secondary/60 transition-colors">
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
-            </button>
+              Annotate
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
+              onClick={() => { void fetchData(); }}
+            >
+              Refresh
+            </Button>
           </div>
         }
       />
@@ -144,9 +153,15 @@ export default function KnowledgeGraphDashboard() {
                     {allEntries.length === 0 && !loading && ' No matching patterns found -- try selecting a specific persona above.'}
                   </p>
                 </div>
-                <button onClick={dismissDrilldown} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
-                  <X className="w-3 h-3" /> Clear
-                </button>
+                <Button
+                  variant="danger"
+                  size="xs"
+                  icon={<X className="w-3 h-3" />}
+                  onClick={dismissDrilldown}
+                  className="bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25"
+                >
+                  Clear
+                </Button>
               </div>
             </div>
           )}
@@ -159,9 +174,15 @@ export default function KnowledgeGraphDashboard() {
                   <p className="text-sm font-medium text-red-300">Knowledge data unavailable</p>
                   <p className="text-sm text-red-400/70 mt-0.5">{fetchError}</p>
                 </div>
-                <button onClick={() => { void fetchData(); }} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
-                  <RefreshCw className="w-3 h-3" /> Retry
-                </button>
+                <Button
+                  variant="danger"
+                  size="xs"
+                  icon={<RefreshCw className="w-3 h-3" />}
+                  onClick={() => { void fetchData(); }}
+                  className="bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25"
+                >
+                  Retry
+                </Button>
               </div>
             </div>
           ) : loading ? (

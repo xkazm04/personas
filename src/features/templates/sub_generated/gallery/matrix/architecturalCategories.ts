@@ -17,6 +17,9 @@ import {
   Layout,
   Bot,
   Globe,
+  HardDrive,
+  ClipboardList,
+  Bell,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -50,12 +53,16 @@ export const ARCH_CATEGORIES: Record<string, ArchCategory> = {
   design:        { key: 'design',         label: 'Design',         icon: Layout,        color: '#F24E1E' },
   ai:            { key: 'ai',             label: 'AI',             icon: Bot,           color: '#6C3AEF' },
   cms:           { key: 'cms',            label: 'CMS',            icon: Globe,         color: '#4353FF' },
+  storage:       { key: 'storage',        label: 'Storage',        icon: HardDrive,     color: '#569A31' },
+  forms:         { key: 'forms',          label: 'Forms',          icon: ClipboardList, color: '#3CCF91' },
+  notifications: { key: 'notifications',  label: 'Notifications',  icon: Bell,          color: '#FF4981' },
 };
 
 /** Maps a connector name to its architectural category key. */
 const CONNECTOR_TO_CATEGORY: Record<string, string> = {
   // Messaging
   slack: 'messaging', discord: 'messaging', telegram: 'messaging',
+  microsoft_teams: 'messaging',
   personas_messages: 'messaging', 'in-app-messaging': 'messaging',
   personas_database: 'database',
   // Source Control & DevOps
@@ -68,9 +75,10 @@ const CONNECTOR_TO_CATEGORY: Record<string, string> = {
   // Productivity / Knowledge
   notion: 'productivity', confluence: 'productivity', airtable: 'productivity',
   coda: 'productivity', google_drive: 'productivity', google_sheets: 'productivity',
-  google_workspace: 'productivity', dropbox: 'productivity',
+  microsoft_excel: 'productivity', onedrive: 'productivity', sharepoint: 'productivity',
+  dropbox: 'productivity',
   // Design
-  figma: 'design',
+  figma: 'design', canva: 'design', penpot: 'design',
   // Cloud & DevOps
   vercel: 'cloud', netlify: 'cloud', cloudflare: 'cloud', aws: 'cloud',
   firebase: 'cloud', kubernetes: 'cloud',
@@ -84,20 +92,23 @@ const CONNECTOR_TO_CATEGORY: Record<string, string> = {
   mixpanel: 'analytics', posthog: 'analytics', amplitude: 'analytics',
   segment: 'analytics', google_analytics: 'analytics',
   // Email / SMS
-  gmail: 'email', sendgrid: 'email', mailchimp: 'email', twilio: 'email',
+  gmail: 'email', microsoft_outlook: 'email',
+  sendgrid: 'email', mailchimp: 'email', twilio: 'email',
   // CRM
-  hubspot: 'crm', intercom: 'crm',
+  hubspot: 'crm', intercom: 'crm', pipedrive: 'crm', attio: 'crm',
   // Support
-  zendesk: 'support', freshdesk: 'support',
+  zendesk: 'support', freshdesk: 'support', crisp: 'support',
   // Social
   buffer: 'social', linkedin: 'social', twitter: 'social',
   // E-Commerce
   shopify: 'ecommerce', shipstation: 'ecommerce',
+  woocommerce: 'ecommerce', lemonsqueezy: 'ecommerce',
   // Finance
   stripe: 'finance', paddle: 'finance', quickbooks: 'finance',
   xero: 'finance', plaid: 'finance',
   // Scheduling
-  google_calendar: 'scheduling', cal_com: 'scheduling', calendly: 'scheduling',
+  google_calendar: 'scheduling', microsoft_calendar: 'scheduling',
+  cal_com: 'scheduling', calendly: 'scheduling',
   // CMS
   wordpress: 'cms', webflow: 'cms', contentful: 'cms',
   // AI
@@ -114,12 +125,17 @@ const CONNECTOR_TO_CATEGORY: Record<string, string> = {
   clerk: 'devops',
   // HR
   greenhouse: 'crm',
-  // Forms
-  typeform: 'productivity',
+  // Forms (moved to forms category below)
   // Marketing
   google_ads: 'social',
   // Automation
   n8n: 'devops', zapier: 'devops',
+  // Storage
+  aws_s3: 'storage', cloudflare_r2: 'storage', backblaze_b2: 'storage',
+  // Forms
+  typeform: 'forms', tally: 'forms', formbricks: 'forms',
+  // Notifications
+  novu: 'notifications', knock: 'notifications', ntfy: 'notifications',
   // Generic
   http: 'cloud',
 };

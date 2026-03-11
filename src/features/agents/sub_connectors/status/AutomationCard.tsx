@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 import { AUTOMATION_STATUS_CONFIG, PLATFORM_CONFIG, formatRelativeTime } from '../libs/automationTypes';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import { Button } from '@/features/shared/components/buttons';
 
 interface AutomationCardProps {
   automation: PersonaAutomation;
@@ -107,23 +108,27 @@ export function AutomationCard({
         {/* Action buttons */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {automation.deploymentStatus === 'active' && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={isTesting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Activity className="w-3 h-3" />}
               onClick={() => onTest(automation.id)}
               disabled={isTesting}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-border text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-40"
+              className="border border-border text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
             >
-              {isTesting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Activity className="w-3 h-3" />}
               Test
-            </button>
+            </Button>
           )}
 
           {automation.deploymentStatus === 'draft' && (
-            <button
+            <Button
+              variant="accent"
+              size="sm"
               onClick={() => onEdit(automation.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-accent/25 text-foreground/80 bg-accent/10 hover:bg-accent/20 transition-colors"
+              className="border-accent/25 text-foreground/80 bg-accent/10 hover:bg-accent/20"
             >
               Configure
-            </button>
+            </Button>
           )}
 
           {automation.platformUrl && (
@@ -140,12 +145,13 @@ export function AutomationCard({
 
           {/* Overflow menu */}
           <div className="relative">
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              icon={<MoreHorizontal className="w-3.5 h-3.5" />}
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
-            >
-              <MoreHorizontal className="w-3.5 h-3.5" />
-            </button>
+              className="w-7 h-7 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+            />
 
             <AnimatePresence>
               {menuOpen && (
@@ -156,40 +162,51 @@ export function AutomationCard({
                   transition={{ duration: 0.1 }}
                   className="absolute right-0 top-full mt-1 z-[100] w-40 rounded-lg border border-border bg-background shadow-lg py-1"
                 >
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<Pencil className="w-3 h-3" />}
                     onClick={() => { onEdit(automation.id); setMenuOpen(false); }}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/50"
+                    className="w-full justify-start px-3 py-1.5 text-foreground/80 hover:bg-secondary/50"
                   >
-                    <Pencil className="w-3 h-3" /> Edit
-                  </button>
+                    Edit
+                  </Button>
 
                   {automation.deploymentStatus === 'active' && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Pause className="w-3 h-3" />}
                       onClick={() => { onToggleStatus(automation.id, 'paused'); setMenuOpen(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/50"
+                      className="w-full justify-start px-3 py-1.5 text-foreground/80 hover:bg-secondary/50"
                     >
-                      <Pause className="w-3 h-3" /> Pause
-                    </button>
+                      Pause
+                    </Button>
                   )}
 
                   {(automation.deploymentStatus === 'paused' || automation.deploymentStatus === 'draft') && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Play className="w-3 h-3" />}
                       onClick={() => { onToggleStatus(automation.id, 'active'); setMenuOpen(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/80 hover:bg-secondary/50"
+                      className="w-full justify-start px-3 py-1.5 text-foreground/80 hover:bg-secondary/50"
                     >
-                      <Play className="w-3 h-3" /> Activate
-                    </button>
+                      Activate
+                    </Button>
                   )}
 
                   <div className="border-t border-border/40 my-1" />
 
-                  <button
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    icon={<Trash2 className="w-3 h-3" />}
                     onClick={handleDelete}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-brand-rose hover:bg-brand-rose/10"
+                    className="w-full justify-start px-3 py-1.5 text-brand-rose hover:bg-brand-rose/10"
                   >
-                    <Trash2 className="w-3 h-3" />
                     {confirmDelete ? 'Confirm?' : 'Delete'}
-                  </button>
+                  </Button>
                 </motion.div>
               )}
             </AnimatePresence>

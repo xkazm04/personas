@@ -107,36 +107,39 @@
     ],
     "suggested_connectors": [
       {
-        "name": "google_workspace",
-        "label": "Google Workspace (Gmail)",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
             "key": "client_id",
-            "label": "OAuth2 Client ID",
+            "label": "OAuth Client ID",
             "type": "text",
-            "placeholder": "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
-            "helpText": "From Google Cloud Console -> APIs & Services -> Credentials -> OAuth 2.0 Client IDs",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "OAuth2 Client Secret",
+            "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-EXAMPLE_SECRET_REPLACE_ME",
-            "helpText": "Displayed when creating the OAuth2 client in Google Cloud Console",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
             "required": true
           },
           {
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//0EXAMPLE_REFRESH_TOKEN_REPLACE_ME",
-            "helpText": "Obtained during the OAuth2 consent flow. Use the OAuth Playground or your app's auth callback.",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Gmail API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app' or 'Web application'.\n5. Complete the OAuth consent screen configuration.\n6. Copy the Client ID and Client Secret.\n7. Complete the OAuth flow to obtain a refresh token with Gmail send, read, and modify scopes.\n8. Create a Gmail label called 'contract-review' for incoming contracts.",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_send",
           "gmail_search",
@@ -144,10 +147,7 @@
         ],
         "related_triggers": [
           0
-        ],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        ]
       },
       {
         "name": "notion",
@@ -371,28 +371,125 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "n1", "target": "n2" },
-          { "id": "e2", "source": "n2", "target": "n3" },
-          { "id": "e3", "source": "n3", "target": "n4", "label": "Valid", "variant": "yes" },
-          { "id": "e4", "source": "n3", "target": "n20", "label": "Invalid", "variant": "no" },
-          { "id": "e5", "source": "n4", "target": "n5" },
-          { "id": "e6", "source": "n5", "target": "n6" },
-          { "id": "e7", "source": "n6", "target": "n7" },
-          { "id": "e8", "source": "n7", "target": "n8" },
-          { "id": "e9", "source": "n8", "target": "n9" },
-          { "id": "e10", "source": "n9", "target": "n10" },
-          { "id": "e11", "source": "n10", "target": "n11" },
-          { "id": "e12", "source": "n11", "target": "n12" },
-          { "id": "e13", "source": "n12", "target": "n13" },
-          { "id": "e14", "source": "n13", "target": "n14" },
-          { "id": "e15", "source": "n14", "target": "n15", "label": "Yes", "variant": "yes" },
-          { "id": "e16", "source": "n14", "target": "n16", "label": "No", "variant": "no" },
-          { "id": "e17", "source": "n15", "target": "n16" },
-          { "id": "e18", "source": "n16", "target": "n17" },
-          { "id": "e19", "source": "n17", "target": "n18" },
-          { "id": "e20", "source": "n18", "target": "n19" },
-          { "id": "e21", "source": "n19", "target": "n21" },
-          { "id": "e22", "source": "n20", "target": "n21", "variant": "error" }
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "Valid",
+            "variant": "yes"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n20",
+            "label": "Invalid",
+            "variant": "no"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e10",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e11",
+            "source": "n10",
+            "target": "n11"
+          },
+          {
+            "id": "e12",
+            "source": "n11",
+            "target": "n12"
+          },
+          {
+            "id": "e13",
+            "source": "n12",
+            "target": "n13"
+          },
+          {
+            "id": "e14",
+            "source": "n13",
+            "target": "n14"
+          },
+          {
+            "id": "e15",
+            "source": "n14",
+            "target": "n15",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e16",
+            "source": "n14",
+            "target": "n16",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e17",
+            "source": "n15",
+            "target": "n16"
+          },
+          {
+            "id": "e18",
+            "source": "n16",
+            "target": "n17"
+          },
+          {
+            "id": "e19",
+            "source": "n17",
+            "target": "n18"
+          },
+          {
+            "id": "e20",
+            "source": "n18",
+            "target": "n19"
+          },
+          {
+            "id": "e21",
+            "source": "n19",
+            "target": "n21"
+          },
+          {
+            "id": "e22",
+            "source": "n20",
+            "target": "n21",
+            "variant": "error"
+          }
         ]
       },
       {
@@ -469,18 +566,74 @@
           }
         ],
         "edges": [
-          { "id": "de1", "source": "d1", "target": "d2" },
-          { "id": "de2", "source": "d2", "target": "d3" },
-          { "id": "de3", "source": "d3", "target": "d4", "label": "Yes", "variant": "yes" },
-          { "id": "de4", "source": "d3", "target": "d11", "label": "None approaching", "variant": "no" },
-          { "id": "de5", "source": "d4", "target": "d5", "label": "Not yet sent", "variant": "no" },
-          { "id": "de6", "source": "d4", "target": "d11", "label": "Already sent", "variant": "yes" },
-          { "id": "de7", "source": "d5", "target": "d6" },
-          { "id": "de8", "source": "d6", "target": "d7" },
-          { "id": "de9", "source": "d7", "target": "d8" },
-          { "id": "de10", "source": "d8", "target": "d9" },
-          { "id": "de11", "source": "d9", "target": "d10" },
-          { "id": "de12", "source": "d10", "target": "d11" }
+          {
+            "id": "de1",
+            "source": "d1",
+            "target": "d2"
+          },
+          {
+            "id": "de2",
+            "source": "d2",
+            "target": "d3"
+          },
+          {
+            "id": "de3",
+            "source": "d3",
+            "target": "d4",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "de4",
+            "source": "d3",
+            "target": "d11",
+            "label": "None approaching",
+            "variant": "no"
+          },
+          {
+            "id": "de5",
+            "source": "d4",
+            "target": "d5",
+            "label": "Not yet sent",
+            "variant": "no"
+          },
+          {
+            "id": "de6",
+            "source": "d4",
+            "target": "d11",
+            "label": "Already sent",
+            "variant": "yes"
+          },
+          {
+            "id": "de7",
+            "source": "d5",
+            "target": "d6"
+          },
+          {
+            "id": "de8",
+            "source": "d6",
+            "target": "d7"
+          },
+          {
+            "id": "de9",
+            "source": "d7",
+            "target": "d8"
+          },
+          {
+            "id": "de10",
+            "source": "d8",
+            "target": "d9"
+          },
+          {
+            "id": "de11",
+            "source": "d9",
+            "target": "d10"
+          },
+          {
+            "id": "de12",
+            "source": "d10",
+            "target": "d11"
+          }
         ]
       },
       {
@@ -552,15 +705,51 @@
           }
         ],
         "edges": [
-          { "id": "he1", "source": "h1", "target": "h2" },
-          { "id": "he2", "source": "h2", "target": "h3" },
-          { "id": "he3", "source": "h3", "target": "h4" },
-          { "id": "he4", "source": "h4", "target": "h5" },
-          { "id": "he5", "source": "h5", "target": "h6" },
-          { "id": "he6", "source": "h6", "target": "h7" },
-          { "id": "he7", "source": "h7", "target": "h8" },
-          { "id": "he8", "source": "h8", "target": "h9" },
-          { "id": "he9", "source": "h9", "target": "h10" }
+          {
+            "id": "he1",
+            "source": "h1",
+            "target": "h2"
+          },
+          {
+            "id": "he2",
+            "source": "h2",
+            "target": "h3"
+          },
+          {
+            "id": "he3",
+            "source": "h3",
+            "target": "h4"
+          },
+          {
+            "id": "he4",
+            "source": "h4",
+            "target": "h5"
+          },
+          {
+            "id": "he5",
+            "source": "h5",
+            "target": "h6"
+          },
+          {
+            "id": "he6",
+            "source": "h6",
+            "target": "h7"
+          },
+          {
+            "id": "he7",
+            "source": "h7",
+            "target": "h8"
+          },
+          {
+            "id": "he8",
+            "source": "h8",
+            "target": "h9"
+          },
+          {
+            "id": "he9",
+            "source": "h9",
+            "target": "h10"
+          }
         ]
       }
     ],
@@ -569,21 +758,39 @@
         "id": "contract_types",
         "question": "What types of contracts do you review most frequently?",
         "type": "multi_select",
-        "options": ["SaaS/Software agreements", "NDAs", "Employment contracts", "Service agreements", "Lease agreements", "Licensing agreements", "Partnership agreements", "Procurement/vendor contracts"],
+        "options": [
+          "SaaS/Software agreements",
+          "NDAs",
+          "Employment contracts",
+          "Service agreements",
+          "Lease agreements",
+          "Licensing agreements",
+          "Partnership agreements",
+          "Procurement/vendor contracts"
+        ],
         "help_text": "This helps the agent prioritize which clause patterns and risk factors to focus on."
       },
       {
         "id": "risk_tolerance",
         "question": "What is your organization's general risk tolerance for contract terms?",
         "type": "single_select",
-        "options": ["Conservative (flag anything non-standard)", "Moderate (flag unfavorable and missing protections)", "Aggressive (only flag critical risks and red flags)"],
+        "options": [
+          "Conservative (flag anything non-standard)",
+          "Moderate (flag unfavorable and missing protections)",
+          "Aggressive (only flag critical risks and red flags)"
+        ],
         "help_text": "Controls the sensitivity of red flag detection and risk ratings."
       },
       {
         "id": "review_volume",
         "question": "Approximately how many contracts do you review per month?",
         "type": "single_select",
-        "options": ["1-5", "6-20", "21-50", "50+"],
+        "options": [
+          "1-5",
+          "6-20",
+          "21-50",
+          "50+"
+        ],
         "help_text": "Helps configure polling frequency and notification batching."
       },
       {

@@ -4,6 +4,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { PersonaContextMenu, type ContextMenuState } from '@/features/agents/components/sub_sidebar/components/PersonaContextMenu';
 import { usePersonaFilters } from '@/features/agents/components/sub_sidebar/libs/usePersonaFilters';
 import { buildSidebarTree } from '@/lib/types/frontendTypes';
+import { Button } from '@/features/shared/components/buttons';
 import type { DbPersona } from '@/lib/types/types';
 import { SidebarHeader } from './SidebarHeader';
 import { SidebarDndSection } from './SidebarDndSection';
@@ -70,9 +71,9 @@ export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSid
       {hasActiveFilters && filteredIds.size === 0 && (
         <div className="text-center py-8 text-sm text-muted-foreground/70">
           <p>No agents match your filters</p>
-          <button onClick={clearFilters} className="mt-2 text-sm text-primary/70 hover:text-primary transition-colors">
+          <Button variant="link" size="sm" onClick={clearFilters} className="mt-2 text-primary/70 hover:text-primary">
             Clear all filters
-          </button>
+          </Button>
         </div>
       )}
 

@@ -3,30 +3,41 @@ import { Check, Palette, Type } from 'lucide-react';
 import { useThemeStore, THEMES, TEXT_SCALES } from '@/stores/themeStore';
 import type { ThemeId, ThemeDefinition, TextScale } from '@/stores/themeStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { Button } from '@/features/shared/components/buttons';
 
 function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
   const { backgroundSample, foregroundSample, primaryColor, accentColor } = theme;
+  // Use the theme's own background behind the label so it's legible on any active theme
+  const borderColor = theme.isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.12)';
   return (
-    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 animate-expand-in pointer-events-none">
+    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 animate-expand-in pointer-events-none" style={{ zIndex: 99999 }}>
       <div
-        className="w-[120px] h-[80px] rounded-lg border border-black/20 shadow-lg overflow-hidden flex flex-col"
-        style={{ backgroundColor: backgroundSample }}
+        className="w-[140px] rounded-lg overflow-hidden flex flex-col"
+        style={{ backgroundColor: backgroundSample, border: `1px solid ${borderColor}`, boxShadow: '0 8px 30px rgba(0,0,0,0.25)' }}
       >
-        <div className="flex-1 flex items-center justify-center gap-1.5 px-2">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor }} />
-          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: foregroundSample, opacity: 0.25 }} />
+        {/* Mini UI preview */}
+        <div className="h-[70px] flex flex-col justify-center px-3 gap-2">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor }} />
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: foregroundSample, opacity: 0.2 }} />
+          </div>
+          <div className="flex gap-1">
+            <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.12 }} />
+            <div className="h-1 w-5 rounded-full" style={{ backgroundColor: primaryColor, opacity: 0.5 }} />
+          </div>
+          <div className="flex gap-1">
+            <div className="h-1 w-8 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.08 }} />
+            <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.08 }} />
+          </div>
         </div>
-        <div className="flex gap-1 px-2 pb-1.5">
-          <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.15 }} />
-          <div className="h-1 w-4 rounded-full" style={{ backgroundColor: primaryColor, opacity: 0.5 }} />
+        {/* Label — rendered ON the theme's own background for proper contrast */}
+        <div
+          className="text-[10px] text-center py-1.5 font-semibold tracking-wide"
+          style={{ color: foregroundSample, borderTop: `1px solid ${borderColor}` }}
+        >
+          {theme.label}
         </div>
-      </div>
-      <div
-        className="text-[10px] text-center mt-1 font-medium"
-        style={{ color: foregroundSample }}
-      >
-        {theme.label}
       </div>
     </div>
   );
@@ -46,11 +57,12 @@ function ThemeSwatch({ theme, active, onSelect }: { theme: ThemeDefinition; acti
   }, []);
 
   return (
-    <button
+    <Button
+      variant="ghost"
       onClick={onSelect}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
-      className={`group relative flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
+      className={`group relative flex flex-col items-center gap-2 p-3 rounded-xl border ${
         active
           ? 'border-primary/30 bg-primary/5'
           : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -66,7 +78,7 @@ function ThemeSwatch({ theme, active, onSelect }: { theme: ThemeDefinition; acti
       <span className={`text-sm ${active ? 'text-foreground/90 font-medium' : 'text-muted-foreground/80'}`}>
         {theme.label}
       </span>
-    </button>
+    </Button>
   );
 }
 
@@ -130,10 +142,11 @@ export default function AppearanceSettings() {
               {TEXT_SCALES.map((scale) => {
                 const isActive = textScale === scale.id;
                 return (
-                  <button
+                  <Button
+                    variant="ghost"
                     key={scale.id}
                     onClick={() => setTextScale(scale.id as TextScale)}
-                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
                       isActive
                         ? 'border-primary/30 bg-primary/5'
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -159,7 +172,7 @@ export default function AppearanceSettings() {
                         <Check className="w-3.5 h-3.5 text-primary" />
                       </div>
                     )}
-                  </button>
+                  </Button>
                 );
               })}
             </div>

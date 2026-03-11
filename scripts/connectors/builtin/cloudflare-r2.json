@@ -1,0 +1,56 @@
+{
+  "id": "builtin-cloudflare-r2",
+  "name": "cloudflare_r2",
+  "label": "Cloudflare R2",
+  "color": "#F38020",
+  "icon_url": "/icons/connectors/cloudflare-r2.svg",
+  "category": "storage",
+  "fields": [
+    {
+      "key": "account_id",
+      "label": "Account ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Cloudflare dashboard → Overview → Account ID (right sidebar)"
+    },
+    {
+      "key": "access_key_id",
+      "label": "R2 Access Key ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From Cloudflare → R2 → Manage R2 API Tokens"
+    },
+    {
+      "key": "secret_access_key",
+      "label": "R2 Secret Access Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From the same R2 API Token creation page"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.cloudflare.com/client/v4/accounts/{{account_id}}/r2/buckets",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{secret_access_key}}"
+    },
+    "description": "Validates R2 credentials via bucket listing"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Cloudflare R2 S3-compatible object storage with zero egress fees for storing and serving files.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Token",
+    "docs_url": "https://developers.cloudflare.com/r2/api/",
+    "setup_guide": "1. Log in to the Cloudflare dashboard.\n2. Go to R2 → Manage R2 API Tokens.\n3. Create a new API token with Object Read & Write permissions.\n4. Copy the Access Key ID, Secret Access Key, and your Account ID.\n5. Paste all values here.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "api_key", "label": "API Token", "type": "credential", "is_default": true}
+    ]
+  }
+}

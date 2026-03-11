@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Download, Sparkles } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 
 export function FooterActions({
   loading,
@@ -32,24 +33,30 @@ export function FooterActions({
     <>
       <div className="flex items-center gap-3">
         {!loading && !ipcError && hasNodeIssue && hasClaudeIssue && (
-          <button
+          <Button
+            variant="accent"
+            accentColor="violet"
+            size="md"
             onClick={() => install('all')}
             disabled={anyInstalling}
-            className="flex-1 px-4 py-2.5 text-sm font-medium rounded-xl bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
+            icon={<Download className="w-4 h-4" />}
+            className="flex-1"
           >
-            <Download className="w-4 h-4" />
             Install All Dependencies
-          </button>
+          </Button>
         )}
         {onNext && (
-          <button
+          <Button
+            variant="accent"
+            accentColor="violet"
+            size="md"
             onClick={onNext}
             disabled={loading}
-            className="flex-1 px-4 py-2.5 text-sm font-medium rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
+            iconRight={<ArrowRight className="w-4 h-4" />}
+            className="flex-1"
           >
             Continue
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -68,13 +75,16 @@ export function FooterActions({
               <h3 className="text-sm font-semibold text-foreground/90">Ready to create your first agent?</h3>
               <p className="text-sm text-muted-foreground/70">All checks passed. Let us guide you through creating and running your first agent.</p>
             </div>
-            <button
+            <Button
+              variant="accent"
+              accentColor="violet"
+              size="md"
               onClick={startOnboarding}
-              className="flex-shrink-0 px-4 py-2.5 text-sm font-medium rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
+              icon={<Sparkles className="w-4 h-4" />}
+              className="flex-shrink-0"
             >
-              <Sparkles className="w-4 h-4" />
               Get Started
-            </button>
+            </Button>
           </div>
         </motion.div>
       )}

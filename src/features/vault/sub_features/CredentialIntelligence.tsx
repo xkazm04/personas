@@ -9,6 +9,7 @@ import {
 import type { CredentialAuditEntry } from '@/lib/bindings/CredentialAuditEntry';
 import type { CredentialUsageStats } from '@/lib/bindings/CredentialUsageStats';
 import type { CredentialDependent } from '@/lib/bindings/CredentialDependent';
+import { Button } from '@/features/shared/components/buttons';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { StatCard } from './IntelligenceStatCard';
 import { AuditLogTable } from './AuditLogTable';
@@ -73,19 +74,20 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
       {/* Sub-tabs */}
       <div className="flex gap-1">
         {(['overview', 'dependents', 'audit'] as IntelTab[]).map((t) => (
-          <button
+          <Button
             key={t}
+            variant="ghost"
+            size="sm"
             onClick={() => setTab(t)}
-            className={`px-2.5 py-1 rounded-xl text-sm font-medium transition-colors ${
-              tab === t
-                ? `${AI_STATUS.bgColor} ${AI_STATUS.color} border ${AI_STATUS.borderColor}`
-                : 'text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/40'
-            }`}
+            className={tab === t
+              ? `${AI_STATUS.bgColor} ${AI_STATUS.color} border ${AI_STATUS.borderColor}`
+              : 'text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/40'
+            }
           >
             {t === 'overview' && 'Overview'}
             {t === 'dependents' && `Dependents (${dependents.length})`}
             {t === 'audit' && `Audit Log (${auditLog.length})`}
-          </button>
+          </Button>
         ))}
       </div>
 

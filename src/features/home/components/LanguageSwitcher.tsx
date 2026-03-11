@@ -2,6 +2,7 @@ import { useI18nStore, type Language } from '@/stores/i18nStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Languages, Check } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/features/shared/components/buttons';
 
 const LANGUAGES = ([
   { code: 'ar' as const, label: 'العربية', flag: '🇸🇦' },
@@ -26,13 +27,14 @@ export default function LanguageSwitcher() {
 
   return (
     <div className="relative">
-      <button
+      <Button
+        variant="secondary"
+        size="md"
+        icon={<Languages className="w-4 h-4 text-primary" />}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50 border border-border/50 text-sm font-medium hover:bg-secondary transition-colors"
       >
-        <Languages className="w-4 h-4 text-primary" />
-        <span>{LANGUAGES.find(l => l.code === language)?.label}</span>
-      </button>
+        {LANGUAGES.find(l => l.code === language)?.label}
+      </Button>
 
       <AnimatePresence>
         {isOpen && (
@@ -52,13 +54,15 @@ export default function LanguageSwitcher() {
                 {LANGUAGES.map((lang) => {
                   const isActive = language === lang.code;
                   return (
-                    <button
+                    <Button
                       key={lang.code}
+                      variant="ghost"
+                      size="md"
                       onClick={() => {
                         setLanguage(lang.code);
                         setIsOpen(false);
                       }}
-                      className={`group relative rounded-lg overflow-hidden transition-all duration-300 text-left ${
+                      className={`group relative overflow-hidden text-left p-0 h-auto ${
                         isActive
                           ? 'ring-2 ring-primary/60 shadow-md'
                           : 'hover:ring-1 hover:ring-primary/30'
@@ -97,7 +101,7 @@ export default function LanguageSwitcher() {
                           </span>
                         </div>
                       </div>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>

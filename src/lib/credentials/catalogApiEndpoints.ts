@@ -946,6 +946,96 @@ const linkedin: EP[] = [
 
 // â”€â”€ Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+// ── Canva ────────────────────────────────────────────────────────────
+
+const canva: EP[] = [
+  ep('GET', '/users/me', 'Get current user profile', [], ['Users']),
+  ep('GET', '/designs', 'List designs', [queryP('query', false, 'Search term'), queryP('continuation', false)], ['Designs']),
+  ep('GET', '/designs/{designId}', 'Get design', [pathP('designId')], ['Designs']),
+  ep('POST', '/designs', 'Create design', [], ['Designs'], jsonBody()),
+  ep('POST', '/exports', 'Export design', [], ['Exports'], jsonBody()),
+  ep('GET', '/exports/{exportId}', 'Get export status', [pathP('exportId')], ['Exports']),
+];
+
+// ── Pipedrive ────────────────────────────────────────────────────────
+
+const pipedrive: EP[] = [
+  ep('GET', '/users/me', 'Get current user', [], ['Users']),
+  ep('GET', '/deals', 'List deals', [queryP('status', false, 'open, won, lost, deleted')], ['Deals']),
+  ep('POST', '/deals', 'Create deal', [], ['Deals'], jsonBody()),
+  ep('GET', '/persons', 'List persons', [queryP('start', false), queryP('limit', false)], ['Persons']),
+  ep('POST', '/persons', 'Create person', [], ['Persons'], jsonBody()),
+  ep('GET', '/organizations', 'List organizations', [], ['Organizations']),
+  ep('GET', '/activities', 'List activities', [queryP('type', false)], ['Activities']),
+  ep('GET', '/pipelines', 'List pipelines', [], ['Pipelines']),
+];
+
+// ── Attio ────────────────────────────────────────────────────────────
+
+const attio: EP[] = [
+  ep('GET', '/self', 'Get current workspace', [], ['Self']),
+  ep('GET', '/objects', 'List objects', [], ['Objects']),
+  ep('POST', '/objects/{object}/records/query', 'Query records', [pathP('object', 'Object slug or ID')], ['Records'], jsonBody()),
+  ep('POST', '/objects/{object}/records', 'Create record', [pathP('object')], ['Records'], jsonBody()),
+  ep('GET', '/lists', 'List lists', [], ['Lists']),
+  ep('POST', '/lists/{list}/entries/query', 'Query list entries', [pathP('list')], ['Lists'], jsonBody()),
+  ep('POST', '/notes', 'Create note', [], ['Notes'], jsonBody()),
+];
+
+// ── Crisp ────────────────────────────────────────────────────────────
+
+const crisp: EP[] = [
+  ep('GET', '/website', 'List websites', [], ['Websites']),
+  ep('GET', '/website/{websiteId}/conversations', 'List conversations', [pathP('websiteId')], ['Conversations']),
+  ep('GET', '/website/{websiteId}/conversation/{sessionId}/messages', 'Get messages', [pathP('websiteId'), pathP('sessionId')], ['Messages']),
+  ep('POST', '/website/{websiteId}/conversation/{sessionId}/message', 'Send message', [pathP('websiteId'), pathP('sessionId')], ['Messages'], jsonBody()),
+  ep('GET', '/website/{websiteId}/people/profiles', 'List people', [pathP('websiteId')], ['People']),
+];
+
+// ── WooCommerce ─────────────────────────────────────────────────────
+
+const woocommerce: EP[] = [
+  ep('GET', '/wp-json/wc/v3/orders', 'List orders', [queryP('status', false, 'pending, processing, completed'), queryP('per_page', false)], ['Orders']),
+  ep('GET', '/wp-json/wc/v3/orders/{id}', 'Get order', [pathP('id')], ['Orders']),
+  ep('GET', '/wp-json/wc/v3/products', 'List products', [queryP('per_page', false)], ['Products']),
+  ep('POST', '/wp-json/wc/v3/products', 'Create product', [], ['Products'], jsonBody()),
+  ep('GET', '/wp-json/wc/v3/customers', 'List customers', [], ['Customers']),
+  ep('GET', '/wp-json/wc/v3/reports/sales', 'Sales report', [queryP('period', false, 'week, month, year')], ['Reports']),
+];
+
+// ── Lemon Squeezy ───────────────────────────────────────────────────
+
+const lemonsqueezy: EP[] = [
+  ep('GET', '/users/me', 'Get current user', [], ['Users']),
+  ep('GET', '/stores', 'List stores', [], ['Stores']),
+  ep('GET', '/products', 'List products', [queryP('filter[store_id]', false)], ['Products']),
+  ep('GET', '/orders', 'List orders', [queryP('filter[store_id]', false)], ['Orders']),
+  ep('GET', '/subscriptions', 'List subscriptions', [], ['Subscriptions']),
+  ep('GET', '/customers', 'List customers', [], ['Customers']),
+];
+
+// ── Novu ────────────────────────────────────────────────────────────
+
+const novu: EP[] = [
+  ep('GET', '/environments/me', 'Get current environment', [], ['Environments']),
+  ep('POST', '/events/trigger', 'Trigger notification', [], ['Events'], jsonBody()),
+  ep('GET', '/subscribers', 'List subscribers', [queryP('page', false)], ['Subscribers']),
+  ep('POST', '/subscribers', 'Create subscriber', [], ['Subscribers'], jsonBody()),
+  ep('GET', '/workflows', 'List workflows', [queryP('page', false)], ['Workflows']),
+  ep('GET', '/notifications', 'List notifications', [queryP('page', false)], ['Notifications']),
+];
+
+// ── Knock ───────────────────────────────────────────────────────────
+
+const knock: EP[] = [
+  ep('GET', '/users', 'List users', [queryP('page_size', false)], ['Users']),
+  ep('PUT', '/users/{userId}', 'Identify user', [pathP('userId')], ['Users'], jsonBody()),
+  ep('GET', '/workflows', 'List workflows', [], ['Workflows']),
+  ep('POST', '/workflows/{workflowKey}/trigger', 'Trigger workflow', [pathP('workflowKey')], ['Workflows'], jsonBody()),
+  ep('GET', '/users/{userId}/messages', 'List user messages', [pathP('userId')], ['Messages']),
+  ep('GET', '/users/{userId}/preferences', 'Get user preferences', [pathP('userId')], ['Preferences']),
+];
+
 export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   azure_devops,
   github,
@@ -993,4 +1083,13 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   google_sheets,
   gmail,
   microsoft_outlook,
+  // New connectors
+  canva,
+  pipedrive,
+  attio,
+  crisp,
+  woocommerce,
+  lemonsqueezy,
+  novu,
+  knock,
 };

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Rocket, Loader2, RefreshCw } from 'lucide-react';
+import { Rocket, RefreshCw } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { Button } from '@/features/shared/components/buttons';
 import type { CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { BUDGET_PRESETS } from './cloudDeploymentHelpers';
@@ -70,18 +71,15 @@ export function CloudDeploymentsPanel({
           <h3 className={`text-sm font-medium text-muted-foreground/90 uppercase tracking-wider ${DEPLOYMENT_TOKENS.sectionHeadingGap}`}>
             Deploy Persona
           </h3>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="xs"
+            icon={<RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />}
             onClick={handleRefresh}
-            className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-xl
-                       bg-secondary/40 border border-primary/15 text-muted-foreground/80
-                       hover:text-foreground/95 hover:border-primary/25
-                       disabled:opacity-40 transition-colors cursor-pointer"
             disabled={isRefreshing}
           >
-            <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
-          </button>
+          </Button>
         </div>
 
         <div className="flex items-end gap-2">
@@ -132,27 +130,17 @@ export function CloudDeploymentsPanel({
             </select>
           </div>
 
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="sm"
+            icon={isDeploying ? undefined : <Rocket className="w-4 h-4" />}
+            loading={isDeploying}
             onClick={handleDeploy}
             disabled={!selectedPersonaId || isDeploying}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl
-                       bg-indigo-500 text-foreground hover:bg-indigo-600
-                       disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            accentColor="indigo"
           >
-            {isDeploying ? (
-              <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
-                <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
-                <span>Deploying\u2026</span>
-                <span className="sr-only">Deploying persona to cloud</span>
-              </span>
-            ) : (
-              <>
-                <Rocket className="w-4 h-4" />
-                Deploy
-              </>
-            )}
-          </button>
+            {isDeploying ? 'Deploying\u2026' : 'Deploy'}
+          </Button>
         </div>
       </div>
 

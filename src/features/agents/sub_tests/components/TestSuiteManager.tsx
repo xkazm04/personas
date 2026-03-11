@@ -4,6 +4,7 @@ import {
   BookOpen, Play, Trash2, ChevronDown, ChevronRight, Save,
   Pencil, X, Check, FileText,
 } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { PersonaTestSuite } from '@/lib/bindings/PersonaTestSuite';
@@ -72,11 +73,14 @@ export function TestSuiteManager({
           Saved Test Suites
         </h4>
         {canSave && (
-          <button onClick={() => setSavingFromRun(true)} disabled={disabled || savingFromRun}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          <Button onClick={() => setSavingFromRun(true)} disabled={disabled || savingFromRun}
+            variant="secondary"
+            size="sm"
+            icon={<Save className="w-3.5 h-3.5" />}
+            className="bg-primary/10 border-primary/20 text-primary hover:bg-primary/15"
             data-testid="save-suite-from-run-btn">
-            <Save className="w-3.5 h-3.5" />Save Scenarios
-          </button>
+            Save Scenarios
+          </Button>
         )}
       </div>
 
@@ -89,12 +93,20 @@ export function TestSuiteManager({
                 <input type="text" value={saveNameInput} onChange={(e) => setSaveNameInput(e.target.value)} placeholder="Suite name (optional)"
                   className="flex-1 px-3 py-2 rounded-xl text-sm bg-background/40 border border-primary/10 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
                   data-testid="save-suite-name-input" />
-                <button onClick={handleSaveFromRun} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-primary/15 text-primary hover:bg-primary/20 transition-colors" data-testid="save-suite-confirm-btn">
-                  <Check className="w-3.5 h-3.5" />Save
-                </button>
-                <button onClick={() => { setSavingFromRun(false); setSaveNameInput(''); }} className="p-2 rounded-lg text-muted-foreground/80 hover:bg-secondary/30 transition-colors" data-testid="save-suite-cancel-btn">
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                <Button onClick={handleSaveFromRun}
+                  variant="secondary"
+                  size="md"
+                  icon={<Check className="w-3.5 h-3.5" />}
+                  className="bg-primary/15 text-primary hover:bg-primary/20"
+                  data-testid="save-suite-confirm-btn">
+                  Save
+                </Button>
+                <Button onClick={() => { setSavingFromRun(false); setSaveNameInput(''); }}
+                  variant="ghost"
+                  size="icon-sm"
+                  icon={<X className="w-3.5 h-3.5" />}
+                  className="text-muted-foreground/80 hover:bg-secondary/30"
+                  data-testid="save-suite-cancel-btn" />
               </div>
             </div>
           </motion.div>
@@ -119,7 +131,7 @@ export function TestSuiteManager({
             return (
               <div key={suite.id} className="border border-primary/10 rounded-xl overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-3 bg-background/30 hover:bg-secondary/20 transition-colors">
-                  <button onClick={() => toggleExpand(suite.id)} className="flex items-center gap-2 flex-1 min-w-0 text-left" data-testid={`suite-expand-${suite.id}`}>
+                  <Button onClick={() => toggleExpand(suite.id)} variant="ghost" size="sm" className="flex items-center gap-2 flex-1 min-w-0 text-left p-0" data-testid={`suite-expand-${suite.id}`}>
                     {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground/80 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground/80 flex-shrink-0" />}
                     <div className="flex-1 min-w-0">
                       {isEditing ? (
@@ -128,8 +140,8 @@ export function TestSuiteManager({
                             onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); if (e.key === 'Escape') handleCancelRename(); }}
                             className="flex-1 px-2 py-0.5 rounded text-sm bg-background/40 border border-primary/20 text-foreground focus:outline-none focus:border-primary/40"
                             autoFocus data-testid={`suite-rename-input-${suite.id}`} />
-                          <button onClick={handleSaveRename} className="p-1 text-primary" data-testid={`suite-rename-save-${suite.id}`}><Check className="w-3.5 h-3.5" /></button>
-                          <button onClick={handleCancelRename} className="p-1 text-muted-foreground" data-testid={`suite-rename-cancel-${suite.id}`}><X className="w-3.5 h-3.5" /></button>
+                          <Button onClick={handleSaveRename} variant="ghost" size="xs" className="p-1 text-primary" data-testid={`suite-rename-save-${suite.id}`} icon={<Check className="w-3.5 h-3.5" />} />
+                          <Button onClick={handleCancelRename} variant="ghost" size="xs" className="p-1 text-muted-foreground" data-testid={`suite-rename-cancel-${suite.id}`} icon={<X className="w-3.5 h-3.5" />} />
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -139,11 +151,11 @@ export function TestSuiteManager({
                       )}
                       <div className="text-sm text-muted-foreground/60 mt-0.5">{new Date(suite.createdAt).toLocaleDateString()}</div>
                     </div>
-                  </button>
+                  </Button>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <button onClick={() => onRunSuite(suite.id)} disabled={disabled} className="p-1.5 rounded-lg hover:bg-primary/15 text-primary/70 hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="Re-run this suite" data-testid={`suite-run-${suite.id}`}><Play className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => handleStartRename(suite)} disabled={disabled} className="p-1.5 rounded-lg hover:bg-secondary/30 text-muted-foreground/80 hover:text-foreground transition-colors disabled:opacity-40" title="Rename" data-testid={`suite-rename-${suite.id}`}><Pencil className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => handleDelete(suite.id)} disabled={disabled} className="p-1.5 rounded-lg hover:bg-red-500/15 text-muted-foreground/80 hover:text-red-400 transition-colors disabled:opacity-40" title="Delete suite" data-testid={`suite-delete-${suite.id}`}><Trash2 className="w-3.5 h-3.5" /></button>
+                    <Button onClick={() => onRunSuite(suite.id)} disabled={disabled} variant="ghost" size="icon-sm" className="hover:bg-primary/15 text-primary/70 hover:text-primary" title="Re-run this suite" data-testid={`suite-run-${suite.id}`} icon={<Play className="w-3.5 h-3.5" />} />
+                    <Button onClick={() => handleStartRename(suite)} disabled={disabled} variant="ghost" size="icon-sm" className="hover:bg-secondary/30 text-muted-foreground/80 hover:text-foreground" title="Rename" data-testid={`suite-rename-${suite.id}`} icon={<Pencil className="w-3.5 h-3.5" />} />
+                    <Button onClick={() => handleDelete(suite.id)} disabled={disabled} variant="ghost" size="icon-sm" className="hover:bg-red-500/15 text-muted-foreground/80 hover:text-red-400" title="Delete suite" data-testid={`suite-delete-${suite.id}`} icon={<Trash2 className="w-3.5 h-3.5" />} />
                   </div>
                 </div>
                 <AnimatePresence>
@@ -166,11 +178,12 @@ export function TestSuiteManager({
                                 </div>
                               )}
                             </div>
-                            <button onClick={() => handleRemoveScenario(suite.id, idx)} disabled={disabled}
-                              className="p-1 rounded hover:bg-red-500/15 text-muted-foreground/50 hover:text-red-400 transition-colors flex-shrink-0 disabled:opacity-40"
-                              title="Remove scenario" data-testid={`scenario-remove-${suite.id}-${idx}`}>
-                              <X className="w-3.5 h-3.5" />
-                            </button>
+                            <Button onClick={() => handleRemoveScenario(suite.id, idx)} disabled={disabled}
+                              variant="ghost"
+                              size="xs"
+                              className="p-1 rounded hover:bg-red-500/15 text-muted-foreground/50 hover:text-red-400 flex-shrink-0"
+                              title="Remove scenario" data-testid={`scenario-remove-${suite.id}-${idx}`}
+                              icon={<X className="w-3.5 h-3.5" />} />
                           </div>
                         ))}
                       </div>

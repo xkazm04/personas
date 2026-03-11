@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useN8nWizard } from '../hooks/useN8nWizard';
 import { N8nStepIndicator } from '../widgets/N8nStepIndicator';
 import { N8nWizardFooter } from '../widgets/N8nWizardFooter';
@@ -75,12 +76,14 @@ export default function N8nImportTab() {
             <p className="text-sm text-red-400 font-medium">Import Error</p>
             <p className="text-sm text-red-400/70 mt-0.5">{state.error}</p>
           </div>
-          <button
+          <Button
             onClick={() => dispatch({ type: 'CLEAR_ERROR' })}
-            className="text-red-400/50 hover:text-red-400 text-sm"
+            variant="ghost"
+            size="xs"
+            className="text-red-400/50 hover:text-red-400"
           >
             Dismiss
-          </button>
+          </Button>
         </motion.div>
       )}
 
@@ -96,12 +99,14 @@ export default function N8nImportTab() {
             <p className="text-sm text-amber-300 font-medium">Partial Session Restore</p>
             <p className="text-sm text-amber-200/90 mt-0.5">{state.sessionWarning}</p>
           </div>
-          <button
+          <Button
             onClick={() => dispatch({ type: 'CLEAR_SESSION_WARNING' })}
-            className="text-amber-300/70 hover:text-amber-200 text-sm"
+            variant="ghost"
+            size="xs"
+            className="text-amber-300/70 hover:text-amber-200"
           >
             Dismiss
-          </button>
+          </Button>
         </motion.div>
       )}
 

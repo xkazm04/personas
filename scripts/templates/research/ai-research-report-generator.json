@@ -165,8 +165,8 @@
         "category": "productivity"
       },
       {
-        "name": "google_workspace",
-        "label": "Google Workspace (Gmail)",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
@@ -174,36 +174,36 @@
             "label": "OAuth Client ID",
             "type": "text",
             "placeholder": "123456789-abc.apps.googleusercontent.com",
-            "helpText": "From Google Cloud Console -> APIs & Services -> Credentials -> OAuth 2.0 Client ID.",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
             "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-...",
-            "helpText": "From the same OAuth client credentials page in Google Cloud Console.",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
             "required": true
           },
           {
-            "key": "default_recipient",
-            "label": "Default Recipient Email",
-            "type": "text",
-            "placeholder": "team@company.com",
-            "helpText": "Default email address for report delivery when no requester email is specified in the research request.",
-            "required": false
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
+            "required": true
           }
         ],
-        "setup_instructions": "1. Go to console.cloud.google.com -> APIs & Services.\n2. Enable the Gmail API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop App'.\n5. Copy the Client ID and Client Secret.\n6. The app will handle the OAuth flow to obtain and refresh access tokens.",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_send"
         ],
         "related_triggers": [
           0
-        ],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        ]
       },
       {
         "name": "news_api",
@@ -245,7 +245,7 @@
       {
         "type": "email",
         "description": "Full research report delivery with HTML-formatted executive summary, key findings, and a direct link to the complete Notion report page.",
-        "required_connector": "google_workspace",
+        "required_connector": "gmail",
         "config_hints": {
           "subject_prefix": "[Research Report]",
           "format": "html"
@@ -346,7 +346,7 @@
             "type": "connector",
             "label": "Send email report",
             "detail": "gmail_send with HTML executive summary, key findings, and Notion page link. Subject: [Research Report] {topic} — {research_id}",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "w14",
@@ -381,27 +381,118 @@
           }
         ],
         "edges": [
-          { "id": "we1", "source": "w1", "target": "w2" },
-          { "id": "we2", "source": "w2", "target": "w3" },
-          { "id": "we3", "source": "w3", "target": "w4", "label": "Yes", "variant": "yes" },
-          { "id": "we4", "source": "w3", "target": "w17", "label": "No", "variant": "no" },
-          { "id": "we5", "source": "w4", "target": "w5" },
-          { "id": "we6", "source": "w5", "target": "w6" },
-          { "id": "we7", "source": "w6", "target": "w7" },
-          { "id": "we8", "source": "w7", "target": "w8" },
-          { "id": "we9", "source": "w8", "target": "w9" },
-          { "id": "we10", "source": "w9", "target": "w10" },
-          { "id": "we11", "source": "w10", "target": "w11" },
-          { "id": "we12", "source": "w11", "target": "w12" },
-          { "id": "we13", "source": "w12", "target": "w13" },
-          { "id": "we14", "source": "w13", "target": "w14" },
-          { "id": "we15", "source": "w14", "target": "w15" },
-          { "id": "we16", "source": "w15", "target": "w16" },
-          { "id": "we17", "source": "w17", "target": "w16" },
-          { "id": "we18", "source": "w6", "target": "w18", "variant": "error" },
-          { "id": "we19", "source": "w7", "target": "w18", "variant": "error" },
-          { "id": "we20", "source": "w8", "target": "w18", "variant": "error" },
-          { "id": "we21", "source": "w18", "target": "w9" }
+          {
+            "id": "we1",
+            "source": "w1",
+            "target": "w2"
+          },
+          {
+            "id": "we2",
+            "source": "w2",
+            "target": "w3"
+          },
+          {
+            "id": "we3",
+            "source": "w3",
+            "target": "w4",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "we4",
+            "source": "w3",
+            "target": "w17",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "we5",
+            "source": "w4",
+            "target": "w5"
+          },
+          {
+            "id": "we6",
+            "source": "w5",
+            "target": "w6"
+          },
+          {
+            "id": "we7",
+            "source": "w6",
+            "target": "w7"
+          },
+          {
+            "id": "we8",
+            "source": "w7",
+            "target": "w8"
+          },
+          {
+            "id": "we9",
+            "source": "w8",
+            "target": "w9"
+          },
+          {
+            "id": "we10",
+            "source": "w9",
+            "target": "w10"
+          },
+          {
+            "id": "we11",
+            "source": "w10",
+            "target": "w11"
+          },
+          {
+            "id": "we12",
+            "source": "w11",
+            "target": "w12"
+          },
+          {
+            "id": "we13",
+            "source": "w12",
+            "target": "w13"
+          },
+          {
+            "id": "we14",
+            "source": "w13",
+            "target": "w14"
+          },
+          {
+            "id": "we15",
+            "source": "w14",
+            "target": "w15"
+          },
+          {
+            "id": "we16",
+            "source": "w15",
+            "target": "w16"
+          },
+          {
+            "id": "we17",
+            "source": "w17",
+            "target": "w16"
+          },
+          {
+            "id": "we18",
+            "source": "w6",
+            "target": "w18",
+            "variant": "error"
+          },
+          {
+            "id": "we19",
+            "source": "w7",
+            "target": "w18",
+            "variant": "error"
+          },
+          {
+            "id": "we20",
+            "source": "w8",
+            "target": "w18",
+            "variant": "error"
+          },
+          {
+            "id": "we21",
+            "source": "w18",
+            "target": "w9"
+          }
         ]
       },
       {
@@ -477,7 +568,7 @@
             "type": "connector",
             "label": "Send email report",
             "detail": "gmail_send HTML executive summary with Notion link. Use requester email if provided during confirmation, otherwise default recipient",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "t12",
@@ -512,24 +603,102 @@
           }
         ],
         "edges": [
-          { "id": "te1", "source": "t1", "target": "t2" },
-          { "id": "te2", "source": "t2", "target": "t3" },
-          { "id": "te3", "source": "t3", "target": "t4" },
-          { "id": "te4", "source": "t4", "target": "t5", "label": "Confirmed", "variant": "yes" },
-          { "id": "te5", "source": "t4", "target": "t15", "label": "Modify", "variant": "no" },
-          { "id": "te6", "source": "t15", "target": "t3" },
-          { "id": "te7", "source": "t5", "target": "t6" },
-          { "id": "te8", "source": "t6", "target": "t7" },
-          { "id": "te9", "source": "t7", "target": "t8" },
-          { "id": "te10", "source": "t8", "target": "t9" },
-          { "id": "te11", "source": "t9", "target": "t10" },
-          { "id": "te12", "source": "t10", "target": "t11" },
-          { "id": "te13", "source": "t11", "target": "t12" },
-          { "id": "te14", "source": "t12", "target": "t13" },
-          { "id": "te15", "source": "t13", "target": "t14" },
-          { "id": "te16", "source": "t10", "target": "t16", "variant": "error" },
-          { "id": "te17", "source": "t11", "target": "t16", "variant": "error" },
-          { "id": "te18", "source": "t16", "target": "t12" }
+          {
+            "id": "te1",
+            "source": "t1",
+            "target": "t2"
+          },
+          {
+            "id": "te2",
+            "source": "t2",
+            "target": "t3"
+          },
+          {
+            "id": "te3",
+            "source": "t3",
+            "target": "t4"
+          },
+          {
+            "id": "te4",
+            "source": "t4",
+            "target": "t5",
+            "label": "Confirmed",
+            "variant": "yes"
+          },
+          {
+            "id": "te5",
+            "source": "t4",
+            "target": "t15",
+            "label": "Modify",
+            "variant": "no"
+          },
+          {
+            "id": "te6",
+            "source": "t15",
+            "target": "t3"
+          },
+          {
+            "id": "te7",
+            "source": "t5",
+            "target": "t6"
+          },
+          {
+            "id": "te8",
+            "source": "t6",
+            "target": "t7"
+          },
+          {
+            "id": "te9",
+            "source": "t7",
+            "target": "t8"
+          },
+          {
+            "id": "te10",
+            "source": "t8",
+            "target": "t9"
+          },
+          {
+            "id": "te11",
+            "source": "t9",
+            "target": "t10"
+          },
+          {
+            "id": "te12",
+            "source": "t10",
+            "target": "t11"
+          },
+          {
+            "id": "te13",
+            "source": "t11",
+            "target": "t12"
+          },
+          {
+            "id": "te14",
+            "source": "t12",
+            "target": "t13"
+          },
+          {
+            "id": "te15",
+            "source": "t13",
+            "target": "t14"
+          },
+          {
+            "id": "te16",
+            "source": "t10",
+            "target": "t16",
+            "variant": "error"
+          },
+          {
+            "id": "te17",
+            "source": "t11",
+            "target": "t16",
+            "variant": "error"
+          },
+          {
+            "id": "te18",
+            "source": "t16",
+            "target": "t12"
+          }
         ]
       },
       {
@@ -605,20 +774,87 @@
           }
         ],
         "edges": [
-          { "id": "ee1", "source": "e1", "target": "e2" },
-          { "id": "ee2", "source": "e2", "target": "e3", "label": "Credentials", "variant": "yes" },
-          { "id": "ee3", "source": "e2", "target": "e4", "label": "Insufficient sources" },
-          { "id": "ee4", "source": "e2", "target": "e5", "label": "State corruption" },
-          { "id": "ee5", "source": "e2", "target": "e6", "label": "Delivery failure" },
-          { "id": "ee6", "source": "e2", "target": "e7", "label": "Rate limit", "variant": "no" },
-          { "id": "ee7", "source": "e3", "target": "e8" },
-          { "id": "ee8", "source": "e4", "target": "e8" },
-          { "id": "ee9", "source": "e5", "target": "e8" },
-          { "id": "ee10", "source": "e6", "target": "e8" },
-          { "id": "ee11", "source": "e7", "target": "e8" },
-          { "id": "ee12", "source": "e8", "target": "e9" },
-          { "id": "ee13", "source": "e9", "target": "e10", "label": "Yes", "variant": "yes" },
-          { "id": "ee14", "source": "e9", "target": "e11", "label": "No", "variant": "no" }
+          {
+            "id": "ee1",
+            "source": "e1",
+            "target": "e2"
+          },
+          {
+            "id": "ee2",
+            "source": "e2",
+            "target": "e3",
+            "label": "Credentials",
+            "variant": "yes"
+          },
+          {
+            "id": "ee3",
+            "source": "e2",
+            "target": "e4",
+            "label": "Insufficient sources"
+          },
+          {
+            "id": "ee4",
+            "source": "e2",
+            "target": "e5",
+            "label": "State corruption"
+          },
+          {
+            "id": "ee5",
+            "source": "e2",
+            "target": "e6",
+            "label": "Delivery failure"
+          },
+          {
+            "id": "ee6",
+            "source": "e2",
+            "target": "e7",
+            "label": "Rate limit",
+            "variant": "no"
+          },
+          {
+            "id": "ee7",
+            "source": "e3",
+            "target": "e8"
+          },
+          {
+            "id": "ee8",
+            "source": "e4",
+            "target": "e8"
+          },
+          {
+            "id": "ee9",
+            "source": "e5",
+            "target": "e8"
+          },
+          {
+            "id": "ee10",
+            "source": "e6",
+            "target": "e8"
+          },
+          {
+            "id": "ee11",
+            "source": "e7",
+            "target": "e8"
+          },
+          {
+            "id": "ee12",
+            "source": "e8",
+            "target": "e9"
+          },
+          {
+            "id": "ee13",
+            "source": "e9",
+            "target": "e10",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "ee14",
+            "source": "e9",
+            "target": "e11",
+            "label": "No",
+            "variant": "no"
+          }
         ]
       }
     ],
@@ -653,7 +889,11 @@
         "type": "select",
         "required": false,
         "default": "standard",
-        "options": ["quick", "standard", "deep"],
+        "options": [
+          "quick",
+          "standard",
+          "deep"
+        ],
         "placeholder": "Select default depth level for research requests"
       },
       {
@@ -662,7 +902,11 @@
         "type": "select",
         "required": false,
         "default": "executive",
-        "options": ["executive", "technical", "general"],
+        "options": [
+          "executive",
+          "technical",
+          "general"
+        ],
         "placeholder": "Select default audience for report tone"
       },
       {
@@ -677,15 +921,27 @@
     "presets": [
       {
         "label": "Executive Briefings",
-        "values": { "default_scope": "standard", "default_audience": "executive", "default_recipient_email": "" }
+        "values": {
+          "default_scope": "standard",
+          "default_audience": "executive",
+          "default_recipient_email": ""
+        }
       },
       {
         "label": "Deep Technical Research",
-        "values": { "default_scope": "deep", "default_audience": "technical", "default_recipient_email": "" }
+        "values": {
+          "default_scope": "deep",
+          "default_audience": "technical",
+          "default_recipient_email": ""
+        }
       },
       {
         "label": "Quick Market Scans",
-        "values": { "default_scope": "quick", "default_audience": "executive", "default_recipient_email": "" }
+        "values": {
+          "default_scope": "quick",
+          "default_audience": "executive",
+          "default_recipient_email": ""
+        }
       }
     ],
     "adoption_questions": [
@@ -693,14 +949,23 @@
         "id": "default_scope",
         "question": "What depth of research do you typically need?",
         "type": "select",
-        "options": ["Quick scan (1-2 sources)", "Standard (3-5 sources)", "Deep dive (6+ sources)"],
+        "options": [
+          "Quick scan (1-2 sources)",
+          "Standard (3-5 sources)",
+          "Deep dive (6+ sources)"
+        ],
         "category": "configuration"
       },
       {
         "id": "default_audience",
         "question": "Who is the primary audience for reports?",
         "type": "select",
-        "options": ["Executive / C-suite", "Technical team", "Marketing / Strategy", "General"],
+        "options": [
+          "Executive / C-suite",
+          "Technical team",
+          "Marketing / Strategy",
+          "General"
+        ],
         "category": "configuration"
       },
       {
@@ -713,7 +978,11 @@
         "id": "delivery_channel",
         "question": "How should reports be delivered?",
         "type": "select",
-        "options": ["Email only", "Telegram only", "Both email and Telegram"],
+        "options": [
+          "Email only",
+          "Telegram only",
+          "Both email and Telegram"
+        ],
         "category": "configuration"
       }
     ]

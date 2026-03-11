@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BookOpen, Plus, Loader2, Sparkles } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { AnimatePresence } from 'framer-motion';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import * as recipeApi from '@/api/templates/recipes';
@@ -129,12 +130,14 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
           </p>
         </div>
         {!creating && (
-          <button
+          <Button
+            variant="primary"
+            size="sm"
+            icon={<Plus className="w-3.5 h-3.5" />}
             onClick={() => setCreating(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" /> New Recipe
-          </button>
+            New Recipe
+          </Button>
         )}
       </div>
 
@@ -163,12 +166,15 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
             <p className="text-sm text-muted-foreground/60 max-w-[280px]">
               Create your first recipe by describing what you want to automate with this credential.
             </p>
-            <button
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Sparkles className="w-3.5 h-3.5" />}
               onClick={() => setCreating(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors mt-4"
+              className="mt-4"
             >
-              <Sparkles className="w-3.5 h-3.5" /> Create First Recipe
-            </button>
+              Create First Recipe
+            </Button>
           </div>
         ) : (
           <div className="space-y-2">

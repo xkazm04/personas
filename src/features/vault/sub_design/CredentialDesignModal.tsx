@@ -1,5 +1,6 @@
 import { X, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Button } from '@/features/shared/components/buttons';
 import { MOTION_TIMING } from '@/features/templates/animationPresets';
 import { computeSubtitle } from '@/features/vault/sub_design/credentialDesignModalTypes';
 import type { CredentialDesignModalProps } from '@/features/vault/sub_design/credentialDesignModalTypes';
@@ -60,12 +61,13 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
               <p className="text-sm text-muted-foreground">{subtitle}</p>
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            icon={<X className="w-4 h-4" />}
             onClick={modal.handleClose}
-            className="p-2 rounded-lg hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground transition-colors duration-snap"
-          >
-            <X className="w-4 h-4" />
-          </button>
+            className="text-muted-foreground/90 hover:text-foreground hover:bg-secondary/60"
+          />
         </div>
 
         {/* Body */}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { Plus, X } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { AnimatePresence } from 'framer-motion';
 import type { DbPersonaTrigger } from '@/lib/types/types';
 import { TriggerAddForm } from '@/features/triggers/components/form/TriggerAddForm';
@@ -52,13 +53,14 @@ export function TriggerConfig() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Triggers</h3>
-        <button
+        <Button
+          variant="primary"
+          size="sm"
+          icon={<Plus className="w-4 h-4" />}
           onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-lg shadow-primary/20"
         >
-          <Plus className="w-4 h-4" />
           Add Trigger
-        </button>
+        </Button>
       </div>
 
       {/* Add Trigger Form */}
@@ -76,9 +78,9 @@ export function TriggerConfig() {
       {triggerError?.kind === 'crud' && (
         <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
           <span className="flex-1">{triggerError.message}</span>
-          <button onClick={clearTriggerError} className="shrink-0 hover:text-red-300 transition-colors">
+          <Button variant="ghost" size="icon-sm" onClick={clearTriggerError} className="shrink-0 hover:text-red-300">
             <X className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </div>
       )}
 

@@ -1,0 +1,39 @@
+{
+  "id": "builtin-onedrive",
+  "name": "onedrive",
+  "label": "OneDrive",
+  "color": "#0078D4",
+  "icon_url": "/icons/connectors/onedrive.svg",
+  "category": "productivity",
+  "fields": [],
+  "healthcheck_config": {
+    "endpoint": "https://graph.microsoft.com/v1.0/me/drive",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
+    "description": "Validates Microsoft OAuth token via Graph /me/drive endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "OneDrive file storage and document management for uploading, downloading, and organizing files via the Microsoft Graph API.",
+    "auth_type": "oauth",
+    "auth_type_label": "OAuth",
+    "oauth_type": "microsoft",
+    "oauth_scopes": [
+      "User.Read",
+      "Files.Read",
+      "Files.ReadWrite",
+      "offline_access"
+    ],
+    "docs_url": "https://learn.microsoft.com/en-us/graph/api/resources/onedrive",
+    "setup_guide": "1. Go to the Azure Portal → Microsoft Entra ID → App registrations.\n2. Click 'New registration', name your app, and set redirect URI to http://localhost.\n3. Under 'Certificates & secrets', create a new client secret and copy it.\n4. Under 'API permissions', add Microsoft Graph delegated permissions: User.Read, Files.Read, Files.ReadWrite.\n5. Copy the Application (client) ID from the Overview page.\n6. In Personas, click Authorize with Microsoft.\n7. Complete consent in your browser and return to Personas.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "oauth", "label": "OAuth", "type": "oauth", "is_default": true},
+      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@softeria/ms-365-mcp-server", "transport": "stdio", "suggested_env": {"MICROSOFT_CLIENT_ID": "", "MICROSOFT_CLIENT_SECRET": "", "MICROSOFT_TENANT_ID": ""}}
+    ]
+  }
+}

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Key, Wrench, Zap, Pencil, Copy, Check, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { CredentialEventConfig } from '@/features/vault/sub_features/CredentialEventConfig';
 import { CredentialIntelligence } from '@/features/vault/sub_features/CredentialIntelligence';
@@ -103,50 +104,56 @@ export function OverviewTab({
         <>
           {/* Primary actions */}
           <div className="flex items-center gap-2">
-            <button
+            <Button
               onClick={() => health.checkStored()}
               disabled={isHealthchecking}
-              className="flex items-center gap-1.5 px-4 py-2 min-h-[36px] bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
+              loading={isHealthchecking}
+              variant="accent"
+              accentColor="emerald"
+              size="md"
+              icon={!isHealthchecking ? <Key className="w-3.5 h-3.5" /> : undefined}
+              className="min-h-[36px]"
             >
-              {isHealthchecking ? (
-                <div className="w-3.5 h-3.5 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Key className="w-3.5 h-3.5" />
-              )}
               Test Connection
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-1.5 px-4 py-2 min-h-[36px] bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-xl text-sm font-medium transition-all"
+              variant="secondary"
+              size="md"
+              icon={<Pencil className="w-3.5 h-3.5" />}
+              className="min-h-[36px]"
             >
-              <Pencil className="w-3.5 h-3.5" />
               Edit Fields
-            </button>
+            </Button>
             <div className="ml-auto">
               {showDeleteConfirm ? (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-red-400/80">Delete this credential?</span>
-                  <button
+                  <Button
                     onClick={() => onDelete(credential.id)}
-                    className="px-3 py-1.5 bg-red-500/15 hover:bg-red-500/25 border border-red-500/25 text-red-400 rounded-xl text-sm font-medium transition-all"
+                    variant="danger"
+                    size="sm"
+                    className="bg-red-500/15 hover:bg-red-500/25 border-red-500/25 text-red-400"
                   >
                     Confirm
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => setShowDeleteConfirm(false)}
-                    className="px-3 py-1.5 bg-secondary/40 hover:bg-secondary/60 border border-primary/15 text-foreground/70 rounded-xl text-sm font-medium transition-all"
+                    variant="secondary"
+                    size="sm"
+                    className="text-foreground/70"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <button
+                <Button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="p-2 hover:bg-red-500/10 rounded-lg transition-colors"
+                  variant="ghost"
+                  size="icon-sm"
                   title="Delete credential"
-                >
-                  <Trash2 className="w-4 h-4 text-red-400/50 hover:text-red-400/80" />
-                </button>
+                  icon={<Trash2 className="w-4 h-4 text-red-400/50 hover:text-red-400/80" />}
+                />
               )}
             </div>
           </div>
@@ -165,9 +172,11 @@ export function OverviewTab({
 
           {/* Credential ID */}
           <div className="flex items-center">
-            <button
+            <Button
               onClick={copyCredentialId}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/10 bg-secondary/20 text-sm text-muted-foreground/70 hover:text-foreground/80 transition-colors"
+              variant="ghost"
+              size="xs"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/10 bg-secondary/20 text-muted-foreground/70 hover:text-foreground/80"
               title="Copy credential ID"
             >
               <span className="font-mono">id</span>
@@ -178,24 +187,23 @@ export function OverviewTab({
               ) : (
                 <Copy className="w-3.5 h-3.5" />
               )}
-            </button>
+            </Button>
           </div>
 
           {/* Collapsible sections: Services and Events */}
           {connector.services.length > 0 && (
             <div className="border border-primary/10 rounded-xl overflow-hidden">
-              <button
+              <Button
                 onClick={() => setExpandedSection(expandedSection === 'services' ? null : 'services')}
-                className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-secondary/20 transition-colors"
+                variant="ghost"
+                size="md"
+                block
+                icon={<Wrench className="w-3.5 h-3.5 text-muted-foreground/60" />}
+                iconRight={expandedSection === 'services' ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />}
+                className="w-full flex items-center gap-2 px-4 py-3 text-left rounded-none"
               >
-                <Wrench className="w-3.5 h-3.5 text-muted-foreground/60" />
-                <span className="text-sm font-medium text-foreground/80">Services ({connector.services.length})</span>
-                {expandedSection === 'services' ? (
-                  <ChevronDown className="w-3.5 h-3.5 ml-auto text-muted-foreground/50" />
-                ) : (
-                  <ChevronRight className="w-3.5 h-3.5 ml-auto text-muted-foreground/50" />
-                )}
-              </button>
+                <span className="text-sm font-medium text-foreground/80 flex-1">Services ({connector.services.length})</span>
+              </Button>
               {expandedSection === 'services' && (
                 <div className="px-4 pb-3 space-y-2">
                   {connector.services.map((service) => (
@@ -218,18 +226,17 @@ export function OverviewTab({
 
           {connector.events.length > 0 && (
             <div className="border border-primary/10 rounded-xl overflow-hidden">
-              <button
+              <Button
                 onClick={() => setExpandedSection(expandedSection === 'events' ? null : 'events')}
-                className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-secondary/20 transition-colors"
+                variant="ghost"
+                size="md"
+                block
+                icon={<Zap className="w-3.5 h-3.5 text-muted-foreground/60" />}
+                iconRight={expandedSection === 'events' ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />}
+                className="w-full flex items-center gap-2 px-4 py-3 text-left rounded-none"
               >
-                <Zap className="w-3.5 h-3.5 text-muted-foreground/60" />
-                <span className="text-sm font-medium text-foreground/80">Events ({connector.events.length})</span>
-                {expandedSection === 'events' ? (
-                  <ChevronDown className="w-3.5 h-3.5 ml-auto text-muted-foreground/50" />
-                ) : (
-                  <ChevronRight className="w-3.5 h-3.5 ml-auto text-muted-foreground/50" />
-                )}
-              </button>
+                <span className="text-sm font-medium text-foreground/80 flex-1">Events ({connector.events.length})</span>
+              </Button>
               {expandedSection === 'events' && (
                 <div className="px-4 pb-3">
                   <CredentialEventConfig credentialId={credential.id} events={connector.events} />

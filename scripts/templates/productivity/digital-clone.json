@@ -255,7 +255,7 @@
             "type": "connector",
             "label": "Poll Gmail",
             "detail": "gmail_search: is:unread -category:promotions -category:social -category:updates",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n3",

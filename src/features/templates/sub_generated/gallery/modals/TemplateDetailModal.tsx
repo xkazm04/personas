@@ -9,6 +9,7 @@ import {
   Clock,
   Play,
 } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { PromptTabsPreview } from '@/features/shared/components/editors/PromptTabsPreview';
 import { DesignConnectorGrid } from '@/features/shared/components/display/DesignConnectorGrid';
 import { BaseModal } from '../../shared/BaseModal';
@@ -104,18 +105,20 @@ export function TemplateDetailModal({
               )}
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors flex-shrink-0">
+          <Button onClick={onClose} variant="ghost" size="icon-sm" className="flex-shrink-0">
             <X className="w-5 h-5 text-muted-foreground/70" />
-          </button>
+          </Button>
         </div>
 
         {/* Tabs */}
         <div className="px-6 border-b border-primary/10 flex gap-0 flex-shrink-0">
           {TAB_CONFIG.map((tab) => (
-            <button
+            <Button
               key={tab.key}
+              variant="ghost"
+              size="sm"
               onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
+              className={`relative ${
                 activeTab === tab.key
                   ? 'text-violet-300'
                   : 'text-muted-foreground/60 hover:text-foreground/80'
@@ -125,7 +128,7 @@ export function TemplateDetailModal({
               {activeTab === tab.key && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500/70 rounded-full" />
               )}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -167,36 +170,42 @@ export function TemplateDetailModal({
         <div className="px-6 py-4 border-t border-primary/10 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 onClick={() => onAdopt(review)}
-                className="px-4 py-2 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
+                variant="secondary"
+                size="sm"
+                icon={<Download className="w-4 h-4" />}
+                className="bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25"
               >
-                <Download className="w-4 h-4" />
                 Adopt as Persona
-              </button>
+              </Button>
               {designResult && (
-                <button
+                <Button
                   onClick={() => {
                     onClose();
                     onTryIt(review);
                   }}
-                  className="px-4 py-2 text-sm rounded-xl bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-2"
+                  variant="secondary"
+                  size="sm"
+                  icon={<Play className="w-4 h-4" />}
+                  className="bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20"
                 >
-                  <Play className="w-4 h-4" />
                   Try It
-                </button>
+                </Button>
               )}
             </div>
-            <button
+            <Button
               onClick={() => {
                 onDelete(review.id);
                 onClose();
               }}
-              className="px-3 py-2 text-sm rounded-xl text-red-400/70 hover:bg-red-500/10 transition-colors flex items-center gap-1.5"
+              variant="danger"
+              size="sm"
+              icon={<Trash2 className="w-3.5 h-3.5" />}
+              className="text-red-400/70 hover:bg-red-500/10"
             >
-              <Trash2 className="w-3.5 h-3.5" />
               Delete
-            </button>
+            </Button>
           </div>
         </div>
     </BaseModal>

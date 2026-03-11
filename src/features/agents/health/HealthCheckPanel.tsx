@@ -6,6 +6,7 @@ import {
   Activity,
   RefreshCw,
 } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { FEASIBILITY_COLORS } from '@/lib/utils/designTokens';
@@ -40,13 +41,14 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
             Run a dry-run analysis against this agent's current configuration to detect missing credentials,
             disconnected connectors, and underspecified use cases.
           </p>
-          <button
+          <Button
             type="button" onClick={handleRun} disabled={!selectedPersona}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-40"
+            variant="primary"
+            size="md"
+            icon={<Activity className="w-4 h-4" />}
           >
-            <Activity className="w-4 h-4" />
             Run Health Check
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -68,13 +70,14 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
             </div>
           </div>
         </div>
-        <button
+        <Button
           type="button" onClick={() => { reset(); handleRun(); }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+          variant="primary"
+          size="sm"
+          icon={<RefreshCw className="w-3.5 h-3.5" />}
         >
-          <RefreshCw className="w-3.5 h-3.5" />
           Retry
-        </button>
+        </Button>
       </div>
     );
   }
@@ -102,12 +105,13 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
             {' \u00b7 '}Checked {new Date(result.checkedAt).toLocaleTimeString()}
           </p>
         </div>
-        <button type="button" onClick={handleRun}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-secondary/60 text-muted-foreground border border-primary/15 hover:bg-secondary/80 transition-colors"
+        <Button type="button" onClick={handleRun}
+          variant="secondary"
+          size="sm"
+          icon={<RefreshCw className="w-3.5 h-3.5" />}
         >
-          <RefreshCw className="w-3.5 h-3.5" />
           Re-run
-        </button>
+        </Button>
       </div>
 
       {dryRun.capabilities.length > 0 && (

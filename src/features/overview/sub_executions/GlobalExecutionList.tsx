@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Loader2, RefreshCw, BarChart3 } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
@@ -94,15 +95,14 @@ export default function GlobalExecutionList() {
         subtitle={`${globalExecutionsTotal} execution${globalExecutionsTotal !== 1 ? 's' : ''} recorded`}
         actions={
           <div className="flex items-center gap-1">
-            <button onClick={() => setShowDashboard(!showDashboard)}
-              className={`p-1.5 rounded-lg transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50'}`}
+            <Button variant="ghost" size="icon-sm" onClick={() => setShowDashboard(!showDashboard)}
+              className={showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : ''}
               title={showDashboard ? 'Show execution list' : 'Show metrics dashboard'}>
               <BarChart3 className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={handleRefresh} disabled={isRefreshing}
-              className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors" title="Refresh">
+            </Button>
+            <Button variant="ghost" size="icon-sm" onClick={handleRefresh} disabled={isRefreshing} title="Refresh">
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
+            </Button>
           </div>
         }
       />

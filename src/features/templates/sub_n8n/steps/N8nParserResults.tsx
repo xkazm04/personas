@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FileJson, FileCode2, Sparkles, AlertTriangle } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { WorkflowPlatform } from '@/lib/personas/parsers/workflowDetector';
@@ -116,12 +117,14 @@ export function N8nParserResults({
             <p className="text-sm text-muted-foreground/90">{parsedResult.summary}</p>
           </div>
         </div>
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={onReset}
-          className="px-3 py-1.5 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/80 transition-colors"
+          className="rounded-xl border-primary/15 text-muted-foreground/80"
         >
           Import Another
-        </button>
+        </Button>
       </div>
 
       {/* Platform confirmation banner */}
@@ -137,18 +140,22 @@ export function N8nParserResults({
             This looks like a <strong>{PLATFORM_LABELS[platform]}</strong> workflow, but we're not 100% sure. Is that correct?
           </p>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onConfirmPlatform}
-              className="px-2.5 py-1 text-sm rounded-lg border border-amber-500/25 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-colors"
+              className="rounded-lg border border-amber-500/25 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
             >
               Yes, that's right
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onReset}
-              className="px-2.5 py-1 text-sm rounded-lg border border-primary/15 text-muted-foreground/70 hover:bg-secondary/50 transition-colors"
+              className="rounded-lg border border-primary/15 text-muted-foreground/70 hover:bg-secondary/50"
             >
               No, re-upload
-            </button>
+            </Button>
           </div>
         </motion.div>
       )}

@@ -132,8 +132,8 @@
         "category": "productivity"
       },
       {
-        "name": "google_workspace",
-        "label": "Google Workspace",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
@@ -141,35 +141,35 @@
             "label": "OAuth Client ID",
             "type": "text",
             "placeholder": "123456789-abc.apps.googleusercontent.com",
-            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
             "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-...",
-            "helpText": "The client secret paired with your OAuth Client ID",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
             "required": true
           },
           {
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//0abc...",
-            "helpText": "Obtained during the OAuth2 consent flow. Required for offline access to Gmail.",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library\n2. Enable the Gmail API\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID\n4. Set application type to 'Web application'\n5. Add authorized redirect URI for your OAuth flow\n6. Copy the Client ID and Client Secret\n7. Complete the OAuth2 consent flow to obtain a refresh token with gmail.send and gmail.readonly scopes",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_send",
           "gmail_search"
         ],
-        "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        "related_triggers": []
       },
       {
         "name": "slack",
@@ -215,7 +215,7 @@
       {
         "type": "email",
         "description": "Personalized owner notifications with page-specific staleness details and action items",
-        "required_connector": "google_workspace",
+        "required_connector": "gmail",
         "config_hints": {
           "subject_prefix": "[Doc Freshness]"
         }
@@ -299,7 +299,7 @@
             "type": "connector",
             "label": "Send owner emails",
             "detail": "gmail_send personalized HTML email per owner with page table, severity, links, and action items",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n11",
@@ -420,7 +420,7 @@
             "type": "connector",
             "label": "Search Gmail for replies",
             "detail": "gmail_search: subject:[Doc Freshness] newer_than:7d to find owner responses",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n3",
@@ -609,7 +609,7 @@
             "type": "connector",
             "label": "Send escalated email",
             "detail": "gmail_send with urgent subject and explicit deadline for response",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n7",

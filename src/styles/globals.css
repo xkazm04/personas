@@ -63,10 +63,14 @@
 }
 
 /* Light theme adjustments */
-[data-theme=”light”] .titlebar-btn:hover {
+[data-theme="light"] .titlebar-btn:hover,
+[data-theme="light-ice"] .titlebar-btn:hover,
+[data-theme="light-news"] .titlebar-btn:hover {
   background: rgba(0, 0, 0, 0.06);
 }
-[data-theme=”light”] .titlebar-btn-close:hover {
+[data-theme="light"] .titlebar-btn-close:hover,
+[data-theme="light-ice"] .titlebar-btn-close:hover,
+[data-theme="light-news"] .titlebar-btn-close:hover {
   background: #e81123;
   color: #fff;
 }
@@ -137,7 +141,7 @@
 
   --color-btn-primary: var(--btn-primary);
 
-  /* Spacing â€” bridged from shared tokens */
+  /* Spacing â€" bridged from shared tokens */
   --spacing-1: var(--spacing-1);
   --spacing-2: var(--spacing-2);
   --spacing-3: var(--spacing-3);
@@ -166,7 +170,7 @@
   --breakpoint-4xl: 2560px;
 }
 
-/* â”€â”€ Base Styles â”€â”€ */
+/* â"€â"€ Base Styles â"€â"€ */
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
@@ -178,7 +182,7 @@ body {
   overflow: hidden;
 }
 
-/* â”€â”€ Text Scale â”€â”€ */
+/* â"€â"€ Text Scale â"€â"€ */
 [data-text-scale="large"] {
   font-size: 15px;
 }
@@ -195,7 +199,7 @@ body {
 [data-text-scale="larger"] .text-\[11px\] { font-size: 13px; }
 [data-text-scale="larger"] .text-\[10px\] { font-size: 12px; }
 
-/* â”€â”€ Hide number input spinners â”€â”€ */
+/* â"€â"€ Hide number input spinners â"€â"€ */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -205,14 +209,14 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* â”€â”€ Glass Morphism â”€â”€ */
+/* â"€â"€ Glass Morphism â"€â"€ */
 .glass {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
 }
 
-/* â”€â”€ Button Size Presets â”€â”€
+/* â"€â"€ Button Size Presets â"€â"€
    Canonical button sizes.  Prefer these over ad-hoc padding combos.
    Tailwind equivalents noted for grep-ability:
      btn-sm  â‰ˆ  px-2.5 py-1   rounded-lg  text-xs
@@ -222,7 +226,7 @@ input[type="number"] {
 .btn-md { padding: 0.375rem 0.875rem; border-radius: var(--radius-md); font-size: 0.875rem; line-height: 1.25rem; }
 .btn-lg { padding: 0.625rem 1.25rem; border-radius: var(--radius-md); font-size: 0.875rem; line-height: 1.25rem; }
 
-/* â”€â”€ Animations â”€â”€ */
+/* â"€â"€ Animations â"€â"€ */
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
@@ -264,7 +268,7 @@ input[type="number"] {
 .animate-spin-slow { animation: spin-slow 30s linear infinite; }
 .animate-expand-in { animation: expand-in 150ms ease-out both; }
 
-/* â”€â”€ Animation timing utilities â”€â”€ */
+/* â"€â"€ Animation timing utilities â"€â"€ */
 .duration-instant { transition-duration: var(--duration-instant); }
 .duration-snap { transition-duration: var(--duration-fast); }
 .duration-flow { transition-duration: var(--duration-normal); }
@@ -282,19 +286,19 @@ input[type="number"] {
   100% { width: 1em; }
 }
 
-/* â”€â”€ Dot Grid â”€â”€ */
+/* â"€â"€ Dot Grid â"€â"€ */
 .dot-grid {
   background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
-/* â”€â”€ Selection â”€â”€ */
+/* â"€â"€ Selection â"€â"€ */
 ::selection {
   background-color: rgba(6, 182, 212, 0.25);
   color: var(--foreground);
 }
 
-/* â”€â”€ Theme Variants â”€â”€ */
+/* â"€â"€ Theme Variants â"€â"€ */
 
 /* Dark: Cyan */
 [data-theme="dark-cyan"] {
@@ -361,7 +365,7 @@ input[type="number"] {
   --btn-primary: #9d174d;
 }
 
-/* Dark: Deadpool â€” black/white canvas with blood-red accents */
+/* Dark: Deadpool â€" black/white canvas with blood-red accents */
 [data-theme="dark-red"] {
   --primary: #cc0000;
   --accent: #e60000;
@@ -382,7 +386,7 @@ input[type="number"] {
   --glass-border: rgba(204, 0, 0, 0.12);
 }
 
-/* Light â€” warm paper-like palette */
+/* Light â€" warm paper-like palette */
 [data-theme="light"] {
   --primary: #2554b0;
   --accent: #3568c7;
@@ -405,6 +409,34 @@ input[type="number"] {
   --glass-border: rgba(0, 0, 0, 0.08);
 }
 
+/* Light: Ice â€" icy blue-white palette with cold linear feel */
+[data-theme="light-ice"] {
+  --primary: #2563eb;
+  --accent: #38bdf8;
+  --background: #f0f5fa;
+  --foreground: #0f172a;
+  --secondary: #dbe8f4;
+  --muted: #4b6a8a;
+  --muted-dark: #334d6e;
+  --muted-foreground: #3d5a80;
+  --border: #b8d0e8;
+  --card-bg: rgba(255, 255, 255, 0.65);
+  --card-border: rgba(59, 130, 246, 0.12);
+  --brand-cyan: #0284c7;
+  --brand-purple: #6366f1;
+  --brand-emerald: #0d9488;
+  --brand-amber: #d97706;
+  --brand-rose: #e11d48;
+  --btn-primary: #1d4ed8;
+  --glass-bg: rgba(255, 255, 255, 0.5);
+  --glass-border: rgba(59, 130, 246, 0.15);
+  --ice-shadow-sm: 0 1px 3px rgba(37, 99, 235, 0.06), 0 1px 2px rgba(37, 99, 235, 0.04);
+  --ice-shadow-md: 0 4px 12px rgba(37, 99, 235, 0.08), 0 2px 4px rgba(37, 99, 235, 0.04);
+  --ice-shadow-lg: 0 8px 30px rgba(37, 99, 235, 0.10), 0 4px 8px rgba(37, 99, 235, 0.05);
+  --ice-shadow-xl: 0 16px 50px rgba(37, 99, 235, 0.12), 0 8px 16px rgba(37, 99, 235, 0.06);
+  --ice-glow: 0 0 20px rgba(56, 189, 248, 0.15), 0 0 60px rgba(37, 99, 235, 0.08);
+}
+
 [data-theme="light"] * {
   scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
 }
@@ -418,7 +450,113 @@ input[type="number"] {
   color: #1c1c28;
 }
 
-/* â”€â”€ Deadpool theme specials â”€â”€ */
+[data-theme="light-ice"] * {
+  scrollbar-color: rgba(37, 99, 235, 0.15) transparent;
+}
+
+[data-theme="light-ice"] .dot-grid {
+  background-image: radial-gradient(circle, rgba(37, 99, 235, 0.05) 1px, transparent 1px);
+}
+
+[data-theme="light-ice"] ::selection {
+  background-color: rgba(37, 99, 235, 0.18);
+  color: #0f172a;
+}
+
+/* Ice: Blue-tinted card shadows and page border glow */
+[data-theme="light-ice"] .rounded-xl {
+  box-shadow: var(--ice-shadow-sm);
+}
+[data-theme="light-ice"] .rounded-xl:hover {
+  box-shadow: var(--ice-shadow-md);
+}
+
+/* Ice: Page border glow — subtle blue radiance along edges */
+[data-theme="light-ice"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  box-shadow: inset 0 0 80px rgba(37, 99, 235, 0.04), inset 0 0 200px rgba(56, 189, 248, 0.03);
+}
+
+/* Ice: JSON highlighting */
+[data-theme="light-ice"] .json-highlight .hljs-attr { color: #4338ca; }
+[data-theme="light-ice"] .json-highlight .hljs-string { color: #047857; }
+[data-theme="light-ice"] .json-highlight .hljs-number { color: #1d4ed8; }
+[data-theme="light-ice"] .json-highlight .hljs-literal { color: #dc2626; }
+[data-theme="light-ice"] .json-highlight .hljs-punctuation { color: #6b7280; }
+
+/* Light: News — vintage newspaper monochrome palette */
+[data-theme="light-news"] {
+  --primary: #1a1a1a;
+  --accent: #555555;
+  --background: #e8e6e1;
+  --foreground: #111111;
+  --secondary: #d5d2cb;
+  --muted: #6b6b6b;
+  --muted-dark: #4a4a4a;
+  --muted-foreground: #555555;
+  --border: #b5b0a8;
+  --card-bg: rgba(255, 255, 255, 0.55);
+  --card-border: rgba(0, 0, 0, 0.10);
+  --brand-cyan: #333333;
+  --brand-purple: #444444;
+  --brand-emerald: #3a3a3a;
+  --brand-amber: #555555;
+  --brand-rose: #2a2a2a;
+  --btn-primary: #222222;
+  --glass-bg: rgba(255, 255, 255, 0.4);
+  --glass-border: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light-news"] * {
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+[data-theme="light-news"] .dot-grid {
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+}
+
+[data-theme="light-news"] ::selection {
+  background-color: rgba(0, 0, 0, 0.15);
+  color: #000000;
+}
+
+/* News: vintage paper texture — faint ruled lines */
+[data-theme="light-news"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    repeating-linear-gradient(
+      180deg,
+      transparent,
+      transparent 27px,
+      rgba(0, 0, 0, 0.025) 27px,
+      rgba(0, 0, 0, 0.025) 28px
+    );
+}
+
+/* News: cards get a subtle inset shadow for printed-on-paper look */
+[data-theme="light-news"] .rounded-xl {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+[data-theme="light-news"] .rounded-xl:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* News: monochrome JSON highlighting */
+[data-theme="light-news"] .json-highlight .hljs-attr { color: #000000; font-weight: 600; }
+[data-theme="light-news"] .json-highlight .hljs-string { color: #333333; }
+[data-theme="light-news"] .json-highlight .hljs-number { color: #1a1a1a; font-weight: 500; }
+[data-theme="light-news"] .json-highlight .hljs-literal { color: #444444; font-style: italic; }
+[data-theme="light-news"] .json-highlight .hljs-punctuation { color: #888888; }
+
+/*â"€â"€ Deadpool theme specials â"€â"€ */
 [data-theme="dark-red"] * {
   scrollbar-color: rgba(204, 0, 0, 0.25) transparent;
 }
@@ -432,7 +570,7 @@ input[type="number"] {
   background-image: radial-gradient(circle, rgba(204, 0, 0, 0.06) 1px, transparent 1px);
 }
 
-/* â”€â”€ Pipeline Animations â”€â”€ */
+/* â"€â"€ Pipeline Animations â"€â"€ */
 @keyframes dash-flow {
   from { stroke-dashoffset: 0; }
   to { stroke-dashoffset: -28; }
@@ -443,7 +581,7 @@ input[type="number"] {
   to { transform: rotate(360deg); }
 }
 
-/* â”€â”€ JSON Syntax Highlighting (highlight.js tokens) â”€â”€ */
+/* â"€â"€ JSON Syntax Highlighting (highlight.js tokens) â"€â"€ */
 .json-highlight .hljs-attr { color: #c4b5fd; }
 .json-highlight .hljs-string { color: #86efac; }
 .json-highlight .hljs-number { color: #93c5fd; }
@@ -451,7 +589,7 @@ input[type="number"] {
 .json-highlight .hljs-punctuation { color: #71717a; }
 .json-highlight .hljs-comment { color: #52525b; font-style: italic; }
 
-/* â”€â”€ Persona Vibe Layer â”€â”€
+/* â"€â"€ Persona Vibe Layer â"€â"€
    Ambient overlay driven by the selected agent's personality.
    Uses --vibe-* custom properties set by VibeThemeProvider.
    Falls back to transparent / 1 so no visual change when no vibe is active.
@@ -500,7 +638,7 @@ input[type="number"] {
   animation-duration: calc(4s / var(--vibe-anim-scale, 1));
 }
 
-/* Vibe-tinted card borders â€” apply subtle glow color to card outlines */
+/* Vibe-tinted card borders â€" apply subtle glow color to card outlines */
 [data-vibe="clinical"] .rounded-xl {
   border-color: rgba(148, 163, 184, calc(0.1 * var(--_border)));
 }
@@ -520,7 +658,80 @@ input[type="number"] {
   border-color: rgba(71, 85, 105, calc(0.04 * var(--_border)));
 }
 
-/* â”€â”€ Theme Transition â”€â”€ */
+/* ── Light-Theme Color Corrections ──
+   Accent-colored buttons use 300/400 Tailwind shades that are designed for
+   dark backgrounds.  On light themes we bump them to their 600/700 equivalents
+   so they remain legible and visually distinct.  The selectors target both
+   "light" and "light-ice" via attribute substring match.                     */
+
+[data-theme^="light"] .text-violet-300,
+[data-theme^="light"] .text-violet-400  { color: #7c3aed; }
+[data-theme^="light"] .text-emerald-300,
+[data-theme^="light"] .text-emerald-400 { color: #059669; }
+[data-theme^="light"] .text-cyan-300,
+[data-theme^="light"] .text-cyan-400    { color: #0891b2; }
+[data-theme^="light"] .text-amber-300,
+[data-theme^="light"] .text-amber-400   { color: #d97706; }
+[data-theme^="light"] .text-sky-300,
+[data-theme^="light"] .text-sky-400     { color: #0284c7; }
+[data-theme^="light"] .text-rose-300,
+[data-theme^="light"] .text-rose-400    { color: #e11d48; }
+[data-theme^="light"] .text-red-300,
+[data-theme^="light"] .text-red-400     { color: #dc2626; }
+[data-theme^="light"] .text-indigo-300,
+[data-theme^="light"] .text-indigo-400  { color: #4f46e5; }
+[data-theme^="light"] .text-pink-300,
+[data-theme^="light"] .text-pink-400    { color: #db2777; }
+[data-theme^="light"] .text-teal-300,
+[data-theme^="light"] .text-teal-400    { color: #0d9488; }
+[data-theme^="light"] .text-blue-300,
+[data-theme^="light"] .text-blue-400    { color: #2563eb; }
+[data-theme^="light"] .text-purple-300,
+[data-theme^="light"] .text-purple-400  { color: #7c3aed; }
+[data-theme^="light"] .text-orange-300,
+[data-theme^="light"] .text-orange-400  { color: #ea580c; }
+[data-theme^="light"] .text-slate-300,
+[data-theme^="light"] .text-slate-400   { color: #475569; }
+
+/* Boost faint accent backgrounds so they're visible on light surfaces */
+[data-theme^="light"] .bg-violet-500\/10  { background-color: rgba(124, 58, 237, 0.12); }
+[data-theme^="light"] .bg-emerald-500\/10 { background-color: rgba(16, 185, 129, 0.12); }
+[data-theme^="light"] .bg-cyan-500\/10    { background-color: rgba(6, 182, 212, 0.12); }
+[data-theme^="light"] .bg-amber-500\/10   { background-color: rgba(245, 158, 11, 0.12); }
+[data-theme^="light"] .bg-sky-500\/10     { background-color: rgba(14, 165, 233, 0.12); }
+[data-theme^="light"] .bg-red-500\/10     { background-color: rgba(239, 68, 68, 0.10); }
+[data-theme^="light"] .bg-rose-500\/10    { background-color: rgba(244, 63, 94, 0.10); }
+[data-theme^="light"] .bg-indigo-500\/10  { background-color: rgba(99, 102, 241, 0.12); }
+[data-theme^="light"] .bg-purple-500\/10  { background-color: rgba(168, 85, 247, 0.12); }
+[data-theme^="light"] .bg-pink-500\/10    { background-color: rgba(236, 72, 153, 0.10); }
+[data-theme^="light"] .bg-teal-500\/10    { background-color: rgba(20, 184, 166, 0.12); }
+[data-theme^="light"] .bg-blue-500\/10    { background-color: rgba(59, 130, 246, 0.12); }
+[data-theme^="light"] .bg-orange-500\/10  { background-color: rgba(249, 115, 22, 0.12); }
+
+/* Boost faint accent borders */
+[data-theme^="light"] .border-violet-500\/20  { border-color: rgba(124, 58, 237, 0.25); }
+[data-theme^="light"] .border-emerald-500\/20 { border-color: rgba(16, 185, 129, 0.25); }
+[data-theme^="light"] .border-cyan-500\/20    { border-color: rgba(6, 182, 212, 0.25); }
+[data-theme^="light"] .border-amber-500\/20   { border-color: rgba(245, 158, 11, 0.25); }
+[data-theme^="light"] .border-sky-500\/20     { border-color: rgba(14, 165, 233, 0.25); }
+[data-theme^="light"] .border-red-500\/20     { border-color: rgba(239, 68, 68, 0.22); }
+[data-theme^="light"] .border-rose-500\/20    { border-color: rgba(244, 63, 94, 0.22); }
+[data-theme^="light"] .border-indigo-500\/20  { border-color: rgba(99, 102, 241, 0.25); }
+[data-theme^="light"] .border-purple-500\/20  { border-color: rgba(168, 85, 247, 0.25); }
+[data-theme^="light"] .border-pink-500\/20    { border-color: rgba(236, 72, 153, 0.22); }
+
+/* Light: boost primary-opacity patterns used on buttons/badges */
+[data-theme^="light"] .bg-primary\/5  { background-color: rgba(var(--primary-rgb, 37, 99, 235), 0.07); }
+[data-theme^="light"] .bg-primary\/10 { background-color: rgba(var(--primary-rgb, 37, 99, 235), 0.12); }
+
+/* Light: JSON syntax highlighting */
+[data-theme="light"] .json-highlight .hljs-attr { color: #5b21b6; }
+[data-theme="light"] .json-highlight .hljs-string { color: #047857; }
+[data-theme="light"] .json-highlight .hljs-number { color: #1d4ed8; }
+[data-theme="light"] .json-highlight .hljs-literal { color: #dc2626; }
+[data-theme="light"] .json-highlight .hljs-punctuation { color: #6b7280; }
+
+/* â"€â"€ Theme Transition â"€â"€ */
 .theme-transitioning,
 .theme-transitioning *,
 .theme-transitioning *::before,

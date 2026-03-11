@@ -48,6 +48,9 @@ import {
   ListTodo,
   Megaphone,
   Table,
+  Palette,
+  ClipboardList,
+  Boxes,
 } from 'lucide-react';
 
 export interface ConnectorMeta {
@@ -68,7 +71,12 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   google_analytics:   { label: 'Google Analytics',   color: '#E37400', iconUrl: 'https://cdn.simpleicons.org/googleanalytics/E37400', Icon: BarChart },
 
   // â”€â”€ Microsoft â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  microsoft_outlook: { label: 'Microsoft Outlook', color: '#0078D4', iconUrl: '/icons/connectors/microsoft-outlook.svg', Icon: Mail },
+  microsoft_outlook:  { label: 'Microsoft Outlook',          color: '#0078D4', iconUrl: '/icons/connectors/microsoft-outlook.svg',  Icon: Mail },
+  microsoft_excel:    { label: 'Microsoft Excel',            color: '#217346', iconUrl: '/icons/connectors/microsoft-excel.svg',    Icon: Table },
+  microsoft_calendar: { label: 'Microsoft Outlook Calendar', color: '#0078D4', iconUrl: '/icons/connectors/microsoft-calendar.svg', Icon: Calendar },
+  microsoft_teams:    { label: 'Microsoft Teams',            color: '#6264A7', iconUrl: '/icons/connectors/microsoft-teams.svg',    Icon: MessageSquare },
+  onedrive:           { label: 'OneDrive',                   color: '#0078D4', iconUrl: '/icons/connectors/onedrive.svg',           Icon: HardDrive },
+  sharepoint:         { label: 'SharePoint',                 color: '#038387', iconUrl: '/icons/connectors/sharepoint.svg',         Icon: Globe },
 
   // â”€â”€ Chat & Messaging â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   slack:              { label: 'Slack',              color: '#4A154B', iconUrl: '/icons/connectors/slack.svg',                          Icon: MessageSquare },
@@ -101,6 +109,8 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
 
   // â”€â”€ Design â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   figma:              { label: 'Figma',              color: '#F24E1E', iconUrl: 'https://cdn.simpleicons.org/figma/F24E1E',            Icon: Layout },
+  canva:              { label: 'Canva',              color: '#00C4CC', iconUrl: '/icons/connectors/canva.svg',                        Icon: Palette },
+  penpot:             { label: 'Penpot',             color: '#0D1117', iconUrl: '/icons/connectors/penpot.svg',                       Icon: Layout },
 
   // â”€â”€ Cloud & DevOps â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   vercel:             { label: 'Vercel',             color: '#000000', iconUrl: 'https://cdn.simpleicons.org/vercel/f0f0f0',           Icon: Triangle },
@@ -139,10 +149,13 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   // â”€â”€ CRM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   hubspot:            { label: 'HubSpot',            color: '#FF7A59', iconUrl: 'https://cdn.simpleicons.org/hubspot/FF7A59',          Icon: Users },
   intercom:           { label: 'Intercom',           color: '#6AFDEF', iconUrl: 'https://cdn.simpleicons.org/intercom/6AFDEF',         Icon: MessageCircle },
+  pipedrive:          { label: 'Pipedrive',          color: '#017737', iconUrl: '/icons/connectors/pipedrive.svg',                    Icon: Users },
+  attio:              { label: 'Attio',              color: '#4F46E5', iconUrl: '/icons/connectors/attio.svg',                        Icon: Users },
 
   // â”€â”€ Support â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   zendesk:            { label: 'Zendesk',            color: '#03363D', iconUrl: 'https://cdn.simpleicons.org/zendesk/f0f0f0',          Icon: LifeBuoy },
   freshdesk:          { label: 'Freshdesk',          color: '#00A656', iconUrl: null,                                                   Icon: Headphones },
+  crisp:              { label: 'Crisp',              color: '#4B60F5', iconUrl: '/icons/connectors/crisp.svg',                        Icon: MessageCircle },
 
   // â”€â”€ Social â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   buffer:             { label: 'Buffer',             color: '#231F20', iconUrl: 'https://cdn.simpleicons.org/buffer/f0f0f0',           Icon: Share2 },
@@ -152,6 +165,8 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   // â”€â”€ E-Commerce â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   shopify:            { label: 'Shopify',            color: '#7AB55C', iconUrl: 'https://cdn.simpleicons.org/shopify/7AB55C',          Icon: ShoppingBag },
   shipstation:        { label: 'ShipStation',        color: '#84C225', iconUrl: null,                                                   Icon: Truck },
+  woocommerce:        { label: 'WooCommerce',        color: '#96588A', iconUrl: '/icons/connectors/woocommerce.svg',                  Icon: ShoppingBag },
+  lemonsqueezy:       { label: 'Lemon Squeezy',      color: '#FFC233', iconUrl: '/icons/connectors/lemonsqueezy.svg',                 Icon: ShoppingBag },
 
   // â”€â”€ Finance & Payments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   stripe:             { label: 'Stripe',             color: '#635BFF', iconUrl: 'https://cdn.simpleicons.org/stripe/635BFF',           Icon: CreditCard },
@@ -197,6 +212,18 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
 
   // â”€â”€ Forms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   typeform:           { label: 'Typeform',           color: '#262627', iconUrl: 'https://cdn.simpleicons.org/typeform/f0f0f0',         Icon: FormInput },
+  tally:              { label: 'Tally',              color: '#3CCF91', iconUrl: '/icons/connectors/tally.svg',                        Icon: ClipboardList },
+  formbricks:         { label: 'Formbricks',         color: '#00C4B8', iconUrl: '/icons/connectors/formbricks.svg',                   Icon: ClipboardList },
+
+  // ── Storage ────────────────────────────────────────────────────
+  aws_s3:             { label: 'AWS S3',             color: '#569A31', iconUrl: '/icons/connectors/aws-s3.svg',                       Icon: Boxes },
+  cloudflare_r2:      { label: 'Cloudflare R2',      color: '#F38020', iconUrl: '/icons/connectors/cloudflare-r2.svg',                Icon: Boxes },
+  backblaze_b2:       { label: 'Backblaze B2',       color: '#E21E29', iconUrl: '/icons/connectors/backblaze-b2.svg',                 Icon: Boxes },
+
+  // ── Notifications ──────────────────────────────────────────────
+  novu:               { label: 'Novu',               color: '#FF4981', iconUrl: '/icons/connectors/novu.svg',                         Icon: Bell },
+  knock:              { label: 'Knock',              color: '#6C47FF', iconUrl: '/icons/connectors/knock.svg',                        Icon: Bell },
+  ntfy:               { label: 'ntfy',               color: '#317F6E', iconUrl: '/icons/connectors/ntfy.svg',                         Icon: Bell },
 
   // â”€â”€ Automation Platforms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   n8n:                { label: 'n8n',                color: '#EA4B71', iconUrl: '/icons/connectors/n8n.svg',                              Icon: Globe },

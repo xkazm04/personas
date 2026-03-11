@@ -153,8 +153,8 @@
         "category": "crm"
       },
       {
-        "name": "google_workspace",
-        "label": "Google Workspace",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
@@ -183,15 +183,15 @@
           }
         ],
         "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_send",
           "gmail_search",
           "gmail_read"
         ],
-        "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        "related_triggers": []
       },
       {
         "name": "slack",
@@ -237,7 +237,7 @@
       {
         "type": "email",
         "description": "Operator alert emails for critical failures (HubSpot sync errors, Gmail delivery failures)",
-        "required_connector": "google_workspace",
+        "required_connector": "gmail",
         "config_hints": {
           "to": "ops-team@yourcompany.com"
         }
@@ -320,7 +320,7 @@
             "type": "connector",
             "label": "Send Confirmation Email",
             "detail": "gmail_send with personalized HTML: meeting time in invitee timezone, video link, agenda, prep materials",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n10",
@@ -471,7 +471,7 @@
             "type": "connector",
             "label": "Send Reminder Email",
             "detail": "gmail_send threaded reply with meeting link, prep materials, and timezone-localized time",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n6",
@@ -497,7 +497,7 @@
             "type": "connector",
             "label": "Send Follow-up Email",
             "detail": "gmail_send threaded reply thanking invitee, summarizing next steps, requesting feedback",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n10",
@@ -642,7 +642,7 @@
             "type": "connector",
             "label": "Send Acknowledgment Email",
             "detail": "gmail_send brief email: acknowledge cancellation, offer to reschedule with Calendly link",
-            "connector": "google_workspace"
+            "connector": "google_calendar"
           },
           {
             "id": "n8",

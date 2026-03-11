@@ -54,6 +54,27 @@ import duckdb from '../../../scripts/connectors/builtin/duckdb.json';
 import googleSheets from '../../../scripts/connectors/builtin/google-sheets.json';
 import gmail from '../../../scripts/connectors/builtin/gmail.json';
 import microsoftOutlook from '../../../scripts/connectors/builtin/microsoft-outlook.json';
+import microsoftExcel from '../../../scripts/connectors/builtin/microsoft-excel.json';
+import microsoftCalendar from '../../../scripts/connectors/builtin/microsoft-calendar.json';
+import microsoftTeams from '../../../scripts/connectors/builtin/microsoft-teams.json';
+import onedrive from '../../../scripts/connectors/builtin/onedrive.json';
+import sharepoint from '../../../scripts/connectors/builtin/sharepoint.json';
+import googleCalendar from '../../../scripts/connectors/builtin/google-calendar.json';
+import canva from '../../../scripts/connectors/builtin/canva.json';
+import penpot from '../../../scripts/connectors/builtin/penpot.json';
+import pipedrive from '../../../scripts/connectors/builtin/pipedrive.json';
+import attio from '../../../scripts/connectors/builtin/attio.json';
+import crisp from '../../../scripts/connectors/builtin/crisp.json';
+import woocommerce from '../../../scripts/connectors/builtin/woocommerce.json';
+import lemonsqueezy from '../../../scripts/connectors/builtin/lemonsqueezy.json';
+import awsS3 from '../../../scripts/connectors/builtin/aws-s3.json';
+import cloudflareR2 from '../../../scripts/connectors/builtin/cloudflare-r2.json';
+import backblazeB2 from '../../../scripts/connectors/builtin/backblaze-b2.json';
+import tally from '../../../scripts/connectors/builtin/tally.json';
+import formbricks from '../../../scripts/connectors/builtin/formbricks.json';
+import novu from '../../../scripts/connectors/builtin/novu.json';
+import knock from '../../../scripts/connectors/builtin/knock.json';
+import ntfy from '../../../scripts/connectors/builtin/ntfy.json';
 
 /**
  * Builtin connector shape â€” extends the shared ConnectorDefinitionBase.
@@ -109,4 +130,25 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   googleSheets,
   gmail,
   microsoftOutlook,
+  microsoftExcel,
+  microsoftCalendar,
+  microsoftTeams,
+  onedrive,
+  sharepoint,
+  googleCalendar,
+  canva,
+  penpot,
+  pipedrive,
+  attio,
+  crisp,
+  woocommerce,
+  lemonsqueezy,
+  awsS3,
+  cloudflareR2,
+  backblazeB2,
+  tally,
+  formbricks,
+  novu,
+  knock,
+  ntfy,
 ] as BuiltinConnectorDef[];

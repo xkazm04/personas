@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, Trash2, Clock, Grid3X3, AlertCircle } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { statusBadge } from '@/lib/eval/evalFramework';
 import { EvalResultsGrid } from './EvalResultsGrid';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
@@ -41,8 +42,8 @@ export function EvalHistory({ runs, resultsMap, expandedRunId, onToggleExpand, o
             const isExpanded = expandedRunId === run.id;
             return (
               <div key={run.id} className="border border-primary/10 rounded-xl overflow-hidden" data-testid={`eval-run-${run.id}`}>
-                <button onClick={() => onToggleExpand(isExpanded ? null : run.id)}
-                  className="w-full flex items-center gap-3 px-4 py-3 bg-background/30 hover:bg-secondary/20 transition-colors text-left" data-testid={`eval-run-toggle-${run.id}`}>
+                <Button variant="ghost" onClick={() => onToggleExpand(isExpanded ? null : run.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-background/30 hover:bg-secondary/20 text-left" data-testid={`eval-run-toggle-${run.id}`}>
                   {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground/80 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground/80 flex-shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -54,11 +55,11 @@ export function EvalHistory({ runs, resultsMap, expandedRunId, onToggleExpand, o
                       {run.scenariosCount > 0 && <span className="text-sm">{run.scenariosCount} scenarios</span>}
                     </div>
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); onDelete(run.id); }}
-                    className="p-1.5 rounded-lg hover:bg-red-500/15 text-muted-foreground/80 hover:text-red-400 transition-colors" title="Delete run" data-testid={`eval-run-delete-${run.id}`}>
+                  <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); onDelete(run.id); }}
+                    className="p-1.5 hover:bg-red-500/15 text-muted-foreground/80 hover:text-red-400" title="Delete run" data-testid={`eval-run-delete-${run.id}`}>
                     <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </button>
+                  </Button>
+                </Button>
 
                 <AnimatePresence>
                   {isExpanded && (

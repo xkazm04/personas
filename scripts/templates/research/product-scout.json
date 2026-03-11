@@ -25,7 +25,7 @@
       "instructions": "## Step 1 — Load Configuration and State\nRead the configured sender list from your settings (a list of email addresses and/or domains to monitor). Load topic preference patterns from agent memory to understand which opportunity types the human reviewer tends to accept or reject.\n\n## Step 2 — Fetch Emails from Configured Senders\nFor each sender in the configured list, use `gmail_search` with query `from:{sender} is:unread` to find unprocessed emails. Retrieve message IDs. If no unread emails are found from any sender, exit silently — do not post a \"nothing found\" message.\n\n## Step 3 — Read and Parse Email Content\nFor each unread email, use `gmail_read` to fetch the full content including headers (From, Subject, Date), body text, and any embedded URLs. Extract:\n- All URLs (links to documentation, release notes, product pages, GitHub repos)\n- Service/product names mentioned\n- Version numbers or update indicators\n- Keywords indicating opportunities: \"new API\", \"v2\", \"integration\", \"connector\", \"SDK\", \"plugin\", \"webhook\", \"release\", \"update\", \"launch\", \"beta\"\n\n## Step 4 — Deduplicate Against SQLite\nFor each extracted URL, query the `scout_seen_urls` table to check if it has been processed before. Skip already-seen URLs. For new URLs, proceed to enrichment.\n\n## Step 5 — Web Enrichment\nFor each new URL found in emails:\n1. Use `web_fetch` to retrieve the page content. Extract key information: service description, API capabilities, pricing model, authentication method, and integration complexity.\n2. If the URL is dead, paywalled, or returns an error, use `web_search` to find alternative sources about the same topic (search for the service name + relevant keywords from the email context).\n3. If no alternative source is found, skip this URL and move to the next.\n4. Synthesize the enrichment into a structured summary: what the service/tool does, how it could integrate with Personas, and estimated implementation effort (low/medium/high).\n\n## Step 6 — Classify Opportunities\nFor each enriched finding, classify into one of three categories:\n- **new_connector**: A service or API not currently in the Personas connector catalog that could be valuable to integrate (e.g., a new project management tool, a CRM, a cloud provider).\n- **api_version**: An update to a service that already has a connector in Personas (e.g., Slack API v2, GitHub GraphQL migration, Notion API version bump).\n- **tooling**: A developer tool, library, framework, or infrastructure component that could enhance Personas internals (e.g., a better queue system, an LLM evaluation framework, a workflow engine).\n\nApply topic preference scoring from memory: if the reviewer has historically rejected a certain topic area (e.g., marketing tools), lower its relevance score. If they consistently accept another area (e.g., database connectors), boost it.\n\n## Step 7 — Store in SQLite\nInsert each new opportunity into the `scout_opportunities` table with status `pending`. Insert each new URL into `scout_seen_urls` for deduplication. Record the email ID, category, title, description, source URL, enrichment summary, and sender email.\n\n## Step 8 — Post Triage Cards to Slack\nFor each pending opportunity, post a structured card to the configured Slack channel (`#product-scout`) with:\n- Category badge (🔌 New Connector / 🔄 API Version / 🛠️ Tooling)\n- Title and one-line summary\n- Source: sender name + email subject\n- Enrichment summary (2-3 sentences of web research findings)\n- Relevance score based on topic preferences (High / Medium / Low)\n- Estimated implementation effort\n- Source URL link\n- Two interactive buttons: **Accept** ✅ and **Reject** ❌\n\nWhen the reviewer clicks Reject, prompt for a brief reason (this feeds into memory learning).\n\n## Step 9 — Process Triage Decisions\nWhen a button interaction is received:\n- **Accept**: Update the opportunity status to `accepted` in SQLite. Set `triaged_at` timestamp. Emit `opportunity.accepted` event with full opportunity data for downstream implementation agents.\n- **Reject**: Update status to `rejected`. Store the rejection reason. Emit `opportunity.rejected` event. Update topic preference memory with the rejection signal.\n\n## Step 10 — Update Topic Preference Memory\nAfter each triage decision, update the agent memory with:\n- The opportunity category and specific topic tags\n- Whether it was accepted or rejected\n- The rejection reason (if rejected)\n- Recalculate topic preference scores: acceptance_rate = accepted / (accepted + rejected) per topic\nThis data is used in Step 6 on future runs to improve relevance scoring.\n\n## Step 11 — Mark Emails as Processed\nAfter all opportunities from an email have been extracted and posted, use `gmail_mark_read` to mark the email as read and apply a `processed/scout` label.",
       "toolGuidance": "## Gmail Tools\n- **gmail_search**: Poll for unread emails from configured senders. Query: `from:{sender} is:unread`. Returns message IDs and basic metadata. Iterate over the sender list and collect all matching message IDs.\n- **gmail_read**: Fetch full email content by message ID. Extract From, Subject, Date, Body (plain text preferred, fall back to HTML), and parse all URLs from the body content.\n- **gmail_mark_read**: After processing, mark email as read and apply label: `{\"addLabelIds\": [\"Label_scout_processed\"], \"removeLabelIds\": [\"UNREAD\"]}`.\n\n## Web Research Tools\n- **web_fetch**: Retrieve URL content for enrichment. Use for documentation pages, release notes, GitHub READMEs, and product pages. Extract structured information about capabilities, APIs, and integration methods.\n- **web_search**: Search the web when a URL fails or for additional context. Queries like `\"{service_name}\" API integration documentation` or `\"{service_name}\" connector webhook`. Use to find alternative sources when primary URLs are inaccessible.\n\n## SQLite (via http_request + sqlite connector)\n- **Dedup check**: `SELECT url FROM scout_seen_urls WHERE url = ?` — check before processing a URL.\n- **Insert opportunity**: `INSERT INTO scout_opportunities (id, email_id, title, category, description, source_url, enrichment_summary, status, sender_email) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)`\n- **Insert URL**: `INSERT INTO scout_seen_urls (url, opportunity_id) VALUES (?, ?)`\n- **Update status**: `UPDATE scout_opportunities SET status = ?, rejection_reason = ?, triaged_at = CURRENT_TIMESTAMP WHERE id = ?`\n- **Pending reviews**: `SELECT * FROM scout_opportunities WHERE status = 'pending' ORDER BY discovered_at DESC`\n\n## Slack (via http_request + slack connector)\n- **Post triage card**: `POST https://slack.com/api/chat.postMessage` with Block Kit blocks including section, context, actions (buttons), and divider blocks.\n- **Button payload**: Actions block with `Accept` (action_id: `scout_accept_{id}`) and `Reject` (action_id: `scout_reject_{id}`) buttons.\n- **Update after triage**: `POST https://slack.com/api/chat.update` to replace buttons with the decision result and timestamp.\n- Headers: `Authorization: Bearer xoxb-...` (auto-injected), `Content-Type: application/json`.\n\n## Local Files (agent memory)\n- **file_read topic_preferences.json**: Load learned topic preference scores at start of each run.\n- **file_write topic_preferences.json**: Update after each triage decision with recalculated acceptance rates per topic.",
       "examples": "## Example 1: New Connector Discovery\n**Email**: From `newsletter@changelog.com`, Subject: \"This week: Neon Postgres goes GA, Linear ships webhooks v2\"\n**Extracted URLs**: `https://neon.tech/blog/ga-announcement`, `https://linear.dev/docs/webhooks-v2`\n**Dedup check**: Neon URL is new, Linear URL already seen → skip Linear.\n**Web enrichment**: Fetches Neon blog post. Finds: serverless Postgres, branching databases, auto-scaling, REST/WebSocket API, OAuth2 auth.\n**Classification**: `new_connector` — Neon is not in the Personas connector catalog.\n**Slack card**:\n```\n🔌 NEW CONNECTOR | Relevance: High\nNeon Serverless Postgres — Branching database with auto-scaling\nSource: changelog.com newsletter — \"Neon Postgres goes GA\"\nEnrichment: Serverless Postgres with database branching, REST API + WebSocket support. OAuth2 authentication. Could serve as a managed database connector for personas that need isolated DB branches per execution.\nEffort: Medium (REST API, OAuth2 flow)\n[neon.tech/blog/ga-announcement]\n[✅ Accept] [❌ Reject]\n```\n\n## Example 2: API Version Update\n**Email**: From `devrel@slack.com`, Subject: \"Slack Platform — Block Kit v3 preview\"\n**Extracted URL**: `https://api.slack.com/block-kit/v3-preview`\n**Web enrichment**: New Block Kit components, interactive modals v2, richer message formatting.\n**Classification**: `api_version` — Slack connector already exists, this is an API update.\n**Topic preferences**: Reviewer has accepted 8/10 Slack-related opportunities → Relevance: High.\n**Slack card**:\n```\n🔄 API VERSION | Relevance: High\nSlack Block Kit v3 — New interactive components and modal improvements\nSource: devrel@slack.com — \"Block Kit v3 preview\"\nEnrichment: Introduces composable interactive blocks, modal v2 with multi-step flows, and rich text input components. Existing Slack connector templates would benefit from updated Block Kit usage.\nEffort: Low (additive, backward-compatible)\n[api.slack.com/block-kit/v3-preview]\n[✅ Accept] [❌ Reject]\n```\n\n## Example 3: Rejected Tooling with Learning\n**Email**: From `digest@techcrunch.com`, Subject: \"AI marketing startup raises $50M\"\n**Classification**: `tooling` — marketing automation platform.\n**Topic preferences**: Reviewer has rejected 6/7 marketing-related opportunities.\n**Slack card posted** with Relevance: Low.\n**Reviewer clicks Reject**: Reason: \"Not relevant to our platform focus.\"\n**Memory update**: Marketing topic acceptance rate drops to 1/8 (12.5%). Future marketing-related findings will be scored even lower.",
-      "errorHandling": "## Gmail Failures\n- **Auth expired (401)**: Post a warning message to `#product-scout`: \"⚠️ Gmail authentication expired — Product Scout cannot fetch emails. Please reauthorize the Google Workspace connector.\" Skip the current run.\n- **Rate limit (429)**: Exponential backoff starting at 30 seconds, max 3 retries. If still failing, post warning and skip.\n- **Zero emails found**: Exit silently. No message posted — this is normal when there are no new emails.\n\n## Web Fetch/Search Failures\n- **URL dead or 404**: Use `web_search` to find alternative sources about the same topic (extract service name + keywords from the email context). Search query: `\"{service_name}\" API documentation integration`.\n- **Paywall or 403**: Same fallback — search for public documentation or blog posts about the service.\n- **No alternative found**: Skip this URL entirely. Do not create an opportunity without enrichment data. Log the skipped URL for debugging.\n- **Rate limit on web search**: Wait and retry once. If still failing, process remaining URLs and note partial enrichment in the run summary.\n\n## SQLite Failures\n- **Database unavailable**: Post error message to `#product-scout`: \"❌ Product Scout database is unavailable. Run cannot proceed — opportunities cannot be stored or deduplicated.\" Emit `opportunity.failed` event. Do not fall back to file storage.\n- **Table not found**: Same error message with additional note: \"SQLite tables have not been created. Please run the adoption wizard to set up the database schema.\"\n- **Write failure**: Post error to Slack with the specific SQL error. Skip the affected opportunity but continue processing remaining ones.\n\n## Slack Failures\n- **Channel not found**: Log error. Queue opportunity cards to `pending_posts.json` for manual review.\n- **Rate limit (429)**: Queue and retry after `Retry-After` header duration.\n- **Button interaction failure**: If the button callback fails to update SQLite, post a threaded reply acknowledging the decision and noting the database update failed.",
+      "errorHandling": "## Gmail Failures\n- **Auth expired (401)**: Post a warning message to `#product-scout`: \"⚠️ Gmail authentication expired — Product Scout cannot fetch emails. Please reauthorize the Gmail connector.\" Skip the current run.\n- **Rate limit (429)**: Exponential backoff starting at 30 seconds, max 3 retries. If still failing, post warning and skip.\n- **Zero emails found**: Exit silently. No message posted — this is normal when there are no new emails.\n\n## Web Fetch/Search Failures\n- **URL dead or 404**: Use `web_search` to find alternative sources about the same topic (extract service name + keywords from the email context). Search query: `\"{service_name}\" API documentation integration`.\n- **Paywall or 403**: Same fallback — search for public documentation or blog posts about the service.\n- **No alternative found**: Skip this URL entirely. Do not create an opportunity without enrichment data. Log the skipped URL for debugging.\n- **Rate limit on web search**: Wait and retry once. If still failing, process remaining URLs and note partial enrichment in the run summary.\n\n## SQLite Failures\n- **Database unavailable**: Post error message to `#product-scout`: \"❌ Product Scout database is unavailable. Run cannot proceed — opportunities cannot be stored or deduplicated.\" Emit `opportunity.failed` event. Do not fall back to file storage.\n- **Table not found**: Same error message with additional note: \"SQLite tables have not been created. Please run the adoption wizard to set up the database schema.\"\n- **Write failure**: Post error to Slack with the specific SQL error. Skip the affected opportunity but continue processing remaining ones.\n\n## Slack Failures\n- **Channel not found**: Log error. Queue opportunity cards to `pending_posts.json` for manual review.\n- **Rate limit (429)**: Queue and retry after `Retry-After` header duration.\n- **Button interaction failure**: If the button callback fails to update SQLite, post a threaded reply acknowledging the decision and noting the database update failed.",
       "customSections": [
         {
           "title": "Database Schema (SQLite)",
@@ -116,36 +116,39 @@
     ],
     "suggested_connectors": [
       {
-        "name": "google_workspace",
-        "label": "Google Workspace",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
             "key": "client_id",
-            "label": "Client ID",
+            "label": "OAuth Client ID",
             "type": "text",
             "placeholder": "123456789-abc.apps.googleusercontent.com",
-            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "Client Secret",
+            "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-...",
-            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client Secret",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
             "required": true
           },
           {
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//0a...",
-            "helpText": "Obtained after OAuth2 consent flow. Enable Gmail API in your Google Cloud project first.",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console (console.cloud.google.com)\n2. Create or select a project\n3. Enable the Gmail API under APIs & Services → Library\n4. Go to APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID\n5. Set application type to 'Web application'\n6. Add authorized redirect URIs as needed\n7. Copy the Client ID and Client Secret\n8. Complete the OAuth consent flow to obtain a refresh token\n9. Ensure the scope `gmail.readonly` is granted (gmail.modify if you want label management)",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_search",
           "gmail_read",
@@ -153,10 +156,7 @@
         ],
         "related_triggers": [
           0
-        ],
-        "api_base_url": "https://gmail.googleapis.com/gmail/v1",
-        "role": "email_source",
-        "category": "productivity"
+        ]
       },
       {
         "name": "slack",
@@ -247,7 +247,7 @@
             "type": "connector",
             "label": "Search Gmail per sender",
             "detail": "gmail_search with query 'from:{sender} is:unread' for each configured sender",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n4",
@@ -260,7 +260,7 @@
             "type": "connector",
             "label": "Read email content",
             "detail": "gmail_read to fetch full body, headers, and extract all URLs",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n6",
@@ -312,7 +312,7 @@
             "type": "connector",
             "label": "Mark email as read",
             "detail": "gmail_mark_read with Label_scout_processed label",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n14",
@@ -334,21 +334,89 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "n1", "target": "n2" },
-          { "id": "e2", "source": "n2", "target": "n3" },
-          { "id": "e3", "source": "n3", "target": "n4" },
-          { "id": "e4", "source": "n4", "target": "n5", "label": "Yes", "variant": "yes" },
-          { "id": "e5", "source": "n4", "target": "n15", "label": "No", "variant": "no" },
-          { "id": "e6", "source": "n5", "target": "n6" },
-          { "id": "e7", "source": "n6", "target": "n7" },
-          { "id": "e8", "source": "n7", "target": "n8", "label": "Yes", "variant": "yes" },
-          { "id": "e9", "source": "n7", "target": "n16", "label": "No", "variant": "no" },
-          { "id": "e10", "source": "n8", "target": "n9" },
-          { "id": "e11", "source": "n9", "target": "n10" },
-          { "id": "e12", "source": "n10", "target": "n11" },
-          { "id": "e13", "source": "n11", "target": "n12" },
-          { "id": "e14", "source": "n12", "target": "n13" },
-          { "id": "e15", "source": "n13", "target": "n14" }
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n15",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n16",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e11",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e12",
+            "source": "n10",
+            "target": "n11"
+          },
+          {
+            "id": "e13",
+            "source": "n11",
+            "target": "n12"
+          },
+          {
+            "id": "e14",
+            "source": "n12",
+            "target": "n13"
+          },
+          {
+            "id": "e15",
+            "source": "n13",
+            "target": "n14"
+          }
         ]
       },
       {
@@ -421,16 +489,60 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "n1", "target": "n2" },
-          { "id": "e2", "source": "n2", "target": "n3", "label": "Accept", "variant": "yes" },
-          { "id": "e3", "source": "n2", "target": "n5", "label": "Reject", "variant": "no" },
-          { "id": "e4", "source": "n3", "target": "n4" },
-          { "id": "e5", "source": "n4", "target": "n8" },
-          { "id": "e6", "source": "n5", "target": "n6" },
-          { "id": "e7", "source": "n6", "target": "n7" },
-          { "id": "e8", "source": "n7", "target": "n8" },
-          { "id": "e9", "source": "n8", "target": "n9" },
-          { "id": "e10", "source": "n9", "target": "n10" }
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "label": "Accept",
+            "variant": "yes"
+          },
+          {
+            "id": "e3",
+            "source": "n2",
+            "target": "n5",
+            "label": "Reject",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n8"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e10",
+            "source": "n9",
+            "target": "n10"
+          }
         ]
       },
       {
@@ -502,18 +614,76 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "n1", "target": "n2" },
-          { "id": "e2", "source": "n2", "target": "n3", "label": "Gmail", "variant": "error" },
-          { "id": "e3", "source": "n2", "target": "n4", "label": "Web", "variant": "error" },
-          { "id": "e4", "source": "n2", "target": "n8", "label": "SQLite", "variant": "error" },
-          { "id": "e5", "source": "n3", "target": "n9" },
-          { "id": "e6", "source": "n4", "target": "n5" },
-          { "id": "e7", "source": "n5", "target": "n6", "label": "Yes", "variant": "yes" },
-          { "id": "e8", "source": "n5", "target": "n7", "label": "No", "variant": "no" },
-          { "id": "e9", "source": "n6", "target": "n10" },
-          { "id": "e10", "source": "n7", "target": "n10" },
-          { "id": "e11", "source": "n8", "target": "n9" },
-          { "id": "e12", "source": "n9", "target": "n10" }
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "label": "Gmail",
+            "variant": "error"
+          },
+          {
+            "id": "e3",
+            "source": "n2",
+            "target": "n4",
+            "label": "Web",
+            "variant": "error"
+          },
+          {
+            "id": "e4",
+            "source": "n2",
+            "target": "n8",
+            "label": "SQLite",
+            "variant": "error"
+          },
+          {
+            "id": "e5",
+            "source": "n3",
+            "target": "n9"
+          },
+          {
+            "id": "e6",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e7",
+            "source": "n5",
+            "target": "n6",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e8",
+            "source": "n5",
+            "target": "n7",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e9",
+            "source": "n6",
+            "target": "n10"
+          },
+          {
+            "id": "e10",
+            "source": "n7",
+            "target": "n10"
+          },
+          {
+            "id": "e11",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e12",
+            "source": "n9",
+            "target": "n10"
+          }
         ]
       }
     ],

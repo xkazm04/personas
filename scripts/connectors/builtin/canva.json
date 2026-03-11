@@ -1,0 +1,40 @@
+{
+  "id": "builtin-canva",
+  "name": "canva",
+  "label": "Canva",
+  "color": "#00C4CC",
+  "icon_url": "/icons/connectors/canva.svg",
+  "category": "design",
+  "fields": [
+    {
+      "key": "access_token",
+      "label": "Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "CNV...",
+      "helpText": "Generate at canva.com/developers → Your Apps → Generate Token"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.canva.com/rest/v1/users/me",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
+    "description": "Validates access token via Canva /users/me endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Canva design platform for creating, managing, and exporting designs via the Canva Connect API.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://www.canva.dev/docs/connect/",
+    "setup_guide": "1. Go to canva.com/developers and sign in.\n2. Create a new integration or select an existing one.\n3. Generate an access token with the required scopes.\n4. Copy the token and paste it here.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "pat", "label": "PAT", "type": "credential", "is_default": true}
+    ]
+  }
+}

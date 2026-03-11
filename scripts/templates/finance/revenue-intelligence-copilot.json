@@ -159,44 +159,44 @@
         "category": "crm"
       },
       {
-        "name": "google_workspace",
-        "label": "Google Workspace (Gmail)",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
             "key": "client_id",
-            "label": "OAuth2 Client ID",
+            "label": "OAuth Client ID",
             "type": "text",
-            "placeholder": "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
-            "helpText": "From Google Cloud Console -> APIs & Services -> Credentials -> OAuth 2.0 Client IDs",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "OAuth2 Client Secret",
+            "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-EXAMPLE_SECRET_REPLACE_ME",
-            "helpText": "Displayed when creating the OAuth2 client in Google Cloud Console",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
             "required": true
           },
           {
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//0EXAMPLE_REFRESH_TOKEN_REPLACE_ME",
-            "helpText": "Obtained during the OAuth2 consent flow. Use the OAuth Playground or your app's auth callback.",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Gmail API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app' or 'Web application'.\n5. Complete the OAuth consent screen configuration.\n6. Copy the Client ID and Client Secret.\n7. Complete the OAuth flow to obtain a refresh token with Gmail send and read scopes.",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_send",
           "gmail_search"
         ],
-        "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        "related_triggers": []
       },
       {
         "name": "slack",
@@ -383,26 +383,118 @@
           }
         ],
         "edges": [
-          {"id": "pe1", "source": "p1", "target": "p2"},
-          {"id": "pe2", "source": "p2", "target": "p3"},
-          {"id": "pe3", "source": "p3", "target": "p4"},
-          {"id": "pe4", "source": "p4", "target": "p5", "label": "Yes", "variant": "yes"},
-          {"id": "pe5", "source": "p4", "target": "p18", "label": "No new events", "variant": "no"},
-          {"id": "pe6", "source": "p5", "target": "p6"},
-          {"id": "pe7", "source": "p6", "target": "p7"},
-          {"id": "pe8", "source": "p7", "target": "p8", "label": "Yes", "variant": "yes"},
-          {"id": "pe9", "source": "p7", "target": "p9", "label": "No — Stripe-only scoring", "variant": "no"},
-          {"id": "pe10", "source": "p8", "target": "p9"},
-          {"id": "pe11", "source": "p9", "target": "p10"},
-          {"id": "pe12", "source": "p10", "target": "p11", "label": "Yes — alert", "variant": "yes"},
-          {"id": "pe13", "source": "p10", "target": "p15", "label": "No — log only", "variant": "no"},
-          {"id": "pe14", "source": "p11", "target": "p12"},
-          {"id": "pe15", "source": "p12", "target": "p13"},
-          {"id": "pe16", "source": "p13", "target": "p14"},
-          {"id": "pe17", "source": "p14", "target": "p15"},
-          {"id": "pe18", "source": "p15", "target": "p16"},
-          {"id": "pe19", "source": "p16", "target": "p17"},
-          {"id": "pe20", "source": "p17", "target": "p18"}
+          {
+            "id": "pe1",
+            "source": "p1",
+            "target": "p2"
+          },
+          {
+            "id": "pe2",
+            "source": "p2",
+            "target": "p3"
+          },
+          {
+            "id": "pe3",
+            "source": "p3",
+            "target": "p4"
+          },
+          {
+            "id": "pe4",
+            "source": "p4",
+            "target": "p5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "pe5",
+            "source": "p4",
+            "target": "p18",
+            "label": "No new events",
+            "variant": "no"
+          },
+          {
+            "id": "pe6",
+            "source": "p5",
+            "target": "p6"
+          },
+          {
+            "id": "pe7",
+            "source": "p6",
+            "target": "p7"
+          },
+          {
+            "id": "pe8",
+            "source": "p7",
+            "target": "p8",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "pe9",
+            "source": "p7",
+            "target": "p9",
+            "label": "No — Stripe-only scoring",
+            "variant": "no"
+          },
+          {
+            "id": "pe10",
+            "source": "p8",
+            "target": "p9"
+          },
+          {
+            "id": "pe11",
+            "source": "p9",
+            "target": "p10"
+          },
+          {
+            "id": "pe12",
+            "source": "p10",
+            "target": "p11",
+            "label": "Yes — alert",
+            "variant": "yes"
+          },
+          {
+            "id": "pe13",
+            "source": "p10",
+            "target": "p15",
+            "label": "No — log only",
+            "variant": "no"
+          },
+          {
+            "id": "pe14",
+            "source": "p11",
+            "target": "p12"
+          },
+          {
+            "id": "pe15",
+            "source": "p12",
+            "target": "p13"
+          },
+          {
+            "id": "pe16",
+            "source": "p13",
+            "target": "p14"
+          },
+          {
+            "id": "pe17",
+            "source": "p14",
+            "target": "p15"
+          },
+          {
+            "id": "pe18",
+            "source": "p15",
+            "target": "p16"
+          },
+          {
+            "id": "pe19",
+            "source": "p16",
+            "target": "p17"
+          },
+          {
+            "id": "pe20",
+            "source": "p17",
+            "target": "p18"
+          }
         ]
       },
       {
@@ -507,21 +599,85 @@
           }
         ],
         "edges": [
-          {"id": "xe1", "source": "x1", "target": "x2"},
-          {"id": "xe2", "source": "x2", "target": "x3"},
-          {"id": "xe3", "source": "x3", "target": "x4"},
-          {"id": "xe4", "source": "x4", "target": "x5"},
-          {"id": "xe5", "source": "x5", "target": "x6"},
-          {"id": "xe6", "source": "x6", "target": "x7"},
-          {"id": "xe7", "source": "x7", "target": "x8", "label": "Yes — HOT", "variant": "yes"},
-          {"id": "xe8", "source": "x7", "target": "x13", "label": "No — log and monitor", "variant": "no"},
-          {"id": "xe9", "source": "x8", "target": "x9"},
-          {"id": "xe10", "source": "x9", "target": "x10"},
-          {"id": "xe11", "source": "x10", "target": "x11"},
-          {"id": "xe12", "source": "x11", "target": "x12"},
-          {"id": "xe13", "source": "x12", "target": "x13"},
-          {"id": "xe14", "source": "x13", "target": "x14"},
-          {"id": "xe15", "source": "x14", "target": "x15"}
+          {
+            "id": "xe1",
+            "source": "x1",
+            "target": "x2"
+          },
+          {
+            "id": "xe2",
+            "source": "x2",
+            "target": "x3"
+          },
+          {
+            "id": "xe3",
+            "source": "x3",
+            "target": "x4"
+          },
+          {
+            "id": "xe4",
+            "source": "x4",
+            "target": "x5"
+          },
+          {
+            "id": "xe5",
+            "source": "x5",
+            "target": "x6"
+          },
+          {
+            "id": "xe6",
+            "source": "x6",
+            "target": "x7"
+          },
+          {
+            "id": "xe7",
+            "source": "x7",
+            "target": "x8",
+            "label": "Yes — HOT",
+            "variant": "yes"
+          },
+          {
+            "id": "xe8",
+            "source": "x7",
+            "target": "x13",
+            "label": "No — log and monitor",
+            "variant": "no"
+          },
+          {
+            "id": "xe9",
+            "source": "x8",
+            "target": "x9"
+          },
+          {
+            "id": "xe10",
+            "source": "x9",
+            "target": "x10"
+          },
+          {
+            "id": "xe11",
+            "source": "x10",
+            "target": "x11"
+          },
+          {
+            "id": "xe12",
+            "source": "x11",
+            "target": "x12"
+          },
+          {
+            "id": "xe13",
+            "source": "x12",
+            "target": "x13"
+          },
+          {
+            "id": "xe14",
+            "source": "x13",
+            "target": "x14"
+          },
+          {
+            "id": "xe15",
+            "source": "x14",
+            "target": "x15"
+          }
         ]
       },
       {
@@ -636,23 +792,93 @@
           }
         ],
         "edges": [
-          {"id": "me1", "source": "m1", "target": "m2"},
-          {"id": "me2", "source": "m2", "target": "m3"},
-          {"id": "me3", "source": "m3", "target": "m4"},
-          {"id": "me4", "source": "m4", "target": "m5"},
-          {"id": "me5", "source": "m5", "target": "m6"},
-          {"id": "me6", "source": "m6", "target": "m7"},
-          {"id": "me7", "source": "m7", "target": "m8"},
-          {"id": "me8", "source": "m8", "target": "m9"},
-          {"id": "me9", "source": "m9", "target": "m10"},
-          {"id": "me10", "source": "m10", "target": "m11"},
-          {"id": "me11", "source": "m11", "target": "m12"},
-          {"id": "me12", "source": "m12", "target": "m13"},
-          {"id": "me13", "source": "m13", "target": "m14"},
-          {"id": "me14", "source": "m14", "target": "m15"},
-          {"id": "me15", "source": "m15", "target": "m17"},
-          {"id": "me16", "source": "m2", "target": "m16", "variant": "error"},
-          {"id": "me17", "source": "m16", "target": "m17", "variant": "error"}
+          {
+            "id": "me1",
+            "source": "m1",
+            "target": "m2"
+          },
+          {
+            "id": "me2",
+            "source": "m2",
+            "target": "m3"
+          },
+          {
+            "id": "me3",
+            "source": "m3",
+            "target": "m4"
+          },
+          {
+            "id": "me4",
+            "source": "m4",
+            "target": "m5"
+          },
+          {
+            "id": "me5",
+            "source": "m5",
+            "target": "m6"
+          },
+          {
+            "id": "me6",
+            "source": "m6",
+            "target": "m7"
+          },
+          {
+            "id": "me7",
+            "source": "m7",
+            "target": "m8"
+          },
+          {
+            "id": "me8",
+            "source": "m8",
+            "target": "m9"
+          },
+          {
+            "id": "me9",
+            "source": "m9",
+            "target": "m10"
+          },
+          {
+            "id": "me10",
+            "source": "m10",
+            "target": "m11"
+          },
+          {
+            "id": "me11",
+            "source": "m11",
+            "target": "m12"
+          },
+          {
+            "id": "me12",
+            "source": "m12",
+            "target": "m13"
+          },
+          {
+            "id": "me13",
+            "source": "m13",
+            "target": "m14"
+          },
+          {
+            "id": "me14",
+            "source": "m14",
+            "target": "m15"
+          },
+          {
+            "id": "me15",
+            "source": "m15",
+            "target": "m17"
+          },
+          {
+            "id": "me16",
+            "source": "m2",
+            "target": "m16",
+            "variant": "error"
+          },
+          {
+            "id": "me17",
+            "source": "m16",
+            "target": "m17",
+            "variant": "error"
+          }
         ]
       }
     ],
@@ -683,7 +909,10 @@
         "id": "stripe_mode",
         "question": "Are you using Stripe in test mode or live mode?",
         "type": "select",
-        "options": ["Test mode (sk_test_)", "Live mode (sk_live_)"],
+        "options": [
+          "Test mode (sk_test_)",
+          "Live mode (sk_live_)"
+        ],
         "default": "Test mode (sk_test_)",
         "helpText": "Start with test mode to verify the integration works correctly before switching to live mode. Test mode uses simulated events and will not affect real payments.",
         "impact": "Determines which Stripe API key prefix to expect and whether events are real or simulated."
@@ -700,7 +929,11 @@
         "id": "churn_thresholds",
         "question": "What churn risk score thresholds should trigger alerts?",
         "type": "select",
-        "options": ["Conservative (Yellow: 40+, Red: 70+)", "Standard (Yellow: 31+, Red: 61+)", "Aggressive (Yellow: 20+, Red: 50+)"],
+        "options": [
+          "Conservative (Yellow: 40+, Red: 70+)",
+          "Standard (Yellow: 31+, Red: 61+)",
+          "Aggressive (Yellow: 20+, Red: 50+)"
+        ],
         "default": "Standard (Yellow: 31+, Red: 61+)",
         "helpText": "Conservative reduces alert noise but may miss early warnings. Aggressive catches more risks but generates more alerts. Start with Standard and adjust based on prediction accuracy.",
         "impact": "Controls alert volume and sensitivity of the churn detection system."
@@ -718,7 +951,10 @@
         "id": "outreach_enabled",
         "question": "Should the copilot automatically send retention and expansion emails?",
         "type": "select",
-        "options": ["Yes — send automatically", "No — Slack alerts only, I will send emails manually"],
+        "options": [
+          "Yes — send automatically",
+          "No — Slack alerts only, I will send emails manually"
+        ],
         "default": "No — Slack alerts only, I will send emails manually",
         "helpText": "When enabled, the copilot sends personalized retention emails to at-risk accounts and upgrade suggestions to expansion-ready accounts. Emails are always suppressed if one was sent in the last 14 days.",
         "impact": "Controls whether proactive outreach is automated or manual."
@@ -735,7 +971,13 @@
         "id": "mrr_currency",
         "question": "What is your primary billing currency?",
         "type": "select",
-        "options": ["USD", "EUR", "GBP", "CAD", "AUD"],
+        "options": [
+          "USD",
+          "EUR",
+          "GBP",
+          "CAD",
+          "AUD"
+        ],
         "default": "USD",
         "helpText": "Used for MRR calculations and report formatting. If you bill in multiple currencies, select the primary one — others will be converted using approximate rates.",
         "impact": "Determines currency formatting in reports and revenue calculations."

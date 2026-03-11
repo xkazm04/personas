@@ -122,8 +122,8 @@
     ],
     "suggested_connectors": [
       {
-        "name": "google_workspace",
-        "label": "Google Workspace (Gmail)",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
@@ -138,12 +138,23 @@
             "key": "client_secret",
             "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-...",
-            "helpText": "Shown alongside Client ID in Google Cloud Console",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to console.cloud.google.com and create or select a project.\n2. Enable Gmail API under APIs & Services → Library.\n3. Configure OAuth consent screen (External, add your email as test user).\n4. Create OAuth 2.0 credentials (Web Application type).\n5. Add authorized redirect URI for Personas.\n6. Download credentials and paste Client ID and Secret here.",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_send",
           "gmail_search",
@@ -152,10 +163,7 @@
         ],
         "related_triggers": [
           1
-        ],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        ]
       },
       {
         "name": "notion",
@@ -353,7 +361,7 @@
       {
         "type": "email",
         "description": "Customer confirmation email on onboarding completion — sent via Gmail with full step summary",
-        "required_connector": "google_workspace",
+        "required_connector": "gmail",
         "config_hints": {
           "from_name": "Onboarding Team",
           "reply_to": "onboarding@yourcompany.com"
@@ -403,7 +411,7 @@
             "type": "connector",
             "label": "Send Data-Request Email",
             "detail": "gmail_send — request missing fields from customer with specific field list and reply instructions",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n5",
@@ -417,7 +425,7 @@
             "type": "connector",
             "label": "Stage A: Send Welcome Email",
             "detail": "gmail_send — personalized HTML email with name, plan, Notion page link, and next-steps summary",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n7",
@@ -459,7 +467,7 @@
             "type": "connector",
             "label": "Stage D: Send Prep Materials Email",
             "detail": "gmail_send — Calendly link, session agenda, onboarding guide, and account access summary",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n13",
@@ -812,7 +820,7 @@
             "type": "connector",
             "label": "Poll Gmail for Customer Reply",
             "detail": "gmail_search query: 'from:{customer_email} subject:onboarding is:unread' — check for data submission reply",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n6",

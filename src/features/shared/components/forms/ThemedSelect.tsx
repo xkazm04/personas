@@ -8,6 +8,10 @@ export interface ThemedSelectOption {
   value: string;
   label: string;
   description?: string;
+  /** Optional icon URL (local SVG rendered via mask-image, or external image) */
+  iconUrl?: string;
+  /** Brand color for local SVG mask icons */
+  iconColor?: string;
 }
 
 export interface ThemedSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
@@ -23,6 +27,34 @@ export interface ThemedSelectProps extends SelectHTMLAttributes<HTMLSelectElemen
   onValueChange?: (value: string) => void;
   /** Placeholder text (filterable mode) */
   placeholder?: string;
+}
+
+// ── Icon helper for options ──────────────────────────────────────
+
+const isLocalSvg = (url: string) => url.startsWith('/') && url.endsWith('.svg');
+
+function OptionIcon({ url, color, label }: { url: string; color?: string; label: string }) {
+  if (isLocalSvg(url)) {
+    return (
+      <span
+        role="img"
+        aria-label={label}
+        className="w-4 h-4 inline-block shrink-0"
+        style={{
+          maskImage: `url(${url})`,
+          maskSize: 'contain',
+          maskRepeat: 'no-repeat',
+          maskPosition: 'center',
+          WebkitMaskImage: `url(${url})`,
+          WebkitMaskSize: 'contain',
+          WebkitMaskRepeat: 'no-repeat',
+          WebkitMaskPosition: 'center',
+          backgroundColor: color || 'currentColor',
+        }}
+      />
+    );
+  }
+  return <img src={url} alt={label} className="w-4 h-4 shrink-0 rounded" referrerPolicy="no-referrer" crossOrigin="anonymous" />;
 }
 
 // ── Filterable dropdown ──────────────────────────────────────────
@@ -56,7 +88,7 @@ function FilterableSelect({
     return options.filter((o) => o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q));
   }, [options, debouncedQuery]);
 
-  const selectedLabel = options.find((o) => o.value === value)?.label;
+  const selectedOption = options.find((o) => o.value === value);
 
   const handleSelect = (val: string) => {
     onValueChange?.(val);
@@ -76,7 +108,10 @@ function FilterableSelect({
     <div ref={containerRef} className={`relative ${wrapperClassName}`}>
       {/* Trigger */}
       <button type="button" onClick={() => setOpen((p) => !p)} className={baseClasses}>
-        <span className={selectedLabel ? '' : 'text-muted-foreground/50'}>{selectedLabel ?? placeholder}</span>
+        <span className={`flex items-center gap-2 ${selectedOption ? '' : 'text-muted-foreground/50'}`}>
+          {selectedOption?.iconUrl && <OptionIcon url={selectedOption.iconUrl} color={selectedOption.iconColor} label={selectedOption.label} />}
+          {selectedOption?.label ?? placeholder}
+        </span>
       </button>
       <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/60 pointer-events-none transition-transform ${open ? 'rotate-180' : ''}`} />
 
@@ -113,6 +148,7 @@ function FilterableSelect({
                 <span className="w-4 flex-shrink-0">
                   {opt.value === value && <Check className="w-3.5 h-3.5 text-primary" />}
                 </span>
+                {opt.iconUrl && <OptionIcon url={opt.iconUrl} color={opt.iconColor} label={opt.label} />}
                 <span className="truncate">{highlightMatch(opt.label, debouncedQuery.trim())}</span>
               </button>
             ))}

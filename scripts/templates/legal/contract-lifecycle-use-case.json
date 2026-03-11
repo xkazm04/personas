@@ -220,36 +220,44 @@
         "category": "messaging"
       },
       {
-        "name": "google_workspace",
-        "label": "Google Workspace (Gmail)",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
             "key": "client_id",
-            "label": "OAuth2 Client ID",
+            "label": "OAuth Client ID",
             "type": "text",
-            "placeholder": "123456789-abcdefg.apps.googleusercontent.com",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
             "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "OAuth2 Client Secret",
+            "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "Generated alongside the Client ID in Google Cloud Console",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to console.cloud.google.com and select or create a project.\n2. Enable the Gmail API under APIs & Services → Library.\n3. Go to APIs & Services → Credentials.\n4. Click 'Create Credentials' → 'OAuth 2.0 Client ID'.\n5. Select 'Web application' as the application type.\n6. Add the Personas OAuth redirect URI to Authorized redirect URIs.\n7. Copy the Client ID and Client Secret.\n8. Configure the OAuth consent screen with the gmail.send and gmail.readonly scopes.\n9. If using a Google Workspace account, an admin may need to approve the app for domain-wide access.",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_send",
           "gmail_search"
         ],
-        "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        "related_triggers": []
       }
     ],
     "suggested_notification_channels": [
@@ -270,7 +278,7 @@
       {
         "type": "email",
         "description": "Gmail-based outreach for signer reminders, contract owner escalations, and renewal notifications. Personalized emails with document context and signing links.",
-        "required_connector": "google_workspace",
+        "required_connector": "gmail",
         "config_hints": {
           "from_alias": "Contract Manager",
           "signature": "— Contract Lifecycle Manager (Automated)"
@@ -550,7 +558,7 @@
             "type": "connector",
             "label": "Send Gmail Reminder",
             "detail": "Send personalized reminder email to pending signer via gmail_send with HTML body and signing link",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n9",
@@ -571,7 +579,7 @@
             "type": "connector",
             "label": "Escalate to Owner (Email)",
             "detail": "Send escalation email to contract owner via gmail_send with full contract context",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n12",
@@ -727,7 +735,7 @@
             "type": "connector",
             "label": "Send Info Email (60d)",
             "detail": "Send informational email to contract owner via gmail_send: 'Contract X renews in ~60 days'",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n7",
@@ -741,7 +749,7 @@
             "type": "connector",
             "label": "Send Reminder Email (30d)",
             "detail": "Send renewal reminder email to contract owner with action items and renewal options",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n9",
@@ -755,7 +763,7 @@
             "type": "connector",
             "label": "Send Urgent Email (14d)",
             "detail": "Send urgent renewal email to contract owner AND their manager via gmail_send",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n11",

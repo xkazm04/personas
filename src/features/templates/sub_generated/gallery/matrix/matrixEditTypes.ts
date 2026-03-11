@@ -25,6 +25,12 @@ export interface MatrixEditState {
   memoryScope: string;
   /** Notification strategy preset */
   messagePreset: string;
+  /** Database setup mode */
+  databaseMode?: 'create' | 'existing';
+  /** Database table name (existing mode) */
+  databaseTable?: string;
+  /** Database schema name (existing mode) */
+  databaseSchema?: string;
 }
 
 export interface MatrixEditCallbacks {
@@ -33,7 +39,7 @@ export interface MatrixEditCallbacks {
   onTriggerConfigChange: (index: number, config: Record<string, string>) => void;
   onToggleApproval: (value: boolean) => void;
   onToggleMemory: (value: boolean) => void;
-  /** Generic preference setter for extended fields (severity, timeout, scope, messagePreset) */
+  /** Generic preference setter for extended fields (severity, timeout, scope, messagePreset, databaseMode) */
   onPreferenceChange: (key: string, value: unknown) => void;
 }
 

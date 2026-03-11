@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useCredentialForaging } from "@/hooks/design/credential/useCredentialForaging";
 import { ForagingResultCard } from "./ForagingResultCard";
+import { Button } from "@/features/shared/components/buttons";
 
 interface ForagingPanelProps {
   onComplete: () => void;
@@ -38,13 +39,15 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
     >
       {/* Header */}
       <div className="flex items-center justify-between">
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<ArrowLeft className="w-3.5 h-3.5" />}
           onClick={onBack}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground/70 hover:text-foreground/90 transition-colors"
+          className="text-muted-foreground/70 hover:text-foreground/90"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
           Back
-        </button>
+        </Button>
         {forage.phase === "results" && forage.scanResult && (
           <span className="text-sm text-muted-foreground/50">
             Scanned {forage.scanResult.scanned_sources.length} sources in{" "}
@@ -77,13 +80,16 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
                 one click.
               </p>
             </div>
-            <button
+            <Button
+              variant="accent"
+              size="sm"
+              icon={<Sparkles className="w-3.5 h-3.5" />}
               onClick={forage.scan}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500/15 text-violet-400 text-sm font-medium border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+              accentColor="violet"
+              className="bg-violet-500/15 text-violet-400 border-violet-500/25 hover:bg-violet-500/25"
             >
-              <Sparkles className="w-3.5 h-3.5" />
               Start Scan
-            </button>
+            </Button>
             <div className="text-sm text-muted-foreground/60 space-y-0.5">
               <p>Scans: ~/.aws, ~/.kube, env vars, .env, ~/.npmrc, Docker, GitHub CLI, SSH</p>
               <p>No secrets are uploaded — scanning happens entirely on your machine.</p>
@@ -132,19 +138,23 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
               </div>
               {importableCount > 0 && (
                 <div className="flex items-center gap-2">
-                  <button
+                  <Button
+                    variant="link"
+                    size="sm"
                     onClick={forage.selectAll}
-                    className="text-sm text-violet-400/80 hover:text-violet-400 transition-colors"
+                    className="text-violet-400/80 hover:text-violet-400"
                   >
                     All
-                  </button>
+                  </Button>
                   <span className="text-muted-foreground/20">|</span>
-                  <button
+                  <Button
+                    variant="link"
+                    size="sm"
                     onClick={forage.selectNone}
-                    className="text-sm text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                    className="text-muted-foreground/50 hover:text-foreground/70"
                   >
                     None
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -177,13 +187,17 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
 
             {/* Import button */}
             {forage.selected.size > 0 && (
-              <button
+              <Button
+                variant="accent"
+                size="md"
+                icon={<Download className="w-4 h-4" />}
+                block
                 onClick={handleImport}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-500/15 text-violet-400 text-sm font-medium border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+                accentColor="violet"
+                className="bg-violet-500/15 text-violet-400 border-violet-500/25 hover:bg-violet-500/25"
               >
-                <Download className="w-4 h-4" />
                 Import {forage.selected.size} credential{forage.selected.size !== 1 ? "s" : ""} to vault
-              </button>
+              </Button>
             )}
           </motion.div>
         )}
@@ -245,19 +259,23 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
               )}
             </div>
             <div className="flex items-center justify-center gap-2">
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 onClick={forage.scan}
-                className="text-sm text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+                className="text-muted-foreground/60 hover:text-foreground/80"
               >
                 Scan again
-              </button>
+              </Button>
               <span className="text-muted-foreground/20">|</span>
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 onClick={onBack}
-                className="text-sm text-violet-400/80 hover:text-violet-400 transition-colors"
+                className="text-violet-400/80 hover:text-violet-400"
               >
                 Back to vault
-              </button>
+              </Button>
             </div>
           </motion.div>
         )}
@@ -277,19 +295,23 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
               <p className="text-sm text-red-400/70 mt-1">{forage.error}</p>
             </div>
             <div className="flex items-center justify-center gap-2">
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 onClick={forage.scan}
-                className="text-sm text-violet-400/80 hover:text-violet-400 transition-colors"
+                className="text-violet-400/80 hover:text-violet-400"
               >
                 Try again
-              </button>
+              </Button>
               <span className="text-muted-foreground/20">|</span>
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 onClick={onBack}
-                className="text-sm text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+                className="text-muted-foreground/60 hover:text-foreground/80"
               >
                 Back
-              </button>
+              </Button>
             </div>
           </motion.div>
         )}

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Wrench, Zap, Link, ChevronDown, ChevronRight, AlertTriangle, Brain, Activity, ShieldCheck } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useState } from 'react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { ConnectorHealthRail } from './confirm/ConnectorHealthRail';
@@ -153,17 +154,15 @@ export function PersonaPreviewCard({
       {/* Collapsible system prompt */}
       {systemPrompt && (
         <div className="mt-3 border-t border-primary/10 pt-3">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={showPrompt ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             onClick={() => setShowPrompt(!showPrompt)}
-            className="flex items-center gap-2 text-sm text-muted-foreground/65 hover:text-muted-foreground transition-colors w-full"
+            className="text-muted-foreground/65 hover:text-muted-foreground w-full justify-start"
           >
-            {showPrompt ? (
-              <ChevronDown className="w-3.5 h-3.5" />
-            ) : (
-              <ChevronRight className="w-3.5 h-3.5" />
-            )}
-            <span>System Prompt Preview</span>
-          </button>
+            System Prompt Preview
+          </Button>
           {showPrompt && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}

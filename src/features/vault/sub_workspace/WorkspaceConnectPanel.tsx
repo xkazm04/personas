@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   RefreshCw,
 } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { GOOGLE_WORKSPACE } from './workspaceProviders';
 import { useWorkspaceConnect } from './useWorkspaceConnect';
 import type { WorkspaceService, WorkspaceProvider } from './workspaceProviders';
@@ -30,9 +31,11 @@ function ServiceCheckbox({
   disabled: boolean;
 }) {
   return (
-    <button
+    <Button
       onClick={onToggle}
       disabled={disabled}
+      variant="ghost"
+      size="md"
       className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left w-full ${
         checked
           ? 'bg-secondary/50 border-primary/25'
@@ -59,7 +62,7 @@ function ServiceCheckbox({
         <div className="text-sm font-medium text-foreground">{service.label}</div>
         <div className="text-xs text-muted-foreground/60 truncate">{service.description}</div>
       </div>
-    </button>
+    </Button>
   );
 }
 
@@ -121,12 +124,12 @@ function ProviderSection({
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button
+        <Button
           onClick={isSelectPhase ? onBack : ws.reset}
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          icon={<ArrowLeft className="w-4 h-4" />}
+        />
         <div className="flex items-center gap-2.5">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
@@ -155,12 +158,14 @@ function ProviderSection({
               {ws.selectedServices.length} of {provider.services.length} selected
             </span>
             {ws.selectedServices.length < provider.services.length && (
-              <button
+              <Button
                 onClick={ws.selectAll}
-                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                variant="link"
+                size="xs"
+                className="text-blue-400 hover:text-blue-300"
               >
                 Select all
-              </button>
+              </Button>
             )}
           </div>
 
@@ -176,13 +181,16 @@ function ProviderSection({
             ))}
           </div>
 
-          <button
+          <Button
             onClick={ws.startConnect}
             disabled={ws.selectedServices.length === 0}
-            className="w-full py-2.5 rounded-xl text-sm font-medium transition-all bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+            variant="primary"
+            size="lg"
+            block
+            className="bg-blue-600 hover:bg-blue-500"
           >
             Connect {ws.selectedServices.length} service{ws.selectedServices.length !== 1 ? 's' : ''} with one login
-          </button>
+          </Button>
         </>
       )}
 
@@ -223,21 +231,26 @@ function ProviderSection({
 
           <div className="flex gap-2">
             {(isDone || isError) && (
-              <button
+              <Button
                 onClick={onComplete}
-                className="flex-1 py-2 rounded-xl text-sm font-medium bg-secondary/40 border border-primary/15 text-foreground hover:bg-secondary/60 transition-colors"
+                variant="secondary"
+                size="md"
+                block
+                className="py-2 rounded-xl"
               >
                 Done
-              </button>
+              </Button>
             )}
             {isError && (
-              <button
+              <Button
                 onClick={ws.reset}
-                className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border border-blue-500/20 text-blue-400 hover:bg-blue-500/10 transition-colors"
+                variant="accent"
+                accentColor="blue"
+                size="md"
+                icon={<RefreshCw className="w-3.5 h-3.5" />}
               >
-                <RefreshCw className="w-3.5 h-3.5" />
                 Retry
-              </button>
+              </Button>
             )}
           </div>
         </>

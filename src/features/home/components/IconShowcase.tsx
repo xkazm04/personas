@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ICON_STYLES } from './iconStyles';
 import { ICONS, type IconMode } from './iconData';
+import { Button } from '@/features/shared/components/buttons';
 
 export default function IconShowcase() {
   const [mode, setMode] = useState<IconMode>('custom');
@@ -15,26 +16,22 @@ export default function IconShowcase() {
       {/* Switcher */}
       <div className="flex items-center justify-center gap-2">
         <div className="flex bg-secondary/40 p-1 rounded-lg border border-border/50">
-          <button
+          <Button
+            variant={mode === 'lucide' ? 'primary' : 'ghost'}
+            size="sm"
             onClick={() => setMode('lucide')}
-            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${
-              mode === 'lucide'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+            className={mode === 'lucide' ? 'shadow-sm' : ''}
           >
             Lucide (Library)
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={mode === 'custom' ? 'primary' : 'ghost'}
+            size="sm"
             onClick={() => setMode('custom')}
-            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${
-              mode === 'custom'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+            className={mode === 'custom' ? 'shadow-sm' : ''}
           >
             Personas (Animated)
-          </button>
+          </Button>
         </div>
       </div>
 

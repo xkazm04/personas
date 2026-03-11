@@ -150,45 +150,45 @@
         "category": "messaging"
       },
       {
-        "name": "google_workspace",
-        "label": "Google Workspace",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
             "key": "client_id",
-            "label": "OAuth2 Client ID",
+            "label": "OAuth Client ID",
             "type": "text",
             "placeholder": "123456789-abc.apps.googleusercontent.com",
-            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "OAuth2 Client Secret",
+            "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-...",
-            "helpText": "From the same OAuth 2.0 Client credentials page in Google Cloud Console",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
             "required": true
           },
           {
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//0abc...",
-            "helpText": "Obtained after OAuth consent flow. Enable Gmail API in Google Cloud Console first.",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app' or 'Web application'.\n5. Complete the OAuth consent screen setup.\n6. Use the client ID and secret to run the OAuth flow and obtain a refresh token.\n7. Enter all three values here.",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_send",
           "gmail_search",
           "gmail_read"
         ],
-        "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        "related_triggers": []
       }
     ],
     "suggested_notification_channels": [
@@ -211,7 +211,7 @@
       {
         "type": "email",
         "description": "Executive distribution list for formatted weekly intelligence briefings with full analysis",
-        "required_connector": "google_workspace",
+        "required_connector": "gmail",
         "config_hints": {
           "to": "executives@company.com",
           "subject_prefix": "[Competitive Intel]"

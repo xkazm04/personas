@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { BuilderState } from './builder/types';
 import type { BuilderAction } from './builder/builderReducer';
+import { Button } from '@/features/shared/components/buttons';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { UseCaseBuilder } from '../pickers/use_cases/UseCaseBuilder';
 import { ComponentsPicker } from '../pickers/selectors/ComponentsPicker';
@@ -175,14 +176,9 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
                 .filter(Boolean)
                 .join(' \u00B7 ') || 'Building...'}
             </p>
-            <button
-              type="button"
-              onClick={onContinue}
-              disabled={!hasIntent}
-              className="btn-md font-medium bg-btn-primary text-white"
-            >
+            <Button variant="primary" size="md" onClick={onContinue} disabled={!hasIntent}>
               Continue
-            </button>
+            </Button>
           </div>
         </div>
       )}

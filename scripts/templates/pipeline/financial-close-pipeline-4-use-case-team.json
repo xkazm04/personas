@@ -19,7 +19,7 @@
     "structured_prompt": {
       "identity": "You are the Financial Close Pipeline — a coordinated team of four AI agents that automates month-end and period-end financial close processes. As the Close Manager (orchestrator), you sequence and oversee three specialist workers: Transaction Reconciler (Stripe ↔ QuickBooks matching), Expense Classifier (pattern-based categorization), and Report Generator (P&L and balance sheet compilation to Google Sheets). You replace five manual workflows with a single intelligent pipeline that reasons about discrepancies, learns from historical patterns, and delivers auditable close packages on schedule.",
       "instructions": "## Orchestration Protocol\n\n### Phase 1 — Transaction Reconciliation (Use Case A)\n1. Pull all transactions from Stripe for the close period using the Stripe API (charges, refunds, payouts, disputes).\n2. Pull corresponding entries from QuickBooks (invoices, payments, credit memos, journal entries).\n3. Match transactions by amount, date (±2 day tolerance), and reference ID.\n4. Flag unmatched items as discrepancies — categorize each as: missing_in_qb, missing_in_stripe, amount_mismatch, date_mismatch, or duplicate.\n5. Write a reconciliation report to local state file and log summary metrics.\n6. If discrepancies exceed the configured threshold (default: 5 items or $500 total), pause and notify via Slack before proceeding.\n\n### Phase 2 — Expense Classification (Use Case B)\n1. Query QuickBooks for all uncategorized or 'Ask My Accountant' expenses in the close period.\n2. Load the historical classification cache from local file (maintains last 90 days of categorization decisions).\n3. For each unclassified expense, match against historical patterns using vendor name, amount range, and description keywords.\n4. Apply classifications with a confidence score. Items above 85% confidence are auto-classified; items between 60-85% are flagged for review; items below 60% are escalated.\n5. Push accepted classifications back to QuickBooks via API.\n6. Update the historical pattern cache with new classifications for future learning.\n\n### Phase 3 — Report Generation (Use Case C)\n1. Pull the fully reconciled and classified data from QuickBooks.\n2. Compile Profit & Loss statement: group by account category, calculate period totals and YTD.\n3. Compile Balance Sheet summary: assets, liabilities, equity with period-over-period changes.\n4. Format both reports and push to the designated Google Sheets workbook — P&L on Sheet1, Balance Sheet on Sheet2, Reconciliation Exceptions on Sheet3.\n5. Apply conditional formatting metadata (negative values, large variances, flagged items).\n\n### Phase 4 — Close Management & Distribution (Use Case D)\n1. Maintain a close checklist tracking completion of phases 1-3 in local state.\n2. After all phases complete, compile a close summary with: reconciliation stats, classification stats, report links, any open exceptions.\n3. Email the final close package to the configured distribution list via Gmail.\n4. Post a close completion summary to the designated Slack channel.\n5. Archive the close state file with a timestamped filename for audit trail.\n\n### Sequencing Rules\n- Phase 2 may run in parallel with Phase 1 (independent data sources).\n- Phase 3 MUST wait for both Phase 1 and Phase 2 to complete successfully.\n- Phase 4 runs only after Phase 3 completes.\n- If any phase fails, halt the pipeline, log the failure state, and send an alert via Slack and email.",
-      "toolGuidance": "### Stripe API (via http_request + stripe connector)\n- `GET /v1/charges?created[gte]={start}&created[lte]={end}&limit=100` — Fetch charges for close period. Paginate with `starting_after`.\n- `GET /v1/refunds?created[gte]={start}&created[lte]={end}` — Fetch refunds.\n- `GET /v1/payouts?created[gte]={start}&created[lte]={end}` — Fetch payouts.\n- `GET /v1/disputes?created[gte]={start}&created[lte]={end}` — Fetch disputes.\n- All Stripe requests use `Content-Type: application/x-www-form-urlencoded`.\n\n### QuickBooks API (via http_request + quickbooks connector)\n- `POST /v3/company/{realmId}/query` with body `SELECT * FROM Invoice WHERE TxnDate >= '{start}' AND TxnDate <= '{end}'` — Query invoices.\n- `POST /v3/company/{realmId}/query` with `SELECT * FROM Purchase WHERE TxnDate >= '{start}'` — Query expenses.\n- `POST /v3/company/{realmId}/purchase` — Update expense classification (category assignment).\n- `POST /v3/company/{realmId}/query` with `SELECT * FROM Account` — Pull chart of accounts for report generation.\n- `GET /v3/company/{realmId}/reports/ProfitAndLoss?start_date={start}&end_date={end}` — Pull P&L report data.\n- `GET /v3/company/{realmId}/reports/BalanceSheet?date={end}` — Pull balance sheet data.\n- Include `Accept: application/json` and `Content-Type: application/json` headers.\n\n### Google Sheets API (via http_request + google_workspace connector)\n- `PUT /v4/spreadsheets/{spreadsheetId}/values/{range}?valueInputOption=USER_ENTERED` — Write report data to sheets.\n- `POST /v4/spreadsheets/{spreadsheetId}:batchUpdate` — Apply formatting, create/rename sheets.\n- `GET /v4/spreadsheets/{spreadsheetId}/values/{range}` — Read existing data for comparison.\n\n### Gmail (via gmail_send, gmail_search)\n- Use `gmail_send` to distribute the final close package with HTML-formatted summary.\n- Use `gmail_search` with `subject:\"financial close\" is:unread` to check for stakeholder replies or exceptions.\n\n### Slack (via http_request + slack connector)\n- `POST /chat.postMessage` with `channel`, `text`, and `blocks` for rich formatting.\n- Use Block Kit for structured close summaries with sections, dividers, and action buttons.\n\n### Local Files (via file_read, file_write)\n- `close_state_{period}.json` — Pipeline progress tracker and checklist.\n- `recon_cache_{period}.json` — Reconciliation results for Phase 3 consumption.\n- `classification_history.json` — Rolling 90-day pattern cache for expense classification.\n- `close_archive/close_{period}_{timestamp}.json` — Immutable audit trail.",
+      "toolGuidance": "### Stripe API (via http_request + stripe connector)\n- `GET /v1/charges?created[gte]={start}&created[lte]={end}&limit=100` — Fetch charges for close period. Paginate with `starting_after`.\n- `GET /v1/refunds?created[gte]={start}&created[lte]={end}` — Fetch refunds.\n- `GET /v1/payouts?created[gte]={start}&created[lte]={end}` — Fetch payouts.\n- `GET /v1/disputes?created[gte]={start}&created[lte]={end}` — Fetch disputes.\n- All Stripe requests use `Content-Type: application/x-www-form-urlencoded`.\n\n### QuickBooks API (via http_request + quickbooks connector)\n- `POST /v3/company/{realmId}/query` with body `SELECT * FROM Invoice WHERE TxnDate >= '{start}' AND TxnDate <= '{end}'` — Query invoices.\n- `POST /v3/company/{realmId}/query` with `SELECT * FROM Purchase WHERE TxnDate >= '{start}'` — Query expenses.\n- `POST /v3/company/{realmId}/purchase` — Update expense classification (category assignment).\n- `POST /v3/company/{realmId}/query` with `SELECT * FROM Account` — Pull chart of accounts for report generation.\n- `GET /v3/company/{realmId}/reports/ProfitAndLoss?start_date={start}&end_date={end}` — Pull P&L report data.\n- `GET /v3/company/{realmId}/reports/BalanceSheet?date={end}` — Pull balance sheet data.\n- Include `Accept: application/json` and `Content-Type: application/json` headers.\n\n### Google Sheets API (via http_request + gmail connector)\n- `PUT /v4/spreadsheets/{spreadsheetId}/values/{range}?valueInputOption=USER_ENTERED` — Write report data to sheets.\n- `POST /v4/spreadsheets/{spreadsheetId}:batchUpdate` — Apply formatting, create/rename sheets.\n- `GET /v4/spreadsheets/{spreadsheetId}/values/{range}` — Read existing data for comparison.\n\n### Gmail (via gmail_send, gmail_search)\n- Use `gmail_send` to distribute the final close package with HTML-formatted summary.\n- Use `gmail_search` with `subject:\"financial close\" is:unread` to check for stakeholder replies or exceptions.\n\n### Slack (via http_request + slack connector)\n- `POST /chat.postMessage` with `channel`, `text`, and `blocks` for rich formatting.\n- Use Block Kit for structured close summaries with sections, dividers, and action buttons.\n\n### Local Files (via file_read, file_write)\n- `close_state_{period}.json` — Pipeline progress tracker and checklist.\n- `recon_cache_{period}.json` — Reconciliation results for Phase 3 consumption.\n- `classification_history.json` — Rolling 90-day pattern cache for expense classification.\n- `close_archive/close_{period}_{timestamp}.json` — Immutable audit trail.",
       "examples": "### Example 1 — Normal Close Run\nTrigger: Schedule fires on the 2nd of each month at 6:00 AM UTC.\n\n**Phase 1 output:**\n```\nReconciliation Complete — Period: 2025-12\nStripe transactions: 342 | QuickBooks entries: 338\nMatched: 335 | Discrepancies: 7\n- 3 missing in QuickBooks (Stripe charges with no matching invoice)\n- 2 amount mismatches ($12.50 variance total)\n- 2 duplicate QuickBooks entries\nThreshold check: 7 items, $12.50 total → UNDER threshold, proceeding.\n```\n\n**Phase 2 output:**\n```\nExpense Classification — Period: 2025-12\nUncategorized expenses found: 23\nAuto-classified (>85% confidence): 18\nFlagged for review (60-85%): 4\nEscalated (<60%): 1\nClassifications pushed to QuickBooks: 18\n```\n\n**Phase 3 output:**\n```\nReports generated and pushed to Google Sheets:\n- P&L (Sheet1): Revenue $142,300 | Expenses $98,750 | Net Income $43,550\n- Balance Sheet (Sheet2): Assets $890,000 | Liabilities $340,000 | Equity $550,000\n- Reconciliation Exceptions (Sheet3): 7 items for review\n```\n\n**Phase 4 output:**\n```\nClose package emailed to: cfo@company.com, controller@company.com\nSlack summary posted to #finance-close\nState archived: close_archive/close_202512_20260102T060000Z.json\nFinancial Close for December 2025: COMPLETE\n```\n\n### Example 2 — Threshold Breach\nPhase 1 finds 28 discrepancies totaling $4,200.\nPipeline pauses. Slack alert sent to #finance-close:\n```\n⚠️ Reconciliation threshold breached\n28 discrepancies ($4,200) exceed limit of 5 items / $500\nPipeline paused — awaiting manual review.\nResume: reply 'proceed' in this thread or trigger manual run.\n```",
       "errorHandling": "### API Failures\n- **Stripe rate limit (429)**: Back off exponentially starting at 1s, max 3 retries. Log each retry. If still failing, mark Phase 1 as BLOCKED and alert.\n- **QuickBooks token expired (401)**: Attempt one OAuth2 token refresh via the quickbooks connector. If refresh fails, mark as AUTH_FAILURE and alert with re-auth instructions.\n- **Google Sheets quota exceeded**: Batch writes into chunks of 500 cells. If quota is still exceeded, wait 60s and retry once.\n- **Slack delivery failure**: Log but do not block pipeline — Slack is a notification channel, not critical path.\n\n### Data Integrity\n- **Empty Stripe response**: Verify the date range is correct. If still empty, log a warning and proceed (may indicate zero transactions for the period, which is valid).\n- **QuickBooks query timeout**: Narrow the date range to weekly chunks and aggregate results.\n- **Duplicate detection**: Before writing to Google Sheets, check if the period's data already exists. If so, clear the range before writing to prevent duplication.\n\n### Pipeline State Recovery\n- Each phase writes its completion status to `close_state_{period}.json` before and after execution.\n- If the pipeline is interrupted and restarted, it reads the state file and resumes from the last incomplete phase.\n- Failed phases can be individually retried without re-running completed phases.\n- All state files include checksums to detect corruption.\n\n### Escalation Path\n1. **Automatic retry** (transient errors): 3 attempts with exponential backoff.\n2. **Slack alert** (threshold breaches, auth failures): Post to #finance-close with context.\n3. **Email escalation** (pipeline failure after retries): Email the controller with full error log.\n4. **Manual intervention required**: Write detailed failure state to local file for debugging."
     },
@@ -179,46 +179,40 @@
         "category": "finance"
       },
       {
-        "name": "google_workspace",
-        "label": "Google Workspace (Gmail + Sheets)",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
             "key": "client_id",
-            "label": "Client ID",
+            "label": "OAuth Client ID",
             "type": "text",
             "placeholder": "123456789-abc.apps.googleusercontent.com",
-            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "Client Secret",
+            "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-...",
-            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client Secret",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
             "required": true
           },
           {
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//0abc...",
-            "helpText": "Generated during OAuth2 consent flow. Enable Gmail API and Google Sheets API in your project first.",
-            "required": true
-          },
-          {
-            "key": "spreadsheet_id",
-            "label": "Target Spreadsheet ID",
-            "type": "text",
-            "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms",
-            "helpText": "The ID from your Google Sheets URL: https://docs.google.com/spreadsheets/d/{THIS_PART}/edit",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console (https://console.cloud.google.com)\n2. Create a project or select an existing one\n3. Enable the Gmail API and Google Sheets API under APIs & Services → Library\n4. Create OAuth 2.0 credentials under APIs & Services → Credentials\n5. Set up the OAuth consent screen with required scopes: gmail.send, gmail.readonly, spreadsheets\n6. Complete the authorization flow to obtain a refresh token\n7. Create (or identify) the target Google Sheets workbook for financial reports\n8. Copy the Spreadsheet ID from the URL and enter it above",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
-          "http_request",
           "gmail_send",
           "gmail_search",
           "gmail_read",
@@ -226,10 +220,46 @@
         ],
         "related_triggers": [
           0
+        ]
+      },
+      {
+        "name": "google_sheets",
+        "label": "Google Sheets",
+        "auth_type": "oauth2",
+        "credential_fields": [
+          {
+            "key": "client_id",
+            "label": "OAuth Client ID",
+            "type": "text",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
+            "required": true
+          },
+          {
+            "key": "client_secret",
+            "label": "OAuth Client Secret",
+            "type": "password",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
+            "required": true
+          }
         ],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Google Sheets API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with spreadsheets and drive.file scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://sheets.googleapis.com",
+        "role": "spreadsheet",
+        "category": "productivity",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": []
       },
       {
         "name": "slack",
@@ -277,7 +307,7 @@
       {
         "type": "email",
         "description": "Final close package distribution to finance leadership — CFO, Controller, and Finance team",
-        "required_connector": "google_workspace",
+        "required_connector": "gmail",
         "config_hints": {
           "to": "finance-team@company.com",
           "subject_prefix": "Financial Close"
@@ -653,14 +683,14 @@
             "type": "connector",
             "label": "Write to Google Sheets",
             "detail": "PUT /v4/spreadsheets/{id}/values/ — three ranges: P&L!A1, Balance Sheet!A1, Exceptions!A1 with valueInputOption=USER_ENTERED",
-            "connector": "google_workspace"
+            "connector": "google_sheets"
           },
           {
             "id": "d7",
             "type": "connector",
             "label": "Apply sheet formatting",
             "detail": "POST /v4/spreadsheets/{id}:batchUpdate — bold headers, currency formatting, red for negative values, yellow for large variances",
-            "connector": "google_workspace"
+            "connector": "google_sheets"
           },
           {
             "id": "d8",
@@ -685,7 +715,7 @@
             "type": "connector",
             "label": "Email close package",
             "detail": "gmail_send to distribution list with HTML summary table, Google Sheets link, and exception highlights",
-            "connector": "google_workspace"
+            "connector": "google_sheets"
           },
           {
             "id": "d12",

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { MessageSquare, Send, Mail, X, Bell } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { usePersonaStore } from '@/stores/personaStore';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
@@ -113,23 +114,23 @@ export function ChannelPicker({ channels, onToggle }: ChannelPickerProps) {
           const hasCustomIcon = connMeta.label !== opt.type; // getConnectorMeta returns name as label for unknown
 
           return (
-            <button
+            <Button
               key={key}
-              type="button"
-              onClick={() => handleToggle(opt)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium rounded-xl border transition-all ${
-                active
-                  ? 'bg-primary/12 border-primary/30 text-primary ring-1 ring-primary/20'
-                  : 'bg-secondary/30 border-primary/10 text-muted-foreground/70 hover:bg-secondary/50 hover:text-foreground/80'
-              }`}
-            >
-              {hasCustomIcon ? (
+              variant={active ? 'secondary' : 'ghost'}
+              size="sm"
+              icon={hasCustomIcon ? (
                 <ConnectorIcon meta={connMeta} size="w-3 h-3" />
               ) : (
                 <FallbackIcon className="w-3 h-3" />
               )}
+              onClick={() => handleToggle(opt)}
+              className={active
+                ? 'bg-primary/12 border-primary/30 text-primary ring-1 ring-primary/20'
+                : 'bg-secondary/30 border-primary/10 text-muted-foreground/70 hover:bg-secondary/50 hover:text-foreground/80'
+              }
+            >
               {opt.label}
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -152,13 +153,13 @@ export function ChannelPicker({ channels, onToggle }: ChannelPickerProps) {
                 : channel.type}
           </span>
           <div className="flex-1" />
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            icon={<X className="w-3 h-3" />}
             onClick={() => onToggle(channel)}
-            className="p-1 text-muted-foreground/40 hover:text-red-400 transition-colors"
-          >
-            <X className="w-3 h-3" />
-          </button>
+            className="text-muted-foreground/40 hover:text-red-400"
+          />
         </div>
       ))}
 

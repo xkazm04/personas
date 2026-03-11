@@ -3,6 +3,7 @@ import { AlertCircle, ArrowRight } from 'lucide-react';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import { sanitizeErrorMessage } from '@/lib/utils/sanitizers/maskSensitive';
 import { usePersonaStore } from '@/stores/personaStore';
+import { Button } from '@/features/shared/components/buttons';
 import {
   type ErrorAction,
   SEVERITY_ICONS,
@@ -61,15 +62,17 @@ export function ErrorExplanationCard({ errorMessage, showRaw, personaId }: Error
                 {explanation.action && (() => {
                   const ActionIcon = explanation.action.icon;
                   return (
-                    <button
+                    <Button
                       onClick={() => handleErrorAction(explanation.action!)}
                       data-testid="error-action-btn"
-                      className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-all group"
+                      variant="primary"
+                      size="sm"
+                      icon={<ActionIcon className="w-3.5 h-3.5" />}
+                      className="mt-2.5 group"
                     >
-                      <ActionIcon className="w-3.5 h-3.5" />
                       {explanation.action.label}
                       <ArrowRight className="w-3 h-3 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                    </button>
+                    </Button>
                   );
                 })()}
               </div>

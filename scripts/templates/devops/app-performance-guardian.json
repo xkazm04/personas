@@ -236,45 +236,45 @@
         "category": "development"
       },
       {
-        "name": "google_workspace",
-        "label": "Google Workspace (OAuth2)",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
             "key": "client_id",
-            "label": "OAuth2 Client ID",
+            "label": "OAuth Client ID",
             "type": "text",
             "placeholder": "123456789-abc.apps.googleusercontent.com",
-            "helpText": "Create OAuth2 credentials in Google Cloud Console → APIs & Services → Credentials → Create OAuth client ID (Desktop app type)",
+            "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "OAuth2 Client Secret",
+            "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-...",
-            "helpText": "Found alongside the Client ID in Google Cloud Console → Credentials",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
             "required": true
           },
           {
-            "key": "report_recipients",
-            "label": "Weekly Report Recipients",
-            "type": "text",
-            "placeholder": "eng-lead@company.com, product@company.com",
-            "helpText": "Comma-separated email addresses that will receive the weekly app health report",
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to console.cloud.google.com and select your project (or create one).\n2. Enable the Gmail API: APIs & Services → Library → search 'Gmail API' → Enable.\n3. Go to APIs & Services → Credentials → Create Credentials → OAuth client ID.\n4. Choose 'Desktop app' as application type, name it 'App Performance Guardian'.\n5. Download the credentials JSON and copy the client_id and client_secret.\n6. Complete the OAuth consent screen setup: add scope 'https://www.googleapis.com/auth/gmail.send'.\n7. The app will prompt for authorization on first run.",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_send"
         ],
         "related_triggers": [
           1
-        ],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "productivity_suite",
-        "category": "productivity"
+        ]
       }
     ],
     "suggested_notification_channels": [
@@ -290,7 +290,7 @@
       {
         "type": "email",
         "description": "Weekly app health report sent every Monday morning with 7-day crash trends, top crash clusters, ANR summary, screen performance regressions, and Linear bug status rollup",
-        "required_connector": "google_workspace",
+        "required_connector": "gmail",
         "config_hints": {
           "subject_prefix": "[App Health]",
           "format": "HTML with tables and trend indicators"
@@ -711,7 +711,7 @@
             "type": "connector",
             "label": "Send Gmail weekly report",
             "detail": "gmail_send to engineering-lead@company.com — subject: [App Health] Weekly Performance Report — Week of {date}. HTML body with full report.",
-            "connector": "google_workspace"
+            "connector": "gmail"
           },
           {
             "id": "n8",

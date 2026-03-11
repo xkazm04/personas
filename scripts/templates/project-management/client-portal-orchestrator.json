@@ -173,44 +173,44 @@
         "category": "productivity"
       },
       {
-        "name": "google_workspace",
-        "label": "Google Workspace (Gmail)",
+        "name": "gmail",
+        "label": "Gmail",
         "auth_type": "oauth2",
         "credential_fields": [
           {
             "key": "client_id",
-            "label": "OAuth2 Client ID",
+            "label": "OAuth Client ID",
             "type": "text",
-            "placeholder": "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
+            "placeholder": "123456789-abc.apps.googleusercontent.com",
             "helpText": "From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs",
             "required": true
           },
           {
             "key": "client_secret",
-            "label": "OAuth2 Client Secret",
+            "label": "OAuth Client Secret",
             "type": "password",
-            "placeholder": "GOCSPX-EXAMPLE_SECRET_REPLACE_ME",
-            "helpText": "Displayed when creating the OAuth2 client in Google Cloud Console",
+            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
+            "helpText": "From the same OAuth 2.0 Client ID configuration page",
             "required": true
           },
           {
             "key": "refresh_token",
             "label": "Refresh Token",
             "type": "password",
-            "placeholder": "1//0EXAMPLE_REFRESH_TOKEN_REPLACE_ME",
-            "helpText": "Obtained during the OAuth2 consent flow. Use the OAuth Playground or your app's auth callback.",
+            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
+            "helpText": "Obtained after completing the OAuth consent flow",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app' or 'Web application'.\n5. Complete the OAuth consent screen configuration.\n6. Copy the Client ID and Client Secret.\n7. Complete the OAuth flow to obtain a refresh token with Gmail send and read scopes.",
+        "setup_instructions": "1. Go to Google Cloud Console → APIs & Services → Library.\n2. Enable the Gmail API.\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
+        "api_base_url": "https://www.googleapis.com",
+        "role": "email",
+        "category": "email",
         "related_tools": [
           "gmail_send",
           "gmail_search"
         ],
-        "related_triggers": [],
-        "api_base_url": "https://www.googleapis.com",
-        "role": "email",
-        "category": "productivity"
+        "related_triggers": []
       },
       {
         "name": "telegram",
@@ -428,25 +428,110 @@
           }
         ],
         "edges": [
-          { "id": "oe1", "source": "o1", "target": "o2" },
-          { "id": "oe2", "source": "o2", "target": "o3" },
-          { "id": "oe3", "source": "o3", "target": "o4", "label": "No duplicate", "variant": "no" },
-          { "id": "oe4", "source": "o3", "target": "o16", "label": "Duplicate found", "variant": "yes" },
-          { "id": "oe5", "source": "o4", "target": "o5" },
-          { "id": "oe6", "source": "o5", "target": "o6" },
-          { "id": "oe7", "source": "o6", "target": "o7" },
-          { "id": "oe8", "source": "o7", "target": "o8", "label": "Valid", "variant": "yes" },
-          { "id": "oe9", "source": "o7", "target": "o17", "label": "Invalid", "variant": "no" },
-          { "id": "oe10", "source": "o8", "target": "o9" },
-          { "id": "oe11", "source": "o9", "target": "o10" },
-          { "id": "oe12", "source": "o10", "target": "o11" },
-          { "id": "oe13", "source": "o11", "target": "o12" },
-          { "id": "oe14", "source": "o12", "target": "o13" },
-          { "id": "oe15", "source": "o13", "target": "o14" },
-          { "id": "oe16", "source": "o14", "target": "o15" },
-          { "id": "oe17", "source": "o15", "target": "o18" },
-          { "id": "oe18", "source": "o16", "target": "o18" },
-          { "id": "oe19", "source": "o17", "target": "o5", "variant": "error" }
+          {
+            "id": "oe1",
+            "source": "o1",
+            "target": "o2"
+          },
+          {
+            "id": "oe2",
+            "source": "o2",
+            "target": "o3"
+          },
+          {
+            "id": "oe3",
+            "source": "o3",
+            "target": "o4",
+            "label": "No duplicate",
+            "variant": "no"
+          },
+          {
+            "id": "oe4",
+            "source": "o3",
+            "target": "o16",
+            "label": "Duplicate found",
+            "variant": "yes"
+          },
+          {
+            "id": "oe5",
+            "source": "o4",
+            "target": "o5"
+          },
+          {
+            "id": "oe6",
+            "source": "o5",
+            "target": "o6"
+          },
+          {
+            "id": "oe7",
+            "source": "o6",
+            "target": "o7"
+          },
+          {
+            "id": "oe8",
+            "source": "o7",
+            "target": "o8",
+            "label": "Valid",
+            "variant": "yes"
+          },
+          {
+            "id": "oe9",
+            "source": "o7",
+            "target": "o17",
+            "label": "Invalid",
+            "variant": "no"
+          },
+          {
+            "id": "oe10",
+            "source": "o8",
+            "target": "o9"
+          },
+          {
+            "id": "oe11",
+            "source": "o9",
+            "target": "o10"
+          },
+          {
+            "id": "oe12",
+            "source": "o10",
+            "target": "o11"
+          },
+          {
+            "id": "oe13",
+            "source": "o11",
+            "target": "o12"
+          },
+          {
+            "id": "oe14",
+            "source": "o12",
+            "target": "o13"
+          },
+          {
+            "id": "oe15",
+            "source": "o13",
+            "target": "o14"
+          },
+          {
+            "id": "oe16",
+            "source": "o14",
+            "target": "o15"
+          },
+          {
+            "id": "oe17",
+            "source": "o15",
+            "target": "o18"
+          },
+          {
+            "id": "oe18",
+            "source": "o16",
+            "target": "o18"
+          },
+          {
+            "id": "oe19",
+            "source": "o17",
+            "target": "o5",
+            "variant": "error"
+          }
         ]
       },
       {
@@ -550,22 +635,94 @@
           }
         ],
         "edges": [
-          { "id": "pe1", "source": "p1", "target": "p2" },
-          { "id": "pe2", "source": "p2", "target": "p3" },
-          { "id": "pe3", "source": "p3", "target": "p4" },
-          { "id": "pe4", "source": "p4", "target": "p5", "label": "Yes", "variant": "yes" },
-          { "id": "pe5", "source": "p4", "target": "p15", "label": "No change", "variant": "no" },
-          { "id": "pe6", "source": "p5", "target": "p6" },
-          { "id": "pe7", "source": "p6", "target": "p7" },
-          { "id": "pe8", "source": "p7", "target": "p8" },
-          { "id": "pe9", "source": "p8", "target": "p9" },
-          { "id": "pe10", "source": "p9", "target": "p10" },
-          { "id": "pe11", "source": "p10", "target": "p11" },
-          { "id": "pe12", "source": "p11", "target": "p12", "label": "Yes", "variant": "yes" },
-          { "id": "pe13", "source": "p11", "target": "p14", "label": "No", "variant": "no" },
-          { "id": "pe14", "source": "p12", "target": "p13" },
-          { "id": "pe15", "source": "p13", "target": "p14" },
-          { "id": "pe16", "source": "p14", "target": "p15" }
+          {
+            "id": "pe1",
+            "source": "p1",
+            "target": "p2"
+          },
+          {
+            "id": "pe2",
+            "source": "p2",
+            "target": "p3"
+          },
+          {
+            "id": "pe3",
+            "source": "p3",
+            "target": "p4"
+          },
+          {
+            "id": "pe4",
+            "source": "p4",
+            "target": "p5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "pe5",
+            "source": "p4",
+            "target": "p15",
+            "label": "No change",
+            "variant": "no"
+          },
+          {
+            "id": "pe6",
+            "source": "p5",
+            "target": "p6"
+          },
+          {
+            "id": "pe7",
+            "source": "p6",
+            "target": "p7"
+          },
+          {
+            "id": "pe8",
+            "source": "p7",
+            "target": "p8"
+          },
+          {
+            "id": "pe9",
+            "source": "p8",
+            "target": "p9"
+          },
+          {
+            "id": "pe10",
+            "source": "p9",
+            "target": "p10"
+          },
+          {
+            "id": "pe11",
+            "source": "p10",
+            "target": "p11"
+          },
+          {
+            "id": "pe12",
+            "source": "p11",
+            "target": "p12",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "pe13",
+            "source": "p11",
+            "target": "p14",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "pe14",
+            "source": "p12",
+            "target": "p13"
+          },
+          {
+            "id": "pe15",
+            "source": "p13",
+            "target": "p14"
+          },
+          {
+            "id": "pe16",
+            "source": "p14",
+            "target": "p15"
+          }
         ]
       },
       {
@@ -669,24 +826,107 @@
           }
         ],
         "edges": [
-          { "id": "de1", "source": "d1", "target": "d2" },
-          { "id": "de2", "source": "d2", "target": "d3" },
-          { "id": "de3", "source": "d3", "target": "d4" },
-          { "id": "de4", "source": "d4", "target": "d5" },
-          { "id": "de5", "source": "d5", "target": "d6", "label": "Yes", "variant": "yes" },
-          { "id": "de6", "source": "d5", "target": "d15", "label": "Not stalled", "variant": "no" },
-          { "id": "de7", "source": "d6", "target": "d7", "label": "Not flagged recently", "variant": "no" },
-          { "id": "de8", "source": "d6", "target": "d15", "label": "Recently alerted", "variant": "yes" },
-          { "id": "de9", "source": "d7", "target": "d8", "label": "7-13 days" },
-          { "id": "de10", "source": "d7", "target": "d9", "label": "14-20 days" },
-          { "id": "de11", "source": "d7", "target": "d11", "label": "21+ days" },
-          { "id": "de12", "source": "d8", "target": "d13" },
-          { "id": "de13", "source": "d9", "target": "d10" },
-          { "id": "de14", "source": "d10", "target": "d8" },
-          { "id": "de15", "source": "d11", "target": "d12" },
-          { "id": "de16", "source": "d12", "target": "d10" },
-          { "id": "de17", "source": "d13", "target": "d14" },
-          { "id": "de18", "source": "d14", "target": "d15" }
+          {
+            "id": "de1",
+            "source": "d1",
+            "target": "d2"
+          },
+          {
+            "id": "de2",
+            "source": "d2",
+            "target": "d3"
+          },
+          {
+            "id": "de3",
+            "source": "d3",
+            "target": "d4"
+          },
+          {
+            "id": "de4",
+            "source": "d4",
+            "target": "d5"
+          },
+          {
+            "id": "de5",
+            "source": "d5",
+            "target": "d6",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "de6",
+            "source": "d5",
+            "target": "d15",
+            "label": "Not stalled",
+            "variant": "no"
+          },
+          {
+            "id": "de7",
+            "source": "d6",
+            "target": "d7",
+            "label": "Not flagged recently",
+            "variant": "no"
+          },
+          {
+            "id": "de8",
+            "source": "d6",
+            "target": "d15",
+            "label": "Recently alerted",
+            "variant": "yes"
+          },
+          {
+            "id": "de9",
+            "source": "d7",
+            "target": "d8",
+            "label": "7-13 days"
+          },
+          {
+            "id": "de10",
+            "source": "d7",
+            "target": "d9",
+            "label": "14-20 days"
+          },
+          {
+            "id": "de11",
+            "source": "d7",
+            "target": "d11",
+            "label": "21+ days"
+          },
+          {
+            "id": "de12",
+            "source": "d8",
+            "target": "d13"
+          },
+          {
+            "id": "de13",
+            "source": "d9",
+            "target": "d10"
+          },
+          {
+            "id": "de14",
+            "source": "d10",
+            "target": "d8"
+          },
+          {
+            "id": "de15",
+            "source": "d11",
+            "target": "d12"
+          },
+          {
+            "id": "de16",
+            "source": "d12",
+            "target": "d10"
+          },
+          {
+            "id": "de17",
+            "source": "d13",
+            "target": "d14"
+          },
+          {
+            "id": "de18",
+            "source": "d14",
+            "target": "d15"
+          }
         ]
       }
     ],

@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
-import { Loader2, Chrome, Key } from 'lucide-react';
+import { Chrome, Key } from 'lucide-react';
 import type { HealthCheckSection } from '@/api/tauriApi';
 import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
+import { Button } from '@/features/shared/components/buttons';
 import { getStatusIcon, SectionStatusDot } from './StatusIndicators';
 import { InstallButton } from './InstallButton';
 
@@ -84,22 +85,28 @@ export function SectionCard({
                 />
               )}
               {check.id === 'ollama_api_key' && !ipcError && (
-                <button
+                <Button
+                  variant="accent"
+                  accentColor="emerald"
+                  size="xs"
                   onClick={onShowOllama}
-                  className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                  icon={<Key className="w-3 h-3" />}
+                  className="mt-2"
                 >
-                  <Key className="w-3 h-3" />
                   {check.status === 'ok' ? 'Edit Key' : 'Configure'}
-                </button>
+                </Button>
               )}
               {check.id === 'litellm_proxy' && !ipcError && (
-                <button
+                <Button
+                  variant="accent"
+                  accentColor="sky"
+                  size="xs"
                   onClick={onShowLiteLLM}
-                  className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-sky-500/10 text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 transition-colors"
+                  icon={<Key className="w-3 h-3" />}
+                  className="mt-2"
                 >
-                  <Key className="w-3 h-3" />
                   {check.status === 'ok' ? 'Edit Config' : 'Configure'}
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -107,18 +114,17 @@ export function SectionCard({
 
         {showSignIn && (
           <div className="px-4 py-2.5 space-y-1.5">
-            <button
+            <Button
+              variant="accent"
+              accentColor="amber"
+              size="sm"
               onClick={onSignIn}
               disabled={authLoading}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+              loading={authLoading}
+              icon={authLoading ? undefined : <Chrome className="w-3.5 h-3.5" />}
             >
-              {authLoading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Chrome className="w-3.5 h-3.5" />
-              )}
               {authLoading ? 'Signing in...' : 'Sign in with Google'}
-            </button>
+            </Button>
             {authError && (
               <p className="text-sm text-red-400/80">{authError}</p>
             )}

@@ -62,8 +62,7 @@ export function UnresolvedComponentCard({
   );
 
   const handleCredentialChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const val = e.target.value;
+    (val: string) => {
       if (val === '__create__') onOpenInlineForm(connector.activeName);
       else if (val === '__design__') onOpenDesign(connector.activeName);
       else if (val === '') onClearCredential(connector.activeName);
@@ -116,17 +115,17 @@ export function UnresolvedComponentCard({
       ) : (
         <div className="space-y-1.5">
           <ThemedSelect
+            filterable
             value={selectedCredentialId ?? ''}
-            onChange={handleCredentialChange}
+            onValueChange={handleCredentialChange}
+            placeholder="Select credential..."
+            options={[
+              ...matchingCreds.map((cred) => ({ value: cred.id, label: cred.name })),
+              { value: '__create__', label: '+ Create new credential' },
+              { value: '__design__', label: '+ Design custom connector' },
+            ]}
             className={`py-1.5 px-2.5 ${hasCredential ? 'border-emerald-500/15' : 'border-primary/10'}`}
-          >
-            <option value="">Select credential...</option>
-            {matchingCreds.map((cred) => (
-              <option key={cred.id} value={cred.id}>{cred.name}</option>
-            ))}
-            <option value="__create__">+ Create new credential</option>
-            <option value="__design__">+ Design custom connector</option>
-          </ThemedSelect>
+          />
           {!hasCredential && matchingCreds.length === 0 && (
             <button
               type="button"

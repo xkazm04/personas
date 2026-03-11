@@ -6,4 +6,8 @@ try {
   if (id && id !== 'dark-midnight') {
     document.documentElement.setAttribute('data-theme', id);
   }
+  // Toggle dark class based on theme type
+  if (id && id.indexOf('light') === 0) {
+    document.documentElement.classList.remove('dark');
+  }
 } catch (e) {}

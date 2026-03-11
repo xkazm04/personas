@@ -94,7 +94,6 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'sales/sales-pipeline-autopilot.json': '0009e283dc8bddbf',
   'sales/sheets-e-commerce-command-center.json': '0009fc200c1c3dbd',
   'security/brand-protection-sentinel.json': '0007b1397fd6d8f5',
-  'security/edge-security-monitor.json': '0010c62bbe4d7eed',
   'security/security-vulnerability-pipeline.json': '0009c8ceb6755cc0',
   'support/customer-feedback-router.json': '00174a7a2bdf8983',
   'support/knowledge-base-review-cycle-manager.json': '001fb4c7f9fdce5c',
