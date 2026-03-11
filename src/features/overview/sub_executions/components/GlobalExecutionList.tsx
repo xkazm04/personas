@@ -14,7 +14,7 @@ import type { GlobalExecution } from '@/lib/types/types';
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
-import ContentLoader from '@/features/shared/components/progress/ContentLoader';
+
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 
 type FilterStatus = 'all' | 'running' | 'completed' | 'failed';
@@ -158,7 +158,7 @@ export default function GlobalExecutionList() {
 
           <ContentBody flex>
             {isLoading ? (
-              <ContentLoader variant="panel" hint="executions" />
+              null
             ) : filteredExecutions.length === 0 ? (
               <div className="flex-1 flex items-center justify-center p-4 md:p-6">
                 {personas.length === 0 ? (

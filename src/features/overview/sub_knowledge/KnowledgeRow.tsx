@@ -39,7 +39,7 @@ export function KnowledgeRow({ entry, personaName }: KnowledgeRowProps) {
               {config?.label ?? entry.knowledge_type}
             </span>
           </div>
-          <div className="flex items-center gap-3 mt-0.5 text-sm text-muted-foreground/60">
+          <div className="flex items-center gap-3 mt-0.5 text-sm text-muted-foreground/80">
             {personaName && <span>{personaName}</span>}
             <span>{total} run{total !== 1 ? 's' : ''}</span>
             <span>avg {formatCost(entry.avg_cost_usd)}</span>
@@ -60,7 +60,7 @@ export function KnowledgeRow({ entry, personaName }: KnowledgeRowProps) {
           <span className="text-sm font-mono text-muted-foreground/70 w-8 text-right">
             {confidencePct}%
           </span>
-          <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/40 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/70 transition-transform ${expanded ? 'rotate-180' : ''}`} />
         </div>
       </button>
 
@@ -75,24 +75,24 @@ export function KnowledgeRow({ entry, personaName }: KnowledgeRowProps) {
           >
             <div className="px-4 pb-3 pt-0 grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <div className="text-sm uppercase tracking-wider text-muted-foreground/50 mb-0.5">Successes</div>
+                <div className="text-sm uppercase tracking-wider text-foreground/70 mb-0.5">Successes</div>
                 <div className="text-sm font-semibold text-emerald-400">{entry.success_count}</div>
               </div>
               <div>
-                <div className="text-sm uppercase tracking-wider text-muted-foreground/50 mb-0.5">Failures</div>
+                <div className="text-sm uppercase tracking-wider text-foreground/70 mb-0.5">Failures</div>
                 <div className="text-sm font-semibold text-red-400">{entry.failure_count}</div>
               </div>
               <div>
-                <div className="text-sm uppercase tracking-wider text-muted-foreground/50 mb-0.5">Avg Cost</div>
+                <div className="text-sm uppercase tracking-wider text-foreground/70 mb-0.5">Avg Cost</div>
                 <div className="text-sm font-semibold text-foreground/80">{formatCost(entry.avg_cost_usd)}</div>
               </div>
               <div>
-                <div className="text-sm uppercase tracking-wider text-muted-foreground/50 mb-0.5">Avg Duration</div>
+                <div className="text-sm uppercase tracking-wider text-foreground/70 mb-0.5">Avg Duration</div>
                 <div className="text-sm font-semibold text-foreground/80">{formatDuration(entry.avg_duration_ms)}</div>
               </div>
               {Object.keys(patternData).length > 0 && (
                 <div className="col-span-full">
-                  <div className="text-sm uppercase tracking-wider text-muted-foreground/50 mb-1">Pattern Data</div>
+                  <div className="text-sm uppercase tracking-wider text-foreground/70 mb-1">Pattern Data</div>
                   <pre className="text-sm text-muted-foreground/70 bg-secondary/20 rounded-lg p-2 overflow-x-auto">
                     {JSON.stringify(patternData, null, 2)}
                   </pre>

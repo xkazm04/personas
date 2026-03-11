@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Plug, ChevronDown } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { ConnectorPipeline } from '../../../shared/ConnectorPipeline';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
@@ -52,6 +53,7 @@ export function ConnectStep() {
   const onCredentialCreated = ctx.handleCredentialCreated;
   const onSwapConnector = ctx.wizard.swapConnector;
 
+  const isSimple = useSimpleMode();
   const [inlineStartMode, setInlineStartMode] = useState<'pick' | 'design-query'>('pick');
   const [showPipeline, setShowPipeline] = useState(false);
 
@@ -108,7 +110,7 @@ export function ConnectStep() {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <Plug className="w-8 h-8 text-muted-foreground/25 mb-3" />
-        <p className="text-sm text-muted-foreground/50">
+        <p className="text-sm text-muted-foreground/80">
           No connectors needed -- you're all set!
         </p>
       </div>
@@ -120,19 +122,19 @@ export function ConnectStep() {
       {/* Step header */}
       <div>
         <h3 className="text-base font-semibold text-foreground">Connect Services</h3>
-        <p className="text-sm text-muted-foreground/60 mt-0.5">
+        <p className="text-sm text-muted-foreground/80 mt-0.5">
           Link your credentials to the connectors this template requires.
         </p>
       </div>
 
-      {/* Collapsible pipeline diagram */}
-      {pipelineSteps.length > 0 && (
+      {/* Collapsible pipeline diagram (hidden in simple mode) */}
+      {!isSimple && pipelineSteps.length > 0 && (
         <div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowPipeline(!showPipeline)}
-            className="text-muted-foreground/50 hover:text-muted-foreground/70 flex items-center gap-1"
+            className="text-muted-foreground/80 hover:text-muted-foreground/90 flex items-center gap-1"
           >
             <ChevronDown className={`w-3 h-3 transition-transform ${showPipeline ? '' : '-rotate-90'}`} />
             Service flow

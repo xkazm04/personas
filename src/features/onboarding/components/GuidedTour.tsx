@@ -1,14 +1,19 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, X, MapPin, Sparkles } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { Button } from '@/features/shared/components/buttons';
 import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
 import type { SidebarSection } from '@/lib/types/types';
 import { STEP_COLORS } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
 
+/** Steps hidden in simple mode (navigate to sections not visible in simple mode). */
+const SIMPLE_HIDDEN_STEPS = new Set(['credentials-catalog']);
+
 export default function GuidedTour() {
+  const isSimple = useSimpleMode();
   const tourActive = usePersonaStore((s) => s.tourActive);
   const currentIndex = usePersonaStore((s) => s.tourCurrentStepIndex);
   const completedSteps = usePersonaStore((s) => s.tourStepCompleted);
@@ -25,10 +30,15 @@ export default function GuidedTour() {
   const [isMinimized, setIsMinimized] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-  const currentStep = TOUR_STEPS[currentIndex];
+  const visibleSteps = useMemo(
+    () => isSimple ? TOUR_STEPS.filter((s) => !SIMPLE_HIDDEN_STEPS.has(s.id)) : TOUR_STEPS,
+    [isSimple],
+  );
+
+  const currentStep = visibleSteps[currentIndex] ?? TOUR_STEPS[currentIndex];
   const isStepCompleted = currentStep ? completedSteps[currentStep.id] : false;
-  const allCompleted = TOUR_STEPS.every((s) => completedSteps[s.id]);
-  const completedCount = TOUR_STEPS.filter((s) => completedSteps[s.id]).length;
+  const allCompleted = visibleSteps.every((s) => completedSteps[s.id]);
+  const completedCount = visibleSteps.filter((s) => completedSteps[s.id]).length;
 
   const navigateToStep = useCallback(
     (stepIndex: number) => {
@@ -81,8 +91,8 @@ export default function GuidedTour() {
         className={`fixed bottom-6 left-[320px] z-[9999] flex items-center gap-2 px-4 py-2.5 rounded-full bg-background/95 backdrop-blur-xl border ${colors.border} shadow-lg ${colors.glow} hover:shadow-xl transition-shadow cursor-pointer group`}
       >
         <MapPin className={`w-4 h-4 ${colors.text}`} />
-        <span className="text-sm font-medium text-foreground/80">Tour {completedCount}/{TOUR_STEPS.length}</span>
-        <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-foreground/70 transition-colors" />
+        <span className="text-sm font-medium text-foreground/80">Tour {completedCount}/{visibleSteps.length}</span>
+        <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/80 group-hover:text-foreground/70 transition-colors" />
       </motion.button>
     );
   }
@@ -106,7 +116,7 @@ export default function GuidedTour() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground/90 leading-tight">Guided Tour</h3>
-                <p className="text-[11px] text-muted-foreground/50">Step {currentIndex + 1} of {TOUR_STEPS.length}</p>
+                <p className="text-[11px] text-muted-foreground/80">Step {currentIndex + 1} of {visibleSteps.length}</p>
               </div>
             </div>
             <div className="flex items-center gap-1">

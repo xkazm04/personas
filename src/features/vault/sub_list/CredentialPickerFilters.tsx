@@ -1,6 +1,8 @@
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
+import { Code2, HeadsetIcon, Briefcase } from 'lucide-react';
+import type { RolePreset } from './catalogRolePresets';
 
 type ConnectedFilter = 'all' | 'connected' | 'new';
 
@@ -17,6 +19,8 @@ interface CredentialPickerFiltersProps {
   activeLicense: string | null;
   onLicenseChange: (v: string | null) => void;
   licenseOptions: ThemedSelectOption[];
+  activeRole: RolePreset | null;
+  onRoleToggle: (role: RolePreset) => void;
 }
 
 export function CredentialPickerFilters({
@@ -32,6 +36,8 @@ export function CredentialPickerFilters({
   activeLicense,
   onLicenseChange,
   licenseOptions,
+  activeRole,
+  onRoleToggle,
 }: CredentialPickerFiltersProps) {
   return (
     <div className={`flex ${IS_MOBILE ? 'flex-col' : 'flex-row items-center'} gap-2`}>
@@ -74,6 +80,27 @@ export function CredentialPickerFilters({
           wrapperClassName={IS_MOBILE ? 'flex-1 min-w-[100px]' : 'w-[170px]'}
           className="!py-1.5 !text-sm"
         />
+      </div>
+      <div className="flex items-center gap-1 ml-auto">
+        {([
+          { role: 'developer' as const, icon: Code2, label: 'Developer' },
+          { role: 'support' as const, icon: HeadsetIcon, label: 'Support' },
+          { role: 'manager' as const, icon: Briefcase, label: 'Manager' },
+        ]).map(({ role, icon: Icon, label }) => (
+          <button
+            key={role}
+            type="button"
+            onClick={() => onRoleToggle(role)}
+            title={label}
+            className={`p-1.5 rounded-lg border transition-colors ${
+              activeRole === role
+                ? 'bg-violet-500/15 border-violet-500/30 text-violet-400'
+                : 'bg-secondary/30 border-primary/10 text-muted-foreground/50 hover:text-muted-foreground/80 hover:border-primary/20'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+          </button>
+        ))}
       </div>
     </div>
   );

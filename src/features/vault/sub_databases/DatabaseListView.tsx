@@ -1,14 +1,24 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Database, Search } from 'lucide-react';
+import { Database, Table2, Code2 } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { usePersonaStore } from '@/stores/personaStore';
-import { DatabaseCard } from './DatabaseCard';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 import { SchemaManagerModal } from './SchemaManagerModal';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 interface DatabaseListViewProps {
   onBack: () => void;
+}
+
+type SortDir = 'asc' | 'desc';
+
+interface DbRow {
+  credential: CredentialMetadata;
+  connector: ConnectorDefinition | undefined;
+  tableCount: number;
+  queryCount: number;
 }
 
 export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
@@ -17,66 +27,151 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
   const dbSchemaTables = usePersonaStore((s) => s.dbSchemaTables);
   const dbSavedQueries = usePersonaStore((s) => s.dbSavedQueries);
 
-  const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<string | null>(null);
   const [selectedCredential, setSelectedCredential] = useState<CredentialMetadata | null>(null);
+  const [typeFilter, setTypeFilter] = useState('');
+  const [sortKey, setSortKey] = useState<string | null>('name');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
-  // Filter to database-category credentials only
-  const dbCredentials = useMemo(() => {
-    return credentials.filter((c) => {
-      const def = connectorDefinitions.find((d) => d.name === c.service_type);
-      return def?.category === 'database';
-    });
-  }, [credentials, connectorDefinitions]);
+  // Build rows: filter to database credentials, enrich with counts
+  const allRows: DbRow[] = useMemo(() => {
+    return credentials
+      .filter((c) => {
+        const def = connectorDefinitions.find((d) => d.name === c.service_type);
+        return def?.category === 'database';
+      })
+      .map((c) => ({
+        credential: c,
+        connector: connectorDefinitions.find((d) => d.name === c.service_type),
+        tableCount: dbSchemaTables.filter((t) => t.credential_id === c.id).length,
+        queryCount: dbSavedQueries.filter((q) => q.credential_id === c.id).length,
+      }));
+  }, [credentials, connectorDefinitions, dbSchemaTables, dbSavedQueries]);
 
-  // Group by service_type for tabs
-  const tabGroups = useMemo(() => {
-    const groups = new Map<string, { label: string; connector: ConnectorDefinition | undefined; credentials: CredentialMetadata[] }>();
-    for (const cred of dbCredentials) {
-      const def = connectorDefinitions.find((d) => d.name === cred.service_type);
-      if (!groups.has(cred.service_type)) {
-        groups.set(cred.service_type, {
-          label: def?.label || cred.service_type,
-          connector: def,
-          credentials: [],
-        });
-      }
-      groups.get(cred.service_type)!.credentials.push(cred);
+  // Type filter options
+  const typeOptions = useMemo(() => {
+    const types = new Map<string, string>();
+    for (const r of allRows) {
+      const label = r.connector?.label || r.credential.service_type;
+      types.set(r.credential.service_type, label);
     }
-    return groups;
-  }, [dbCredentials, connectorDefinitions]);
+    return [
+      { value: '', label: `All Types (${types.size})` },
+      ...Array.from(types.entries()).sort(([, a], [, b]) => a.localeCompare(b)).map(([val, lab]) => ({
+        value: val,
+        label: lab,
+      })),
+    ];
+  }, [allRows]);
 
-  const tabKeys = useMemo(() => Array.from(tabGroups.keys()), [tabGroups]);
-
-  // Auto-select first tab
-  useEffect(() => {
-    if (!activeTab && tabKeys.length > 0) {
-      setActiveTab(tabKeys[0]!);
+  // Filter + sort
+  const displayRows = useMemo(() => {
+    let rows = allRows;
+    if (typeFilter) {
+      rows = rows.filter((r) => r.credential.service_type === typeFilter);
     }
-  }, [activeTab, tabKeys]);
+    if (sortKey) {
+      const dir = sortDir === 'asc' ? 1 : -1;
+      rows = [...rows].sort((a, b) => {
+        switch (sortKey) {
+          case 'name':
+            return dir * a.credential.name.localeCompare(b.credential.name);
+          case 'tables':
+            return dir * (a.tableCount - b.tableCount);
+          case 'queries':
+            return dir * (a.queryCount - b.queryCount);
+          case 'created':
+            return dir * (new Date(a.credential.created_at).getTime() - new Date(b.credential.created_at).getTime());
+          default:
+            return 0;
+        }
+      });
+    }
+    return rows;
+  }, [allRows, typeFilter, sortKey, sortDir]);
 
-  // Filtered credentials for active tab
-  const visibleCredentials = useMemo(() => {
-    if (!activeTab) return dbCredentials;
-    const group = tabGroups.get(activeTab);
-    if (!group) return [];
-    const q = search.trim().toLowerCase();
-    if (!q) return group.credentials;
-    return group.credentials.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.service_type.toLowerCase().includes(q),
-    );
-  }, [activeTab, tabGroups, search, dbCredentials]);
+  const handleSort = useCallback((key: string) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }, [sortKey]);
 
-  const getConnector = (serviceType: string) =>
-    connectorDefinitions.find((d) => d.name === serviceType);
+  const columns: DataGridColumn<DbRow>[] = useMemo(() => [
+    {
+      key: 'name',
+      label: 'Database',
+      width: '1.5fr',
+      sortable: true,
+      render: (row) => (
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div
+            className="w-6 h-6 rounded-md flex items-center justify-center border border-primary/15 shrink-0"
+            style={{ backgroundColor: `${row.connector?.color || '#6B7280'}15` }}
+          >
+            {row.connector?.icon_url ? (
+              <ThemedConnectorIcon url={row.connector.icon_url} label={row.connector.label} color={row.connector.color} size="w-3.5 h-3.5" />
+            ) : (
+              <Database className="w-3.5 h-3.5 text-blue-400/60" />
+            )}
+          </div>
+          <span className="text-sm font-medium text-foreground truncate">{row.credential.name}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      width: '0.8fr',
+      filterOptions: typeOptions,
+      filterValue: typeFilter,
+      onFilterChange: setTypeFilter,
+      render: (row) => (
+        <span className="text-sm text-foreground/70 truncate">{row.connector?.label || row.credential.service_type}</span>
+      ),
+    },
+    {
+      key: 'tables',
+      label: 'Tables',
+      width: '0.5fr',
+      sortable: true,
+      render: (row) => row.tableCount > 0 ? (
+        <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-lg bg-blue-500/10 text-blue-400/80">
+          <Table2 className="w-3 h-3" />
+          {row.tableCount}
+        </span>
+      ) : (
+        <span className="text-xs text-muted-foreground/40">—</span>
+      ),
+    },
+    {
+      key: 'queries',
+      label: 'Queries',
+      width: '0.5fr',
+      sortable: true,
+      render: (row) => row.queryCount > 0 ? (
+        <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-lg bg-violet-500/10 text-violet-400/80">
+          <Code2 className="w-3 h-3" />
+          {row.queryCount}
+        </span>
+      ) : (
+        <span className="text-xs text-muted-foreground/40">—</span>
+      ),
+    },
+    {
+      key: 'created',
+      label: 'Created',
+      width: '0.7fr',
+      sortable: true,
+      align: 'right' as const,
+      render: (row) => (
+        <span className="text-sm text-foreground/60">{formatRelativeTime(row.credential.created_at)}</span>
+      ),
+    },
+  ], [typeOptions, typeFilter]);
 
-  const getTableCount = (credentialId: string) =>
-    dbSchemaTables.filter((t) => t.credential_id === credentialId).length;
-
-  const getQueryCount = (credentialId: string) =>
-    dbSavedQueries.filter((q) => q.credential_id === credentialId).length;
-
-  if (dbCredentials.length === 0) {
+  if (allRows.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -99,81 +194,27 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="space-y-4"
+        className="flex flex-col min-h-0"
       >
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Filter databases..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl bg-secondary/30 border border-primary/10 text-sm text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30 transition-colors"
-          />
-        </div>
-
-        {/* Tab bar */}
-        {tabKeys.length > 1 && (
-          <div className="flex items-center gap-1 border-b border-primary/10 pb-px">
-            {tabKeys.map((key) => {
-              const group = tabGroups.get(key)!;
-              const isActive = key === activeTab;
-              return (
-                <button
-                  key={key}
-                  onClick={() => setActiveTab(key)}
-                  className={`relative px-3 py-2 text-sm font-medium rounded-t-lg transition-colors ${
-                    isActive
-                      ? 'text-foreground/90'
-                      : 'text-muted-foreground/60 hover:text-muted-foreground/80'
-                  }`}
-                >
-                  <span className="flex items-center gap-1.5">
-                    {group.connector?.icon_url ? (
-                      <ThemedConnectorIcon url={group.connector.icon_url} label={group.connector.label} color={group.connector.color} size="w-3.5 h-3.5" />
-                    ) : null}
-                    {group.label}
-                    <span className="text-muted-foreground/60">({group.credentials.length})</span>
-                  </span>
-                  {isActive && (
-                    <motion.div
-                      layoutId="dbTypeTab"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary/60 rounded-full"
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Credential cards */}
-        <div className="space-y-2">
-          {visibleCredentials.map((cred) => (
-            <DatabaseCard
-              key={cred.id}
-              credential={cred}
-              connector={getConnector(cred.service_type)}
-              tableCount={getTableCount(cred.id)}
-              queryCount={getQueryCount(cred.id)}
-              onClick={() => setSelectedCredential(cred)}
-            />
-          ))}
-          {visibleCredentials.length === 0 && search && (
-            <p className="text-sm text-muted-foreground/50 text-center py-6">
-              No matching databases
-            </p>
-          )}
-        </div>
+        <DataGrid<DbRow>
+          columns={columns}
+          data={displayRows}
+          getRowKey={(row) => row.credential.id}
+          onRowClick={(row) => setSelectedCredential(row.credential)}
+          sortKey={sortKey}
+          sortDirection={sortDir}
+          onSort={handleSort}
+          emptyIcon={Database}
+          emptyTitle="No matching databases"
+          emptyDescription="Try changing the type filter"
+          className="flex-1"
+        />
       </motion.div>
 
-      {/* Schema Manager Modal */}
       {selectedCredential && (
         <SchemaManagerModal
           credential={selectedCredential}
-          connector={getConnector(selectedCredential.service_type)}
+          connector={connectorDefinitions.find((d) => d.name === selectedCredential.service_type)}
           onClose={() => setSelectedCredential(null)}
         />
       )}

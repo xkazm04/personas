@@ -37,13 +37,13 @@ export const INPUT_FIELD =
 export const BUTTON_VARIANTS: Record<'tryIt' | 'adopt' | 'delete', ButtonVariantToken> = {
   tryIt: {
     bg: 'bg-emerald-500/10',
-    text: 'text-emerald-300',
+    text: 'text-emerald-400',
     border: 'border-emerald-500/20',
     hover: 'hover:bg-emerald-500/20',
   },
   adopt: {
     bg: 'bg-violet-500/15',
-    text: 'text-violet-300',
+    text: 'text-violet-400',
     border: 'border-violet-500/25',
     hover: 'hover:bg-violet-500/25',
   },
@@ -64,7 +64,7 @@ export const STATUS_COLORS: Record<string, StatusColorToken> = {
     ringColor: 'focus:ring-blue-500/40',
   },
   ai: {
-    color: 'text-violet-300',
+    color: 'text-violet-400',
     bgColor: 'bg-violet-500/10',
     borderColor: 'border-violet-500/20',
     ringColor: 'focus:ring-violet-500/40',
@@ -118,3 +118,27 @@ export const FEASIBILITY_COLORS: Record<string, StatusColorToken> = {
   partial: { color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
   blocked: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
 };
+
+// ── Simple mode tokens ─────────────────────────────────────────────────
+
+export type SimpleStatus = 'good' | 'warning' | 'problem';
+
+export interface SimpleStatusToken {
+  label: string;
+  color: string;
+  bg: string;
+  dot: string;
+}
+
+export const SIMPLE_MODE = {
+  /** Reduced three-level status palette for simple mode */
+  STATUS: {
+    good:    { label: 'Good',      color: 'text-emerald-400', bg: 'bg-emerald-500/10', dot: 'bg-emerald-400' },
+    warning: { label: 'Attention', color: 'text-amber-400',   bg: 'bg-amber-500/10',   dot: 'bg-amber-400' },
+    problem: { label: 'Problem',   color: 'text-red-400',     bg: 'bg-red-500/10',     dot: 'bg-red-400' },
+  } satisfies Record<SimpleStatus, SimpleStatusToken>,
+  /** Card style for simple mode — larger, rounder, more breathing room */
+  CARD: 'rounded-xl border border-primary/10 bg-background/60 p-5 shadow-sm',
+  /** Minimum touch target for simple mode interactive elements */
+  MIN_TARGET: 'min-h-[44px] min-w-[44px]',
+} as const;

@@ -1,16 +1,22 @@
+import { lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-import DashboardWithSubtabs from '@/features/overview/components/dashboard/DashboardWithSubtabs';
-import ExecutionsWithSubtabs from '@/features/overview/components/dashboard/ExecutionsWithSubtabs';
-import ManualReviewList from '@/features/overview/sub_manual-review/components/ManualReviewList';
-import MessageList from '@/features/overview/sub_messages/components/MessageList';
-import EventLogList from '@/features/overview/sub_events/components/EventLogList';
-import KnowledgeHub from '@/features/overview/components/dashboard/cards/KnowledgeHub';
-import SLADashboard from '@/features/overview/sub_sla/components/SLADashboard';
-import CronAgentsPage from '@/features/overview/sub_cron_agents/components/CronAgentsPage';
-import ScheduleTimeline from '@/features/overview/sub_schedules/components/ScheduleTimeline';
+import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 import { OverviewFilterProvider } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { useExecutionDashboardPipeline } from '@/hooks/overview/useExecutionDashboardPipeline';
+
+// Lazy-load each subtab — only the active one ships to the render tree.
+// On Desktop these become separate chunks; on Android inlineDynamicImports
+// collapses them into the IIFE so the Suspense resolves in one microtask.
+const DashboardWithSubtabs = lazy(() => import('@/features/overview/components/dashboard/DashboardWithSubtabs'));
+const ExecutionsWithSubtabs = lazy(() => import('@/features/overview/components/dashboard/ExecutionsWithSubtabs'));
+const ManualReviewList = lazy(() => import('@/features/overview/sub_manual-review/components/ManualReviewList'));
+const MessageList = lazy(() => import('@/features/overview/sub_messages/components/MessageList'));
+const EventLogList = lazy(() => import('@/features/overview/sub_events/components/EventLogList'));
+const KnowledgeHub = lazy(() => import('@/features/overview/components/dashboard/cards/KnowledgeHub'));
+const SLADashboard = lazy(() => import('@/features/overview/sub_sla/components/SLADashboard'));
+const CronAgentsPage = lazy(() => import('@/features/overview/sub_cron_agents/components/CronAgentsPage'));
+const ScheduleTimeline = lazy(() => import('@/features/overview/sub_schedules/components/ScheduleTimeline'));
 
 function OverviewContent() {
   useExecutionDashboardPipeline();
@@ -24,16 +30,18 @@ function OverviewContent() {
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
     >
-      {overviewTab === 'home' ? <DashboardWithSubtabs /> :
-      overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
-      overviewTab === 'manual-review' ? <ManualReviewList /> :
-      overviewTab === 'messages' ? <MessageList /> :
-      overviewTab === 'events' ? <EventLogList /> :
-      overviewTab === 'knowledge' ? <KnowledgeHub /> :
-      overviewTab === 'sla' ? <SLADashboard /> :
-      overviewTab === 'cron-agents' ? <CronAgentsPage /> :
-      overviewTab === 'schedules' ? <ScheduleTimeline /> :
-      <DashboardWithSubtabs />}
+      <Suspense fallback={<PanelSkeleton variant="subtab" />}>
+        {overviewTab === 'home' ? <DashboardWithSubtabs /> :
+        overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
+        overviewTab === 'manual-review' ? <ManualReviewList /> :
+        overviewTab === 'messages' ? <MessageList /> :
+        overviewTab === 'events' ? <EventLogList /> :
+        overviewTab === 'knowledge' ? <KnowledgeHub /> :
+        overviewTab === 'sla' ? <SLADashboard /> :
+        overviewTab === 'cron-agents' ? <CronAgentsPage /> :
+        overviewTab === 'schedules' ? <ScheduleTimeline /> :
+        <DashboardWithSubtabs />}
+      </Suspense>
     </motion.div>
   );
 }

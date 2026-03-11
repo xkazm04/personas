@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { CheckCircle2, Download } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import type { CategoryWithCount } from '@/api/overview/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -45,6 +46,8 @@ export function ExploreView({
     return map;
   }, [allItems]);
 
+  const isSimple = useSimpleMode();
+
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4 2xl:px-8 3xl:px-12 4xl:px-16">
       {/* Ready to Deploy section */}
@@ -53,7 +56,9 @@ export function ExploreView({
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle2 className="w-4 h-4 text-emerald-400/70" />
             <h2 className="text-sm font-semibold text-foreground/80">Ready to Deploy</h2>
+            {!isSimple && (
             <span className="text-sm text-muted-foreground/60">Templates with all connectors configured</span>
+            )}
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2">
             {readyTemplates.map((t) => (
@@ -65,10 +70,10 @@ export function ExploreView({
                 className="flex-shrink-0 w-52 bg-secondary/20 border border-emerald-500/15 p-3 text-left hover:border-emerald-500/30 hover:bg-secondary/30"
               >
                 <div className="text-sm font-medium text-foreground/80 truncate">{t.test_case_name}</div>
-                <div className="text-sm text-muted-foreground/50 truncate mt-0.5">
+                <div className="text-sm text-muted-foreground/80 truncate mt-0.5">
                   {t.instruction.length > 60 ? t.instruction.slice(0, 60) + '...' : t.instruction}
                 </div>
-                {t.adoption_count > 0 && (
+                {!isSimple && t.adoption_count > 0 && (
                   <div className="flex items-center gap-1 mt-2 text-sm text-emerald-400/60">
                     <Download className="w-2.5 h-2.5" />
                     {t.adoption_count} adoption{t.adoption_count !== 1 ? 's' : ''}

@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion';
-import { PanelLeftClose, PanelLeft } from 'lucide-react';
+import { PanelLeftClose, PanelLeft, Sparkles, LayoutGrid, Wrench } from 'lucide-react';
 import { SidebarIconStyles, SIDEBAR_ICONS } from './SidebarIcons';
 import { usePersonaStore } from '@/stores/personaStore';
 import type { SidebarSection } from '@/lib/types/types';
 import { IS_MOBILE, MOBILE_SECTIONS } from '@/lib/utils/platform/platform';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useDevMode } from '@/hooks/utility/interaction/useDevMode';
 import { sections } from './sidebarData';
 
 interface SidebarLevel1Props {
@@ -31,19 +33,24 @@ export default function SidebarLevel1({
   const isLabRunning = usePersonaStore((s) => s.isLabRunning);
   const connectorTestActive = usePersonaStore((s) => s.connectorTestActive);
   const isDev = import.meta.env.DEV;
+  const isSimple = useSimpleMode();
+  const isDevMode = useDevMode();
+  const viewMode = usePersonaStore((s) => s.viewMode);
+  const toggleViewMode = usePersonaStore((s) => s.toggleViewMode);
 
   return (
     <>
       <SidebarIconStyles />
       <div className={`${collapsed ? 'w-[52px]' : 'w-[88px]'} bg-secondary/40 border-r border-primary/15 flex flex-col items-center py-3 gap-1 transition-all duration-200`}>
         {sections
-          .filter((s) => (!s.devOnly || isDev) && (!IS_MOBILE || MOBILE_SECTIONS.has(s.id)))
+          .filter((s) => (!s.devOnly || isDev) && (!s.devModeOnly || isDevMode) && (!IS_MOBILE || MOBILE_SECTIONS.has(s.id)) && (!isSimple || !s.simpleHidden))
           .map((section) => {
           const CustomIcon = SIDEBAR_ICONS[section.id];
           const FallbackIcon = section.icon;
           const isActive = sidebarSection === section.id;
           const isDisabled = disabledSections.has(section.id);
           const isDevSection = section.devOnly;
+          const isDevModeSection = section.devModeOnly;
 
           return (
             <button
@@ -59,7 +66,7 @@ export default function SidebarLevel1({
               disabled={isDisabled}
               className={`relative ${collapsed ? 'w-[40px]' : 'w-[76px]'} rounded-xl flex flex-col items-center justify-center py-2 transition-all group ${
                 isDisabled ? 'cursor-not-allowed opacity-40' : ''
-              } ${isDevSection ? 'ring-1 ring-amber-500/40' : ''}`}
+              } ${isDevSection ? 'ring-1 ring-amber-500/40' : ''} ${isDevModeSection ? 'ring-1 ring-amber-500/30' : ''}`}
               title={isDisabled ? `${section.label} (${section.id === 'cloud' ? 'Sign in to unlock cloud features' : 'Coming soon'})` : section.label}
             >
               {isActive && !isDisabled && (
@@ -80,8 +87,8 @@ export default function SidebarLevel1({
                 }
               </div>
               {!collapsed && (
-                <span className={`relative z-10 text-[10px] leading-tight mt-1 font-semibold transition-colors ${
-                  isActive ? 'text-primary' : 'text-foreground/60 group-hover:text-foreground/90'
+                <span className={`relative z-10 text-[10px] leading-tight mt-1 font-bold transition-colors ${
+                  isActive ? 'text-primary' : 'text-foreground/80 group-hover:text-foreground'
                 }`}>
                   {section.label}
                 </span>
@@ -123,6 +130,23 @@ export default function SidebarLevel1({
         )}
 
         <div className="flex-1" />
+
+        {!IS_MOBILE && (
+          <button
+            onClick={toggleViewMode}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors mb-1 ${
+              viewMode === 'simple'
+                ? 'text-violet-400 bg-violet-500/15 hover:bg-violet-500/25'
+                : viewMode === 'dev'
+                  ? 'text-amber-400 bg-amber-500/15 hover:bg-amber-500/25'
+                  : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50'
+            }`}
+            title={viewMode === 'simple' ? 'Switch to Full mode' : viewMode === 'full' ? 'Switch to Dev mode' : 'Switch to Simple mode'}
+          >
+            {viewMode === 'simple' ? <Sparkles className="w-4 h-4" /> : viewMode === 'dev' ? <Wrench className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
+          </button>
+        )}
+
         {!collapsed && appVersion && (
           <div className="pb-1 pt-1">
             <span className="text-sm font-mono text-muted-foreground/80 block text-center">

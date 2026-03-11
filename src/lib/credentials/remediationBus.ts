@@ -57,6 +57,8 @@ export function actionsForRemediation(remediation: Remediation): RemediationActi
       return ['auto_rotate', 'notify_critical'];
     case 'disable':
       return ['auto_disable', 'notify_critical'];
+    default:
+      return [];
   }
 }
 

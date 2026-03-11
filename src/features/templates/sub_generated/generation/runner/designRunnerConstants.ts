@@ -108,21 +108,21 @@ export const PREDEFINED_TEST_CASES: PredefinedTestCase[] = [
 ];
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  Email: 'bg-blue-500/15 text-blue-300 border-blue-500/25',
-  Development: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25',
-  Content: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
-  Research: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/25',
-  'Project Management': 'bg-purple-500/15 text-purple-300 border-purple-500/25',
-  Finance: 'bg-green-500/15 text-green-300 border-green-500/25',
-  DevOps: 'bg-orange-500/15 text-orange-300 border-orange-500/25',
-  HR: 'bg-pink-500/15 text-pink-300 border-pink-500/25',
-  Sales: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/25',
-  Support: 'bg-teal-500/15 text-teal-300 border-teal-500/25',
-  Legal: 'bg-red-500/15 text-red-300 border-red-500/25',
-  Productivity: 'bg-violet-500/15 text-violet-300 border-violet-500/25',
-  Marketing: 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/25',
-  Security: 'bg-rose-500/15 text-rose-300 border-rose-500/25',
-  Pipeline: 'bg-sky-500/15 text-sky-300 border-sky-500/25',
+  Email: 'bg-blue-500/15 text-blue-400 border-blue-500/25',
+  Development: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
+  Content: 'bg-amber-500/15 text-amber-400 border-amber-500/25',
+  Research: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25',
+  'Project Management': 'bg-purple-500/15 text-purple-400 border-purple-500/25',
+  Finance: 'bg-green-500/15 text-green-400 border-green-500/25',
+  DevOps: 'bg-orange-500/15 text-orange-400 border-orange-500/25',
+  HR: 'bg-pink-500/15 text-pink-400 border-pink-500/25',
+  Sales: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/25',
+  Support: 'bg-teal-500/15 text-teal-400 border-teal-500/25',
+  Legal: 'bg-red-500/15 text-red-400 border-red-500/25',
+  Productivity: 'bg-violet-500/15 text-violet-400 border-violet-500/25',
+  Marketing: 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/25',
+  Security: 'bg-rose-500/15 text-rose-400 border-rose-500/25',
+  Pipeline: 'bg-sky-500/15 text-sky-400 border-sky-500/25',
 };
 
 export const TRIGGER_OPTIONS = ['schedule', 'polling', 'webhook', 'manual', 'event'] as const;

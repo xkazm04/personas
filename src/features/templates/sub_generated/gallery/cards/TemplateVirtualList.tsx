@@ -154,8 +154,7 @@ export function TemplateVirtualList({
 
         {isFetchingMore && (
           <div className="flex items-center justify-center py-4">
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/50" />
-            <span className="ml-2 text-sm text-muted-foreground/50">Loading more...</span>
+            <div className="w-4 h-4 border-2 border-primary/20 border-t-primary/60 rounded-full animate-spin" />
           </div>
         )}
       </div>

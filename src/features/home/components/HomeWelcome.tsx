@@ -1,4 +1,4 @@
-import { BarChart3, Bot, Zap, Key, FlaskConical, Users, Cloud, Settings } from 'lucide-react';
+import { BarChart3, Bot, Zap, Key, FlaskConical, Users, Cloud, Settings, Wrench } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useMemo } from 'react';
@@ -15,6 +15,7 @@ const NAV_CARDS: NavCard[] = [
   { id: 'design-reviews', icon: FlaskConical, color: 'purple', gradFrom: 'from-purple-500/8', gradTo: 'to-fuchsia-500/4', glowColor: 'bg-purple-500/20', accentBorder: 'border-purple-500/20 hover:border-purple-400/40', iconBg: 'bg-purple-500/15', iconText: 'text-purple-400' },
   { id: 'team', icon: Users, color: 'rose', gradFrom: 'from-rose-500/8', gradTo: 'to-pink-500/4', glowColor: 'bg-rose-500/20', accentBorder: 'border-rose-500/20 hover:border-rose-400/40', iconBg: 'bg-rose-500/15', iconText: 'text-rose-400' },
   { id: 'cloud', icon: Cloud, color: 'sky', gradFrom: 'from-sky-500/8', gradTo: 'to-blue-500/4', glowColor: 'bg-sky-500/20', accentBorder: 'border-sky-500/20 hover:border-sky-400/40', iconBg: 'bg-sky-500/15', iconText: 'text-sky-400' },
+  { id: 'dev-tools', icon: Wrench, color: 'amber', gradFrom: 'from-amber-500/8', gradTo: 'to-yellow-500/4', glowColor: 'bg-amber-500/20', accentBorder: 'border-amber-500/20 hover:border-amber-400/40', iconBg: 'bg-amber-500/15', iconText: 'text-amber-400' },
   { id: 'settings', icon: Settings, color: 'slate', gradFrom: 'from-slate-400/8', gradTo: 'to-zinc-500/4', glowColor: 'bg-slate-400/15', accentBorder: 'border-slate-400/20 hover:border-slate-300/40', iconBg: 'bg-slate-400/15', iconText: 'text-slate-400' },
 ];
 

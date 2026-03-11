@@ -92,7 +92,7 @@ export function useRemediationEvaluator() {
       if (!rotationStatus?.anomaly_score) continue;
 
       const { anomaly_score } = rotationStatus;
-      const actions = actionsForRemediation(anomaly_score.remediation);
+      const actions = actionsForRemediation(anomaly_score.remediation) ?? [];
       const dispatched: RemediationEvent[] = [];
 
       for (const action of actions) {
@@ -132,15 +132,17 @@ export function useRemediationEvaluator() {
   useEffect(() => {
     mountedRef.current = true;
 
+    const safeEvaluate = () => {
+      evaluate().catch(() => {
+        if (mountedRef.current) setEvaluating(false);
+      });
+    };
+
     // Initial evaluation after a short delay (let store hydrate)
-    const initialTimeout = setTimeout(() => {
-      void evaluate();
-    }, 5_000);
+    const initialTimeout = setTimeout(safeEvaluate, 5_000);
 
     // Periodic evaluation
-    timerRef.current = setInterval(() => {
-      void evaluate();
-    }, EVAL_INTERVAL_MS);
+    timerRef.current = setInterval(safeEvaluate, EVAL_INTERVAL_MS);
 
     return () => {
       mountedRef.current = false;
@@ -155,7 +157,9 @@ export function useRemediationEvaluator() {
   /** Force an immediate re-evaluation (e.g., after manual healthcheck). */
   const forceEvaluate = useCallback(() => {
     remediationBus.resetCooldowns();
-    void evaluate();
+    evaluate().catch(() => {
+      if (mountedRef.current) setEvaluating(false);
+    });
   }, [evaluate]);
 
   return {

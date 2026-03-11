@@ -116,7 +116,8 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
               }
             }
           }
-          return [...prev, entry];
+          const next = [...prev, entry];
+          return next.length > 500 ? next.slice(-500) : next;
         }),
         ctrl.signal,
       );

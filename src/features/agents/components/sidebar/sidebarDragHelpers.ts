@@ -25,5 +25,7 @@ export function resolveDropGroupId(drop: DropPayload, personas: DbPersona[]): st
       const target = personas.find(p => p.id === drop.personaId);
       return target?.group_id || null;
     }
+    default:
+      return null;
   }
 }

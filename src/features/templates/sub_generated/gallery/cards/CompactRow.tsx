@@ -5,6 +5,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { getCategoryMeta } from '../search/filters/searchConstants';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { TemplateModal } from './reviewParseCache';
@@ -25,6 +26,7 @@ export function CompactRow({
   isAiResult,
   modals,
 }: CompactRowProps) {
+  const isSimple = useSimpleMode();
   const categoryMeta = review.category ? getCategoryMeta(review.category) : null;
   const CategoryIcon = categoryMeta?.icon ?? null;
 
@@ -53,28 +55,36 @@ export function CompactRow({
         )}
       </div>
       <div className="flex items-center gap-3 flex-shrink-0 ml-2">
-        <span
-          className={`inline-flex items-center gap-1 text-sm font-mono ${
-            readinessScore === 100
-              ? 'text-emerald-400/80'
-              : readinessScore > 0
-                ? 'text-amber-400/70'
-                : 'text-muted-foreground/40'
-          }`}
-          title={`${readinessScore}% ready`}
-        >
-          {readinessScore === 100 ? (
-            <CheckCircle2 className="w-3 h-3" />
-          ) : (
-            <ShieldCheck className="w-3 h-3" />
-          )}
-          {readinessScore}%
-        </span>
-        {review.adoption_count > 0 && (
-          <span className="inline-flex items-center gap-1 text-sm font-mono text-emerald-400/70">
-            <Download className="w-2.5 h-2.5" />
-            {review.adoption_count}
+        {isSimple ? (
+          <span className={`inline-flex items-center gap-1 ${readinessScore === 100 ? 'text-emerald-400/80' : 'text-amber-400/70'}`}>
+            {readinessScore === 100 ? <CheckCircle2 className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
           </span>
+        ) : (
+          <>
+            <span
+              className={`inline-flex items-center gap-1 text-sm font-mono ${
+                readinessScore === 100
+                  ? 'text-emerald-400/80'
+                  : readinessScore > 0
+                    ? 'text-amber-400/70'
+                    : 'text-muted-foreground/70'
+              }`}
+              title={`${readinessScore}% ready`}
+            >
+              {readinessScore === 100 ? (
+                <CheckCircle2 className="w-3 h-3" />
+              ) : (
+                <ShieldCheck className="w-3 h-3" />
+              )}
+              {readinessScore}%
+            </span>
+            {review.adoption_count > 0 && (
+              <span className="inline-flex items-center gap-1 text-sm font-mono text-emerald-400/70">
+                <Download className="w-2.5 h-2.5" />
+                {review.adoption_count}
+              </span>
+            )}
+          </>
         )}
       </div>
     </div>

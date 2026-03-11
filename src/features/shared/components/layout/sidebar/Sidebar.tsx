@@ -5,7 +5,9 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { useAuthStore } from '@/stores/authStore';
 import type { SidebarSection } from '@/lib/types/types';
 import OnboardingProgressBar from '@/features/onboarding/components/OnboardingProgressBar';
-import { IS_MOBILE } from '@/lib/utils/platform/platform';
+import { IS_MOBILE, SIMPLE_SECTIONS, DEV_MODE_SECTIONS } from '@/lib/utils/platform/platform';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useDevMode } from '@/hooks/utility/interaction/useDevMode';
 import { sections } from './sidebarData';
 import SidebarLevel1 from './SidebarLevel1';
 import SidebarLevel2 from './SidebarLevel2';
@@ -67,6 +69,9 @@ export default function Sidebar() {
     return disabled;
   }, [isAuthenticated]);
 
+  const isSimple = useSimpleMode();
+  const isDevMode = useDevMode();
+
   // Redirect away from dev-only sections/tabs when not in dev mode
   useEffect(() => {
     if (isDev) return;
@@ -74,6 +79,22 @@ export default function Sidebar() {
       setSidebarSection('home');
     }
   }, [isDev, sidebarSection, setSidebarSection]);
+
+  // Redirect away from simple-hidden sections when switching to simple mode
+  useEffect(() => {
+    if (!isSimple) return;
+    if (!SIMPLE_SECTIONS.has(sidebarSection)) {
+      setSidebarSection('home');
+    }
+  }, [isSimple, sidebarSection, setSidebarSection]);
+
+  // Redirect away from dev-mode-only sections when not in dev mode
+  useEffect(() => {
+    if (isDevMode) return;
+    if (DEV_MODE_SECTIONS.has(sidebarSection)) {
+      setSidebarSection('home');
+    }
+  }, [isDevMode, sidebarSection, setSidebarSection]);
 
   useEffect(() => {
     if (isDev) return;

@@ -6,6 +6,7 @@ export interface SubNavItem {
   icon: LucideIcon;
   label: string;
   devOnly?: boolean;
+  simpleHidden?: boolean;
 }
 
 export interface SubNavBadge {
@@ -66,7 +67,7 @@ export default function SidebarSubNav({
             }`}>
               <Icon className={`${iconSize} ${isActive ? 'text-primary' : 'text-muted-foreground/90'}`} />
             </div>
-            <span className={`text-sm ${isActive ? 'font-medium text-foreground/90' : isOverview ? 'font-medium text-muted-foreground/80' : 'text-muted-foreground/65'}`}>
+            <span className={`text-sm ${isActive ? 'font-semibold text-foreground' : isOverview ? 'font-medium text-foreground/80' : 'font-medium text-muted-foreground/90'}`}>
               {item.label}
             </span>
             {badge && badge.count > 0 && (

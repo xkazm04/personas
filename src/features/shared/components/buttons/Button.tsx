@@ -79,9 +79,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const isDisabled = disabled || loading;
 
     // Build accent classes dynamically
+    // Note: text-*-400 colors are corrected to 600/700 on light themes via CSS overrides in globals.css
     let accentClasses = '';
     if (variant === 'accent' && accentColor) {
-      accentClasses = `border-${accentColor}-500/25 bg-${accentColor}-500/10 text-${accentColor}-400 hover:bg-${accentColor}-500/20`;
+      accentClasses = `border-${accentColor}-500/25 bg-${accentColor}-500/10 text-${accentColor}-400 hover:bg-${accentColor}-500/20 font-semibold`;
     }
 
     const classes = [

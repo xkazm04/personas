@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Trash2, Loader2, ExternalLink, Check, X, Copy } from 'lucide-react';
+import { Send, Trash2, ExternalLink, Check, X, Copy } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
@@ -113,9 +113,7 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
             <Send className="w-3 h-3" /> Delivery Status
           </div>
           {deliveriesLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground/80 py-1">
-              <Loader2 className="w-3 h-3 animate-spin" /> Loading...
-            </div>
+            null
           ) : deliveries.length === 0 ? (
             <div className="text-sm text-muted-foreground/80 py-1">No delivery channels configured</div>
           ) : (

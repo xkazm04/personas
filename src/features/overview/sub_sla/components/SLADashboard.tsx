@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Shield, AlertTriangle, Clock, Loader2, Wrench } from 'lucide-react';
+import { Shield, AlertTriangle, Clock, Wrench } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { getSlaDashboard } from '@/api/overview/sla';
 import type { SlaDashboardData } from '@/api/overview/sla';
@@ -41,9 +41,7 @@ export default function SLADashboard() {
 
       <ContentBody centered>
         {loading && !data ? (
-          <div className="flex items-center justify-center py-20 text-muted-foreground/70">
-            <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading SLA data...
-          </div>
+          null
         ) : !data ? (
           <div className="text-center py-20 text-muted-foreground/70">No execution data available.</div>
         ) : (

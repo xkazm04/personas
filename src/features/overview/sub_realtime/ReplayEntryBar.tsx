@@ -12,8 +12,8 @@ export const ReplayEntryBar = memo(function ReplayEntryBar({
 }) {
   return (
     <div className="flex items-center justify-center gap-3 px-4 py-2.5 bg-gradient-to-r from-background/90 via-secondary/30 to-background/90 border-t border-primary/10">
-      <History className="w-3.5 h-3.5 text-muted-foreground/50" />
-      <span className="text-sm text-muted-foreground/60 font-medium tracking-wide">
+      <History className="w-3.5 h-3.5 text-muted-foreground/80" />
+      <span className="text-sm text-foreground/70 font-medium tracking-wide">
         REPLAY
       </span>
       <div className="w-px h-4 bg-primary/10" />

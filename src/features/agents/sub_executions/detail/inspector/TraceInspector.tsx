@@ -1,6 +1,6 @@
 import type { DbPersonaExecution } from '@/lib/types/types';
 import { formatDuration } from '@/lib/utils/formatters';
-import { AlertCircle, Loader2, Activity } from 'lucide-react';
+import { AlertCircle, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SPAN_TYPE_CONFIG } from './traceInspectorTypes';
 import { SpanRow } from './SpanRow';
@@ -15,14 +15,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   const { trace, loading, error, collapsedSpans, toggleSpan, visibleNodes, totalMs, childrenMap } =
     useTraceData(execution.id, execution.persona_id);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/80" />
-        <span className="ml-2 text-sm text-muted-foreground/80">Loading trace...</span>
-      </div>
-    );
-  }
+  if (loading) return null;
 
   if (error) {
     return (

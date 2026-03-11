@@ -58,9 +58,9 @@ export function compositeScore(
 /** Return Tailwind color class for a score value. */
 export function scoreColor(score: number | null): string {
   if (score === null) return 'text-muted-foreground/80';
-  if (score >= 80) return 'text-emerald-400';
-  if (score >= 50) return 'text-amber-400';
-  return 'text-red-400';
+  if (score >= 80) return 'text-status-success';
+  if (score >= 50) return 'text-status-warning';
+  return 'text-status-error';
 }
 
 // ── Status badge styling ───────────────────────────────────────
@@ -69,14 +69,14 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; border: string }
   drafting:   { bg: 'bg-violet-500/15', text: 'text-violet-400', border: 'border-violet-500/30' },
   generating: { bg: 'bg-primary/15', text: 'text-primary', border: 'border-primary/30' },
   running:    { bg: 'bg-primary/15', text: 'text-primary', border: 'border-primary/30' },
-  completed:  { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-  passed:     { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-  failed:     { bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/20' },
-  cancelled:  { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/20' },
-  error:      { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/20' },
+  completed:  { bg: 'bg-status-success/15', text: 'text-status-success', border: 'border-status-success/20' },
+  passed:     { bg: 'bg-status-success/15', text: 'text-status-success', border: 'border-status-success/20' },
+  failed:     { bg: 'bg-status-error/15', text: 'text-status-error', border: 'border-status-error/20' },
+  cancelled:  { bg: 'bg-status-warning/15', text: 'text-status-warning', border: 'border-status-warning/20' },
+  error:      { bg: 'bg-status-warning/15', text: 'text-status-warning', border: 'border-status-warning/20' },
 };
 
-const FALLBACK_STATUS = { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/20' };
+const FALLBACK_STATUS = { bg: 'bg-status-warning/15', text: 'text-status-warning', border: 'border-status-warning/20' };
 
 /** Return Tailwind class string for a status badge. */
 export function statusBadge(status: string): string {

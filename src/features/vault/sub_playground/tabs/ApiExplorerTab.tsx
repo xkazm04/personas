@@ -1,4 +1,4 @@
-import { Upload, FileText, Globe, Loader2, Search, X, PlayCircle, Square } from 'lucide-react';
+import { Upload, FileText, Globe, Search, X, PlayCircle, Square } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { EndpointRow } from '../EndpointRow';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
@@ -21,14 +21,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
 
   // ── Render ─────────────────────────────────────────────────────
 
-  if (state.loading) {
-    return (
-      <div className="flex items-center justify-center h-full py-20 gap-2">
-        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/60" />
-        <span className="text-sm text-muted-foreground/60">Loading API definition...</span>
-      </div>
-    );
-  }
+  if (state.loading) return null;
 
   return (
     <div className="flex flex-col h-full">

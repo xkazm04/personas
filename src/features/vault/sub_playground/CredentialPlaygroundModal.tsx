@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, RotateCw, Globe, Server, BookOpen } from 'lucide-react';
+import { Eye, RotateCw, Globe, Server, BookOpen, History } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import { useGoogleOAuth } from '@/features/vault/hooks/useGoogleOAuth';
@@ -12,11 +12,12 @@ import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types'
 import { PlaygroundHeader } from './PlaygroundHeader';
 import { PlaygroundTabContent } from './PlaygroundTabContent';
 
-type PlaygroundTab = 'overview' | 'api-explorer' | 'recipes' | 'mcp-tools' | 'rotation';
+type PlaygroundTab = 'overview' | 'executions' | 'api-explorer' | 'recipes' | 'mcp-tools' | 'rotation';
 interface TabDef { id: PlaygroundTab; label: string; icon: typeof Eye; }
 
 function getAvailableTabs(connector: ConnectorDefinition | undefined): TabDef[] {
   const tabs: TabDef[] = [{ id: 'overview', label: 'Overview', icon: Eye }];
+  tabs.push({ id: 'executions', label: 'Executions', icon: History });
   const category = connector?.category;
   if (category === 'custom' || (category && !['mcp', 'database'].includes(category))) {
     tabs.push({ id: 'api-explorer', label: 'API Explorer', icon: Globe });

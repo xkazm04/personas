@@ -26,9 +26,22 @@ export interface RedisKeyInfo {
 // ── Module-level cache ─────────────────────────────────────────────────
 // Persists across tab switches and component remounts within the session.
 // Cleared explicitly via refresh/clearCache.
+// Bounded to prevent unbounded memory growth in long sessions.
+const MAX_TABLE_CACHE = 50;
+const MAX_COLUMN_CACHE = 200;
+
 const _tableCache = new Map<string, IntrospectedTable[]>();
 const _redisKeyCache = new Map<string, RedisKeyInfo[]>();
 const _columnCache = new Map<string, IntrospectedColumn[]>();
+
+/** Evict oldest entries when a Map exceeds maxSize. */
+function boundedSet<V>(map: Map<string, V>, key: string, value: V, maxSize: number) {
+  map.set(key, value);
+  if (map.size > maxSize) {
+    const oldest = map.keys().next().value;
+    if (oldest !== undefined) map.delete(oldest);
+  }
+}
 
 export function clearCacheForCredential(credentialId: string) {
   _tableCache.delete(credentialId);
@@ -154,11 +167,11 @@ export function useTableIntrospection({
       const result = await introspectDbTables(credentialId);
       if (isRedis) {
         const keys = parseRedisKeysResult(result).map((k) => ({ key: k }));
-        _redisKeyCache.set(credentialId, keys);
+        boundedSet(_redisKeyCache, credentialId, keys, MAX_TABLE_CACHE);
         setRedisKeys(keys);
       } else {
         const parsed = parseTablesResult(result);
-        _tableCache.set(credentialId, parsed);
+        boundedSet(_tableCache, credentialId, parsed, MAX_TABLE_CACHE);
         setTables(parsed);
       }
     } catch (err) {
@@ -181,7 +194,7 @@ export function useTableIntrospection({
     try {
       const result = await introspectDbColumns(credentialId, tableName);
       const parsed = parseColumnsResult(result);
-      _columnCache.set(cacheKey, parsed);
+      boundedSet(_columnCache, cacheKey, parsed, MAX_COLUMN_CACHE);
       setColumns(parsed);
     } catch (err) {
       setColumnsError(errMsg(err, 'Failed to fetch columns'));

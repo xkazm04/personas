@@ -36,17 +36,19 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
     return () => clearPipelineState();
   }, [projectId, fetchPipelines, clearPipelineState]);
 
-  // Auto-refresh running pipelines
+  // Auto-refresh running pipelines — use scalar deps to avoid interval churn
+  const activePipelineId = activePipeline?.id ?? null;
+  const activePipelineStatus = activePipeline?.status ?? null;
   useEffect(() => {
-    if (!projectId || !activePipeline) return;
-    if (activePipeline.status !== 'running' && activePipeline.status !== 'pending') return;
+    if (!projectId || !activePipelineId) return;
+    if (activePipelineStatus !== 'running' && activePipelineStatus !== 'pending') return;
 
     const interval = setInterval(() => {
-      refreshPipeline(projectId, activePipeline.id);
+      refreshPipeline(projectId, activePipelineId);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [projectId, activePipeline, refreshPipeline]);
+  }, [projectId, activePipelineId, activePipelineStatus, refreshPipeline]);
 
   if (!projectId) {
     return (
@@ -101,10 +103,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
         {/* Left: pipeline list */}
         <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1 scrollbar-thin">
           {loading && pipelines.length === 0 ? (
-            <div className="flex items-center justify-center py-8 text-muted-foreground/50 text-sm">
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              Loading pipelines...
-            </div>
+            null
           ) : pipelines.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
@@ -165,10 +164,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
               {/* Jobs list */}
               <div className="space-y-2">
                 {jobs.length === 0 && loading ? (
-                  <div className="flex items-center justify-center py-6 text-muted-foreground/50 text-sm">
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Loading jobs...
-                  </div>
+                  null
                 ) : jobs.length === 0 ? (
                   <p className="text-sm text-muted-foreground/50 text-center py-4">No jobs found</p>
                 ) : (

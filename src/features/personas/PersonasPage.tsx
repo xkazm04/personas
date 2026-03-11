@@ -12,6 +12,7 @@ import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavConte
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
+import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 
 const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
@@ -22,6 +23,10 @@ const EventsPage = lazy(() => import('@/features/triggers/components/display/eve
 const CloudDeployPanel = lazy(() => import('@/features/deployment/components/cloud/CloudDeployPanel'));
 const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
+const DevToolsPage = lazy(() => import('@/features/dev-tools/DevToolsPage'));
+
+// Shared Suspense fallback for all lazy-loaded sections
+const SectionFallback = <PanelSkeleton variant="section" />;
 
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
@@ -50,7 +55,7 @@ export default function PersonasPage() {
   const runStartup = useCallback(() => {
     // Run all startup fetches in parallel and collect failures.
     // Using Promise.allSettled prevents any single call's error from overwriting
-    // the others â€” the final store.error is the aggregate of all failures.
+    // the others — the final store.error is the aggregate of all failures.
     setError(null);
     const STARTUP_LABELS = ['personas', 'tools', 'credentials', 'recipes', 'pending review', 'groups'] as const;
     Promise.allSettled([
@@ -66,7 +71,7 @@ export default function PersonasPage() {
         .map((r, i) => (r.status === 'rejected' ? STARTUP_LABELS[i] : null))
         .filter((l): l is NonNullable<typeof l> => l !== null);
       if (failed.length > 0) {
-        setError(`Startup failed â€” ${failed.join(', ')} could not be loaded`);
+        setError(`Startup failed — ${failed.join(', ')} could not be loaded`);
       }
     }).catch(() => {
       setPersonasFetched(true);
@@ -84,15 +89,26 @@ export default function PersonasPage() {
     }
   }, []);
 
-  // Prefetch likely next routes after initial load settles
+  // Prefetch likely next routes after initial load settles.
+  // Speculative — fires during browser idle time, failures silently ignored.
   useEffect(() => {
     if (!personasFetched) return;
     const id = requestIdleCallback(() => {
+      // Tier 1: most frequently visited sections
       import('@/features/overview/components/dashboard/OverviewPage').catch(() => {});
       import('@/features/vault/sub_manager/CredentialManager').catch(() => {});
       import('@/features/settings/components/SettingsPage').catch(() => {});
     });
-    return () => cancelIdleCallback(id);
+    // Tier 2: prefetch after a short delay so tier 1 chunks land first
+    const id2 = requestIdleCallback(() => {
+      import('@/features/deployment/components/cloud/CloudDeployPanel').catch(() => {});
+      import('@/features/templates/components/DesignReviewsPage').catch(() => {});
+      import('@/features/triggers/components/display/event/EventsPage').catch(() => {});
+    });
+    return () => {
+      cancelIdleCallback(id);
+      cancelIdleCallback(id2);
+    };
   }, [personasFetched]);
 
   const renderContent = () => {
@@ -108,12 +124,12 @@ export default function PersonasPage() {
 
     if (sidebarSection === 'home') return <ErrorBoundary name="Home"><HomePage /></ErrorBoundary>;
     if (sidebarSection === 'team') {
-      return <ErrorBoundary name="Teams"><Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>}><TeamCanvas /></Suspense></ErrorBoundary>;
+      return <ErrorBoundary name="Teams"><Suspense fallback={SectionFallback}><TeamCanvas /></Suspense></ErrorBoundary>;
     }
     if (sidebarSection === 'cloud') {
       return (
         <ErrorBoundary name="Cloud">
-        <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>}>
+        <Suspense fallback={SectionFallback}>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={cloudTab}
@@ -137,12 +153,13 @@ export default function PersonasPage() {
       );
     }
     if (sidebarSection === 'overview') {
-      return <ErrorBoundary name="Overview"><Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>}><OverviewPage /></Suspense></ErrorBoundary>;
+      return <ErrorBoundary name="Overview"><Suspense fallback={SectionFallback}><OverviewPage /></Suspense></ErrorBoundary>;
     }
-    if (sidebarSection === 'credentials') return <ErrorBoundary name="Vault"><Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>}><CredentialManager /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'events') return <ErrorBoundary name="Triggers"><Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>}><EventsPage /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>}><DesignReviewsPage /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'settings') return <ErrorBoundary name="Settings"><Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>}><SettingsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'credentials') return <ErrorBoundary name="Vault"><Suspense fallback={SectionFallback}><CredentialManager /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'events') return <ErrorBoundary name="Triggers"><Suspense fallback={SectionFallback}><EventsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={SectionFallback}><DesignReviewsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'dev-tools') return <ErrorBoundary name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'settings') return <ErrorBoundary name="Settings"><Suspense fallback={SectionFallback}><SettingsPage /></Suspense></ErrorBoundary>;
     if (selectedPersonaId) return <ErrorBoundary name="Agent Editor"><PersonaEditor /></ErrorBoundary>;
     return <ErrorBoundary name="Agent Overview"><PersonaOverviewPage /></ErrorBoundary>;
   };

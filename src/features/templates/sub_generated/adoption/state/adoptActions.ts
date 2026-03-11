@@ -29,7 +29,7 @@ export function useAdoptDomainActions(update: UpdateFn, updateFn: UpdateWithPrev
   }, [updateFn]);
 
   const transformStarted = useCallback((adoptId: string) => {
-    update({ step: 'build', transforming: true, backgroundAdoptId: adoptId, transformPhase: 'running', transformLines: [], error: null });
+    update({ step: 'build', transforming: true, backgroundAdoptId: adoptId, transformPhase: 'running', transformLines: [], error: null, questions: null });
   }, [update]);
 
   const transformLines = useCallback((lines: string[]) => {
@@ -41,7 +41,9 @@ export function useAdoptDomainActions(update: UpdateFn, updateFn: UpdateWithPrev
   }, [update]);
 
   const awaitingAnswers = useCallback((questions: TransformQuestionResponse[]) => {
-    update({ step: 'tune', transforming: false, transformPhase: 'idle', questions, questionGenerating: false, userAnswers: prefillDefaults(questions) });
+    // Stay on current step (build for full wizard, quick adopt doesn't use steps)
+    // — questions are rendered inline in the build step / command center
+    update({ transforming: false, transformPhase: 'idle', questions, questionGenerating: false, userAnswers: prefillDefaults(questions) });
   }, [update]);
 
   const transformCompleted = useCallback((draft: N8nPersonaDraft) => {

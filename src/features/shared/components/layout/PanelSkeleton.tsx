@@ -6,10 +6,12 @@
  * Variants:
  *  - "panel"  (default) — full page skeleton with header bar + content blocks
  *  - "tab"    — smaller skeleton for editor tab content (no header bar)
+ *  - "subtab" — minimal skeleton for sub-tab content (list/grid placeholder)
+ *  - "section" — full-height centered spinner for top-level section loads
  */
 
 interface PanelSkeletonProps {
-  variant?: 'panel' | 'tab';
+  variant?: 'panel' | 'tab' | 'subtab' | 'section';
 }
 
 function ShimmerBlock({ className }: { className: string }) {
@@ -21,6 +23,34 @@ function ShimmerBlock({ className }: { className: string }) {
 }
 
 export default function PanelSkeleton({ variant = 'panel' }: PanelSkeletonProps) {
+  if (variant === 'section') {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (variant === 'subtab') {
+    return (
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden animate-in fade-in duration-150">
+        {/* Toolbar shimmer */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10">
+          <ShimmerBlock className="h-7 w-28 !rounded-lg" />
+          <ShimmerBlock className="h-7 w-20 !rounded-lg" />
+          <div className="flex-1" />
+          <ShimmerBlock className="h-7 w-7 !rounded-lg" />
+        </div>
+        {/* List rows shimmer */}
+        <div className="flex-1 p-4 space-y-2">
+          {Array.from({ length: 6 }, (_, i) => (
+            <ShimmerBlock key={i} className={`h-12 ${i > 3 ? 'opacity-50' : ''}`} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (variant === 'tab') {
     return (
       <div className="py-6 space-y-4 animate-in fade-in">

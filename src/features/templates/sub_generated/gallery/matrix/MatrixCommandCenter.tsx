@@ -1,15 +1,19 @@
 /**
  * MatrixCommandCenter — 9th cell centerpiece for PersonaMatrix.
  *
- * Edit mode: prompt input + capability toggles + radial launch orb.
+ * Edit mode phases:
+ *   1. Pre-build: prompt input + capability toggles + radial launch orb
+ *   2. Building: clean status indicator (no terminal logs)
+ *   3. Awaiting questions: status + "Answer Questions" button → modal
  * View mode: expandable prompt section chips.
  */
 import { useState, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Terminal, FileText, Play, X, User, Wrench, BookOpen, Shield, ChevronUp, ChevronDown, Globe, Search, Loader2 } from 'lucide-react';
+import { FileText, Play, X, User, Wrench, BookOpen, Shield, Globe, Search, Loader2, HelpCircle, CheckCircle2 } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
-import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import type { AgentIR } from '@/lib/types/designTypes';
+import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
+import { BuildQuestionnaireModal } from './BuildQuestionnaireModal';
 
 interface PromptSection { key: string; label: string; icon: React.ComponentType<{ className?: string }>; color: string; content: string; }
 
@@ -28,27 +32,6 @@ function PromptModal({ section, onClose }: { section: PromptSection; onClose: ()
       </div>
     </div>,
     document.body,
-  );
-}
-
-function MiniTerminalStrip({ isRunning, lastLine, lines }: { isRunning: boolean; lastLine: string; lines: string[] }) {
-  const [expanded, setExpanded] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  return (
-    <div className="rounded-lg border border-primary/10 bg-card-bg overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-foreground/[0.04] transition-colors" onClick={() => setExpanded(!expanded)}>
-        {isRunning && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0" />}
-        <Terminal className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-        <span className="flex-1 font-mono text-sm text-muted-foreground/50 truncate">{lastLine || 'Ready'}</span>
-        {lines.length > 0 && (expanded ? <ChevronUp className="w-3 h-3 text-muted-foreground/30 shrink-0" /> : <ChevronDown className="w-3 h-3 text-muted-foreground/30 shrink-0" />)}
-      </div>
-      {expanded && lines.length > 0 && (
-        <div ref={scrollRef} className="max-h-28 overflow-y-auto px-3 pb-2 font-mono text-sm leading-4 space-y-px border-t border-primary/5">
-          {lines.map((line, i) => (<div key={i} className={`whitespace-pre-wrap break-words ${TERMINAL_STYLE_MAP[classifyLine(line)]}`}>{line}</div>))}
-          {isRunning && <div className="text-primary/40 animate-pulse">{'>'} _</div>}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -77,32 +60,82 @@ function LaunchOrb({ onClick, disabled, isRunning, label }: { onClick?: () => vo
         disabled={disabled || isRunning}
         className="group relative w-16 h-16 rounded-full flex items-center justify-center disabled:cursor-not-allowed transition-all duration-300"
       >
-        {/* Outer glow ring — amber when blocked, primary when ready */}
+        {/* Outer glow ring */}
         <span className={`absolute inset-0 rounded-full border-2 transition-colors ${
           blocked
-            ? 'border-amber-500/25 shadow-[0_0_12px_rgba(245,158,11,0.15)]'
+            ? 'border-orange-500/30 dark:border-amber-500/25 shadow-[0_0_12px_rgba(234,88,12,0.2)] dark:shadow-[0_0_12px_rgba(245,158,11,0.15)]'
             : 'border-primary/25 group-hover:border-primary/50 group-disabled:border-primary/10 shadow-[0_0_16px_var(--glass-bg)]'
         }`} />
-        {/* Pulsing halo when running */}
         {isRunning && <span className="absolute inset-[-4px] rounded-full border border-primary/20 animate-ping" />}
-        {/* Inner fill */}
         <span className={`absolute inset-[3px] rounded-full transition-colors ${
           blocked
-            ? 'bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-orange-500/10'
+            ? 'bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-red-500/10 dark:from-amber-500/15 dark:via-amber-500/5 dark:to-orange-500/10'
             : 'bg-gradient-to-br from-primary/20 via-primary/10 to-accent/15 group-hover:from-primary/30 group-hover:via-primary/15 group-hover:to-accent/25'
         }`} />
-        {/* Icon */}
         {isRunning
           ? <Loader2 className="w-6 h-6 text-primary animate-spin relative z-10" />
           : <Play className={`w-6 h-6 relative z-10 transition-colors ${
-              blocked ? 'text-amber-500/50' : 'text-primary/80 group-hover:text-primary'
+              blocked ? 'text-orange-600/60 dark:text-amber-500/50' : 'text-primary/80 group-hover:text-primary'
             }`} />}
       </button>
       <span className={`text-[11px] font-medium tracking-wide uppercase ${
-        blocked ? 'text-amber-500/60' : 'text-muted-foreground/50'
+        blocked ? 'text-orange-600/70 dark:text-amber-500/60' : 'text-muted-foreground/50'
       }`}>
         {isRunning ? 'Building...' : label}
       </span>
+    </div>
+  );
+}
+
+/** Clean status indicator replacing the terminal strip during build. */
+function BuildStatusIndicator({ phaseLabel }: { phaseLabel: string }) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-2">
+      <div className="relative w-12 h-12 flex items-center justify-center">
+        <span className="absolute inset-0 rounded-full border-2 border-primary/20 animate-pulse" />
+        <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
+        <Loader2 className="w-5 h-5 text-primary animate-spin relative z-10" />
+      </div>
+      <span className="text-sm text-foreground/60 font-medium">{phaseLabel}</span>
+      <p className="text-xs text-muted-foreground/40 text-center leading-relaxed">
+        You can close this dialog — processing continues in the background.
+      </p>
+    </div>
+  );
+}
+
+/** Awaiting questions state — shows button to open questionnaire. */
+function AwaitingQuestionsIndicator({ questionCount, onOpenQuestions }: { questionCount: number; onOpenQuestions: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-2">
+      <div className="relative w-12 h-12 flex items-center justify-center">
+        <span className="absolute inset-0 rounded-full border-2 border-primary/25" />
+        <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
+        <HelpCircle className="w-5 h-5 text-primary relative z-10" />
+      </div>
+      <span className="text-sm text-foreground/70 font-medium">Your input needed</span>
+      <button
+        type="button"
+        onClick={onOpenQuestions}
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+      >
+        <HelpCircle className="w-3.5 h-3.5" />
+        Answer {questionCount} question{questionCount !== 1 ? 's' : ''}
+      </button>
+    </div>
+  );
+}
+
+/** Build completed state. */
+function BuildCompletedIndicator() {
+  return (
+    <div className="flex flex-col items-center gap-2 py-2">
+      <div className="relative w-12 h-12 flex items-center justify-center">
+        <span className="absolute inset-0 rounded-full border-2 border-emerald-400/25" />
+        <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-emerald-500/15 via-emerald-500/8 to-emerald-400/10" />
+        <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
+      </div>
+      <span className="text-sm text-foreground/70 font-medium">Build Complete</span>
     </div>
   );
 }
@@ -111,18 +144,35 @@ interface MatrixCommandCenterProps {
   designResult: AgentIR | null;
   isEditMode: boolean;
   isRunning?: boolean;
-  lastLine?: string;
-  cliLines?: string[];
   onLaunch?: () => void;
   launchDisabled?: boolean;
   launchLabel?: string;
+  /** Questions from CLI during build */
+  questions?: TransformQuestionResponse[] | null;
+  /** Current user answers */
+  userAnswers?: Record<string, string>;
+  /** Callback when a question answer changes */
+  onAnswerUpdated?: (questionId: string, answer: string) => void;
+  /** Callback to submit answers and continue build */
+  onSubmitAnswers?: () => void;
+  /** Whether build is completed */
+  buildCompleted?: boolean;
+  /** User-facing phase label */
+  phaseLabel?: string;
 }
 
-export function MatrixCommandCenter({ designResult, isEditMode, isRunning = false, lastLine = '', cliLines = [], onLaunch, launchDisabled = false, launchLabel = 'Build Persona' }: MatrixCommandCenterProps) {
+export function MatrixCommandCenter({
+  designResult, isEditMode,
+  isRunning = false,
+  onLaunch, launchDisabled = false, launchLabel = 'Build Persona',
+  questions, userAnswers = {}, onAnswerUpdated, onSubmitAnswers,
+  buildCompleted = false, phaseLabel = 'Generating persona...',
+}: MatrixCommandCenterProps) {
   const [openSection, setOpenSection] = useState<PromptSection | null>(null);
   const [promptText, setPromptText] = useState('');
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [webBrowseEnabled, setWebBrowseEnabled] = useState(false);
+  const [showQuestionnaire, setShowQuestionnaire] = useState(false);
 
   const sections = useMemo<PromptSection[]>(() => {
     if (!designResult?.structured_prompt) return [];
@@ -136,7 +186,50 @@ export function MatrixCommandCenter({ designResult, isEditMode, isRunning = fals
     return r;
   }, [designResult]);
 
+  const hasQuestions = !!questions && questions.length > 0;
+  const awaitingQuestions = hasQuestions && !isRunning;
+
   if (isEditMode) {
+    // Phase 2: Building — show status indicator
+    if (isRunning) {
+      return (
+        <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
+          <BuildStatusIndicator phaseLabel={phaseLabel} />
+        </div>
+      );
+    }
+
+    // Phase 3: Awaiting questions — show Q&A button
+    if (awaitingQuestions) {
+      return (
+        <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
+          <AwaitingQuestionsIndicator
+            questionCount={questions!.length}
+            onOpenQuestions={() => setShowQuestionnaire(true)}
+          />
+          {showQuestionnaire && onAnswerUpdated && onSubmitAnswers && (
+            <BuildQuestionnaireModal
+              questions={questions!}
+              userAnswers={userAnswers}
+              onAnswerUpdated={onAnswerUpdated}
+              onSubmit={() => { setShowQuestionnaire(false); onSubmitAnswers(); }}
+              onClose={() => setShowQuestionnaire(false)}
+            />
+          )}
+        </div>
+      );
+    }
+
+    // Build completed state
+    if (buildCompleted) {
+      return (
+        <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
+          <BuildCompletedIndicator />
+        </div>
+      );
+    }
+
+    // Phase 1: Pre-build — prompt + toggles + launch orb
     return (
       <div className="flex flex-col gap-3 w-full h-full items-center">
         <textarea
@@ -154,19 +247,14 @@ export function MatrixCommandCenter({ designResult, isEditMode, isRunning = fals
 
         <div className="flex-1 flex items-center justify-center">
           {onLaunch && (
-            <LaunchOrb onClick={onLaunch} disabled={launchDisabled} isRunning={isRunning} label={launchLabel} />
+            <LaunchOrb onClick={onLaunch} disabled={launchDisabled} isRunning={false} label={launchLabel} />
           )}
         </div>
-
-        {(isRunning || cliLines.length > 0) && (
-          <div className="w-full">
-            <MiniTerminalStrip isRunning={isRunning} lastLine={lastLine} lines={cliLines} />
-          </div>
-        )}
       </div>
     );
   }
 
+  // View mode — section chips
   return (
     <div className="flex flex-col gap-3 w-full h-full">
       <div className="flex flex-wrap gap-1.5">

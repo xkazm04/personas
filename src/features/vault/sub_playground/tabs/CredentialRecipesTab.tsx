@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { BookOpen, Plus, Loader2, Sparkles } from 'lucide-react';
+import { BookOpen, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { AnimatePresence } from 'framer-motion';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
@@ -111,13 +111,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
     setError(null);
   }, [generator]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16 text-sm text-muted-foreground/60">
-        <Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading recipes...
-      </div>
-    );
-  }
+  if (loading) return null;
 
   return (
     <div className="flex flex-col h-full">

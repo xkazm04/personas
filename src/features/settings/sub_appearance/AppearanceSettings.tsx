@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
-import { Check, Palette, Type } from 'lucide-react';
+import { Check, Palette, Type, Sparkles, LayoutGrid, Wrench } from 'lucide-react';
 import { useThemeStore, THEMES, TEXT_SCALES } from '@/stores/themeStore';
+import { usePersonaStore } from '@/stores/personaStore';
 import type { ThemeId, ThemeDefinition, TextScale } from '@/stores/themeStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
@@ -87,6 +88,8 @@ export default function AppearanceSettings() {
   const setTheme = useThemeStore((s) => s.setTheme);
   const textScale = useThemeStore((s) => s.textScale);
   const setTextScale = useThemeStore((s) => s.setTextScale);
+  const viewMode = usePersonaStore((s) => s.viewMode);
+  const setViewMode = usePersonaStore((s) => s.setViewMode);
 
   const darkThemes = THEMES.filter((t) => !t.isLight);
   const lightThemes = THEMES.filter((t) => t.isLight);
@@ -102,6 +105,63 @@ export default function AppearanceSettings() {
 
       <ContentBody centered>
         <div className="space-y-6">
+          {/* View mode toggle */}
+          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-4 h-4 text-violet-400" />
+              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Interface Mode</h2>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => setViewMode('simple')}
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
+                  viewMode === 'simple'
+                    ? 'border-violet-500/30 bg-violet-500/5'
+                    : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                }`}
+              >
+                <Sparkles className={`w-5 h-5 ${viewMode === 'simple' ? 'text-violet-400' : 'text-muted-foreground/50'}`} />
+                <span className={`text-sm font-medium ${viewMode === 'simple' ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>Simple</span>
+                <span className="text-[11px] text-muted-foreground/50 text-center">Streamlined view</span>
+                {viewMode === 'simple' && (
+                  <div className="absolute top-2 right-2"><Check className="w-3.5 h-3.5 text-violet-400" /></div>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setViewMode('full')}
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
+                  viewMode === 'full'
+                    ? 'border-primary/30 bg-primary/5'
+                    : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                }`}
+              >
+                <LayoutGrid className={`w-5 h-5 ${viewMode === 'full' ? 'text-foreground/80' : 'text-muted-foreground/50'}`} />
+                <span className={`text-sm font-medium ${viewMode === 'full' ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>Full</span>
+                <span className="text-[11px] text-muted-foreground/50 text-center">All features</span>
+                {viewMode === 'full' && (
+                  <div className="absolute top-2 right-2"><Check className="w-3.5 h-3.5 text-primary" /></div>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setViewMode('dev')}
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
+                  viewMode === 'dev'
+                    ? 'border-amber-500/30 bg-amber-500/5'
+                    : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                }`}
+              >
+                <Wrench className={`w-5 h-5 ${viewMode === 'dev' ? 'text-amber-400' : 'text-muted-foreground/50'}`} />
+                <span className={`text-sm font-medium ${viewMode === 'dev' ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>Dev</span>
+                <span className="text-[11px] text-muted-foreground/50 text-center">Full + Dev Tools</span>
+                {viewMode === 'dev' && (
+                  <div className="absolute top-2 right-2"><Check className="w-3.5 h-3.5 text-amber-400" /></div>
+                )}
+              </Button>
+            </div>
+          </div>
           {/* Dark themes */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
             <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Dark</h2>

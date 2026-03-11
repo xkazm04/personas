@@ -136,6 +136,11 @@ export function useDesignConversation(personaId: string | null) {
         return;
       }
       messages.push(message);
+      // Cap message history to prevent unbounded growth in long sessions
+      const MAX_MESSAGES = 500;
+      if (messages.length > MAX_MESSAGES) {
+        messages.splice(0, messages.length - MAX_MESSAGES);
+      }
 
       try {
         const updated = await appendDesignConversationMessage(

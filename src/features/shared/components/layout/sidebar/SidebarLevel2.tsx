@@ -1,7 +1,7 @@
 import { Key, Zap, Users, Sparkles } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { usePersonaStore } from '@/stores/personaStore';
-import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab } from '@/lib/types/types';
+import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 import GroupedAgentSidebar from '@/features/agents/components/sidebar/GroupedAgentSidebar';
@@ -10,8 +10,9 @@ import SidebarSubNav from './SidebarSubNav';
 import type { SubNavBadge } from './SidebarSubNav';
 import {
   homeItems, overviewItems, credentialItems, templateItems,
-  cloudItems, getSettingsItems,
+  cloudItems, devToolsItems, getSettingsItems,
 } from './sidebarData';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 
 interface SidebarLevel2Props {
   onCreatePersona: () => void;
@@ -37,8 +38,14 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
   const setCloudTab = usePersonaStore((s) => s.setCloudTab);
   const settingsTab = usePersonaStore((s) => s.settingsTab);
   const setSettingsTab = usePersonaStore((s) => s.setSettingsTab);
+  const devToolsTab = usePersonaStore((s) => s.devToolsTab);
+  const setDevToolsTab = usePersonaStore((s) => s.setDevToolsTab);
 
   const isDev = import.meta.env.DEV;
+  const isSimple = useSimpleMode();
+
+  const filterSimple = <T extends { simpleHidden?: boolean }>(items: T[]): T[] =>
+    isSimple ? items.filter((i) => !i.simpleHidden) : items;
 
   const templateCount = connectorDefinitions.filter((conn) => {
     const metadata = conn.metadata as Record<string, unknown> | null;
@@ -62,7 +69,7 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
     'from-template': { count: templateCount, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' },
   };
 
-  const settingsItems = getSettingsItems(isDev);
+  const settingsItems = getSettingsItems(isDev, isSimple);
 
   switch (sidebarSection) {
     case 'home':
@@ -88,7 +95,7 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
     case 'overview':
       return (
         <SidebarSubNav
-          items={overviewItems}
+          items={filterSimple(overviewItems)}
           activeId={overviewTab}
           onSelect={(id) => setOverviewTab(id as OverviewTab)}
           badges={overviewBadges}
@@ -113,7 +120,7 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
     case 'credentials':
       return (
         <SidebarSubNav
-          items={credentialItems}
+          items={filterSimple(credentialItems)}
           activeId={credentialView}
           onSelect={(id) => navigate(id as CredentialNavKey)}
           badges={credentialBadges}
@@ -141,7 +148,7 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
     case 'design-reviews':
       return (
         <SidebarSubNav
-          items={templateItems}
+          items={filterSimple(templateItems)}
           activeId={templateTab}
           onSelect={(id) => setTemplateTab(id as TemplateTab)}
           badges={templateGalleryTotal > 0 ? {
@@ -172,6 +179,31 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
           onSelect={(id) => setCloudTab(id as CloudTab)}
         />
       );
+
+    case 'dev-tools': {
+      const activeProjectId = usePersonaStore.getState().activeProjectId;
+      const projects = usePersonaStore.getState().projects;
+      const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
+      return (
+        <>
+          <SidebarSubNav
+            items={devToolsItems}
+            activeId={devToolsTab}
+            onSelect={(id) => setDevToolsTab(id as DevToolsTab)}
+            variant="overview"
+          />
+          {activeProject && (
+            <div className="mx-3 mt-3 px-3 py-2 rounded-lg bg-amber-500/5 border border-amber-500/15">
+              <p className="text-[10px] uppercase tracking-wider text-amber-400/50 font-medium mb-0.5">Active Project</p>
+              <p className="text-xs text-foreground/70 font-medium truncate">{activeProject.name}</p>
+              {activeProject.root_path && (
+                <p className="text-[10px] text-muted-foreground/40 truncate mt-0.5">{activeProject.root_path}</p>
+              )}
+            </div>
+          )}
+        </>
+      );
+    }
 
     case 'settings':
       return (

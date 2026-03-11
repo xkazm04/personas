@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../../storeTypes";
-import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab } from "@/lib/types/types";
 import type { AdoptWizardStep } from "@/features/templates/sub_generated/adoption/hooks/useAdoptReducer";
 
 /** Snapshot of adoption wizard state saved when the user closes mid-adoption. */
@@ -47,6 +47,7 @@ export interface UiSlice {
   templateTestActive: boolean;
   connectorTestActive: boolean;
   templateGalleryTotal: number;
+  devToolsTab: DevToolsTab;
   adoptionDraft: AdoptionDraft | null;
 
   // Actions
@@ -69,6 +70,7 @@ export interface UiSlice {
   setConnectorTestActive: (active: boolean) => void;
   setTemplateGalleryTotal: (total: number) => void;
   setAdoptionDraft: (draft: AdoptionDraft | null) => void;
+  setDevToolsTab: (tab: DevToolsTab) => void;
 }
 
 export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) => ({
@@ -91,6 +93,7 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   templateTestActive: false,
   connectorTestActive: false,
   templateGalleryTotal: 0,
+  devToolsTab: "projects" as DevToolsTab,
   adoptionDraft: null,
 
   setSidebarSection: (section) => set({ sidebarSection: section }),
@@ -112,4 +115,5 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   setConnectorTestActive: (active) => set({ connectorTestActive: active }),
   setTemplateGalleryTotal: (total) => set({ templateGalleryTotal: total }),
   setAdoptionDraft: (draft) => set({ adoptionDraft: draft }),
+  setDevToolsTab: (tab) => set({ devToolsTab: tab }),
 });

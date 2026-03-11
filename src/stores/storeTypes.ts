@@ -31,8 +31,10 @@ import type { HealthCheckSlice } from "./slices/agents/healthCheckSlice";
 import type { TourSlice } from "./slices/system/tourSlice";
 import type { BudgetEnforcementSlice } from "./slices/agents/budgetEnforcementSlice";
 import type { AlertSlice } from "./slices/overview/alertSlice";
+import type { ViewModeSlice } from "./slices/system/viewModeSlice";
+import type { DevToolsSlice } from "./slices/system/devToolsSlice";
 
-// â”€â”€ Shared helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Shared helper ──────────────────────────────────────────────────────
 export function errMsg(err: unknown, fallback: string): string {
   if (err instanceof Error) return err.message;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,7 +42,7 @@ export function errMsg(err: unknown, fallback: string): string {
   return fallback;
 }
 
-// â”€â”€ Combined store type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Combined store type ────────────────────────────────────────────────
 export type PersonaStore = PersonaSlice &
   ToolSlice &
   TriggerSlice &
@@ -67,4 +69,6 @@ export type PersonaStore = PersonaSlice &
   HealthCheckSlice &
   TourSlice &
   BudgetEnforcementSlice &
-  AlertSlice;
+  AlertSlice &
+  ViewModeSlice &
+  DevToolsSlice;

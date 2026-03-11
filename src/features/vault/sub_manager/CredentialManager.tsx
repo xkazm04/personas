@@ -2,12 +2,13 @@ import { ContentBox, ContentBody } from '@/features/shared/components/layout/Con
 import { VaultErrorBanner } from '@/features/vault/sub_card/banners/VaultErrorBanner';
 import { CredentialRelationshipGraph } from '@/features/vault/sub_graph/CredentialRelationshipGraph';
 import { CredentialDeleteDialog } from '@/features/vault/sub_card/CredentialDeleteDialog';
-import { HealthStatusBar } from '@/features/vault/sub_manager/HealthStatusBar';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { useCredentialManagerState } from './useCredentialManagerState';
-import { CredentialManagerHeader } from './CredentialManagerHeader';
+import { CredentialManagerHeader, CredentialToolbar } from './CredentialManagerHeader';
 import { CredentialManagerViews } from './CredentialManagerViews';
 
 export function CredentialManager() {
+  const isSimple = useSimpleMode();
   const state = useCredentialManagerState();
 
   const {
@@ -33,17 +34,13 @@ export function CredentialManager() {
     undoDelete,
   } = state;
 
-  if (loading) {
-    return (
-      <div className="flex-1 min-h-0 w-full flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  if (loading) return null;
 
   return (
     <ContentBox>
-      <CredentialManagerHeader
+      <CredentialManagerHeader credentialCount={credentials.length} />
+
+      <CredentialToolbar
         credentialCount={credentials.length}
         showGraph={showGraph}
         onToggleGraph={() => setShowGraph((p) => !p)}
@@ -58,11 +55,10 @@ export function CredentialManager() {
         searchInputRef={searchInputRef}
         showSearchBar={viewState.view === 'list' || viewState.view === 'catalog-browse'}
         isCatalogView={viewState.view === 'catalog-browse'}
+        credentials={credentials}
+        bulk={bulk}
+        isDailyRun={isDailyRun}
       />
-
-      {credentials.length > 0 && (
-        <HealthStatusBar credentials={credentials} bulk={bulk} isDailyRun={isDailyRun} />
-      )}
 
       <ContentBody>
         {bannerError && (
@@ -76,7 +72,7 @@ export function CredentialManager() {
           />
         )}
 
-        {showGraph && viewState.view === 'list' && (
+        {!isSimple && showGraph && viewState.view === 'list' && (
           <div className="mb-3">
             <CredentialRelationshipGraph />
           </div>

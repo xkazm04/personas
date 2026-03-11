@@ -4,6 +4,8 @@ import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
 interface ConnectorReadinessProps {
   statuses: ConnectorReadinessStatus[];
   compact?: boolean;
+  /** Simple mode: show only a single checkmark or X with a label. */
+  simplified?: boolean;
 }
 
 function getOverallHealth(statuses: ConnectorReadinessStatus[]): 'ready' | 'partial' | 'missing' {
@@ -17,20 +19,20 @@ function getOverallHealth(statuses: ConnectorReadinessStatus[]): 'ready' | 'part
 const HEALTH_CONFIG = {
   ready: {
     Icon: CheckCircle2,
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-500/10 border-emerald-500/20',
+    color: 'text-status-success',
+    bg: 'bg-status-success/10 border-status-success/20',
     label: 'Ready',
   },
   partial: {
     Icon: AlertCircle,
-    color: 'text-amber-400',
-    bg: 'bg-amber-500/10 border-amber-500/20',
+    color: 'text-status-warning',
+    bg: 'bg-status-warning/10 border-status-warning/20',
     label: 'Partial',
   },
   missing: {
     Icon: XCircle,
-    color: 'text-red-400',
-    bg: 'bg-red-500/10 border-red-500/20',
+    color: 'text-status-error',
+    bg: 'bg-status-error/10 border-status-error/20',
     label: 'Setup needed',
   },
 } as const;
@@ -43,19 +45,28 @@ const STATUS_ICON = {
 } as const;
 
 const STATUS_COLOR = {
-  ready: 'text-emerald-400',
-  missing: 'text-amber-400',
-  unhealthy: 'text-red-400',
-  unknown: 'text-muted-foreground/80',
+  ready: 'text-status-success',
+  missing: 'text-status-warning',
+  unhealthy: 'text-status-error',
+  unknown: 'text-status-neutral',
 } as const;
 
 /**
  * Compact dot indicator or detailed readiness badge.
  */
-export function ConnectorReadiness({ statuses, compact = true }: ConnectorReadinessProps) {
+export function ConnectorReadiness({ statuses, compact = true, simplified = false }: ConnectorReadinessProps) {
   const overall = getOverallHealth(statuses);
   const config = HEALTH_CONFIG[overall];
   const StatusIcon = config.Icon;
+
+  if (simplified) {
+    return (
+      <span className={`inline-flex items-center gap-1 ${config.color}`} title={config.label}>
+        <StatusIcon className="w-3.5 h-3.5" />
+        <span className="text-xs font-medium">{overall === 'ready' ? 'Ready' : overall === 'partial' ? 'Needs setup' : 'Not ready'}</span>
+      </span>
+    );
+  }
 
   if (compact) {
     return (
@@ -83,10 +94,10 @@ export function ConnectorReadiness({ statuses, compact = true }: ConnectorReadin
             <Icon className={`w-3.5 h-3.5 ${color}`} />
             <span className="text-sm text-foreground/80">{status.connector_name}</span>
             {!status.has_credential && status.installed && (
-              <span className="text-sm text-amber-400/60">needs credential</span>
+              <span className="text-sm text-status-warning/60">needs credential</span>
             )}
             {!status.installed && (
-              <span className="text-sm text-amber-400/60">not installed</span>
+              <span className="text-sm text-status-warning/60">not installed</span>
             )}
           </div>
         );

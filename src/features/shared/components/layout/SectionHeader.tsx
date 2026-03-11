@@ -6,19 +6,21 @@ interface SectionHeaderProps {
   badge?: ReactNode;
   trailing?: ReactNode;
   className?: string;
+  /** When true, hides badge and trailing actions for a cleaner look. */
+  simplified?: boolean;
 }
 
-export function SectionHeader({ icon, label, badge, trailing, className }: SectionHeaderProps) {
+export function SectionHeader({ icon, label, badge, trailing, className, simplified }: SectionHeaderProps) {
   return (
     <div className={`flex items-center justify-between gap-3 ${className ?? ''}`}>
       <div className="flex items-center gap-2 px-1 min-w-0">
-        {icon && <span className="text-muted-foreground/80 shrink-0">{icon}</span>}
-        <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground/80 truncate">
+        {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
+        <p className="text-sm font-bold uppercase tracking-widest text-foreground/70 truncate">
           {label}
         </p>
-        {badge}
+        {!simplified && badge}
       </div>
-      {trailing && <div className="shrink-0">{trailing}</div>}
+      {!simplified && trailing && <div className="shrink-0">{trailing}</div>}
     </div>
   );
 }

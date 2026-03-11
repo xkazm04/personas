@@ -59,12 +59,13 @@ function ConnectorsToolsSection({ designResult }: { designResult: AgentIR }) {
     const rows: Array<{ connector: SuggestedConnector | null; tools: string[] }> = [];
 
     for (const conn of suggestedConnectors) {
-      const tools = (conn.related_tools ?? []).filter((t) => designResult.suggested_tools.includes(t));
+      const suggestedTools = designResult.suggested_tools ?? [];
+      const tools = (conn.related_tools ?? []).filter((t) => suggestedTools.includes(t));
       tools.forEach((t) => linkedTools.add(t));
       rows.push({ connector: conn, tools });
     }
 
-    const unlinked = designResult.suggested_tools.filter((t) => !linkedTools.has(t));
+    const unlinked = (designResult.suggested_tools ?? []).filter((t) => !linkedTools.has(t));
     if (unlinked.length > 0) {
       rows.push({ connector: null, tools: unlinked });
     }
@@ -72,7 +73,7 @@ function ConnectorsToolsSection({ designResult }: { designResult: AgentIR }) {
     return rows;
   }, [suggestedConnectors, designResult.suggested_tools]);
 
-  if (connectorRows.length === 0 && designResult.suggested_tools.length === 0) return null;
+  if (connectorRows.length === 0 && (designResult.suggested_tools ?? []).length === 0) return null;
 
   return (
     <div className="space-y-3">

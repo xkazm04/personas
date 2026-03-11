@@ -38,6 +38,10 @@ export const vi = {
         label: "Đám Mây",
         description: "Triển khai agent lên hạ tầng đám mây và GitLab CI"
       },
+      'dev-tools': {
+        label: "Công Cụ Phát Triển",
+        description: "Quản lý dự án, quét mã nguồn, tạo ý tưởng, phân loại và thực thi tác vụ"
+      },
       settings: {
         label: "Cài Đặt",
         description: "Tài khoản, giao diện, thông báo và cấu hình engine"

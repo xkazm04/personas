@@ -38,6 +38,10 @@ export const fr = {
         label: "Cloud",
         description: "Déployez des agents sur l'infrastructure cloud et GitLab CI"
       },
+      'dev-tools': {
+        label: "Outils de développement",
+        description: "Gestion de projets, analyse du code, génération d'idées, triage et exécution de tâches"
+      },
       settings: {
         label: "Paramètres",
         description: "Compte, apparence, notifications et configuration du moteur"

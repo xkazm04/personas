@@ -9,6 +9,7 @@ import { extractConnectorNames } from '@/lib/personas/utils';
 import PersonaHoverPreview from './PersonaHoverPreview';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { PersonaHealthIndicator } from './PersonaHealthIndicator';
 import { WeeklyPerformanceReport } from '@/features/agents/sub_prompt_lab';
 import { useRelevanceSort, type ScoredPersona } from '../sidebar/useRelevanceSort';
@@ -68,6 +69,7 @@ export default function PersonaOverviewPage() {
     return result;
   }, [scored]);
 
+  const isSimple = useSimpleMode();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -138,15 +140,17 @@ export default function PersonaOverviewPage() {
       <ContentHeader
         icon={<Bot className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Agent Surface"
-        subtitle={`${personas.length} agent${personas.length !== 1 ? 's' : ''} â€” sorted by relevance`}
+        title={isSimple ? 'My Agents' : 'Agent Surface'}
+        subtitle={isSimple ? `${personas.length} agent${personas.length !== 1 ? 's' : ''}` : `${personas.length} agent${personas.length !== 1 ? 's' : ''} \u2014 sorted by relevance`}
       />
 
       <ContentBody>
-      {/* Weekly Performance Report */}
+      {/* Weekly Performance Report (hidden in simple mode) */}
+      {!isSimple && (
       <div className="mb-4">
         <WeeklyPerformanceReport onNavigateToAgent={(id) => selectPersona(id)} />
       </div>
+      )}
 
       {sections.map(({ key, items }) => {
         const meta = SECTION_META[key];
@@ -159,7 +163,7 @@ export default function PersonaOverviewPage() {
             <div className={`flex items-center gap-2 mb-3 px-1`}>
               <Icon className={`w-4 h-4 ${meta.color}`} />
               <h2 className={`text-sm font-semibold ${meta.color}`}>{meta.label}</h2>
-              <span className="text-sm text-muted-foreground/50">({items.length})</span>
+              <span className="text-sm text-muted-foreground/80">({items.length})</span>
             </div>
 
             <div role="listbox" aria-label={`${meta.label} agents`} className={`grid gap-3 ${IS_MOBILE ? '[grid-template-columns:1fr]' : '[grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] 3xl:[grid-template-columns:repeat(auto-fill,minmax(320px,1fr))] 4xl:[grid-template-columns:repeat(auto-fill,minmax(360px,1fr))]'}`}>
@@ -203,8 +207,8 @@ export default function PersonaOverviewPage() {
                       borderImage: `linear-gradient(to bottom, ${groupColor}, transparent) 1`,
                     } : undefined}
                   >
-                    {/* Connector icons */}
-                    {connectors.length > 0 && (
+                    {/* Connector icons (hidden in simple mode) */}
+                    {!isSimple && connectors.length > 0 && (
                       <div className="flex items-center gap-1 mb-2">
                         {connectors.map((name) => {
                           const meta = getConnectorMeta(name);
@@ -223,7 +227,7 @@ export default function PersonaOverviewPage() {
                     )}
 
                     <div className="flex items-center gap-3 mb-2">
-                      <PersonaHealthIndicator persona={persona} health={health} />
+                      {!isSimple && <PersonaHealthIndicator persona={persona} health={health} />}
                       <div className="flex items-center gap-1.5">
                         <div className={`w-2 h-2 rounded-full ${persona.enabled ? 'bg-emerald-400' : 'bg-muted-foreground/20'}`} />
                         <span className={`text-sm font-medium px-1.5 py-0.5 rounded-lg ${persona.enabled ? 'text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground/80 bg-muted-foreground/10'}`}>
@@ -236,7 +240,8 @@ export default function PersonaOverviewPage() {
                       <p className="text-sm text-muted-foreground/90 mt-1 line-clamp-2">{persona.description}</p>
                     )}
 
-                    {/* Metadata row: triggers, last run, model */}
+                    {/* Metadata row: triggers, last run, model (hidden in simple mode) */}
+                    {!isSimple && (
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {triggerCount != null && triggerCount > 0 && (
                         <span className="flex items-center gap-1 text-sm font-mono text-muted-foreground/80">
@@ -256,6 +261,7 @@ export default function PersonaOverviewPage() {
                         </span>
                       )}
                     </div>
+                    )}
                   </motion.button>
                 );
               })}

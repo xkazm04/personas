@@ -127,7 +127,7 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
           )}
         </div>
 
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </Button>
 
       {/* Conflict list */}
@@ -142,7 +142,7 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
           >
             <div className="mt-2 space-y-2 max-h-[400px] overflow-y-auto pr-1">
               {unresolvedConflicts.length === 0 ? (
-                <div className="text-center py-6 text-sm text-muted-foreground/60">
+                <div className="text-center py-6 text-sm text-muted-foreground/80">
                   <Check className="w-5 h-5 mx-auto mb-2 text-emerald-400" />
                   All conflicts resolved
                 </div>

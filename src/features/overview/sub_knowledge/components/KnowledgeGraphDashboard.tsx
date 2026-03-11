@@ -12,7 +12,7 @@ import { useOverviewFilters } from '@/features/overview/components/dashboard/Ove
 import { KNOWLEDGE_TYPES, SCOPE_TYPES } from '../libs/knowledgeHelpers';
 import { KnowledgeRow } from './KnowledgeRow';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
-import ContentLoader from '@/features/shared/components/progress/ContentLoader';
+
 import { AnnotateModal } from './AnnotateModal';
 
 export default function KnowledgeGraphDashboard() {
@@ -186,14 +186,14 @@ export default function KnowledgeGraphDashboard() {
               </div>
             </div>
           ) : loading ? (
-            <ContentLoader variant="panel" hint="knowledge" />
+            null
           ) : allEntries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-4">
                 <Network className="w-6 h-6 text-violet-400/60" />
               </div>
               <h3 className="text-sm font-semibold text-foreground/80 mb-1">No knowledge patterns yet</h3>
-              <p className="text-sm text-muted-foreground/60 max-w-sm">
+              <p className="text-sm text-muted-foreground/80 max-w-sm">
                 Run executions to build the knowledge graph. Every execution teaches the system about tool sequences, failure patterns, and cost-quality tradeoffs. Agents can also annotate shared knowledge.
               </p>
             </div>

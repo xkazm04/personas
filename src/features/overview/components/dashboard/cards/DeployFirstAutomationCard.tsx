@@ -13,6 +13,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { startAutomationDesign, deployAutomation } from '@/api/agents/automations';
 import type { DeployAutomationResult } from '@/api/agents/automations';
 
@@ -68,6 +69,7 @@ type CardPhase = 'prompt' | 'designing' | 'deploying' | 'success' | 'error';
 export default function DeployFirstAutomationCard() {
   const credentials = usePersonaStore((s) => s.credentials);
   const personas = usePersonaStore((s) => s.personas);
+  const isSimple = useSimpleMode();
 
   const [phase, setPhase] = useState<CardPhase>('prompt');
   const [deployResult, setDeployResult] = useState<DeployAutomationResult | null>(null);
@@ -179,7 +181,7 @@ export default function DeployFirstAutomationCard() {
             <p className="text-sm font-medium text-foreground/80">
               {phase === 'designing' ? 'Designing automation...' : 'Deploying to platform...'}
             </p>
-            <p className="text-xs text-muted-foreground/60 mt-0.5">
+            <p className="text-xs text-muted-foreground/80 mt-0.5">
               This may take a few moments
             </p>
           </div>
@@ -202,6 +204,33 @@ export default function DeployFirstAutomationCard() {
         >
           Try again
         </button>
+      </div>
+    );
+  }
+
+  // ── Simple mode: single CTA ───────────────────────────────────────────
+  if (isSimple) {
+    return (
+      <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm p-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+            <Rocket className="w-5 h-5 text-violet-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-foreground/90">Ready to automate?</h3>
+            <p className="text-xs text-muted-foreground/70 mt-0.5">
+              Set up your first automation in one click
+            </p>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleDeploy(availableTemplates[0]!)}
+            className="px-4 py-2 rounded-xl bg-violet-500/15 text-violet-400 text-sm font-semibold border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-1.5"
+          >
+            Get Started <ArrowRight className="w-3.5 h-3.5" />
+          </motion.button>
+        </div>
       </div>
     );
   }
@@ -242,7 +271,7 @@ export default function DeployFirstAutomationCard() {
               >
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                   tpl.platform === 'github_actions'
-                    ? 'bg-gray-500/10 text-gray-400'
+                    ? 'bg-gray-500/10 text-muted-foreground'
                     : tpl.platform === 'zapier'
                     ? 'bg-orange-500/10 text-orange-400'
                     : 'bg-amber-500/10 text-amber-400'
@@ -251,9 +280,9 @@ export default function DeployFirstAutomationCard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground/85">{tpl.title}</p>
-                  <p className="text-xs text-muted-foreground/60 mt-0.5 truncate">{tpl.description}</p>
+                  <p className="text-xs text-muted-foreground/80 mt-0.5 truncate">{tpl.description}</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary/60 transition-colors shrink-0" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground/70 group-hover:text-primary/60 transition-colors shrink-0" />
               </motion.button>
             );
           })}

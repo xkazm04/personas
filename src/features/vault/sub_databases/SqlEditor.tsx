@@ -69,7 +69,7 @@ export function SqlEditor({ value, onChange, language = 'sql', placeholder, onEx
         onScroll={handleScroll}
         placeholder={placeholder}
         spellCheck={false}
-        className="relative w-full h-full p-3 text-sm font-mono bg-transparent text-transparent caret-foreground/80 resize-none focus:outline-none placeholder:text-muted-foreground/30"
+        className="relative w-full h-full p-3 text-sm font-mono bg-transparent text-transparent caret-foreground/80 resize-none focus:outline-none placeholder:text-muted-foreground/60"
         style={{ minHeight }}
       />
     </div>

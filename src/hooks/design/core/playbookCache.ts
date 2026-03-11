@@ -13,7 +13,8 @@ export interface PlaybookRecord {
 
 const STORAGE_KEY = 'dolla:playbooks';
 
-/** In-memory cache keyed by normalised service name. */
+/** In-memory cache keyed by normalised service name. Bounded to prevent unbounded growth. */
+const MAX_PLAYBOOK_CACHE = 100;
 const cache = new Map<string, PlaybookRecord>();
 
 function normalise(name: string): string {
@@ -65,6 +66,11 @@ export function savePlaybook(record: PlaybookRecord): void {
 
   const usageCount = existing ? existing.usageCount + 1 : 1;
   cache.set(key, { ...record, usageCount });
+  // Evict oldest entry if cache exceeds limit
+  if (cache.size > MAX_PLAYBOOK_CACHE) {
+    const oldest = cache.keys().next().value;
+    if (oldest !== undefined) cache.delete(oldest);
+  }
   persist();
 }
 

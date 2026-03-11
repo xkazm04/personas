@@ -133,44 +133,28 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
 
               {/* Mode content — fills remaining space */}
               <AnimatePresence mode="wait">
-                {entryMode === 'chat' ? (
-                  <motion.div
-                    key="chat-creator"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={TRANSITION_FAST}
-                    className="border border-primary/10 rounded-xl overflow-hidden bg-background/30"
-                  >
+                <motion.div
+                  key={entryMode}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={TRANSITION_FAST}
+                  className={entryMode === 'chat' ? 'border border-primary/10 rounded-xl overflow-hidden bg-background/30' : undefined}
+                >
+                  {entryMode === 'chat' ? (
                     <ChatCreator
                       onCancel={canCancel ? () => { void handleCancel(); } : undefined}
                       onCreated={(id) => setDraftPersonaId(id)}
                       onActivated={() => setIsCreatingPersona(false)}
                     />
-                  </motion.div>
-                ) : entryMode === 'matrix' ? (
-                  <motion.div
-                    key="matrix-creator"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={TRANSITION_FAST}
-                  >
+                  ) : entryMode === 'matrix' ? (
                     <MatrixCreator
                       state={builderState}
                       dispatch={dispatch}
                       onContinue={handleContinue}
                       onCancel={canCancel ? () => { void handleCancel(); } : undefined}
                     />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="builder"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={TRANSITION_FAST}
-                  >
+                  ) : (
                     <BuilderStep
                       state={builderState}
                       dispatch={dispatch}
@@ -179,8 +163,8 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                       draftPersonaId={draftPersonaId}
                       setDraftPersonaId={setDraftPersonaId}
                     />
-                  </motion.div>
-                )}
+                  )}
+                </motion.div>
               </AnimatePresence>
             </motion.div>
           ) : (

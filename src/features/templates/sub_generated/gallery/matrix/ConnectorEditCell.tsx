@@ -296,11 +296,11 @@ export function ConnectorEditCell({
                 >
                   <ConnectorIcon meta={meta} size="w-3 h-3" />
                 </div>
-                <span className="text-sm font-medium text-amber-400/90 truncate flex-1 text-left">
+                <span className="text-sm font-medium text-orange-600 dark:text-amber-400 truncate flex-1 text-left">
                   {roleLabel || meta.label}
                 </span>
-                <AlertCircle className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
-                <span className="text-[11px] text-amber-400/70 whitespace-nowrap">not connected</span>
+                <AlertCircle className="w-3 h-3 text-orange-500 dark:text-amber-400/60 flex-shrink-0" />
+                <span className="text-[11px] text-orange-600/80 dark:text-amber-400/70 whitespace-nowrap">not connected</span>
               </Button>
 
               {isOpen && (
@@ -338,9 +338,9 @@ export function ConnectorEditCell({
               {isMatched ? (
                 <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
               ) : (
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60 flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 dark:bg-amber-400/60 flex-shrink-0" />
               )}
-              <span className={`text-sm truncate max-w-[80px] ${isMatched ? 'text-muted-foreground/40' : 'text-amber-400/80 font-semibold'}`}>
+              <span className={`text-sm truncate max-w-[80px] ${isMatched ? 'text-muted-foreground/40' : 'text-orange-600 dark:text-amber-400/80 font-semibold'}`}>
                 {matchedCred?.name ?? (isMatched ? 'Linked' : 'Set up')}
               </span>
             </Button>

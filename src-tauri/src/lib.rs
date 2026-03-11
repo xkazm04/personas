@@ -861,6 +861,62 @@ pub fn run() {
             commands::infrastructure::workflows::cancel_workflow_job,
             // Tier usage
             commands::infrastructure::tier_usage::get_tier_usage,
+            // Dev Tools — Projects
+            commands::infrastructure::dev_tools::dev_tools_list_projects,
+            commands::infrastructure::dev_tools::dev_tools_get_project,
+            commands::infrastructure::dev_tools::dev_tools_create_project,
+            commands::infrastructure::dev_tools::dev_tools_update_project,
+            commands::infrastructure::dev_tools::dev_tools_delete_project,
+            // Dev Tools — Goals
+            commands::infrastructure::dev_tools::dev_tools_list_goals,
+            commands::infrastructure::dev_tools::dev_tools_get_goal,
+            commands::infrastructure::dev_tools::dev_tools_create_goal,
+            commands::infrastructure::dev_tools::dev_tools_update_goal,
+            commands::infrastructure::dev_tools::dev_tools_delete_goal,
+            commands::infrastructure::dev_tools::dev_tools_reorder_goals,
+            // Dev Tools — Goal Signals
+            commands::infrastructure::dev_tools::dev_tools_list_goal_signals,
+            commands::infrastructure::dev_tools::dev_tools_create_goal_signal,
+            // Dev Tools — Context Groups
+            commands::infrastructure::dev_tools::dev_tools_list_context_groups,
+            commands::infrastructure::dev_tools::dev_tools_create_context_group,
+            commands::infrastructure::dev_tools::dev_tools_update_context_group,
+            commands::infrastructure::dev_tools::dev_tools_delete_context_group,
+            commands::infrastructure::dev_tools::dev_tools_reorder_context_groups,
+            // Dev Tools — Contexts
+            commands::infrastructure::dev_tools::dev_tools_list_contexts,
+            commands::infrastructure::dev_tools::dev_tools_get_context,
+            commands::infrastructure::dev_tools::dev_tools_create_context,
+            commands::infrastructure::dev_tools::dev_tools_update_context,
+            commands::infrastructure::dev_tools::dev_tools_delete_context,
+            commands::infrastructure::dev_tools::dev_tools_move_context_to_group,
+            // Dev Tools — Context Group Relationships
+            commands::infrastructure::dev_tools::dev_tools_list_context_group_relationships,
+            commands::infrastructure::dev_tools::dev_tools_create_context_group_relationship,
+            commands::infrastructure::dev_tools::dev_tools_delete_context_group_relationship,
+            // Dev Tools — Ideas
+            commands::infrastructure::dev_tools::dev_tools_list_ideas,
+            commands::infrastructure::dev_tools::dev_tools_get_idea,
+            commands::infrastructure::dev_tools::dev_tools_create_idea,
+            commands::infrastructure::dev_tools::dev_tools_update_idea,
+            commands::infrastructure::dev_tools::dev_tools_delete_idea,
+            commands::infrastructure::dev_tools::dev_tools_bulk_delete_ideas,
+            // Dev Tools — Scans
+            commands::infrastructure::dev_tools::dev_tools_list_scans,
+            commands::infrastructure::dev_tools::dev_tools_get_scan,
+            commands::infrastructure::dev_tools::dev_tools_create_scan,
+            commands::infrastructure::dev_tools::dev_tools_update_scan,
+            // Dev Tools — Tasks
+            commands::infrastructure::dev_tools::dev_tools_list_tasks,
+            commands::infrastructure::dev_tools::dev_tools_get_task,
+            commands::infrastructure::dev_tools::dev_tools_create_task,
+            commands::infrastructure::dev_tools::dev_tools_update_task,
+            commands::infrastructure::dev_tools::dev_tools_delete_task,
+            // Dev Tools — Triage Rules
+            commands::infrastructure::dev_tools::dev_tools_list_triage_rules,
+            commands::infrastructure::dev_tools::dev_tools_create_triage_rule,
+            commands::infrastructure::dev_tools::dev_tools_update_triage_rule,
+            commands::infrastructure::dev_tools::dev_tools_delete_triage_rule,
             // Notifications
             notifications::send_app_notification,
             notifications::test_notification_channel,

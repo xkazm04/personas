@@ -138,12 +138,15 @@ export function compileWizardToAgentIR(answers: WizardAnswers): AgentIR {
   const approvalActions = (Array.isArray(answers['approval_actions']) ? answers['approval_actions'] : []) as string[];
 
   // Build identity from mission type
-  const identity = `You are a ${mission} agent.${dataScope ? ` ${ANSWER_TO_INSTRUCTION.data_scope?.map[dataScope] || ''}` : ''}`;
+  const dataEntry = ANSWER_TO_INSTRUCTION.data_scope;
+  const identity = `You are a ${mission} agent.${dataScope && dataEntry ? ` ${dataEntry.map[dataScope] || ''}` : ''}`;
 
   // Build instructions from autonomy + reporting
   const instructionParts: string[] = [];
-  if (autonomy) instructionParts.push(ANSWER_TO_INSTRUCTION.autonomy_level?.map[autonomy] || '');
-  if (reporting) instructionParts.push(ANSWER_TO_INSTRUCTION.reporting_style?.map[reporting] || '');
+  const autonomyEntry = ANSWER_TO_INSTRUCTION.autonomy_level;
+  const reportingEntry = ANSWER_TO_INSTRUCTION.reporting_style;
+  if (autonomy && autonomyEntry) instructionParts.push(autonomyEntry.map[autonomy] || '');
+  if (reporting && reportingEntry) instructionParts.push(reportingEntry.map[reporting] || '');
   if (approvalActions.length > 0) {
     instructionParts.push(`Require human approval for: ${approvalActions.join('; ')}.`);
   }
@@ -163,7 +166,7 @@ export function compileWizardToAgentIR(answers: WizardAnswers): AgentIR {
     triggers.push({
       trigger_type: triggerType,
       config: triggerType === 'schedule' ? { cron: '0 9 * * *' } : {},
-      description: ANSWER_TO_INSTRUCTION.trigger_type?.map[triggerChoice] || triggerChoice,
+      description: ANSWER_TO_INSTRUCTION.trigger_type?.map[triggerChoice] ?? triggerChoice,
     });
   }
 

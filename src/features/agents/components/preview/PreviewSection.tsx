@@ -15,7 +15,7 @@ export function PreviewSection({
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-1.5">
-        <Icon className="w-3 h-3 text-muted-foreground/40" />
+        <Icon className="w-3 h-3 text-muted-foreground/70" />
         <span className="text-sm font-semibold text-muted-foreground/60 uppercase tracking-wider">{label}</span>
         {count != null && count > 0 && (
           <span className="ml-auto text-sm tabular-nums font-medium text-primary/60 bg-primary/8 px-1.5 py-0.5 rounded-full">

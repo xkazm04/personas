@@ -5,6 +5,7 @@ import { getPurposeForConnector, PURPOSE_GROUPS } from '@/lib/credentials/connec
 import { getLicenseTier, LICENSE_TIER_META, type LicenseTier } from '@/lib/credentials/connectorLicensing';
 import { CredentialPickerFilters } from './CredentialPickerFilters';
 import { ConnectorCard } from './ConnectorCard';
+import { ROLE_PRESETS, type RolePreset } from './catalogRolePresets';
 
 interface CredentialPickerProps {
   connectors: ConnectorDefinition[];
@@ -24,6 +25,16 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
   const [activePurpose, setActivePurpose] = useState<string | null>(null);
   const [activeLicense, setActiveLicense] = useState<string | null>(null);
   const [connectedFilter, setConnectedFilter] = useState<ConnectedFilter>('all');
+  const [activeRole, setActiveRole] = useState<RolePreset | null>(null);
+
+  const handleRoleToggle = (role: RolePreset) => {
+    if (activeRole === role) {
+      setActiveRole(null);
+    } else {
+      setActiveRole(role);
+      setActiveCategory(null);
+    }
+  };
 
   const ownedServiceTypes = useMemo(() => {
     const set = new Set<string>();
@@ -48,24 +59,27 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
       ? list.filter((c) => getLicenseTier(c.name, c.metadata as Record<string, unknown> | null) === license)
       : list;
 
+  const applyRole = (list: ConnectorDefinition[], role: RolePreset | null) =>
+    role ? list.filter((c) => ROLE_PRESETS[role].categories.includes(c.category)) : list;
+
   const purposeBase = useMemo(
-    () => applyLicense(applyConnected(applyCategory(connectors, activeCategory), connectedFilter), activeLicense),
-    [connectors, activeCategory, connectedFilter, activeLicense, ownedServiceTypes],
+    () => applyRole(applyLicense(applyConnected(applyCategory(connectors, activeCategory), connectedFilter), activeLicense), activeRole),
+    [connectors, activeCategory, connectedFilter, activeLicense, activeRole, ownedServiceTypes],
   );
 
   const categoryBase = useMemo(
-    () => applyLicense(applyConnected(applyPurpose(connectors, activePurpose), connectedFilter), activeLicense),
-    [connectors, activePurpose, connectedFilter, activeLicense, ownedServiceTypes],
+    () => applyRole(applyLicense(applyConnected(applyPurpose(connectors, activePurpose), connectedFilter), activeLicense), activeRole),
+    [connectors, activePurpose, connectedFilter, activeLicense, activeRole, ownedServiceTypes],
   );
 
   const connectedBase = useMemo(
-    () => applyLicense(applyCategory(applyPurpose(connectors, activePurpose), activeCategory), activeLicense),
-    [connectors, activePurpose, activeCategory, activeLicense],
+    () => applyRole(applyLicense(applyCategory(applyPurpose(connectors, activePurpose), activeCategory), activeLicense), activeRole),
+    [connectors, activePurpose, activeCategory, activeLicense, activeRole],
   );
 
   const licenseBase = useMemo(
-    () => applyConnected(applyCategory(applyPurpose(connectors, activePurpose), activeCategory), connectedFilter),
-    [connectors, activePurpose, activeCategory, connectedFilter, ownedServiceTypes],
+    () => applyRole(applyConnected(applyCategory(applyPurpose(connectors, activePurpose), activeCategory), connectedFilter), activeRole),
+    [connectors, activePurpose, activeCategory, connectedFilter, activeRole, ownedServiceTypes],
   );
 
   const purposeOptions = useMemo<ThemedSelectOption[]>(() => {
@@ -74,7 +88,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
       const p = getPurposeForConnector(c.name);
       if (p) counts[p] = (counts[p] || 0) + 1;
     }
-    const opts: ThemedSelectOption[] = [{ value: '', label: `All Purposes (${purposeBase.length})` }];
+    const opts: ThemedSelectOption[] = [{ value: '', label: `All Purposes (${Object.keys(counts).length})` }];
     for (const pg of PURPOSE_GROUPS) {
       if (counts[pg.purpose]) {
         opts.push({ value: pg.purpose, label: `${pg.label} (${counts[pg.purpose]})` });
@@ -88,7 +102,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
     for (const c of categoryBase) {
       counts[c.category] = (counts[c.category] || 0) + 1;
     }
-    const opts: ThemedSelectOption[] = [{ value: '', label: `All Categories (${categoryBase.length})` }];
+    const opts: ThemedSelectOption[] = [{ value: '', label: `All Categories (${Object.keys(counts).length})` }];
     Object.entries(counts)
       .sort(([a], [b]) => a.localeCompare(b))
       .forEach(([cat, count]) => {
@@ -104,8 +118,9 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
       if (ownedServiceTypes.has(c.name)) connected++;
       else fresh++;
     }
+    const statusCount = (connected > 0 ? 1 : 0) + (fresh > 0 ? 1 : 0);
     const opts: ThemedSelectOption[] = [
-      { value: 'all', label: `All (${connectedBase.length})` },
+      { value: 'all', label: `All (${statusCount})` },
     ];
     if (connected > 0) opts.push({ value: 'connected', label: `Connected (${connected})` });
     if (fresh > 0) opts.push({ value: 'new', label: `New (${fresh})` });
@@ -118,7 +133,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
       const tier = getLicenseTier(c.name, c.metadata as Record<string, unknown> | null);
       counts[tier] = (counts[tier] || 0) + 1;
     }
-    const opts: ThemedSelectOption[] = [{ value: '', label: `All Licenses (${licenseBase.length})` }];
+    const opts: ThemedSelectOption[] = [{ value: '', label: `All Licenses (${Object.keys(counts).length})` }];
     for (const tier of ['personal', 'paid', 'enterprise'] as LicenseTier[]) {
       if (counts[tier]) {
         opts.push({ value: tier, label: `${LICENSE_TIER_META[tier].label} (${counts[tier]})` });
@@ -134,8 +149,12 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
     if (activeLicense) result = result.filter((c) => getLicenseTier(c.name, c.metadata as Record<string, unknown> | null) === activeLicense);
     if (connectedFilter === 'connected') result = result.filter((c) => ownedServiceTypes.has(c.name));
     if (connectedFilter === 'new') result = result.filter((c) => !ownedServiceTypes.has(c.name));
+    if (activeRole) {
+      const roleCats = ROLE_PRESETS[activeRole].categories;
+      result = result.filter((c) => roleCats.includes(c.category));
+    }
     return result;
-  }, [connectors, activeCategory, activePurpose, activeLicense, connectedFilter, ownedServiceTypes]);
+  }, [connectors, activeCategory, activePurpose, activeLicense, connectedFilter, activeRole, ownedServiceTypes]);
 
   useEffect(() => {
     if (searchTerm?.trim()) {
@@ -143,6 +162,7 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
       setActivePurpose(null);
       setActiveLicense(null);
       setConnectedFilter('all');
+      setActiveRole(null);
     }
   }, [searchTerm]);
 
@@ -161,6 +181,8 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
         activeLicense={activeLicense}
         onLicenseChange={setActiveLicense}
         licenseOptions={licenseOptions}
+        activeRole={activeRole}
+        onRoleToggle={handleRoleToggle}
       />
 
       <div className="grid [grid-template-columns:repeat(auto-fill,minmax(9rem,1fr))] gap-2.5">

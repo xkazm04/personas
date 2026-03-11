@@ -72,9 +72,14 @@ export function useSchemaProposal({
   const startPolling = useCallback((proposalId: string) => {
     if (pollingRef.current) clearInterval(pollingRef.current);
 
+    let consecutiveErrors = 0;
+    const MAX_CONSECUTIVE_ERRORS = 20; // ~30s of failures at 1.5s interval
+
     pollingRef.current = setInterval(async () => {
       try {
         const snap = await getSchemaProposalSnapshot(proposalId);
+        consecutiveErrors = 0; // Reset on success
+
         if (snap.lines.length > 0) setLines(snap.lines);
 
         if (snap.status === 'completed') {
@@ -93,7 +98,12 @@ export function useSchemaProposal({
           setError(snap.error ?? 'Schema proposal failed.');
         }
       } catch {
-        // Transient fetch error — keep polling
+        consecutiveErrors++;
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          setPhase('failed');
+          setError('Schema proposal timed out — backend unreachable after repeated failures.');
+        }
       }
     }, 1500);
   }, []);

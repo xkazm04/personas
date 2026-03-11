@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Shield, ShieldAlert, ShieldCheck, ChevronDown, Lock, KeyRound, HardDrive, Loader2 } from 'lucide-react';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import type { VaultStatus } from '@/api/tauriApi';
 import { migratePlaintextCredentials, vaultStatus as refreshVaultStatus } from '@/api/tauriApi';
 
@@ -9,6 +10,7 @@ interface VaultStatusBadgeProps {
 }
 
 export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProps) {
+  const isSimple = useSimpleMode();
   const [open, setOpen] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
   const [migrationResult, setMigrationResult] = useState<{ migrated: number; failed: number } | null>(null);
@@ -45,14 +47,28 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
   if (vault.total <= 0) return null;
 
   const hasPlaintext = vault.plaintext > 0;
+
+  // Simple mode: just a static badge, no dropdown
+  if (isSimple) {
+    return (
+      <span className={`flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg border ${
+        hasPlaintext
+          ? 'bg-amber-600/15 border-amber-500/20 text-amber-400'
+          : 'bg-emerald-600/15 border-emerald-500/20 text-emerald-400'
+      }`}>
+        {hasPlaintext ? <ShieldAlert className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
+        {hasPlaintext ? 'Needs attention' : 'Secure'}
+      </span>
+    );
+  }
   const isKeychain = vault.key_source === 'keychain';
 
-  const badgeClass = `flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-lg border cursor-pointer transition-colors ${
+  const badgeClass = `flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg border cursor-pointer transition-colors ${
     hasPlaintext
-      ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/15'
+      ? 'bg-amber-600/15 border-amber-600/25 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 hover:bg-amber-600/20 dark:hover:bg-amber-500/15'
       : isKeychain
-        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/15'
-        : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/15'
+        ? 'bg-emerald-600/15 border-emerald-600/25 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-600/20 dark:hover:bg-emerald-500/15'
+        : 'bg-yellow-600/15 border-yellow-600/25 dark:border-yellow-500/20 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-600/20 dark:hover:bg-yellow-500/15'
   }`;
 
   return (

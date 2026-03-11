@@ -41,7 +41,7 @@ export function ExecutionListHeader({
               className={`ml-auto flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
                 showRaw
                   ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                  : 'text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'
+                  : 'text-muted-foreground/80 hover:text-muted-foreground/90 border border-transparent'
               }`}
             >
               <Shield className="w-3 h-3" />
@@ -55,7 +55,7 @@ export function ExecutionListHeader({
             className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
               compareMode
                 ? 'bg-primary/15 text-primary/80 border border-primary/20'
-                : 'text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'
+                : 'text-muted-foreground/80 hover:text-muted-foreground/90 border border-transparent'
             }`}
           >
             {compareMode ? <X className="w-3 h-3" /> : <ArrowLeftRight className="w-3 h-3" />}
@@ -80,7 +80,7 @@ export function ExecutionListHeader({
               <span className="text-sm font-mono text-indigo-400">#{compareLeft.slice(0, 8)}</span>
               {compareRight && (
                 <>
-                  <span className="text-muted-foreground/40">vs</span>
+                  <span className="text-muted-foreground/70">vs</span>
                   <span className="text-sm font-mono text-pink-400">#{compareRight.slice(0, 8)}</span>
                 </>
               )}

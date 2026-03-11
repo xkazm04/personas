@@ -1,7 +1,10 @@
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ArrowRight, type LucideIcon } from 'lucide-react';
 import { SIDEBAR_ICONS, SidebarIconStyles } from '@/features/shared/components/layout/sidebar/SidebarIcons';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useDevMode } from '@/hooks/utility/interaction/useDevMode';
+import { SIMPLE_SECTIONS, DEV_MODE_SECTIONS } from '@/lib/utils/platform/platform';
 
 export interface NavCard {
   id: string;
@@ -59,7 +62,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
 
         {/* Module name overlaid at bottom of illustration */}
         <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-6 bg-gradient-to-t from-black/40 to-transparent pointer-events-none z-10">
-          <h3 className="text-lg font-extrabold tracking-wide text-muted-foreground/70 uppercase">{cardT.label}</h3>
+          <h3 className="text-lg font-extrabold tracking-wide text-foreground/80 uppercase drop-shadow-sm">{cardT.label}</h3>
         </div>
 
         {/* Arrow overlay */}
@@ -73,18 +76,30 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
 
       {/* Description below — fixed height */}
       <div className="mt-1.5 px-1 h-[48px] flex items-start">
-        <p className="text-xs leading-relaxed text-muted-foreground/60 line-clamp-3">{cardT.description}</p>
+        <p className="text-xs leading-relaxed text-muted-foreground/80 line-clamp-3">{cardT.description}</p>
       </div>
     </motion.button>
   );
 }
 
 export default function NavigationGrid({ cards, translations, onCardClick }: NavigationGridProps) {
+  const isSimple = useSimpleMode();
+  const isDevMode = useDevMode();
+  const visibleCards = useMemo(
+    () => {
+      let filtered = cards;
+      if (isSimple) filtered = filtered.filter((c) => SIMPLE_SECTIONS.has(c.id));
+      if (!isDevMode) filtered = filtered.filter((c) => !DEV_MODE_SECTIONS.has(c.id));
+      return filtered;
+    },
+    [cards, isSimple, isDevMode],
+  );
+
   return (
     <>
       <SidebarIconStyles />
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
-        {cards.map((card, i) => {
+        {visibleCards.map((card, i) => {
           const cardT = translations[card.id] || { label: card.id, description: '' };
           return (
             <NavCardWrapper

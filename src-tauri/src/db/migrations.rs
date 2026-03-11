@@ -1043,6 +1043,193 @@ CREATE TABLE IF NOT EXISTS automation_runs (
 CREATE INDEX IF NOT EXISTS idx_automation_runs_automation ON automation_runs(automation_id);
 CREATE INDEX IF NOT EXISTS idx_automation_runs_execution  ON automation_runs(execution_id);
 
+-- ============================================================================
+-- Dev Tools: Projects
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dev_projects (
+  id            TEXT PRIMARY KEY,
+  name          TEXT NOT NULL,
+  root_path     TEXT NOT NULL UNIQUE,
+  description   TEXT,
+  status        TEXT NOT NULL DEFAULT 'active',
+  tech_stack    TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ============================================================================
+-- Dev Tools: Goals
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dev_goals (
+  id             TEXT PRIMARY KEY,
+  project_id     TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+  context_id     TEXT,
+  order_index    INTEGER NOT NULL DEFAULT 0,
+  title          TEXT NOT NULL,
+  description    TEXT,
+  status         TEXT NOT NULL DEFAULT 'open',
+  progress       INTEGER DEFAULT 0,
+  target_date    TEXT,
+  started_at     TEXT,
+  completed_at   TEXT,
+  created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_dev_goals_project ON dev_goals(project_id);
+CREATE INDEX IF NOT EXISTS idx_dev_goals_status ON dev_goals(status);
+
+-- ============================================================================
+-- Dev Tools: Goal Signals
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dev_goal_signals (
+  id            TEXT PRIMARY KEY,
+  goal_id       TEXT NOT NULL REFERENCES dev_goals(id) ON DELETE CASCADE,
+  signal_type   TEXT NOT NULL,
+  source_id     TEXT,
+  delta         INTEGER,
+  message       TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_dev_goal_signals_goal ON dev_goal_signals(goal_id);
+
+-- ============================================================================
+-- Dev Tools: Context Groups
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dev_context_groups (
+  id            TEXT PRIMARY KEY,
+  project_id    TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+  name          TEXT NOT NULL,
+  color         TEXT NOT NULL DEFAULT '#6366f1',
+  icon          TEXT,
+  group_type    TEXT,
+  position      INTEGER NOT NULL DEFAULT 0,
+  health_score  INTEGER,
+  last_scan_at  TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_dev_context_groups_project ON dev_context_groups(project_id);
+
+-- ============================================================================
+-- Dev Tools: Contexts
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dev_contexts (
+  id                TEXT PRIMARY KEY,
+  project_id        TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+  group_id          TEXT REFERENCES dev_context_groups(id) ON DELETE SET NULL,
+  name              TEXT NOT NULL,
+  description       TEXT,
+  file_paths        TEXT NOT NULL DEFAULT '[]',
+  entry_points      TEXT,
+  db_tables         TEXT,
+  keywords          TEXT,
+  api_surface       TEXT,
+  cross_refs        TEXT,
+  tech_stack        TEXT,
+  created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_dev_contexts_project ON dev_contexts(project_id);
+CREATE INDEX IF NOT EXISTS idx_dev_contexts_group ON dev_contexts(group_id);
+
+-- ============================================================================
+-- Dev Tools: Context Group Relationships
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dev_context_group_relationships (
+  id              TEXT PRIMARY KEY,
+  project_id      TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+  source_group_id TEXT NOT NULL REFERENCES dev_context_groups(id) ON DELETE CASCADE,
+  target_group_id TEXT NOT NULL REFERENCES dev_context_groups(id) ON DELETE CASCADE,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ============================================================================
+-- Dev Tools: Ideas
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dev_ideas (
+  id            TEXT PRIMARY KEY,
+  project_id    TEXT REFERENCES dev_projects(id) ON DELETE CASCADE,
+  context_id    TEXT,
+  scan_type     TEXT NOT NULL,
+  category      TEXT NOT NULL DEFAULT 'functionality',
+  title         TEXT NOT NULL,
+  description   TEXT,
+  reasoning     TEXT,
+  status        TEXT NOT NULL DEFAULT 'pending',
+  effort        INTEGER,
+  impact        INTEGER,
+  risk          INTEGER,
+  provider      TEXT,
+  model         TEXT,
+  rejection_reason TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_dev_ideas_status ON dev_ideas(status);
+CREATE INDEX IF NOT EXISTS idx_dev_ideas_project ON dev_ideas(project_id);
+
+-- ============================================================================
+-- Dev Tools: Scans
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dev_scans (
+  id            TEXT PRIMARY KEY,
+  project_id    TEXT REFERENCES dev_projects(id) ON DELETE CASCADE,
+  scan_type     TEXT NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'running',
+  idea_count    INTEGER DEFAULT 0,
+  input_tokens  INTEGER,
+  output_tokens INTEGER,
+  duration_ms   INTEGER,
+  error         TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ============================================================================
+-- Dev Tools: Tasks
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dev_tasks (
+  id              TEXT PRIMARY KEY,
+  project_id      TEXT REFERENCES dev_projects(id) ON DELETE CASCADE,
+  title           TEXT NOT NULL,
+  description     TEXT,
+  source_idea_id  TEXT REFERENCES dev_ideas(id) ON DELETE SET NULL,
+  goal_id         TEXT REFERENCES dev_goals(id) ON DELETE SET NULL,
+  status          TEXT NOT NULL DEFAULT 'queued',
+  session_id      TEXT,
+  progress_pct    INTEGER DEFAULT 0,
+  output_lines    INTEGER DEFAULT 0,
+  error           TEXT,
+  started_at      TEXT,
+  completed_at    TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_dev_tasks_status ON dev_tasks(status);
+CREATE INDEX IF NOT EXISTS idx_dev_tasks_project ON dev_tasks(project_id);
+
+-- ============================================================================
+-- Dev Tools: Triage Rules
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dev_triage_rules (
+  id            TEXT PRIMARY KEY,
+  project_id    TEXT REFERENCES dev_projects(id) ON DELETE CASCADE,
+  name          TEXT NOT NULL,
+  conditions    TEXT NOT NULL,
+  action        TEXT NOT NULL,
+  enabled       INTEGER DEFAULT 1,
+  times_fired   INTEGER DEFAULT 0,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 "#;
 
 /// Incremental migrations for columns added after the initial schema.

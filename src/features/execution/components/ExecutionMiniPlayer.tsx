@@ -11,6 +11,7 @@ import {
   PinOff,
 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { Button } from '@/features/shared/components/buttons';
 import { useElapsedTimer } from '@/hooks/utility/timing/useElapsedTimer';
 import { formatElapsed } from '@/lib/utils/formatters';
@@ -19,6 +20,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PipelineDots, StatusIndicator } from './PipelineDots';
 
 export default function ExecutionMiniPlayer() {
+  const isSimple = useSimpleMode();
   const miniPlayerPinned = usePersonaStore((s) => s.miniPlayerPinned);
   const miniPlayerExpanded = usePersonaStore((s) => s.miniPlayerExpanded);
   const miniPlayerPosition = usePersonaStore((s) => s.miniPlayerPosition);
@@ -139,14 +141,14 @@ export default function ExecutionMiniPlayer() {
           className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 bg-secondary/30 cursor-grab active:cursor-grabbing"
           onMouseDown={handleMouseDown}
         >
-          <GripVertical className="w-3.5 h-3.5 text-muted-foreground/30 flex-shrink-0" />
+          <GripVertical className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0" />
           <StatusIndicator isExecuting={isExecuting} hasError={!!error && !isExecuting} />
           <div className="flex-1 min-w-0 flex items-center gap-2">
             <Bot className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
             <span className="text-sm font-medium text-foreground/80 truncate">{personaName}</span>
           </div>
           {isExecuting && (
-            <div className="flex items-center gap-1 text-sm font-mono text-muted-foreground/60">
+            <div className="flex items-center gap-1 text-sm font-mono text-muted-foreground/80">
               <Timer className="w-3 h-3" />
               {formatElapsed(elapsed, 'clock')}
             </div>
@@ -163,6 +165,7 @@ export default function ExecutionMiniPlayer() {
               </Button>
             </Tooltip>
           )}
+          {!isSimple && (
           <Tooltip content={miniPlayerExpanded ? 'Collapse' : 'Expand'}>
             <Button
               variant="ghost"
@@ -172,6 +175,7 @@ export default function ExecutionMiniPlayer() {
               {miniPlayerExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
             </Button>
           </Tooltip>
+          )}
           <Tooltip content="Unpin mini-player">
             <Button
               variant="ghost"
@@ -183,21 +187,46 @@ export default function ExecutionMiniPlayer() {
           </Tooltip>
         </div>
 
-        {/* Pipeline stage dots */}
+        {/* Simple mode: friendly progress bar */}
+        {isSimple && (
+          <div className="px-3 py-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-sm text-foreground/80">
+                {isExecuting
+                  ? error ? 'Something went wrong' : 'Running...'
+                  : error ? 'Failed' : 'Complete'}
+              </span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-primary/10 overflow-hidden">
+              <motion.div
+                className={`h-full rounded-full ${
+                  error && !isExecuting ? 'bg-red-400' : isExecuting ? 'bg-blue-400' : 'bg-emerald-400'
+                }`}
+                initial={{ width: '0%' }}
+                animate={{ width: isExecuting ? '75%' : '100%' }}
+                transition={{ duration: isExecuting ? 2 : 0.3, ease: 'easeOut' }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Full mode: Pipeline stage dots */}
+        {!isSimple && (
         <div className="flex items-center gap-2 px-3 py-1.5 border-b border-primary/5 bg-secondary/10">
-          <span className="text-sm text-muted-foreground/60 uppercase tracking-wider">Pipeline</span>
+          <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">Pipeline</span>
           <PipelineDots trace={pipelineTrace} />
           {executionOutput.length > 0 && (
-            <span className="ml-auto text-sm font-mono text-muted-foreground/60">
+            <span className="ml-auto text-sm font-mono text-muted-foreground/80">
               {executionOutput.length} lines
             </span>
           )}
         </div>
+        )}
 
-        {/* Collapsed: single last line */}
-        {!miniPlayerExpanded && (
+        {/* Full mode: Collapsed single last line */}
+        {!isSimple && !miniPlayerExpanded && (
           <div className="px-3 py-1.5 bg-black/20">
-            <div className="font-mono text-sm text-muted-foreground/50 truncate flex items-center gap-1.5">
+            <div className="font-mono text-sm text-muted-foreground/80 truncate flex items-center gap-1.5">
               {isExecuting && (
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
               )}
@@ -208,14 +237,14 @@ export default function ExecutionMiniPlayer() {
           </div>
         )}
 
-        {/* Expanded: scrollable terminal */}
-        {miniPlayerExpanded && (
+        {/* Full mode: Expanded scrollable terminal */}
+        {!isSimple && miniPlayerExpanded && (
           <div
             ref={terminalRef}
             className="max-h-52 overflow-y-auto bg-black/20 px-3 py-2 font-mono text-sm leading-relaxed scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent"
           >
             {lastLines.length === 0 && (
-              <div className="text-muted-foreground/60 flex items-center gap-2 py-2">
+              <div className="text-muted-foreground/80 flex items-center gap-2 py-2">
                 <Terminal className="w-3.5 h-3.5" />
                 {isExecuting ? 'Waiting for output...' : 'No output'}
               </div>

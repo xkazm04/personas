@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Workflow, Loader2, Terminal, RefreshCw } from 'lucide-react';
+import { Workflow, Terminal, RefreshCw } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useToastStore } from '@/stores/toastStore';
 import { getWorkflowsOverview, cancelWorkflowJob } from '@/api/pipeline/workflows';
@@ -69,9 +69,7 @@ export default function WorkflowsDashboard() {
 
       <ContentBody>
         {loading && !data ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground/60">
-            <Loader2 className="w-5 h-5 animate-spin" /> Loading workflows...
-          </div>
+          null
         ) : !data || data.total_count === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <Terminal className="w-10 h-10 text-muted-foreground/20" />

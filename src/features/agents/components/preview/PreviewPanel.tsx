@@ -87,17 +87,17 @@ export function PreviewPanel({
               </PreviewSection>
 
               {/* Tools */}
-              <PreviewSection icon={Wrench} label="Tools" count={result.suggested_tools.length}>
-                {result.suggested_tools.length > 0 ? (
+              <PreviewSection icon={Wrench} label="Tools" count={(result.suggested_tools ?? []).length}>
+                {(result.suggested_tools ?? []).length > 0 ? (
                   <div className="flex flex-wrap gap-1">
-                    {result.suggested_tools.slice(0, 5).map((t) => (
+                    {(result.suggested_tools ?? []).slice(0, 5).map((t) => (
                       <span key={t} className="px-1.5 py-0.5 text-sm bg-primary/8 border border-primary/12 rounded text-foreground/60 truncate max-w-[100px]">
                         {t}
                       </span>
                     ))}
-                    {result.suggested_tools.length > 5 && (
+                    {(result.suggested_tools ?? []).length > 5 && (
                       <span className="text-sm text-muted-foreground/50">
-                        +{result.suggested_tools.length - 5}
+                        +{(result.suggested_tools ?? []).length - 5}
                       </span>
                     )}
                   </div>
@@ -107,10 +107,10 @@ export function PreviewPanel({
               </PreviewSection>
 
               {/* Triggers */}
-              <PreviewSection icon={Zap} label="Triggers" count={result.suggested_triggers.length}>
-                {result.suggested_triggers.length > 0 ? (
+              <PreviewSection icon={Zap} label="Triggers" count={(result.suggested_triggers ?? []).length}>
+                {(result.suggested_triggers ?? []).length > 0 ? (
                   <div className="space-y-0.5">
-                    {result.suggested_triggers.map((t, i) => (
+                    {(result.suggested_triggers ?? []).map((t, i) => (
                       <div key={i} className="flex items-center gap-1.5">
                         <Clock className="w-2.5 h-2.5 text-muted-foreground/40 shrink-0" />
                         <span className="text-sm text-foreground/60 truncate">

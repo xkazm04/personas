@@ -9,6 +9,7 @@ export type ThemeId =
   | 'dark-purple'
   | 'dark-pink'
   | 'dark-red'
+  | 'dark-matrix'
   | 'light'
   | 'light-ice'
   | 'light-news';
@@ -33,6 +34,7 @@ export const THEMES: ThemeDefinition[] = [
   { id: 'dark-purple', label: 'Purple', primaryColor: '#a855f7', accentColor: '#c084fc', backgroundSample: '#0e0a14', foregroundSample: '#f3e8ff', isLight: false },
   { id: 'dark-pink', label: 'Pink', primaryColor: '#ec4899', accentColor: '#f472b6', backgroundSample: '#140a10', foregroundSample: '#fce7f3', isLight: false },
   { id: 'dark-red', label: 'Red', primaryColor: '#cc0000', accentColor: '#e60000', backgroundSample: '#080808', foregroundSample: '#ededed', isLight: false },
+  { id: 'dark-matrix', label: 'Matrix', primaryColor: '#00ff41', accentColor: '#20c20e', backgroundSample: '#000000', foregroundSample: '#00ff41', isLight: false },
   { id: 'light', label: 'Light', primaryColor: '#2554b0', accentColor: '#3568c7', backgroundSample: '#f0ede6', foregroundSample: '#1c1c28', isLight: true },
   { id: 'light-ice', label: 'Ice', primaryColor: '#2563eb', accentColor: '#38bdf8', backgroundSample: '#f0f5fa', foregroundSample: '#0f172a', isLight: true },
   { id: 'light-news', label: 'News', primaryColor: '#1a1a1a', accentColor: '#555555', backgroundSample: '#e8e6e1', foregroundSample: '#111111', isLight: true },

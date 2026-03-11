@@ -55,14 +55,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
     return () => { cancelled = true; };
   }, [credentialId]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-6 text-sm text-muted-foreground/90">
-        <div className="w-3 h-3 border border-primary/30 border-t-transparent rounded-full animate-spin mr-2" />
-        Loading intelligence...
-      </div>
-    );
-  }
+  if (loading) return null;
 
   const hasActivity = stats && stats.total_accesses > 0;
   const unusedDays = stats?.last_accessed_at

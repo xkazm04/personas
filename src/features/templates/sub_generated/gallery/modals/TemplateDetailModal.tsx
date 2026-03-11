@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   X,
   Download,
@@ -10,6 +10,7 @@ import {
   Play,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { PromptTabsPreview } from '@/features/shared/components/editors/PromptTabsPreview';
 import { DesignConnectorGrid } from '@/features/shared/components/display/DesignConnectorGrid';
 import { BaseModal } from '../../shared/BaseModal';
@@ -49,7 +50,13 @@ export function TemplateDetailModal({
   onViewFlows,
   onTryIt,
 }: TemplateDetailModalProps) {
+  const isSimple = useSimpleMode();
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
+
+  const visibleTabs = useMemo(
+    () => isSimple ? TAB_CONFIG.filter((t) => t.key !== 'json') : TAB_CONFIG,
+    [isSimple],
+  );
 
   if (!isOpen || !review) return null;
 
@@ -91,13 +98,13 @@ export function TemplateDetailModal({
                 <StatusIcon className="w-3 h-3" />
                 {statusBadge.label}
               </span>
-              {review.adoption_count > 0 && (
+              {!isSimple && review.adoption_count > 0 && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-full bg-emerald-500/10 border border-emerald-500/15 text-emerald-400/70">
                   <Download className="w-3 h-3" />
                   {review.adoption_count} adopted
                 </span>
               )}
-              {review.had_references && (
+              {!isSimple && review.had_references && (
                 <span className="text-sm text-violet-400/50 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-violet-400/40" />
                   Used reference patterns
@@ -112,7 +119,7 @@ export function TemplateDetailModal({
 
         {/* Tabs */}
         <div className="px-6 border-b border-primary/10 flex gap-0 flex-shrink-0">
-          {TAB_CONFIG.map((tab) => (
+          {visibleTabs.map((tab) => (
             <Button
               key={tab.key}
               variant="ghost"
@@ -121,7 +128,7 @@ export function TemplateDetailModal({
               className={`relative ${
                 activeTab === tab.key
                   ? 'text-violet-300'
-                  : 'text-muted-foreground/60 hover:text-foreground/80'
+                  : 'text-muted-foreground/80 hover:text-foreground/80'
               }`}
             >
               {tab.label}
@@ -159,7 +166,7 @@ export function TemplateDetailModal({
               </pre>
             )}
             {!designResult && activeTab !== 'json' && (
-              <div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">
+              <div className="flex items-center justify-center py-12 text-sm text-muted-foreground/80">
                 Design data unavailable for this template.
               </div>
             )}
@@ -194,6 +201,7 @@ export function TemplateDetailModal({
                 </Button>
               )}
             </div>
+            {!isSimple && (
             <Button
               onClick={() => {
                 onDelete(review.id);
@@ -206,6 +214,7 @@ export function TemplateDetailModal({
             >
               Delete
             </Button>
+            )}
           </div>
         </div>
     </BaseModal>

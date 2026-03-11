@@ -116,7 +116,7 @@ export default function SLADashboard() {
               </div>
 
               {data.persona_stats.length === 0 ? (
-                <div className="px-5 py-8 text-center text-sm text-muted-foreground/60">
+                <div className="px-5 py-8 text-center text-sm text-muted-foreground/80">
                   No agents have executed in this period.
                 </div>
               ) : (

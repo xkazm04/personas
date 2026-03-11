@@ -7,6 +7,7 @@ import {
 import type { AgentIR, SuggestedTrigger, SuggestedEventSubscription, ProtocolCapability } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
+import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import type { RequiredConnector } from '../../adoption/steps/connect/ConnectStep';
 import type { MatrixEditState, MatrixEditCallbacks } from './EditableMatrixCells';
 import { ConnectorEditCell, TriggerEditCell, ReviewEditCell, MemoryEditCell, MessagesEditCell } from './EditableMatrixCells';
@@ -36,9 +37,21 @@ interface PersonaMatrixBaseProps {
   launchDisabled?: boolean;
   launchLabel?: string;
   isRunning?: boolean;
-  lastLine?: string;
-  cliLines?: string[];
   onNavigateCatalog?: () => void;
+  /** Lock all interactive grid cells to view mode during build */
+  buildLocked?: boolean;
+  /** CLI questions during build */
+  questions?: TransformQuestionResponse[] | null;
+  /** Current user answers */
+  userAnswers?: Record<string, string>;
+  /** Question answer changed */
+  onAnswerUpdated?: (questionId: string, answer: string) => void;
+  /** Submit answers and continue build */
+  onSubmitAnswers?: () => void;
+  /** Whether build is completed (draft available) */
+  buildCompleted?: boolean;
+  /** User-facing build phase label */
+  phaseLabel?: string;
 }
 
 interface PersonaMatrixViewProps extends PersonaMatrixBaseProps { mode?: 'view'; }
@@ -142,15 +155,15 @@ const TRIGGER_LABELS: Record<string, string> = {
 
 // ── Cell renderer (Neon, dark+light aware) ───────────────────────────
 
-function MatrixCellRenderer({ cell, isEditMode }: { cell: MatrixCell; isEditMode: boolean }) {
+function MatrixCellRenderer({ cell, isEditMode, buildLocked }: { cell: MatrixCell; isEditMode: boolean; buildLocked?: boolean }) {
   const Watermark = cell.watermark;
-  const useEditRender = isEditMode && cell.editRender;
+  const useEditRender = isEditMode && cell.editRender && !buildLocked;
 
   return (
     <div className={[
       'relative rounded-xl border border-card-border p-4 transition-all duration-150 shadow-md',
       useEditRender
-        ? 'bg-card-bg hover:bg-foreground/[0.06] ring-1 ring-inset ring-primary/10'
+        ? 'bg-card-bg ring-1 ring-inset ring-primary/10'
         : 'bg-card-bg',
     ].join(' ')}>
       <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
@@ -171,7 +184,7 @@ function MatrixCellRenderer({ cell, isEditMode }: { cell: MatrixCell; isEditMode
 // ── Main Component ───────────────────────────────────────────────────
 
 export function PersonaMatrix(props: PersonaMatrixProps) {
-  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, lastLine, cliLines, onNavigateCatalog } = props;
+  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel } = props;
   const isEditMode = props.mode === 'edit';
 
   const cells = useMemo<MatrixCell[]>(() => {
@@ -216,7 +229,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   }, [designResult, flows, isEditMode, onNavigateCatalog,
     ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
 
-  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={isEditMode} isRunning={isRunning} lastLine={lastLine} cliLines={cliLines} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} />);
+  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={isEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} />);
 
   if (!designResult || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
 
@@ -234,14 +247,14 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         </div>
       )}
       <div className="grid grid-cols-[1fr_1.3fr_1fr] gap-2.5">
-        {firstFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} />))}
+        {firstFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} />))}
         <div className="relative rounded-xl border border-primary/30 p-5 ring-1 ring-primary/10 shadow-2xl shadow-primary/5 overflow-hidden">
           {/* Neon background — theme-colored radial glow */}
           <div className="absolute inset-0 bg-card-bg" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_70%)] opacity-[0.07]" />
           <div className="relative z-10">{commandCenter}</div>
         </div>
-        {lastFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} />))}
+        {lastFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} />))}
       </div>
     </div>
   );

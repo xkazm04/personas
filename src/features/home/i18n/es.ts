@@ -38,6 +38,10 @@ export const es = {
         label: "Nube",
         description: "Despliega agentes en infraestructura cloud y GitLab CI"
       },
+      'dev-tools': {
+        label: "Herramientas de desarrollo",
+        description: "Gestión de proyectos, escaneo de código, generación de ideas, triaje y ejecución de tareas"
+      },
       settings: {
         label: "Ajustes",
         description: "Cuenta, apariencia, notificaciones y configuración del motor"

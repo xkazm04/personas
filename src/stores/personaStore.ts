@@ -1,5 +1,5 @@
 /**
- * Persona store facade â€” composes domain slices into a single Zustand store.
+ * Persona store facade — composes domain slices into a single Zustand store.
  *
  * Each slice lives in ./slices/<domain>Slice.ts and owns its state + actions.
  * Cross-slice calls work because get() returns the full merged PersonaStore.
@@ -37,9 +37,11 @@ import { createHealthCheckSlice } from "./slices/agents/healthCheckSlice";
 import { createTourSlice } from "./slices/system/tourSlice";
 import { createBudgetEnforcementSlice } from "./slices/agents/budgetEnforcementSlice";
 import { createAlertSlice } from "./slices/overview/alertSlice";
+import { createViewModeSlice } from "./slices/system/viewModeSlice";
+import { createDevToolsSlice } from "./slices/system/devToolsSlice";
 import { AUTH_LOGIN_EVENT } from "./authStore";
 
-// â”€â”€ Store â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Store ──────────────────────────────────────────────────────────────
 
 export const usePersonaStore = create<PersonaStore>()(
     persist(
@@ -71,6 +73,8 @@ export const usePersonaStore = create<PersonaStore>()(
         ...createTourSlice(...a),
         ...createBudgetEnforcementSlice(...a),
         ...createAlertSlice(...a),
+        ...createViewModeSlice(...a),
+        ...createDevToolsSlice(...a),
       }),
       {
         name: "persona-ui-state",
@@ -85,12 +89,13 @@ export const usePersonaStore = create<PersonaStore>()(
           onboardingCompleted: state.onboardingCompleted,
           tourCompleted: state.tourCompleted,
           tourDismissed: state.tourDismissed,
+          viewMode: state.viewMode,
         }),
       },
     ),
 );
 
-// â”€â”€ Auth Bridge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Auth Bridge ───────────────────────────────────────────────────────
 
 let authBridgeAttached = false;
 function initAuthBridgeListener() {
@@ -103,7 +108,7 @@ function initAuthBridgeListener() {
 
 initAuthBridgeListener();
 
-// â”€â”€ Healing Listener â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Healing Listener ──────────────────────────────────────────────────
 
 /** Listen for healing-event from Tauri backend and auto-refresh issues. */
 let healingListenerAttached = false;

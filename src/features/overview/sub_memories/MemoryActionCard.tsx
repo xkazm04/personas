@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lightbulb, X, Gauge, Clock, AlertTriangle, Settings, GitBranch } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import type { MemoryAction, MemoryActionKind } from './hooks/memoryActions';
 import { ACTION_KIND_META } from './hooks/memoryActions';
 
@@ -15,9 +16,10 @@ const KIND_ICONS: Record<MemoryActionKind, typeof Gauge> = {
 interface MemoryActionCardProps {
   action: MemoryAction;
   onDismiss: (id: string) => void;
+  simplified?: boolean;
 }
 
-function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
+function MemoryActionCardItem({ action, onDismiss, simplified }: MemoryActionCardProps) {
   const meta = ACTION_KIND_META[action.kind];
   const Icon = KIND_ICONS[action.kind];
 
@@ -48,10 +50,14 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
             <span className={`text-sm font-semibold px-1.5 py-0.5 rounded-md ${meta.bgClass} ${meta.textClass}`}>
               {meta.label}
             </span>
-            <span className="text-sm text-muted-foreground/50 font-mono">{action.score}/10</span>
+            {!simplified && (
+              <span className="text-sm text-muted-foreground/80 font-mono">{action.score}/10</span>
+            )}
           </div>
           <p className="text-sm font-medium text-foreground/85 line-clamp-2">{action.memoryTitle}</p>
-          <p className="text-sm text-muted-foreground/70 line-clamp-2">{action.rule}</p>
+          {!simplified && (
+            <p className="text-sm text-muted-foreground/70 line-clamp-2">{action.rule}</p>
+          )}
         </div>
       </div>
     </motion.div>
@@ -64,6 +70,7 @@ interface MemoryActionsPanelProps {
 }
 
 export function MemoryActionsPanel({ actions, onDismiss }: MemoryActionsPanelProps) {
+  const isSimple = useSimpleMode();
   const visible = actions.filter((a) => !a.dismissed);
   if (visible.length === 0) return null;
 
@@ -74,13 +81,13 @@ export function MemoryActionsPanel({ actions, onDismiss }: MemoryActionsPanelPro
           <Lightbulb className="w-3.5 h-3.5" />
         </div>
         <h3 className="text-sm font-bold uppercase tracking-widest text-foreground/80">
-          Memory Insights
+          {isSimple ? 'What I Learned' : 'Memory Insights'}
         </h3>
-        <span className="text-sm text-muted-foreground/50 ml-auto">{visible.length} suggestion{visible.length !== 1 ? 's' : ''}</span>
+        <span className="text-sm text-muted-foreground/80 ml-auto">{visible.length} suggestion{visible.length !== 1 ? 's' : ''}</span>
       </div>
       <AnimatePresence mode="popLayout">
         {visible.map((action) => (
-          <MemoryActionCardItem key={action.id} action={action} onDismiss={onDismiss} />
+          <MemoryActionCardItem key={action.id} action={action} onDismiss={onDismiss} simplified={isSimple} />
         ))}
       </AnimatePresence>
     </div>

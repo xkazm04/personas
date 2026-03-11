@@ -56,13 +56,13 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
             className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
               auditFilter === f
                 ? 'bg-primary/15 text-foreground/90 border border-primary/20'
-                : 'text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/30'
+                : 'text-muted-foreground/80 hover:text-muted-foreground/90 hover:bg-secondary/30'
             }`}
           >
             {f === 'all' ? 'All' : (OP_LABELS[f]?.label ?? f)}
           </button>
         ))}
-        <span className="ml-auto text-xs text-muted-foreground/50">{filtered.length} entries</span>
+        <span className="ml-auto text-xs text-muted-foreground/80">{filtered.length} entries</span>
       </div>
 
       {/* Table */}
@@ -70,9 +70,9 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/10">
-              <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Operation</th>
-              <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Detail</th>
-              <th className="text-right px-3 py-1.5 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Time</th>
+              <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">Operation</th>
+              <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">Detail</th>
+              <th className="text-right px-3 py-1.5 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">Time</th>
             </tr>
           </thead>
           <tbody>
@@ -89,7 +89,7 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
                   <td className="px-3 py-1.5 text-xs text-foreground/80 truncate max-w-[300px]">
                     {entry.persona_name ? `by ${entry.persona_name}` : entry.detail ?? ''}
                   </td>
-                  <td className="px-3 py-1.5 text-xs text-muted-foreground/60 tabular-nums text-right whitespace-nowrap">
+                  <td className="px-3 py-1.5 text-xs text-muted-foreground/80 tabular-nums text-right whitespace-nowrap">
                     {formatRelativeTime(entry.created_at, '')}
                   </td>
                 </tr>
@@ -109,7 +109,7 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
           >
             <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/70" />
           </button>
-          <span className="text-xs text-muted-foreground/60 tabular-nums">
+          <span className="text-xs text-muted-foreground/80 tabular-nums">
             Page {auditPage + 1}/{totalPages}
           </span>
           <button

@@ -91,11 +91,7 @@ export default function GeneratedReviewsTab({
   };
 
   if (gallery.isLoading && gallery.allItems.length === 0 && gallery.total === 0) {
-    return (
-      <div className="flex items-center justify-center h-full text-muted-foreground/80 text-sm">
-        Loading templates...
-      </div>
-    );
+    return null;
   }
 
   if (gallery.total === 0 && !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0 && gallery.coverageFilter === 'all' && !gallery.aiSearchActive) {

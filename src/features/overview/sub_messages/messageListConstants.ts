@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 
 export const priorityConfig: Record<string, { color: string; bgColor: string; borderColor: string; label: string }> = {
-  high: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', label: 'High' },
+  high: { color: 'text-status-error', bgColor: 'bg-status-error/10', borderColor: 'border-status-error/30', label: 'High' },
   normal: { color: 'text-foreground/80', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' },
   low: { color: 'text-muted-foreground/90', bgColor: 'bg-muted/20', borderColor: 'border-muted-foreground/20', label: 'Low' },
 };
@@ -44,10 +44,10 @@ export interface DeliveryStatusStyle {
 }
 
 export const deliveryStatusConfig: Record<string, DeliveryStatusStyle> = {
-  delivered: { iconName: 'CheckCircle2', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30', label: 'Delivered' },
-  failed: { iconName: 'AlertCircle', color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', label: 'Failed' },
-  pending: { iconName: 'Clock', color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30', label: 'Pending' },
-  queued: { iconName: 'Loader2', color: 'text-blue-400', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30', label: 'Queued' },
+  delivered: { iconName: 'CheckCircle2', color: 'text-status-success', bgColor: 'bg-status-success/10', borderColor: 'border-status-success/30', label: 'Delivered' },
+  failed: { iconName: 'AlertCircle', color: 'text-status-error', bgColor: 'bg-status-error/10', borderColor: 'border-status-error/30', label: 'Failed' },
+  pending: { iconName: 'Clock', color: 'text-status-pending', bgColor: 'bg-status-pending/10', borderColor: 'border-status-pending/30', label: 'Pending' },
+  queued: { iconName: 'Loader2', color: 'text-status-processing', bgColor: 'bg-status-processing/10', borderColor: 'border-status-processing/30', label: 'Queued' },
 };
 
 export const channelLabels: Record<string, string> = {

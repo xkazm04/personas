@@ -1,14 +1,17 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { FlaskConical, GitBranch, Wand2, ArrowLeftRight, Grid3X3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import { Button } from '@/features/shared/components/buttons';
-import { ArenaPanel } from './panels/arena/ArenaPanel';
-import { AbPanel } from './panels/ab/AbPanel';
-import { MatrixPanel } from './panels/matrix/MatrixPanel';
-import { EvalPanel } from './panels/eval/EvalPanel';
-import { VersionsPanel } from './panels/VersionsPanel';
+import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 import type { LabMode } from '@/stores/slices/agents/labSlice';
+
+// Each mode panel is lazy-loaded — only the active one resolves.
+const ArenaPanel = lazy(() => import('./panels/arena/ArenaPanel').then(m => ({ default: m.ArenaPanel })));
+const AbPanel = lazy(() => import('./panels/ab/AbPanel').then(m => ({ default: m.AbPanel })));
+const EvalPanel = lazy(() => import('./panels/eval/EvalPanel').then(m => ({ default: m.EvalPanel })));
+const MatrixPanel = lazy(() => import('./panels/matrix/MatrixPanel').then(m => ({ default: m.MatrixPanel })));
+const VersionsPanel = lazy(() => import('./panels/VersionsPanel').then(m => ({ default: m.VersionsPanel })));
 
 const LAB_MODE_KEY = 'dac-lab-mode';
 
@@ -77,12 +80,14 @@ export function LabTab() {
         })}
       </div>
 
-      {/* Mode content */}
-      {labMode === 'arena' && <ArenaPanel />}
-      {labMode === 'ab' && <AbPanel />}
-      {labMode === 'eval' && <EvalPanel />}
-      {labMode === 'matrix' && <MatrixPanel />}
-      {labMode === 'versions' && <VersionsPanel />}
+      {/* Mode content — lazy loaded with skeleton fallback */}
+      <Suspense fallback={<PanelSkeleton variant="tab" />}>
+        {labMode === 'arena' && <ArenaPanel />}
+        {labMode === 'ab' && <AbPanel />}
+        {labMode === 'eval' && <EvalPanel />}
+        {labMode === 'matrix' && <MatrixPanel />}
+        {labMode === 'versions' && <VersionsPanel />}
+      </Suspense>
     </div>
   );
 }

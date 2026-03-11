@@ -9,6 +9,7 @@ import {
 import { Button } from '@/features/shared/components/buttons';
 import { AnimatePresence } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { FEASIBILITY_COLORS } from '@/lib/utils/designTokens';
 import type { DryRunIssue, DryRunResult } from './types';
 import type { UseHealthCheckReturn } from './useHealthCheck';
@@ -22,6 +23,7 @@ interface HealthCheckPanelProps {
 }
 
 export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
+  const isSimple = useSimpleMode();
   const { phase, result, score, error, runHealthCheck, markIssueResolved, reset } = healthCheck;
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const handleApplyFix = useApplyHealthFix();
@@ -37,7 +39,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
         <div className="text-center py-8">
           <Activity className="w-10 h-10 text-primary/40 mx-auto mb-3" />
           <h3 className="text-sm font-medium text-foreground/80 mb-1">Agent Health Check</h3>
-          <p className="text-sm text-muted-foreground/60 mb-4 max-w-sm mx-auto">
+          <p className="text-sm text-muted-foreground/80 mb-4 max-w-sm mx-auto">
             Run a dry-run analysis against this agent's current configuration to detect missing credentials,
             disconnected connectors, and underspecified use cases.
           </p>
@@ -66,7 +68,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
             <XCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
             <div>
               <p className="text-sm font-medium text-red-400">Health check failed</p>
-              <p className="text-sm text-muted-foreground/60 mt-0.5">{error}</p>
+              <p className="text-sm text-muted-foreground/80 mt-0.5">{error}</p>
             </div>
           </div>
         </div>
@@ -100,7 +102,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
               {dryRun.status.charAt(0).toUpperCase() + dryRun.status.slice(1)}
             </div>
           </div>
-          <p className="text-sm text-muted-foreground/60">
+          <p className="text-sm text-muted-foreground/80">
             {remainingIssues > 0 ? `${remainingIssues} issue${remainingIssues !== 1 ? 's' : ''} found` : 'No issues detected'}
             {' \u00b7 '}Checked {new Date(result.checkedAt).toLocaleTimeString()}
           </p>
@@ -114,9 +116,9 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
         </Button>
       </div>
 
-      {dryRun.capabilities.length > 0 && (
+      {!isSimple && dryRun.capabilities.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider">Capabilities</p>
+          <p className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wider">Capabilities</p>
           <div className="space-y-1">
             {dryRun.capabilities.map((cap: string, i: number) => (
               <div key={i} className="flex items-center gap-2 text-sm text-emerald-400/80">
@@ -131,7 +133,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
       <AnimatePresence mode="popLayout">
         {dryRun.issues.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider">Issues</p>
+            <p className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wider">Issues</p>
             <div className="space-y-2">
               {dryRun.issues.map((issue: DryRunIssue) => (
                 <HealthIssueCard key={issue.id} issue={issue} personaId={result.personaId}

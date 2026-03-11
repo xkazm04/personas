@@ -117,7 +117,7 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
                   ? 'text-emerald-400/70'
                   : item.status === 'failed'
                     ? 'text-red-400/70'
-                    : 'text-muted-foreground/50'
+                    : 'text-muted-foreground/80'
               }`}>
                 {item.status === 'done' ? 'Added' : item.status === 'failed' ? 'Failed' : 'Skipped'}
               </span>
@@ -156,7 +156,7 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
           size="sm"
           icon={<SkipForward className="w-3.5 h-3.5" />}
           onClick={handleSkip}
-          className="text-muted-foreground/60 hover:text-foreground/80"
+          className="text-muted-foreground/80 hover:text-foreground/90"
           title="Skip this service"
         >
           Skip
@@ -176,8 +176,8 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
                   : item.status === 'failed'
                     ? 'border-red-500/20 bg-red-500/5 text-red-400/70'
                     : item.status === 'skipped'
-                      ? 'border-primary/10 bg-secondary/10 text-muted-foreground/40'
-                      : 'border-primary/10 bg-secondary/20 text-muted-foreground/50'
+                      ? 'border-primary/10 bg-secondary/10 text-muted-foreground/70'
+                      : 'border-primary/10 bg-secondary/20 text-muted-foreground/80'
             }`}
           >
             <StatusIcon status={item.status} size="w-3 h-3" />
@@ -207,7 +207,7 @@ function StatusIcon({ status, size = 'w-4 h-4' }: { status: ItemStatus; size?: s
     case 'failed':
       return <XCircle className={`${size} text-red-400`} />;
     case 'skipped':
-      return <SkipForward className={`${size} text-muted-foreground/40`} />;
+      return <SkipForward className={`${size} text-muted-foreground/70`} />;
     case 'running':
       return <Loader2 className={`${size} text-violet-400 animate-spin`} />;
     default:

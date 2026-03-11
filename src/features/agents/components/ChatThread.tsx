@@ -34,7 +34,7 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
               <p className="text-sm text-foreground/80">
                 Tell me what you need this agent to do. I'll build the full configuration — prompt, tools, triggers — from your description.
               </p>
-              <p className="text-sm text-muted-foreground/50">
+              <p className="text-sm text-muted-foreground/80">
                 Example: "Watch my GitHub PRs and post a summary to Slack every morning"
               </p>
             </div>

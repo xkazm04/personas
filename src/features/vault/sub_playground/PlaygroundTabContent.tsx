@@ -3,12 +3,13 @@ import { ApiExplorerTab } from './tabs/ApiExplorerTab';
 import { McpToolsTab } from './tabs/McpToolsTab';
 import { CredentialRotationSection } from '@/features/vault/sub_features/CredentialRotationSection';
 import { CredentialRecipesTab } from './tabs/CredentialRecipesTab';
+import { ExecutionsTab } from './tabs/ExecutionsTab';
 import { CATALOG_API_ENDPOINTS } from '@/lib/credentials/catalogApiEndpoints';
 import type { RotationStatus } from '@/api/vault/rotation';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { GoogleOAuthState } from '@/features/vault/hooks/useGoogleOAuth';
 
-type PlaygroundTab = 'overview' | 'api-explorer' | 'recipes' | 'mcp-tools' | 'rotation';
+type PlaygroundTab = 'overview' | 'executions' | 'api-explorer' | 'recipes' | 'mcp-tools' | 'rotation';
 
 interface PlaygroundTabContentProps {
   activeTab: PlaygroundTab;
@@ -69,6 +70,9 @@ export function PlaygroundTabContent({
         <div className="p-6 text-sm text-muted-foreground/80">
           No connector definition available for this credential type.
         </div>
+      )}
+      {activeTab === 'executions' && (
+        <ExecutionsTab credentialId={credential.id} createdAt={credential.created_at} />
       )}
       {activeTab === 'api-explorer' && (
         <ApiExplorerTab

@@ -77,3 +77,18 @@ export const MOBILE_SECTIONS = new Set<string>([
   'design-reviews',
   'credentials',
 ]);
+
+/** Sidebar sections available in simple mode. */
+export const SIMPLE_SECTIONS = new Set<string>([
+  'home',
+  'overview',
+  'personas',
+  'credentials',
+  'design-reviews',
+  'settings',
+]);
+
+/** Sidebar sections only visible in dev mode. */
+export const DEV_MODE_SECTIONS = new Set<string>([
+  'dev-tools',
+]);

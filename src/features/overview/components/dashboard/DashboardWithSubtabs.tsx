@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState, startTransition } from 'react';
 import { LayoutDashboard, BarChart3, Radio } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import DashboardHome from '@/features/overview/components/dashboard/DashboardHome';
-import AnalyticsDashboard from '@/features/overview/sub_analytics/components/AnalyticsDashboard';
-import RealtimeVisualizerPage from '@/features/overview/sub_realtime/components/views/RealtimeVisualizerPage';
+import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
+
+// DashboardHome is the default view — keep it eager for instant first paint.
+// Analytics (recharts-heavy) and Realtime (d3/svg-heavy) are lazy.
+const AnalyticsDashboard = lazy(() => import('@/features/overview/sub_analytics/components/AnalyticsDashboard'));
+const RealtimeVisualizerPage = lazy(() => import('@/features/overview/sub_realtime/components/views/RealtimeVisualizerPage'));
 
 type DashboardSubtab = 'overview' | 'analytics' | 'realtime';
 
@@ -15,6 +19,10 @@ const SUBTABS: Array<{ id: DashboardSubtab; label: string; icon: typeof LayoutDa
 
 export default function DashboardWithSubtabs() {
   const [subtab, setSubtab] = useState<DashboardSubtab>('overview');
+
+  const handleTabSwitch = (id: DashboardSubtab) => {
+    startTransition(() => setSubtab(id));
+  };
 
   return (
     <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
@@ -29,7 +37,7 @@ export default function DashboardWithSubtabs() {
               variant={isActive ? 'secondary' : 'ghost'}
               size="sm"
               icon={<Icon className="w-3.5 h-3.5" />}
-              onClick={() => setSubtab(tab.id)}
+              onClick={() => handleTabSwitch(tab.id)}
               className={isActive
                 ? 'bg-primary/10 text-foreground border border-primary/20 shadow-sm'
                 : 'text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/40'}
@@ -40,10 +48,14 @@ export default function DashboardWithSubtabs() {
         })}
       </div>
 
-      {/* Content */}
-      {subtab === 'overview' ? <DashboardHome /> :
-       subtab === 'analytics' ? <AnalyticsDashboard /> :
-       <RealtimeVisualizerPage />}
+      {/* Content — DashboardHome is eager, others lazy */}
+      {subtab === 'overview' ? (
+        <DashboardHome />
+      ) : (
+        <Suspense fallback={<PanelSkeleton variant="subtab" />}>
+          {subtab === 'analytics' ? <AnalyticsDashboard /> : <RealtimeVisualizerPage />}
+        </Suspense>
+      )}
     </div>
   );
 }

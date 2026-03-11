@@ -4,6 +4,7 @@ pub mod system;
 pub mod setup;
 pub mod settings;
 pub mod cloud;
+pub mod dev_tools;
 pub mod gitlab;
 pub mod workflows;
 pub mod tier_usage;

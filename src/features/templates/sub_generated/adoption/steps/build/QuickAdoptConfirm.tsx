@@ -1,13 +1,26 @@
 import { useMemo, useCallback, useState } from 'react';
-import { Settings, CheckCircle2, AlertTriangle, ExternalLink } from 'lucide-react';
-import { DimensionRadial } from '../../../shared/DimensionRadial';
+import { Settings, ExternalLink } from 'lucide-react';
 import { PersonaMatrix } from '../../../gallery/matrix/PersonaMatrix';
 import type { MatrixEditState, MatrixEditCallbacks } from '../../../gallery/matrix/EditableMatrixCells';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
 
 const BUILTIN = new Set(['personas_messages', 'personas_database']);
+
+/** Derive a user-friendly phase label from transform lines. */
+function derivePhaseLabel(lines: string[]): string {
+  if (lines.length === 0) return 'Initializing...';
+  const last = lines[lines.length - 1]?.toLowerCase() ?? '';
+  if (last.includes('tool')) return 'Configuring tools...';
+  if (last.includes('trigger')) return 'Setting up triggers...';
+  if (last.includes('prompt') || last.includes('system')) return 'Building persona prompt...';
+  if (last.includes('connector') || last.includes('service')) return 'Wiring connectors...';
+  if (last.includes('validat')) return 'Validating draft...';
+  if (last.includes('complet') || last.includes('done') || last.includes('finish')) return 'Finalizing...';
+  return 'Generating persona...';
+}
 
 export function QuickAdoptConfirm() {
   const {
@@ -20,8 +33,10 @@ export function QuickAdoptConfirm() {
     quickAdopt,
     enterFullWizard,
     setConnectorCredential,
+    continueTransform,
   } = useAdoptionWizard();
 
+  const isSimple = useSimpleMode();
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
 
   const matchSummary = useMemo(() => {
@@ -71,26 +86,26 @@ export function QuickAdoptConfirm() {
 
   const handleQuickAdopt = useCallback(() => { quickAdopt(); }, [quickAdopt]);
   const handleNavigateCatalog = useCallback(() => { setSidebarSection('credentials'); }, [setSidebarSection]);
+  const handleAnswerUpdated = useCallback((questionId: string, answer: string) => {
+    wizard.answerUpdated(questionId, answer);
+  }, [wizard]);
+  const handleSubmitAnswers = useCallback(() => { void continueTransform(); }, [continueTransform]);
+
   const hasMissing = matchSummary.missingConnectorTypes.length > 0;
+  // Lock grid cells during build or when questions are pending
+  const isBuildActive = state.transforming || (!!state.questions && state.questions.length > 0 && !state.draft);
+  const phaseLabel = useMemo(() => derivePhaseLabel(state.transformLines), [state.transformLines]);
 
   return (
     <div className="flex flex-col gap-4 px-6 py-5 w-full h-full">
-      {/* Centered header with connector status */}
+      {/* Header */}
       <div className="flex flex-col items-center gap-2 text-center">
-        <DimensionRadial designResult={designResult} size={44} />
         <h2 className="text-base font-semibold text-foreground/90 truncate max-w-full">{state.templateName}</h2>
-        <div className="flex items-center gap-1.5">
-          {matchSummary.allMatched ? (
-            <span className="text-sm text-emerald-400/80 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />All connectors matched</span>
-          ) : (
-            <span className="text-sm text-amber-400/80 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />{matchSummary.matched}/{matchSummary.total} connectors linked</span>
-          )}
-        </div>
-        {hasMissing && (
+        {hasMissing && !isBuildActive && (
           <p className="text-[12px] text-muted-foreground/50 leading-snug">
             {'Missing: '}
             {matchSummary.missingConnectorTypes.map((t, i) => (
-              <span key={t}>{i > 0 && ', '}{getConnectorMeta(t).label}</span>
+              <span key={t} className="text-orange-500 dark:text-amber-400">{i > 0 && ', '}{getConnectorMeta(t).label}</span>
             ))}
             {' — '}
             <button type="button" onClick={handleNavigateCatalog} className="text-primary/70 hover:text-primary transition-colors inline-flex items-center gap-0.5">
@@ -116,15 +131,24 @@ export function QuickAdoptConfirm() {
           launchLabel="Build Persona"
           isRunning={state.transforming}
           onNavigateCatalog={handleNavigateCatalog}
+          buildLocked={isBuildActive}
+          questions={state.questions}
+          userAnswers={state.userAnswers}
+          onAnswerUpdated={handleAnswerUpdated}
+          onSubmitAnswers={handleSubmitAnswers}
+          buildCompleted={!!state.draft}
+          phaseLabel={phaseLabel}
         />
       </div>
 
-      {/* Footer */}
+      {/* Footer (hidden in simple mode or during build) */}
+      {!isSimple && !isBuildActive && (
       <div className="flex items-center pt-1 border-t border-primary/10 flex-shrink-0">
         <button onClick={enterFullWizard} className="text-sm text-muted-foreground/60 hover:text-foreground/70 transition-colors inline-flex items-center gap-1.5">
           <Settings className="w-3.5 h-3.5" />Full wizard
         </button>
       </div>
+      )}
     </div>
   );
 }

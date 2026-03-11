@@ -42,12 +42,12 @@ export interface ExecutionStatusEntry extends BadgeColors {
 }
 
 export const EXECUTION_STATUS_MAP: Record<string, ExecutionStatusEntry> = {
-  queued:     { label: 'Queued',     icon: Clock,         text: 'text-muted-foreground',  bg: 'bg-muted/30',          border: 'border-muted-foreground/20' },
-  running:    { label: 'Running',    icon: Loader2,       text: 'text-blue-400',          bg: 'bg-blue-500/10',       border: 'border-blue-500/30',       pulse: true },
-  completed:  { label: 'Completed',  icon: CheckCircle2,  text: 'text-emerald-400',       bg: 'bg-emerald-500/10',    border: 'border-emerald-500/20' },
-  failed:     { label: 'Failed',     icon: XCircle,       text: 'text-red-400',           bg: 'bg-red-500/10',        border: 'border-red-500/20' },
-  cancelled:  { label: 'Cancelled',  icon: Pause,         text: 'text-amber-400',         bg: 'bg-amber-500/10',      border: 'border-amber-500/20' },
-  incomplete: { label: 'Incomplete', icon: AlertTriangle,  text: 'text-orange-400',        bg: 'bg-orange-500/10',     border: 'border-orange-500/20' },
+  queued:     { label: 'Queued',     icon: Clock,         text: 'text-status-neutral',      bg: 'bg-status-neutral/10',    border: 'border-status-neutral/20' },
+  running:    { label: 'Running',    icon: Loader2,       text: 'text-status-processing',   bg: 'bg-status-processing/10', border: 'border-status-processing/30', pulse: true },
+  completed:  { label: 'Completed',  icon: CheckCircle2,  text: 'text-status-success',      bg: 'bg-status-success/10',    border: 'border-status-success/20' },
+  failed:     { label: 'Failed',     icon: XCircle,       text: 'text-status-error',        bg: 'bg-status-error/10',      border: 'border-status-error/20' },
+  cancelled:  { label: 'Cancelled',  icon: Pause,         text: 'text-status-warning',      bg: 'bg-status-warning/10',    border: 'border-status-warning/20' },
+  incomplete: { label: 'Incomplete', icon: AlertTriangle,  text: 'text-status-warning',      bg: 'bg-status-warning/10',    border: 'border-status-warning/20' },
 };
 
 /** Fallback entry for unknown statuses. */
@@ -73,19 +73,19 @@ export const EXECUTION_STATUS_COLORS: Record<string, BadgeColors> = (() => {
 })();
 
 export const EVENT_STATUS_COLORS: Record<string, BadgeColors> = {
-  pending: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
-  processing: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' },
-  completed: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-  processed: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-  failed: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
-  skipped: { bg: 'bg-secondary/50', text: 'text-muted-foreground/90', border: 'border-primary/10' },
+  pending:    { bg: 'bg-status-pending/10',    text: 'text-status-pending',    border: 'border-status-pending/20' },
+  processing: { bg: 'bg-status-processing/10', text: 'text-status-processing', border: 'border-status-processing/20' },
+  completed:  { bg: 'bg-status-success/10',    text: 'text-status-success',    border: 'border-status-success/20' },
+  processed:  { bg: 'bg-status-success/10',    text: 'text-status-success',    border: 'border-status-success/20' },
+  failed:     { bg: 'bg-status-error/10',      text: 'text-status-error',      border: 'border-status-error/20' },
+  skipped:    { bg: 'bg-status-neutral/10',    text: 'text-status-neutral',    border: 'border-status-neutral/20' },
 };
 
 export const SEVERITY_COLORS: Record<string, BadgeColors> = {
-  low: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' },
-  medium: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
-  high: { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/20' },
-  critical: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
+  low:      { bg: 'bg-status-info/10',    text: 'text-status-info',    border: 'border-status-info/20' },
+  medium:   { bg: 'bg-status-warning/10', text: 'text-status-warning', border: 'border-status-warning/20' },
+  high:     { bg: 'bg-status-warning/10', text: 'text-status-warning', border: 'border-status-warning/20' },
+  critical: { bg: 'bg-status-error/10',   text: 'text-status-error',   border: 'border-status-error/20' },
 };
 
 export const HEALING_CATEGORY_COLORS: Record<string, BadgeColors> = {
@@ -175,6 +175,26 @@ export function formatElapsed(ms: number, format: 'compact' | 'clock' = 'compact
   const hours = Math.floor(mins / 60);
   const remMins = mins % 60;
   return remMins > 0 ? `${hours}h ${remMins}m` : `${hours}h`;
+}
+
+// ── Simple mode helpers ────────────────────────────────────────────────
+
+import type { SimpleStatus } from './designTokens';
+import { SIMPLE_MODE } from './designTokens';
+
+/**
+ * Map a granular status string to one of three simple levels.
+ * Used in simple mode to reduce cognitive load.
+ */
+export function formatSimpleStatus(status: string): { level: SimpleStatus; label: string } {
+  const s = status.toLowerCase();
+  if (['completed', 'success', 'healthy', 'ready', 'approved', 'active', 'running', 'processed'].includes(s)) {
+    return { level: 'good', label: SIMPLE_MODE.STATUS.good.label };
+  }
+  if (['failed', 'error', 'critical', 'rejected', 'blocked', 'unhealthy'].includes(s)) {
+    return { level: 'problem', label: SIMPLE_MODE.STATUS.problem.label };
+  }
+  return { level: 'warning', label: SIMPLE_MODE.STATUS.warning.label };
 }
 
 export function formatDuration(ms: number | null): string {

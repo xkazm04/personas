@@ -38,6 +38,10 @@ export const ko = {
         label: "클라우드",
         description: "클라우드 인프라 및 GitLab CI에 에이전트 배포"
       },
+      'dev-tools': {
+        label: "개발 도구",
+        description: "프로젝트 관리, 코드베이스 스캔, 아이디어 생성, 분류 및 작업 실행"
+      },
       settings: {
         label: "설정",
         description: "계정, 외관, 알림 및 엔진 설정"

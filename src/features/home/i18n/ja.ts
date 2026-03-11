@@ -38,6 +38,10 @@ export const ja = {
         label: "クラウド",
         description: "クラウドインフラとGitLab CIへのエージェントデプロイ"
       },
+      'dev-tools': {
+        label: "開発ツール",
+        description: "プロジェクト管理、コードベーススキャン、アイデア生成、トリアージ、タスク実行"
+      },
       settings: {
         label: "設定",
         description: "アカウント、外観、通知、エンジン設定"

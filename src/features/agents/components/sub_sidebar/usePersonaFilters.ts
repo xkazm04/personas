@@ -236,6 +236,11 @@ export function usePersonaFilters(
       tagCacheRef.current.set(p.id, { fingerprint, tags });
       map[p.id] = tags;
     }
+    // Prune cache entries for deleted personas
+    const currentIds = new Set(personas.map(p => p.id));
+    for (const key of tagCacheRef.current.keys()) {
+      if (!currentIds.has(key)) tagCacheRef.current.delete(key);
+    }
     return map;
   }, [personas, healthMap, lastRunMap]);
 

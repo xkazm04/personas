@@ -1,8 +1,9 @@
 import { Trash2, Key, Plug } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { Button } from '@/features/shared/components/buttons';
+import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-import { formatTimestamp } from '@/lib/utils/formatters';
+
 import type { RotationStatus } from '@/api/vault/rotation';
 import type { HealthResult } from '@/features/vault/hooks/health/useCredentialHealth';
 import { CompositeHealthDot } from './badges/CompositeHealthDot';
@@ -27,6 +28,8 @@ export function CredentialCardHeader({
   onSelect,
   onDelete,
 }: CredentialCardHeaderProps) {
+  const isSimple = useSimpleMode();
+
   return (
     <div
       role="button"
@@ -62,29 +65,20 @@ export function CredentialCardHeader({
                 healthResult={effectiveHealthcheckResult}
                 rotationStatus={rotationStatus}
               />
+              {!isSimple && (
               <BadgeRow
                 credential={credential}
                 connector={connector}
                 rotationStatus={rotationStatus}
                 rotationCountdown={rotationCountdown}
               />
-            </div>
-
-            <div className="mt-1 text-sm text-muted-foreground/90">
-              Last used {formatTimestamp(credential.last_used_at, 'Never')}
-              {credential.healthcheck_last_tested_at && (
-                <>
-                  {' · Last tested '}
-                  {formatTimestamp(credential.healthcheck_last_tested_at, 'Never')}
-                  {effectiveHealthcheckResult?.isStale && (
-                    <span className="text-muted-foreground/50 italic" title="Result from a previous session — re-test for a fresh check"> (cached)</span>
-                  )}
-                </>
               )}
             </div>
+
           </div>
         </div>
 
+        {!isSimple && (
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -98,6 +92,7 @@ export function CredentialCardHeader({
             title="Delete credential"
           />
         </div>
+        )}
       </div>
     </div>
   );

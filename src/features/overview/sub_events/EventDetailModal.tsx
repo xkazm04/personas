@@ -25,16 +25,16 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           {/* IDs & metadata */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <span className="text-sm text-muted-foreground block mb-0.5">Event ID</span>
+              <span className="text-sm text-foreground/70 font-medium block mb-0.5">Event ID</span>
               <span className="text-sm"><UuidLabel value={event.id} /></span>
             </div>
             <div>
-              <span className="text-sm text-muted-foreground block mb-0.5">Project</span>
+              <span className="text-sm text-foreground/70 font-medium block mb-0.5">Project</span>
               <span className="text-sm"><UuidLabel value={event.project_id} /></span>
             </div>
             {event.source_id && (
               <div>
-                <span className="text-sm text-muted-foreground block mb-0.5">Source</span>
+                <span className="text-sm text-foreground/70 font-medium block mb-0.5">Source</span>
                 <span className="text-sm">
                   <UuidLabel value={event.source_id} label={event.source_type || undefined} />
                 </span>
@@ -42,7 +42,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
             )}
             {event.processed_at && (
               <div className="rounded-xl border border-primary/10 bg-background/30 px-2.5 py-2">
-                <span className="text-sm font-mono text-muted-foreground">Processed</span>
+                <span className="text-sm font-mono text-foreground/70 font-medium">Processed</span>
                 <span className="ml-2 text-sm text-foreground">
                   {new Date(event.processed_at).toLocaleString()}
                 </span>
@@ -54,7 +54,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           {event.payload && (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-muted-foreground">Payload</span>
+                <span className="text-sm text-foreground/70 font-medium">Payload</span>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(
@@ -64,7 +64,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                       setTimeout(() => setCopiedPayload(false), 2000);
                     }).catch(() => { /* intentional: non-critical — clipboard copy fallback */ });
                   }}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
                   title="Copy payload"
                 >
                   {copiedPayload ? (

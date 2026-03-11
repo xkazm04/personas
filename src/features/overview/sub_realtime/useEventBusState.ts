@@ -19,16 +19,28 @@ export function useEventBusState(events: RealtimeEvent[], personas: PersonaInfo[
 
   useEffect(() => {
     const map = discoveredSourcesRef.current;
+    const now = Date.now();
     for (const evt of events) {
       const key = evt.source_id || evt.source_type || 'unknown';
       if (!key || key === 'unknown') continue;
       const existing = map.get(key);
       if (existing) {
         existing.count++;
-        existing.lastSeen = Date.now();
+        existing.lastSeen = now;
       } else {
-        map.set(key, { id: key, label: labelForSource(key), count: 1, lastSeen: Date.now() });
+        map.set(key, { id: key, label: labelForSource(key), count: 1, lastSeen: now });
       }
+    }
+    // Prune stale sources (not seen in 10 min) and cap at 100 entries
+    const STALE_MS = 10 * 60 * 1000;
+    if (map.size > 100) {
+      for (const [k, v] of map) {
+        if (now - v.lastSeen > STALE_MS) map.delete(k);
+      }
+    }
+    if (map.size > 100) {
+      const sorted = [...map.entries()].sort((a, b) => a[1].lastSeen - b[1].lastSeen);
+      for (let i = 0; i < sorted.length - 100; i++) map.delete(sorted[i]![0]);
     }
   }, [events]);
 

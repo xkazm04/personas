@@ -35,16 +35,16 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <span className="text-sm text-muted-foreground block mb-0.5">Event ID</span>
+          <span className="text-sm text-foreground/70 font-medium block mb-0.5">Event ID</span>
           <span className="text-sm"><UuidLabel value={event.id} /></span>
         </div>
         <div>
-          <span className="text-sm text-muted-foreground block mb-0.5">Project</span>
+          <span className="text-sm text-foreground/70 font-medium block mb-0.5">Project</span>
           <span className="text-sm"><UuidLabel value={event.project_id} /></span>
         </div>
         {event.source_id && (
           <div>
-            <span className="text-sm text-muted-foreground block mb-0.5">Source</span>
+            <span className="text-sm text-foreground/70 font-medium block mb-0.5">Source</span>
             <span className="text-sm">
               <UuidLabel value={event.source_id} label={event.source_type || undefined} />
             </span>
@@ -52,7 +52,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
         )}
         {event.processed_at && (
           <div className="rounded-xl border border-primary/10 bg-background/30 px-2.5 py-2">
-            <span className="text-sm font-mono text-muted-foreground">Processed</span>
+            <span className="text-sm font-mono text-foreground/70 font-medium">Processed</span>
             <span className="ml-2 text-sm text-foreground">
               {new Date(event.processed_at).toLocaleString()}
             </span>
@@ -63,7 +63,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
       {event.payload && (
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-sm text-muted-foreground">Payload</span>
+            <span className="text-sm text-foreground/70 font-medium">Payload</span>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(
@@ -73,7 +73,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
                   setTimeout(() => setCopiedPayload(false), 2000);
                 }).catch(() => { /* intentional */ });
               }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
               title="Copy payload"
             >
               {copiedPayload ? (
@@ -116,13 +116,13 @@ const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: '
 
 export function EventRow({ event, index, start, size, getPersona, onClick }: EventRowProps) {
   const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-muted-foreground';
+  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
   const targetPersona = getPersona(event.target_persona_id);
   const hoverAccent =
-    event.status === 'processing' ? 'hover:border-l-blue-400'
-    : event.status === 'completed' || event.status === 'processed' ? 'hover:border-l-emerald-400'
-    : event.status === 'failed' ? 'hover:border-l-red-400'
-    : 'hover:border-l-amber-400';
+    event.status === 'processing' ? 'hover:border-l-status-processing'
+    : event.status === 'completed' || event.status === 'processed' ? 'hover:border-l-status-success'
+    : event.status === 'failed' ? 'hover:border-l-status-error'
+    : 'hover:border-l-status-pending';
 
   return (
     <tr
@@ -140,7 +140,7 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
         <span className={`text-sm font-medium ${typeColor}`}>{event.event_type}</span>
       </td>
       <td className="px-4 py-2.5">
-        <span className="text-sm text-foreground/70 truncate block">{event.source_type}</span>
+        <span className="text-sm text-foreground truncate block">{event.source_type}</span>
       </td>
       <td className="px-4 py-2.5">
         {targetPersona ? (
@@ -149,16 +149,16 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
               className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
               style={{ backgroundColor: (targetPersona.color || '#6366f1') + '15' }}
             >
-              {targetPersona.icon || <Bot className="w-3.5 h-3.5 text-muted-foreground/80" />}
+              {targetPersona.icon || <Bot className="w-3.5 h-3.5 text-foreground/50" />}
             </div>
-            <span className="text-sm text-foreground/70 truncate">{targetPersona.name}</span>
+            <span className="text-sm text-foreground truncate">{targetPersona.name}</span>
           </div>
         ) : (
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg flex items-center justify-center border border-primary/10 bg-muted/20 flex-shrink-0">
-              <Server className="w-3.5 h-3.5 text-muted-foreground/70" />
+              <Server className="w-3.5 h-3.5 text-foreground/40" />
             </div>
-            <span className="text-sm text-muted-foreground/70 truncate">{event.source_type || 'System'}</span>
+            <span className="text-sm text-foreground/60 truncate">{event.source_type || 'System'}</span>
           </div>
         )}
       </td>
@@ -172,7 +172,7 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
         </span>
       </td>
       <td className="px-4 py-2.5 text-right">
-        <span className="text-sm text-foreground/70">
+        <span className="text-sm text-foreground">
           {new Date(event.created_at).toLocaleString()}
         </span>
       </td>
@@ -192,13 +192,13 @@ interface EventGridRowProps {
 
 export function EventGridRow({ event, index, gridCols, getPersona, onClick }: EventGridRowProps) {
   const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-muted-foreground';
+  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
   const targetPersona = getPersona(event.target_persona_id);
   const hoverAccent =
-    event.status === 'processing' ? 'hover:border-l-blue-400'
-    : event.status === 'completed' || event.status === 'processed' ? 'hover:border-l-emerald-400'
-    : event.status === 'failed' ? 'hover:border-l-red-400'
-    : 'hover:border-l-amber-400';
+    event.status === 'processing' ? 'hover:border-l-status-processing'
+    : event.status === 'completed' || event.status === 'processed' ? 'hover:border-l-status-success'
+    : event.status === 'failed' ? 'hover:border-l-status-error'
+    : 'hover:border-l-status-pending';
 
   return (
     <div
@@ -210,7 +210,7 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
         <span className={`text-sm font-medium truncate ${typeColor}`}>{event.event_type}</span>
       </div>
       <div className="px-4 py-2.5 flex items-center min-w-0">
-        <span className="text-sm text-foreground/70 truncate">{event.source_type}</span>
+        <span className="text-sm text-foreground truncate">{event.source_type}</span>
       </div>
       <div className="px-4 py-2.5 flex items-center min-w-0">
         {targetPersona ? (
@@ -219,16 +219,16 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
               className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
               style={{ backgroundColor: (targetPersona.color || '#6366f1') + '15' }}
             >
-              {targetPersona.icon || <Bot className="w-3.5 h-3.5 text-muted-foreground/80" />}
+              {targetPersona.icon || <Bot className="w-3.5 h-3.5 text-foreground/50" />}
             </div>
-            <span className="text-sm text-foreground/70 truncate">{targetPersona.name}</span>
+            <span className="text-sm text-foreground truncate">{targetPersona.name}</span>
           </div>
         ) : (
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-6 h-6 rounded-lg flex items-center justify-center border border-primary/10 bg-muted/20 flex-shrink-0">
-              <Server className="w-3.5 h-3.5 text-muted-foreground/70" />
+              <Server className="w-3.5 h-3.5 text-foreground/40" />
             </div>
-            <span className="text-sm text-muted-foreground/70 truncate">{event.source_type || 'System'}</span>
+            <span className="text-sm text-foreground/60 truncate">{event.source_type || 'System'}</span>
           </div>
         )}
       </div>
@@ -242,7 +242,7 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
         </span>
       </div>
       <div className="px-4 py-2.5 flex items-center justify-end">
-        <span className="text-sm text-foreground/70">{formatRelativeTime(event.created_at)}</span>
+        <span className="text-sm text-foreground">{formatRelativeTime(event.created_at)}</span>
       </div>
     </div>
   );

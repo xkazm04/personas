@@ -18,8 +18,8 @@ export function calcCompleteness(result: AgentIR | null): number {
   if (result.structured_prompt?.identity) filled++;
   if (result.structured_prompt?.instructions) filled++;
   if (result.full_prompt_markdown) filled++;
-  if (result.suggested_tools.length > 0) filled++;
-  if (result.suggested_triggers.length > 0) filled++;
+  if ((result.suggested_tools ?? []).length > 0) filled++;
+  if ((result.suggested_triggers ?? []).length > 0) filled++;
   if (result.summary) filled++;
   return Math.round((filled / total) * 100);
 }

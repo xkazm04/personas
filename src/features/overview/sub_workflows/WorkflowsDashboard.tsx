@@ -150,7 +150,7 @@ export default function WorkflowsDashboard() {
             {/* Job list */}
             <div className="flex flex-col gap-2">
               {filteredJobs.length === 0 ? (
-                <div className="text-[12px] text-muted-foreground/50 text-center py-8">
+                <div className="text-[12px] text-muted-foreground/80 text-center py-8">
                   No jobs match the current filters
                 </div>
               ) : (

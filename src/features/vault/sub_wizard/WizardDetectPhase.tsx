@@ -137,8 +137,8 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
       {/* Detection results banner */}
       {hasDetected && detected.length === 0 && (
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-secondary/30 border border-primary/10 rounded-xl">
-          <Radar className="w-4 h-4 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground/70">No authenticated services detected. Select manually below.</p>
+          <Radar className="w-4 h-4 text-muted-foreground/80" />
+          <p className="text-sm text-muted-foreground/80">No authenticated services detected. Select manually below.</p>
         </div>
       )}
 
@@ -150,7 +150,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search services..."
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all"
+          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all"
         />
       </div>
 
@@ -173,7 +173,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
             variant="ghost"
             size="sm"
             onClick={() => setSelected(new Set())}
-            className="text-muted-foreground/60 hover:text-foreground/80"
+            className="text-muted-foreground/80 hover:text-foreground/90"
           >
             Clear selection
           </Button>
