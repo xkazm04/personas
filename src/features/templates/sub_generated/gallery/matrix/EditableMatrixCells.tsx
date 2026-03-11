@@ -15,4 +15,4 @@ export { REVIEW_PRESETS, MEMORY_PRESETS, MESSAGE_PRESETS, TRIGGER_ICONS } from '
 // Cell components
 export { ConnectorEditCell } from './ConnectorEditCell';
 export { TriggerEditCell } from './TriggerEditCell';
-export { ReviewEditCell, MemoryEditCell, MessagesEditCell } from './PresetEditCells';
+export { ReviewEditCell, MemoryEditCell, MessagesEditCell, ErrorEditCell, UseCaseEditCell } from './PresetEditCells';

@@ -21,7 +21,7 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
   const deletePersona = usePersonaStore((s) => s.deletePersona);
 
   const [step, setStep] = useState<WizardStep>('entry');
-  const [entryMode, setEntryMode] = useState<EntryMode>('build');
+  const [entryMode, setEntryMode] = useState<EntryMode>('matrix');
   const [builderState, dispatch] = useReducer(builderReducer, INITIAL_BUILDER_STATE);
   const [draftPersonaId, setDraftPersonaId] = useState<string | null>(null);
 
@@ -153,6 +153,8 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                       dispatch={dispatch}
                       onContinue={handleContinue}
                       onCancel={canCancel ? () => { void handleCancel(); } : undefined}
+                      draftPersonaId={draftPersonaId}
+                      setDraftPersonaId={setDraftPersonaId}
                     />
                   ) : (
                     <BuilderStep

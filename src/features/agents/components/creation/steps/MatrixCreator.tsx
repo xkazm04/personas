@@ -1,12 +1,10 @@
 /**
  * MatrixCreator — "Matrix" mode for persona creation.
  *
- * Renders PersonaMatrix in edit mode with default boilerplate values
- * derived from the current BuilderState. No template connection required.
+ * Renders PersonaMatrix in edit mode with AI generation via useMatrixOrchestration.
+ * The center command-cell acts as intent input / generate / completeness hub.
  */
 import { useMemo, useState, useCallback, type Dispatch } from 'react';
-import { ArrowRight } from 'lucide-react';
-import { Button } from '@/features/shared/components/buttons';
 import { PersonaMatrix } from '@/features/templates/sub_generated/gallery/matrix/PersonaMatrix';
 import { usePersonaStore } from '@/stores/personaStore';
 import { getArchitectureComponent } from '@/lib/credentials/connectorRoles';
@@ -15,6 +13,7 @@ import type { RequiredConnector } from '@/features/templates/sub_generated/adopt
 import type { MatrixEditState, MatrixEditCallbacks } from '@/features/templates/sub_generated/gallery/matrix/matrixEditTypes';
 import type { BuilderState, TriggerPreset } from './builder/types';
 import type { BuilderAction } from './builder/builderReducer';
+import { useMatrixOrchestration } from './builder/useMatrixOrchestration';
 
 const BUILTIN = new Set(['personas_messages', 'personas_database', 'in-app-messaging']);
 
@@ -23,6 +22,8 @@ interface MatrixCreatorProps {
   dispatch: Dispatch<BuilderAction>;
   onContinue: () => void;
   onCancel?: () => void;
+  draftPersonaId: string | null;
+  setDraftPersonaId: (id: string | null) => void;
 }
 
 function triggerToSuggested(preset: TriggerPreset) {
@@ -33,9 +34,12 @@ function triggerToSuggested(preset: TriggerPreset) {
   };
 }
 
-export function MatrixCreator({ state, dispatch, onContinue, onCancel }: MatrixCreatorProps) {
+export function MatrixCreator({ state, dispatch, onContinue, onCancel, draftPersonaId, setDraftPersonaId }: MatrixCreatorProps) {
   const credentials = usePersonaStore((s) => s.credentials);
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+
+  // ── AI orchestration ──────────────────────────────────────────────
+  const orchestration = useMatrixOrchestration({ state, dispatch, draftPersonaId, setDraftPersonaId });
 
   // ── Derive AgentIR from BuilderState ─────────────────────────────
 
@@ -141,6 +145,11 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel }: MatrixC
   const [messagePreset, setMessagePreset] = useState('updates');
   const [databaseMode, setDatabaseMode] = useState<'create' | 'existing'>('create');
 
+  const useCasesForEdit = useMemo(() =>
+    state.useCases.filter((uc) => uc.title.trim()).map((uc) => ({ id: uc.id, title: uc.title, category: uc.category || 'automation' })),
+    [state.useCases],
+  );
+
   const editState = useMemo<MatrixEditState>(() => ({
     connectorCredentialMap,
     connectorSwaps,
@@ -152,7 +161,9 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel }: MatrixC
     memoryScope,
     messagePreset,
     databaseMode,
-  }), [connectorCredentialMap, connectorSwaps, triggerConfigs, requireApproval, autoApproveSeverity, reviewTimeout, memoryEnabled, memoryScope, messagePreset, databaseMode]);
+    errorStrategy: state.errorStrategy,
+    useCases: useCasesForEdit,
+  }), [connectorCredentialMap, connectorSwaps, triggerConfigs, requireApproval, autoApproveSeverity, reviewTimeout, memoryEnabled, memoryScope, messagePreset, databaseMode, state.errorStrategy, useCasesForEdit]);
 
   const editCallbacks = useMemo<MatrixEditCallbacks>(() => ({
     onCredentialSelect: (connectorName, credentialId) => {
@@ -183,17 +194,23 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel }: MatrixC
       else if (key === 'reviewTimeout') setReviewTimeout(value as string);
       else if (key === 'memoryScope') setMemoryScope(value as string);
     },
+    onErrorStrategyChange: (value) => {
+      dispatch({ type: 'SET_ERROR_STRATEGY', payload: value });
+    },
+    onUseCaseAdd: (title) => {
+      dispatch({ type: 'ADD_USE_CASE_WITH_DATA', payload: { title, description: '' } });
+    },
+    onUseCaseRemove: (id) => {
+      dispatch({ type: 'REMOVE_USE_CASE', payload: id });
+    },
+    onUseCaseUpdate: (id, title) => {
+      dispatch({ type: 'UPDATE_USE_CASE', payload: { id, updates: { title } } });
+    },
   }), [state.components, dispatch]);
 
   const handleNavigateCatalog = useCallback(() => {
     setSidebarSection('credentials');
   }, [setSidebarSection]);
-
-  // ── Check readiness ──────────────────────────────────────────────
-
-  const externalConnectors = requiredConnectors.filter((rc) => !BUILTIN.has(rc.activeName));
-  const allMatched = externalConnectors.every((rc) => !!connectorCredentialMap[rc.activeName]);
-  const canContinue = state.components.length > 0 || state.useCases.length > 0;
 
   return (
     <div className="flex flex-col gap-5 h-full">
@@ -207,30 +224,29 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel }: MatrixC
           editCallbacks={editCallbacks}
           requiredConnectors={requiredConnectors}
           credentials={credentials}
-          launchLabel="Continue"
-          launchDisabled={!canContinue}
-          onLaunch={onContinue}
           onNavigateCatalog={handleNavigateCatalog}
+          // Creation mode props
+          variant="creation"
+          intentText={state.intent}
+          onIntentChange={(text) => dispatch({ type: 'SET_INTENT', payload: text })}
+          onLaunch={orchestration.handleGenerate}
+          launchDisabled={!orchestration.canGenerate}
+          isRunning={orchestration.isGenerating}
+          completeness={orchestration.completeness}
+          hasDesignResult={orchestration.hasDesignResult}
+          onContinue={onContinue}
+          onRefine={orchestration.handleRefine}
         />
       </div>
 
-      {/* Footer with action buttons */}
-      <div className="flex items-center justify-between pt-3 border-t border-primary/10 flex-shrink-0">
-        {onCancel ? (
-          <Button variant="ghost" size="sm" onClick={onCancel} className="text-muted-foreground/60">
+      {/* Cancel link — continue is inside the command center */}
+      {onCancel && (
+        <div className="flex items-center justify-start pt-3 border-t border-primary/10 flex-shrink-0">
+          <button type="button" onClick={onCancel} className="text-sm text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors">
             Cancel
-          </Button>
-        ) : <span />}
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={onContinue}
-          disabled={!canContinue}
-          iconRight={<ArrowRight className="w-3.5 h-3.5" />}
-        >
-          Continue to Identity
-        </Button>
-      </div>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

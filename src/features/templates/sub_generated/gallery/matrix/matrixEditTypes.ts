@@ -31,6 +31,10 @@ export interface MatrixEditState {
   databaseTable?: string;
   /** Database schema name (existing mode) */
   databaseSchema?: string;
+  /** Current error strategy value */
+  errorStrategy?: string;
+  /** Simplified use case list for edit display */
+  useCases?: Array<{ id: string; title: string; category: string }>;
 }
 
 export interface MatrixEditCallbacks {
@@ -41,6 +45,12 @@ export interface MatrixEditCallbacks {
   onToggleMemory: (value: boolean) => void;
   /** Generic preference setter for extended fields (severity, timeout, scope, messagePreset, databaseMode) */
   onPreferenceChange: (key: string, value: unknown) => void;
+  /** Error strategy changed */
+  onErrorStrategyChange?: (value: string) => void;
+  /** Use case management */
+  onUseCaseAdd?: (title: string) => void;
+  onUseCaseRemove?: (id: string) => void;
+  onUseCaseUpdate?: (id: string, title: string) => void;
 }
 
 // ── Preset templates ──────────────────────────────────────────────────
