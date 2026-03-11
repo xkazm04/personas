@@ -37,6 +37,75 @@ function scrubPii(input: string): string {
  * Session tracking is enabled for Release Health (active user counts).
  * beforeSend strips PII (IPs, emails, UUIDs, URLs, quoted names) from events.
  */
+// ---------------------------------------------------------------------------
+// Feature usage tracking via Sentry events
+// ---------------------------------------------------------------------------
+
+/** Deduplication window: ignore repeated identical events within this period. */
+const DEDUP_MS = 5_000;
+
+/** Sample rate for feature events (0–1). Adjust based on Sentry plan quota. */
+const FEATURE_SAMPLE_RATE = 1.0;
+
+let _lastFeatureKey = "";
+let _lastFeatureTime = 0;
+
+/**
+ * Track a feature/section visit as a Sentry event.
+ *
+ * Creates a `feature_visit` message with structured tags for Sentry Discover.
+ * Deduplicates rapid repeated visits (e.g. tab bouncing within 5 s).
+ * Respects FEATURE_SAMPLE_RATE for quota control.
+ *
+ * No PII: only section/tab/action strings are sent.
+ */
+export function trackFeature(
+  section: string,
+  tab?: string,
+  action: string = "view",
+): void {
+  const key = `${section}:${tab ?? ""}:${action}`;
+  const now = Date.now();
+  if (key === _lastFeatureKey && now - _lastFeatureTime < DEDUP_MS) return;
+  if (FEATURE_SAMPLE_RATE < 1 && Math.random() > FEATURE_SAMPLE_RATE) return;
+
+  _lastFeatureKey = key;
+  _lastFeatureTime = now;
+
+  Sentry.withScope((scope) => {
+    scope.setTag("event_type", "feature_visit");
+    scope.setTag("feature.section", section);
+    if (tab) scope.setTag("feature.tab", tab);
+    scope.setTag("feature.action", action);
+    scope.setLevel("info");
+    Sentry.captureMessage(`feature_visit: ${section}${tab ? `.${tab}` : ""}`, "info");
+  });
+}
+
+/**
+ * Track a discrete user interaction (button click, wizard step, etc.).
+ *
+ * Lighter weight than trackFeature — intended for key actions, not every click.
+ */
+export function trackInteraction(
+  category: string,
+  action: string,
+  label?: string,
+): void {
+  Sentry.withScope((scope) => {
+    scope.setTag("event_type", "interaction");
+    scope.setTag("ix.category", category);
+    scope.setTag("ix.action", action);
+    if (label) scope.setTag("ix.label", label);
+    scope.setLevel("info");
+    Sentry.captureMessage(`interaction: ${category}.${action}`, "info");
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Initialization
+// ---------------------------------------------------------------------------
+
 export function initSentry(appVersion: string): void {
   const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
 
