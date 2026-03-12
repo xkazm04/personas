@@ -3,6 +3,7 @@ import type { NotificationChannel, NotificationChannelType } from '@/lib/types/f
 import type { CredentialMetadata } from '@/lib/types/types';
 import { NotificationChannelCard } from './NotificationChannelCard';
 import { AddChannelButton } from './AddChannelButton';
+import { TOOLS_BORDER } from '@/lib/utils/designTokens';
 
 export const channelTypes: Array<{
   type: NotificationChannelType;
@@ -52,7 +53,7 @@ export function ChannelList({
   return (
     <div className="space-y-3">
       {/* In-App (always present, read-only) */}
-      <div className="flex items-center gap-3 p-2.5 bg-secondary/30 border border-primary/15 rounded-xl">
+      <div className={`flex items-center gap-3 p-2.5 bg-secondary/30 border ${TOOLS_BORDER} rounded-xl`}>
         <Bell className="w-4 h-4 text-emerald-400 flex-shrink-0" />
         <span className="text-sm font-medium text-foreground/80 flex-1">In-App Messages</span>
         <span className="flex items-center gap-1 text-sm text-emerald-400/80">

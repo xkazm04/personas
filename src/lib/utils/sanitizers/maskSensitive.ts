@@ -8,7 +8,7 @@
 const SENSITIVE_KEY_RE =
   /^(password|passwd|secret|token|api_key|apikey|api[-_]?secret|access[-_]?key|auth|authorization|credential|private[-_]?key|client[-_]?secret|refresh[-_]?token|access[-_]?token|bearer|session[-_]?id|cookie|x[-_]?api[-_]?key|connection[-_]?string|dsn)$/i;
 
-const MASK = '••••••••';
+const MASK = '********';
 
 /**
  * Recursively walk a parsed JSON value and redact values whose keys match
@@ -46,7 +46,7 @@ export function maskSensitiveJson(raw: string | null | undefined): string | null
   }
 }
 
-// ── Error message sanitization ───────────────────────────────────────────
+// -- Error message sanitization -------------------------------------------
 
 // Unix/Windows absolute file paths with optional :line:col
 const FILE_PATH_RE = /(?:\/[\w./-]+|[A-Z]:\\[\w.\\ -]+)(?::\d+(?::\d+)?)?/g;

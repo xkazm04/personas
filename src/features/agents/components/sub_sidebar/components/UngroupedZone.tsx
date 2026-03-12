@@ -52,7 +52,7 @@ export function UngroupedZone({
         </div>
       )}
       {ungrouped.length === 0 && groupsLength > 0 && activeId && (
-        <div className="text-center py-3 text-sm text-muted-foreground/80 border border-dashed border-primary/15 rounded-lg">
+        <div className="text-center py-3 text-sm text-muted-foreground/80 border border-dashed border-primary/20 rounded-lg">
           Drop here to ungroup
         </div>
       )}

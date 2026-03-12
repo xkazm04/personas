@@ -1,5 +1,5 @@
 /**
- * CredentialRecipe — TypeScript binding matching the Rust model.
+ * CredentialRecipe -- TypeScript binding matching the Rust model.
  * Auto-generated shape; manually maintained for immediate use.
  */
 export interface CredentialRecipe {

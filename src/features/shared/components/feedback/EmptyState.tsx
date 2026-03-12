@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { Key, Zap, Bot, Play, Radio, Link, ListChecks, type LucideIcon } from 'lucide-react';
 
-// â”€â”€ Scenario Variants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Scenario Variants --------------------------------------------
 
 export type EmptyStateVariant =
   | 'credentials-need-agents'
@@ -38,7 +38,7 @@ const SCENARIO_CONFIGS: Record<EmptyStateVariant, ScenarioConfig> = {
   'triggers-manual-only': {
     icon: Zap,
     title: 'This agent runs manually only',
-    subtitle: 'Add a trigger to automate it â€” schedules, webhooks, or event-driven.',
+    subtitle: 'Add a trigger to automate it -- schedules, webhooks, or event-driven.',
     iconColor: 'text-amber-400/80',
     iconContainerClassName: 'bg-amber-500/10 border-amber-500/20',
   },
@@ -71,13 +71,13 @@ const SCENARIO_CONFIGS: Record<EmptyStateVariant, ScenarioConfig> = {
   'use-cases-empty': {
     icon: ListChecks,
     title: 'No use cases defined yet',
-    subtitle: 'Define what this agent should do â€” import from a workflow or describe it in plain language.',
+    subtitle: 'Define what this agent should do -- import from a workflow or describe it in plain language.',
     iconColor: 'text-violet-400/75',
     iconContainerClassName: 'bg-violet-500/10 border-violet-500/20',
   },
 };
 
-// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Component ----------------------------------------------------
 
 interface EmptyStateProps {
   icon?: LucideIcon;

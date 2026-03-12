@@ -1,6 +1,6 @@
 import type { McpTool } from '@/api/agents/mcpTools';
 
-// ── Tool input form ──────────────────────────────────────────────
+// -- Tool input form ----------------------------------------------
 
 interface ToolInputFormProps {
   tool: McpTool;
@@ -63,7 +63,7 @@ export function ToolInputForm({
                 onChange={(e) => onChange({ ...values, [key]: e.target.value })}
                 className="px-2 py-1.5 rounded text-sm bg-secondary/20 border border-primary/10 text-foreground/70 focus:outline-none focus:border-primary/25"
               >
-                <option value="">— select —</option>
+                <option value="">-- select --</option>
                 <option value="true">true</option>
                 <option value="false">false</option>
               </select>

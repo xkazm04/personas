@@ -32,7 +32,7 @@ export function CredentialCard({
       const status = await getRotationStatus(credential.id);
       setRotationStatus(status);
     } catch {
-      // intentional: non-critical — rotation status not yet configured for this credential
+      // intentional: non-critical -- rotation status not yet configured for this credential
     }
   }, [credential.id]);
 

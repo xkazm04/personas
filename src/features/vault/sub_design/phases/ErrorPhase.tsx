@@ -34,17 +34,17 @@ function recoveryTips(error: string | null, instruction: string | undefined): st
 
   if (raw.includes('Failed to extract connector design') || raw.includes('Failed to generate')) {
     if (input.length < 10) {
-      tips.push('Your description was quite short. Try being more specific — e.g. "GitHub personal access token" instead of "GitHub".');
+      tips.push('Your description was quite short. Try being more specific -- e.g. "GitHub personal access token" instead of "GitHub".');
     }
     if (!input.includes('api') && !input.includes('key') && !input.includes('token') && !input.includes('oauth') && !input.includes('secret')) {
-      tips.push('Include the credential type — e.g. "API key", "OAuth", "bot token", or "secret key".');
+      tips.push('Include the credential type -- e.g. "API key", "OAuth", "bot token", or "secret key".');
     }
     tips.push('Mention the specific service or product name clearly (e.g. "Stripe" rather than "payment processor").');
   }
 
   if (raw.includes('timed out')) {
     tips.push('Try a simpler, more targeted description to speed up analysis.');
-    tips.push('Check your internet connection — the AI needs to reach Anthropic servers.');
+    tips.push('Check your internet connection -- the AI needs to reach Anthropic servers.');
   }
 
   if (raw.includes('Claude CLI not found')) {

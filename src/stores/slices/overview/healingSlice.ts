@@ -2,6 +2,7 @@ import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../../storeTypes";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
+import type { HealingTimelineEvent } from "@/lib/bindings/HealingTimelineEvent";
 import * as api from "@/api/tauriApi";
 import { errMsg } from "../../storeTypes";
 
@@ -10,18 +11,23 @@ export interface HealingSlice {
   healingIssues: PersonaHealingIssue[];
   healingRunning: boolean;
   retryChain: PersonaExecution[];
+  healingTimeline: HealingTimelineEvent[];
+  healingTimelineLoading: boolean;
 
   // Actions
   fetchHealingIssues: () => Promise<void>;
   triggerHealing: (personaId?: string) => Promise<{ failures_analyzed: number; issues_created: number; auto_fixed: number } | null>;
   resolveHealingIssue: (id: string, personaId?: string) => Promise<void>;
   fetchRetryChain: (executionId: string, personaId?: string) => Promise<void>;
+  fetchHealingTimeline: (personaId: string) => Promise<void>;
 }
 
 export const createHealingSlice: StateCreator<PersonaStore, [], [], HealingSlice> = (set, get) => ({
   healingIssues: [],
   healingRunning: false,
   retryChain: [],
+  healingTimeline: [],
+  healingTimelineLoading: false,
 
   fetchHealingIssues: async () => {
     try {
@@ -53,7 +59,7 @@ export const createHealingSlice: StateCreator<PersonaStore, [], [], HealingSlice
         ?? get().healingIssues.find((i) => i.id === id)?.persona_id
         ?? '';
       await api.updateHealingStatus(id, "resolved", callerPersonaId);
-      set({ healingIssues: get().healingIssues.filter((i) => i.id !== id) });
+      set((state) => ({ healingIssues: state.healingIssues.filter((i) => i.id !== id) }));
     } catch (err) {
       set({ error: errMsg(err, "Failed to resolve healing issue") });
     }
@@ -66,6 +72,16 @@ export const createHealingSlice: StateCreator<PersonaStore, [], [], HealingSlice
       set({ retryChain: chain });
     } catch (err) {
       set({ retryChain: [], error: errMsg(err, "Failed to fetch retry chain") });
+    }
+  },
+
+  fetchHealingTimeline: async (personaId: string) => {
+    set({ healingTimelineLoading: true });
+    try {
+      const timeline = await api.getHealingTimeline(personaId);
+      set({ healingTimeline: timeline, healingTimelineLoading: false });
+    } catch (err) {
+      set({ healingTimeline: [], healingTimelineLoading: false, error: errMsg(err, "Failed to fetch healing timeline") });
     }
   },
 });

@@ -12,7 +12,7 @@
       "type": "text",
       "required": true,
       "placeholder": "",
-      "helpText": "From Backblaze → App Keys → Add a New Application Key"
+      "helpText": "From Backblaze -> App Keys -> Add a New Application Key"
     },
     {
       "key": "application_key",
@@ -20,7 +20,7 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "Shown once when creating the key — copy immediately"
+      "helpText": "Shown once when creating the key -- copy immediately"
     }
   ],
   "healthcheck_config": {

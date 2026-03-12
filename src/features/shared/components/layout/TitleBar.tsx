@@ -33,7 +33,7 @@ export default function TitleBar() {
         <span>Personas</span>
       </div>
 
-      {/* Spacer — entire middle area is draggable */}
+      {/* Spacer -- entire middle area is draggable */}
       <div data-tauri-drag-region className="flex-1" />
 
       {/* Window controls */}

@@ -41,7 +41,7 @@ export function ToolSearchFilter({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search tools..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-primary/20 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         <div className="flex gap-0.5 p-0.5 rounded-lg bg-secondary/40 border border-primary/10">
@@ -79,7 +79,7 @@ export function ToolSearchFilter({
             className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all ${
               selectedCategory === category
                 ? 'text-foreground shadow-lg shadow-primary/20'
-                : 'bg-secondary/40 text-muted-foreground/80 hover:bg-secondary/60 hover:text-foreground/95 border border-primary/15'
+                : 'bg-secondary/40 text-muted-foreground/80 hover:bg-secondary/60 hover:text-foreground/95 border border-primary/20'
             }`}
           >
             {selectedCategory === category && (
@@ -111,7 +111,7 @@ export function ToolSearchFilter({
             {assignedTools.slice(0, 5).map((tool) => (
               <span
                 key={tool.id}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm bg-primary/10 text-foreground/90 border border-primary/15 truncate max-w-[120px] flex-shrink-0"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm bg-primary/10 text-foreground/90 border border-primary/20 truncate max-w-[120px] flex-shrink-0"
               >
                 {tool.name}
               </span>

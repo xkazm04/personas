@@ -6,7 +6,7 @@ export type PersonaGroup = { id: string, name: string, color: string, sortOrder:
  */
 description: string | null, 
 /**
- * JSON-encoded ModelProfile — group-level default model
+ * JSON-encoded ModelProfile -- group-level default model
  */
 defaultModelProfile: string | null, 
 /**

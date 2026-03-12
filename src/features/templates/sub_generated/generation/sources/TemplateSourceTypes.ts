@@ -1,6 +1,6 @@
 import type { CustomTemplateCase } from '../runner/designRunnerConstants';
 
-// ── Unified source type ──────────────────────────────────────────────────
+// -- Unified source type --------------------------------------------------
 
 export interface TemplateSource {
   id: string;
@@ -11,7 +11,7 @@ export interface TemplateSource {
   category?: string;
 }
 
-// ── Discriminated union props ────────────────────────────────────────────
+// -- Discriminated union props --------------------------------------------
 
 export interface PredefinedProps {
   mode: 'predefined';

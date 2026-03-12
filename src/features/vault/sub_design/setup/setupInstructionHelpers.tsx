@@ -1,4 +1,4 @@
-// ── Helpers ─────────────────────────────────────────────────────
+// -- Helpers -----------------------------------------------------
 
 /** Split markdown into logical step blocks by numbered list items or headings. */
 export function parseSteps(markdown: string): { preamble: string; steps: string[] } {
@@ -36,7 +36,7 @@ export function parseSteps(markdown: string): { preamble: string; steps: string[
   return { preamble: preamble.trim(), steps };
 }
 
-// ── Persistence helpers ──────────────────────────────────────────
+// -- Persistence helpers ------------------------------------------
 
 /** Fast string hash for localStorage keys. */
 export function simpleHash(str: string): string {
@@ -55,7 +55,7 @@ export function readPersistedSteps(key: string): number[] {
   return [];
 }
 
-// ── Progress ring + badge ────────────────────────────────────────
+// -- Progress ring + badge ----------------------------------------
 
 export function ProgressRingBadge({
   gradientId,

@@ -103,7 +103,7 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="e.g. Happy Path"
-            className="w-full px-2.5 py-1.5 rounded-lg bg-background/60 border border-primary/15 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
+            className="w-full px-2.5 py-1.5 rounded-lg bg-background/60 border border-primary/20 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSave();
@@ -115,7 +115,7 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
             placeholder="Description (optional)"
-            className="w-full px-2.5 py-1.5 rounded-lg bg-background/60 border border-primary/15 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
+            className="w-full px-2.5 py-1.5 rounded-lg bg-background/60 border border-primary/20 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
           />
           <div className="flex items-center gap-2">
             <button

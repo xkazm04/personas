@@ -4,7 +4,7 @@ import type { ModelProfile } from '@/lib/types/frontendTypes';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { extractConnectorNames } from '@/lib/personas/utils';
 
-// ── Smart Tag Types ──────────────────────────────────────────────────
+// -- Smart Tag Types --------------------------------------------------
 
 export type TagCategory = 'status' | 'model' | 'health' | 'recency' | 'auto';
 
@@ -17,7 +17,7 @@ export interface SmartTag {
   auto: boolean;
 }
 
-// ── Tag Vocabulary ───────────────────────────────────────────────────
+// -- Tag Vocabulary ---------------------------------------------------
 
 const STATUS_TAGS: SmartTag[] = [
   { id: 'status:enabled', label: 'Enabled', color: '#10B981', category: 'status', auto: false },
@@ -56,7 +56,7 @@ export const TAG_GROUPS: { category: TagCategory; label: string; tags: SmartTag[
   { category: 'recency', label: 'Recency', tags: RECENCY_TAGS },
 ];
 
-// ── Persona Run State ─────────────────────────────────────────────────
+// -- Persona Run State -------------------------------------------------
 export type PersonaRunState = 'never_run' | 'active' | 'stale';
 
 export function getPersonaRunState(lastRun: string | null | undefined, staleDays: number): PersonaRunState {
@@ -66,7 +66,7 @@ export function getPersonaRunState(lastRun: string | null | undefined, staleDays
   return Date.now() - last > staleDays * 86_400_000 ? 'stale' : 'active';
 }
 
-// ── Filter State ─────────────────────────────────────────────────────
+// -- Filter State -----------------------------------------------------
 
 export interface FilterState {
   search: string;
@@ -75,7 +75,7 @@ export interface FilterState {
 
 const defaultFilters: FilterState = { search: '', tags: new Set() };
 
-// ── Parse model profile ──────────────────────────────────────────────
+// -- Parse model profile ----------------------------------------------
 
 function parseModelProfile(persona: DbPersona): ModelProfile | null {
   if (!persona.model_profile) return null;
@@ -92,7 +92,7 @@ function getProviderLabel(persona: DbPersona): string {
   return mp.provider;
 }
 
-// ── Compute all tags for a persona ───────────────────────────────────
+// -- Compute all tags for a persona -----------------------------------
 
 function computePersonaTags(
   persona: DbPersona,
@@ -132,7 +132,7 @@ function computePersonaTags(
     if (age <= 30 * 86_400_000) tags.add('recency:month');
   }
 
-  // Auto tags — connector-based
+  // Auto tags -- connector-based
   const connectors = extractConnectorNames(persona, 10);
   for (const name of connectors) {
     const lower = name.toLowerCase();
@@ -147,14 +147,14 @@ function computePersonaTags(
     else tags.add(`auto:${lower}`);
   }
 
-  // Auto tags — run state
+  // Auto tags -- run state
   if (runState === 'never_run') tags.add('auto:never-run');
   if (tags.has('health:needs-attention')) tags.add('auto:needs-attention');
 
   return tags;
 }
 
-// ── Auto tag metadata ────────────────────────────────────────────────
+// -- Auto tag metadata ------------------------------------------------
 
 const AUTO_TAG_META: Record<string, { label: string; color: string }> = {
   'auto:slack': { label: 'slack', color: '#4A154B' },
@@ -180,7 +180,7 @@ function resolveAutoTag(id: string): SmartTag {
   };
 }
 
-// ── Hook ─────────────────────────────────────────────────────────────
+// -- Hook -------------------------------------------------------------
 
 export function usePersonaFilters(
   personas: DbPersona[],
@@ -276,7 +276,7 @@ export function usePersonaFilters(
     return result;
   }, [allAutoTags]);
 
-  // Filter personas — single tag-intersection operation
+  // Filter personas -- single tag-intersection operation
   const filteredIds = useMemo(() => {
     const query = filters.search.toLowerCase().trim();
     const activeTags = filters.tags;

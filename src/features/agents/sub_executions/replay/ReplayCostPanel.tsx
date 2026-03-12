@@ -21,30 +21,36 @@ export function ReplayCostPanel({
   const timePct = totalMs > 0 ? (currentMs / totalMs) * 100 : 0;
 
   return (
-    <div className="flex items-center gap-4 px-4 py-2.5 border-t border-primary/10 bg-secondary/20">
-      {/* Cost */}
-      <div className="flex items-center gap-1.5">
-        <DollarSign className="w-3 h-3 text-emerald-400/60" />
-        <span className="text-sm font-mono tabular-nums text-emerald-400">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 border-t border-primary/10 bg-secondary/20">
+      {/* Cost + bar */}
+      <div className="flex items-center gap-1.5 min-w-0">
+        {accumulatedCost === 0 && totalCost === 0 ? (
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
+            <ellipse cx="7" cy="9" rx="5" ry="2" fill="#10b981" fillOpacity="0.2" stroke="#10b981" strokeWidth="0.8" strokeOpacity="0.3" />
+            <ellipse cx="7" cy="7" rx="5" ry="2" fill="#10b981" fillOpacity="0.15" stroke="#10b981" strokeWidth="0.8" strokeOpacity="0.25" />
+            <ellipse cx="7" cy="5" rx="5" ry="2" fill="#10b981" fillOpacity="0.1" stroke="#10b981" strokeWidth="0.8" strokeOpacity="0.2" />
+          </svg>
+        ) : (
+          <DollarSign className="w-3 h-3 text-emerald-400/60 flex-shrink-0" />
+        )}
+        <span className="text-sm font-mono tabular-nums text-emerald-400 truncate">
           {formatCost(accumulatedCost)}
         </span>
-        <span className="text-sm text-muted-foreground/60">
+        <span className="text-sm text-muted-foreground/60 truncate">
           / {formatCost(totalCost)}
         </span>
+        <div className="w-16 sm:w-[120px] h-1.5 bg-secondary/50 rounded-full overflow-hidden flex-shrink-0">
+          <div
+            className="h-full bg-emerald-500/50 rounded-full transition-[width] duration-150"
+            style={{ width: `${costPct}%` }}
+          />
+        </div>
       </div>
 
-      {/* Cost bar */}
-      <div className="flex-1 h-1.5 bg-secondary/50 rounded-full overflow-hidden max-w-[120px]">
-        <div
-          className="h-full bg-emerald-500/50 rounded-full transition-[width] duration-150"
-          style={{ width: `${costPct}%` }}
-        />
-      </div>
-
-      {/* Time */}
-      <div className="flex items-center gap-1.5">
-        <Clock className="w-3 h-3 text-blue-400/60" />
-        <span className="text-sm font-mono tabular-nums text-blue-400">
+      {/* Time + percentage */}
+      <div className="flex items-center gap-1.5 min-w-0">
+        <Clock className="w-3 h-3 text-blue-400/60 flex-shrink-0" />
+        <span className="text-sm font-mono tabular-nums text-blue-400 truncate">
           {formatMs(currentMs)}
         </span>
         <span className="text-sm text-muted-foreground/60">
@@ -53,8 +59,8 @@ export function ReplayCostPanel({
       </div>
 
       {/* Steps */}
-      <div className="flex items-center gap-1.5">
-        <Hash className="w-3 h-3 text-muted-foreground/50" />
+      <div className="flex items-center gap-1.5 min-w-0">
+        <Hash className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
         <span className="text-sm font-mono tabular-nums text-muted-foreground/60">
           {completedSteps}/{totalSteps} steps
         </span>

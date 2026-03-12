@@ -59,8 +59,8 @@ export function SidebarHeader({
       >
         <div className={`w-7 h-7 rounded-lg flex items-center justify-center border transition-colors ${
           selectedPersonaId === null
-            ? 'bg-primary/15 border-primary/25'
-            : 'bg-secondary/40 border-primary/15'
+            ? 'bg-primary/15 border-primary/30'
+            : 'bg-secondary/40 border-primary/20'
         }`}>
           <LayoutGrid className={`w-3.5 h-3.5 ${selectedPersonaId === null ? 'text-primary' : 'text-muted-foreground/90'}`} />
         </div>

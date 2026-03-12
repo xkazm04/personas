@@ -4,7 +4,7 @@ import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import type { ReturnFlow } from '../../libs/visualizationHelpers';
 import { CX, CY, RETURN_FLOW_MS } from '../../libs/visualizationHelpers';
 
-// ── Inbound particles (tool -> center -> persona) ────────────────
+// -- Inbound particles (tool -> center -> persona) ----------------
 
 interface InboundParticlesProps {
   activeEvents: RealtimeEvent[];
@@ -67,7 +67,7 @@ export function InboundParticles({ activeEvents, uid, getSourcePos, getTargetPos
   );
 }
 
-// ── Return-flow particles (persona -> center -> tool) ────────────
+// -- Return-flow particles (persona -> center -> tool) ------------
 
 export function ReturnFlowParticles({ flows, uid }: { flows: ReturnFlow[]; uid: string }) {
   return (

@@ -1,5 +1,5 @@
 /**
- * ExecutionState — canonical state machine for execution status.
+ * ExecutionState -- canonical state machine for execution status.
  *
  * Mirrors the Rust `ExecutionState` enum in `engine/types.rs`.
  * All status comparisons, color mappings, and boolean derivations
@@ -23,7 +23,7 @@ export const EXECUTION_STATES = [
 /** Canonical execution state type (matches Rust enum serialization). */
 export type ExecutionState = (typeof EXECUTION_STATES)[number];
 
-/** Terminal states — execution is done, no further transitions. */
+/** Terminal states -- execution is done, no further transitions. */
 export const TERMINAL_STATES: readonly ExecutionState[] = [
   'completed',
   'failed',
@@ -31,7 +31,7 @@ export const TERMINAL_STATES: readonly ExecutionState[] = [
   'cancelled',
 ] as const;
 
-/** Active states — execution is in progress. */
+/** Active states -- execution is in progress. */
 export const ACTIVE_STATES: readonly ExecutionState[] = [
   'queued',
   'running',
@@ -39,7 +39,7 @@ export const ACTIVE_STATES: readonly ExecutionState[] = [
 
 /**
  * Returns true if the status represents an active (non-terminal) execution.
- * This replaces the separate `isExecuting` boolean — derive it from status.
+ * This replaces the separate `isExecuting` boolean -- derive it from status.
  */
 export function isActiveState(status: string): boolean {
   return status === 'queued' || status === 'running';

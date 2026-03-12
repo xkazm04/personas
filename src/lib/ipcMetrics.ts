@@ -1,5 +1,5 @@
-// ── IPC Call Duration Ring Buffer ─────────────────────────────────────
-// Pure frontend instrumentation — records timing for every Tauri IPC call.
+// -- IPC Call Duration Ring Buffer -------------------------------------
+// Pure frontend instrumentation -- records timing for every Tauri IPC call.
 
 const RING_SIZE = 500;
 
@@ -22,7 +22,7 @@ export interface IpcCommandStats {
   errorRate: number;
 }
 
-// Ring buffer — overwrites oldest entries when full
+// Ring buffer -- overwrites oldest entries when full
 const ring: IpcCallRecord[] = [];
 let writeIndex = 0;
 let totalRecords = 0;
@@ -49,7 +49,7 @@ export function getIpcTotalCount(): number {
   return totalRecords;
 }
 
-// ── Percentile Computation ──────────────────────────────────────────
+// -- Percentile Computation ------------------------------------------
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
@@ -57,7 +57,7 @@ function percentile(sorted: number[], p: number): number {
   return sorted[Math.max(0, idx)]!;
 }
 
-// ── Per-Command Stats ───────────────────────────────────────────────
+// -- Per-Command Stats -----------------------------------------------
 
 export function computeCommandStats(): IpcCommandStats[] {
   const records = getIpcRecords();
@@ -93,7 +93,7 @@ export function computeCommandStats(): IpcCommandStats[] {
   return stats;
 }
 
-// ── Slowest Recent Calls ────────────────────────────────────────────
+// -- Slowest Recent Calls --------------------------------------------
 
 export function getSlowestCalls(n: number): IpcCallRecord[] {
   return getIpcRecords()
@@ -102,7 +102,7 @@ export function getSlowestCalls(n: number): IpcCallRecord[] {
     .slice(0, n);
 }
 
-// ── Global Summary ──────────────────────────────────────────────────
+// -- Global Summary --------------------------------------------------
 
 export interface IpcGlobalSummary {
   totalCalls: number;
@@ -135,7 +135,7 @@ export function getGlobalSummary(): IpcGlobalSummary {
   };
 }
 
-// ── Subscription for React ──────────────────────────────────────────
+// -- Subscription for React ------------------------------------------
 
 type Listener = () => void;
 const listeners = new Set<Listener>();

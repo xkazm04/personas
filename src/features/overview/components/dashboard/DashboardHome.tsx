@@ -129,7 +129,11 @@ export default function DashboardHome() {
 
             <div className="space-y-6">
               <TrafficErrorsChart chartData={chartData} totalTraffic={chartTotals.totalTraffic} totalErrors={chartTotals.totalErrors} />
-              <HealthDigestPanel />
+              {import.meta.env.DEV && (
+                <div className="rounded-xl border-2 border-amber-500/40 p-0.5">
+                  <HealthDigestPanel />
+                </div>
+              )}
               <DeployFirstAutomationCard />
             </div>
           </div>

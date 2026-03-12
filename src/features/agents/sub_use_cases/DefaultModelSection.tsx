@@ -8,7 +8,7 @@ import type { ModelProvider } from '@/lib/types/frontendTypes';
 import { isOllamaCloudValue, OLLAMA_CLOUD_PRESETS } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 
-// ── Derive a human-readable label from the draft ────────────────────
+// -- Derive a human-readable label from the draft --------------------
 function resolveModelLabel(draft: PersonaDraft): { label: string; provider: string } {
   const model = draft.selectedModel;
   if (!model || model === '') return { label: 'Opus', provider: 'Anthropic' };
@@ -49,8 +49,8 @@ export function DefaultModelSection({ draft, patch, modelDirty }: DefaultModelSe
         onClick={() => setExpanded((p) => !p)}
         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all text-left ${
           expanded
-            ? 'bg-primary/8 border-primary/25'
-            : 'bg-secondary/40 border-primary/15 hover:border-primary/25 hover:bg-secondary/50'
+            ? 'bg-primary/8 border-primary/30'
+            : 'bg-secondary/40 border-primary/20 hover:border-primary/30 hover:bg-secondary/50'
         }`}
       >
         <Cpu className="w-3.5 h-3.5 text-muted-foreground/70 flex-shrink-0" />

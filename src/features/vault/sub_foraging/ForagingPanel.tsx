@@ -74,7 +74,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
                 Credential Foraging
               </h3>
               <p className="text-sm text-muted-foreground/60 mt-1 max-w-sm mx-auto leading-relaxed">
-                Scan your filesystem for existing credentials — AWS profiles,
+                Scan your filesystem for existing credentials -- AWS profiles,
                 environment variables, .env files, Docker configs, SSH keys, and
                 more. Discovered credentials can be imported into your vault with
                 one click.
@@ -92,7 +92,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
             </Button>
             <div className="text-sm text-muted-foreground/60 space-y-0.5">
               <p>Scans: ~/.aws, ~/.kube, env vars, .env, ~/.npmrc, Docker, GitHub CLI, SSH</p>
-              <p>No secrets are uploaded — scanning happens entirely on your machine.</p>
+              <p>No secrets are uploaded -- scanning happens entirely on your machine.</p>
             </div>
           </motion.div>
         )}

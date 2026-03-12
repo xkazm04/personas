@@ -7,16 +7,16 @@ export interface ConnectorRole {
 
 /**
  * Registry of connector functional roles.
- * Connectors sharing a role are interchangeable â€” users can swap between them
+ * Connectors sharing a role are interchangeable -- users can swap between them
  * in the adoption wizard and the CLI will adjust the persona accordingly.
  */
 export const CONNECTOR_ROLES: ConnectorRole[] = [
-  // â”€â”€ Communication â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Communication ---------------------------------------------
   { role: 'chat_messaging',      label: 'Chat & Messaging',     members: ['slack', 'discord', 'telegram', 'microsoft_teams', 'gmail', 'microsoft_outlook', 'personas_messages'] },
   { role: 'email_delivery',      label: 'Email Delivery',       members: ['sendgrid', 'resend', 'mailchimp'] },
   { role: 'sms',                 label: 'SMS',                  members: ['twilio_sms', 'twilio'] },
 
-  // â”€â”€ Development â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Development -----------------------------------------------
   { role: 'source_control',      label: 'Source Control',       members: ['github', 'gitlab', 'azure_devops'] },
   { role: 'ci_cd',               label: 'CI/CD',                members: ['circleci', 'gitlab', 'azure_devops'] },
   { role: 'project_tracking',    label: 'Project Tracking',     members: ['jira', 'linear', 'clickup', 'monday_com', 'asana', 'trello', 'todoist'] },
@@ -24,51 +24,51 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   { role: 'design',              label: 'Design',               members: ['figma', 'canva', 'penpot'] },
   { role: 'feature_flags',       label: 'Feature Flags',        members: ['launchdarkly', 'posthog'] },
 
-  // â”€â”€ Infrastructure â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Infrastructure --------------------------------------------
   { role: 'hosting',             label: 'Hosting & Deploy',     members: ['vercel', 'netlify', 'cloudflare'] },
   { role: 'cloud_infra',         label: 'Cloud Infrastructure', members: ['aws', 'firebase', 'kubernetes'] },
   { role: 'database',            label: 'Database',             members: ['personas_database', 'supabase', 'neon', 'convex', 'planetscale', 'upstash', 'postgres_proxy', 'postgres', 'mongodb', 'redis', 'duckdb', 'notion', 'google_sheets'] },
   { role: 'cloud_storage',       label: 'Cloud Storage',        members: ['dropbox', 'onedrive', 'aws_s3', 'cloudflare_r2', 'backblaze_b2'] },
 
-  // â”€â”€ Monitoring & Security â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Monitoring & Security -------------------------------------
   { role: 'error_monitoring',    label: 'Error Monitoring',     members: ['sentry', 'betterstack'] },
   { role: 'incident_management', label: 'Incident Management',  members: ['pagerduty', 'datadog'] },
   { role: 'uptime_monitoring',   label: 'Uptime Monitoring',    members: ['uptime_robot', 'betterstack'] },
   { role: 'security_scanning',   label: 'Security Scanning',    members: ['snyk'] },
 
-  // â”€â”€ Analytics & Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Analytics & Data ------------------------------------------
   { role: 'analytics',           label: 'Product Analytics',    members: ['mixpanel', 'posthog', 'twilio_segment', 'amplitude', 'google_analytics', 'segment'] },
   { role: 'spreadsheet',         label: 'Spreadsheets',         members: ['google_sheets', 'microsoft_excel', 'airtable'] },
 
-  // â”€â”€ Customer-Facing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Customer-Facing -------------------------------------------
   { role: 'crm',                 label: 'CRM',                  members: ['hubspot', 'intercom', 'pipedrive', 'attio'] },
   { role: 'support_ticketing',   label: 'Support Ticketing',    members: ['zendesk', 'freshdesk', 'intercom', 'crisp'] },
   { role: 'social_media',        label: 'Social Media',         members: ['buffer', 'linkedin', 'twitter'] },
 
-  // â”€â”€ Content & CMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Content & CMS ---------------------------------------------
   { role: 'cms',                 label: 'CMS',                  members: ['wordpress', 'webflow', 'contentful'] },
   { role: 'search_engine',       label: 'Search Engine',        members: ['algolia'] },
   { role: 'video_comms',         label: 'Video & Comms',        members: ['loom'] },
 
-  // â”€â”€ Finance & Commerce â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Finance & Commerce ----------------------------------------
   { role: 'payment_processing',  label: 'Payment Processing',   members: ['stripe', 'paddle'] },
   { role: 'accounting',          label: 'Accounting',           members: ['quickbooks', 'xero'] },
   { role: 'banking_fintech',     label: 'Banking & Fintech',    members: ['plaid'] },
   { role: 'e_commerce',          label: 'E-Commerce',           members: ['shopify', 'shipstation', 'woocommerce', 'lemonsqueezy'] },
 
-  // â”€â”€ Scheduling & Forms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Scheduling & Forms ----------------------------------------
   { role: 'scheduling',          label: 'Scheduling',           members: ['calendly', 'cal_com', 'google_calendar', 'microsoft_calendar'] },
   { role: 'form_survey',         label: 'Forms & Surveys',      members: ['typeform', 'tally', 'formbricks'] },
   { role: 'notifications',       label: 'Notifications',        members: ['novu', 'knock', 'ntfy'] },
 
-  // â”€â”€ Specialty â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Specialty -------------------------------------------------
   { role: 'auth_identity',       label: 'Auth & Identity',      members: ['clerk'] },
   { role: 'ai_platform',         label: 'AI Platform',          members: ['openai', 'leonardo_ai'] },
   { role: 'advertising',         label: 'Advertising',          members: ['google_ads'] },
   { role: 'e_signature',         label: 'E-Signature',          members: ['docusign'] },
   { role: 'hr_recruiting',       label: 'HR & Recruiting',      members: ['greenhouse'] },
 
-  // â”€â”€ Desktop Apps â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Desktop Apps --------------------------------------------
   { role: 'code_editor',         label: 'Code Editor',          members: ['desktop_vscode'] },
   { role: 'container_runtime',   label: 'Container Runtime',    members: ['desktop_docker'] },
   { role: 'shell',               label: 'Shell / Terminal',     members: ['desktop_terminal'] },
@@ -76,7 +76,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   { role: 'browser_automation',  label: 'Browser Automation',   members: ['desktop_browser'] },
 ];
 
-// â”€â”€ Purpose groups: architectural-level categorisation of roles â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Purpose groups: architectural-level categorisation of roles --------
 
 export interface PurposeGroup {
   purpose: string;
@@ -99,7 +99,7 @@ export const PURPOSE_GROUPS: PurposeGroup[] = [
   { purpose: 'desktop',             label: 'Desktop Apps',         roles: ['code_editor', 'container_runtime', 'shell', 'note_taking', 'browser_automation'] },
 ];
 
-// Pre-computed lookup: connector name â†’ purpose key
+// Pre-computed lookup: connector name -> purpose key
 const _connectorPurposeMap = new Map<string, string>();
 for (const pg of PURPOSE_GROUPS) {
   for (const roleKey of pg.roles) {

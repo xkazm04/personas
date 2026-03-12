@@ -1,4 +1,4 @@
-// ── Filter / Sort / Grouping helpers (prompt-lab specific) ──
+// -- Filter / Sort / Grouping helpers (prompt-lab specific) --
 
 export type TagFilter = 'all' | 'production' | 'experimental' | 'archived';
 export type SortOrder = 'newest' | 'oldest';

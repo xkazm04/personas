@@ -136,7 +136,7 @@ export default function DesignReviewRunner({
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-sm font-medium text-foreground/80">
                   Template {state.progressInfo.current} of {state.progressInfo.total}
-                  <span className="text-muted-foreground/90 ml-1.5">— {state.progressInfo.pct}%</span>
+                  <span className="text-muted-foreground/90 ml-1.5">-- {state.progressInfo.pct}%</span>
                 </span>
                 <span className="flex items-center gap-1.5 text-sm text-muted-foreground/90">
                   <Clock className="w-3 h-3" />{state.progressInfo.eta}

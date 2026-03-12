@@ -1,4 +1,4 @@
-//! BYOM (Bring Your Own Model) — Enterprise provider policy engine.
+//! BYOM (Bring Your Own Model) -- Enterprise provider policy engine.
 //!
 //! Allows organizations to configure:
 //! - **Allowed providers**: restrict which LLM providers can be used

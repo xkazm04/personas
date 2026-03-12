@@ -32,7 +32,7 @@ function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
             <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.08 }} />
           </div>
         </div>
-        {/* Label — rendered ON the theme's own background for proper contrast */}
+        {/* Label -- rendered ON the theme's own background for proper contrast */}
         <div
           className="text-[10px] text-center py-1.5 font-semibold tracking-wide"
           style={{ color: foregroundSample, borderTop: `1px solid ${borderColor}` }}

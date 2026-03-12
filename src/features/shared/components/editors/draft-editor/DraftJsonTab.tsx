@@ -29,7 +29,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
       }
       onJsonChange(value, parsed, null);
     } catch {
-      // intentional: non-critical — JSON parse fallback
+      // intentional: non-critical -- JSON parse fallback
       onJsonChange(value, null, 'Invalid JSON syntax.');
     }
   };
@@ -53,7 +53,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
     try {
       return sanitizeHljsHtml(hljs.highlight(draftJson, { language: 'json' }).value);
     } catch {
-      // intentional: non-critical — JSON parse fallback (escape and show plain)
+      // intentional: non-critical -- JSON parse fallback (escape and show plain)
       return draftJson
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')

@@ -41,7 +41,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
       onMouseLeave={() => setHovered(false)}
       className="group relative text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background h-[200px] flex flex-col"
     >
-      {/* Illustration area — fixed height */}
+      {/* Illustration area -- fixed height */}
       <div className={`relative w-full h-[140px] flex-shrink-0 rounded-xl border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-sm group-hover:shadow-xl transition-all duration-400`}>
         {/* Glow blob */}
         <div className={`absolute inset-0 ${card.glowColor} blur-3xl rounded-full opacity-0 group-hover:opacity-40 transition-opacity duration-500 pointer-events-none scale-75`} />
@@ -74,7 +74,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
         <div className={`absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent ${card.iconText.replace('text-', 'via-')}/30 to-transparent`} />
       </div>
 
-      {/* Description below — fixed height */}
+      {/* Description below -- fixed height */}
       <div className="mt-1.5 px-1 h-[48px] flex items-start">
         <p className="text-xs leading-relaxed text-muted-foreground/80 line-clamp-3">{cardT.description}</p>
       </div>

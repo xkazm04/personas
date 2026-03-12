@@ -65,7 +65,7 @@ export function RecipeHistoryTab({ history, onClear }: RecipeHistoryTabProps) {
                     (() => {
                       const trimmed = run.llm_output!.trim();
                       if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
-                        try { return '```json\n' + JSON.stringify(JSON.parse(trimmed), null, 2) + '\n```'; } catch { /* intentional: non-critical — JSON parse fallback */ }
+                        try { return '```json\n' + JSON.stringify(JSON.parse(trimmed), null, 2) + '\n```'; } catch { /* intentional: non-critical -- JSON parse fallback */ }
                       }
                       return trimmed;
                     })()

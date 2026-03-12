@@ -170,13 +170,13 @@ export function TestComparisonTable({ results }: Props) {
             </thead>
             <tbody>
               {scenarios.map((scenario) => (
-                <tr key={scenario} className="border-b border-primary/5 hover:bg-secondary/10 transition-colors">
+                <tr key={scenario} className="border-b border-primary/10 hover:bg-secondary/10 transition-colors">
                   <td className="px-3 py-2.5 text-foreground/80 font-medium max-w-[200px] truncate">
                     {scenario}
                   </td>
                   {models.map((mid) => {
                     const r = matrix[scenario]?.[mid];
-                    if (!r) return <td key={mid} className="px-3 py-2.5 text-center text-muted-foreground/80">—</td>;
+                    if (!r) return <td key={mid} className="px-3 py-2.5 text-center text-muted-foreground/80">--</td>;
                     const composite = compositeScore(
                       r.tool_accuracy_score ?? 0,
                       r.output_quality_score ?? 0,

@@ -9,7 +9,7 @@ interface ToolCategoryListProps {
   viewMode: 'grid' | 'grouped';
   filteredTools: ToolDef[];
   connectorGroups: Array<[string, ToolDef[]]>;
-  assignedToolIds: string[];
+  assignedToolIds: Set<string>;
   credentialTypeSet: Set<string>;
   credentialLabel: (credType: string) => string;
   usageByTool: Map<string, number>;
@@ -45,7 +45,7 @@ export function ToolCategoryList({
     <div className="py-16 flex flex-col items-center justify-center text-center">
       <Wrench className="w-10 h-10 text-muted-foreground/50 mb-3" />
       <p className="text-sm text-muted-foreground">No tools assigned yet</p>
-      <button onClick={onBrowseTools} className="mt-3 text-sm px-2.5 py-1 rounded-xl border border-primary/15 text-muted-foreground/80 hover:text-foreground/80 hover:bg-secondary/40 transition-colors">
+      <button onClick={onBrowseTools} className="mt-3 text-sm px-2.5 py-1 rounded-xl border border-primary/20 text-muted-foreground/80 hover:text-foreground/80 hover:bg-secondary/40 transition-colors">
         Browse available tools
       </button>
     </div>
@@ -58,7 +58,7 @@ export function ToolCategoryList({
       <>
         <div className="grid gap-2" style={{ gridTemplateColumns: IS_MOBILE ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))' }}>
           {filteredTools.map((tool) => {
-            const isAssigned = assignedToolIds.includes(tool.id);
+            const isAssigned = assignedToolIds.has(tool.id);
             const missingCredential = tool.requires_credential_type && !credentialTypeSet.has(tool.requires_credential_type);
             return (
               <ToolCard

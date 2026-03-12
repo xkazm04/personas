@@ -140,7 +140,7 @@ export default function KnowledgeGraphDashboard() {
                   </p>
                   <p className="text-sm text-red-400/70 mt-0.5">
                     Showing failure patterns active on or after this date.
-                    {allEntries.length === 0 && !loading && ' No matching patterns found — try selecting a specific persona above.'}
+                    {allEntries.length === 0 && !loading && ' No matching patterns found -- try selecting a specific persona above.'}
                   </p>
                 </div>
                 <Button variant="danger" size="xs" icon={<X className="w-3 h-3" />} onClick={dismissDrilldown} className="bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25">

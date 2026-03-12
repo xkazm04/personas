@@ -8,6 +8,7 @@ import type { StreamingSection } from '@/api/templates/n8nTransform';
 import type { TransformQuestion, TransformSubPhase } from '../hooks/useN8nImportReducer';
 import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
 import { StreamingSections } from './StreamingSections';
+import { TransformPhaseStepper } from './TransformPhaseStepper';
 
 interface N8nTransformChatProps {
   transformSubPhase: TransformSubPhase;
@@ -21,7 +22,7 @@ interface N8nTransformChatProps {
   isRestoring: boolean;
   onRetry: () => void;
   onCancel: () => void;
-  /** Error message from the transform — shown inline when failed */
+  /** Error message from the transform -- shown inline when failed */
   errorMessage?: string | null;
 }
 
@@ -51,7 +52,10 @@ export function N8nTransformChat({
 
   return (
     <div ref={scrollRef} className="space-y-4">
-      {/* Phase 1: Asking — unified transform in progress */}
+      {/* Horizontal phase stepper */}
+      <TransformPhaseStepper currentPhase={transformSubPhase} />
+
+      {/* Phase 1: Asking -- unified transform in progress */}
       {transformSubPhase === 'asking' && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -75,7 +79,7 @@ export function N8nTransformChat({
         </motion.div>
       )}
 
-      {/* Phase 2: Answering — questions loaded, user fills in */}
+      {/* Phase 2: Answering -- questions loaded, user fills in */}
       {transformSubPhase === 'answering' && (
         <AnimatePresence>
           {/* Questions available */}
@@ -100,9 +104,11 @@ export function N8nTransformChat({
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary/30 border border-primary/8">
+                <div role="tablist" aria-label="Question view mode" className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary/30 border border-primary/8">
                   <button
                     type="button"
+                    role="tab"
+                    aria-selected={viewMode === 'list'}
                     onClick={() => setViewMode('list')}
                     className={`px-2 py-1 text-sm rounded-lg flex items-center gap-1.5 transition-all ${
                       viewMode === 'list'
@@ -115,6 +121,8 @@ export function N8nTransformChat({
                   </button>
                   <button
                     type="button"
+                    role="tab"
+                    aria-selected={viewMode === 'stepper'}
                     onClick={() => setViewMode('stepper')}
                     className={`px-2 py-1 text-sm rounded-lg flex items-center gap-1.5 transition-all ${
                       viewMode === 'stepper'
@@ -173,7 +181,7 @@ export function N8nTransformChat({
         </AnimatePresence>
       )}
 
-      {/* Phase 3: Generating — show answer summary + streaming sections + progress */}
+      {/* Phase 3: Generating -- show answer summary + streaming sections + progress */}
       {transformSubPhase === 'generating' && (
         <>
           {/* Answer summary bubble */}
@@ -204,7 +212,7 @@ export function N8nTransformChat({
             </motion.div>
           )}
 
-          {/* Streaming sections — tools, triggers, connectors appear one-by-one */}
+          {/* Streaming sections -- tools, triggers, connectors appear one-by-one */}
           <StreamingSections
             sections={streamingSections}
             isStreaming={transformPhase === 'running'}
@@ -222,7 +230,7 @@ export function N8nTransformChat({
         </>
       )}
 
-      {/* Phase 4: Failed — show progress (which renders failure state) */}
+      {/* Phase 4: Failed -- show progress (which renders failure state) */}
       {transformSubPhase === 'failed' && (
         <TransformProgress
           phase={transformPhase}
@@ -235,7 +243,7 @@ export function N8nTransformChat({
         />
       )}
 
-      {/* Idle state — shouldn't normally be visible, but handle gracefully */}
+      {/* Idle state -- shouldn't normally be visible, but handle gracefully */}
       {transformSubPhase === 'idle' && (
         <TransformProgress
           phase="idle"

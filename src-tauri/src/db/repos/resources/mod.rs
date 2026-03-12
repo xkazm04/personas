@@ -14,3 +14,4 @@ pub mod automations;
 pub mod credential_recipes;
 pub mod identity;
 pub mod exposure;
+pub mod tool_audit_log;

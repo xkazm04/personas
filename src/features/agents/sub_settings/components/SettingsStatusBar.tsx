@@ -22,7 +22,7 @@ export function SettingsStatusBar({
       <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
         {isSaving ? (
           <>
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-primary/70" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-primary/70" aria-hidden="true" />
             <span>Saving {changedSections.join(' + ').toLowerCase()}...</span>
           </>
         ) : isDirty ? (
@@ -32,8 +32,8 @@ export function SettingsStatusBar({
           </>
         ) : (
           <>
-            <Check className="w-3.5 h-3.5 text-emerald-400/70" />
-            <span className="text-muted-foreground/60">All changes saved</span>
+            <Check className="w-3.5 h-3.5 text-emerald-400/70" aria-hidden="true" />
+            <span className="text-muted-foreground/70">All changes saved</span>
           </>
         )}
       </div>
@@ -41,15 +41,15 @@ export function SettingsStatusBar({
       {!showDeleteConfirm ? (
         <button
           onClick={() => setShowDeleteConfirm(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
           Delete
         </button>
       ) : (
         <div className="flex items-center gap-2">
           <span className="text-sm text-amber-400/70 flex items-center gap-1">
-            <AlertTriangle className="w-3.5 h-3.5" />
+            <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
             Irreversible
           </span>
           <button

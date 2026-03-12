@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 // ============================================================================
-// EvalResult — standardized output from any evaluation strategy
+// EvalResult -- standardized output from any evaluation strategy
 // ============================================================================
 
 /// A standardized evaluation result produced by any EvalStrategy.
@@ -22,9 +22,9 @@ use ts_rs::TS;
 pub struct EvalResult {
     /// The strategy that produced this result.
     pub strategy: EvalStrategyKind,
-    /// Score from 0–100. Higher is better.
+    /// Score from 0--100. Higher is better.
     pub score: i32,
-    /// Confidence in the score (0.0–1.0). Low confidence means the evaluation
+    /// Confidence in the score (0.0--1.0). Low confidence means the evaluation
     /// had limited signal (e.g. no expected behavior specified).
     pub confidence: f64,
     /// Human-readable explanation of how the score was derived.
@@ -52,7 +52,7 @@ pub enum EvalStrategyKind {
 }
 
 // ============================================================================
-// EvalInput — what every strategy receives
+// EvalInput -- what every strategy receives
 // ============================================================================
 
 /// Input provided to evaluation strategies.
@@ -270,7 +270,7 @@ pub fn eval_confusion_detect(input: &EvalInput) -> EvalResult {
             score: 0,
             confidence: 0.85,
             explanation: format!(
-                "Agent appears confused — matched {} confusion phrase(s): \"{}\"",
+                "Agent appears confused -- matched {} confusion phrase(s): \"{}\"",
                 matched.len(),
                 matched[0]
             ),
@@ -302,7 +302,7 @@ pub fn eval_confusion_detect(input: &EvalInput) -> EvalResult {
 }
 
 // ============================================================================
-// Composite evaluation — runs multiple strategies and combines results
+// Composite evaluation -- runs multiple strategies and combines results
 // ============================================================================
 
 /// Weights for composite scoring. Keep in sync with frontend.
@@ -393,7 +393,7 @@ mod tests {
         }
     }
 
-    // ── Keyword Match ──
+    // -- Keyword Match --
 
     #[test]
     fn test_keyword_match_good_output() {
@@ -424,7 +424,7 @@ mod tests {
         assert!(result.confidence < 0.5);
     }
 
-    // ── Tool Accuracy ──
+    // -- Tool Accuracy --
 
     #[test]
     fn test_tool_accuracy_perfect() {
@@ -454,7 +454,7 @@ mod tests {
         assert!(result.score > 70, "But not by too much: {}", result.score);
     }
 
-    // ── Confusion Detect ──
+    // -- Confusion Detect --
 
     #[test]
     fn test_confusion_detected() {
@@ -500,7 +500,7 @@ mod tests {
         assert!(result.passed == Some(false));
     }
 
-    // ── Protocol Compliance ──
+    // -- Protocol Compliance --
 
     #[test]
     fn test_protocol_compliance_all_found() {
@@ -532,7 +532,7 @@ mod tests {
         assert!(result.confidence < 0.5);
     }
 
-    // ── Composite ──
+    // -- Composite --
 
     #[test]
     fn test_composite_normal() {

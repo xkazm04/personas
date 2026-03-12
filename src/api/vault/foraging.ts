@@ -1,6 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
 export type ForageSource =
   | "aws_credentials"
@@ -39,7 +39,7 @@ export interface ForageImportResult {
   field_count: number;
 }
 
-// ── API calls ──────────────────────────────────────────────────────────
+// -- API calls ----------------------------------------------------------
 
 export const scanCredentialSources = () =>
   invoke<ForagingScanResult>("scan_credential_sources");

@@ -3,7 +3,7 @@ import { Clock, Copy, Check } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { ApiProxyResponse } from '@/api/system/apiProxy';
 
-// ── Status styling ───────────────────────────────────────────────
+// -- Status styling -----------------------------------------------
 
 function statusStyle(status: number): string {
   if (status >= 200 && status < 300) return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25';
@@ -11,7 +11,7 @@ function statusStyle(status: number): string {
   return 'bg-red-500/15 text-red-400 border-red-500/25';
 }
 
-// ── Component ────────────────────────────────────────────────────
+// -- Component ----------------------------------------------------
 
 type ResponseSubTab = 'body' | 'headers' | 'raw';
 
@@ -29,7 +29,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
       const parsed = JSON.parse(response.body);
       return JSON.stringify(parsed, null, 2);
     } catch {
-      // intentional: non-critical — JSON parse fallback
+      // intentional: non-critical -- JSON parse fallback
       return response.body;
     }
   }, [response.body]);

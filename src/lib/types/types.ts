@@ -3,7 +3,7 @@
  * Bridges Rust ts-rs bindings to the shapes components expect.
  */
 
-// â”€â”€ Re-export Rust binding types with Db-prefixed aliases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Re-export Rust binding types with Db-prefixed aliases --------------
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaToolDefinition } from "@/lib/bindings/PersonaToolDefinition";
 import type { PersonaTool } from "@/lib/bindings/PersonaTool";
@@ -67,7 +67,7 @@ export type {
   RawConnectorDefinition,
 };
 
-// â”€â”€ Frontend Enriched Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Frontend Enriched Types --------------------------------------------
 
 /** Persona with associated tools, triggers, and event subscriptions */
 export interface PersonaWithDetails extends Persona {
@@ -245,7 +245,7 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
   return [{ id, label, type: 'credential', is_default: true }];
 }
 
-// â”€â”€ Navigation Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Navigation Types ---------------------------------------------------
 
 export type SidebarSection = "home" | "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "settings" | "dev-tools";
 export type HomeTab = "welcome" | "system-check";
@@ -258,7 +258,7 @@ export type DevToolsTab = "projects" | "context-map" | "idea-scanner" | "idea-tr
 
 export type CliEngine = "claude_code" | "codex_cli" | "gemini_cli" | "copilot_cli";
 
-// â”€â”€ Analytics Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Analytics Types ----------------------------------------------------
 
 export interface ToolUsageSummary {
   tool_name: string;
@@ -282,7 +282,7 @@ export interface PersonaUsageSummary {
   unique_tools: number;
 }
 
-// â”€â”€ Execution Output Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Execution Output Types ---------------------------------------------
 
 export interface ExecutionOutputLine {
   line?: string;
@@ -290,7 +290,7 @@ export interface ExecutionOutputLine {
   status?: string;
 }
 
-// â”€â”€ Persona Info Mixin (shared across enriched types) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Persona Info Mixin (shared across enriched types) ------------------
 
 export interface WithPersonaInfo {
   persona_name?: string;
@@ -315,7 +315,7 @@ export function enrichWithPersona<T extends { persona_id: string }>(
   });
 }
 
-// â”€â”€ Enriched Types (with persona info for global views) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Enriched Types (with persona info for global views) ----------------
 
 export interface ManualReviewItem extends WithPersonaInfo {
   id: string;
@@ -328,7 +328,7 @@ export interface ManualReviewItem extends WithPersonaInfo {
   reviewer_notes: string | null;
   created_at: string;
   resolved_at: string | null;
-  /** Where this review originated â€” 'local' (default) or 'cloud'. */
+  /** Where this review originated -- 'local' (default) or 'cloud'. */
   source?: 'local' | 'cloud';
 }
 

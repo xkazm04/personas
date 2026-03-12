@@ -17,7 +17,7 @@ export function AiHealingCounters({
         return `Applying ${fixCount} fix${fixCount !== 1 ? 'es' : ''}...`;
       case 'completed':
         return fixCount > 0
-          ? `${fixCount} fix${fixCount !== 1 ? 'es' : ''} applied${shouldRetry ? ' — retrying' : ''}`
+          ? `${fixCount} fix${fixCount !== 1 ? 'es' : ''} applied${shouldRetry ? ' -- retrying' : ''}`
           : 'No fixes needed';
       case 'failed':
         return 'Healing failed';

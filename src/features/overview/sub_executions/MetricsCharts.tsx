@@ -7,7 +7,7 @@ import { CHART_COLORS, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/s
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/charts/ChartErrorBoundary';
 import { ChartTooltipContent, fmtCost, fmtMs } from './MetricsSummaryCards';
 
-// ── Cost Per Day Chart ───────────────────────────────────────────────
+// -- Cost Per Day Chart -----------------------------------------------
 
 interface CostPerDayChartProps {
   personaCostData: Array<Record<string, string | number>>;
@@ -60,7 +60,7 @@ export function CostPerDayChart({ personaCostData, personaNames, chartData, anom
   );
 }
 
-// ── Executions By Status Chart ───────────────────────────────────────
+// -- Executions By Status Chart ---------------------------------------
 
 interface ExecutionsByStatusChartProps {
   data: Array<Record<string, string | number>>;
@@ -96,7 +96,7 @@ export function ExecutionsByStatusChart({ data, compareEnabled }: ExecutionsBySt
   );
 }
 
-// ── Success Rate Chart ───────────────────────────────────────────────
+// -- Success Rate Chart -----------------------------------------------
 
 interface SuccessRateChartProps {
   data: Array<Record<string, string | number>>;
@@ -128,7 +128,7 @@ export function SuccessRateChart({ data, compareEnabled }: SuccessRateChartProps
   );
 }
 
-// ── Latency Distribution Chart ───────────────────────────────────────
+// -- Latency Distribution Chart ---------------------------------------
 
 interface LatencyChartProps {
   data: Array<Record<string, string | number>>;

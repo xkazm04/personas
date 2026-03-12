@@ -306,7 +306,7 @@ mod tests {
         pool
     }
 
-    // ── Schema Tables ───────────────────────────────────────────────
+    // -- Schema Tables -----------------------------------------------
 
     #[test]
     fn test_create_table() {
@@ -348,7 +348,7 @@ mod tests {
         let pool = test_pool();
         let t1 = create_table(&pool, "cred-1", "users", None, None).unwrap();
         let t2 = create_table(&pool, "cred-2", "users", None, None).unwrap();
-        assert_ne!(t1.id, t2.id); // Different credentials → both succeed
+        assert_ne!(t1.id, t2.id); // Different credentials -> both succeed
     }
 
     #[test]
@@ -448,7 +448,7 @@ mod tests {
         assert!(err.contains("NotFound") || err.contains("not found") || err.contains("DbSchemaTable"));
     }
 
-    // ── Saved Queries ───────────────────────────────────────────────
+    // -- Saved Queries -----------------------------------------------
 
     #[test]
     fn test_create_query() {
@@ -589,7 +589,7 @@ mod tests {
         assert_eq!(list_tables(&pool, "cred-1").unwrap().len(), 2);
         assert_eq!(list_queries(&pool, "cred-1").unwrap().len(), 1);
 
-        // Delete the parent credential — should cascade
+        // Delete the parent credential -- should cascade
         let conn = pool.get().unwrap();
         // Re-enable FK enforcement on this connection
         conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();

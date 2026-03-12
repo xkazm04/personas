@@ -17,7 +17,7 @@ use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 // ============================================================================
-// Arena — Multi-model comparison (mirrors existing test_runner flow)
+// Arena -- Multi-model comparison (mirrors existing test_runner flow)
 // ============================================================================
 
 #[tauri::command]
@@ -129,7 +129,7 @@ pub fn lab_cancel_arena(
 }
 
 // ============================================================================
-// A/B — Prompt version comparison (multi-scenario, multi-model)
+// A/B -- Prompt version comparison (multi-scenario, multi-model)
 // ============================================================================
 
 #[allow(clippy::too_many_arguments)]
@@ -285,7 +285,7 @@ pub fn lab_cancel_ab(
 }
 
 // ============================================================================
-// Matrix — Draft generation + current vs draft comparison
+// Matrix -- Draft generation + current vs draft comparison
 // ============================================================================
 
 #[tauri::command]
@@ -438,7 +438,7 @@ pub fn lab_accept_matrix_draft(
 }
 
 // ============================================================================
-// Eval — N prompt versions × M models evaluation matrix
+// Eval -- N prompt versions × M models evaluation matrix
 // ============================================================================
 
 #[tauri::command]
@@ -505,7 +505,7 @@ pub async fn lab_start_eval(
         flags.insert(run_id.clone(), cancelled.clone());
     }
 
-    // Build persona variants — one per version
+    // Build persona variants -- one per version
     let mut variants: Vec<(String, i32, crate::db::models::Persona)> = Vec::new();
     for version in &versions {
         let mut p = persona.clone();

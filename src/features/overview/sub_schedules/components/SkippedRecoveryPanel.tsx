@@ -150,7 +150,7 @@ export default function SkippedRecoveryPanel({
                     <button
                       onClick={() => handleDismiss(agent.trigger_id)}
                       className="flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border bg-secondary/30 border-primary/10 text-muted-foreground/60 hover:text-muted-foreground/90 transition-colors"
-                      title="Skip — don't recover"
+                      title="Skip -- don't recover"
                     >
                       <SkipForward className="w-3 h-3" />
                       Skip

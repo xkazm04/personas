@@ -4,7 +4,7 @@ export { EditorBody } from './components/EditorBody';
 export { EditorTabBar } from './components/EditorTabBar';
 export { PersonaEditorHeader } from './components/PersonaEditorHeader';
 export { UnsavedChangesBanner, DesignNudgeBanner, CloudNudgeBanner } from './components/EditorBanners';
-export { EditorDirtyProvider, useEditorDirty, useEditorDirtyState, TabSaveError } from './libs/EditorDocument';
+export { EditorDirtyProvider, useEditorDirty, useEditorDirtyState, useEditorHistory, TabSaveError, type UndoEntry } from './libs/EditorDocument';
 export { type PersonaDraft, buildDraft, draftChanged, SETTINGS_KEYS, MODEL_KEYS } from './libs/PersonaDraft';
 export { useEditorSave } from './libs/useEditorSave';
 export { useEffectivePersona } from './libs/useEffectivePersona';

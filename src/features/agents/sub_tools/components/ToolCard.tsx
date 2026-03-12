@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { CheckCircle, AlertCircle, ArrowRight, BarChart3, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ToolImpactPanel } from './ToolImpactPanel';
 import { ToolCheckbox } from './ToolCheckbox';
 import type { ToolDef } from './ToolCardItems';
 import type { ToolImpactData } from '../libs/toolImpactTypes';
+import { TOOLS_BORDER, TOOLS_BTN_COMPACT } from '@/lib/utils/designTokens';
 
-export function ToolCard({
+export const ToolCard = memo(function ToolCard({
   tool,
   isAssigned,
   missingCredential,
@@ -44,10 +45,10 @@ export function ToolCard({
       onClick={() => !missingCredential && onToggle(tool.id, tool.name, isAssigned)}
       className={`p-3 rounded-xl border backdrop-blur-sm transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
         missingCredential
-          ? 'bg-secondary/20 border-primary/10 opacity-60 cursor-not-allowed'
+          ? `bg-secondary/20 ${TOOLS_BORDER} opacity-60 cursor-not-allowed`
           : isAssigned
             ? 'bg-primary/10 border-primary/30 shadow-[0_0_15px_rgba(59,130,246,0.08)] cursor-pointer'
-            : 'bg-secondary/40 border-primary/15 hover:border-primary/20 cursor-pointer'
+            : `bg-secondary/40 ${TOOLS_BORDER} hover:border-primary/20 cursor-pointer`
       }`}
     >
       <div className="flex items-start gap-3">
@@ -74,9 +75,9 @@ export function ToolCard({
               )
             )}
           </div>
-          <p className="text-sm text-muted-foreground/90 mt-1.5 line-clamp-2">{tool.description}</p>
+          <p className="text-sm text-muted-foreground/90 mt-2 line-clamp-2">{tool.description}</p>
           {missingCredential && tool.requires_credential_type && (
-            <div className="mt-1.5 space-y-1">
+            <div className="mt-2 space-y-1">
               <p className="text-sm text-amber-400/80">
                 Requires a <span className="font-medium">{credentialLabel(tool.requires_credential_type)}</span> credential to connect
               </p>
@@ -91,12 +92,12 @@ export function ToolCard({
           )}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             {tool.category && (
-              <span className="inline-block px-2 py-0.5 rounded-lg text-sm font-mono bg-background/50 text-muted-foreground/80 border border-primary/15">
+              <span className={`inline-block px-2 py-0.5 rounded-lg text-sm font-mono bg-background/50 text-muted-foreground/80 border ${TOOLS_BORDER}`}>
                 {tool.category}
               </span>
             )}
             {usageCount > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm bg-primary/5 text-muted-foreground/90 border border-primary/10">
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm bg-primary/5 text-muted-foreground/90 border ${TOOLS_BORDER}`}>
                 <BarChart3 className="w-3 h-3" />
                 {usageCount.toLocaleString()} calls
               </span>
@@ -104,7 +105,7 @@ export function ToolCard({
             {hasImpact && (
               <button
                 onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-                className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm text-muted-foreground/60 hover:text-muted-foreground/90 hover:bg-primary/5 border border-transparent hover:border-primary/10 transition-all"
+                className={`ml-auto inline-flex items-center gap-1 ${TOOLS_BTN_COMPACT} rounded-lg text-sm text-muted-foreground/60 hover:text-muted-foreground/90 hover:bg-primary/5 border border-transparent hover:${TOOLS_BORDER} transition-all`}
                 title={expanded ? 'Hide impact analysis' : 'Show impact analysis'}
               >
                 Impact
@@ -125,4 +126,4 @@ export function ToolCard({
       </AnimatePresence>
     </motion.div>
   );
-}
+});

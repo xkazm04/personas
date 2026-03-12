@@ -116,13 +116,13 @@ export function TriggerSetupCard({
 
                 {trigger.trigger_type === 'manual' && (
                   <p className="text-sm text-muted-foreground/40 italic">
-                    Triggered manually — no configuration needed
+                    Triggered manually -- no configuration needed
                   </p>
                 )}
 
                 {trigger.trigger_type === 'event' && (
                   <p className="text-sm text-muted-foreground/40 italic">
-                    Triggered by system events — no configuration needed
+                    Triggered by system events -- no configuration needed
                   </p>
                 )}
 

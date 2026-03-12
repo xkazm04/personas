@@ -11,7 +11,7 @@ import { deriveConnectorReadiness } from '../../shared/ConnectorReadiness';
 import type { ConnectorReadinessStatus, AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
-// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Types ------------------------------------------------------------
 
 export interface PrerequisiteItem {
   connectorName: string;
@@ -30,7 +30,7 @@ function deriveOverall(items: PrerequisiteItem[]): PrerequisiteOverall {
   return 'blocked';
 }
 
-// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Component --------------------------------------------------------
 
 interface AdoptionPrerequisitesPanelProps {
   designResult: AgentIR | null;
@@ -103,7 +103,7 @@ export function AdoptionPrerequisitesPanel({
         {overall === 'ready' ? (
           <>
             <ShieldCheck className="w-4 h-4" />
-            All set â€” Start Adoption
+            All set -- Start Adoption
           </>
         ) : (
           <>
@@ -119,7 +119,7 @@ export function AdoptionPrerequisitesPanel({
   );
 }
 
-// â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Sub-components ---------------------------------------------------
 
 function OverallBadge({ overall, total, ready }: { overall: PrerequisiteOverall; total: number; ready: number }) {
   const config = {

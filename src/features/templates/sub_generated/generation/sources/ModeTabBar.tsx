@@ -1,5 +1,5 @@
 /**
- * ModeTabBar — tab bar for selecting run mode in DesignReviewRunner.
+ * ModeTabBar -- tab bar for selecting run mode in DesignReviewRunner.
  */
 import { Beaker, FileText, List } from 'lucide-react';
 

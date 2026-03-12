@@ -88,7 +88,7 @@ export function useRunnerExecution({
     const hint = `Previous execution was cancelled${executionSummary?.duration_ms ? ` after ${formatElapsed(executionSummary.duration_ms)}` : ''}${lastTool ? ` while running tool "${lastTool}"` : ''}. Please continue from where the previous execution left off.`;
 
     let sessionId: string | null = null;
-    // activeExecutionId is null after cancel/finish — use lastExecutionId to
+    // activeExecutionId is null after cancel/finish -- use lastExecutionId to
     // fetch the session for true session resumption.
     const resumeExecId = activeExecutionId ?? usePersonaStore.getState().lastExecutionId;
     if (resumeExecId) {
@@ -136,7 +136,7 @@ export function useRunnerExecution({
       const role = target?.getAttribute?.('role');
       if (role === 'textbox' || role === 'combobox' || role === 'listbox' || role === 'option' || role === 'button' || role === 'menuitem') return;
 
-      // Skip when a modal/dialog is open — Enter likely confirms the dialog, not triggers execution
+      // Skip when a modal/dialog is open -- Enter likely confirms the dialog, not triggers execution
       if (target?.closest?.('[role="dialog"], dialog, [data-radix-dialog-content]')) return;
 
       handleExecuteRef.current?.();

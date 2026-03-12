@@ -1,6 +1,6 @@
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// --- Types -------------------------------------------------------------------
 
 export interface ToolCallStep {
   step_index: number;
@@ -12,14 +12,14 @@ export interface ToolCallStep {
   duration_ms?: number;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers -----------------------------------------------------------------
 
 export function parseToolSteps(raw: string | null): ToolCallStep[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
-  } catch { // intentional: non-critical — JSON parse fallback
+  } catch { // intentional: non-critical -- JSON parse fallback
     return [];
   }
 }
@@ -86,7 +86,7 @@ export function jsonDiff(a: string | null, b: string | null): Array<{ path: stri
         diffs.push({ path: key, left: valA, right: valB });
       }
     }
-  } catch { // intentional: non-critical — JSON parse fallback
+  } catch { // intentional: non-critical -- JSON parse fallback
     if (a !== b) {
       diffs.push({ path: '(root)', left: a ?? '(empty)', right: b ?? '(empty)' });
     }
@@ -94,7 +94,7 @@ export function jsonDiff(a: string | null, b: string | null): Array<{ path: stri
   return diffs;
 }
 
-// ─── What Changed Summary ────────────────────────────────────────────────────
+// --- What Changed Summary ----------------------------------------------------
 
 export function generateWhatChanged(left: PersonaExecution, right: PersonaExecution): string[] {
   const changes: string[] = [];
@@ -143,7 +143,7 @@ export function generateWhatChanged(left: PersonaExecution, right: PersonaExecut
 
   // Status change
   if (left.status !== right.status) {
-    changes.push(`Status changed: ${left.status} → ${right.status}`);
+    changes.push(`Status changed: ${left.status} -> ${right.status}`);
   }
 
   // Tool order
@@ -155,12 +155,12 @@ export function generateWhatChanged(left: PersonaExecution, right: PersonaExecut
     changes.push('Different tool call order');
   }
   if (stepsL.length !== stepsR.length && (stepsL.length > 0 || stepsR.length > 0)) {
-    changes.push(`Tool calls: ${stepsL.length} → ${stepsR.length}`);
+    changes.push(`Tool calls: ${stepsL.length} -> ${stepsR.length}`);
   }
 
   // Model change
   if (left.model_used && right.model_used && left.model_used !== right.model_used) {
-    changes.push(`Model changed: ${left.model_used} → ${right.model_used}`);
+    changes.push(`Model changed: ${left.model_used} -> ${right.model_used}`);
   }
 
   if (changes.length === 0) {

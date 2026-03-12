@@ -1,6 +1,6 @@
 import { useEffect, useReducer } from 'react';
 
-// ── ModuleCache: module-level shared cache with pub/sub ───────────────
+// -- ModuleCache: module-level shared cache with pub/sub ---------------
 
 export interface ModuleCacheOptions {
   /** Time-to-live in milliseconds. Entries older than this are treated as absent. */
@@ -103,7 +103,7 @@ export function createModuleCache<K, V>(options?: ModuleCacheOptions): ModuleCac
   };
 }
 
-// ── React hook ────────────────────────────────────────────────────────
+// -- React hook --------------------------------------------------------
 
 /**
  * Subscribe to a `ModuleCache` and return the value for `key`.

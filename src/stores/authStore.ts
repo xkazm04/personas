@@ -56,7 +56,7 @@ export const useAuthStore = create<AuthState>()(
               isLoading: false,
             });
           } catch {
-            // intentional: non-critical — auth state check on startup; backend may not be ready yet
+            // intentional: non-critical -- auth state check on startup; backend may not be ready yet
             set({ isLoading: false });
           }
         },

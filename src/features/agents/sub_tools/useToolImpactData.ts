@@ -55,7 +55,7 @@ function parseToolNames(toolStepsJson: string | null): string[] {
     }
     return Array.from(names);
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical -- JSON parse fallback
     return [];
   }
 }
@@ -76,7 +76,7 @@ function parseUseCaseTitles(designContext: string | null): Map<string, string> {
       }
     }
   } catch {
-    // intentional: non-critical — JSON parse fallback (design_context may have a different shape)
+    // intentional: non-critical -- JSON parse fallback (design_context may have a different shape)
   }
   return map;
 }

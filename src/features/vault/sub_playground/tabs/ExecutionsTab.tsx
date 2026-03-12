@@ -70,7 +70,7 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
                       <span className="text-muted-foreground/60">{entry.persona_name ? ' · ' : ''}{entry.detail}</span>
                     )}
                     {!entry.persona_name && !entry.detail && (
-                      <span className="text-muted-foreground/50 italic">—</span>
+                      <span className="text-muted-foreground/50 italic">--</span>
                     )}
                   </div>
                   <span className="text-sm text-muted-foreground/50 shrink-0">

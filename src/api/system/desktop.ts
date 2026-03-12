@@ -1,6 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
 export interface DiscoveredApp {
   connector_name: string;
@@ -40,7 +40,7 @@ export interface DesktopConnectorManifest {
   justifications: Record<string, string>;
 }
 
-// ── Capability metadata ────────────────────────────────────────────────
+// -- Capability metadata ------------------------------------------------
 
 export const CAPABILITY_INFO: Record<
   DesktopCapability,
@@ -88,7 +88,7 @@ export const CAPABILITY_INFO: Record<
   },
 };
 
-// ── Desktop Discovery ──────────────────────────────────────────────────
+// -- Desktop Discovery --------------------------------------------------
 
 export const discoverDesktopApps = () =>
   invoke<DiscoveredApp[]>("discover_desktop_apps", {});

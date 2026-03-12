@@ -37,9 +37,9 @@ async fn read_line_limited<R: tokio::io::AsyncBufRead + Unpin>(
             Ok(Ok(buf)) => buf,
             Ok(Err(e)) => return Err(e),
             Err(_) => {
-                // Watchdog timeout — no newline within the time limit
+                // Watchdog timeout -- no newline within the time limit
                 if line_buf.is_empty() {
-                    // Nothing buffered and timed out — treat as EOF
+                    // Nothing buffered and timed out -- treat as EOF
                     return Ok(None);
                 }
                 let mut s = String::from_utf8_lossy(&line_buf).into_owned();
@@ -63,14 +63,14 @@ async fn read_line_limited<R: tokio::io::AsyncBufRead + Unpin>(
             if !truncated && line_buf.len() + take <= MAX_LINE_BYTES {
                 line_buf.extend_from_slice(&available[..take]);
             } else if !truncated {
-                // Partial fit — fill up to the limit
+                // Partial fit -- fill up to the limit
                 let remaining = MAX_LINE_BYTES - line_buf.len();
                 line_buf.extend_from_slice(&available[..remaining]);
                 truncated = true;
             }
             (nl_pos + 1, true) // +1 to consume the newline
         } else {
-            // No newline found — take the whole buffer
+            // No newline found -- take the whole buffer
             let take = available.len();
             if !truncated && line_buf.len() + take <= MAX_LINE_BYTES {
                 line_buf.extend_from_slice(available);
@@ -221,7 +221,7 @@ pub async fn run_execution(
 
     let log_file_path = logger.path().to_string_lossy().to_string();
 
-    // Resolve workspace (group) defaults — persona-level > group-level > global
+    // Resolve workspace (group) defaults -- persona-level > group-level > global
     let workspace = persona
         .group_id
         .as_deref()
@@ -251,7 +251,7 @@ pub async fn run_execution(
         resolve_global_provider_settings(&pool, profile);
     }
 
-    // Workspace shared instructions — appended to the prompt later
+    // Workspace shared instructions -- appended to the prompt later
     let workspace_instructions = workspace
         .as_ref()
         .and_then(|ws| ws.shared_instructions.clone())
@@ -308,7 +308,7 @@ pub async fn run_execution(
     );
     let hint_refs: Vec<&str> = cred_hints.iter().map(|s| s.as_str()).collect();
     let prompt_text = if is_session_resume {
-        // For session resume, send a lighter prompt — the session already has context
+        // For session resume, send a lighter prompt -- the session already has context
         prompt::assemble_resume_prompt(
             input_data.as_ref(),
             if hint_refs.is_empty() { None } else { Some(&hint_refs) },
@@ -508,7 +508,7 @@ pub async fn run_execution(
 
             match cmd.spawn() {
                 Ok(c) => {
-                    // Spawn succeeded — use this provider
+                    // Spawn succeeded -- use this provider
                     break 'failover c;
                 }
                 Err(e) => {
@@ -568,7 +568,7 @@ pub async fn run_execution(
         };
     };
 
-    // Provider spawn succeeded — record in trace
+    // Provider spawn succeeded -- record in trace
     let spawn_span = trace.start_span(
         SpanType::CliSpawn,
         &format!("CLI Spawn: {}", cli_provider.engine_name()),
@@ -711,12 +711,12 @@ pub async fn run_execution(
             if total_stdout_bytes > MAX_OUTPUT_BYTES {
                 if !output_truncated {
                     output_truncated = true;
-                    logger.log("[RUNNER] stdout truncated — MAX_OUTPUT_BYTES (10MB) exceeded");
+                    logger.log("[RUNNER] stdout truncated -- MAX_OUTPUT_BYTES (10MB) exceeded");
                     let _ = app.emit(
                         "execution-output",
                         ExecutionOutputEvent {
                             execution_id: exec_id_for_stream.clone(),
-                            line: "[output truncated — 10MB limit exceeded]".to_string(),
+                            line: "[output truncated -- 10MB limit exceeded]".to_string(),
                         },
                     );
                 }
@@ -954,10 +954,10 @@ pub async fn run_execution(
         {
             if !accomplished {
                 final_status = ExecutionState::Incomplete;
-                logger.log("[OUTCOME] Task not accomplished — marking as incomplete");
+                logger.log("[OUTCOME] Task not accomplished -- marking as incomplete");
             }
         } else {
-            // No outcome_assessment found — use heuristic, but conservatively
+            // No outcome_assessment found -- use heuristic, but conservatively
             // defer to exit code 0. Agents often discuss errors they encountered
             // and fixed (e.g., "I found an error and resolved it"), so error
             // substrings alone are not reliable without checking for resolution
@@ -979,7 +979,7 @@ pub async fn run_execution(
                 || lower_text.contains("worked around");
             if has_error_indicators && !has_success_indicators && !has_resolution_indicators {
                 final_status = ExecutionState::Incomplete;
-                logger.log("[OUTCOME] No assessment found, error indicators detected — marking as incomplete");
+                logger.log("[OUTCOME] No assessment found, error indicators detected -- marking as incomplete");
             }
         }
     }
@@ -1141,7 +1141,7 @@ pub(crate) async fn resolve_credential_env_vars(
     };
 
     for tool in tools {
-        // ── Primary: match tool name in connector services ──
+        // -- Primary: match tool name in connector services --
         let mut matched_connector = false;
         for connector in &connectors {
             let services: Vec<serde_json::Value> =
@@ -1171,10 +1171,10 @@ pub(crate) async fn resolve_credential_env_vars(
             }
         }
 
-        // ── Fallback: match via requires_credential_type ──
+        // -- Fallback: match via requires_credential_type --
         if !matched_connector {
             if let Some(ref cred_type) = tool.requires_credential_type {
-                // Try matching connector by name (e.g. "google" → connector named "google")
+                // Try matching connector by name (e.g. "google" -> connector named "google")
                 // or by name prefix/substring for common patterns
                 for connector in &connectors {
                     if !seen_connectors.insert(connector.name.clone()) {
@@ -1299,7 +1299,7 @@ async fn try_refresh_oauth_token(
         "microsoft" => "https://login.microsoftonline.com/common/oauth2/v2.0/token",
         "slack" => "https://slack.com/api/oauth.v2.access",
         "github" => "https://github.com/login/oauth/access_token",
-        _ => return None, // Unknown provider — skip refresh
+        _ => return None, // Unknown provider -- skip refresh
     };
 
     tracing::info!("Refreshing OAuth access token for connector '{}'", connector_name);

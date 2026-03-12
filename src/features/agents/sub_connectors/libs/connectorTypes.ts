@@ -8,15 +8,15 @@ export interface ConnectorStatus {
   linkError: string | null;
 }
 
-// ── Connector readiness ──────────────────────────────────────────────
+// -- Connector readiness ----------------------------------------------
 //
 // Execution requires a linked credential (any readiness except 'unlinked').
-// A passing healthcheck ('healthy') is recommended but not strictly required —
+// A passing healthcheck ('healthy') is recommended but not strictly required --
 // connectors with 'linked_untested' or 'unhealthy' status will attempt execution
 // but may fail at runtime.
 
 export type ConnectorReadiness =
-  | 'unlinked'        // no credential linked — blocks execution
+  | 'unlinked'        // no credential linked -- blocks execution
   | 'linked_untested' // credential linked, not yet tested
   | 'healthy'         // credential linked, healthcheck passed
   | 'unhealthy';      // credential linked, healthcheck failed
@@ -32,7 +32,7 @@ export function isExecutionReady(status: ConnectorStatus): boolean {
   return deriveReadiness(status) !== 'unlinked';
 }
 
-// ── UI status config ─────────────────────────────────────────────────
+// -- UI status config -------------------------------------------------
 
 export const STATUS_CONFIG = {
   ready: { color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', label: 'Ready' },

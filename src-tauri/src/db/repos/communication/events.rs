@@ -397,7 +397,7 @@ pub fn create_subscription(
     )?;
 
     if rows == 0 {
-        // Duplicate exists — return the existing subscription
+        // Duplicate exists -- return the existing subscription
         let existing = conn.query_row(
             "SELECT * FROM persona_event_subscriptions
              WHERE persona_id = ?1 AND event_type = ?2

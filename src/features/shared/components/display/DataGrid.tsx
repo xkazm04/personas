@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 
-/* ── Types ─────────────────────────────────────────────────────────── */
+/* -- Types ----------------------------------------------------------- */
 
 export interface DataGridColumn<T> {
   key: string;
@@ -49,7 +49,7 @@ export interface DataGridProps<T> {
   simplified?: boolean;
 }
 
-/* ── Component ─────────────────────────────────────────────────────── */
+/* -- Component ------------------------------------------------------- */
 
 export function DataGrid<T>({
   columns,
@@ -86,7 +86,7 @@ export function DataGrid<T>({
 
   const Icon = EmptyIcon || Inbox;
 
-  /* ── Loading ───────────────────────────────────────────────────── */
+  /* -- Loading ----------------------------------------------------- */
   if (isLoading) {
     return (
       <div className={`flex flex-col items-center justify-center py-12 ${className ?? ''}`}>
@@ -96,7 +96,7 @@ export function DataGrid<T>({
     );
   }
 
-  /* ── Empty ──────────────────────────────────────────────────────── */
+  /* -- Empty -------------------------------------------------------- */
   if (data.length === 0) {
     return (
       <div className={`flex flex-col items-center justify-center py-12 text-center ${className ?? ''}`}>
@@ -111,7 +111,7 @@ export function DataGrid<T>({
     );
   }
 
-  /* ── Grid ───────────────────────────────────────────────────────── */
+  /* -- Grid --------------------------------------------------------- */
   return (
     <div className={`flex flex-col min-h-0 ${className ?? ''}`}>
       {/* Header */}

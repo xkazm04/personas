@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useViewport, type Node } from '@xyflow/react';
 
-// ── Constants ────────────────────────────────────────────────────────
+// -- Constants --------------------------------------------------------
 const SNAP_TOLERANCE = 4;
 const FADE_DURATION_MS = 200;
 const NODE_WIDTH = 180;
 const NODE_HEIGHT = 70;
 
-// ── Types ────────────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------------
 export interface AlignmentLine {
   orientation: 'horizontal' | 'vertical';
   /** Fixed coordinate of the line (x for vertical, y for horizontal) */
@@ -47,7 +47,7 @@ export function computeAlignments(draggedNode: Node, otherNodes: Node[]): Alignm
     if (other.id === draggedNode.id) continue;
     const o = getNodeEdges(other);
 
-    // ── Vertical alignments (x-axis match → draw vertical line) ──────
+    // -- Vertical alignments (x-axis match -> draw vertical line) ------
     const xPairs: [number, number][] = [
       [d.left, o.left],
       [d.left, o.right],
@@ -63,7 +63,7 @@ export function computeAlignments(draggedNode: Node, otherNodes: Node[]): Alignm
       }
     }
 
-    // ── Horizontal alignments (y-axis match → draw horizontal line) ──
+    // -- Horizontal alignments (y-axis match -> draw horizontal line) --
     const yPairs: [number, number][] = [
       [d.top, o.top],
       [d.top, o.bottom],
@@ -83,7 +83,7 @@ export function computeAlignments(draggedNode: Node, otherNodes: Node[]): Alignm
   return lines;
 }
 
-// ── Component ────────────────────────────────────────────────────────
+// -- Component --------------------------------------------------------
 interface AlignmentGuidesProps {
   lines: AlignmentLine[];
   /** Whether a drag is actively occurring */

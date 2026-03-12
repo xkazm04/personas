@@ -234,8 +234,8 @@ pub async fn execute_team(
         return Ok(run_id);
     }
 
-    // Topological sort via shared module — exclude feedback edges so the graph
-    // is a clean DAG. Feedback edges (e.g. reviewer→orchestrator) are intentional
+    // Topological sort via shared module -- exclude feedback edges so the graph
+    // is a clean DAG. Feedback edges (e.g. reviewer->orchestrator) are intentional
     // back-edges that should not affect execution order or data flow.
     let member_ids: Vec<String> = members.iter().map(|m| m.id.clone()).collect();
     let edges: Vec<(&str, &str)> = connections
@@ -250,7 +250,7 @@ pub async fn execute_team(
         tracing::warn!(
             team_id = %team_id,
             cycle_nodes = ?sort_result.cycle_nodes,
-            "Pipeline contains a non-feedback cycle — cyclic nodes will be appended after acyclic ones",
+            "Pipeline contains a non-feedback cycle -- cyclic nodes will be appended after acyclic ones",
         );
     }
 
@@ -379,7 +379,7 @@ pub async fn execute_team(
                     .find_map(|pid| node_outputs.get(pid).and_then(|o| o.clone()))
                     .or_else(|| input_data.clone())
             } else {
-                // Root node (no non-feedback predecessors) — use pipeline input
+                // Root node (no non-feedback predecessors) -- use pipeline input
                 input_data.clone()
             };
 
@@ -665,7 +665,7 @@ pub fn suggest_topology(
     Ok(topology::suggest_topology(&query, &personas, &existing_member_ids))
 }
 
-/// LLM model for team building — needs reasoning for composition decisions.
+/// LLM model for team building -- needs reasoning for composition decisions.
 const TEAM_BUILDER_MODEL: &str = "claude-sonnet-4-6";
 const TEAM_BUILDER_TIMEOUT_SECS: u64 = 120;
 

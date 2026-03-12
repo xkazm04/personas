@@ -10,7 +10,7 @@ import {
   OLLAMA_CLOUD_BASE_URL,
 } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 
-// ── Available models for testing ──────────────────────────────────────
+// -- Available models for testing --------------------------------------
 
 export interface ModelOption {
   id: string;
@@ -36,7 +36,7 @@ export const OLLAMA_MODELS: ModelOption[] = OLLAMA_CLOUD_PRESETS.map((p) => ({
 
 export const ALL_MODELS: ModelOption[] = [...ANTHROPIC_MODELS, ...OLLAMA_MODELS];
 
-// ── Props ─────────────────────────────────────────────────────────────
+// -- Props -------------------------------------------------------------
 
 interface TestRunnerConfigProps {
   selectedModels: Set<string>;
@@ -90,7 +90,7 @@ export function TestRunnerConfig({
           Test your persona across multiple LLM models with auto-generated scenarios
         </p>
       </div>
-      <div className="border border-primary/15 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
+      <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
         <div className="p-4 space-y-4">
           {/* Warnings */}
           {(!hasPrompt || !hasTools) && (
@@ -133,7 +133,7 @@ export function TestRunnerConfig({
                 )}
               >
                 {({ close, focusIndex }) => (
-                  <div className="py-1 bg-background border border-primary/15 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+                  <div className="py-1 bg-background border border-primary/20 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
                     {useCaseOptions.map((opt, i) => (
                       <button
                         key={opt.value}
@@ -227,7 +227,7 @@ export function TestRunnerConfig({
               className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Play className="w-4 h-4" />
-              Run Test ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` — ${selectedUseCase.title}` : ''})
+              Run Test ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` -- ${selectedUseCase.title}` : ''})
             </button>
           )}
         </div>

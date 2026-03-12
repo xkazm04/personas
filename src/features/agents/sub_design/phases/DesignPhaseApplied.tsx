@@ -99,7 +99,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
           <ul className="space-y-1.5 mb-3">
             {failedOperations.map((op, i) => (
               <li key={i} className="text-sm text-amber-400/90 flex items-start gap-1.5">
-                <span className="mt-0.5 shrink-0 text-amber-500">{op.kind === 'trigger' ? 'âš¡' : 'ðŸ“¡'}</span>
+                <span className="mt-0.5 shrink-0 text-amber-500">{op.kind === 'trigger' ? '⚡' : '📡'}</span>
                 <span>
                   <span className="font-medium">{op.label}</span>
                   <span className="block text-xs text-amber-400/60">{op.error}</span>
@@ -117,7 +117,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors disabled:opacity-50"
             >
               <RotateCcw className={`w-3.5 h-3.5 ${retrying ? 'animate-spin' : ''}`} />
-              {retrying ? 'Retryingâ€¦' : `Retry ${failedOperations.length} failed`}
+              {retrying ? 'Retrying...' : `Retry ${failedOperations.length} failed`}
             </button>
           )}
         </motion.div>
@@ -134,7 +134,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
           <ul className="space-y-1">
             {warnings.map((w, i) => (
               <li key={i} className="text-sm text-amber-400/90 flex items-start gap-1.5">
-                <span className="mt-0.5 shrink-0">â€¢</span>
+                <span className="mt-0.5 shrink-0">*</span>
                 <span>{w}</span>
               </li>
             ))}

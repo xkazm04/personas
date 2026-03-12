@@ -1,7 +1,7 @@
 import { Shield, Beaker, Archive } from 'lucide-react';
 import { getSectionSummary } from '@/lib/personas/promptMigration';
 
-// ── Tag colors ──
+// -- Tag colors --
 
 export const TAG_STYLES: Record<string, { bg: string; text: string; icon: typeof Shield }> = {
   production: { bg: 'bg-emerald-500/15 border-emerald-500/20', text: 'text-emerald-400', icon: Shield },
@@ -9,7 +9,7 @@ export const TAG_STYLES: Record<string, { bg: string; text: string; icon: typeof
   archived: { bg: 'bg-zinc-500/15 border-zinc-500/20', text: 'text-zinc-400', icon: Archive },
 };
 
-// ── Helpers ──
+// -- Helpers --
 
 export function formatRelative(dateStr: string): string {
   const d = new Date(dateStr);
@@ -28,7 +28,7 @@ export function formatRelative(dateStr: string): string {
 // getSectionSummary is re-exported from the canonical StructuredPrompt module
 export { getSectionSummary };
 
-// ── Diff engine (production-grade with MAX_DP_CELLS guard) ──
+// -- Diff engine (production-grade with MAX_DP_CELLS guard) --
 
 type DiffEntry = { type: 'same' | 'added' | 'removed'; text: string };
 
@@ -125,7 +125,7 @@ export function diffStrings(a: string, b: string): DiffEntry[] {
   const tokensA = a.split(/(\s+)/);
   const tokensB = b.split(/(\s+)/);
 
-  // Quick upper-bound check before any work — if raw token counts are
+  // Quick upper-bound check before any work -- if raw token counts are
   // small enough, the stripped middle can only be smaller.
   if (tokensA.length * tokensB.length <= MAX_DP_CELLS) {
     return diffWithStrip(tokensA, tokensB, lcsDiff);

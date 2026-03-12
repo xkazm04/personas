@@ -11,7 +11,7 @@ function parseTags(tagsJson: string | null): string[] {
   return parseJsonOrDefault<string[]>(tagsJson, []);
 }
 
-// ── Importance dots ──────────────────────────────────────────────
+// -- Importance dots ----------------------------------------------
 export function ImportanceDots({ value }: { value: number }) {
   const label = `Importance: ${value} of 5`;
   return (
@@ -31,7 +31,7 @@ export function ImportanceDots({ value }: { value: number }) {
   );
 }
 
-// ── Memory Row ───────────────────────────────────────────────────
+// -- Memory Row ---------------------------------------------------
 export function MemoryRow({
   memory,
   personaName,

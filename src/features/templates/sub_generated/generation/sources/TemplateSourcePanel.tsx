@@ -6,7 +6,7 @@ import type { TemplateSourcePanelProps } from './TemplateSourceTypes';
 export type { TemplateSource } from './TemplateSourceTypes';
 export type { TemplateSourcePanelProps } from './TemplateSourceTypes';
 
-// ── Predefined variant ───────────────────────────────────────────────────
+// -- Predefined variant ---------------------------------------------------
 
 function PredefinedView() {
   return (
@@ -21,7 +21,7 @@ function PredefinedView() {
   );
 }
 
-// ── Component ────────────────────────────────────────────────────────────
+// -- Component ------------------------------------------------------------
 
 export function TemplateSourcePanel(props: TemplateSourcePanelProps) {
   if (props.mode === 'predefined') return <PredefinedView />;

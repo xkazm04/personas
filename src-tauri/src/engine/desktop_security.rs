@@ -12,7 +12,7 @@ use std::sync::RwLock;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-// ── Capability declarations ──────────────────────────────────────────
+// -- Capability declarations ------------------------------------------
 
 /// Granular capabilities a desktop connector can request.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -61,7 +61,7 @@ impl DesktopCapability {
     }
 }
 
-// ── Connector manifest ──────────────────────────────────────────────
+// -- Connector manifest ----------------------------------------------
 
 /// Security manifest declaring what a desktop connector needs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -117,13 +117,13 @@ impl DesktopConnectorManifest {
     }
 }
 
-// ── Approval store ──────────────────────────────────────────────────
+// -- Approval store --------------------------------------------------
 
 /// Tracks user approvals for desktop connector capabilities.
 /// Persisted to the database; cached in memory for fast checks.
 #[derive(Debug)]
 pub struct DesktopApprovalStore {
-    /// connector_id → set of approved capabilities
+    /// connector_id -> set of approved capabilities
     approved: RwLock<HashMap<String, HashSet<DesktopCapability>>>,
 }
 
@@ -260,7 +260,7 @@ impl DesktopApprovalStore {
     }
 }
 
-// ── Built-in manifests ──────────────────────────────────────────────
+// -- Built-in manifests ----------------------------------------------
 
 /// Get the security manifest for a known desktop connector.
 pub fn get_manifest(connector_name: &str) -> Option<DesktopConnectorManifest> {

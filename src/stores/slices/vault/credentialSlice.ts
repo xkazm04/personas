@@ -108,12 +108,16 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
   },
 
   deleteCredential: async (id) => {
-    await api.deleteCredential(id);
-    set((state) => ({
-      credentials: state.credentials.filter((c) => c.id !== id),
-      credentialEvents: state.credentialEvents.filter((e) => e.credential_id !== id),
-      error: null,
-    }));
+    try {
+      await api.deleteCredential(id);
+      set((state) => ({
+        credentials: state.credentials.filter((c) => c.id !== id),
+        credentialEvents: state.credentialEvents.filter((e) => e.credential_id !== id),
+        error: null,
+      }));
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to delete credential") });
+    }
   },
 
   updateCredentialField: async (id, key, value, isSensitive) => {

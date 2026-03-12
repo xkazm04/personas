@@ -41,7 +41,7 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
       const d = new Date(iso + 'T00:00:00');
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
-    return `${fmt(range[0])} – ${fmt(range[1])}`;
+    return `${fmt(range[0])} -- ${fmt(range[1])}`;
   };
 
   return (

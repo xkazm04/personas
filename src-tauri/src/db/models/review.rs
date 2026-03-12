@@ -170,7 +170,7 @@ impl CreateDesignReviewInput {
 }
 
 // ============================================================================
-// Import helper — serde-based alternative to manual JSON extraction
+// Import helper -- serde-based alternative to manual JSON extraction
 // ============================================================================
 
 fn default_test_case_id() -> String { "unknown".into() }

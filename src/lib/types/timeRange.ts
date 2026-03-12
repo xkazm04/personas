@@ -65,7 +65,7 @@ export function resolveTimeRange(range: TimeRange): { startDate: string; endDate
       return {
         startDate: range.startDate,
         endDate: range.endDate,
-        label: `${fmtShort(range.startDate)} – ${fmtShort(range.endDate)}`,
+        label: `${fmtShort(range.startDate)} -- ${fmtShort(range.endDate)}`,
       };
     }
   }

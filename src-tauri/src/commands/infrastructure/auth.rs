@@ -340,7 +340,7 @@ pub async fn login_with_google(
     WebviewWindowBuilder::new(&app, "oauth", tauri::WebviewUrl::External(
         oauth_url.parse().map_err(|e| AppError::Auth(format!("Invalid OAuth URL: {e}")))?,
     ))
-    .title("Personas — Sign in with Google")
+    .title("Personas -- Sign in with Google")
     .inner_size(480.0, 680.0)
     .center()
     .resizable(false)
@@ -365,7 +365,7 @@ pub async fn login_with_google(
 
             return false; // Block navigation to personas:// scheme
         }
-        true // Allow Supabase → Google → consent redirects
+        true // Allow Supabase -> Google -> consent redirects
     })
     .build()
     .map_err(|e| AppError::Auth(format!("Failed to open sign-in window: {e}")))?;
@@ -423,7 +423,7 @@ pub async fn refresh_session(
     state: tauri::State<'_, Arc<AppState>>,
     app: AppHandle,
 ) -> Result<AuthStateResponse, AppError> {
-    // Acquire the refresh lock — subsequent callers block here until the
+    // Acquire the refresh lock -- subsequent callers block here until the
     // first refresh completes, then proceed with the already-refreshed state.
     let _refresh_guard = state.refresh_lock.lock().await;
 
@@ -508,7 +508,7 @@ pub async fn handle_auth_callback(
 
     let params = parse_url_fragment(url_str);
 
-    // ── State parameter validation (RFC 6749 §10.12) ────────────────────
+    // -- State parameter validation (RFC 6749 §10.12) --------------------
     let state: &Arc<AppState> = &app.state::<Arc<AppState>>();
     {
         let mut auth = state.auth.lock().await;
@@ -520,7 +520,7 @@ pub async fn handle_auth_callback(
                 tracing::debug!("OAuth state parameter validated");
             }
             (Some(_), Some(_)) => {
-                tracing::warn!("OAuth callback state mismatch — possible deep-link injection");
+                tracing::warn!("OAuth callback state mismatch -- possible deep-link injection");
                 return Err(AppError::Auth(
                     "OAuth state mismatch: callback did not originate from this app".into(),
                 ));
@@ -532,7 +532,7 @@ pub async fn handle_auth_callback(
                 ));
             }
             (None, _) => {
-                tracing::warn!("No pending OAuth state — unsolicited callback rejected");
+                tracing::warn!("No pending OAuth state -- unsolicited callback rejected");
                 return Err(AppError::Auth(
                     "No pending OAuth flow: unsolicited auth callback rejected".into(),
                 ));

@@ -3,7 +3,7 @@ import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { N8nImportAction, TransformQuestion, TransformSubPhase } from '../hooks/useN8nImportReducer';
 import { normalizeDraftFromUnknown } from '../hooks/n8nTypes';
 
-// ── Transform State Slice ──
+// -- Transform State Slice --
 
 export interface TransformState {
   // Questions
@@ -46,7 +46,7 @@ export const INITIAL_TRANSFORM: TransformState = {
   draftJsonError: null,
 };
 
-// ── Reducer ──
+// -- Reducer --
 
 export function transformReducer(
   slice: TransformState,

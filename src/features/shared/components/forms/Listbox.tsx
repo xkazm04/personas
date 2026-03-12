@@ -7,7 +7,7 @@ interface ListboxProps {
   renderTrigger: (props: { isOpen: boolean; toggle: () => void }) => ReactNode;
   /** Render the dropdown options. */
   children: (props: { close: () => void; focusIndex: number }) => ReactNode;
-  /** Total selectable items — enables ArrowUp/Down keyboard navigation. */
+  /** Total selectable items -- enables ArrowUp/Down keyboard navigation. */
   itemCount?: number;
   /** Called when Enter is pressed on a focused item (0-based index). */
   onSelectFocused?: (index: number) => void;

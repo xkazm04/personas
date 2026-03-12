@@ -14,6 +14,7 @@ import {
   CREATE_TEMPLATE_STEP_META,
 } from '../useCreateTemplateReducer';
 import { WizardStepper } from '@/features/shared/components/progress/WizardStepper';
+import { TRANSITION_NORMAL } from '@/features/templates/animationPresets';
 import { BaseModal } from '../../shared/BaseModal';
 import type { CreateTemplateModalProps } from './createTemplateTypes';
 import { useCreateTemplateActions } from '../useCreateTemplateActions';
@@ -38,13 +39,13 @@ export function CreateTemplateModal({
     handleClose: actionClose,
   } = useCreateTemplateActions(isOpen, onTemplateCreated);
 
-  // ── Close handler ──
+  // -- Close handler --
   const handleClose = useCallback(() => {
     actionClose();
     onClose();
   }, [actionClose, onClose]);
 
-  // ── Navigation ──
+  // -- Navigation --
   const canGoBack = state.step !== 'describe' && !state.generating && !state.saving;
 
   const handleBack = useCallback(() => {
@@ -53,7 +54,7 @@ export function CreateTemplateModal({
     else if (state.step === 'generate' && !state.generating) reducer.goToStep('describe');
   }, [canGoBack, state.step, state.generating, reducer]);
 
-  // ── Step indicator ──
+  // -- Step indicator --
   const createWizardSteps = useMemo(
     () => CREATE_TEMPLATE_STEPS.map((s) => ({ key: s, label: CREATE_TEMPLATE_STEP_META[s].label })),
     [],
@@ -74,7 +75,7 @@ export function CreateTemplateModal({
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        transition={TRANSITION_NORMAL}
         className="relative h-full flex flex-col overflow-hidden"
       >
         {/* Header */}

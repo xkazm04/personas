@@ -82,8 +82,8 @@ export function ConnectorPicker({ selected, onToggle }: ConnectorPickerProps) {
                     onClick={() => onToggle(c.name)}
                     className={`inline-flex items-center gap-1.5 px-2 py-1 text-sm rounded-lg border transition-all ${
                       active
-                        ? 'bg-primary/10 border-primary/25 text-foreground/90 ring-1 ring-primary/20'
-                        : 'bg-secondary/20 border-primary/8 text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/75'
+                        ? 'bg-primary/10 border-primary/30 text-foreground/90 ring-1 ring-primary/20'
+                        : 'bg-secondary/20 border-primary/10 text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/75'
                     }`}
                   >
                     <ConnectorIcon meta={meta} size="w-3 h-3" />

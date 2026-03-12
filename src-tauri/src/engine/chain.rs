@@ -214,7 +214,7 @@ pub fn extract_chain_metadata(payload: Option<&str>) -> (u32, HashSet<String>, O
 // Config-time cycle detection
 // =============================================================================
 
-/// Build a directed graph from all chain triggers: source_persona_id → persona_id.
+/// Build a directed graph from all chain triggers: source_persona_id -> persona_id.
 /// Then check whether adding a proposed edge would create a cycle via BFS.
 ///
 /// Returns `Ok(())` if the proposed edge is safe, or `Err(AppError::Validation(...))`
@@ -237,7 +237,7 @@ pub fn detect_chain_cycle(
         ));
     }
 
-    // Load all enabled chain triggers and build adjacency list: source → [targets]
+    // Load all enabled chain triggers and build adjacency list: source -> [targets]
     let all_triggers = trigger_repo::get_all(pool)?;
     let mut graph: HashMap<String, Vec<String>> = HashMap::new();
 
@@ -267,7 +267,7 @@ pub fn detect_chain_cycle(
         .push(proposed_target.to_string());
 
     // BFS from proposed_target: can we reach proposed_source?
-    // If yes, proposed_source → proposed_target → ... → proposed_source is a cycle.
+    // If yes, proposed_source -> proposed_target -> ... -> proposed_source is a cycle.
     let mut visited = HashSet::new();
     let mut queue = VecDeque::new();
     let mut parent: HashMap<String, String> = HashMap::new();
@@ -279,7 +279,7 @@ pub fn detect_chain_cycle(
         if let Some(neighbors) = graph.get(&node) {
             for next in neighbors {
                 if next == proposed_source {
-                    // Found a cycle — reconstruct path for the error message
+                    // Found a cycle -- reconstruct path for the error message
                     let mut path = vec![proposed_source.to_string(), proposed_target.to_string()];
                     let mut cur = node.clone();
                     // Walk back through parent links to build the path
@@ -297,7 +297,7 @@ pub fn detect_chain_cycle(
 
                     return Err(AppError::Validation(format!(
                         "Circular chain detected: {}. This would create an infinite execution loop.",
-                        names.join(" → ")
+                        names.join(" -> ")
                     )));
                 }
                 if visited.insert(next.clone()) {
@@ -614,7 +614,7 @@ mod tests {
         // A -> B exists
         make_chain(&pool, &a, &b);
 
-        // Now try to add B -> A (would create A→B→A)
+        // Now try to add B -> A (would create A->B->A)
         let result = detect_chain_cycle(&pool, &b, &a, None);
         assert!(result.is_err());
         let msg = result.unwrap_err().to_string();
@@ -632,7 +632,7 @@ mod tests {
         make_chain(&pool, &a, &b);
         make_chain(&pool, &b, &c);
 
-        // Now try to add C -> A (would create A→B→C→A)
+        // Now try to add C -> A (would create A->B->C->A)
         let result = detect_chain_cycle(&pool, &c, &a, None);
         assert!(result.is_err());
         let msg = result.unwrap_err().to_string();

@@ -1,8 +1,8 @@
 /**
- * PersonaCompiler â€” explicit compilation pipeline abstraction.
+ * PersonaCompiler -- explicit compilation pipeline abstraction.
  *
  * The design workflow is structurally a multi-stage compiler:
- *   wizard input â†’ NL instruction â†’ LLM prompt â†’ Claude CLI â†’ structured JSON â†’ DB writes
+ *   wizard input -> NL instruction -> LLM prompt -> Claude CLI -> structured JSON -> DB writes
  *
  * This module makes the compiler metaphor explicit so that:
  * - Refinement is simply "recompilation with additional constraints"
@@ -17,7 +17,7 @@ import type { DesignPhase, AgentIR, DesignQuestion } from '@/lib/types/designTyp
 // Re-export the binding type
 export type { CompilationStage };
 
-// â”€â”€ Stage Metadata â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Stage Metadata ----------------------------------------------
 
 export interface CompilationStageInfo {
   stage: CompilationStage;
@@ -54,7 +54,7 @@ export const COMPILATION_STAGES: CompilationStageInfo[] = [
   },
 ];
 
-// â”€â”€ Phase â†’ Stage Mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Phase -> Stage Mapping ----------------------------------------
 
 /**
  * Map the design phase state machine to the currently active compilation stage.
@@ -68,7 +68,7 @@ export function phaseToStage(phase: DesignPhase): CompilationStage | null {
     case 'analyzing':
     case 'refining':
       // During analysis/refinement, the backend is running stages 1-3
-      // (prompt assembly â†’ LLM generation â†’ result parsing)
+      // (prompt assembly -> LLM generation -> result parsing)
       return 'llm_generation';
     case 'preview':
       // Preview means parsing and feasibility are complete
@@ -97,7 +97,7 @@ export function activeStageIndex(phase: DesignPhase): number {
   return COMPILATION_STAGES.findIndex((s) => s.stage === stage);
 }
 
-// â”€â”€ Compilation Mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Compilation Mode --------------------------------------------
 
 /** Whether this compilation is initial or a refinement (recompilation). */
 export type CompilationMode = 'initial' | 'recompile';
@@ -116,7 +116,7 @@ export function getCompilationMode(
   return 'initial';
 }
 
-// â”€â”€ Compiler Result Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Compiler Result Types ----------------------------------------
 
 /** The outcome of a compilation pass. */
 export type CompilationOutcome =
@@ -126,7 +126,7 @@ export type CompilationOutcome =
 
 /**
  * Build a CompilationOutcome from the current hook state.
- * This is a pure derivation â€” no side effects.
+ * This is a pure derivation -- no side effects.
  */
 export function deriveOutcome(
   phase: DesignPhase,

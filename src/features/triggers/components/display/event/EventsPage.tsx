@@ -77,7 +77,7 @@ export function EventsPage() {
           setTriggerHealth('healthy');
         }
       } catch {
-        // intentional: non-critical — badge counts are decorative
+        // intentional: non-critical -- badge counts are decorative
       }
 
       try {
@@ -85,7 +85,7 @@ export function EventsPage() {
         if (stale) return;
         setSubCount(subs.length);
       } catch {
-        // intentional: non-critical — subscription count is decorative
+        // intentional: non-critical -- subscription count is decorative
       }
     }
 
@@ -143,7 +143,7 @@ export function EventsPage() {
         </div>
       </ContentHeader>
 
-      {/* Rate Limit Dashboard — shows when any triggers have rate limits */}
+      {/* Rate Limit Dashboard -- shows when any triggers have rate limits */}
       {tab === "triggers" && <RateLimitDashboard triggers={allTriggers} />}
 
       {/* Content */}

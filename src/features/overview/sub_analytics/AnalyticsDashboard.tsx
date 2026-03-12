@@ -49,7 +49,7 @@ export default function AnalyticsDashboard() {
   const refreshInFlightRef = useRef<Promise<void> | null>(null);
   const refreshQueuedRef = useRef(false);
 
-  // ── Data fetching ──
+  // -- Data fetching --
   const fetchDays = compareEnabled ? previousPeriodDays : effectiveDays;
   const refreshAll = useCallback(() => Promise.all([
     fetchObservabilityMetrics(fetchDays, selectedPersonaId || undefined),
@@ -73,7 +73,7 @@ export default function AnalyticsDashboard() {
     return () => clearInterval(interval);
   }, [autoRefresh, refreshAllSafe]);
 
-  // ── Derived data ──
+  // -- Derived data --
   const summary = observabilityMetrics?.summary;
   const rawChartData = observabilityMetrics?.chartData?.chart_points ?? [];
   const chartData = useMemo(() => {
@@ -93,7 +93,7 @@ export default function AnalyticsDashboard() {
   const latencyData = useMemo(() => executionDashboard ? executionDashboard.daily_points.map((pt) => ({ date: pt.date, p50: pt.p50_duration_ms, p95: pt.p95_duration_ms, p99: pt.p99_duration_ms })) : [], [executionDashboard]);
   const costAnomalies = executionDashboard?.cost_anomalies ?? [];
 
-  // ── Callbacks ──
+  // -- Callbacks --
   const handleRunAnalysis = useCallback(async () => {
     setAnalysisResult(null); setAnalysisError(null);
     const targetPersonaId = selectedPersonaId || personas[0]?.id;

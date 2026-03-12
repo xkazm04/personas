@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_LABELS } from '../../libs/visualizationHelpers';
 
-// ── HTML overlays rendered on top of the SVG ─────────────────────
+// -- HTML overlays rendered on top of the SVG ---------------------
 
 interface OverlaysProps {
   seenTypes: string[];
@@ -57,7 +57,7 @@ export function EventBusOverlays({ seenTypes, droppedCount, isEmpty }: OverlaysP
           <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-primary/10 rounded-xl px-4 py-2">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-cyan/40" />
             <span className="text-sm text-muted-foreground/60">
-              Idle — click <span className="font-medium text-purple-300/80">Test Flow</span> to simulate traffic
+              Idle -- click <span className="font-medium text-purple-300/80">Test Flow</span> to simulate traffic
             </span>
           </div>
         </div>

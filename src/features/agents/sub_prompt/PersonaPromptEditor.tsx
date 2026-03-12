@@ -51,7 +51,7 @@ export function PersonaPromptEditor() {
   const [showSaved, setShowSaved] = useState(false);
   const [selectedCustomIndex, setSelectedCustomIndex] = useState(0);
 
-  // Derive dirty from baseline comparison — single source of truth
+  // Derive dirty from baseline comparison -- single source of truth
   const promptDirty = useMemo(() => promptChanged(sp, baseline), [sp, baseline]);
 
   useEffect(() => {

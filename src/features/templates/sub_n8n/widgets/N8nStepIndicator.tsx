@@ -35,7 +35,7 @@ interface N8nStepIndicatorProps {
 export function N8nStepIndicator({ currentStep, processing = false, className = '' }: N8nStepIndicatorProps) {
   const activeIndex = STEP_META[currentStep].index;
 
-  // Elapsed timer — resets on step change or when processing starts/stops
+  // Elapsed timer -- resets on step change or when processing starts/stops
   const [elapsed, setElapsed] = useState(0);
   const prevStepRef = useRef(currentStep);
   useEffect(() => {

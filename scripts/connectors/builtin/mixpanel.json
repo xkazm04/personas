@@ -12,7 +12,7 @@
       "type": "text",
       "required": true,
       "placeholder": "",
-      "helpText": "From Mixpanel → Organization Settings → Service Accounts"
+      "helpText": "From Mixpanel -> Organization Settings -> Service Accounts"
     },
     {
       "key": "service_account_secret",
@@ -28,7 +28,7 @@
       "type": "text",
       "required": true,
       "placeholder": "",
-      "helpText": "From Mixpanel → Project Settings → Project ID"
+      "helpText": "From Mixpanel -> Project Settings -> Project ID"
     },
     {
       "key": "project_token",
@@ -36,7 +36,7 @@
       "type": "password",
       "required": false,
       "placeholder": "",
-      "helpText": "From Mixpanel → Project Settings → Access Keys → Project Token"
+      "helpText": "From Mixpanel -> Project Settings -> Access Keys -> Project Token"
     }
   ],
   "healthcheck_config": {
@@ -55,7 +55,7 @@
     "auth_type": "project_secret",
     "auth_type_label": "Service Account",
     "docs_url": "https://developer.mixpanel.com/reference/project-secret",
-    "setup_guide": "1. Go to Mixpanel → Organization Settings → Service Accounts\n2. Click 'Add Service Account' and note the username and secret\n3. Go to Project Settings to find your Project ID\n4. Enter the service account username, secret, and project ID here",
+    "setup_guide": "1. Go to Mixpanel -> Organization Settings -> Service Accounts\n2. Click 'Add Service Account' and note the username and secret\n3. Go to Project Settings to find your Project ID\n4. Enter the service account username, secret, and project ID here",
     "pricing_tier": "paid",
     "auth_variants": [
       {

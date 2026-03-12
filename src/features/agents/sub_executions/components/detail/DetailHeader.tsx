@@ -38,7 +38,7 @@ export function ErrorDisplay({ errorMessage, showRaw, onErrorAction }: ErrorDisp
                     <button
                       onClick={() => onErrorAction(explanation.action!)}
                       data-testid="error-action-btn"
-                      className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-all group"
+                      className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-all group"
                     >
                       <ActionIcon className="w-3.5 h-3.5" />
                       {explanation.action.label}

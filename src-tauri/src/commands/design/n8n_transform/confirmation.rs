@@ -14,7 +14,7 @@ use crate::AppState;
 
 use super::types::{N8nPersonaOutput, normalize_n8n_persona_draft};
 
-// ── Per-entity error tracking ────────────────────────────────────────────
+// -- Per-entity error tracking --------------------------------------------
 
 /// A single entity that failed during import.
 #[derive(Debug, Clone, serde::Serialize)]
@@ -34,14 +34,14 @@ pub struct ImportResult {
     pub import_transaction_id: Option<String>,
 }
 
-// ── Transactional persona import ─────────────────────────────────────────
+// -- Transactional persona import -----------------------------------------
 
 /// Create persona + all entities atomically on a single connection.
 ///
 /// All inserts happen inside a SQLite transaction. If ANY entity fails,
 /// the entire transaction is rolled back and no partial persona exists.
 /// Per-entity errors are collected and returned so the frontend can display
-/// "3 of 5 tools failed: X, Y, Z — fix and retry".
+/// "3 of 5 tools failed: X, Y, Z -- fix and retry".
 pub fn create_persona_atomically(
     pool: &DbPool,
     draft: &N8nPersonaOutput,
@@ -64,7 +64,7 @@ pub fn create_persona_atomically(
 
     let mut entity_errors: Vec<EntityError> = Vec::new();
 
-    // ── 1. Insert persona ────────────────────────────────────────────
+    // -- 1. Insert persona --------------------------------------------
 
     let persona_name = draft
         .name
@@ -110,14 +110,14 @@ pub fn create_persona_atomically(
             now,
         ],
     ) {
-        // Persona insert failure is fatal — tx is dropped (auto-rollback)
+        // Persona insert failure is fatal -- tx is dropped (auto-rollback)
         let err_msg = e.to_string();
         drop(tx);
         record_import_tx_status(&mut conn, &tx_id, "rolled_back", None, Some(&err_msg));
         return Err(AppError::Database(e));
     }
 
-    // ── 2. Insert triggers ───────────────────────────────────────────
+    // -- 2. Insert triggers -------------------------------------------
 
     let mut triggers_created = 0u32;
     if let Some(ref triggers) = draft.triggers {
@@ -162,7 +162,7 @@ pub fn create_persona_atomically(
         }
     }
 
-    // ── 3. Insert tool definitions + assignments ─────────────────────
+    // -- 3. Insert tool definitions + assignments ---------------------
 
     let mut tools_created = 0u32;
     let mut tool_credential_map: Vec<(String, String)> = Vec::new();
@@ -262,13 +262,13 @@ pub fn create_persona_atomically(
         }
     }
 
-    // ── 4. Register connector services (within the same tx) ──────────
+    // -- 4. Register connector services (within the same tx) ----------
 
     if !tool_credential_map.is_empty() {
         register_connector_services_txn(&tx, &tool_credential_map);
     }
 
-    // ── 5. Decide: commit or rollback ────────────────────────────────
+    // -- 5. Decide: commit or rollback --------------------------------
 
     // If ALL entities failed (nothing was created at all beyond the persona),
     // roll back entirely. Otherwise commit with the entity_errors as warnings.
@@ -278,7 +278,7 @@ pub fn create_persona_atomically(
     let total_created = triggers_created as usize + tools_created as usize;
 
     if total_requested > 0 && total_created == 0 && !entity_errors.is_empty() {
-        // Complete failure — roll back everything
+        // Complete failure -- roll back everything
         let error_summary = format!(
             "All {} entities failed to create",
             entity_errors.len()
@@ -361,7 +361,7 @@ fn record_import_tx_status(
     );
 }
 
-/// Register tool → connector service mappings (within a transaction).
+/// Register tool -> connector service mappings (within a transaction).
 fn register_connector_services_txn(
     conn: &rusqlite::Connection,
     tool_credential_map: &[(String, String)],
@@ -396,8 +396,8 @@ fn register_connector_services_txn(
             .iter()
             .find(|(_, name, _)| name == cred_type)
             .or_else(|| {
-                // 2. Prefix fallback — only if exactly one connector matches
-                //    to avoid "github" → "github-enterprise" mislinks.
+                // 2. Prefix fallback -- only if exactly one connector matches
+                //    to avoid "github" -> "github-enterprise" mislinks.
                 let prefix_matches: Vec<_> = connectors
                     .iter()
                     .filter(|(_, name, _)| {
@@ -456,7 +456,7 @@ fn collect_connectors_needing_setup(draft: &N8nPersonaOutput) -> Vec<String> {
         .unwrap_or_default()
 }
 
-// ── Tauri command ────────────────────────────────────────────────────────
+// -- Tauri command --------------------------------------------------------
 
 #[tauri::command]
 pub fn confirm_n8n_persona_draft(
@@ -517,7 +517,7 @@ pub fn confirm_n8n_persona_draft(
         session_id.as_deref(),
     )?;
 
-    // Stamp the persona_id on the session (outside the transaction — the persona is committed)
+    // Stamp the persona_id on the session (outside the transaction -- the persona is committed)
     if let Some(ref sid) = session_id {
         if let Some(persona_val) = response.get("persona") {
             if let Some(pid) = persona_val.get("id").and_then(|v| v.as_str()) {

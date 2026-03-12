@@ -17,7 +17,7 @@ use crate::commands::credentials::ai_artifact_flow::{
 };
 use crate::commands::credentials::shared::build_credential_task_cli_args;
 
-// ── Messages ────────────────────────────────────────────────────
+// -- Messages ----------------------------------------------------
 
 const AUTOMATION_DESIGN_MESSAGES: AiArtifactMessages = AiArtifactMessages {
     status_event: "automation-design-status",
@@ -34,7 +34,7 @@ const AUTOMATION_DESIGN_MESSAGES: AiArtifactMessages = AiArtifactMessages {
     timeout_secs: 300,
 };
 
-// ── Prompt builder ──────────────────────────────────────────────
+// -- Prompt builder ----------------------------------------------
 
 fn build_automation_design_prompt(
     description: &str,
@@ -66,7 +66,7 @@ fn build_automation_design_prompt(
 
 ## Your task
 
-Design an automation configuration that will be AUTOMATICALLY DEPLOYED via the platform's API. You must generate a complete, deployable workflow definition — not just instructions.
+Design an automation configuration that will be AUTOMATICALLY DEPLOYED via the platform's API. You must generate a complete, deployable workflow definition -- not just instructions.
 
 Return ONLY a JSON object (no markdown fences, no explanation outside) with this exact structure:
 
@@ -87,7 +87,7 @@ Return ONLY a JSON object (no markdown fences, no explanation outside) with this
   ],
   "suggested_credential_type": "Name of an existing connector/credential type to authenticate, or null",
   "handles_connectors": ["List of connector names this automation would replace/supplement"],
-  "workflow_definition": <platform-specific deployable definition — see below>
+  "workflow_definition": <platform-specific deployable definition -- see below>
 }}
 
 ## Platform-specific workflow_definition
@@ -129,7 +129,7 @@ The workflow MUST trigger on repository_dispatch with the matching event_type.
 
 ### For zapier:
 Generate: {{ "catch_hook_url": "<url if the user provided one, otherwise null>" }}
-Zapier hooks must be created in the Zapier UI — provide helpful setup_steps explaining this.
+Zapier hooks must be created in the Zapier UI -- provide helpful setup_steps explaining this.
 
 ### For custom:
 Set workflow_definition to null.
@@ -137,8 +137,8 @@ Set workflow_definition to null.
 ## Guidelines
 - Choose the platform that best fits the description. Default to n8n for data processing, GitHub Actions for CI/CD, Zapier for simple integrations.
 - If the user mentions a specific platform, use that.
-- webhook_url should be null — it will be resolved automatically during deployment.
-- Keep input_schema minimal — only include fields the workflow actually needs.
+- webhook_url should be null -- it will be resolved automatically during deployment.
+- Keep input_schema minimal -- only include fields the workflow actually needs.
 - Use "connector" fallback_mode when the agent has matching connectors that could do the same work.
 - setup_steps should explain what was auto-configured and any remaining manual steps.
 - If existing credentials match what the automation needs, reference them in suggested_credential_type.
@@ -146,7 +146,7 @@ Set workflow_definition to null.
     )
 }
 
-// ── Extractor ───────────────────────────────────────────────────
+// -- Extractor ---------------------------------------------------
 
 fn extract_automation_design_result(text: &str) -> Option<serde_json::Value> {
     // Try to find JSON object in the text
@@ -191,7 +191,7 @@ fn extract_automation_design_result(text: &str) -> Option<serde_json::Value> {
     None
 }
 
-// ── Commands ────────────────────────────────────────────────────
+// -- Commands ----------------------------------------------------
 
 #[tauri::command]
 pub async fn start_automation_design(

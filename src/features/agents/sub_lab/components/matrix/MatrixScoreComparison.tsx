@@ -45,7 +45,7 @@ export function MatrixScoreComparison({ currentAgg, draftAgg }: MatrixScoreCompa
             {rows.map((row) => {
               const d = row.draft - row.current;
               return (
-                <tr key={row.label} className="border-b border-primary/5">
+                <tr key={row.label} className="border-b border-primary/10">
                   <td className="px-3 py-2.5 text-foreground/80 font-medium flex items-center gap-1.5">
                     {row.icon && <row.icon className="w-3.5 h-3.5 text-muted-foreground/80" />}
                     {row.label}

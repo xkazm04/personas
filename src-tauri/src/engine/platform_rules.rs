@@ -63,18 +63,18 @@ pub fn builtin_n8n() -> PlatformDefinition {
                 &["gmailOAuth2", "googleSheetsOAuth2Api", "googleCalendarOAuth2Api",
                   "googleDriveOAuth2Api", "google*"],
                 "google",
-                "All Google OAuth credential types → single 'google' connector",
+                "All Google OAuth credential types -> single 'google' connector",
             ),
             cc(
                 &["slackOAuth2Api", "slackApi"],
                 "slack",
-                "All Slack credential types → single 'slack' connector",
+                "All Slack credential types -> single 'slack' connector",
             ),
             cc(
                 &["microsoftOutlookOAuth2Api", "microsoftOneDriveOAuth2Api",
                   "microsoftTeamsOAuth2Api"],
                 "microsoft",
-                "All Microsoft credential types → single 'microsoft' connector",
+                "All Microsoft credential types -> single 'microsoft' connector",
             ),
         ],
         node_role_classification: vec![
@@ -164,18 +164,18 @@ pub fn builtin_zapier() -> PlatformDefinition {
                 &["gmail", "google-mail", "google-sheets", "google-drive",
                   "google-calendar", "google-contacts", "google*"],
                 "google",
-                "All Zapier Google app types → single 'google' connector",
+                "All Zapier Google app types -> single 'google' connector",
             ),
             cc(
                 &["slack", "slack-*"],
                 "slack",
-                "All Zapier Slack app types → single 'slack' connector",
+                "All Zapier Slack app types -> single 'slack' connector",
             ),
             cc(
                 &["microsoft-outlook", "microsoft-onedrive", "microsoft-teams",
                   "microsoft-*"],
                 "microsoft",
-                "All Zapier Microsoft app types → single 'microsoft' connector",
+                "All Zapier Microsoft app types -> single 'microsoft' connector",
             ),
         ],
         node_role_classification: vec![
@@ -251,17 +251,17 @@ pub fn builtin_make() -> PlatformDefinition {
             cc(
                 &["google:*", "gmail:*", "google-sheets:*", "google-drive:*"],
                 "google",
-                "All Make Google module types → single 'google' connector",
+                "All Make Google module types -> single 'google' connector",
             ),
             cc(
                 &["slack:*"],
                 "slack",
-                "All Make Slack module types → single 'slack' connector",
+                "All Make Slack module types -> single 'slack' connector",
             ),
             cc(
                 &["microsoft-*:*"],
                 "microsoft",
-                "All Make Microsoft module types → single 'microsoft' connector",
+                "All Make Microsoft module types -> single 'microsoft' connector",
             ),
         ],
         node_role_classification: vec![
@@ -330,7 +330,7 @@ impl PlatformDefinition {
                 .map(|s| format!("\"{s}\""))
                 .collect::<Vec<_>>()
                 .join(", ");
-            lines.push(format!("- {} → single connector \"{}\"", sources, rule.target_connector));
+            lines.push(format!("- {} -> single connector \"{}\"", sources, rule.target_connector));
         }
 
         if !self.excluded_credential_types.is_empty() {
@@ -338,7 +338,7 @@ impl PlatformDefinition {
                 .map(|s| format!("\"{s}\""))
                 .collect::<Vec<_>>()
                 .join(", ");
-            lines.push(format!("- {excluded} → NOT mapped (Personas has built-in LLM)"));
+            lines.push(format!("- {excluded} -> NOT mapped (Personas has built-in LLM)"));
         }
 
         lines.push("- For other credential types, map to the closest connector by service name".into());
@@ -378,11 +378,11 @@ impl PlatformDefinition {
         }
 
         let mut lines = vec![
-            format!("\n## {} → Persona Protocol Mapping", self.label),
+            format!("\n## {} -> Persona Protocol Mapping", self.label),
         ];
 
         for rule in &self.protocol_map_rules {
-            lines.push(format!("- {} → `{}` ({})",
+            lines.push(format!("- {} -> `{}` ({})",
                 rule.platform_pattern,
                 rule.target_protocol,
                 rule.condition));
@@ -404,7 +404,7 @@ impl PlatformDefinition {
     /// Resolve a node type to its target service name using node_type_map.
     pub fn resolve_node_type(&self, node_type: &str) -> Option<&str> {
         let lower = node_type.to_lowercase();
-        // Strip platform prefix (e.g., "n8n-nodes-base.gmailTrigger" → "gmailtrigger")
+        // Strip platform prefix (e.g., "n8n-nodes-base.gmailTrigger" -> "gmailtrigger")
         let name = lower.rsplit('.').next().unwrap_or(&lower);
         // Remove common suffixes
         let cleaned = name

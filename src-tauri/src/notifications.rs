@@ -46,7 +46,7 @@ struct ExternalChannel {
 fn parse_prefs(json: Option<&str>) -> NotificationPrefs {
     match json {
         Some(json_str) => {
-            // If the JSON starts with '[', it's the new array format — return defaults
+            // If the JSON starts with '[', it's the new array format -- return defaults
             if json_str.trim_start().starts_with('[') {
                 return NotificationPrefs::default();
             }
@@ -176,8 +176,8 @@ async fn deliver_telegram(
 
 /// Send email via HTTP email service (SendGrid / Resend).
 /// Supports two providers detected by the presence of config keys:
-///   - `sendgrid_api_key` → SendGrid v3 API
-///   - `resend_api_key`   → Resend API
+///   - `sendgrid_api_key` -> SendGrid v3 API
+///   - `resend_api_key`   -> Resend API
 ///     Falls back to no-op if neither is configured.
 async fn deliver_email(
     ch: &ExternalChannel,
@@ -363,7 +363,7 @@ pub fn notify_n8n_transform_completed(
 }
 
 // ---------------------------------------------------------------------------
-// Generic notification command — allows the frontend to trigger OS notifications
+// Generic notification command -- allows the frontend to trigger OS notifications
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
@@ -376,7 +376,7 @@ pub fn send_app_notification(
 }
 
 // ---------------------------------------------------------------------------
-// Test notification command — delivers a test message to a single channel
+// Test notification command -- delivers a test message to a single channel
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
@@ -386,7 +386,7 @@ pub async fn test_notification_channel(
     let channel: ExternalChannel = serde_json::from_str(&channel_json)
         .map_err(|e| format!("Invalid channel config: {e}"))?;
 
-    let title = "Personas — Test Notification";
+    let title = "Personas -- Test Notification";
     let body = "If you see this, your notification channel is working correctly.";
 
     match channel.channel_type.as_str() {

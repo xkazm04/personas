@@ -2,20 +2,20 @@ import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import type { DesignUseCase } from '@/lib/types/frontendTypes';
 
-// ── Subscription ownership lifecycle ────────────────────────────────
+// -- Subscription ownership lifecycle --------------------------------
 //
 // JSON suggestions (design_context.useCases[].event_subscriptions) are
 // *templates* that become DB subscriptions (PersonaEventSubscription) on
 // activation. Once activated, the JSON entry is marked `adopted: true`
-// so it never resurfaces — even if the DB record is later deleted.
+// so it never resurfaces -- even if the DB record is later deleted.
 //
-//   JSON suggestion  ──activate──▶  DB record created  +  JSON marked adopted
+//   JSON suggestion  --activate--▶  DB record created  +  JSON marked adopted
 //                                   (source of truth)
 //
 // The DB is the sole authority for active/paused subscriptions.
 // JSON entries only serve as initial suggestions.
 
-// ── Lifecycle stages ────────────────────────────────────────────────
+// -- Lifecycle stages ------------------------------------------------
 
 export type SubscriptionStage = 'suggested' | 'activated' | 'paused' | 'retired';
 
@@ -49,7 +49,7 @@ export interface UnifiedSubscription {
   suggestedIndex?: number;
 }
 
-// ── Stage derivation ────────────────────────────────────────────────
+// -- Stage derivation ------------------------------------------------
 
 function deriveTriggerStage(trigger: PersonaTrigger): SubscriptionStage {
   return trigger.enabled ? 'activated' : 'paused';
@@ -59,7 +59,7 @@ function deriveSubscriptionStage(sub: PersonaEventSubscription): SubscriptionSta
   return sub.enabled ? 'activated' : 'paused';
 }
 
-// ── Merge logic ─────────────────────────────────────────────────────
+// -- Merge logic -----------------------------------------------------
 
 export function mergeSubscriptions(
   useCases: DesignUseCase[],

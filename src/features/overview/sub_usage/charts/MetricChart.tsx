@@ -8,7 +8,7 @@ interface MetricChartProps {
   insight?: string | null;
   /** Height passed to ResponsiveContainer. */
   height: number;
-  /** The Recharts chart element (BarChart, AreaChart, PieChart, …). */
+  /** The Recharts chart element (BarChart, AreaChart, PieChart, ...). */
   children: ReactElement;
   /** Additional className merged into the card wrapper (e.g. grid column span). */
   className?: string;

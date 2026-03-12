@@ -1,16 +1,16 @@
 //! Unified reactive subscription model.
 //!
 //! All background reactivity loops follow the same abstract pattern:
-//!   1. **Source** â€” poll an external condition (DB rows, HTTP endpoints, etc.)
-//!   2. **Predicate** â€” evaluate whether the condition warrants action
-//!   3. **Action** â€” dispatch the side-effect (publish event, start execution, etc.)
+//!   1. **Source** -- poll an external condition (DB rows, HTTP endpoints, etc.)
+//!   2. **Predicate** -- evaluate whether the condition warrants action
+//!   3. **Action** -- dispatch the side-effect (publish event, start execution, etc.)
 //!
 //! The [`ReactiveSubscription`] trait captures this pattern. Each subscription
 //! declares its own poll interval, and the unified [`run_subscriptions`] loop
 //! schedules all subscriptions through a single `tokio::select!` loop.
 //!
 //! Adding a new reactivity source (e.g., file-watch, WebSocket) only requires
-//! implementing the trait â€” no new `tokio::spawn` block needed.
+//! implementing the trait -- no new `tokio::spawn` block needed.
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -28,10 +28,10 @@ use crate::engine::ExecutionEngine;
 /// A reactive subscription that the unified scheduler loop will poll.
 ///
 /// Each implementor defines:
-/// - `name()` â€” human-readable label for logs
-/// - `interval()` â€” how often to poll
-/// - `initial_delay()` â€” optional startup delay (default 0)
-/// - `tick()` â€” the combined source â†’ predicate â†’ action cycle
+/// - `name()` -- human-readable label for logs
+/// - `interval()` -- how often to poll
+/// - `initial_delay()` -- optional startup delay (default 0)
+/// - `tick()` -- the combined source -> predicate -> action cycle
 #[async_trait::async_trait]
 pub trait ReactiveSubscription: Send + Sync + 'static {
     /// Human-readable name for logging.
@@ -45,7 +45,7 @@ pub trait ReactiveSubscription: Send + Sync + 'static {
         Duration::ZERO
     }
 
-    /// Execute one poll cycle: source â†’ predicate â†’ action.
+    /// Execute one poll cycle: source -> predicate -> action.
     ///
     /// Errors are logged internally; the loop continues regardless.
     async fn tick(&self);
@@ -306,7 +306,7 @@ impl ReactiveSubscription for AutoRollbackSubscription {
     }
 
     fn interval(&self) -> Duration {
-        // Check every 5 minutes â€” auto-rollback doesn't need to be instant
+        // Check every 5 minutes -- auto-rollback doesn't need to be instant
         Duration::from_secs(300)
     }
 
@@ -371,7 +371,7 @@ async fn run_single(
 ///
 /// Each subscription gets its own task but the pattern is uniform: the caller
 /// only needs to push a new `Box<dyn ReactiveSubscription>` to add a new
-/// reactivity source â€” no new `tokio::spawn` block required.
+/// reactivity source -- no new `tokio::spawn` block required.
 pub fn spawn_subscriptions(
     subscriptions: Vec<Box<dyn ReactiveSubscription>>,
     scheduler: Arc<SchedulerState>,

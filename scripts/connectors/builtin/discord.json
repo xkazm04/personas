@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Discord Developer Portal → Bot → Token"
+      "helpText": "From Discord Developer Portal -> Bot -> Token"
     }
   ],
   "healthcheck_config": {

@@ -4,7 +4,7 @@ import { X, DollarSign, RotateCcw, FileText } from 'lucide-react';
 import { DraggablePersonaCard } from './DraggablePersonaCard';
 import type { DbPersona, DbPersonaGroup } from '@/lib/types/types';
 
-// ── Workspace Settings sub-component ────────────────────────────────
+// -- Workspace Settings sub-component --------------------------------
 interface WorkspaceSettingsProps {
   group: DbPersonaGroup;
   onUpdate: (updates: Partial<{
@@ -38,7 +38,7 @@ export function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSetting
     onClose();
   };
 
-  const inputClass = "w-full px-2 py-1 text-sm bg-background/60 border border-primary/15 rounded-xl outline-none focus:border-primary/30 text-foreground/90 placeholder:text-muted-foreground/40";
+  const inputClass = "w-full px-2 py-1 text-sm bg-background/60 border border-primary/20 rounded-xl outline-none focus:border-primary/30 text-foreground/90 placeholder:text-muted-foreground/40";
 
   return (
     <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-2.5" data-testid="workspace-settings-panel">
@@ -83,7 +83,7 @@ export function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSetting
   );
 }
 
-// ── Persona List ─────────────────────────────────────────────────────
+// -- Persona List -----------------------------------------------------
 
 interface PersonaListProps {
   personas: DbPersona[];

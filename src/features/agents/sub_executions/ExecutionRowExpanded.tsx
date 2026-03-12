@@ -87,7 +87,7 @@ export function ExecutionRowExpanded({
             e.stopPropagation();
             onRerun(execution.input_data || '{}');
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors"
         >
           <RotateCw className="w-3 h-3" />
           Re-run with same input

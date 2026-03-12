@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, X, MapPin, Sparkles } from 'lucide-react';
+import { ChevronRight, X, MapPin, Sparkles } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { Button } from '@/features/shared/components/buttons';
@@ -28,7 +28,6 @@ export default function GuidedTour() {
   const setEditorTab = usePersonaStore((s) => s.setEditorTab);
 
   const [isMinimized, setIsMinimized] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   const visibleSteps = useMemo(
     () => isSimple ? TOUR_STEPS.filter((s) => !SIMPLE_HIDDEN_STEPS.has(s.id)) : TOUR_STEPS,
@@ -88,11 +87,10 @@ export default function GuidedTour() {
       <motion.button
         initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}
         onClick={() => { setIsMinimized(false); navigateToStep(currentIndex); }}
-        className={`fixed bottom-6 left-[320px] z-[9999] flex items-center gap-2 px-4 py-2.5 rounded-full bg-background/95 backdrop-blur-xl border ${colors.border} shadow-lg ${colors.glow} hover:shadow-xl transition-shadow cursor-pointer group`}
+        className={`fixed left-0 top-[50%] -translate-y-1/2 z-[9999] flex flex-col items-center gap-1.5 px-1.5 py-3 rounded-r-full bg-background/95 backdrop-blur-xl border border-l-0 ${colors.border} shadow-lg ${colors.glow} hover:shadow-xl transition-shadow cursor-pointer group`}
       >
         <MapPin className={`w-4 h-4 ${colors.text}`} />
-        <span className="text-sm font-medium text-foreground/80">Tour {completedCount}/{visibleSteps.length}</span>
-        <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/80 group-hover:text-foreground/70 transition-colors" />
+        <span className="text-[10px] font-medium text-foreground/80 [writing-mode:vertical-lr]">{completedCount}/{visibleSteps.length}</span>
       </motion.button>
     );
   }
@@ -101,15 +99,12 @@ export default function GuidedTour() {
     <AnimatePresence mode="wait">
       <motion.div
         key="tour-panel"
-        initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.97 }}
+        initial={{ opacity: 0, x: -20, scale: 0.97 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: -20, scale: 0.97 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        drag dragMomentum={false} dragElastic={0.1}
-        onDragEnd={(_, info) => setDragOffset((prev) => ({ x: prev.x + info.offset.x, y: prev.y + info.offset.y }))}
-        style={{ x: dragOffset.x, y: dragOffset.y }}
-        className="fixed bottom-6 left-[320px] z-[9999] w-[380px] max-w-[calc(100vw-2rem)]"
+        className="fixed left-0 top-[36px] bottom-0 z-[9999] w-[380px]"
       >
-        <div className={`rounded-2xl border ${colors.border} bg-background/95 backdrop-blur-xl shadow-2xl ${colors.glow} overflow-hidden`}>
-          <div className="flex items-center justify-between px-4 py-3 border-b border-primary/8 cursor-grab active:cursor-grabbing">
+        <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.border} bg-background/95 backdrop-blur-xl shadow-2xl ${colors.glow} overflow-hidden flex flex-col`}>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-primary/8">
             <div className="flex items-center gap-2.5">
               <div className={`w-8 h-8 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center`}>
                 <Sparkles className={`w-4 h-4 ${colors.text}`} />

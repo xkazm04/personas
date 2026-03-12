@@ -59,7 +59,7 @@ export function NotificationChannelCard({
   return (
     <div
       className={`border rounded-xl p-2.5 space-y-2 transition-colors ${
-        enabled ? 'bg-secondary/30 border-primary/15' : 'bg-secondary/10 border-primary/15 opacity-60'
+        enabled ? 'bg-secondary/30 border-primary/20' : 'bg-secondary/10 border-primary/20 opacity-60'
       }`}
     >
       {/* Header row */}
@@ -91,7 +91,7 @@ export function NotificationChannelCard({
               value={config[field.key] || ''}
               onChange={(e) => onConfigChange(field.key, e.target.value)}
               placeholder={field.placeholder}
-              className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-primary/30 ${isEmpty ? 'border-red-500/50' : 'border-primary/15'}`}
+              className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-primary/30 ${isEmpty ? 'border-red-500/50' : 'border-primary/20'}`}
             />
           </div>
         );
@@ -122,7 +122,7 @@ export function NotificationChannelCard({
               ? 'bg-emerald-500/15 border border-emerald-500/25 text-emerald-300'
               : testStatus === 'error'
                 ? 'bg-red-500/15 border border-red-500/25 text-red-300'
-                : 'bg-secondary/60 border border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/80'
+                : 'bg-secondary/60 border border-primary/20 text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/80'
           } disabled:opacity-40 disabled:cursor-not-allowed`}
         >
           {testStatus === 'sending' ? (

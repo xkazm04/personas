@@ -10,9 +10,12 @@ pub mod mdns;
 pub mod connection;
 pub mod manifest_sync;
 pub mod messaging;
+pub mod periodic;
 
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::RwLock;
+use tokio_util::sync::CancellationToken;
 
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -21,6 +24,7 @@ use self::connection::ConnectionManager;
 use self::manifest_sync::ManifestSync;
 use self::mdns::MdnsService;
 use self::messaging::MessageRouter;
+use self::periodic::PeriodicTask;
 use self::transport::QuicTransport;
 use self::types::NetworkConfig;
 
@@ -33,6 +37,7 @@ pub struct NetworkService {
     pub messages: Arc<MessageRouter>,
     config: Arc<RwLock<NetworkConfig>>,
     running: Arc<RwLock<bool>>,
+    cancel: CancellationToken,
 }
 
 impl NetworkService {
@@ -58,6 +63,7 @@ impl NetworkService {
             messages,
             config,
             running: Arc::new(RwLock::new(false)),
+            cancel: CancellationToken::new(),
         })
     }
 
@@ -97,16 +103,40 @@ impl NetworkService {
             mdns.browse_loop(pool_browse).await;
         });
 
-        // Start health check loop
+        // Start health check loop via PeriodicTask harness
         let connections_health = self.connections.clone();
+        let cancel = self.cancel.clone();
         tokio::spawn(async move {
-            connections_health.health_check_loop().await;
+            PeriodicTask::new("p2p_health_check", Duration::from_secs(15), cancel)
+                .run(|| {
+                    let conns = connections_health.clone();
+                    async move { conns.run_health_checks().await.map_err(|e| e.to_string()) }
+                })
+                .await;
         });
 
-        // Start periodic manifest sync
+        // Start periodic manifest sync via PeriodicTask harness
         let manifest_sync = self.manifest_sync.clone();
+        let cancel = self.cancel.clone();
         tokio::spawn(async move {
-            manifest_sync.periodic_sync_loop().await;
+            PeriodicTask::new("p2p_manifest_sync", Duration::from_secs(30), cancel)
+                .run(|| {
+                    let ms = manifest_sync.clone();
+                    async move { ms.run_periodic_sync().await.map_err(|e| e.to_string()) }
+                })
+                .await;
+        });
+
+        // Start periodic mDNS peer pruning via PeriodicTask harness
+        let mdns_prune = self.mdns.clone();
+        let cancel = self.cancel.clone();
+        tokio::spawn(async move {
+            PeriodicTask::new("p2p_mdns_prune", Duration::from_secs(60), cancel)
+                .run(|| {
+                    let m = mdns_prune.clone();
+                    async move { m.prune_stale_peers(120).map(|_| ()).map_err(|e| e.to_string()) }
+                })
+                .await;
         });
 
         // Start message receiver
@@ -127,6 +157,8 @@ impl NetworkService {
         if !*running {
             return Ok(());
         }
+        // Signal all PeriodicTask loops to shut down
+        self.cancel.cancel();
         self.mdns.unregister();
         self.connections.disconnect_all().await;
         *running = false;

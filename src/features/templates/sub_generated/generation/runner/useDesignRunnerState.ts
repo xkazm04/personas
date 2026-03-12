@@ -1,5 +1,5 @@
 /**
- * useDesignRunnerState — state and handlers for DesignReviewRunner modal.
+ * useDesignRunnerState -- state and handlers for DesignReviewRunner modal.
  */
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import type { RunProgress } from '@/hooks/design/template/useDesignReviews';

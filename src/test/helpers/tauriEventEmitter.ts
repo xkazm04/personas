@@ -2,7 +2,7 @@
  * Tauri event simulation for E2E tests.
  *
  * Overrides the default `listen` mock from setup.ts so that test code
- * can emit synthetic Tauri events and drive the full hook → component pipeline.
+ * can emit synthetic Tauri events and drive the full hook -> component pipeline.
  *
  * Usage:
  *   beforeEach(() => installTauriEventEmitter());
@@ -54,7 +54,7 @@ export function listenerCount(eventName: string): number {
   return registry.get(eventName)?.size ?? 0;
 }
 
-/** Tear down — call in `afterEach`. */
+/** Tear down -- call in `afterEach`. */
 export function teardownTauriEventEmitter(): void {
   registry.clear();
 }

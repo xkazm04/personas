@@ -98,7 +98,7 @@ export const updateTeamConnection = (id: string, connectionType: string) =>
 export const deleteTeamConnection = (id: string) =>
   invoke<boolean>("delete_team_connection", { id });
 
-// ── Pipeline ─────────────────────────────────────────────────────────────
+// -- Pipeline -------------------------------------------------------------
 
 export interface PipelineRun {
   id: string;
@@ -123,12 +123,12 @@ export const getPipelineRun = (id: string) =>
 export const cancelPipeline = (runId: string) =>
   invoke<boolean>("cancel_pipeline", { runId });
 
-// ── Pipeline Analytics & Optimizer ──────────────────────────────────────
+// -- Pipeline Analytics & Optimizer --------------------------------------
 
 export const getPipelineAnalytics = (teamId: string) =>
   invoke<PipelineAnalytics>("get_pipeline_analytics", { teamId });
 
-// ── Canvas Assistant — Topology Suggestions ─────────────────────────────
+// -- Canvas Assistant -- Topology Suggestions -----------------------------
 
 export const suggestTopology = (query: string, teamId?: string) =>
   invoke<TopologyBlueprint>("suggest_topology", { query, teamId: teamId ?? null });

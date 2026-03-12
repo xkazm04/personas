@@ -10,6 +10,7 @@ import { MemoryConflictReview } from './MemoryConflictReview';
 import ReviewResultsModal from './ReviewResultsModal';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import type { MemoryReviewResult } from '@/api/overview/memories';
+import { seedMockMemory } from '@/api/overview/memories';
 
 type SortColumn = 'importance' | 'created_at';
 type SortDirection = 'asc' | 'desc';
@@ -86,6 +87,11 @@ export default function MemoriesPage() {
 
   const closeReviewModal = useCallback(() => { setReviewResult(null); setReviewError(null); }, []);
 
+  const handleSeedMemory = useCallback(async () => {
+    try { await seedMockMemory(); await fetchMemories({}); }
+    catch (err) { console.error('Failed to seed mock memory:', err); }
+  }, [fetchMemories]);
+
   return (
     <ContentBox>
       <ContentHeader
@@ -95,6 +101,11 @@ export default function MemoriesPage() {
         subtitle={`${memoriesTotal} memor${memoriesTotal !== 1 ? 'ies' : 'y'} stored by agents`}
         actions={
           <div className="flex items-center gap-2">
+            {import.meta.env.DEV && (
+              <button onClick={handleSeedMemory} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock memory (dev only)">
+                <Plus className="w-3.5 h-3.5" /> Mock Memory
+              </button>
+            )}
             <button onClick={handleReview} disabled={isReviewing || memoriesTotal === 0} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
               {isReviewing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
               {isReviewing ? 'Reviewing...' : 'Review with AI'}

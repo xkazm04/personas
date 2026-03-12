@@ -19,7 +19,7 @@ use super::ai_artifact_flow::{
 };
 use super::shared::build_credential_task_cli_args;
 
-// ── Credential design messages ──────────────────────────────────
+// -- Credential design messages ----------------------------------
 
 const DESIGN_MESSAGES: AiArtifactMessages = AiArtifactMessages {
     status_event: "credential-design-status",
@@ -35,7 +35,7 @@ const DESIGN_MESSAGES: AiArtifactMessages = AiArtifactMessages {
     timeout_secs: 600,
 };
 
-// ── Commands ────────────────────────────────────────────────────
+// -- Commands ----------------------------------------------------
 
 #[tauri::command]
 pub async fn start_credential_design(
@@ -63,7 +63,7 @@ pub async fn start_credential_design(
     }
 
     let truncated = if instruction.len() > 120 {
-        format!("{}…", &instruction[..120])
+        format!("{}...", &instruction[..120])
     } else {
         instruction.clone()
     };

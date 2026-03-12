@@ -18,6 +18,8 @@ export interface DiscoveredPeer {
   first_seen_at: string;
   is_connected: boolean;
   metadata: string | null;
+  /** Trust status: "trusted" if peer_id is in trusted_peers, "unknown" otherwise. */
+  trust_status: string;
 }
 
 export interface PeerManifestEntry {
@@ -37,6 +39,18 @@ export interface NetworkStatusInfo {
   discovered_peer_count: number;
   connected_peer_count: number;
   local_peer_id: string;
+}
+
+export interface ConnectionHealth {
+  avgLatencyMs: number | null;
+  missedPingCount: number;
+  connectedCount: number;
+}
+
+export interface NetworkSnapshot {
+  status: NetworkStatusInfo;
+  health: ConnectionHealth;
+  discoveredPeers: DiscoveredPeer[];
 }
 
 export interface NetworkConfig {
@@ -92,6 +106,12 @@ export const syncPeerManifest = (peerId: string) =>
 
 export const getNetworkStatus = () =>
   invoke<NetworkStatusInfo>("get_network_status");
+
+export const getConnectionHealth = () =>
+  invoke<ConnectionHealth>("get_connection_health");
+
+export const getNetworkSnapshot = () =>
+  invoke<NetworkSnapshot>("get_network_snapshot");
 
 // ============================================================================
 // Agent Messaging

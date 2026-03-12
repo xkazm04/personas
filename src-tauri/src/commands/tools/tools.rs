@@ -144,5 +144,5 @@ pub async fn invoke_tool_direct(
     require_privileged(&state, "invoke_tool_direct").await?;
     let tool = repo::get_definition_by_id(&state.db, &tool_id)?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
-    tool_runner::invoke_tool_direct(&state.db, &tool, &persona_id, &persona.name, &input_json).await
+    tool_runner::invoke_tool_direct(&state.db, &tool, &persona_id, &persona.name, &input_json, Some(&state.rate_limiter)).await
 }

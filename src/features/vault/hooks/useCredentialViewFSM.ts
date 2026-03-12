@@ -4,7 +4,7 @@ import { getAuthMethods } from '@/lib/types/types';
 import { isGoogleOAuthConnector } from '@/lib/utils/platform/connectors';
 import { useCredentialNav, type CredentialNavKey } from './CredentialNavContext';
 
-// â”€â”€ View names (the finite states) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- View names (the finite states) ----------------------------------
 
 export type ViewName =
   | 'list'
@@ -22,7 +22,7 @@ export type ViewName =
   | 'foraging'
   | 'databases';
 
-// â”€â”€ Discriminated union: each state carries exactly the data it needs â”€â”€
+// -- Discriminated union: each state carries exactly the data it needs --
 
 export type CredentialViewState =
   | { view: 'list' }
@@ -40,7 +40,7 @@ export type CredentialViewState =
   | { view: 'foraging' }
   | { view: 'databases' };
 
-// â”€â”€ Typed actions â”€â”€
+// -- Typed actions --
 
 export type CredentialViewAction =
   | { type: 'GO_LIST' }
@@ -61,9 +61,9 @@ export type CredentialViewAction =
   | { type: 'GO_FORAGING' }
   | { type: 'GO_DATABASES' };
 
-// â”€â”€ Transition Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Transition Table ------------------------------------------------
 //
-// Explicit map of (sourceView, actionType) â†’ allowed.
+// Explicit map of (sourceView, actionType) -> allowed.
 // If a transition isn't listed, it's invalid and the reducer ignores it.
 // This makes the navigation graph inspectable and prevents impossible states.
 
@@ -109,7 +109,7 @@ function isValidTransition(view: ViewName, action: ActionType): boolean {
   return TRANSITION_TABLE[view].has(action);
 }
 
-// â”€â”€ Nav key for sidebar highlighting â”€â”€
+// -- Nav key for sidebar highlighting --
 
 const NAV_KEY_MAP: Record<ViewName, CredentialNavKey> = {
   'list':               'credentials',
@@ -132,7 +132,7 @@ export function getNavKey(state: CredentialViewState): CredentialNavKey {
   return NAV_KEY_MAP[state.view];
 }
 
-// â”€â”€ Action handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Action handlers -------------------------------------------------
 //
 // Each handler produces the next state for its action type.
 // These are only called after the transition table validates the action.
@@ -217,7 +217,7 @@ const ACTION_HANDLERS: Record<ActionType, ActionHandler<never>> = {
   GO_DATABASES: GO_DATABASES as ActionHandler<never>,
 };
 
-// â”€â”€ Reducer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Reducer ---------------------------------------------------------
 
 function reducer(state: CredentialViewState, action: CredentialViewAction): CredentialViewState {
   if (!isValidTransition(state.view, action.type)) {
@@ -232,7 +232,7 @@ function reducer(state: CredentialViewState, action: CredentialViewAction): Cred
 
 const INITIAL_STATE: CredentialViewState = { view: 'list' };
 
-// â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Hook ------------------------------------------------------------
 
 export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);

@@ -6,7 +6,7 @@ import {
   CX, CY, iconChar,
 } from '../../libs/visualizationHelpers';
 
-// ── Outer ring: Tool / Source nodes ──────────────────────────────
+// -- Outer ring: Tool / Source nodes ------------------------------
 
 export function ToolNodeGroup({ nodes }: { nodes: SwarmNode[] }) {
   return (
@@ -36,7 +36,7 @@ export function ToolNodeGroup({ nodes }: { nodes: SwarmNode[] }) {
   );
 }
 
-// ── Middle ring: Persona nodes with processing arcs ──────────────
+// -- Middle ring: Persona nodes with processing arcs --------------
 
 export function PersonaNodeGroup({
   nodes,

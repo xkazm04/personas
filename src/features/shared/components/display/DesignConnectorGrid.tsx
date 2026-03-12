@@ -223,7 +223,7 @@ function MessagesNotificationsSection({ designResult }: { designResult: AgentIR 
 }
 
 // ============================================================================
-// Main Component â€” read-only display of connectors, triggers, and channels
+// Main Component -- read-only display of connectors, triggers, and channels
 // ============================================================================
 
 export function DesignConnectorGrid({

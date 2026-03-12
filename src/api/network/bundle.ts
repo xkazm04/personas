@@ -34,6 +34,8 @@ export interface BundleImportPreview {
 export interface BundleImportOptions {
   skip_conflicts: boolean;
   rename_prefix?: string | null;
+  /** When set, apply uses cached preview bytes instead of re-reading the file. */
+  preview_id?: string | null;
 }
 
 export interface BundleImportResult {

@@ -31,7 +31,7 @@ fn is_private_ip(ip: IpAddr) -> bool {
 }
 
 fn is_v4_shared(ip: Ipv4Addr) -> bool {
-    // 100.64.0.0/10 — Carrier-grade NAT (RFC 6598)
+    // 100.64.0.0/10 -- Carrier-grade NAT (RFC 6598)
     let octets = ip.octets();
     octets[0] == 100 && (octets[1] & 0xC0) == 64
 }
@@ -97,7 +97,7 @@ fn is_blocked_hostname(host: &str) -> bool {
 /// the URL points to a private/internal address that could enable SSRF.
 ///
 /// Performs DNS resolution to catch hostnames that resolve to private IPs
-/// (e.g., `http://metadata.internal/` → 169.254.169.254).
+/// (e.g., `http://metadata.internal/` -> 169.254.169.254).
 pub fn validate_url_safety(url_str: &str) -> Result<(), String> {
     let parsed = url::Url::parse(url_str)
         .map_err(|e| format!("Invalid URL: {e}"))?;

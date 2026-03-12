@@ -17,7 +17,7 @@ function getFeasibilityExplanation(result: DesignTestResult): string {
   const issues = result.issues.length;
 
   if (result.overall_feasibility === 'ready') {
-    return `Your persona passes all checks — ${caps} capabilit${caps !== 1 ? 'ies' : 'y'} confirmed with no issues found.`;
+    return `Your persona passes all checks -- ${caps} capabilit${caps !== 1 ? 'ies' : 'y'} confirmed with no issues found.`;
   }
   if (result.overall_feasibility === 'blocked') {
     return `${issues} issue${issues !== 1 ? 's' : ''} prevent${issues === 1 ? 's' : ''} this persona from running. Resolve the issues listed below before proceeding.`;

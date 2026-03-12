@@ -26,13 +26,13 @@
   "events": [],
   "metadata": {
     "template_enabled": true,
-    "summary": "System terminal access — execute commands, read/write files, and navigate the filesystem via desktop bridge.",
+    "summary": "System terminal access -- execute commands, read/write files, and navigate the filesystem via desktop bridge.",
     "auth_type": "desktop_bridge",
     "auth_type_label": "Desktop Bridge",
     "connection_mode": "desktop_bridge",
     "bridge_name": "terminal",
     "docs_url": "",
-    "setup_guide": "1. A shell (bash, zsh, or PowerShell) must be available on your system\n2. Click Detect to scan for available shells\n3. Approve the requested capabilities — terminal has elevated permissions",
+    "setup_guide": "1. A shell (bash, zsh, or PowerShell) must be available on your system\n2. Click Detect to scan for available shells\n3. Approve the requested capabilities -- terminal has elevated permissions",
     "pricing_tier": "free",
     "capabilities": ["process_spawn", "file_read", "file_write", "env_read"]
   }

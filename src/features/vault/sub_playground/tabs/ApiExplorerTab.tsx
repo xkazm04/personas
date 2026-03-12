@@ -9,7 +9,7 @@ import { EmptyState, TestRunCounters, PasteSpecModal } from './ApiExplorerSubCom
 import { RequestBuilder } from '../RequestBuilder';
 import { ResponseViewer } from '../ResponseViewer';
 
-// ── Component ────────────────────────────────────────────────────
+// -- Component ----------------------------------------------------
 
 interface ApiExplorerTabProps {
   credentialId: string;
@@ -19,7 +19,7 @@ interface ApiExplorerTabProps {
 export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTabProps) {
   const state = useApiExplorerState(credentialId, catalogEndpoints);
 
-  // ── Render ─────────────────────────────────────────────────────
+  // -- Render -----------------------------------------------------
 
   if (state.loading) return null;
 

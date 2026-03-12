@@ -1,9 +1,9 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 
-// ── Variant + Size types ──────────────────────────────────────
+// -- Variant + Size types --------------------------------------
 
 export type ButtonVariant =
-  | 'primary'    // Filled accent — main CTA
+  | 'primary'    // Filled accent -- main CTA
   | 'secondary'  // Bordered, subtle fill on hover
   | 'ghost'      // No border/bg, text-only + hover fill
   | 'danger'     // Red destructive action
@@ -12,7 +12,7 @@ export type ButtonVariant =
 
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon-sm' | 'icon-md' | 'icon-lg';
 
-// ── Style maps ────────────────────────────────────────────────
+// -- Style maps ------------------------------------------------
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
@@ -39,12 +39,12 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
   'icon-lg': 'w-11 h-11 rounded-xl p-0 justify-center',
 };
 
-// ── Props ─────────────────────────────────────────────────────
+// -- Props -----------------------------------------------------
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  /** For 'accent' variant — provide a Tailwind color stem, e.g. "violet", "emerald" */
+  /** For 'accent' variant -- provide a Tailwind color stem, e.g. "violet", "emerald" */
   accentColor?: string;
   /** Optional left icon */
   icon?: ReactNode;
@@ -56,7 +56,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
 }
 
-// ── Component ─────────────────────────────────────────────────
+// -- Component -------------------------------------------------
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (

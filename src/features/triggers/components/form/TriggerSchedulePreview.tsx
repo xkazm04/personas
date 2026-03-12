@@ -120,7 +120,7 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
         <CalendarClock className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
         <p className="text-sm text-foreground/90">
           <span className="font-medium text-amber-400/90">{cronPreview.description}</span>
-          {' — '}next run:{' '}
+          {' -- '}next run:{' '}
           <span className="font-medium text-foreground/90">{formatRunTime(firstRun)}</span>
         </p>
       </div>

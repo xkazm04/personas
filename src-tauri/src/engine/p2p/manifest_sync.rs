@@ -8,6 +8,7 @@ use std::sync::Arc;
 use super::connection::ConnectionManager;
 use super::protocol::{self, ManifestEntry, Message};
 use super::types::PeerManifestEntry;
+use crate::db::repos::resources::exposure as exposure_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -65,7 +66,8 @@ impl ManifestSync {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT resource_type, resource_id, display_name, access_level, tags
-             FROM exposed_resources"
+             FROM exposed_resources
+             WHERE expires_at IS NULL OR expires_at > datetime('now')"
         )?;
 
         let entries = stmt.query_map([], |row| {
@@ -89,16 +91,21 @@ impl ManifestSync {
         peer_id: &str,
         resources: &[ManifestEntry],
     ) -> Result<(), AppError> {
-        let conn = self.pool.get()?;
+        let mut conn = self.pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
 
-        // Delete existing entries for this peer, then insert fresh ones
-        conn.execute(
+        // Wrap DELETE + INSERT in a transaction to prevent data loss on crash
+        // or partial manifests from concurrent syncs.
+        let tx = conn.transaction().map_err(|e| {
+            AppError::Internal(format!("Failed to begin transaction: {e}"))
+        })?;
+
+        tx.execute(
             "DELETE FROM peer_manifests WHERE peer_id = ?1",
             rusqlite::params![peer_id],
         )?;
 
-        let mut stmt = conn.prepare(
+        let mut stmt = tx.prepare(
             "INSERT INTO peer_manifests (id, peer_id, resource_type, resource_id, display_name, access_level, tags, synced_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)"
         )?;
@@ -117,6 +124,11 @@ impl ManifestSync {
                 now,
             ])?;
         }
+
+        drop(stmt);
+        tx.commit().map_err(|e| {
+            AppError::Internal(format!("Failed to commit manifest transaction: {e}"))
+        })?;
 
         Ok(())
     }
@@ -149,25 +161,36 @@ impl ManifestSync {
         Ok(entries)
     }
 
+    /// Run a single manifest sync pass: clean up expired exposures, then sync all connected peers.
+    pub async fn run_periodic_sync(&self) -> Result<(), AppError> {
+        // Clean up expired exposures each cycle
+        match exposure_repo::cleanup_expired_exposures(&self.pool) {
+            Ok(count) if count > 0 => {
+                tracing::info!(count, "Cleaned up expired exposures");
+            }
+            Err(e) => {
+                tracing::warn!("Failed to clean up expired exposures: {}", e);
+            }
+            _ => {}
+        }
+
+        // Get list of connected peer IDs from discovered_peers
+        let peer_ids = self.get_connected_peer_ids()?;
+
+        for peer_id in peer_ids {
+            if let Err(e) = self.sync_manifest(&peer_id).await {
+                tracing::debug!(peer_id = %peer_id, "Periodic manifest sync failed: {}", e);
+            }
+        }
+        Ok(())
+    }
+
     /// Periodic manifest sync loop (runs every 30s for all connected peers).
+    /// Prefer using `PeriodicTask` + `run_periodic_sync` for new code.
     pub async fn periodic_sync_loop(&self) {
         loop {
             tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-
-            // Get list of connected peer IDs from discovered_peers
-            let peer_ids = match self.get_connected_peer_ids() {
-                Ok(ids) => ids,
-                Err(e) => {
-                    tracing::warn!("Failed to get connected peers for sync: {}", e);
-                    continue;
-                }
-            };
-
-            for peer_id in peer_ids {
-                if let Err(e) = self.sync_manifest(&peer_id).await {
-                    tracing::debug!(peer_id = %peer_id, "Periodic manifest sync failed: {}", e);
-                }
-            }
+            let _ = self.run_periodic_sync().await;
         }
     }
 

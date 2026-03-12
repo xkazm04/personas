@@ -35,11 +35,13 @@ export function useToolSelectorPersona() {
   }, [toolUsageSummary]);
 
   const personaId = selectedPersona?.id || '';
-  const assignedToolIds = selectedPersona?.tools?.map(t => t.id) || [];
+  const assignedToolIds = useMemo(() => {
+    const ids = selectedPersona?.tools?.map(t => t.id) || [];
+    return new Set(ids);
+  }, [selectedPersona?.tools]);
 
   const assignedTools = useMemo(() => {
-    const toolIdSet = new Set(assignedToolIds);
-    return toolDefinitions.filter((td) => toolIdSet.has(td.id));
+    return toolDefinitions.filter((td) => assignedToolIds.has(td.id));
   }, [assignedToolIds, toolDefinitions]);
 
   return {

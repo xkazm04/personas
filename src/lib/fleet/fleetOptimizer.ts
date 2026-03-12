@@ -15,7 +15,7 @@
 import type { ExecutionDashboardData } from '@/lib/bindings/ExecutionDashboardData';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 
-// ── Recommendation Types ────────────────────────────────────────────
+// -- Recommendation Types --------------------------------------------
 
 export type RecommendationType =
   | 'downgrade_model'
@@ -44,7 +44,7 @@ export interface FleetRecommendation {
   generatedAt: string;
 }
 
-// ── Thresholds ──────────────────────────────────────────────────────
+// -- Thresholds ------------------------------------------------------
 
 /** Persona is "costly" if avg cost/exec exceeds this */
 const HIGH_COST_PER_EXEC_USD = 0.10;
@@ -61,7 +61,7 @@ const HIGH_HEALING_ISSUE_COUNT = 3;
 /** Cost anomaly sigma threshold */
 const ANOMALY_SIGMA_THRESHOLD = 2.0;
 
-// ── Per-Persona Success Rate Derivation ─────────────────────────────
+// -- Per-Persona Success Rate Derivation -----------------------------
 
 interface PersonaPerformance {
   personaId: string;
@@ -103,7 +103,7 @@ function derivePerPersonaPerformance(
     // Derive success rate: if we have daily points, use overall daily aggregation
     // For a per-persona success rate, use available execution count + healing failure signal
     const totalExecs = tp.total_executions;
-    const failedEstimate = healing.total; // Each healing issue ≈ 1 failed execution
+    const failedEstimate = healing.total; // Each healing issue ~= 1 failed execution
     const successRate = totalExecs > 0
       ? Math.max(0, Math.min(100, ((totalExecs - failedEstimate) / totalExecs) * 100))
       : 100;
@@ -125,7 +125,7 @@ function derivePerPersonaPerformance(
   return results;
 }
 
-// ── Recommendation Generation ───────────────────────────────────────
+// -- Recommendation Generation ---------------------------------------
 
 /**
  * Generate the single highest-priority optimization recommendation
@@ -195,7 +195,7 @@ export function generateFleetRecommendation(
     };
   }
 
-  // 3. High cost + high success → downgrade model
+  // 3. High cost + high success -> downgrade model
   const expensive = performances
     .filter((p) => p.totalExecutions >= MIN_EXECUTIONS)
     .filter((p) => p.avgCostPerExec >= HIGH_COST_PER_EXEC_USD && p.successRate >= 90)
@@ -203,7 +203,7 @@ export function generateFleetRecommendation(
 
   if (expensive.length > 0) {
     const candidate = expensive[0]!;
-    const estimatedSaving = candidate.totalCost * 0.6; // ~60% saving from Opus→Sonnet or Sonnet→Haiku
+    const estimatedSaving = candidate.totalCost * 0.6; // ~60% saving from Opus->Sonnet or Sonnet->Haiku
     return {
       id: `downgrade-${candidate.personaId}`,
       type: 'downgrade_model',

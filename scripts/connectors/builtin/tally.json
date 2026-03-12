@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "Go to tally.so → Settings → Integrations → API → Generate access token"
+      "helpText": "Go to tally.so -> Settings -> Integrations -> API -> Generate access token"
     }
   ],
   "healthcheck_config": {
@@ -31,7 +31,7 @@
     "auth_type": "pat",
     "auth_type_label": "PAT",
     "docs_url": "https://tally.so/help/developer-resources",
-    "setup_guide": "1. Log in to tally.so.\n2. Go to Settings → Integrations → API.\n3. Generate a new access token.\n4. Copy the token and paste it here.",
+    "setup_guide": "1. Log in to tally.so.\n2. Go to Settings -> Integrations -> API.\n3. Generate a new access token.\n4. Copy the token and paste it here.",
     "pricing_tier": "freemium",
     "auth_methods": [
       {"id": "pat", "label": "PAT", "type": "credential", "is_default": true}

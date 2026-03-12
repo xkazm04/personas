@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 
-// ── Shared line classification ──
+// -- Shared line classification --
 
 type LineStyle = 'error' | 'system' | 'success' | 'marker' | 'default';
 

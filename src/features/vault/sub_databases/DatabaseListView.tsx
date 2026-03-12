@@ -142,7 +142,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
           {row.tableCount}
         </span>
       ) : (
-        <span className="text-xs text-muted-foreground/40">—</span>
+        <span className="text-xs text-muted-foreground/40">--</span>
       ),
     },
     {
@@ -156,7 +156,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
           {row.queryCount}
         </span>
       ) : (
-        <span className="text-xs text-muted-foreground/40">—</span>
+        <span className="text-xs text-muted-foreground/40">--</span>
       ),
     },
     {

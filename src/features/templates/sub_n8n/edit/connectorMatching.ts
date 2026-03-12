@@ -25,7 +25,7 @@ export function matchCredentialToConnector(
 
   if (connectorName.length < MIN_FUZZY_LENGTH) return null;
 
-  // 2. Prefix match (either direction) — only if unambiguous (single match)
+  // 2. Prefix match (either direction) -- only if unambiguous (single match)
   const prefixMatches = credentials.filter(
     (c) =>
       c.service_type.startsWith(connectorName) ||

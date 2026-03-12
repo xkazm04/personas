@@ -4,7 +4,7 @@ import type { RealtimeEvent, AnimationPhase } from '@/hooks/realtime/useRealtime
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import { useEventPhaseProgressor } from '@/hooks/realtime/useEventPhaseProgressor';
 
-// ── Types ──────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------
 
 export type TimeRange = '1d' | '7d';
 export type PlaybackSpeed = 2 | 4 | 8 | 16 | 32 | 64;
@@ -46,12 +46,12 @@ export interface UseTimelineReplayReturn extends TimelineReplayState {
   seekTo: (fractionOrMs: number, isMs?: boolean) => void;
 }
 
-// ── Constants ──────────────────────────────────────────────────────
+// -- Constants ------------------------------------------------------
 
 const TICK_INTERVAL = 50; // ms between replay ticks
 const MAX_REPLAY_EVENTS = 5000;
 
-// ── Hook ───────────────────────────────────────────────────────────
+// -- Hook -----------------------------------------------------------
 
 export function useTimelineReplay(): UseTimelineReplayReturn {
   const [active, setActive] = useState(false);
@@ -99,7 +99,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
 
   useEventPhaseProgressor({ active, setEvents: setReplayEvents });
 
-  // ── Replay tick loop ─────────────────────────────────────────────
+  // -- Replay tick loop ---------------------------------------------
   const tick = useCallback(() => {
     if (!playingRef.current || isSeekingRef.current) return;
 
@@ -164,7 +164,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
     };
   }, [playing, active, tick]);
 
-  // ── Public API ───────────────────────────────────────────────────
+  // -- Public API ---------------------------------------------------
 
   const enterReplay = useCallback(async (newRange: TimeRange) => {
     setLoading(true);
@@ -246,7 +246,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
     cursorRef.current = ms;
     setCursorMs(ms);
 
-    // Recompute nextEventIdx — find first event after cursor
+    // Recompute nextEventIdx -- find first event after cursor
     const cursorTime = rangeStartRef.current + ms;
     const events = eventsRef.current;
     const idx = findFirstAfter(events, cursorTime);

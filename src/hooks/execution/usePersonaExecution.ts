@@ -63,7 +63,7 @@ export function usePersonaExecution() {
           : null,
       }));
 
-      // Run finalize_status middleware (fire-and-forget â€” non-blocking)
+      // Run finalize_status middleware (fire-and-forget -- non-blocking)
       const trace = usePersonaStore.getState().pipelineTrace;
       if (trace) {
         const finalizePayload: FinalizeStatusPayload = {
@@ -104,7 +104,7 @@ export function usePersonaExecution() {
   // users are browsing agents without running them.
   useEffect(() => {
     if (!activeExecutionId) {
-      // No execution â€” tear down any lingering listener
+      // No execution -- tear down any lingering listener
       if (queueUnlistenRef.current) {
         queueUnlistenRef.current();
         queueUnlistenRef.current = null;

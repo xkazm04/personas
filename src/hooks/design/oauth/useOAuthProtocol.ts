@@ -35,7 +35,7 @@ export interface OAuthProtocolState<TStartArgs extends unknown[]> {
   message: { success: boolean; message: string } | null;
   /** Read current credential values (stored in a ref to avoid DevTools/Sentry exposure). */
   getValues: () => Record<string, string>;
-  /** Monotonic counter incremented when values change — depend on this for re-renders. */
+  /** Monotonic counter incremented when values change -- depend on this for re-renders. */
   valuesVersion: number;
 }
 

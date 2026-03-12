@@ -66,11 +66,13 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
       setFirings([]);
       return;
     }
+    let cancelled = false;
     setIsLoadingFirings(true);
     cloudListTriggerFirings(expandedId, 10)
-      .then(setFirings)
-      .catch(() => setFirings([]))
-      .finally(() => setIsLoadingFirings(false));
+      .then((data) => { if (!cancelled) setFirings(data); })
+      .catch(() => { if (!cancelled) setFirings([]); })
+      .finally(() => { if (!cancelled) setIsLoadingFirings(false); });
+    return () => { cancelled = true; };
   }, [expandedId]);
 
   const handleToggle = async (trigger: CloudTrigger) => {

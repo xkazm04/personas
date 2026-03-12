@@ -55,7 +55,7 @@ export default function PersonasPage() {
   const runStartup = useCallback(() => {
     // Run all startup fetches in parallel and collect failures.
     // Using Promise.allSettled prevents any single call's error from overwriting
-    // the others — the final store.error is the aggregate of all failures.
+    // the others -- the final store.error is the aggregate of all failures.
     setError(null);
     const STARTUP_LABELS = ['personas', 'tools', 'credentials', 'recipes', 'pending review', 'groups'] as const;
     Promise.allSettled([
@@ -71,7 +71,7 @@ export default function PersonasPage() {
         .map((r, i) => (r.status === 'rejected' ? STARTUP_LABELS[i] : null))
         .filter((l): l is NonNullable<typeof l> => l !== null);
       if (failed.length > 0) {
-        setError(`Startup failed — ${failed.join(', ')} could not be loaded`);
+        setError(`Startup failed -- ${failed.join(', ')} could not be loaded`);
       }
     }).catch(() => {
       setPersonasFetched(true);
@@ -90,7 +90,7 @@ export default function PersonasPage() {
   }, []);
 
   // Prefetch likely next routes after initial load settles.
-  // Speculative — fires during browser idle time, failures silently ignored.
+  // Speculative -- fires during browser idle time, failures silently ignored.
   useEffect(() => {
     if (!personasFetched) return;
     const id = requestIdleCallback(() => {

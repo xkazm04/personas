@@ -276,8 +276,10 @@ pub async fn synthesize_team_from_templates(
             },
         )?;
 
-        // Track adoption count
-        let _ = review_repo::increment_adoption_count(&state.db, &tmpl.test_case_name);
+        // Track adoption count (with audit log)
+        if let Err(e) = review_repo::increment_adoption_count(&state.db, &tmpl.test_case_name, Some(&persona.id)) {
+            tracing::warn!(template = %tmpl.test_case_name, error = %e, "Failed to increment adoption count");
+        }
 
         persona_ids.push(persona.id);
     }

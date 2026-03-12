@@ -167,11 +167,11 @@ function FileUploadTab({
       </motion.div>
       <PreviewCard preview={preview} FileIcon={FileIcon} onClick={preview?.kind === 'valid' ? handleManualProceed : undefined} />
       {preview?.kind === 'valid' && (
-        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex flex-col items-start gap-1.5">
+        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-4 flex flex-col items-start gap-1.5">
           <button onClick={handleManualProceed} className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors">
             Continue
           </button>
-          <p className="text-sm text-muted-foreground/60">Press Enter or click to continue</p>
+          <p className="text-sm text-muted-foreground/70">Press Enter or click to continue</p>
         </motion.div>
       )}
     </motion.div>
@@ -193,7 +193,7 @@ function PasteTab({
         <div className="px-4 py-2.5 border-b border-primary/8 flex items-center gap-2">
           <ClipboardPaste className="w-4 h-4 text-violet-400" />
           <span className="text-sm font-medium text-foreground/80">Paste workflow JSON</span>
-          <span className="text-sm text-muted-foreground/60 ml-auto">
+          <span className="text-sm text-muted-foreground/70 ml-auto">
             {pasteText.length > 0 && formatFileSize(pasteText.length)}
           </span>
         </div>
@@ -214,7 +214,7 @@ function PasteTab({
             className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-medium transition-all ${
               pastePreview?.kind === 'valid'
                 ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
-                : 'bg-secondary/40 text-muted-foreground/40 border border-primary/10 cursor-not-allowed'
+                : 'bg-secondary/40 text-muted-foreground/60 border border-primary/10 disabled:cursor-not-allowed'
             }`}
           >
             <ChevronRight className="w-3.5 h-3.5" />
@@ -265,7 +265,7 @@ function UrlTab({
             disabled={urlFetching || !urlValue.trim()}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               urlFetching || !urlValue.trim()
-                ? 'bg-secondary/40 text-muted-foreground/40 border border-primary/10 cursor-not-allowed'
+                ? 'bg-secondary/40 text-muted-foreground/60 border border-primary/10 disabled:cursor-not-allowed'
                 : 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
             }`}
           >
@@ -287,11 +287,11 @@ function UrlTab({
       </div>
       <PreviewCard preview={urlPreview} FileIcon={FileJson} onClick={urlPreview?.kind === 'valid' ? handleUrlImport : undefined} />
       {urlPreview?.kind === 'valid' && (
-        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex flex-col items-start gap-1.5">
+        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-4 flex flex-col items-start gap-1.5">
           <button onClick={handleUrlImport} className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors">
             Continue
           </button>
-          <p className="text-sm text-muted-foreground/60">Press Enter or click to continue</p>
+          <p className="text-sm text-muted-foreground/70">Press Enter or click to continue</p>
         </motion.div>
       )}
     </motion.div>

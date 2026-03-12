@@ -8,7 +8,7 @@ use crate::db::models::Persona;
 use super::types::{CliArgs, ModelProfile, StreamLineType};
 
 // =============================================================================
-// PromptDelivery — how the provider sends the prompt to the CLI process
+// PromptDelivery -- how the provider sends the prompt to the CLI process
 // =============================================================================
 
 /// How the CLI provider receives the prompt text.
@@ -23,7 +23,7 @@ pub enum PromptDelivery {
 }
 
 // =============================================================================
-// EngineKind — which CLI engine is selected
+// EngineKind -- which CLI engine is selected
 // =============================================================================
 
 /// Supported CLI engine backends.

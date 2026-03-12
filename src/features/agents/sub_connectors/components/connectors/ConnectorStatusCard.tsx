@@ -62,19 +62,19 @@ export function ConnectorStatusCard({
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {alternatives && alternatives.length > 0 && onSwap && (
             <button onClick={() => setSwapOpen((o) => !o)}
-              className={`flex items-center gap-1 px-2 py-1.5 text-sm rounded-xl border transition-colors ${swapOpen ? 'border-sky-500/30 text-sky-300 bg-sky-500/15' : 'border-primary/15 text-muted-foreground/60 hover:bg-secondary/50 hover:text-foreground/80'}`}
+              className={`flex items-center gap-1 px-2 py-1.5 text-sm rounded-xl border transition-colors ${swapOpen ? 'border-sky-500/30 text-sky-300 bg-sky-500/15' : 'border-primary/20 text-muted-foreground/60 hover:bg-secondary/50 hover:text-foreground/80'}`}
               title="Swap to alternative connector"><ArrowLeftRight className="w-3 h-3" /></button>
           )}
           {status.credentialId ? (
             <button onClick={() => onTest(status.name, status.credentialId!)} disabled={status.testing}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40">
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40">
               {status.testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Activity className="w-3 h-3" />} Test
             </button>
           ) : (
             <>
               {credentials.length > 0 && (
                 <button onClick={() => onToggleLinking(isLinking ? null : status.name)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border transition-colors ${isLinking ? 'border-violet-500/30 text-violet-300 bg-violet-500/15' : 'border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95'}`}>
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border transition-colors ${isLinking ? 'border-violet-500/30 text-violet-300 bg-violet-500/15' : 'border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95'}`}>
                   <ChevronDown className={`w-3 h-3 transition-transform ${isLinking ? 'rotate-180' : ''}`} /> Link Existing
                 </button>
               )}

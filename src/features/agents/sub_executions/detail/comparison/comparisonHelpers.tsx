@@ -2,19 +2,19 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { ToolCallStep } from './comparisonTypes';
 
-// ─── Parsing ─────────────────────────────────────────────────────────────────
+// --- Parsing -----------------------------------------------------------------
 
 export function parseToolSteps(raw: string | null): ToolCallStep[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
-  } catch { // intentional: non-critical — JSON parse fallback
+  } catch { // intentional: non-critical -- JSON parse fallback
     return [];
   }
 }
 
-// ─── Formatting ──────────────────────────────────────────────────────────────
+// --- Formatting --------------------------------------------------------------
 
 export function pctChange(a: number, b: number): number {
   if (a === 0) return b === 0 ? 0 : 100;
@@ -35,7 +35,7 @@ export function fmtCost(v: number): string {
   return v < 0.001 ? '<$0.001' : `$${v.toFixed(4)}`;
 }
 
-// ─── Delta display ───────────────────────────────────────────────────────────
+// --- Delta display -----------------------------------------------------------
 
 export function deltaIcon(pct: number) {
   if (Math.abs(pct) < 5) return <Minus className="w-3 h-3 text-muted-foreground/60" />;
@@ -49,7 +49,7 @@ export function deltaColor(pct: number, lowerIsBetter = true): string {
   return good ? 'text-emerald-400' : 'text-amber-400';
 }
 
-// ─── Diff utilities ──────────────────────────────────────────────────────────
+// --- Diff utilities ----------------------------------------------------------
 
 /** Simple word-level diff for terminal output lines. */
 export function diffLines(linesA: string[], linesB: string[]): Array<{ type: 'same' | 'added' | 'removed'; text: string }> {
@@ -88,7 +88,7 @@ export function jsonDiff(a: string | null, b: string | null): Array<{ path: stri
         diffs.push({ path: key, left: valA, right: valB });
       }
     }
-  } catch { // intentional: non-critical — JSON parse fallback
+  } catch { // intentional: non-critical -- JSON parse fallback
     if (a !== b) {
       diffs.push({ path: '(root)', left: a ?? '(empty)', right: b ?? '(empty)' });
     }
@@ -96,7 +96,7 @@ export function jsonDiff(a: string | null, b: string | null): Array<{ path: stri
   return diffs;
 }
 
-// ─── What Changed Summary ────────────────────────────────────────────────────
+// --- What Changed Summary ----------------------------------------------------
 
 export function generateWhatChanged(left: PersonaExecution, right: PersonaExecution): string[] {
   const changes: string[] = [];
@@ -145,7 +145,7 @@ export function generateWhatChanged(left: PersonaExecution, right: PersonaExecut
 
   // Status change
   if (left.status !== right.status) {
-    changes.push(`Status changed: ${left.status} → ${right.status}`);
+    changes.push(`Status changed: ${left.status} -> ${right.status}`);
   }
 
   // Tool order
@@ -157,12 +157,12 @@ export function generateWhatChanged(left: PersonaExecution, right: PersonaExecut
     changes.push('Different tool call order');
   }
   if (stepsL.length !== stepsR.length && (stepsL.length > 0 || stepsR.length > 0)) {
-    changes.push(`Tool calls: ${stepsL.length} → ${stepsR.length}`);
+    changes.push(`Tool calls: ${stepsL.length} -> ${stepsR.length}`);
   }
 
   // Model change
   if (left.model_used && right.model_used && left.model_used !== right.model_used) {
-    changes.push(`Model changed: ${left.model_used} → ${right.model_used}`);
+    changes.push(`Model changed: ${left.model_used} -> ${right.model_used}`);
   }
 
   if (changes.length === 0) {

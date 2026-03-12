@@ -2,9 +2,9 @@ import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../../storeTypes";
 import * as Sentry from "@sentry/react";
 
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
-export type OnboardingStep = "pick-template" | "adopt" | "execute";
+export type OnboardingStep = "discover" | "pick-template" | "adopt" | "execute";
 
 export interface OnboardingSlice {
   // State
@@ -25,13 +25,13 @@ export interface OnboardingSlice {
   dismissOnboarding: () => void;
 }
 
-// ── Sentry metrics helpers ─────────────────────────────────────────────
+// -- Sentry metrics helpers ---------------------------------------------
 
 function trackStepCompletion(step: OnboardingStep) {
   try {
     Sentry.metrics.count("onboarding.step_completed", 1, { attributes: { step } });
   } catch {
-    // intentional: non-critical — Sentry may not be initialized in dev
+    // intentional: non-critical -- Sentry may not be initialized in dev
   }
 }
 
@@ -39,7 +39,7 @@ function trackOnboardingComplete() {
   try {
     Sentry.metrics.count("onboarding.flow_completed", 1);
   } catch {
-    // intentional: non-critical — Sentry may not be initialized in dev
+    // intentional: non-critical -- Sentry may not be initialized in dev
   }
 }
 
@@ -47,13 +47,14 @@ function trackOnboardingDismissed(atStep: OnboardingStep) {
   try {
     Sentry.metrics.count("onboarding.dismissed", 1, { attributes: { at_step: atStep } });
   } catch {
-    // intentional: non-critical — Sentry may not be initialized in dev
+    // intentional: non-critical -- Sentry may not be initialized in dev
   }
 }
 
-// ── Slice ──────────────────────────────────────────────────────────────
+// -- Slice --------------------------------------------------------------
 
 const INITIAL_STEP_STATUS: Record<OnboardingStep, boolean> = {
+  "discover": false,
   "pick-template": false,
   "adopt": false,
   "execute": false,
@@ -66,7 +67,7 @@ export const createOnboardingSlice: StateCreator<
   OnboardingSlice
 > = (set, get) => ({
   onboardingActive: false,
-  onboardingStep: "pick-template",
+  onboardingStep: "discover",
   onboardingCompleted: false,
   onboardingStepCompleted: { ...INITIAL_STEP_STATUS },
   onboardingSelectedReviewId: null,
@@ -78,11 +79,11 @@ export const createOnboardingSlice: StateCreator<
     try {
       Sentry.metrics.count("onboarding.started", 1);
     } catch {
-      // intentional: non-critical — Sentry may not be initialized in dev
+      // intentional: non-critical -- Sentry may not be initialized in dev
     }
     set({
       onboardingActive: true,
-      onboardingStep: "pick-template",
+      onboardingStep: "discover",
       onboardingStepCompleted: { ...INITIAL_STEP_STATUS },
       onboardingSelectedReviewId: null,
       onboardingCreatedPersonaId: null,
@@ -112,7 +113,7 @@ export const createOnboardingSlice: StateCreator<
     set({
       onboardingActive: false,
       onboardingCompleted: true,
-      onboardingStep: "pick-template",
+      onboardingStep: "discover",
     });
   },
 

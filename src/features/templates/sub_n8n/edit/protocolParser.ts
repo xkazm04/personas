@@ -66,12 +66,12 @@ export function extractProtocolCapabilities(
   structuredPrompt: Record<string, unknown> | null | undefined,
   structuredCapabilities?: ProtocolCapability[],
 ): ProtocolCapability[] {
-  // ── Primary: use structured capabilities from parser when available ──
+  // -- Primary: use structured capabilities from parser when available --
   if (structuredCapabilities && structuredCapabilities.length > 0) {
     return structuredCapabilities;
   }
 
-  // ── Fallback: keyword-based scan of prompt text ──
+  // -- Fallback: keyword-based scan of prompt text --
   const capabilities: ProtocolCapability[] = [];
   const fullText = (systemPrompt ?? '').toLowerCase();
 

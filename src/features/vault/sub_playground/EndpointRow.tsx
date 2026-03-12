@@ -2,7 +2,7 @@ import { ChevronDown, ChevronRight, Play, CheckCircle2, XCircle, Loader2, MinusC
 import type { ApiEndpoint } from '@/api/system/apiProxy';
 import type { EndpointTestResult } from './useApiTestRunner';
 
-// ── Method badge colors ──────────────────────────────────────────
+// -- Method badge colors ------------------------------------------
 
 const METHOD_STYLES: Record<string, string> = {
   GET: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
@@ -14,7 +14,7 @@ const METHOD_STYLES: Record<string, string> = {
 
 const DEFAULT_METHOD_STYLE = 'bg-secondary/30 text-muted-foreground/70 border-primary/10';
 
-// ── Component ────────────────────────────────────────────────────
+// -- Component ----------------------------------------------------
 
 interface EndpointRowProps {
   endpoint: ApiEndpoint;
@@ -107,7 +107,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
                     )}
                     {p.description && (
                       <span className="text-sm text-muted-foreground/60 truncate">
-                        — {p.description}
+                        -- {p.description}
                       </span>
                     )}
                   </div>
@@ -142,12 +142,12 @@ function formatSchema(schemaJson: string): string {
   try {
     return JSON.stringify(JSON.parse(schemaJson), null, 2);
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical -- JSON parse fallback
     return schemaJson;
   }
 }
 
-// ── Test result badge ─────────────────────────────────────────────
+// -- Test result badge ---------------------------------------------
 
 function TestBadge({ result }: { result: EndpointTestResult }) {
   switch (result.verdict) {

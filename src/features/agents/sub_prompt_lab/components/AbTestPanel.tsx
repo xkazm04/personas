@@ -76,7 +76,7 @@ export function AbTestPanel({ personaId, compareA, compareB }: AbTestPanelProps)
           onChange={(e) => setTestInput(e.target.value)}
           placeholder='{"task": "Summarize the latest sales report"}'
           data-testid="ab-test-input"
-          className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono"
+          className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono"
         />
       </div>
 

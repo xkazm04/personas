@@ -1,12 +1,12 @@
 /**
- * Round 8: Feature Area Quality Tests — Real tasks from each feature area
+ * Round 8: Feature Area Quality Tests -- Real tasks from each feature area
  * in the Personas app, run against configurable provider/model combos.
  *
  * Scoped via environment variables:
- *   CLI_TEST_PROVIDERS  — e.g. "claude,copilot"
- *   CLI_TEST_MODELS     — e.g. "claude-sonnet-4-6,gpt-5.4"
- *   CLI_TEST_TIERS      — e.g. "budget,standard"
- *   CLI_TEST_FEATURES   — e.g. "persona-design,healing-diagnosis"
+ *   CLI_TEST_PROVIDERS  -- e.g. "claude,copilot"
+ *   CLI_TEST_MODELS     -- e.g. "claude-sonnet-4-6,gpt-5.4"
+ *   CLI_TEST_TIERS      -- e.g. "budget,standard"
+ *   CLI_TEST_FEATURES   -- e.g. "persona-design,healing-diagnosis"
  */
 import { buildTestMatrix, getScopedFeatures } from '../helpers/providerDetection';
 import { runCli } from '../helpers/cliRunner';
@@ -75,13 +75,13 @@ function recordAndAssert(
   expect(validation.passed, formatDiagnostic(result, validation)).toBe(true);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Feature area tests
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 for (const entry of matrix) {
   describe(`${entry.provider.displayName} / ${entry.model.label}`, () => {
-    // ─── Persona Design ─────────────────────────────────────────────────
+    // --- Persona Design -------------------------------------------------
     if (isFeatureEnabled('persona-design')) {
       it('persona-design: generates system prompt from brief', async () => {
         workspace = createWorkspace('persona-design');
@@ -163,7 +163,7 @@ for (const entry of matrix) {
       }, 180_000);
     }
 
-    // ─── Credential Design ──────────────────────────────────────────────
+    // --- Credential Design ----------------------------------------------
     if (isFeatureEnabled('credential-design')) {
       it('credential-design: generates setup guide from connector spec', async () => {
         workspace = createWorkspace('credential-design');
@@ -229,7 +229,7 @@ for (const entry of matrix) {
       }, 180_000);
     }
 
-    // ─── N8N Transform ──────────────────────────────────────────────────
+    // --- N8N Transform --------------------------------------------------
     if (isFeatureEnabled('n8n-transform')) {
       it('n8n-transform: analyzes workflow and suggests personas', async () => {
         workspace = createWorkspace('n8n-workflow');
@@ -293,7 +293,7 @@ for (const entry of matrix) {
       }, 180_000);
     }
 
-    // ─── Healing Diagnosis ──────────────────────────────────────────────
+    // --- Healing Diagnosis ----------------------------------------------
     if (isFeatureEnabled('healing-diagnosis')) {
       it('healing-diagnosis: diagnoses connector failure from logs', async () => {
         workspace = createWorkspace('healing-diagnosis');
@@ -357,7 +357,7 @@ for (const entry of matrix) {
       }, 180_000);
     }
 
-    // ─── Persona Testing ────────────────────────────────────────────────
+    // --- Persona Testing ------------------------------------------------
     if (isFeatureEnabled('persona-testing')) {
       it('persona-testing: evaluates persona response quality', async () => {
         workspace = createWorkspace('empty');
@@ -423,7 +423,7 @@ for (const entry of matrix) {
       }, 180_000);
     }
 
-    // ─── Smart Search ───────────────────────────────────────────────────
+    // --- Smart Search ---------------------------------------------------
     if (isFeatureEnabled('smart-search')) {
       it('smart-search: finds relevant information across files', async () => {
         workspace = createWorkspace('multi-file-project');
@@ -485,7 +485,7 @@ for (const entry of matrix) {
       }, 180_000);
     }
 
-    // ─── Recipe Generation ──────────────────────────────────────────────
+    // --- Recipe Generation ----------------------------------------------
     if (isFeatureEnabled('recipe-generation')) {
       it('recipe-generation: creates automation recipe from requirements', async () => {
         workspace = createWorkspace('empty');

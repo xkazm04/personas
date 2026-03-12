@@ -15,7 +15,7 @@ use tauri::State;
 use crate::ipc_auth::require_privileged_sync;
 use crate::AppState;
 
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
 /// A single discovered credential source on the filesystem.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,9 +66,9 @@ pub struct ForagingScanResult {
     pub scan_duration_ms: u64,
 }
 
-// ── Known env-var patterns ─────────────────────────────────────────────
+// -- Known env-var patterns ---------------------------------------------
 
-/// Map of environment variable names → (service_type, field_key).
+/// Map of environment variable names -> (service_type, field_key).
 const ENV_PATTERNS: &[(&str, &str, &str)] = &[
     ("OPENAI_API_KEY", "openai", "api_key"),
     ("ANTHROPIC_API_KEY", "anthropic", "api_key"),
@@ -126,7 +126,7 @@ const ENV_PATTERNS: &[(&str, &str, &str)] = &[
     ("MONGO_URL", "mongodb", "connection_string"),
 ];
 
-// ── Scanning logic ─────────────────────────────────────────────────────
+// -- Scanning logic -----------------------------------------------------
 
 fn home_dir() -> Option<PathBuf> {
     std::env::var("HOME")
@@ -216,7 +216,7 @@ fn scan_aws_credentials() -> Vec<ForagedCredential> {
             .collect();
         out.push(ForagedCredential {
             id: format!("aws:profile:{profile}"),
-            label: format!("AWS — {profile}"),
+            label: format!("AWS -- {profile}"),
             service_type: "aws".to_string(),
             source: ForageSource::AwsCredentials,
             fields: display_fields,
@@ -261,7 +261,7 @@ fn scan_kube_config() -> Vec<ForagedCredential> {
         Err(_) => return results,
     };
 
-    // Simple YAML context extraction — look for `- name:` under `contexts:`
+    // Simple YAML context extraction -- look for `- name:` under `contexts:`
     let mut in_contexts = false;
     let mut context_names = Vec::new();
 
@@ -287,7 +287,7 @@ fn scan_kube_config() -> Vec<ForagedCredential> {
         fields.insert("context".to_string(), name.clone());
         results.push(ForagedCredential {
             id: format!("kube:context:{name}"),
-            label: format!("Kubernetes — {name}"),
+            label: format!("Kubernetes -- {name}"),
             service_type: "kubernetes".to_string(),
             source: ForageSource::KubeConfig,
             fields,
@@ -408,7 +408,7 @@ fn scan_docker_config() -> Vec<ForagedCredential> {
                 fields.insert("registry".to_string(), registry.clone());
                 results.push(ForagedCredential {
                     id: format!("docker:registry:{registry}"),
-                    label: format!("Docker — {registry}"),
+                    label: format!("Docker -- {registry}"),
                     service_type: "docker".to_string(),
                     source: ForageSource::DockerConfig,
                     fields,
@@ -453,7 +453,7 @@ fn scan_github_cli() -> Vec<ForagedCredential> {
                 fields.insert("api_key".to_string(), mask_value(token));
                 results.push(ForagedCredential {
                     id: format!("ghcli:{host}"),
-                    label: format!("GitHub CLI — {host}"),
+                    label: format!("GitHub CLI -- {host}"),
                     service_type: "github".to_string(),
                     source: ForageSource::GitHubCli,
                     fields,
@@ -487,7 +487,7 @@ fn scan_ssh_keys() -> Vec<ForagedCredential> {
             fields.insert("key_file".to_string(), format!("~/.ssh/{key_name}"));
             results.push(ForagedCredential {
                 id: format!("ssh:key:{key_name}"),
-                label: format!("SSH Key — {key_name}"),
+                label: format!("SSH Key -- {key_name}"),
                 service_type: "ssh".to_string(),
                 source: ForageSource::SshKey,
                 fields,
@@ -512,7 +512,7 @@ fn mark_existing(
     }
 }
 
-/// Deduplicate results — prefer higher confidence and env vars over dotenv.
+/// Deduplicate results -- prefer higher confidence and env vars over dotenv.
 fn deduplicate(results: Vec<ForagedCredential>) -> Vec<ForagedCredential> {
     let mut seen: HashMap<String, usize> = HashMap::new();
     let mut deduped: Vec<ForagedCredential> = Vec::new();
@@ -543,7 +543,7 @@ fn deduplicate(results: Vec<ForagedCredential>) -> Vec<ForagedCredential> {
     deduped
 }
 
-// ── Tauri Commands ─────────────────────────────────────────────────────
+// -- Tauri Commands -----------------------------------------------------
 
 /// Scan the local filesystem for discoverable credentials.
 #[tauri::command]

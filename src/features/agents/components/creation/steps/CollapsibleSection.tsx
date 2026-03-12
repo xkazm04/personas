@@ -61,7 +61,7 @@ export function CollapsibleSection({
               if (contentRef.current && isOpen) contentRef.current.style.overflow = 'visible';
             }}
           >
-            <div className="px-3.5 pb-3.5 border-t border-primary/12 pt-3">
+            <div className="px-3.5 pb-3.5 border-t border-primary/20 pt-3">
               {children}
             </div>
           </motion.div>

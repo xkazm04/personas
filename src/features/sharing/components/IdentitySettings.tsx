@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Copy, Check, UserPlus, ShieldOff, Trash2, Fingerprint } from 'lucide-react';
+import { Copy, Check, UserPlus, Trash2, Fingerprint } from 'lucide-react';
+import { TrustVerifiedIcon, TrustUnknownIcon, TrustRevokedIcon } from './NetworkIcons';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
+import { InlineConfirm } from './InlineConfirm';
 
 export { IdentitySettings };
 export default function IdentitySettings() {
@@ -60,7 +62,7 @@ export default function IdentitySettings() {
       setShowImportForm(false);
       addToast(`Trusted peer "${peer.display_name}" added`, 'success');
     } catch {
-      addToast('Failed to import peer — check the identity card', 'error');
+      addToast('Failed to import peer -- check the identity card', 'error');
     }
   };
 
@@ -209,7 +211,16 @@ export default function IdentitySettings() {
                 className="rounded-xl border border-border bg-secondary/20 p-3 flex items-center justify-between"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground truncate">{peer.display_name}</div>
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-foreground truncate">
+                    {peer.trust_level === 'verified' ? (
+                      <TrustVerifiedIcon className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                    ) : peer.trust_level === 'revoked' ? (
+                      <TrustRevokedIcon className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                    ) : (
+                      <TrustUnknownIcon className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                    )}
+                    <span className="truncate">{peer.display_name}</span>
+                  </div>
                   <div className="text-xs text-muted-foreground font-mono">{truncatePeerId(peer.peer_id)}</div>
                   {peer.notes && (
                     <div className="text-xs text-muted-foreground/70 mt-0.5">{peer.notes}</div>
@@ -224,21 +235,35 @@ export default function IdentitySettings() {
                     {peer.trust_level}
                   </span>
                   {peer.trust_level !== 'revoked' && (
-                    <button
-                      onClick={() => handleRevoke(peer.peer_id, peer.display_name)}
-                      title="Revoke trust"
-                      className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-amber-500 transition-colors"
+                    <InlineConfirm
+                      message={`Revoke trust for "${peer.display_name}"?`}
+                      onConfirm={() => handleRevoke(peer.peer_id, peer.display_name)}
                     >
-                      <ShieldOff className="w-3.5 h-3.5" />
-                    </button>
+                      {({ requestConfirm }) => (
+                        <button
+                          onClick={requestConfirm}
+                          title="Revoke trust"
+                          className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-amber-500 transition-colors"
+                        >
+                          <TrustRevokedIcon className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </InlineConfirm>
                   )}
-                  <button
-                    onClick={() => handleDelete(peer.peer_id, peer.display_name)}
-                    title="Remove peer"
-                    className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-red-500 transition-colors"
+                  <InlineConfirm
+                    message={`Remove peer "${peer.display_name}"?`}
+                    onConfirm={() => handleDelete(peer.peer_id, peer.display_name)}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                    {({ requestConfirm }) => (
+                      <button
+                        onClick={requestConfirm}
+                        title="Remove peer"
+                        className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </InlineConfirm>
                 </div>
               </div>
             ))}

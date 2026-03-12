@@ -68,3 +68,6 @@ export const getSharedKnowledgeInjection = (
     toolNames,
     connectorTypes,
   });
+
+export const seedMockKnowledge = () =>
+  invoke<ExecutionKnowledge>('seed_mock_knowledge', {});

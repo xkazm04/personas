@@ -34,7 +34,7 @@ export interface PhaseEntry {
   toolCalls: ToolCallDot[];
 }
 
-/** Duration color for tool-call dots — mirrors ExecutionInspector's durationColor. */
+/** Duration color for tool-call dots -- mirrors ExecutionInspector's durationColor. */
 export function dotColor(ms: number | undefined): string {
   if (ms === undefined) return 'bg-blue-400/70'; // still running
   if (ms < 2000) return 'bg-emerald-400';

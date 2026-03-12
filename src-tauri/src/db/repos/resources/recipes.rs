@@ -194,16 +194,22 @@ pub fn update(
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
-    conn.execute(
+    let tx = conn.unchecked_transaction()?;
+    tx.execute(
         "DELETE FROM persona_recipe_links WHERE recipe_id = ?1",
         params![id],
     )?;
-    let rows = conn.execute("DELETE FROM recipe_definitions WHERE id = ?1", params![id])?;
+    tx.execute(
+        "DELETE FROM recipe_versions WHERE recipe_id = ?1",
+        params![id],
+    )?;
+    let rows = tx.execute("DELETE FROM recipe_definitions WHERE id = ?1", params![id])?;
+    tx.commit()?;
     Ok(rows > 0)
 }
 
 // ============================================================================
-// Persona ↔ Recipe Link Operations
+// Persona <-> Recipe Link Operations
 // ============================================================================
 
 pub fn link_to_persona(
@@ -308,7 +314,8 @@ pub fn get_versions(pool: &DbPool, recipe_id: &str) -> Result<Vec<RecipeVersion>
         "SELECT * FROM recipe_versions WHERE recipe_id = ?1 ORDER BY version_number DESC"
     )?;
     let rows = stmt.query_map([recipe_id], row_to_version)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 pub fn get_latest_version_number(pool: &DbPool, recipe_id: &str) -> Result<i32, AppError> {
@@ -355,6 +362,21 @@ pub fn revert_to_version(pool: &DbPool, recipe_id: &str, version_id: &str) -> Re
         rusqlite::params![version_id, recipe_id],
         row_to_version,
     ).map_err(|_| AppError::NotFound(format!("Version {version_id} not found")))?;
+
+    // Snapshot the current recipe state before overwriting so the user can recover it
+    let current = get_by_id(pool, recipe_id)?;
+    let latest = get_latest_version_number(pool, recipe_id)?;
+    let snapshot_version = if latest == 0 { 1 } else { latest + 1 };
+    create_version(
+        pool,
+        recipe_id,
+        snapshot_version,
+        &current.prompt_template,
+        current.input_schema.as_deref(),
+        current.sample_inputs.as_deref(),
+        current.description.as_deref(),
+        Some(&format!("Snapshot before revert to v{}", version.version_number)),
+    )?;
 
     let now = chrono::Utc::now().to_rfc3339();
     conn.execute(

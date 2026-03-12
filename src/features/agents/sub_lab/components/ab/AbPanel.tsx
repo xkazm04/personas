@@ -42,7 +42,7 @@ export function AbPanel() {
 
   const useCases = useMemo(() => parseDesignContext(selectedPersona?.design_context).useCases ?? [], [selectedPersona?.design_context]);
   const useCaseOptions = useMemo(() => [{ value: '__all__', label: 'All Use Cases' }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))], [useCases]);
-  const versionOptions = useMemo(() => promptVersions.map((v) => ({ value: v.id, label: `v${v.version_number} — ${v.tag}` })), [promptVersions]);
+  const versionOptions = useMemo(() => promptVersions.map((v) => ({ value: v.id, label: `v${v.version_number} -- ${v.tag}` })), [promptVersions]);
 
   const handleStart = async () => {
     if (!selectedPersona || !versionAId || !versionBId || selectedModels.size === 0) return;
@@ -64,7 +64,7 @@ export function AbPanel() {
           </button>
         )}>
         {({ close, focusIndex }) => (
-          <div className="py-1 bg-background border border-primary/15 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+          <div className="py-1 bg-background border border-primary/20 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
             {versionOptions.map((opt, i) => (
               <button key={opt.value} onClick={() => { onChange(opt.value); close(); }}
                 className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${focusIndex === i ? 'bg-primary/15 text-foreground' : ''} ${value === opt.value ? `text-${color}-400 font-medium` : 'text-muted-foreground/90 hover:bg-secondary/30'}`}>
@@ -79,7 +79,7 @@ export function AbPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="border border-primary/15 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
+      <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
         <div className="p-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             {renderVersionPicker('Version A', 'blue', versionAId, setVersionAId)}
@@ -115,7 +115,7 @@ export function AbPanel() {
                   </button>
                 )}>
                 {({ close, focusIndex }) => (
-                  <div className="py-1 bg-background border border-primary/15 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+                  <div className="py-1 bg-background border border-primary/20 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
                     {useCaseOptions.map((opt, i) => (
                       <button key={opt.value} onClick={() => { setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); close(); }}
                         className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${focusIndex === i ? 'bg-primary/15 text-foreground' : ''} ${(selectedUseCaseId ?? '__all__') === opt.value ? 'text-primary font-medium' : 'text-muted-foreground/90 hover:bg-secondary/30'}`}>
@@ -131,7 +131,7 @@ export function AbPanel() {
           <div className="space-y-1">
             <label className="text-sm text-muted-foreground/70">Test Input (optional JSON)</label>
             <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder='{"task": "Summarize the latest sales report"}' disabled={isLabRunning}
-              className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono disabled:opacity-50" />
+              className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono disabled:opacity-50" />
           </div>
 
           {isLabRunning ? (

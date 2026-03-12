@@ -1,5 +1,5 @@
 /**
- * E2E: CLI scenario streams — Query Debug, N8N Transform, Template Adoption.
+ * E2E: CLI scenario streams -- Query Debug, N8N Transform, Template Adoption.
  *
  * Each scenario uses useCorrelatedCliStream with different event names and
  * idField values. These tests simulate the complete Tauri event pipeline
@@ -35,15 +35,15 @@ afterEach(() => {
   teardownTauriEventEmitter();
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SCENARIO A: Query Debug (QueriesTab → useQueryDebug → useCorrelatedCliStream)
+// ===========================================================================
+// SCENARIO A: Query Debug (QueriesTab -> useQueryDebug -> useCorrelatedCliStream)
 //
 // Events: query-debug-output / query-debug-status
 // ID field: job_id
 // Extras in status payload: result, corrected_query
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
-describe('E2E: Query Debug — Claude provider', () => {
+describe('E2E: Query Debug -- Claude provider', () => {
   it('streams debug output, completes, and extracts result + corrected query', async () => {
     const onStatusEvent = vi.fn();
     const { result } = renderHook(() =>
@@ -91,7 +91,7 @@ describe('E2E: Query Debug — Claude provider', () => {
   });
 });
 
-describe('E2E: Query Debug — Gemini provider', () => {
+describe('E2E: Query Debug -- Gemini provider', () => {
   it('streams Gemini-specific debug output with type casting fix', async () => {
     const onStatusEvent = vi.fn();
     const { result } = renderHook(() =>
@@ -128,7 +128,7 @@ describe('E2E: Query Debug — Gemini provider', () => {
   });
 });
 
-describe('E2E: Query Debug — Copilot provider', () => {
+describe('E2E: Query Debug -- Copilot provider', () => {
   it('streams Copilot-specific debug output with GROUP BY fix', async () => {
     const onStatusEvent = vi.fn();
     const { result } = renderHook(() =>
@@ -165,7 +165,7 @@ describe('E2E: Query Debug — Copilot provider', () => {
   });
 });
 
-describe('E2E: Query Debug — failure after retries', () => {
+describe('E2E: Query Debug -- failure after retries', () => {
   it('handles failed debug with max retries exceeded', async () => {
     const onFailed = vi.fn();
     const { result } = renderHook(() =>
@@ -201,14 +201,14 @@ describe('E2E: Query Debug — failure after retries', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SCENARIO B: N8N Transform (useN8nTransform → useCorrelatedCliStream)
+// ===========================================================================
+// SCENARIO B: N8N Transform (useN8nTransform -> useCorrelatedCliStream)
 //
 // Events: n8n-transform-output / n8n-transform-status
 // ID field: transform_id
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
-describe('E2E: N8N Transform — Claude provider', () => {
+describe('E2E: N8N Transform -- Claude provider', () => {
   it('streams full transform lifecycle with milestone markers', async () => {
     const onStatusEvent = vi.fn();
     const { result } = renderHook(() =>
@@ -257,7 +257,7 @@ describe('E2E: N8N Transform — Claude provider', () => {
   });
 });
 
-describe('E2E: N8N Transform — Gemini provider', () => {
+describe('E2E: N8N Transform -- Gemini provider', () => {
   it('streams Gemini-specific transform output', async () => {
     const { result } = renderHook(() =>
       useCorrelatedCliStream({
@@ -290,7 +290,7 @@ describe('E2E: N8N Transform — Gemini provider', () => {
   });
 });
 
-describe('E2E: N8N Transform — parse failure', () => {
+describe('E2E: N8N Transform -- parse failure', () => {
   it('handles unsupported node type error', async () => {
     const onFailed = vi.fn();
     const { result } = renderHook(() =>
@@ -326,7 +326,7 @@ describe('E2E: N8N Transform — parse failure', () => {
   });
 });
 
-describe('E2E: N8N Transform — concurrent isolation', () => {
+describe('E2E: N8N Transform -- concurrent isolation', () => {
   it('two transforms with different IDs do not interfere', async () => {
     const { result: r1 } = renderHook(() =>
       useCorrelatedCliStream({
@@ -360,14 +360,14 @@ describe('E2E: N8N Transform — concurrent isolation', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SCENARIO C: Template Adoption (useAsyncTransform → useCorrelatedCliStream)
+// ===========================================================================
+// SCENARIO C: Template Adoption (useAsyncTransform -> useCorrelatedCliStream)
 //
 // Events: template-adopt-output / template-adopt-status
 // ID field: adopt_id
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
-describe('E2E: Template Adoption — default (Claude) provider', () => {
+describe('E2E: Template Adoption -- default (Claude) provider', () => {
   it('streams full adoption lifecycle with sandbox policy', async () => {
     const onStatusEvent = vi.fn();
     const { result } = renderHook(() =>
@@ -403,7 +403,7 @@ describe('E2E: Template Adoption — default (Claude) provider', () => {
   });
 });
 
-describe('E2E: Template Adoption — Copilot provider', () => {
+describe('E2E: Template Adoption -- Copilot provider', () => {
   it('streams Copilot adoption with different budget settings', async () => {
     const { result } = renderHook(() =>
       useCorrelatedCliStream({
@@ -436,7 +436,7 @@ describe('E2E: Template Adoption — Copilot provider', () => {
   });
 });
 
-describe('E2E: Template Adoption — failure mid-adoption', () => {
+describe('E2E: Template Adoption -- failure mid-adoption', () => {
   it('handles adoption failure and triggers onFailed callback', async () => {
     const onFailed = vi.fn();
     const { result } = renderHook(() =>
@@ -455,7 +455,7 @@ describe('E2E: Template Adoption — failure mid-adoption', () => {
     act(() => {
       emitTauriEvent('template-adopt-output', {
         adopt_id: 'adopt-fail-1',
-        line: '[System] Starting template adoption…',
+        line: '[System] Starting template adoption...',
       });
       emitTauriEvent('template-adopt-output', {
         adopt_id: 'adopt-fail-1',
@@ -481,9 +481,9 @@ describe('E2E: Template Adoption — failure mid-adoption', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SCENARIO D: Cross-scenario — same events, different consumers
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// SCENARIO D: Cross-scenario -- same events, different consumers
+// ===========================================================================
 
 describe('E2E: cross-scenario isolation', () => {
   it('execution, debug, and transform streams are fully isolated', async () => {
@@ -581,7 +581,7 @@ describe('E2E: cross-scenario isolation', () => {
     act(() => {
       emitTauriEvent('query-debug-output', {
         job_id: 'gemini-debug-1',
-        line: '> Analyzing query error context…',
+        line: '> Analyzing query error context...',
       });
     });
 
@@ -599,9 +599,9 @@ describe('E2E: cross-scenario isolation', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SCENARIO E: Rapid event bursts — stress test
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// SCENARIO E: Rapid event bursts -- stress test
+// ===========================================================================
 
 describe('E2E: rapid event bursts', () => {
   it('handles 1000 lines in quick succession without data loss', async () => {

@@ -38,11 +38,13 @@ export function useToolSelectorState() {
   }, [toolUsageSummary]);
 
   const personaId = selectedPersona?.id || '';
-  const assignedToolIds = selectedPersona?.tools?.map(t => t.id) || [];
+  const assignedToolIds = useMemo(() => {
+    const ids = selectedPersona?.tools?.map(t => t.id) || [];
+    return new Set(ids);
+  }, [selectedPersona?.tools]);
 
   const assignedTools = useMemo(() => {
-    const toolIdSet = new Set(assignedToolIds);
-    return toolDefinitions.filter((td) => toolIdSet.has(td.id));
+    return toolDefinitions.filter((td) => assignedToolIds.has(td.id));
   }, [assignedToolIds, toolDefinitions]);
 
   const categories = useMemo(() => {
@@ -137,9 +139,9 @@ export function useToolSelectorState() {
   const handleBulkToggle = useCallback(async (tools: Array<{ id: string }>, allAssigned: boolean) => {
     clearUndoToast();
     if (allAssigned) {
-      await bulkRemoveTools(personaId, tools.filter((t) => assignedToolIds.includes(t.id)).map((t) => t.id));
+      await bulkRemoveTools(personaId, tools.filter((t) => assignedToolIds.has(t.id)).map((t) => t.id));
     } else {
-      await bulkAssignTools(personaId, tools.filter((t) => !assignedToolIds.includes(t.id)).map((t) => t.id));
+      await bulkAssignTools(personaId, tools.filter((t) => !assignedToolIds.has(t.id)).map((t) => t.id));
     }
   }, [clearUndoToast, bulkRemoveTools, bulkAssignTools, personaId, assignedToolIds]);
 

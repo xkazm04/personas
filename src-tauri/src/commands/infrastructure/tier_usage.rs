@@ -7,6 +7,7 @@ use ts_rs::TS;
 use crate::engine::rate_limiter::EVENT_SOURCE_WINDOW;
 use crate::engine::tier::TierConfig;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 /// A single rate-limit bucket's current usage.
@@ -19,7 +20,7 @@ pub struct RateBucketUsage {
     pub current: usize,
     /// Maximum allowed events in the window (from tier config).
     pub limit: usize,
-    /// Usage percentage (0–100).
+    /// Usage percentage (0--100).
     pub percent: f64,
 }
 
@@ -45,6 +46,7 @@ pub struct TierUsageSnapshot {
 pub async fn get_tier_usage(
     state: State<'_, Arc<AppState>>,
 ) -> Result<TierUsageSnapshot, AppError> {
+    require_auth(&state).await?;
     let tier = state.tier_config.lock().unwrap_or_else(|e| e.into_inner()).clone();
 
     // Snapshot rate limiter buckets
@@ -67,7 +69,7 @@ pub async fn get_tier_usage(
         })
         .collect();
 
-    // Snapshot concurrency tracker (tokio Mutex — needs await)
+    // Snapshot concurrency tracker (tokio Mutex -- needs await)
     let tracker = state.engine.tracker().lock().await;
     let total_running = tracker.total_running();
     let total_queued = tracker.total_queued();

@@ -1,5 +1,5 @@
 /**
- * ManualForm — manual credential entry form for InlineCredentialPanel.
+ * ManualForm -- manual credential entry form for InlineCredentialPanel.
  */
 import { useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';

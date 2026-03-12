@@ -9,7 +9,7 @@ import {
 } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 import { UseCaseModelOverrideForm } from './UseCaseModelOverrideForm';
 
-// ── Available model options ──────────────────────────────────────────
+// -- Available model options ------------------------------------------
 
 interface ModelOption {
   id: string;
@@ -56,12 +56,12 @@ function defaultProfileLabel(rawModelProfile: string | null): string {
     const mp = JSON.parse(rawModelProfile) as ModelProfile;
     return profileToLabel(mp);
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical -- JSON parse fallback
     return 'Not set';
   }
 }
 
-// ── Component ────────────────────────────────────────────────────────
+// -- Component --------------------------------------------------------
 
 interface UseCaseModelOverrideProps {
   useCase: UseCaseItem;

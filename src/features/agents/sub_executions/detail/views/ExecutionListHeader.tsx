@@ -66,7 +66,7 @@ export function ExecutionListHeader({
 
       {/* Compare mode toolbar */}
       {compareMode && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/15 rounded-xl text-sm">
+        <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl text-sm">
           <ArrowLeftRight className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" />
           <span className="text-muted-foreground/70">
             {!compareLeft

@@ -1,4 +1,4 @@
-// Design Wizard â€” Step Definitions & Types
+// Design Wizard -- Step Definitions & Types
 
 export interface WizardOption { label: string; description: string; }
 
@@ -51,10 +51,10 @@ export const WIZARD_STEPS: WizardStep[] = [
         header: 'Data scope',
         multiSelect: false,
         options: [
-          { label: 'All incoming data', description: 'Processes everything that arrives â€” no filtering. Suitable for dedicated channels or inboxes.' },
+          { label: 'All incoming data', description: 'Processes everything that arrives -- no filtering. Suitable for dedicated channels or inboxes.' },
           { label: 'Specific sources (allowlist)', description: 'Only processes data from explicitly configured sources, senders, or domains. Everything else is ignored.' },
           { label: 'Filter / label-based', description: 'Processes data that matches specific filters, labels, tags, or rules. Leverages existing categorization.' },
-          { label: 'Custom rules', description: 'Uses custom logic to decide what to process â€” content analysis, keyword matching, or conditional rules.' },
+          { label: 'Custom rules', description: 'Uses custom logic to decide what to process -- content analysis, keyword matching, or conditional rules.' },
         ],
       },
       {
@@ -63,7 +63,7 @@ export const WIZARD_STEPS: WizardStep[] = [
         header: 'Output',
         multiSelect: true,
         options: [
-          { label: 'Create tasks in a project tool', description: 'Creates tasks in ClickUp, Jira, Notion, or similar â€” with title, description, priority, and due dates.' },
+          { label: 'Create tasks in a project tool', description: 'Creates tasks in ClickUp, Jira, Notion, or similar -- with title, description, priority, and due dates.' },
           { label: 'Send notifications', description: 'Sends alerts via Slack, Telegram, email, or Discord when conditions are met.' },
           { label: 'Update spreadsheets or databases', description: 'Writes extracted data to Google Sheets, Airtable, or database tables for tracking and analysis.' },
           { label: 'Draft responses for review', description: 'Prepares reply drafts or response templates for human review before sending.' },
@@ -96,7 +96,7 @@ export const WIZARD_STEPS: WizardStep[] = [
         options: [
           { label: 'Sending messages or emails', description: 'Agent drafts outbound communication but waits for your OK before sending.' },
           { label: 'Creating or modifying external records', description: 'Task creation, database writes, or updates to external systems require confirmation.' },
-          { label: 'Deleting or archiving data', description: 'Any destructive operation â€” delete, archive, or bulk modification â€” needs approval.' },
+          { label: 'Deleting or archiving data', description: 'Any destructive operation -- delete, archive, or bulk modification -- needs approval.' },
           { label: 'Only destructive / irreversible actions', description: 'Agent runs freely for safe operations. Only pauses for actions that cannot be undone.' },
         ],
       },
@@ -114,7 +114,7 @@ export const WIZARD_STEPS: WizardStep[] = [
         multiSelect: false,
         options: [
           { label: 'Real-time (webhook / push)', description: 'Triggered instantly when new data arrives via webhook or push notification. Lowest latency.' },
-          { label: 'Scheduled (cron)', description: 'Runs on a fixed schedule â€” hourly, daily, weekly. Predictable and battery-friendly.' },
+          { label: 'Scheduled (cron)', description: 'Runs on a fixed schedule -- hourly, daily, weekly. Predictable and battery-friendly.' },
           { label: 'Polling interval', description: 'Checks for new data at regular intervals (e.g., every 5 minutes). Slight delay but simple setup.' },
           { label: 'Manual only', description: 'Only runs when you explicitly trigger it. Full control, no background processing.' },
         ],

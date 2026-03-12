@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
-// ── Copy button ─────────────────────────────────────────────────
+// -- Copy button -------------------------------------------------
 
 export function CopyButton({ text, className }: { text: string; className?: string }) {
   const [copied, setCopied] = useState(false);
@@ -38,7 +38,7 @@ export function CopyButton({ text, className }: { text: string; className?: stri
   );
 }
 
-// ── Custom markdown components with copy/link enhancements ──────
+// -- Custom markdown components with copy/link enhancements ------
 
 export function buildComponents(onOpenUrl: (url: string) => void): Components {
   return {

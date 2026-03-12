@@ -9,7 +9,7 @@ import type { DbPersonaToolDefinition } from '@/lib/types/types';
  */
 export function useToolSelectorActions(
   personaId: string,
-  assignedToolIds: string[],
+  assignedToolIds: Set<string>,
   assignedTools: DbPersonaToolDefinition[],
 ) {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
@@ -62,9 +62,9 @@ export function useToolSelectorActions(
   const handleBulkToggle = useCallback(async (tools: Array<{ id: string }>, allAssigned: boolean) => {
     clearUndoToast();
     if (allAssigned) {
-      await bulkRemoveTools(personaId, tools.filter((t) => assignedToolIds.includes(t.id)).map((t) => t.id));
+      await bulkRemoveTools(personaId, tools.filter((t) => assignedToolIds.has(t.id)).map((t) => t.id));
     } else {
-      await bulkAssignTools(personaId, tools.filter((t) => !assignedToolIds.includes(t.id)).map((t) => t.id));
+      await bulkAssignTools(personaId, tools.filter((t) => !assignedToolIds.has(t.id)).map((t) => t.id));
     }
   }, [clearUndoToast, bulkRemoveTools, bulkAssignTools, personaId, assignedToolIds]);
 

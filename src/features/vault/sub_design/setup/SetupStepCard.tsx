@@ -6,7 +6,7 @@ import {
   Circle,
 } from 'lucide-react';
 
-// ── Step card component ─────────────────────────────────────────
+// -- Step card component -----------------------------------------
 
 export function SetupStepCard({
   stepMarkdown,

@@ -25,7 +25,7 @@ export function MatrixHistory({ runs, resultsMap, expandedRunId, onToggleExpand,
       </h4>
 
       {runs.length === 0 ? (
-        <div className="text-center py-12 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl">
+        <div className="text-center py-12 bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl">
           <div className="w-14 h-14 rounded-xl bg-violet-500/8 border border-violet-500/12 flex items-center justify-center mx-auto mb-4">
             <Wand2 className="w-7 h-7 text-violet-400/40" />
           </div>

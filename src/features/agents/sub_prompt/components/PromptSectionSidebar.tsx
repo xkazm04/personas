@@ -96,7 +96,7 @@ export function PromptSectionSidebar({
               tabIndex={active ? 0 : -1}
               className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-xl transition-colors text-left relative ${
                 active
-                  ? 'bg-primary/10 text-foreground/80 border border-primary/20'
+                  ? 'bg-primary/10 text-foreground/80 border border-primary/30'
                   : 'text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
               }`}
             >
@@ -114,8 +114,37 @@ export function PromptSectionSidebar({
         })}
       </div>
 
-      <div className="px-2.5 pb-0.5 text-sm text-muted-foreground/60">
-        Prompt completeness: {filled}/{total} sections
+      <div className="flex items-center gap-2 px-2.5 pb-0.5">
+        <svg width="32" height="32" viewBox="0 0 32 32" className={filled === total && total > 0 ? 'prompt-gauge-complete' : ''}>
+          <defs>
+            <linearGradient id="pg-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#8b5cf6" />
+              <stop offset="100%" stopColor="#10b981" />
+            </linearGradient>
+          </defs>
+          <circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-secondary/30" />
+          <circle
+            cx="16" cy="16" r="13" fill="none"
+            stroke="url(#pg-grad)" strokeWidth="2.5" strokeLinecap="round"
+            strokeDasharray={`${2 * Math.PI * 13}`}
+            strokeDashoffset={`${2 * Math.PI * 13 * (1 - (total > 0 ? filled / total : 0))}`}
+            transform="rotate(-90 16 16)"
+            style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+          />
+          <text x="16" y="17" textAnchor="middle" dominantBaseline="central" fontSize="8" fontWeight="600" fill="currentColor" className="text-foreground/70">
+            {filled}/{total}
+          </text>
+        </svg>
+        <span className="text-xs text-muted-foreground/50">sections</span>
+        <style>{`
+          @keyframes prompt-gauge-glow {
+            0%, 100% { filter: drop-shadow(0 0 0px transparent); }
+            50% { filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.5)); }
+          }
+          .prompt-gauge-complete {
+            animation: prompt-gauge-glow 1.5s ease-in-out 1;
+          }
+        `}</style>
       </div>
 
       {/* Save status */}

@@ -133,7 +133,7 @@ impl MessageRouter {
     /// Background loop that receives messages from all connected peers.
     /// Listens for incoming uni/bi streams on each connection.
     pub async fn receive_loop(&self, connections: Arc<ConnectionManager>) {
-        // This is handled in the connection accept path — each incoming stream
+        // This is handled in the connection accept path -- each incoming stream
         // is dispatched based on the message type. This loop is a placeholder
         // for future background processing (e.g., event emission).
         loop {

@@ -143,7 +143,7 @@ export function substituteVariables(
     content: replaceVars(s.content, sanitized),
   }));
 
-  // Phase C (Area #8) â€” substitute variables in tool names, trigger descriptions/configs,
+  // Phase C (Area #8) -- substitute variables in tool names, trigger descriptions/configs,
   // connector setup instructions, and adoption questions
   const substitutedTools = design.suggested_tools.map((t) => replaceVars(t, sanitized));
 

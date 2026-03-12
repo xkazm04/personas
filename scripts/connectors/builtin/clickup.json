@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "pk_...",
-      "helpText": "From ClickUp Settings → Apps → API Token"
+      "helpText": "From ClickUp Settings -> Apps -> API Token"
     }
   ],
   "healthcheck_config": {
@@ -31,7 +31,7 @@
     "auth_type": "pat",
     "auth_type_label": "PAT",
     "docs_url": "https://clickup.com/api/developer-portal/authentication",
-    "setup_guide": "1. Go to app.clickup.com and sign in\n2. Click your avatar → Settings → Apps\n3. Under 'API Token', click 'Generate' or copy existing token\n4. Paste the pk_... token value here",
+    "setup_guide": "1. Go to app.clickup.com and sign in\n2. Click your avatar -> Settings -> Apps\n3. Under 'API Token', click 'Generate' or copy existing token\n4. Paste the pk_... token value here",
     "pricing_tier": "free",
     "auth_methods": [
       {"id": "pat", "label": "PAT", "type": "credential", "is_default": true},

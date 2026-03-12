@@ -11,7 +11,12 @@ use serde::Serialize;
 use tokio::process::Command;
 use tokio::time::timeout;
 
+use std::sync::Arc;
+use tauri::State;
+
 use crate::error::AppError;
+use crate::ipc_auth::require_auth;
+use crate::AppState;
 
 /// Result of probing a single service for existing authentication.
 #[derive(Debug, Clone, Serialize)]
@@ -28,7 +33,7 @@ pub struct AuthDetection {
     pub confidence: String,
 }
 
-// ── CLI Probes ─────────────────────────────────────────────────────────
+// -- CLI Probes ---------------------------------------------------------
 
 /// CLI tool probe definition.
 struct CliProbe {
@@ -221,9 +226,9 @@ async fn probe_cli_tools() -> Vec<AuthDetection> {
     results
 }
 
-// ── Browser Cookie Probes ──────────────────────────────────────────────
+// -- Browser Cookie Probes ----------------------------------------------
 
-/// Known service domain → connector service_type mapping.
+/// Known service domain -> connector service_type mapping.
 const COOKIE_DOMAIN_MAP: &[(&str, &str)] = &[
     (".github.com", "github"),
     (".google.com", "google_workspace"),
@@ -293,7 +298,7 @@ fn browser_cookie_paths() -> Vec<PathBuf> {
 /// Read browser cookie databases and check for session cookies from known domains.
 ///
 /// We copy the DB to a temp file to avoid locking conflicts with the running browser.
-/// We only check for cookie *existence* and expiry — no decryption needed.
+/// We only check for cookie *existence* and expiry -- no decryption needed.
 fn probe_browser_cookies() -> Vec<AuthDetection> {
     let mut detected: HashMap<String, AuthDetection> = HashMap::new();
 
@@ -355,7 +360,7 @@ fn probe_browser_cookies() -> Vec<AuthDetection> {
             }
         }
 
-        // Clean up temp file — log failure since it may contain sensitive cookie data
+        // Clean up temp file -- log failure since it may contain sensitive cookie data
         if let Err(e) = std::fs::remove_file(&temp_path) {
             tracing::warn!(target: "audit", "Failed to remove temp cookie probe file: {}", e);
         }
@@ -376,11 +381,14 @@ fn chrome_epoch_now() -> i64 {
     unix_micros + CHROME_EPOCH_OFFSET
 }
 
-// ── Public API ─────────────────────────────────────────────────────────
+// -- Public API ---------------------------------------------------------
 
 /// Detect all authenticated services using CLI probing and browser cookies.
 #[tauri::command]
-pub async fn detect_authenticated_services() -> Result<Vec<AuthDetection>, AppError> {
+pub async fn detect_authenticated_services(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<AuthDetection>, AppError> {
+    require_auth(&state).await?;
     // Run CLI probes (async) and cookie probes (sync, in blocking thread) in parallel
     let (cli_results, cookie_results) = tokio::join!(
         probe_cli_tools(),

@@ -43,7 +43,7 @@ export function PromptLabTab() {
               data-testid={`version-filter-${tab.id}`}
               className={`px-2 py-0.5 text-sm rounded-full transition-colors border ${
                 pv.tagFilter === tab.id
-                  ? 'bg-primary/15 text-foreground/80 border-primary/25'
+                  ? 'bg-primary/15 text-foreground/80 border-primary/30'
                   : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/40 border-transparent'
               }`}
             >

@@ -43,7 +43,7 @@
   "events": [],
   "metadata": {
     "template_enabled": true,
-    "summary": "Obsidian note-taking integration — read, write, search, and navigate your knowledge vault via desktop bridge.",
+    "summary": "Obsidian note-taking integration -- read, write, search, and navigate your knowledge vault via desktop bridge.",
     "auth_type": "desktop_bridge",
     "auth_type_label": "Desktop Bridge",
     "connection_mode": "desktop_bridge",

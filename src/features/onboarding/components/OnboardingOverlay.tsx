@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import AdoptionWizardModal from '@/features/templates/sub_generated/adoption/AdoptionWizardModal';
+import { DesktopDiscoveryStep } from './DesktopDiscoveryStep';
 import { TemplatePickerStep } from './TemplatePickerStep';
 import { ExecutionStep } from './ExecutionStep';
 import { StepIndicator, STEPS } from './StepIndicator';
@@ -28,6 +29,12 @@ export default function OnboardingOverlay() {
     showAdoptionWizard,
     selectedReview,
     createdPersona,
+    discoveredApps,
+    isScanning,
+    approvedApps,
+    approvingApp,
+    handleApproveApp,
+    handleNextFromDiscover,
     handleTemplateSelect,
     handleNextFromPick,
     handleAdoptionComplete,
@@ -100,6 +107,16 @@ export default function OnboardingOverlay() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           >
+            {onboardingStep === 'discover' && (
+              <DesktopDiscoveryStep
+                apps={discoveredApps}
+                isScanning={isScanning}
+                approvedApps={approvedApps}
+                approvingApp={approvingApp}
+                onApprove={handleApproveApp}
+              />
+            )}
+
             {onboardingStep === 'pick-template' && (
               <TemplatePickerStep
                 templates={templates}
@@ -137,6 +154,17 @@ export default function OnboardingOverlay() {
         </button>
 
         <div className="flex items-center gap-2">
+          {onboardingStep === 'discover' && (
+            <button
+              onClick={handleNextFromDiscover}
+              disabled={isScanning}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Continue
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+
           {onboardingStep === 'pick-template' && (
             <button
               onClick={handleNextFromPick}

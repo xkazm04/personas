@@ -30,7 +30,7 @@ export interface HealingToast extends BaseToast {
 export type Toast = StandardToast | HealingToast;
 
 // ---------------------------------------------------------------------------
-// Priority mapping — healing critical/high > standard error > standard success
+// Priority mapping -- healing critical/high > standard error > standard success
 // ---------------------------------------------------------------------------
 
 const STANDARD_PRIORITY: Record<'success' | 'error', number> = {

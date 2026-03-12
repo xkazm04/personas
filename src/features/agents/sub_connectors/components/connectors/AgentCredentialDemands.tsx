@@ -26,7 +26,7 @@ export function AgentCredentialDemands() {
       await mutateCredentialLink(selectedPersona.id, demand.connectorName, credentialId);
       await fetchCredentials();
     } catch {
-      // intentional: non-critical — link will retry on next attempt
+      // intentional: non-critical -- link will retry on next attempt
     }
     setLinkingDemand(null);
   }, [selectedPersona, fetchCredentials]);
@@ -137,7 +137,7 @@ function DemandCard({
               className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors cursor-pointer ${
                 isLinking
                   ? 'bg-blue-500/15 text-blue-400 border-blue-500/25'
-                  : 'border-primary/15 text-muted-foreground/70 hover:bg-secondary/50 hover:text-foreground/80'
+                  : 'border-primary/20 text-muted-foreground/70 hover:bg-secondary/50 hover:text-foreground/80'
               }`}
             >
               <ArrowRight className="w-3 h-3" />
@@ -164,7 +164,7 @@ function DemandCard({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-2.5 pt-1 border-t border-primary/8 space-y-1">
+            <div className="px-3 pb-2.5 pt-1 border-t border-primary/10 space-y-1">
               <p className="text-xs text-muted-foreground/50 mb-1.5">
                 Link an existing credential:
               </p>

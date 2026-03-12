@@ -3,7 +3,7 @@ import {
 } from '../useCreateTemplateReducer';
 import type { PersistedCreateTemplateContext } from '../useCreateTemplateReducer';
 
-// ── Props ──
+// -- Props --
 
 export interface CreateTemplateModalProps {
   isOpen: boolean;
@@ -11,7 +11,7 @@ export interface CreateTemplateModalProps {
   onTemplateCreated: () => void;
 }
 
-// ── Persistence helpers ──
+// -- Persistence helpers --
 
 export function persistContext(ctx: PersistedCreateTemplateContext) {
   window.localStorage.setItem(CREATE_TEMPLATE_CONTEXT_KEY, JSON.stringify(ctx));

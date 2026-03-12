@@ -17,7 +17,7 @@ use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
-// ── Event payloads ──────────────────────────────────────────────
+// -- Event payloads ----------------------------------------------
 
 #[derive(Clone, Serialize)]
 struct DesignOutputEvent {
@@ -34,7 +34,7 @@ struct DesignStatusEvent {
     question: Option<serde_json::Value>,
 }
 
-// ── Commands ────────────────────────────────────────────────────
+// -- Commands ----------------------------------------------------
 
 /// Shared setup for design commands: generates a design ID, sets it as active,
 /// and spawns `run_design_analysis`.
@@ -58,7 +58,7 @@ fn spawn_design_run(
 
     // Kill any existing design analysis child process before spawning a new one.
     // Without this, rapid clicks on "Generate Design" spawn multiple concurrent
-    // CLI processes, but only the last PID is tracked — earlier ones become
+    // CLI processes, but only the last PID is tracked -- earlier ones become
     // unkillable orphans that silently consume API credits.
     {
         let old_pid = state.active_design_child_pid.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?.take();
@@ -243,7 +243,7 @@ pub async fn compile_from_intent(
     )
 }
 
-// ── Design analysis runner ──────────────────────────────────────
+// -- Design analysis runner --------------------------------------
 
 struct DesignRunParams {
     app: tauri::AppHandle,
@@ -340,7 +340,22 @@ async fn run_design_analysis(params: DesignRunParams) {
     }
 
     // Read stdout line by line, emit design-output events
-    let stdout = child.stdout.take().expect("stdout was piped");
+    let stdout = match child.stdout.take() {
+        Some(s) => s,
+        None => {
+            let _ = app.emit(
+                "design-status",
+                DesignStatusEvent {
+                    design_id,
+                    status: "failed".into(),
+                    result: None,
+                    error: Some("Failed to capture stdout from CLI process".to_string()),
+                    question: None,
+                },
+            );
+            return;
+        }
+    };
     let mut reader = BufReader::new(stdout).lines();
     let mut full_output = String::new();
 
@@ -369,7 +384,7 @@ async fn run_design_analysis(params: DesignRunParams) {
     })
     .await;
 
-    // On timeout, kill the process BEFORE waiting — otherwise wait() blocks forever
+    // On timeout, kill the process BEFORE waiting -- otherwise wait() blocks forever
     if stream_result.is_err() {
         let _ = child.kill().await;
         let _ = child.wait().await;
@@ -387,7 +402,7 @@ async fn run_design_analysis(params: DesignRunParams) {
         return;
     }
 
-    // Normal exit — wait for process and clear the PID
+    // Normal exit -- wait for process and clear the PID
     let _ = child.wait().await;
     *active_child_pid.lock().unwrap_or_else(|e| e.into_inner()) = None;
 
@@ -406,7 +421,7 @@ async fn run_design_analysis(params: DesignRunParams) {
     match compiler::parse_output(&full_output) {
         ParseOutcome::Question(question) => {
             // Pipeline short-circuit: LLM needs clarification
-            tracing::info!(design_id = %design_id, "Design analysis paused — question emitted");
+            tracing::info!(design_id = %design_id, "Design analysis paused -- question emitted");
             let _ = app.emit(
                 "design-status",
                 DesignStatusEvent {
@@ -524,7 +539,7 @@ pub fn extract_display_text(line: &str) -> Option<String> {
     }
 }
 
-// ── Preview prompt ─────────────────────────────────────────────
+// -- Preview prompt ---------------------------------------------
 
 /// Return the fully assembled prompt markdown for a persona, exactly as the
 /// runtime engine would build it.  Accepts an optional `structured_prompt_json`

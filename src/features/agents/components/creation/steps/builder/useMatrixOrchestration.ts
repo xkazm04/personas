@@ -1,5 +1,5 @@
 /**
- * useMatrixOrchestration — AI generation + credential matching + dry-run for Matrix creation mode.
+ * useMatrixOrchestration -- AI generation + credential matching + dry-run for Matrix creation mode.
  * Adapts useBuilderOrchestration for the matrix-centric flow.
  */
 import { useState, useEffect, useCallback, useRef, type Dispatch } from 'react';
@@ -35,7 +35,7 @@ export function calcCompleteness(state: BuilderState): number {
   if (state.intent.trim().length > 10) filled++;
   // Channels (messages)
   if (state.channels.length > 0) filled++;
-  // Memory (always on by default — count as filled)
+  // Memory (always on by default -- count as filled)
   filled++;
   return Math.round((filled / total) * 100);
 }
@@ -150,7 +150,7 @@ export function useMatrixOrchestration({
 
       await design.startIntentCompilation(personaId, enhancedIntent);
     } catch {
-      useToastStore.getState().addToast('Failed to generate agent — check your connection', 'error');
+      useToastStore.getState().addToast('Failed to generate agent -- check your connection', 'error');
       isCreatingRef.current = false;
       setIsGenerating(false);
     }

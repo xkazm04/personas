@@ -118,7 +118,7 @@ export function ConnectorStatusCard({
               title="Swap to alternative connector"
               className={swapOpen
                 ? 'border-sky-500/30 text-sky-300 bg-sky-500/15'
-                : 'border-primary/15 text-muted-foreground/60 hover:bg-secondary/50 hover:text-foreground/80'
+                : 'border-primary/20 text-muted-foreground/60 hover:bg-secondary/50 hover:text-foreground/80'
               }
             />
           )}
@@ -129,7 +129,7 @@ export function ConnectorStatusCard({
               icon={status.testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Activity className="w-3 h-3" />}
               onClick={() => onTest(status.name, status.credentialId!)}
               disabled={status.testing}
-              className="border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95"
+              className="border border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95"
             >
               Test
             </Button>
@@ -143,7 +143,7 @@ export function ConnectorStatusCard({
                   onClick={() => onToggleLinking(isLinking ? null : status.name)}
                   className={isLinking
                     ? 'border-violet-500/30 text-violet-300 bg-violet-500/15'
-                    : 'border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95'
+                    : 'border border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95'
                   }
                 >
                   Link Existing
@@ -176,14 +176,14 @@ export function ConnectorStatusCard({
             <div className="mt-3 border border-primary/10 rounded-lg bg-background/40 max-h-48 overflow-y-auto">
               {matchingCreds.length > 0 && (
                 <>
-                  <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/5">Best match</p>
+                  <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/10">Best match</p>
                   {matchingCreds.map((cred) => (
                     <Button
                       key={cred.id}
                       variant="ghost"
                       size="sm"
                       onClick={() => onLinkCredential(status.name, cred.id, cred.name)}
-                      className="w-full justify-start px-3 py-2 text-left hover:bg-secondary/40 border-b border-primary/5 last:border-0"
+                      className="w-full justify-start px-3 py-2 text-left hover:bg-secondary/40 border-b border-primary/10 last:border-0"
                     >
                       <Star className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -197,7 +197,7 @@ export function ConnectorStatusCard({
               {otherCreds.length > 0 && (
                 <>
                   {matchingCreds.length > 0 && (
-                    <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/5">Other credentials</p>
+                    <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/10">Other credentials</p>
                   )}
                   {otherCreds.map((cred) => (
                     <Button
@@ -205,7 +205,7 @@ export function ConnectorStatusCard({
                       variant="ghost"
                       size="sm"
                       onClick={() => onLinkCredential(status.name, cred.id, cred.name)}
-                      className="w-full justify-start px-3 py-2 text-left hover:bg-secondary/40 border-b border-primary/5 last:border-0"
+                      className="w-full justify-start px-3 py-2 text-left hover:bg-secondary/40 border-b border-primary/10 last:border-0"
                     >
                       <div className="w-3 h-3 flex-shrink-0" />
                       <div className="flex-1 min-w-0">

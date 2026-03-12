@@ -69,7 +69,7 @@ export function AssignModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 8 }}
         transition={{ duration: 0.15 }}
-        className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-lg max-h-[70vh] flex flex-col overflow-hidden"
+        className="bg-background border border-primary/20 rounded-2xl shadow-2xl w-full max-w-lg max-h-[70vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -89,7 +89,7 @@ export function AssignModal({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-primary/8 px-4">
+        <div className="flex border-b border-primary/10 px-4">
           <Button
             variant="ghost"
             size="sm"

@@ -1,6 +1,5 @@
-import { useCallback } from 'react';
 import { startAutomationDesign, cancelAutomationDesign } from '@/api/agents/automations';
-import { useAiArtifactFlow, defaultGetLine, buildResolveStatus } from '../template/useAiArtifactFlow';
+import { useAiArtifactTask } from './useAiArtifactTask';
 
 export type AutomationDesignPhase = 'idle' | 'analyzing' | 'preview' | 'error';
 
@@ -22,33 +21,26 @@ export interface AutomationDesignResult {
 }
 
 export function useAutomationDesign() {
-  const flow = useAiArtifactFlow<{ personaId: string; description: string }, AutomationDesignResult>({
-    stream: {
-      progressEvent: 'automation-design-output',
-      statusEvent: 'automation-design-status',
-      getLine: defaultGetLine,
-      resolveStatus: buildResolveStatus('Automation design failed'),
-      completedPhase: 'preview',
-      runningPhase: 'analyzing',
-      startErrorMessage: 'Failed to start automation design',
-    },
-    startFn: ({ personaId, description }) => startAutomationDesign(personaId, description),
+  const task = useAiArtifactTask<[string, string], AutomationDesignResult>({
+    progressEvent: 'automation-design-output',
+    statusEvent: 'automation-design-status',
+    runningPhase: 'analyzing',
+    completedPhase: 'preview',
+    startFn: startAutomationDesign,
+    cancelFn: cancelAutomationDesign,
+    errorMessage: 'Automation design failed',
   });
 
-  const cancel = useCallback(() => {
-    flow.cancel(() => cancelAutomationDesign());
-  }, [flow.cancel]);
-
   return {
-    phase: flow.phase as AutomationDesignPhase,
-    outputLines: flow.lines,
-    result: flow.result,
-    error: flow.error,
-    start: flow.start,
-    cancel,
-    reset: flow.reset,
-    setResult: flow.setResult,
-    setPhase: flow.setPhase,
-    setError: flow.setError,
+    phase: task.phase as AutomationDesignPhase,
+    outputLines: task.lines,
+    result: task.result,
+    error: task.error,
+    start: task.start,
+    cancel: task.cancel,
+    reset: task.reset,
+    setResult: task.setResult,
+    setPhase: task.setPhase,
+    setError: task.setError,
   };
 }

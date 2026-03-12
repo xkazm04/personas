@@ -42,7 +42,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
       </div>
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-semibold ${confirmed ? 'text-emerald-400' : 'text-amber-400'}`}>
-          {confirmed ? 'Step confirmed — waiting for detection' : 'Action Required'}
+          {confirmed ? 'Step confirmed -- waiting for detection' : 'Action Required'}
         </p>
         <p className="text-sm text-foreground/80 mt-1 leading-relaxed">{message}</p>
         {!confirmed && (

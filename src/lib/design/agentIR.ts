@@ -1,5 +1,5 @@
 /**
- * AgentIR utilities — factory, diff, and merge operations.
+ * AgentIR utilities -- factory, diff, and merge operations.
  *
  * These enable the universal interchange pipeline where every
  * creation/modification path converges on AgentIR, and operations
@@ -8,7 +8,7 @@
 
 import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
 
-// ── Factory ─────────────────────────────────────────────────────
+// -- Factory -----------------------------------------------------
 
 /** Create a minimal empty AgentIR with all required fields initialized. */
 export function emptyAgentIR(): AgentIR {
@@ -28,7 +28,7 @@ export function emptyAgentIR(): AgentIR {
   };
 }
 
-// ── Diff ────────────────────────────────────────────────────────
+// -- Diff --------------------------------------------------------
 
 export interface AgentIRFieldDiff {
   field: string;
@@ -99,7 +99,7 @@ export function diffAgentIR(before: AgentIR, after: AgentIR): AgentIRDiff {
   return { changed, fields, addedTools, removedTools, addedTriggers, removedTriggers, addedConnectors, removedConnectors };
 }
 
-// ── Merge ───────────────────────────────────────────────────────
+// -- Merge -------------------------------------------------------
 
 /**
  * Merge an overlay onto a base AgentIR. Overlay values take precedence.

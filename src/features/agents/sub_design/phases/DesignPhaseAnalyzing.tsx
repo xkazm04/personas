@@ -27,7 +27,7 @@ export function DesignPhaseAnalyzing({ instruction, outputLines, savedDesignResu
           <span>Updating design...</span>
         </div>
       )}
-      <div className="bg-secondary/30 rounded-xl px-4 py-3 text-sm text-foreground/90 border border-primary/15">
+      <div className="bg-secondary/30 rounded-xl px-4 py-3 text-sm text-foreground/90 border border-primary/20">
         {instruction}
       </div>
 

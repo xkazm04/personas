@@ -25,7 +25,7 @@ export function LabProgress() {
                     : labProgress.phase === 'generating'
                       ? 'Generating test scenarios...'
                       : labProgress.phase === 'executing'
-                        ? `Testing ${labProgress.modelId ?? ''} — ${labProgress.scenarioName ?? ''}`
+                        ? `Testing ${labProgress.modelId ?? ''} -- ${labProgress.scenarioName ?? ''}`
                         : labProgress.phase}
                 </span>
               </div>
@@ -48,9 +48,9 @@ export function LabProgress() {
 
             {labProgress.scores && (
               <div className="flex items-center gap-4 text-sm text-muted-foreground/90">
-                <span>Tool: {labProgress.scores.tool_accuracy ?? '—'}</span>
-                <span>Output: {labProgress.scores.output_quality ?? '—'}</span>
-                <span>Protocol: {labProgress.scores.protocol_compliance ?? '—'}</span>
+                <span>Tool: {labProgress.scores.tool_accuracy ?? '--'}</span>
+                <span>Output: {labProgress.scores.output_quality ?? '--'}</span>
+                <span>Protocol: {labProgress.scores.protocol_compliance ?? '--'}</span>
               </div>
             )}
           </div>

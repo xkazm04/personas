@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bookmark, Check, Plus, Trash2, X } from 'lucide-react';
 import { listSavedViews, createSavedView, deleteSavedView, type SavedView } from '@/api/overview/savedViews';
+import { log } from '@/lib/log';
 
 interface SavedViewsDropdownProps {
   currentPersonaId: string | null;
@@ -56,7 +57,7 @@ export function SavedViewsDropdown({
       const data = await listSavedViews();
       setViews(data);
     } catch (e) {
-      console.error('Failed to load saved views:', e);
+      log.error('SavedViewsDropdown', 'Failed to load saved views', { error: String(e) });
     }
   };
 
@@ -93,7 +94,7 @@ export function SavedViewsDropdown({
       setIsSaving(false);
       await loadViews();
     } catch (e) {
-      console.error('Failed to save view:', e);
+      log.error('SavedViewsDropdown', 'Failed to save view', { operation: 'createSavedView', name: newViewName.trim(), error: String(e) });
     }
   };
 
@@ -103,7 +104,7 @@ export function SavedViewsDropdown({
       await deleteSavedView(id);
       await loadViews();
     } catch (err) {
-      console.error('Failed to delete view:', err);
+      log.error('SavedViewsDropdown', 'Failed to delete view', { operation: 'deleteSavedView', viewId: id, error: String(err) });
     }
   };
 

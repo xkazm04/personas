@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { Sparkles } from 'lucide-react';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
+import { ThinkingLoader } from '../../../shared/ThinkingLoader';
 import { validateVariable } from '@/lib/utils/sanitizers/variableSanitizer';
 import { TemplateVariablesCard } from './TemplateVariablesCard';
 import { TriggerSetupCard } from './TriggerSetupCard';
@@ -8,7 +8,7 @@ import { HumanReviewCard } from './HumanReviewCard';
 import { MemoryCard } from './MemoryCard';
 import { AiQuestionsCard } from './AiQuestionsCard';
 
-// ── Component ─────────────────────────────────────────────
+// -- Component ---------------------------------------------
 
 export function TuneStep() {
   const {
@@ -39,7 +39,7 @@ export function TuneStep() {
   const hasVariables = adoptionRequirements.length > 0;
   const hasQuestions = questions !== null && questions.length > 0;
 
-  // ── Selected triggers ──
+  // -- Selected triggers --
 
   const selectedTriggers = useMemo(() => {
     if (!designResult?.suggested_triggers) return [];
@@ -55,7 +55,7 @@ export function TuneStep() {
     });
   }, [designResult, selectedTriggerIndices]);
 
-  // ── Variable validation summary ──
+  // -- Variable validation summary --
 
   const hasRequiredMissing = useMemo(() => {
     if (!hasVariables) return false;
@@ -127,7 +127,7 @@ export function TuneStep() {
       {/* Loading indicator for questions generation */}
       {questionGenerating && !hasQuestions && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-500/5 border border-violet-500/10">
-          <Sparkles className="w-3.5 h-3.5 text-violet-400 animate-pulse" />
+          <ThinkingLoader size={20} />
           <span className="text-sm text-violet-300/70">Analyzing template for configuration questions...</span>
         </div>
       )}

@@ -360,7 +360,7 @@ pub fn get_reviews_paginated(
 
         Ok(PaginatedReviewResult { items, total })
     } else {
-        // Fast path: no coverage filter — use SQL LIMIT/OFFSET
+        // Fast path: no coverage filter -- use SQL LIMIT/OFFSET
         // Count total
         let count_sql = format!("SELECT COUNT(*) FROM persona_design_reviews{where_clause}");
         let params_refs: Vec<&dyn rusqlite::types::ToSql> =
@@ -400,15 +400,44 @@ pub fn get_reviews_paginated(
 }
 
 /// Increment the adoption_count and update last_adopted_at for a template identified by name.
-pub fn increment_adoption_count(pool: &DbPool, template_name: &str) -> Result<(), AppError> {
+/// Also inserts an audit row into adoption_log for provenance tracking.
+pub fn increment_adoption_count(
+    pool: &DbPool,
+    template_name: &str,
+    persona_id: Option<&str>,
+) -> Result<(), AppError> {
     let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    conn.execute(
+    let mut conn = pool.get()?;
+    let tx = conn.transaction().map_err(|e| {
+        AppError::Internal(format!("Failed to begin adoption transaction: {e}"))
+    })?;
+
+    // Atomic increment
+    tx.execute(
         "UPDATE persona_design_reviews
          SET adoption_count = adoption_count + 1, last_adopted_at = ?1
          WHERE test_case_name = ?2",
         params![now, template_name],
     )?;
+
+    // Look up the review id for the audit log
+    let review_id: Option<String> = tx
+        .prepare("SELECT id FROM persona_design_reviews WHERE test_case_name = ?1")?
+        .query_row(params![template_name], |row| row.get(0))
+        .ok();
+
+    // Insert audit log entry
+    let log_id = uuid::Uuid::new_v4().to_string();
+    tx.execute(
+        "INSERT INTO adoption_log (id, template_name, source_review_id, persona_id, adopted_at)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![log_id, template_name, review_id, persona_id, now],
+    )?;
+
+    tx.commit().map_err(|e| {
+        AppError::Internal(format!("Failed to commit adoption transaction: {e}"))
+    })?;
+
     Ok(())
 }
 

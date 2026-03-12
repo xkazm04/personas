@@ -155,7 +155,7 @@ export function SuiteListItem({
                 scenarios.map((scenario, idx) => (
                   <div
                     key={`${scenario.name}-${idx}`}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-background/20 border border-primary/5"
+                    className="flex items-start gap-3 p-3 rounded-lg bg-background/20 border border-primary/10"
                   >
                     <FileText className="w-4 h-4 text-primary/40 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">

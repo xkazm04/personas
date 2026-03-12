@@ -124,7 +124,7 @@ export function MatrixResultsView({ run, results }: Props) {
                 ].map((row) => {
                   const d = row.draft - row.current;
                   return (
-                    <tr key={row.label} className="border-b border-primary/5">
+                    <tr key={row.label} className="border-b border-primary/10">
                       <td className="px-3 py-2.5 text-foreground/80 font-medium flex items-center gap-1.5">
                         {row.icon && <row.icon className="w-3.5 h-3.5 text-muted-foreground/80" />}
                         {row.label}
@@ -150,19 +150,19 @@ export function MatrixResultsView({ run, results }: Props) {
           <div className="flex items-center gap-6 text-sm text-muted-foreground/80 px-1">
             <span className="flex items-center gap-1">
               <DollarSign className="w-3 h-3" />
-              Current: ${currentAgg?.totalCost.toFixed(4) ?? '—'}
+              Current: ${currentAgg?.totalCost.toFixed(4) ?? '--'}
             </span>
             <span className="flex items-center gap-1">
               <DollarSign className="w-3 h-3" />
-              Draft: ${draftAgg?.totalCost.toFixed(4) ?? '—'}
+              Draft: ${draftAgg?.totalCost.toFixed(4) ?? '--'}
             </span>
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              Current: {currentAgg ? (currentAgg.avgDuration / 1000).toFixed(1) : '—'}s
+              Current: {currentAgg ? (currentAgg.avgDuration / 1000).toFixed(1) : '--'}s
             </span>
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              Draft: {draftAgg ? (draftAgg.avgDuration / 1000).toFixed(1) : '—'}s
+              Draft: {draftAgg ? (draftAgg.avgDuration / 1000).toFixed(1) : '--'}s
             </span>
           </div>
         </div>
@@ -202,13 +202,13 @@ export function MatrixResultsView({ run, results }: Props) {
                   const draftScore = calcComposite(draftRows);
 
                   return (
-                    <tr key={scenario} className="border-b border-primary/5 hover:bg-secondary/10 transition-colors">
+                    <tr key={scenario} className="border-b border-primary/10 hover:bg-secondary/10 transition-colors">
                       <td className="px-3 py-2.5 text-foreground/80 font-medium max-w-[200px] truncate">{scenario}</td>
                       <td className={`px-3 py-2.5 text-center font-bold ${scoreColor(currentScore)}`}>
-                        {currentScore ?? '—'}
+                        {currentScore ?? '--'}
                       </td>
                       <td className={`px-3 py-2.5 text-center font-bold ${scoreColor(draftScore)}`}>
-                        {draftScore ?? '—'}
+                        {draftScore ?? '--'}
                       </td>
                     </tr>
                   );

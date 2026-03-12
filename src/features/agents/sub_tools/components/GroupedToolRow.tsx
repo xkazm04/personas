@@ -58,7 +58,7 @@ export function GroupedToolRow({
           )}
         </div>
         {usageCount > 0 && (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm bg-primary/5 text-muted-foreground/80 border border-primary/8 flex-shrink-0">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm bg-primary/5 text-muted-foreground/80 border border-primary/10 flex-shrink-0">
             <BarChart3 className="w-2.5 h-2.5" />
             {usageCount.toLocaleString()}
           </span>

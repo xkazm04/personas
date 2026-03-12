@@ -23,7 +23,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isCloud = review.source === 'cloud';
 
-  // Local guard against double-submit — fires immediately before parent state updates
+  // Local guard against double-submit -- fires immediately before parent state updates
   const actionFiredRef = useRef(false);
   const handleAction = useCallback((status: ManualReviewStatus, notes?: string) => {
     if (actionFiredRef.current || isProcessing) return;

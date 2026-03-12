@@ -16,31 +16,41 @@ const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
  */
 export function useHealthDigestScheduler() {
   const ran = useRef(false);
+  const running = useRef(false);
   const personasLoaded = usePersonaStore((s) => s.personas.length > 0);
 
   useEffect(() => {
-    if (ran.current || !personasLoaded) return;
-    ran.current = true;
+    if (ran.current || running.current || !personasLoaded) return;
+    running.current = true;
 
     (async () => {
       try {
         // Check if digest is enabled (default: true)
         const enabledRaw = await getAppSetting(DIGEST_ENABLED_KEY).catch(() => null);
-        if (enabledRaw === 'false') return;
+        if (enabledRaw === 'false') {
+          ran.current = true; // User disabled digests — no retry needed
+          return;
+        }
 
         // Check when we last ran
         const lastRunRaw = await getAppSetting(LAST_DIGEST_KEY).catch(() => null);
         const lastRunMs = lastRunRaw ? new Date(lastRunRaw).getTime() : 0;
         const now = Date.now();
 
-        if (now - lastRunMs < ONE_WEEK_MS) return; // Not yet due
+        if (now - lastRunMs < ONE_WEEK_MS) {
+          ran.current = true; // Not yet due — no retry needed
+          return;
+        }
 
         // Run the digest
         const digest = await usePersonaStore.getState().runFullHealthDigest();
-        if (!digest) return;
+        if (!digest) return; // Will retry on next effect cycle
 
         // Record timestamp
         await setAppSetting(LAST_DIGEST_KEY, new Date().toISOString());
+
+        // Digest succeeded — latch so we don't re-run this session
+        ran.current = true;
 
         // Send native notification
         const { totalScore, totalIssues, errorCount, warningCount } = digest;
@@ -51,10 +61,11 @@ export function useHealthDigestScheduler() {
           : `Score: ${totalScore.value}/100 \u00b7 ${totalIssues} issue${totalIssues !== 1 ? 's' : ''} across ${digest.personas.length} agent${digest.personas.length !== 1 ? 's' : ''} (${errorCount} errors, ${warningCount} warnings)`;
 
         await invoke<void>('send_app_notification', { title, body }).catch(() => {
-          // Notification permission may not be granted — silently ignore
+          // Notification permission may not be granted -- silently ignore
         });
       } catch {
-        // intentional: non-critical — background scheduling
+        // Transient failure — unlock so next render cycle retries
+        running.current = false;
       }
     })();
   }, [personasLoaded]);

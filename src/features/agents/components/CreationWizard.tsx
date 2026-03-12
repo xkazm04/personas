@@ -1,11 +1,52 @@
-import { useState, useReducer, useCallback } from 'react';
+import { useState, useReducer, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Blocks, MessageCircle, LayoutGrid } from 'lucide-react';
+import type { SVGProps } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { ChatCreator } from '@/features/agents/components/ChatCreator';
 import { BuilderStep, IdentityStep, MatrixCreator, builderReducer, INITIAL_BUILDER_STATE } from './creation';
 import { TRANSITION_SLOW, TRANSITION_FAST } from '@/features/templates/animationPresets';
+
+const iconDefaults: SVGProps<SVGSVGElement> = { width: 16, height: 16, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+
+/** Wrench assembling blocks */
+function BuildIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...iconDefaults} {...props}>
+      <rect x="2" y="2" width="5" height="5" rx="1" />
+      <rect x="9" y="9" width="5" height="5" rx="1" />
+      <path d="M10 3l2.5-1L14 4.5 13 7l-2-1" />
+      <path d="M7 9l-1 2-2.5 1L2 10.5 3 8" />
+    </svg>
+  );
+}
+
+/** Speech bubbles forming a persona silhouette */
+function ChatPersonaIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...iconDefaults} {...props}>
+      <path d="M3 3h7a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H6l-2 1.5V9H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+      <path d="M12 6h1a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1v1.5L10 12H8" />
+      <circle cx="5.5" cy="5.5" r="0.75" fill="currentColor" stroke="none" />
+      <circle cx="7.5" cy="5.5" r="0.75" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/** Grid of agent avatars */
+function MatrixAgentsIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...iconDefaults} {...props}>
+      <circle cx="4.5" cy="4" r="1.5" />
+      <circle cx="11.5" cy="4" r="1.5" />
+      <circle cx="4.5" cy="11" r="1.5" />
+      <circle cx="11.5" cy="11" r="1.5" />
+      <path d="M4.5 6v1.5h7V6" />
+      <path d="M4.5 9v-1" />
+      <path d="M11.5 9v-1" />
+    </svg>
+  );
+}
 
 type WizardStep = 'entry' | 'identity';
 type EntryMode = 'build' | 'chat' | 'matrix';
@@ -24,13 +65,30 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
   const [entryMode, setEntryMode] = useState<EntryMode>('matrix');
   const [builderState, dispatch] = useReducer(builderReducer, INITIAL_BUILDER_STATE);
   const [draftPersonaId, setDraftPersonaId] = useState<string | null>(null);
+  const modeTabRefs = useRef<Partial<Record<EntryMode, HTMLButtonElement | null>>>({});
+
+  const MODES: EntryMode[] = ['build', 'chat', 'matrix'];
+
+  const handleModeKeyDown = useCallback((mode: EntryMode, e: React.KeyboardEvent<HTMLButtonElement>) => {
+    let offset = 0;
+    if (e.key === 'ArrowRight') offset = 1;
+    else if (e.key === 'ArrowLeft') offset = -1;
+    else if (e.key === 'Home') { e.preventDefault(); setEntryMode('build'); modeTabRefs.current.build?.focus(); return; }
+    else if (e.key === 'End') { e.preventDefault(); setEntryMode('matrix'); modeTabRefs.current.matrix?.focus(); return; }
+    else return;
+    e.preventDefault();
+    const idx = MODES.indexOf(mode);
+    const next = MODES[(idx + offset + MODES.length) % MODES.length] as EntryMode;
+    setEntryMode(next);
+    modeTabRefs.current[next]?.focus();
+  }, []);
 
   const handleCancel = useCallback(async () => {
     if (draftPersonaId) {
       try {
         await deletePersona(draftPersonaId);
       } catch {
-        // intentional: non-critical — best-effort cleanup for abandoned drafts
+        // intentional: non-critical -- best-effort cleanup for abandoned drafts
       }
       setDraftPersonaId(null);
     }
@@ -67,15 +125,22 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                   </p>
                 </div>
 
-                <div className="flex border border-primary/15 rounded-xl overflow-hidden shrink-0">
+                <div className="flex border border-primary/20 rounded-xl overflow-hidden shrink-0" role="tablist" aria-label="Creation mode">
                   <button
+                    ref={(el) => { modeTabRefs.current.build = el; }}
                     onClick={() => setEntryMode('build')}
+                    onKeyDown={(e) => handleModeKeyDown('build', e)}
+                    role="tab"
+                    id="wizard-tab-build"
+                    aria-selected={entryMode === 'build'}
+                    aria-controls="wizard-tabpanel"
+                    tabIndex={entryMode === 'build' ? 0 : -1}
                     className="relative flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium"
                   >
                     {entryMode === 'build' && (
                       <motion.div
                         layoutId="wizard-mode-pill"
-                        className="absolute inset-0 bg-primary/10 rounded-xl"
+                        className="absolute inset-0 bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl"
                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                       />
                     )}
@@ -84,12 +149,19 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                         ? 'text-foreground/90'
                         : 'text-muted-foreground/70 hover:text-muted-foreground'
                     }`}>
-                      <Blocks className="w-3.5 h-3.5" />
+                      <BuildIcon className="w-3.5 h-3.5" />
                       Build
                     </span>
                   </button>
                   <button
+                    ref={(el) => { modeTabRefs.current.chat = el; }}
                     onClick={() => setEntryMode('chat')}
+                    onKeyDown={(e) => handleModeKeyDown('chat', e)}
+                    role="tab"
+                    id="wizard-tab-chat"
+                    aria-selected={entryMode === 'chat'}
+                    aria-controls="wizard-tabpanel"
+                    tabIndex={entryMode === 'chat' ? 0 : -1}
                     className={`relative flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
                       entryMode === 'chat'
                         ? 'text-foreground/90'
@@ -99,17 +171,24 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                     {entryMode === 'chat' && (
                       <motion.div
                         layoutId="wizard-mode-pill"
-                        className="absolute inset-0 bg-primary/10 rounded-xl"
+                        className="absolute inset-0 bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl"
                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                       />
                     )}
                     <span className="relative z-10 flex items-center gap-2">
-                      <MessageCircle className="w-3.5 h-3.5" />
+                      <ChatPersonaIcon className="w-3.5 h-3.5" />
                       Chat
                     </span>
                   </button>
                   <button
+                    ref={(el) => { modeTabRefs.current.matrix = el; }}
                     onClick={() => setEntryMode('matrix')}
+                    onKeyDown={(e) => handleModeKeyDown('matrix', e)}
+                    role="tab"
+                    id="wizard-tab-matrix"
+                    aria-selected={entryMode === 'matrix'}
+                    aria-controls="wizard-tabpanel"
+                    tabIndex={entryMode === 'matrix' ? 0 : -1}
                     className={`relative flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
                       entryMode === 'matrix'
                         ? 'text-foreground/90'
@@ -119,27 +198,30 @@ export default function CreationWizard({ canCancel }: CreationWizardProps) {
                     {entryMode === 'matrix' && (
                       <motion.div
                         layoutId="wizard-mode-pill"
-                        className="absolute inset-0 bg-primary/10 rounded-xl"
+                        className="absolute inset-0 bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl"
                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                       />
                     )}
                     <span className="relative z-10 flex items-center gap-2">
-                      <LayoutGrid className="w-3.5 h-3.5" />
+                      <MatrixAgentsIcon className="w-3.5 h-3.5" />
                       Matrix
                     </span>
                   </button>
                 </div>
               </div>
 
-              {/* Mode content — fills remaining space */}
+              {/* Mode content -- fills remaining space */}
               <AnimatePresence mode="wait">
                 <motion.div
                   key={entryMode}
+                  role="tabpanel"
+                  id="wizard-tabpanel"
+                  aria-labelledby={`wizard-tab-${entryMode}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={TRANSITION_FAST}
-                  className={entryMode === 'chat' ? 'border border-primary/10 rounded-xl overflow-hidden bg-background/30' : undefined}
+                  className={entryMode === 'chat' ? 'border border-primary/20 rounded-xl overflow-hidden bg-background/30' : undefined}
                 >
                   {entryMode === 'chat' ? (
                     <ChatCreator

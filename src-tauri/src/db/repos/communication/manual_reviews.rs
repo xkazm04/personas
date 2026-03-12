@@ -187,7 +187,7 @@ pub fn get_pending_count(
     }
 }
 
-// ── Review Messages ─────────────────────────────────────────────
+// -- Review Messages ---------------------------------------------
 
 fn row_to_message(row: &Row) -> rusqlite::Result<ReviewMessage> {
     Ok(ReviewMessage {

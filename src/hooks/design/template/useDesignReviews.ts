@@ -75,7 +75,7 @@ export function useDesignReviews() {
     const seeds = getSeedReviews();
 
     // Upsert ALL seeds (not just missing) to backfill new fields like category.
-    // The backend uses ON CONFLICT DO UPDATE so this is safe — it preserves
+    // The backend uses ON CONFLICT DO UPDATE so this is safe -- it preserves
     // adoption_count and last_adopted_at while updating changed fields.
     if (seeds.length === 0) return;
 
@@ -85,7 +85,7 @@ export function useDesignReviews() {
       const data = await api.listDesignReviews();
       setReviews(data);
     } catch {
-      // intentional: non-critical — seeding catalog templates is best-effort
+      // intentional: non-critical -- seeding catalog templates is best-effort
     }
   }, []);
 
@@ -154,7 +154,7 @@ export function useDesignReviews() {
           }
           refresh();
         } else if (status === 'generating') {
-          // Template is being generated — update progress with template name
+          // Template is being generated -- update progress with template name
           setRunProgress((prev) => ({
             current: test_case_index,
             total,
@@ -182,7 +182,7 @@ export function useDesignReviews() {
           else if (status === 'error') countersRef.current.errored++;
 
           const elapsedStr = elapsed_ms ? ` (${(elapsed_ms / 1000).toFixed(1)}s)` : '';
-          const errorStr = error_message ? ` — ${error_message}` : '';
+          const errorStr = error_message ? ` -- ${error_message}` : '';
           setRunProgress((prev) => ({
             current: test_case_index + 1,
             total,
@@ -207,7 +207,7 @@ export function useDesignReviews() {
       try {
         await api.cancelDesignReviewRun(currentRunId.current);
       } catch {
-        // intentional: non-critical — cancellation is best-effort
+        // intentional: non-critical -- cancellation is best-effort
       }
     }
     if (unlistenRef.current) {

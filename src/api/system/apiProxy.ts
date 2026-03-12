@@ -1,6 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
 export interface ApiProxyResponse {
   status: number;
@@ -35,7 +35,7 @@ export interface ApiRequestBody {
   required: boolean;
 }
 
-// ── API Proxy ──────────────────────────────────────────────────────────
+// -- API Proxy ----------------------------------------------------------
 
 export const executeApiRequest = (
   credentialId: string,
@@ -52,7 +52,7 @@ export const executeApiRequest = (
     body: body || null,
   });
 
-// ── API Definition ─────────────────────────────────────────────────────
+// -- API Definition -----------------------------------------------------
 
 export const parseApiDefinition = (rawSpec: string) =>
   invoke<ApiEndpoint[]>('parse_api_definition', { rawSpec });

@@ -116,7 +116,7 @@ function ErrorFallback({
                   : 'Something unexpected happened'}
               </p>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Don't worry â€” your data is safe. You can try again or head back to the dashboard.
+                Don't worry -- your data is safe. You can try again or head back to the dashboard.
               </p>
             </div>
           </div>
@@ -148,7 +148,7 @@ function ErrorFallback({
             {copied ? 'Copied to clipboard' : 'Copy report for support'}
           </button>
 
-          {/* Details toggle â€” hidden by default, labeled for developers */}
+          {/* Details toggle -- hidden by default, labeled for developers */}
           <button
             onClick={() => setShowDetails(!showDetails)}
             className="flex items-center gap-1.5 text-xs text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"

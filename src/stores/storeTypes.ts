@@ -34,8 +34,9 @@ import type { AlertSlice } from "./slices/overview/alertSlice";
 import type { ViewModeSlice } from "./slices/system/viewModeSlice";
 import type { DevToolsSlice } from "./slices/system/devToolsSlice";
 import type { NetworkSlice } from "./slices/network/networkSlice";
+import type { SetupSlice } from "./slices/system/setupSlice";
 
-// ── Shared helper ──────────────────────────────────────────────────────
+// -- Shared helper ------------------------------------------------------
 export function errMsg(err: unknown, fallback: string): string {
   if (err instanceof Error) return err.message;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,7 +44,7 @@ export function errMsg(err: unknown, fallback: string): string {
   return fallback;
 }
 
-// ── Combined store type ────────────────────────────────────────────────
+// -- Combined store type ------------------------------------------------
 export type PersonaStore = PersonaSlice &
   ToolSlice &
   TriggerSlice &
@@ -73,4 +74,5 @@ export type PersonaStore = PersonaSlice &
   AlertSlice &
   ViewModeSlice &
   DevToolsSlice &
-  NetworkSlice;
+  NetworkSlice &
+  SetupSlice;

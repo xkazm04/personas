@@ -12,8 +12,8 @@ pub fn save(pool: &DbPool, trace: &ExecutionTrace) -> Result<(), AppError> {
 
     let conn = pool.get()?;
     conn.execute(
-        "INSERT INTO execution_traces (id, execution_id, trace_id, persona_id, chain_trace_id, spans, total_duration_ms, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        "INSERT INTO execution_traces (id, execution_id, trace_id, persona_id, chain_trace_id, spans, total_duration_ms, evicted_span_count, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         params![
             id,
             trace.execution_id,
@@ -22,6 +22,7 @@ pub fn save(pool: &DbPool, trace: &ExecutionTrace) -> Result<(), AppError> {
             trace.chain_trace_id,
             spans_json,
             trace.total_duration_ms.map(|d| d as i64),
+            trace.evicted_span_count as i64,
             trace.created_at,
         ],
     )?;
@@ -36,12 +37,13 @@ pub fn get_by_execution_id(
 ) -> Result<Option<ExecutionTrace>, AppError> {
     let conn = pool.get()?;
     let result = conn.query_row(
-        "SELECT trace_id, execution_id, persona_id, chain_trace_id, spans, total_duration_ms, created_at
+        "SELECT trace_id, execution_id, persona_id, chain_trace_id, spans, total_duration_ms, evicted_span_count, created_at
          FROM execution_traces WHERE execution_id = ?1 ORDER BY created_at DESC LIMIT 1",
         params![execution_id],
         |row| {
             let spans_json: String = row.get("spans")?;
             let total_duration_ms: Option<i64> = row.get("total_duration_ms")?;
+            let evicted: i64 = row.get::<_, Option<i64>>("evicted_span_count")?.unwrap_or(0);
             Ok(ExecutionTrace {
                 trace_id: row.get("trace_id")?,
                 execution_id: row.get("execution_id")?,
@@ -49,6 +51,7 @@ pub fn get_by_execution_id(
                 chain_trace_id: row.get("chain_trace_id")?,
                 spans: serde_json::from_str(&spans_json).unwrap_or_default(),
                 total_duration_ms: total_duration_ms.map(|d| d as u64),
+                evicted_span_count: evicted as u64,
                 created_at: row.get("created_at")?,
             })
         },
@@ -68,12 +71,13 @@ pub fn get_by_chain_trace_id(
 ) -> Result<Vec<ExecutionTrace>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
-        "SELECT trace_id, execution_id, persona_id, chain_trace_id, spans, total_duration_ms, created_at
+        "SELECT trace_id, execution_id, persona_id, chain_trace_id, spans, total_duration_ms, evicted_span_count, created_at
          FROM execution_traces WHERE chain_trace_id = ?1 ORDER BY created_at ASC",
     )?;
     let rows = stmt.query_map(params![chain_trace_id], |row| {
         let spans_json: String = row.get("spans")?;
         let total_duration_ms: Option<i64> = row.get("total_duration_ms")?;
+        let evicted: i64 = row.get::<_, Option<i64>>("evicted_span_count")?.unwrap_or(0);
         Ok(ExecutionTrace {
             trace_id: row.get("trace_id")?,
             execution_id: row.get("execution_id")?,
@@ -81,6 +85,7 @@ pub fn get_by_chain_trace_id(
             chain_trace_id: row.get("chain_trace_id")?,
             spans: serde_json::from_str(&spans_json).unwrap_or_default(),
             total_duration_ms: total_duration_ms.map(|d| d as u64),
+            evicted_span_count: evicted as u64,
             created_at: row.get("created_at")?,
         })
     })?;

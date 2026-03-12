@@ -70,7 +70,7 @@ pub fn build_step_help_prompt(
     prompt.push_str("  \"updated_url\": null\n");
     prompt.push_str("}\n");
     prompt.push_str("```\n\n");
-    prompt.push_str("`updated_url` — if you can provide a more specific URL for the user to visit, include it; otherwise null.\n");
+    prompt.push_str("`updated_url` -- if you can provide a more specific URL for the user to visit, include it; otherwise null.\n");
 
     prompt
 }
@@ -142,7 +142,7 @@ Output ONLY a JSON code block:
   ],
   "verification_hint": "After pasting your token, we'll test it by calling the GitHub API to verify it works.",
   "tips": [
-    "Store your token securely — GitHub will not show it again",
+    "Store your token securely -- GitHub will not show it again",
     "Use fine-grained tokens for better security when available"
   ]
 }
@@ -150,19 +150,19 @@ Output ONLY a JSON code block:
 
 Important rules:
 1. `action_type` must be one of: `navigate` (open a URL), `configure` (fill forms/select options on the portal), `create_account` (sign up for the service), `authorize` (OAuth/consent flow), `capture` (copy/capture a credential value), `verify` (email/phone verification).
-2. `requires_human` — true if the step requires human interaction (CAPTCHA, clicking buttons, reading values). false only for simple navigation.
-3. `field_fills` — maps credential field keys to descriptions of what value to capture at this step. Only set on `capture` steps.
-4. `url` — provide the most specific, direct URL possible. Deep-link to the exact settings page, not the homepage.
-5. `wait_for` — describes what the user action we're waiting for before proceeding. null if automatic.
-6. `visual_hint` — brief instruction about what the user will see on the page and what to click/do.
-7. `estimated_time_seconds` — realistic estimate for the entire flow.
-8. `prerequisites` — list of things the user needs before starting (account, payment method, etc.).
-9. `tips` — helpful tips about the credential (security, expiration, etc.).
-10. `verification_hint` — what happens after all credentials are captured.
+2. `requires_human` -- true if the step requires human interaction (CAPTCHA, clicking buttons, reading values). false only for simple navigation.
+3. `field_fills` -- maps credential field keys to descriptions of what value to capture at this step. Only set on `capture` steps.
+4. `url` -- provide the most specific, direct URL possible. Deep-link to the exact settings page, not the homepage.
+5. `wait_for` -- describes what the user action we're waiting for before proceeding. null if automatic.
+6. `visual_hint` -- brief instruction about what the user will see on the page and what to click/do.
+7. `estimated_time_seconds` -- realistic estimate for the entire flow.
+8. `prerequisites` -- list of things the user needs before starting (account, payment method, etc.).
+9. `tips` -- helpful tips about the credential (security, expiration, etc.).
+10. `verification_hint` -- what happens after all credentials are captured.
 11. Steps should be ordered chronologically. Include account creation steps if the service requires sign-up.
-12. Be specific about URLs — use the exact developer portal URLs, not generic homepages.
+12. Be specific about URLs -- use the exact developer portal URLs, not generic homepages.
 13. For OAuth services, include steps for creating an OAuth app/client in the developer portal.
-14. Output ONLY the JSON block — no additional text before or after.
+14. Output ONLY the JSON block -- no additional text before or after.
 "####;
 
 // ============================================================================

@@ -95,7 +95,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
               <AddSubscriptionForm onAdd={handleAdd} onCancel={() => setShowAddForm(false)} />
             ) : (
               <button onClick={() => setShowAddForm(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/15 hover:border-primary/40 text-sm text-muted-foreground/80 hover:text-primary/80 transition-all w-full focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none focus-visible:rounded-xl">
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/20 hover:border-primary/40 text-sm text-muted-foreground/80 hover:text-primary/80 transition-all w-full focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none focus-visible:rounded-xl">
                 <Plus className="w-4 h-4" /> Add Subscription
               </button>
             )}

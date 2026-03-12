@@ -1,10 +1,10 @@
 /**
- * StructuredPrompt — Canonical Owner Module
+ * StructuredPrompt -- Canonical Owner Module
  *
  * Single source of truth for StructuredPrompt operations:
  * - Types & interfaces
  * - Creation & migration
- * - Parsing (JSON string → StructuredPrompt, Record → StructuredPrompt)
+ * - Parsing (JSON string -> StructuredPrompt, Record -> StructuredPrompt)
  * - Validation
  * - Serialization & persistence
  * - Rendering to markdown
@@ -12,7 +12,7 @@
  * - Editable format conversion (for draft editors)
  */
 
-// ── Types ──────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------
 
 export interface StructuredPromptSection {
   title: string;
@@ -49,7 +49,7 @@ export const SECTION_LABELS: Record<StandardSectionKey, string> = {
   errorHandling: 'Error Handling',
 };
 
-// ── Creation & Migration ───────────────────────────────────────
+// -- Creation & Migration ---------------------------------------
 
 /** Create an empty structured prompt with all fields initialized. */
 export function createEmptyStructuredPrompt(): StructuredPrompt {
@@ -75,7 +75,7 @@ export function migratePromptToStructured(flatPrompt: string): StructuredPrompt 
   };
 }
 
-// ── Validation ─────────────────────────────────────────────────
+// -- Validation -------------------------------------------------
 
 /** Check if all sections of a structured prompt are empty. */
 export function isStructuredPromptEmpty(sp: StructuredPrompt): boolean {
@@ -90,7 +90,7 @@ export function isStructuredPromptEmpty(sp: StructuredPrompt): boolean {
   );
 }
 
-// ── Parsing ────────────────────────────────────────────────────
+// -- Parsing ----------------------------------------------------
 
 /**
  * Normalize a custom section object, handling multiple heading field names
@@ -150,14 +150,14 @@ export function parseFromRecord(value: Record<string, unknown> | null | undefine
   };
 }
 
-// ── Serialization ──────────────────────────────────────────────
+// -- Serialization ----------------------------------------------
 
 /** Serialize a StructuredPrompt to a JSON string for database persistence. */
 export function stringifyStructuredPrompt(sp: StructuredPrompt): string {
   return JSON.stringify(sp);
 }
 
-// ── Rendering ──────────────────────────────────────────────────
+// -- Rendering --------------------------------------------------
 
 import { previewPrompt as tauriPreviewPrompt } from '@/api/templates/design';
 
@@ -210,8 +210,8 @@ export function renderToMarkdown(sp: StructuredPrompt): string {
  * guidance, and communication protocols. Falls back to the local
  * `renderToMarkdown` if the IPC call fails.
  *
- * @param personaId  — Persona to preview.
- * @param sp         — Optional draft structured prompt (previews unsaved edits).
+ * @param personaId  -- Persona to preview.
+ * @param sp         -- Optional draft structured prompt (previews unsaved edits).
  */
 export async function previewPrompt(
   personaId: string,
@@ -227,7 +227,7 @@ export async function previewPrompt(
   }
 }
 
-// ── Section Summaries ──────────────────────────────────────────
+// -- Section Summaries ------------------------------------------
 
 /**
  * Extract short summaries (first 80 chars) for each standard section.
@@ -247,7 +247,7 @@ export function getSectionSummary(json: string | null): Record<string, string> {
   return result;
 }
 
-// ── Editable Format (for draft editors) ────────────────────────
+// -- Editable Format (for draft editors) ------------------------
 
 /** Custom section format used by draft editors (adds `key` and `label` fields). */
 export type EditableCustomSection = {

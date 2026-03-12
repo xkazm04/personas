@@ -4,13 +4,13 @@ import { toCredentialMetadata, type CredentialMetadata } from '@/lib/types/types
 import { usePersonaStore } from '@/stores/personaStore';
 import { createModuleCache, useModuleCacheSubscription } from '@/hooks/utility/data/useModuleSubscription';
 
-// ── Re-use the same shared caches from useCredentialHealth ──────────
+// -- Re-use the same shared caches from useCredentialHealth ----------
 // We import them indirectly: the result cache is the module-level cache
 // inside useCredentialHealth.ts. Since we can't import it directly,
 // we call checkStored-equivalent logic that writes to the same cache
 // by invoking the healthcheck API and using the exported static helpers.
 
-// ── Bulk-specific state cache (separate from per-key health cache) ──
+// -- Bulk-specific state cache (separate from per-key health cache) --
 
 export interface BulkResult {
   credentialId: string;
@@ -32,7 +32,7 @@ export interface BulkSummary {
 
 const bulkSummaryCache = createModuleCache<'latest', BulkSummary>();
 
-// ── Hook ─────────────────────────────────────────────────────────────
+// -- Hook -------------------------------------------------------------
 
 const CONCURRENCY = 5;
 
@@ -98,7 +98,7 @@ export function useBulkHealthcheck() {
               usePersonaStore.setState((s) => ({
                 credentials: s.credentials.map((c) => (c.id === cred.id ? updated : c)),
               }));
-            } catch { /* intentional: non-critical — healthcheck metadata persistence is best-effort */ }
+            } catch { /* intentional: non-critical -- healthcheck metadata persistence is best-effort */ }
           } catch (e) {
             success = false;
             message = e instanceof Error ? e.message : 'Healthcheck failed';

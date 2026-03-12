@@ -33,7 +33,7 @@ pub struct WebhookState {
 
 /// Start the webhook HTTP server on port 9420.
 ///
-/// Returns a shutdown sender — drop it (or send) to stop the server.
+/// Returns a shutdown sender -- drop it (or send) to stop the server.
 pub async fn start_webhook_server(
     pool: DbPool,
     rate_limiter: Arc<RateLimiter>,
@@ -72,7 +72,7 @@ async fn health() -> impl IntoResponse {
     Json(serde_json::json!({ "status": "ok", "service": "personas-webhook" }))
 }
 
-/// GET /webhook/{trigger_id} — returns info about the trigger (for debugging).
+/// GET /webhook/{trigger_id} -- returns info about the trigger (for debugging).
 async fn webhook_info(
     AxumState(state): AxumState<Arc<WebhookState>>,
     Path(trigger_id): Path<String>,
@@ -113,7 +113,7 @@ struct WebhookResponse {
     error: Option<String>,
 }
 
-/// POST /webhook/{trigger_id} — receive webhook payload, validate HMAC, publish event.
+/// POST /webhook/{trigger_id} -- receive webhook payload, validate HMAC, publish event.
 async fn handle_webhook(
     AxumState(state): AxumState<Arc<WebhookState>>,
     Path(trigger_id): Path<String>,
@@ -180,7 +180,7 @@ async fn handle_webhook(
         );
     }
 
-    // 3. Parse config once — typed access replaces manual JSON extraction
+    // 3. Parse config once -- typed access replaces manual JSON extraction
     let cfg = trigger.parse_config();
     let (webhook_secret, cfg_event_type) = match &cfg {
         crate::db::models::TriggerConfig::Webhook {
@@ -227,11 +227,11 @@ async fn handle_webhook(
             }
         }
         _ => {
-            // No secret configured or empty — reject as misconfigured.
+            // No secret configured or empty -- reject as misconfigured.
             // Webhook triggers must have a non-empty secret.
             tracing::warn!(
                 trigger_id = %trigger_id,
-                "Webhook trigger has no HMAC secret configured — rejecting request",
+                "Webhook trigger has no HMAC secret configured -- rejecting request",
             );
             return (
                 StatusCode::FORBIDDEN,
@@ -248,7 +248,7 @@ async fn handle_webhook(
     let payload = match serde_json::from_slice::<serde_json::Value>(&body) {
         Ok(v) => Some(serde_json::to_string(&v).unwrap_or_default()),
         Err(_) => {
-            // Not JSON — wrap as raw text
+            // Not JSON -- wrap as raw text
             let text = String::from_utf8_lossy(&body);
             if text.is_empty() {
                 None

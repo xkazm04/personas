@@ -85,7 +85,7 @@ export function UnsavedChangesBanner({
         <button key="save" onClick={onSaveAndSwitch} className="btn-sm font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors duration-snap">
           Save & Switch
         </button>,
-        <button key="discard" onClick={onDiscardAndSwitch} className="btn-sm font-medium bg-secondary/50 text-foreground/80 border border-primary/15 hover:bg-secondary/70 transition-colors duration-snap">
+        <button key="discard" onClick={onDiscardAndSwitch} className="btn-sm font-medium bg-secondary/50 text-foreground/80 border border-primary/20 hover:bg-secondary/70 transition-colors duration-snap">
           Discard
         </button>,
       ]}

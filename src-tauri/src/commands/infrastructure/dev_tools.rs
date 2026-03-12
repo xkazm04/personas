@@ -7,6 +7,7 @@ use crate::db::models::{
 };
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
 // ============================================================================
@@ -18,6 +19,7 @@ pub fn dev_tools_list_projects(
     state: State<'_, Arc<AppState>>,
     status: Option<String>,
 ) -> Result<Vec<DevProject>, AppError> {
+    require_auth_sync(&state)?;
     repo::list_projects(&state.db, status.as_deref())
 }
 
@@ -26,6 +28,7 @@ pub fn dev_tools_get_project(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<DevProject, AppError> {
+    require_auth_sync(&state)?;
     repo::get_project_by_id(&state.db, &id)
 }
 
@@ -38,6 +41,7 @@ pub fn dev_tools_create_project(
     status: Option<String>,
     tech_stack: Option<String>,
 ) -> Result<DevProject, AppError> {
+    require_auth_sync(&state)?;
     repo::create_project(
         &state.db,
         &name,
@@ -57,6 +61,7 @@ pub fn dev_tools_update_project(
     status: Option<String>,
     tech_stack: Option<Option<String>>,
 ) -> Result<DevProject, AppError> {
+    require_auth_sync(&state)?;
     repo::update_project(
         &state.db,
         &id,
@@ -72,6 +77,7 @@ pub fn dev_tools_delete_project(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete_project(&state.db, &id)
 }
 
@@ -85,6 +91,7 @@ pub fn dev_tools_list_goals(
     project_id: String,
     status: Option<String>,
 ) -> Result<Vec<DevGoal>, AppError> {
+    require_auth_sync(&state)?;
     repo::list_goals_by_project(&state.db, &project_id, status.as_deref())
 }
 
@@ -93,6 +100,7 @@ pub fn dev_tools_get_goal(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<DevGoal, AppError> {
+    require_auth_sync(&state)?;
     repo::get_goal_by_id(&state.db, &id)
 }
 
@@ -106,6 +114,7 @@ pub fn dev_tools_create_goal(
     status: Option<String>,
     target_date: Option<String>,
 ) -> Result<DevGoal, AppError> {
+    require_auth_sync(&state)?;
     repo::create_goal(
         &state.db,
         &project_id,
@@ -130,6 +139,7 @@ pub fn dev_tools_update_goal(
     started_at: Option<Option<String>>,
     completed_at: Option<Option<String>>,
 ) -> Result<DevGoal, AppError> {
+    require_auth_sync(&state)?;
     repo::update_goal(
         &state.db,
         &id,
@@ -149,6 +159,7 @@ pub fn dev_tools_delete_goal(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete_goal(&state.db, &id)
 }
 
@@ -157,6 +168,7 @@ pub fn dev_tools_reorder_goals(
     state: State<'_, Arc<AppState>>,
     ids: Vec<String>,
 ) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     repo::reorder_goals(&state.db, &ids)
 }
 
@@ -170,6 +182,7 @@ pub fn dev_tools_list_goal_signals(
     goal_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<DevGoalSignal>, AppError> {
+    require_auth_sync(&state)?;
     repo::list_goal_signals(&state.db, &goal_id, limit)
 }
 
@@ -182,6 +195,7 @@ pub fn dev_tools_create_goal_signal(
     delta: Option<i32>,
     message: Option<String>,
 ) -> Result<DevGoalSignal, AppError> {
+    require_auth_sync(&state)?;
     repo::create_goal_signal(
         &state.db,
         &goal_id,
@@ -201,6 +215,7 @@ pub fn dev_tools_list_context_groups(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<Vec<DevContextGroup>, AppError> {
+    require_auth_sync(&state)?;
     repo::list_context_groups(&state.db, &project_id)
 }
 
@@ -213,6 +228,7 @@ pub fn dev_tools_create_context_group(
     icon: Option<String>,
     group_type: Option<String>,
 ) -> Result<DevContextGroup, AppError> {
+    require_auth_sync(&state)?;
     repo::create_context_group(
         &state.db,
         &project_id,
@@ -234,6 +250,7 @@ pub fn dev_tools_update_context_group(
     health_score: Option<Option<i32>>,
     last_scan_at: Option<Option<String>>,
 ) -> Result<DevContextGroup, AppError> {
+    require_auth_sync(&state)?;
     repo::update_context_group(
         &state.db,
         &id,
@@ -251,6 +268,7 @@ pub fn dev_tools_delete_context_group(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete_context_group(&state.db, &id)
 }
 
@@ -259,6 +277,7 @@ pub fn dev_tools_reorder_context_groups(
     state: State<'_, Arc<AppState>>,
     ids: Vec<String>,
 ) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     repo::reorder_context_groups(&state.db, &ids)
 }
 
@@ -272,6 +291,7 @@ pub fn dev_tools_list_contexts(
     project_id: String,
     group_id: Option<String>,
 ) -> Result<Vec<DevContext>, AppError> {
+    require_auth_sync(&state)?;
     repo::list_contexts_by_project(&state.db, &project_id, group_id.as_deref())
 }
 
@@ -280,6 +300,7 @@ pub fn dev_tools_get_context(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<DevContext, AppError> {
+    require_auth_sync(&state)?;
     repo::get_context_by_id(&state.db, &id)
 }
 
@@ -298,6 +319,7 @@ pub fn dev_tools_create_context(
     cross_refs: Option<String>,
     tech_stack: Option<String>,
 ) -> Result<DevContext, AppError> {
+    require_auth_sync(&state)?;
     repo::create_context(
         &state.db,
         &project_id,
@@ -328,6 +350,7 @@ pub fn dev_tools_update_context(
     cross_refs: Option<Option<String>>,
     tech_stack: Option<Option<String>>,
 ) -> Result<DevContext, AppError> {
+    require_auth_sync(&state)?;
     repo::update_context(
         &state.db,
         &id,
@@ -348,6 +371,7 @@ pub fn dev_tools_delete_context(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete_context(&state.db, &id)
 }
 
@@ -357,6 +381,7 @@ pub fn dev_tools_move_context_to_group(
     id: String,
     group_id: Option<String>,
 ) -> Result<DevContext, AppError> {
+    require_auth_sync(&state)?;
     repo::move_context_to_group(&state.db, &id, group_id.as_deref())
 }
 
@@ -369,6 +394,7 @@ pub fn dev_tools_list_context_group_relationships(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<Vec<DevContextGroupRelationship>, AppError> {
+    require_auth_sync(&state)?;
     repo::list_context_group_relationships(&state.db, &project_id)
 }
 
@@ -379,6 +405,7 @@ pub fn dev_tools_create_context_group_relationship(
     source_group_id: String,
     target_group_id: String,
 ) -> Result<DevContextGroupRelationship, AppError> {
+    require_auth_sync(&state)?;
     repo::create_context_group_relationship(
         &state.db,
         &project_id,
@@ -392,6 +419,7 @@ pub fn dev_tools_delete_context_group_relationship(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete_context_group_relationship(&state.db, &id)
 }
 
@@ -408,6 +436,7 @@ pub fn dev_tools_list_ideas(
     limit: Option<i64>,
     offset: Option<i64>,
 ) -> Result<Vec<DevIdea>, AppError> {
+    require_auth_sync(&state)?;
     repo::list_ideas(
         &state.db,
         project_id.as_deref(),
@@ -423,6 +452,7 @@ pub fn dev_tools_get_idea(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<DevIdea, AppError> {
+    require_auth_sync(&state)?;
     repo::get_idea_by_id(&state.db, &id)
 }
 
@@ -443,6 +473,7 @@ pub fn dev_tools_create_idea(
     provider: Option<String>,
     model: Option<String>,
 ) -> Result<DevIdea, AppError> {
+    require_auth_sync(&state)?;
     repo::create_idea(
         &state.db,
         project_id.as_deref(),
@@ -474,6 +505,7 @@ pub fn dev_tools_update_idea(
     risk: Option<Option<i32>>,
     rejection_reason: Option<Option<String>>,
 ) -> Result<DevIdea, AppError> {
+    require_auth_sync(&state)?;
     repo::update_idea(
         &state.db,
         &id,
@@ -493,6 +525,7 @@ pub fn dev_tools_delete_idea(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete_idea(&state.db, &id)
 }
 
@@ -501,6 +534,7 @@ pub fn dev_tools_bulk_delete_ideas(
     state: State<'_, Arc<AppState>>,
     ids: Vec<String>,
 ) -> Result<usize, AppError> {
+    require_auth_sync(&state)?;
     repo::bulk_delete_ideas(&state.db, &ids)
 }
 
@@ -514,6 +548,7 @@ pub fn dev_tools_list_scans(
     project_id: Option<String>,
     limit: Option<i64>,
 ) -> Result<Vec<DevScan>, AppError> {
+    require_auth_sync(&state)?;
     repo::list_scans(&state.db, project_id.as_deref(), limit)
 }
 
@@ -522,6 +557,7 @@ pub fn dev_tools_get_scan(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<DevScan, AppError> {
+    require_auth_sync(&state)?;
     repo::get_scan_by_id(&state.db, &id)
 }
 
@@ -532,6 +568,7 @@ pub fn dev_tools_create_scan(
     scan_type: String,
     status: Option<String>,
 ) -> Result<DevScan, AppError> {
+    require_auth_sync(&state)?;
     repo::create_scan(
         &state.db,
         project_id.as_deref(),
@@ -551,6 +588,7 @@ pub fn dev_tools_update_scan(
     duration_ms: Option<i64>,
     error: Option<Option<String>>,
 ) -> Result<DevScan, AppError> {
+    require_auth_sync(&state)?;
     repo::update_scan(
         &state.db,
         &id,
@@ -573,6 +611,7 @@ pub fn dev_tools_list_tasks(
     project_id: Option<String>,
     status: Option<String>,
 ) -> Result<Vec<DevTask>, AppError> {
+    require_auth_sync(&state)?;
     repo::list_tasks(&state.db, project_id.as_deref(), status.as_deref())
 }
 
@@ -581,6 +620,7 @@ pub fn dev_tools_get_task(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<DevTask, AppError> {
+    require_auth_sync(&state)?;
     repo::get_task_by_id(&state.db, &id)
 }
 
@@ -594,6 +634,7 @@ pub fn dev_tools_create_task(
     goal_id: Option<String>,
     status: Option<String>,
 ) -> Result<DevTask, AppError> {
+    require_auth_sync(&state)?;
     repo::create_task(
         &state.db,
         project_id.as_deref(),
@@ -619,6 +660,7 @@ pub fn dev_tools_update_task(
     started_at: Option<Option<String>>,
     completed_at: Option<Option<String>>,
 ) -> Result<DevTask, AppError> {
+    require_auth_sync(&state)?;
     repo::update_task(
         &state.db,
         &id,
@@ -639,6 +681,7 @@ pub fn dev_tools_delete_task(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete_task(&state.db, &id)
 }
 
@@ -651,6 +694,7 @@ pub fn dev_tools_list_triage_rules(
     state: State<'_, Arc<AppState>>,
     project_id: Option<String>,
 ) -> Result<Vec<TriageRule>, AppError> {
+    require_auth_sync(&state)?;
     repo::list_triage_rules(&state.db, project_id.as_deref())
 }
 
@@ -663,6 +707,7 @@ pub fn dev_tools_create_triage_rule(
     action: String,
     enabled: Option<bool>,
 ) -> Result<TriageRule, AppError> {
+    require_auth_sync(&state)?;
     repo::create_triage_rule(
         &state.db,
         project_id.as_deref(),
@@ -683,6 +728,7 @@ pub fn dev_tools_update_triage_rule(
     enabled: Option<bool>,
     times_fired: Option<i32>,
 ) -> Result<TriageRule, AppError> {
+    require_auth_sync(&state)?;
     repo::update_triage_rule(
         &state.db,
         &id,
@@ -699,5 +745,6 @@ pub fn dev_tools_delete_triage_rule(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
     repo::delete_triage_rule(&state.db, &id)
 }

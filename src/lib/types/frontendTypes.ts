@@ -3,7 +3,7 @@
  * Includes model configuration, credential templates, and notification channels.
  */
 
-// â”€â”€ Sidebar Tree â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Sidebar Tree ------------------------------------------------------
 
 import type { DbPersona, DbPersonaGroup } from "./types";
 
@@ -20,7 +20,7 @@ export interface UngroupedNode {
 
 export type SidebarNode = GroupNode | UngroupedNode;
 
-// â”€â”€ Drag Payloads (discriminated union) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Drag Payloads (discriminated union) -------------------------------
 
 export type DragPayload =
   | { type: 'persona'; personaId: string }
@@ -63,7 +63,7 @@ export function buildSidebarTree(
   return nodes;
 }
 
-// â”€â”€ Model Configuration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Model Configuration ------------------------------------------------
 
 export type ModelProvider = "anthropic" | "ollama" | "litellm" | "copilot" | "custom";
 
@@ -74,7 +74,7 @@ export interface ModelProfile {
   auth_token?: string;
 }
 
-// â”€â”€ Notification Channels â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Notification Channels ----------------------------------------------
 
 export type NotificationChannelType = "slack" | "telegram" | "email";
 
@@ -85,8 +85,8 @@ export interface NotificationChannel {
   config: Record<string, string>;
 }
 
-// â”€â”€ Credential Templates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Canonical field/event types live in types.ts â€” re-export to avoid duplicates.
+// -- Credential Templates -----------------------------------------------
+// Canonical field/event types live in types.ts -- re-export to avoid duplicates.
 export type { CredentialTemplateField, CredentialTemplateEvent } from "./types";
 import type { CredentialTemplateField, CredentialTemplateEvent } from "./types";
 
@@ -112,41 +112,41 @@ export interface CredentialTemplateService {
   label: string;
 }
 
-// â”€â”€ Trigger Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Trigger Types ------------------------------------------------------
 
 export type PersonaTriggerType = "manual" | "schedule" | "polling" | "webhook";
 
-// â”€â”€ Execution Status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Execution Status ---------------------------------------------------
 // Re-export the canonical ExecutionState from the execution module.
 // PersonaExecutionStatus is kept as an alias for backward compatibility.
 export type { ExecutionState as PersonaExecutionStatus } from "@/lib/execution/executionState";
 
-// â”€â”€ Healing Issue Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Healing Issue Types ------------------------------------------------
 
 export type HealingIssueSeverity = "low" | "medium" | "high" | "critical";
 export type HealingIssueCategory = "performance" | "reliability" | "security" | "cost" | "quality";
 export type HealingIssueStatus = "detected" | "analyzing" | "resolved" | "ignored";
 
-// â”€â”€ Manual Review Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Manual Review Types ------------------------------------------------
 
 export type ManualReviewSeverity = "info" | "warning" | "critical";
 export type ManualReviewStatus = "pending" | "approved" | "rejected";
 
-// â”€â”€ Event Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Event Types --------------------------------------------------------
 
 export type PersonaEventType = "execution_completed" | "execution_failed" | "manual_review" | "user_message" | "persona_action" | "emit_event" | "custom";
 export type PersonaEventSourceType = "persona" | "user" | "system" | "scheduler";
 export type PersonaEventStatus = "pending" | "processed" | "failed";
 
-// â”€â”€ Credential Service Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Credential Service Types -------------------------------------------
 
 export type CredentialServiceType = "api_key" | "oauth" | "webhook" | "smtp" | "custom";
 
-// â”€â”€ Memory Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Memory Categories --------------------------------------------------
 
 export type PersonaMemoryCategory = "fact" | "preference" | "instruction" | "context" | "learned" | "custom";
 
-// â”€â”€ Design Context Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Design Context Types ----------------------------------------------
 
 export type DesignFileType = "api-spec" | "schema" | "mcp-config" | "other";
 
@@ -218,10 +218,10 @@ export interface UseCaseSuggestedTrigger {
  * JSON-backed event subscription suggestion within a use case's design_context.
  *
  * Lifecycle:
- * 1. **suggested** â€“ Exists in JSON with `enabled: true`, no DB counterpart.
- * 2. **activated** â€“ User clicks Activate â†’ a DB `PersonaEventSubscription` is created
+ * 1. **suggested** -- Exists in JSON with `enabled: true`, no DB counterpart.
+ * 2. **activated** -- User clicks Activate -> a DB `PersonaEventSubscription` is created
  *    and the JSON entry is marked `adopted: true`. The suggestion is then hidden.
- * 3. **retired** â€“ The DB record can be toggled/deleted independently.
+ * 3. **retired** -- The DB record can be toggled/deleted independently.
  *    The JSON entry stays `adopted: true` so it does NOT reappear as a suggestion.
  *
  * JSON entries are *suggestions*; DB records are the *source of truth* for active subscriptions.
@@ -237,10 +237,10 @@ export interface UseCaseEventSubscription {
 /**
  * Typed envelope for the `design_context` JSON column.
  * Three independent sections that can evolve separately:
- * - `designFiles` â€” files & references for the AI design prompt
- * - `credentialLinks` â€” connector name â†’ credential ID mappings
- * - `useCases` â€” structured workflow descriptions from design results
- * - `summary` â€” optional human-readable summary (legacy compat)
+ * - `designFiles` -- files & references for the AI design prompt
+ * - `credentialLinks` -- connector name -> credential ID mappings
+ * - `useCases` -- structured workflow descriptions from design results
+ * - `summary` -- optional human-readable summary (legacy compat)
  */
 export interface DesignContextData {
   designFiles?: DesignFilesSection;
@@ -251,7 +251,7 @@ export interface DesignContextData {
   watchedTables?: Record<string, string[]>;
 }
 
-// â”€â”€ Flow Diagram Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Flow Diagram Types ------------------------------------------------
 
 export interface FlowNode {
   id: string;

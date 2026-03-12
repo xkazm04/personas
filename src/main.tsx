@@ -8,7 +8,7 @@ import { initAnalytics } from "./lib/analytics";
 import { persistCrash } from "./lib/utils/crashPersistence";
 import "./styles/globals.css";
 
-// â”€â”€ Render React immediately (sync) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Render React immediately (sync) -------------------------------------
 // On Android WebView, async bootstrap can hang if Tauri IPC promises never
 // resolve. Render first, then set up Sentry/error handlers asynchronously.
 
@@ -80,7 +80,7 @@ if (root) {
   console.error("[main] #root element not found");
 }
 
-// â”€â”€ Async setup (Sentry, error handlers) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Async setup (Sentry, error handlers) --------------------------------
 // Runs after React is already mounted so the app is visible immediately.
 
 (async () => {
@@ -97,7 +97,7 @@ if (root) {
     console.warn("[main] Sentry init failed:", e);
   }
 
-  // Feature usage analytics — subscribes to Zustand store navigation changes
+  // Feature usage analytics -- subscribes to Zustand store navigation changes
   try {
     const { usePersonaStore } = await import("./stores/personaStore");
     initAnalytics(usePersonaStore.subscribe);

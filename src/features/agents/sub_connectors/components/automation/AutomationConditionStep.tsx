@@ -73,7 +73,7 @@ export function AutomationConditionStep({
             </div>
           )}
           {platform === 'github_actions' && githubRepo && (
-            <div className="px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/15">
+            <div className="px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/20">
               <p className="text-sm text-foreground/80"><GitBranch className="w-3.5 h-3.5 inline mr-1 text-primary" />Repository dispatch configured for <span className="font-medium">{githubRepo}</span></p>
               {designResult.workflow_definition && !!(designResult.workflow_definition as Record<string, unknown>).event_type && (
                 <p className="text-sm text-muted-foreground mt-1">Event type: <code className="px-1 py-0.5 rounded bg-secondary/40 text-sm">{String((designResult.workflow_definition as Record<string, unknown>).event_type)}</code></p>

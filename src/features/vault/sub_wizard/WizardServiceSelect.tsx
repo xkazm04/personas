@@ -102,7 +102,7 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
                     </span>
                     <span className="text-sm text-muted-foreground/60 block truncate">
                       {isDesktopBridge(connector)
-                        ? 'Desktop bridge â€” auto-detected'
+                        ? 'Desktop bridge -- auto-detected'
                         : `${connector.fields.length} field${connector.fields.length !== 1 ? 's' : ''} required`}
                     </span>
                   </div>

@@ -13,7 +13,7 @@ pub struct N8nPersonaOutput {
     pub max_turns: Option<i32>,
     pub design_context: Option<String>,
     pub notification_channels: Option<String>,
-    // Entity fields — populated by connector-aware transform
+    // Entity fields -- populated by connector-aware transform
     pub triggers: Option<Vec<N8nTriggerDraft>>,
     pub tools: Option<Vec<N8nToolDraft>>,
     pub required_connectors: Option<Vec<N8nConnectorRef>>,

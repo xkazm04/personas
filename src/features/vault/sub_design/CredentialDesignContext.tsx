@@ -3,7 +3,7 @@ import type { CredentialTemplateField } from '@/lib/types/types';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { CredentialFlow } from './CredentialDesignHelpers';
 
-// ── Context value ────────────────────────────────────────────────
+// -- Context value ------------------------------------------------
 
 export interface CredentialDesignContextValue {
   // Design result
@@ -47,7 +47,7 @@ export interface CredentialDesignContextValue {
 
 const CredentialDesignContext = createContext<CredentialDesignContextValue | null>(null);
 
-// ── Hook ─────────────────────────────────────────────────────────
+// -- Hook ---------------------------------------------------------
 
 export function useCredentialDesignContext(): CredentialDesignContextValue {
   const ctx = useContext(CredentialDesignContext);
@@ -57,7 +57,7 @@ export function useCredentialDesignContext(): CredentialDesignContextValue {
   return ctx;
 }
 
-// ── Provider ─────────────────────────────────────────────────────
+// -- Provider -----------------------------------------------------
 
 interface ProviderProps {
   value: CredentialDesignContextValue;

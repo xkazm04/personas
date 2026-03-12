@@ -2,7 +2,7 @@
  * useCredentialRemediation
  *
  * App-level hook that activates the credential remediation evaluator.
- * Mount once in App.tsx — it periodically scans all credentials for anomaly
+ * Mount once in App.tsx -- it periodically scans all credentials for anomaly
  * signals and dispatches remediation actions (auto-rotate, auto-disable, notify).
  *
  * This is the glue that closes the anomaly-to-remediation action loop.

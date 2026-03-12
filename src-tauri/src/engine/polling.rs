@@ -83,7 +83,7 @@ pub async fn poll_due_triggers(
             continue;
         }
 
-        // Parse config once — typed access replaces scattered json_extract calls
+        // Parse config once -- typed access replaces scattered json_extract calls
         let cfg = trigger.parse_config();
         let (cfg_url, cfg_headers, previous_hash) = match &cfg {
             crate::db::models::TriggerConfig::Polling {
@@ -179,7 +179,7 @@ pub async fn poll_due_triggers(
 
         let content_changed = match &previous_hash {
             Some(prev) => prev != &current_hash,
-            None => true, // First poll — always fire
+            None => true, // First poll -- always fire
         };
 
         // Compute next schedule time up-front (needed for both paths)
@@ -199,7 +199,7 @@ pub async fn poll_due_triggers(
                 Ok(true) => {
                     clear_backoff(&trigger.id);
 
-                    // CAS succeeded — safe to publish the event
+                    // CAS succeeded -- safe to publish the event
                     let event_type = sched_logic::trigger_event_type(&trigger);
                     let payload = serde_json::json!({
                         "url": url,
@@ -240,7 +240,7 @@ pub async fn poll_due_triggers(
                     }
                 }
                 Ok(false) => {
-                    // CAS failed — another cycle already updated the hash (or trigger was deleted)
+                    // CAS failed -- another cycle already updated the hash (or trigger was deleted)
                     tracing::debug!(
                         trigger_id = %trigger.id,
                         "Polling: CAS failed (hash already updated), skipping duplicate event"
@@ -258,7 +258,7 @@ pub async fn poll_due_triggers(
                 "Polling: no content change detected"
             );
 
-            // No content change — still advance the schedule so we don't re-poll immediately
+            // No content change -- still advance the schedule so we don't re-poll immediately
             if let Err(e) = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref()) {
                 tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", e);
                 record_mark_failure(&trigger.id);

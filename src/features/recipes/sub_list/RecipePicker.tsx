@@ -5,7 +5,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 
 interface RecipePickerProps {
-  /** Recipes already linked — excluded from the list */
+  /** Recipes already linked -- excluded from the list */
   linkedRecipeIds: Set<string>;
   onSelect: (recipe: RecipeDefinition) => void;
   onClose: () => void;

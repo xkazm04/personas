@@ -46,7 +46,7 @@ pub struct ImportedMcpServer {
     pub source: String,
 }
 
-// ── App detection ───────────────────────────────────────────────────
+// -- App detection ---------------------------------------------------
 
 /// Known desktop apps and their detection strategies.
 struct AppDetector {
@@ -155,7 +155,7 @@ fn detect_binary(app: &AppDetector) -> (bool, Option<String>) {
     {
         for pattern in app.install_paths {
             if pattern.contains('*') {
-                // Glob pattern — try expanding
+                // Glob pattern -- try expanding
                 if let Some(expanded) = expand_windows_glob(pattern) {
                     if expanded.exists() {
                         return (true, Some(expanded.to_string_lossy().to_string()));
@@ -215,7 +215,7 @@ async fn is_process_running(connector_name: &str) -> bool {
     {
         #[allow(unused_imports)]
         use std::os::windows::process::CommandExt;
-        // Use tasklist — minimal overhead
+        // Use tasklist -- minimal overhead
         for name in process_names {
             let mut cmd = tokio::process::Command::new("tasklist");
             cmd.args(["/FI", &format!("IMAGENAME eq {name}"), "/NH"]);
@@ -251,7 +251,7 @@ async fn is_process_running(connector_name: &str) -> bool {
     false
 }
 
-// ── Claude Desktop MCP config import ────────────────────────────────
+// -- Claude Desktop MCP config import --------------------------------
 
 /// Claude Desktop configuration file structure.
 #[derive(Debug, Deserialize)]
@@ -318,7 +318,7 @@ pub async fn import_claude_desktop_mcp_servers() -> Result<Vec<ImportedMcpServer
         }
     }
 
-    Ok(vec![]) // No config found — not an error
+    Ok(vec![]) // No config found -- not an error
 }
 
 /// Get possible Claude Desktop config file locations.

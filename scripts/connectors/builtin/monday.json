@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "eyJ...",
-      "helpText": "From monday.com → Avatar → Developers → My Access Tokens"
+      "helpText": "From monday.com -> Avatar -> Developers -> My Access Tokens"
     }
   ],
   "healthcheck_config": {
@@ -33,7 +33,7 @@
     "auth_type": "pat",
     "auth_type_label": "PAT",
     "docs_url": "https://developer.monday.com/api-reference/docs/authentication",
-    "setup_guide": "1. Go to monday.com and sign in to your account\n2. Click your avatar → Administration → API\n3. Copy your personal API token (or generate a new one)\n4. Paste the token value here",
+    "setup_guide": "1. Go to monday.com and sign in to your account\n2. Click your avatar -> Administration -> API\n3. Copy your personal API token (or generate a new one)\n4. Paste the token value here",
     "pricing_tier": "paid"
   }
 }

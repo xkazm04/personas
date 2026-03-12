@@ -65,7 +65,7 @@ export function ExecutionListToolbar({
 
       {/* Compare mode toolbar */}
       {compareMode && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/15 rounded-xl text-sm">
+        <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl text-sm">
           <ArrowLeftRight className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" />
           <span className="text-muted-foreground/70">
             {!compareLeft
@@ -109,9 +109,9 @@ export function ExecutionListEmptyState({ onTryIt }: ExecutionListEmptyStateProp
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="flex flex-col items-center text-center py-12 px-6 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl"
+      className="flex flex-col items-center text-center py-12 px-6 bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl"
     >
-      <div className="w-12 h-12 rounded-xl bg-primary/8 border border-primary/12 flex items-center justify-center mb-4">
+      <div className="w-12 h-12 rounded-xl bg-primary/8 border border-primary/20 flex items-center justify-center mb-4">
         <Rocket className="w-5.5 h-5.5 text-primary/40" />
       </div>
       <p className="text-sm font-medium text-foreground/80">
@@ -122,7 +122,7 @@ export function ExecutionListEmptyState({ onTryIt }: ExecutionListEmptyStateProp
       </p>
       <button
         onClick={onTryIt}
-        className="mt-4 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors"
+        className="mt-4 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors"
       >
         <Play className="w-3.5 h-3.5" />
         Try it now

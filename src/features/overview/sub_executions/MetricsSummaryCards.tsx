@@ -5,7 +5,7 @@ import {
 import { CHART_COLORS } from '@/features/overview/sub_usage/charts/chartConstants';
 import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
 
-// ── Formatters (shared) ──────────────────────────────────────────────
+// -- Formatters (shared) ----------------------------------------------
 
 export const fmtCost = (v: number) => v < 0.01 ? '<$0.01' : `$${v.toFixed(2)}`;
 export const fmtMs = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${Math.round(v)}ms`;
@@ -14,7 +14,7 @@ export const fmtDate = (d: string) => {
   return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-// ── Summary Card ─────────────────────────────────────────────────────
+// -- Summary Card -----------------------------------------------------
 
 export function SummaryCard({
   icon: Icon,
@@ -50,7 +50,7 @@ export function SummaryCard({
   );
 }
 
-// ── Anomaly Badge ────────────────────────────────────────────────────
+// -- Anomaly Badge ----------------------------------------------------
 
 export function AnomalyBadge({
   anomaly,
@@ -64,7 +64,7 @@ export function AnomalyBadge({
       <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
       <div className="min-w-0">
         <p className="text-sm font-medium text-amber-300">
-          {fmtDate(anomaly.date)} — Cost spike {fmtCost(anomaly.cost)}
+          {fmtDate(anomaly.date)} -- Cost spike {fmtCost(anomaly.cost)}
           <span className="text-amber-400/70 ml-1">
             ({anomaly.deviation_sigma.toFixed(1)}σ above avg {fmtCost(anomaly.moving_avg)})
           </span>
@@ -88,7 +88,7 @@ export function AnomalyBadge({
   );
 }
 
-// ── Chart Tooltip ────────────────────────────────────────────────────
+// -- Chart Tooltip ----------------------------------------------------
 
 export function ChartTooltipContent({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
@@ -106,7 +106,7 @@ export function ChartTooltipContent({ active, payload, label }: { active?: boole
   );
 }
 
-// ── Top Personas List ────────────────────────────────────────────────
+// -- Top Personas List ------------------------------------------------
 
 interface TopPersona {
   persona_id: string;

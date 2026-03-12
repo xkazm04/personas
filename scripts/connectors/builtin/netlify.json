@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Netlify → User Settings → Applications → Personal Access Tokens"
+      "helpText": "From Netlify -> User Settings -> Applications -> Personal Access Tokens"
     }
   ],
   "healthcheck_config": {

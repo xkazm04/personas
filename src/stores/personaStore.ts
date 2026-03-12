@@ -1,5 +1,5 @@
 /**
- * Persona store facade — composes domain slices into a single Zustand store.
+ * Persona store facade -- composes domain slices into a single Zustand store.
  *
  * Each slice lives in ./slices/<domain>Slice.ts and owns its state + actions.
  * Cross-slice calls work because get() returns the full merged PersonaStore.
@@ -40,9 +40,10 @@ import { createAlertSlice } from "./slices/overview/alertSlice";
 import { createViewModeSlice } from "./slices/system/viewModeSlice";
 import { createDevToolsSlice } from "./slices/system/devToolsSlice";
 import { createNetworkSlice } from "./slices/network/networkSlice";
+import { createSetupSlice } from "./slices/system/setupSlice";
 import { AUTH_LOGIN_EVENT } from "./authStore";
 
-// ── Store ──────────────────────────────────────────────────────────────
+// -- Store --------------------------------------------------------------
 
 export const usePersonaStore = create<PersonaStore>()(
     persist(
@@ -77,6 +78,7 @@ export const usePersonaStore = create<PersonaStore>()(
         ...createViewModeSlice(...a),
         ...createDevToolsSlice(...a),
         ...createNetworkSlice(...a),
+        ...createSetupSlice(...a),
       }),
       {
         name: "persona-ui-state",
@@ -92,12 +94,16 @@ export const usePersonaStore = create<PersonaStore>()(
           tourCompleted: state.tourCompleted,
           tourDismissed: state.tourDismissed,
           viewMode: state.viewMode,
+          setupRole: state.setupRole,
+          setupTool: state.setupTool,
+          setupGoal: state.setupGoal,
+          setupCompleted: state.setupCompleted,
         }),
       },
     ),
 );
 
-// ── Auth Bridge ───────────────────────────────────────────────────────
+// -- Auth Bridge -------------------------------------------------------
 
 let authBridgeAttached = false;
 function initAuthBridgeListener() {
@@ -110,7 +116,7 @@ function initAuthBridgeListener() {
 
 initAuthBridgeListener();
 
-// ── Healing Listener ──────────────────────────────────────────────────
+// -- Healing Listener --------------------------------------------------
 
 /** Listen for healing-event from Tauri backend and auto-refresh issues. */
 let healingListenerAttached = false;

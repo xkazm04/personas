@@ -89,7 +89,7 @@ export function PreviewPhase({
             </div>
           )}
           {platform === 'github_actions' && githubRepo && (
-            <div className="px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/15">
+            <div className="px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/20">
               <p className="text-sm text-foreground/80">
                 <GitBranch className="w-3.5 h-3.5 inline mr-1 text-primary" />
                 Repository dispatch configured for <span className="font-medium">{githubRepo}</span>

@@ -11,14 +11,14 @@
  *   3. Edge-case (overflow, dedup, truncation, etc.)
  */
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Provider-specific execution output
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
-/** Claude Code CLI — persona execution with tool calls */
+/** Claude Code CLI -- persona execution with tool calls */
 export const CLAUDE_EXECUTION_LINES = [
   'Session started (claude-sonnet-4-6)',
-  '> Analyzing input data and determining next steps…',
+  '> Analyzing input data and determining next steps...',
   '> Using tool: Read',
   '  Tool result: File contents (245 chars)',
   '> Using tool: Write',
@@ -33,10 +33,10 @@ export const CLAUDE_EXECUTION_LINES = [
   '[SUMMARY]{"status":"completed","duration_ms":12400,"cost_usd":0.032,"last_tool":"Write"}',
 ];
 
-/** Gemini CLI — persona execution with web search */
+/** Gemini CLI -- persona execution with web search */
 export const GEMINI_EXECUTION_LINES = [
   'Session started (gemini-3.1-flash-lite-preview)',
-  '> Analyzing input data and determining next steps…',
+  '> Analyzing input data and determining next steps...',
   '> Using tool: Read',
   '  Tool result: File contents (189 chars)',
   '> Using tool: WebSearch',
@@ -50,10 +50,10 @@ export const GEMINI_EXECUTION_LINES = [
   '[SUMMARY]{"status":"completed","duration_ms":8700,"cost_usd":0.018,"last_tool":"WebSearch"}',
 ];
 
-/** Copilot CLI — persona execution with tests */
+/** Copilot CLI -- persona execution with tests */
 export const COPILOT_EXECUTION_LINES = [
   'Session started (gpt-5.1-codex-mini)',
-  '> Analyzing input data and determining next steps…',
+  '> Analyzing input data and determining next steps...',
   '> Using tool: Read',
   '  Tool result: Configuration loaded (92 chars)',
   '> Using tool: Bash',
@@ -67,14 +67,14 @@ export const COPILOT_EXECUTION_LINES = [
   '[SUMMARY]{"status":"completed","duration_ms":15100,"cost_usd":0.041,"last_tool":"Bash"}',
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Failure scenarios
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 /** Mid-stream error (tool failure) */
 export const FAILED_EXECUTION_LINES = [
   'Session started (claude-sonnet-4-6)',
-  '> Analyzing input data…',
+  '> Analyzing input data...',
   '> Using tool: Bash',
   '  Tool result: Command failed (exit code 1)',
   '[ERROR] Process exited with non-zero status',
@@ -84,35 +84,35 @@ export const FAILED_EXECUTION_LINES = [
 /** Timeout execution */
 export const TIMEOUT_EXECUTION_LINES = [
   'Session started (claude-sonnet-4-6)',
-  '> Analyzing complex dataset…',
+  '> Analyzing complex dataset...',
   '> Using tool: Read',
   '  Tool result: Large file (15000 chars)',
   '[TIMEOUT] Execution exceeded 60s limit',
   '[SUMMARY]{"status":"failed","duration_ms":60000,"cost_usd":0.095,"last_tool":"Read"}',
 ];
 
-/** Gemini failure — auth error */
+/** Gemini failure -- auth error */
 export const GEMINI_AUTH_FAILURE_LINES = [
   'Session started (gemini-3.1-flash-lite-preview)',
   '[ERROR] Authentication failed: invalid API key',
   '[SUMMARY]{"status":"failed","duration_ms":450,"cost_usd":0,"last_tool":null}',
 ];
 
-/** Copilot failure — model unavailable */
+/** Copilot failure -- model unavailable */
 export const COPILOT_MODEL_FAILURE_LINES = [
   'Session started (gpt-5.1-codex-mini)',
-  '> Analyzing input data…',
+  '> Analyzing input data...',
   '[ERROR] Model "gpt-5.1-codex-mini" is not available in your current plan',
   '[SUMMARY]{"status":"failed","duration_ms":1200,"cost_usd":0,"last_tool":null}',
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Query debug scenario
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
-/** Successful query debug — Claude provider */
+/** Successful query debug -- Claude provider */
 export const QUERY_DEBUG_CLAUDE_LINES = [
-  '> Analyzing query error context…',
+  '> Analyzing query error context...',
   '> Attempt 1: Examining table schema',
   '> Using tool: Read',
   '  Tool result: Schema loaded',
@@ -121,9 +121,9 @@ export const QUERY_DEBUG_CLAUDE_LINES = [
   'Completed in 4.2s',
 ];
 
-/** Successful query debug — Gemini provider */
+/** Successful query debug -- Gemini provider */
 export const QUERY_DEBUG_GEMINI_LINES = [
-  '> Analyzing query error context…',
+  '> Analyzing query error context...',
   '> Attempt 1: Examining table schema with Gemini',
   '> Using tool: Read',
   '  Tool result: Schema loaded (PostgreSQL)',
@@ -132,9 +132,9 @@ export const QUERY_DEBUG_GEMINI_LINES = [
   'Completed in 3.8s',
 ];
 
-/** Successful query debug — Copilot provider */
+/** Successful query debug -- Copilot provider */
 export const QUERY_DEBUG_COPILOT_LINES = [
-  '> Analyzing query error context…',
+  '> Analyzing query error context...',
   '> Attempt 1: Reviewing error log with Copilot',
   '> Using tool: Read',
   '  Tool result: Error context loaded',
@@ -145,25 +145,25 @@ export const QUERY_DEBUG_COPILOT_LINES = [
 
 /** Failed query debug */
 export const QUERY_DEBUG_FAILED_LINES = [
-  '> Analyzing query error context…',
+  '> Analyzing query error context...',
   '> Attempt 1: Examining table schema',
   '> Attempt 2: Trying alternative approach',
   '> Max retries exceeded',
   '[ERROR] Could not resolve query issue after 3 attempts',
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // N8N transform scenario
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
-/** N8N workflow transform — full lifecycle */
+/** N8N workflow transform -- full lifecycle */
 export const N8N_TRANSFORM_LINES = [
-  '[System] Starting workflow transformation…',
+  '[System] Starting workflow transformation...',
   '> Analyzing static workflow structure (12 nodes, 8 connections)',
   '[Milestone] Parsing workflow structure',
   '> Preparing transformation prompt for Claude',
   '[Milestone] Preparing transformation',
-  '> AI is generating persona draft…',
+  '> AI is generating persona draft...',
   '[Milestone] AI generating persona draft',
   '> Extracting structured output from AI response',
   '[Milestone] Extracting persona structure',
@@ -172,14 +172,14 @@ export const N8N_TRANSFORM_LINES = [
   'Completed in 22.8s',
 ];
 
-/** N8N transform — Gemini engine */
+/** N8N transform -- Gemini engine */
 export const N8N_TRANSFORM_GEMINI_LINES = [
-  '[System] Starting workflow transformation (Gemini)…',
+  '[System] Starting workflow transformation (Gemini)...',
   '> Analyzing static workflow structure (8 nodes, 5 connections)',
   '[Milestone] Parsing workflow structure',
   '> Preparing transformation prompt for Gemini 3.1 Flash Lite Preview',
   '[Milestone] Preparing transformation',
-  '> AI is generating persona draft via Gemini…',
+  '> AI is generating persona draft via Gemini...',
   '[Milestone] AI generating persona draft',
   '> Extracting structured output',
   '[Milestone] Extracting persona structure',
@@ -188,61 +188,61 @@ export const N8N_TRANSFORM_GEMINI_LINES = [
   'Completed in 19.4s',
 ];
 
-/** N8N transform failure — parse error */
+/** N8N transform failure -- parse error */
 export const N8N_TRANSFORM_FAILED_LINES = [
-  '[System] Starting workflow transformation…',
+  '[System] Starting workflow transformation...',
   '> Analyzing static workflow structure (3 nodes, 1 connection)',
   '[Milestone] Parsing workflow structure',
   '[ERROR] Failed to parse workflow: unsupported node type "n8n-nodes-base.customNode"',
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Template adoption scenario
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
-/** Template adoption — full lifecycle */
+/** Template adoption -- full lifecycle */
 export const TEMPLATE_ADOPTION_LINES = [
-  '[System] Starting template adoption…',
+  '[System] Starting template adoption...',
   '> Parsing template definition',
   '> Analyzing use cases and generating persona configuration',
   '> Applying sandbox policy overrides (budget: $0.50, concurrency: 1)',
   '> Generating persona from template variables',
-  '> Extracting design result…',
+  '> Extracting design result...',
   '> Normalizing draft structure',
   '> Persona creation complete',
   'Completed in 18.3s',
 ];
 
-/** Template adoption — Copilot engine */
+/** Template adoption -- Copilot engine */
 export const TEMPLATE_ADOPTION_COPILOT_LINES = [
-  '[System] Starting template adoption (Copilot)…',
+  '[System] Starting template adoption (Copilot)...',
   '> Parsing template definition',
   '> Generating persona configuration with Copilot',
   '> Applying sandbox policy overrides (budget: $1.00, concurrency: 2)',
-  '> Extracting design result…',
+  '> Extracting design result...',
   '> Normalizing draft structure',
   '> Persona creation complete',
   'Completed in 24.6s',
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // AI healing scenario
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
-/** AI healing — successful diagnosis and fix */
+/** AI healing -- successful diagnosis and fix */
 export const AI_HEALING_SUCCESS_LINES = [
-  '> Starting AI healing diagnosis…',
+  '> Starting AI healing diagnosis...',
   '> Analyzing execution failure context',
   '> Diagnosing root cause: missing API credential',
   '> Applying fix: credential rotation',
-  '> Verifying fix effectiveness…',
-  '> Fix verified — execution should succeed on retry',
+  '> Verifying fix effectiveness...',
+  '> Fix verified -- execution should succeed on retry',
   'Diagnosis complete in 6.1s',
 ];
 
-/** AI healing — diagnosis but no auto-fix */
+/** AI healing -- diagnosis but no auto-fix */
 export const AI_HEALING_MANUAL_LINES = [
-  '> Starting AI healing diagnosis…',
+  '> Starting AI healing diagnosis...',
   '> Analyzing execution failure context',
   '> Diagnosing root cause: rate limit exceeded',
   '> Cannot auto-fix: requires manual rate limit increase',
@@ -250,39 +250,39 @@ export const AI_HEALING_MANUAL_LINES = [
   'Diagnosis complete in 2.4s',
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // API test runner scenario
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
-/** API batch test — mixed results */
+/** API batch test -- mixed results */
 export const API_TEST_RUNNER_LINES = [
   '10:30:01 Starting batch API test (8 endpoints)',
   '10:30:01 Testing GET /api/v1/users',
-  '10:30:02 ✓ GET /api/v1/users → 200 OK (340ms)',
+  '10:30:02 [v] GET /api/v1/users -> 200 OK (340ms)',
   '10:30:02 Testing POST /api/v1/users',
-  '10:30:03 ✓ POST /api/v1/users → 201 Created (520ms)',
+  '10:30:03 [v] POST /api/v1/users -> 201 Created (520ms)',
   '10:30:03 Testing GET /api/v1/users/{id}',
-  '10:30:03 → Skipped (path params)',
+  '10:30:03 -> Skipped (path params)',
   '10:30:03 Testing DELETE /api/v1/users/{id}',
-  '10:30:03 → Skipped (path params)',
+  '10:30:03 -> Skipped (path params)',
   '10:30:03 Testing GET /api/v1/orders',
-  '10:30:04 ✓ GET /api/v1/orders → 200 OK (280ms)',
+  '10:30:04 [v] GET /api/v1/orders -> 200 OK (280ms)',
   '10:30:04 Testing POST /api/v1/orders',
-  '10:30:05 ✗ POST /api/v1/orders → 401 Unauthorized (150ms)',
+  '10:30:05 [x] POST /api/v1/orders -> 401 Unauthorized (150ms)',
   '10:30:05 Testing GET /api/v1/health',
-  '10:30:05 ✓ GET /api/v1/health → 200 OK (45ms)',
+  '10:30:05 [v] GET /api/v1/health -> 200 OK (45ms)',
   '10:30:05 Testing PUT /api/v1/settings',
-  '10:30:06 ✗ PUT /api/v1/settings → 500 Internal Server Error (890ms)',
+  '10:30:06 [x] PUT /api/v1/settings -> 500 Internal Server Error (890ms)',
   '10:30:06 Batch complete: 4 passed, 2 failed, 2 skipped',
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Phase detection lines (for PersonaRunner phase timeline)
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 export const PHASE_DETECTION_LINES = {
   initializing: 'Session started (claude-sonnet-4-6)',
-  thinking: '> Analyzing input data and determining next steps…',
+  thinking: '> Analyzing input data and determining next steps...',
   callingTools: '> Using tool: Read',
   toolResult: '  Tool result: File contents (245 chars)',
   responding: 'I have completed the analysis. Here are my findings:',
@@ -290,9 +290,9 @@ export const PHASE_DETECTION_LINES = {
   error: '[ERROR] Process exited with non-zero status',
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Edge-case fixtures
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 /** Line exceeding MAX_STREAM_LINE_LENGTH (4096 chars) */
 export const OVERSIZED_LINE = 'X'.repeat(5000);
@@ -313,9 +313,9 @@ export function generateOverflowLines(count: number): string[] {
   return Array.from({ length: count }, (_, i) => `Line ${i + 1}: output data`);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Multi-provider execution matrix
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 export interface ProviderFixture {
   name: string;

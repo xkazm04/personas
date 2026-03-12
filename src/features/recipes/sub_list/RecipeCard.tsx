@@ -28,7 +28,7 @@ function parseTags(tags: string | null): string[] {
     const parsed = JSON.parse(tags);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical -- JSON parse fallback
     return [];
   }
 }

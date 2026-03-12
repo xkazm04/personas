@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 
-// ── Base constraint for wizard state ──
+// -- Base constraint for wizard state --
 
 export interface WizardStateBase {
   step: string;
@@ -12,14 +12,14 @@ export interface WizardStateBase {
   error: string | null;
 }
 
-// ── Step metadata ──
+// -- Step metadata --
 
 export interface StepMeta {
   label: string;
   index: number;
 }
 
-// ── Options for the factory ──
+// -- Options for the factory --
 
 export interface WizardReducerOptions<S extends WizardStateBase> {
   initialState: S;
@@ -30,7 +30,7 @@ export interface WizardReducerOptions<S extends WizardStateBase> {
   goBack: (state: S, goToStep: (step: S['step']) => void) => void;
 }
 
-// ── Return type ──
+// -- Return type --
 
 export interface WizardReducerCore<S extends WizardStateBase> {
   state: S;
@@ -47,7 +47,7 @@ export interface WizardReducerCore<S extends WizardStateBase> {
   reset: () => void;
 }
 
-// ── Factory hook ──
+// -- Factory hook --
 
 export function useWizardReducer<S extends WizardStateBase>(
   options: WizardReducerOptions<S>,

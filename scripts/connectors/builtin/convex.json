@@ -12,7 +12,7 @@
       "type": "url",
       "required": true,
       "placeholder": "https://your-app-123.convex.cloud",
-      "helpText": "From Convex Dashboard → Settings → URL"
+      "helpText": "From Convex Dashboard -> Settings -> URL"
     },
     {
       "key": "deploy_key",
@@ -20,7 +20,7 @@
       "type": "password",
       "required": true,
       "placeholder": "prod:...",
-      "helpText": "From Convex Dashboard → Settings → Deploy Key"
+      "helpText": "From Convex Dashboard -> Settings -> Deploy Key"
     }
   ],
   "healthcheck_config": {
@@ -43,7 +43,7 @@
     "db_engine": "convex",
     "db_features": ["function_execution", "schema_introspection_pro", "document_browsing_pro"],
     "query_language": "convex",
-    "query_help": "Call Convex functions via JSON body:\n\n• Query: {\"path\": \"messages:list\", \"args\": {}}\n• Mutation: {\"path\": \"messages:send\", \"args\": {\"body\": \"Hello\"}}\n• Action: {\"path\": \"actions:doSomething\", \"args\": {}}\n\nProfessional plan also supports browsing tables by name.",
+    "query_help": "Call Convex functions via JSON body:\n\n* Query: {\"path\": \"messages:list\", \"args\": {}}\n* Mutation: {\"path\": \"messages:send\", \"args\": {\"body\": \"Hello\"}}\n* Action: {\"path\": \"actions:doSomething\", \"args\": {}}\n\nProfessional plan also supports browsing tables by name.",
     "auth_methods": [
       {"id": "deploy_key", "label": "Deploy Key", "type": "credential", "is_default": true}
     ]

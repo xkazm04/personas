@@ -93,7 +93,7 @@ export const createToolSlice: StateCreator<PersonaStore, [], [], ToolSlice> = (s
         toolUsageByPersona: byPersona,
       });
     } catch {
-      // intentional: error state handled by store — resets to empty arrays for graceful degradation
+      // intentional: error state handled by store -- resets to empty arrays for graceful degradation
       set({ toolUsageSummary: [], toolUsageOverTime: [], toolUsageByPersona: [] });
     }
   },

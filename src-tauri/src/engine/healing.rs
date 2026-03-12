@@ -1,6 +1,6 @@
 //! Healing engine: error classification, diagnosis, and auto-fix logic.
 //!
-//! Pure functions — no DB or async dependencies — for testability.
+//! Pure functions -- no DB or async dependencies -- for testability.
 
 /// Broad failure category derived from error strings and flags.
 #[derive(Debug, Clone, PartialEq)]
@@ -108,7 +108,7 @@ pub const MAX_RETRY_COUNT: i64 = 3;
 /// Produce a full [`HealingDiagnosis`] with a recommended action.
 ///
 /// `consecutive_failures` is the number of recent consecutive failures for the
-/// same persona — used to escalate backoff or switch from retry to manual issue.
+/// same persona -- used to escalate backoff or switch from retry to manual issue.
 ///
 /// `retry_count` is the number of retries already attempted for this specific
 /// execution chain. When it reaches [`MAX_RETRY_COUNT`], retryable actions
@@ -170,7 +170,7 @@ pub fn diagnose(
         },
         FailureCategory::Timeout => {
             if consecutive_failures >= 1 || retry_count >= MAX_RETRY_COUNT {
-                // Already retried once or retry limit exhausted — escalate to manual issue
+                // Already retried once or retry limit exhausted -- escalate to manual issue
                 HealingDiagnosis {
                     category: category.clone(),
                     action: HealingAction::CreateIssue,
@@ -373,14 +373,14 @@ mod tests {
 
     #[test]
     fn test_diagnose_rate_limit_escalating_backoff() {
-        // consecutive_failures = 3 → 30 * 2^3 = 240
+        // consecutive_failures = 3 -> 30 * 2^3 = 240
         let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 3, 0);
         assert_eq!(
             d.action,
             HealingAction::RetryWithBackoff { delay_secs: 240 }
         );
 
-        // consecutive_failures = 5 → 30 * 32 = 960 → capped at 300
+        // consecutive_failures = 5 -> 30 * 32 = 960 -> capped at 300
         let d2 = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 5, 0);
         assert_eq!(
             d2.action,
@@ -390,12 +390,12 @@ mod tests {
 
     #[test]
     fn test_diagnose_rate_limit_retries_exhausted() {
-        // retry_count = MAX_RETRY_COUNT → escalate to CreateIssue
+        // retry_count = MAX_RETRY_COUNT -> escalate to CreateIssue
         let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, MAX_RETRY_COUNT);
         assert_eq!(d.action, HealingAction::CreateIssue);
         assert_eq!(d.severity, "high");
 
-        // retry_count > MAX_RETRY_COUNT → still CreateIssue
+        // retry_count > MAX_RETRY_COUNT -> still CreateIssue
         let d2 = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, MAX_RETRY_COUNT + 1);
         assert_eq!(d2.action, HealingAction::CreateIssue);
     }
@@ -413,7 +413,7 @@ mod tests {
 
     #[test]
     fn test_diagnose_timeout_max_cap() {
-        // 1_200_000 * 2 = 2_400_000 → capped at 1_800_000
+        // 1_200_000 * 2 = 2_400_000 -> capped at 1_800_000
         let d = diagnose(&FailureCategory::Timeout, "timed out", 1_200_000, 0, 0);
         assert_eq!(
             d.action,

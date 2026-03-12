@@ -33,18 +33,14 @@ export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> 
     try {
       const hasSearch = !!filters?.search?.trim();
       const limit = hasSearch ? 500 : 100;
-      const [memories, total, stats] = await Promise.all([
-        api.listMemories(
-          filters?.persona_id,
-          filters?.category,
-          filters?.search,
-          limit,
-          0,
-        ),
-        api.getMemoryCount(filters?.persona_id, filters?.category, filters?.search),
-        api.getMemoryStats(filters?.persona_id, filters?.category, filters?.search),
-      ]);
-      set({ memories, memoriesTotal: total, memoryStats: stats });
+      const result = await api.listMemoriesWithStats(
+        filters?.persona_id,
+        filters?.category,
+        filters?.search,
+        limit,
+        0,
+      );
+      set({ memories: result.memories, memoriesTotal: result.total, memoryStats: result.stats });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch memories") });
     }
@@ -85,22 +81,27 @@ export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> 
   },
 
   reviewMemories: async (personaId?) => {
-    const memoriesBefore = get().memories;
-    const result = await api.reviewMemoriesWithCli(personaId);
-    // Refresh memories list after review
-    await get().fetchMemories();
+    try {
+      const memoriesBefore = get().memories;
+      const result = await api.reviewMemoriesWithCli(personaId);
+      // Refresh memories list after review
+      await get().fetchMemories();
 
-    // Extract actionable rules from high-scoring memories (8+)
-    if (result.details.length > 0) {
-      const newActions = extractActionsFromReview(result.details, memoriesBefore);
-      if (newActions.length > 0) {
-        const all = [...get().memoryActions, ...newActions];
-        saveActions(all);
-        set({ memoryActions: all });
+      // Extract actionable rules from high-scoring memories (8+)
+      if (result.details.length > 0) {
+        const newActions = extractActionsFromReview(result.details, memoriesBefore);
+        if (newActions.length > 0) {
+          const all = [...get().memoryActions, ...newActions];
+          saveActions(all);
+          set({ memoryActions: all });
+        }
       }
-    }
 
-    return result;
+      return result;
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to review memories") });
+      throw err;
+    }
   },
 
   dismissMemoryAction: (actionId) => {

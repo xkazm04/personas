@@ -148,7 +148,7 @@ export function buildCredentialGraph(
       }
 
       edges.push({
-        id: `${credId}→${agentNodeId}:${dep.link_type}`,
+        id: `${credId}->${agentNodeId}:${dep.link_type}`,
         source: credId,
         target: agentNodeId,
         label: dep.via_connector ?? dep.link_type,
@@ -175,7 +175,7 @@ export function buildCredentialGraph(
     nodeIds.add(evtNodeId);
 
     edges.push({
-      id: `${evt.credential_id}→${evtNodeId}`,
+      id: `${evt.credential_id}->${evtNodeId}`,
       source: evt.credential_id,
       target: evtNodeId,
       label: 'triggers',

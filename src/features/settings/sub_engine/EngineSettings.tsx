@@ -148,9 +148,9 @@ export default function EngineSettings() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Row component
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 function OperationRow({
   operation,
@@ -179,7 +179,7 @@ function OperationRow({
         const installed = installedProviders.has(p.id);
         const defaultEnabled = DEFAULT_CAPABILITIES[operation]?.[p.id] ?? false;
         const enabled = isEnabled(operation, p.id);
-        // Lock cells where the default is false — CLI failed the test, not toggleable
+        // Lock cells where the default is false -- CLI failed the test, not toggleable
         const locked = !defaultEnabled;
 
         return (
@@ -194,7 +194,7 @@ function OperationRow({
               <div className="flex justify-center">
                 <span
                   className="w-6 h-6 rounded bg-rose-500/10 border border-rose-500/20 flex items-center justify-center cursor-not-allowed"
-                  title={`${label} is not supported by ${p.shortLabel} — failed integration tests`}
+                  title={`${label} is not supported by ${p.shortLabel} -- failed integration tests`}
                 >
                   <Lock className="w-2.5 h-2.5 text-rose-400/40" />
                 </span>

@@ -1,5 +1,7 @@
-import { Loader2, Plug, Unplug, ChevronRight, ShieldCheck, ShieldQuestion } from 'lucide-react';
+import { memo, useMemo } from 'react';
+import { Loader2, ChevronRight } from 'lucide-react';
 import type { DiscoveredPeer, ConnectionState } from '@/api/network/discovery';
+import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnectedIcon } from './NetworkIcons';
 
 interface PeerCardProps {
   peer: DiscoveredPeer;
@@ -18,7 +20,7 @@ const STATE_DOT: Record<string, string> = {
   Disconnected: 'bg-zinc-500',
 };
 
-export function PeerCard({
+export const PeerCard = memo(function PeerCard({
   peer,
   connectionState,
   isTrusted,
@@ -35,7 +37,7 @@ export function PeerCard({
     ? `${peer.peer_id.slice(0, 8)}...${peer.peer_id.slice(-8)}`
     : peer.peer_id;
 
-  const lastSeen = (() => {
+  const lastSeen = useMemo(() => {
     try {
       const d = new Date(peer.last_seen_at);
       const diff = Date.now() - d.getTime();
@@ -45,7 +47,7 @@ export function PeerCard({
     } catch {
       return '';
     }
-  })();
+  }, [peer.last_seen_at]);
 
   return (
     <div className="rounded-xl border border-border bg-secondary/20 p-3 flex items-center gap-3">
@@ -62,9 +64,9 @@ export function PeerCard({
             {peer.display_name}
           </span>
           {isTrusted ? (
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+            <TrustVerifiedIcon className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
           ) : (
-            <ShieldQuestion className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
+            <TrustUnknownIcon className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
@@ -87,7 +89,7 @@ export function PeerCard({
             title="Disconnect"
             className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-amber-500 transition-colors"
           >
-            <Unplug className="w-3.5 h-3.5" />
+            <NodeDisconnectedIcon className="w-3.5 h-3.5" />
           </button>
         ) : (
           <button
@@ -95,7 +97,7 @@ export function PeerCard({
             title="Connect"
             className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-emerald-500 transition-colors"
           >
-            <Plug className="w-3.5 h-3.5" />
+            <NodeConnectedIcon className="w-3.5 h-3.5" />
           </button>
         )}
         <button
@@ -108,4 +110,4 @@ export function PeerCard({
       </div>
     </div>
   );
-}
+});

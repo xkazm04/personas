@@ -5,6 +5,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import type { PersonaAutomation, AutomationDeploymentStatus } from '@/lib/bindings/PersonaAutomation';
 import { AutomationCard } from './AutomationCard';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
+import { TOOLS_BTN_COMPACT, TOOLS_INNER_SPACE } from '@/lib/utils/designTokens';
 
 interface AutomationsSectionProps {
   automations: PersonaAutomation[];
@@ -93,7 +94,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
           trailing={
             <button
               onClick={(e) => { e.stopPropagation(); onAdd(); }}
-              className="flex items-center gap-1 px-2 py-1 text-sm font-medium rounded-lg border border-accent/20 text-foreground/80 bg-accent/10 hover:bg-accent/20 transition-colors"
+              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} text-sm font-medium rounded-lg border border-accent/20 text-foreground/80 bg-accent/10 hover:bg-accent/20 transition-colors`}
             >
               <Plus className="w-3 h-3" />
               Add
@@ -111,7 +112,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
             transition={{ duration: 0.15 }}
             className="overflow-hidden"
           >
-            <div className="space-y-2 pt-2">
+            <div className={`${TOOLS_INNER_SPACE} pt-2`}>
               {automations.map((auto) => (
                 <AutomationCard
                   key={auto.id}

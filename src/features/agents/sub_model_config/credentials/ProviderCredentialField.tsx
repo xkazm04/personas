@@ -31,7 +31,7 @@ export function ProviderCredentialField({
   containerClassName,
 }: ProviderCredentialFieldProps) {
   const f1 = useAppSetting(field1.settingKey);
-  // Always call — hook is a no-op when field2 is absent (empty key returns null gracefully)
+  // Always call -- hook is a no-op when field2 is absent (empty key returns null gracefully)
   const f2 = useAppSetting(field2?.settingKey ?? '');
 
   if (!f1.loaded || (field2 && !f2.loaded)) return null;

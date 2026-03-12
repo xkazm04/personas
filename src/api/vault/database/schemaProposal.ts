@@ -1,6 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// ── Types ────────────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------------
 
 export interface SchemaProposalSnapshot {
   job_id: string;
@@ -20,7 +20,7 @@ export interface SchemaValidationResult {
   all_tables: string[];
 }
 
-// ── Commands ─────────────────────────────────────────────────────────
+// -- Commands ---------------------------------------------------------
 
 /**
  * Ask the LLM CLI to propose a database schema based on the template's

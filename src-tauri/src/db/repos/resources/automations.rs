@@ -51,7 +51,7 @@ fn row_to_run(row: &Row) -> rusqlite::Result<AutomationRun> {
     })
 }
 
-// ── Automation CRUD ──────────────────────────────────────────────────
+// -- Automation CRUD --------------------------------------------------
 
 pub fn get_by_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<PersonaAutomation>, AppError> {
     let conn = pool.get()?;
@@ -219,7 +219,7 @@ pub fn record_trigger_result(
     Ok(())
 }
 
-// ── Automation Runs ──────────────────────────────────────────────────
+// -- Automation Runs --------------------------------------------------
 
 pub fn create_run(
     pool: &DbPool,

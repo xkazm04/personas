@@ -4,7 +4,7 @@ use crate::db::models::{CreateTestResultInput, PersonaTestResult, PersonaTestRun
 use crate::db::DbPool;
 use crate::error::AppError;
 
-// ── Row mappers ────────────────────────────────────────────────
+// -- Row mappers ------------------------------------------------
 
 fn row_to_run(row: &Row) -> rusqlite::Result<PersonaTestRun> {
     Ok(PersonaTestRun {
@@ -43,7 +43,7 @@ fn row_to_result(row: &Row) -> rusqlite::Result<PersonaTestResult> {
     })
 }
 
-// ── Test Runs ──────────────────────────────────────────────────
+// -- Test Runs --------------------------------------------------
 
 pub fn create_run(
     pool: &DbPool,
@@ -120,7 +120,7 @@ pub fn delete_run(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     Ok(rows > 0)
 }
 
-// ── Test Results ───────────────────────────────────────────────
+// -- Test Results -----------------------------------------------
 
 pub fn create_result(
     pool: &DbPool,

@@ -29,7 +29,7 @@ export interface ThemedSelectProps extends SelectHTMLAttributes<HTMLSelectElemen
   placeholder?: string;
 }
 
-// ── Icon helper for options ──────────────────────────────────────
+// -- Icon helper for options --------------------------------------
 
 const isLocalSvg = (url: string) => url.startsWith('/') && url.endsWith('.svg');
 
@@ -57,7 +57,7 @@ function OptionIcon({ url, color, label }: { url: string; color?: string; label:
   return <img src={url} alt={label} className="w-4 h-4 shrink-0 rounded" referrerPolicy="no-referrer" crossOrigin="anonymous" />;
 }
 
-// ── Filterable dropdown ──────────────────────────────────────────
+// -- Filterable dropdown ------------------------------------------
 
 function FilterableSelect({
   options = [],
@@ -159,7 +159,7 @@ function FilterableSelect({
   );
 }
 
-// ── Main export ──────────────────────────────────────────────────
+// -- Main export --------------------------------------------------
 
 /**
  * Drop-in replacement for plain `<select>` that follows the app's

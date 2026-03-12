@@ -15,7 +15,7 @@
       "duration_ms": 551,
       "tests": [
         {
-          "name": "E2E: useAiHealingStream — initial state > starts idle with empty state",
+          "name": "E2E: useAiHealingStream -- initial state > starts idle with empty state",
           "file": "cli-healing-stream.e2e.test.ts",
           "state": "pass",
           "duration_ms": 11,
@@ -267,21 +267,21 @@
           "provider": "General"
         },
         {
-          "name": "E2E: Query Debug — failure after retries > handles failed debug with max retries exceeded",
+          "name": "E2E: Query Debug -- failure after retries > handles failed debug with max retries exceeded",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: N8N Transform — parse failure > handles unsupported node type error",
+          "name": "E2E: N8N Transform -- parse failure > handles unsupported node type error",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: Template Adoption — failure mid-adoption > handles adoption failure and triggers onFailed callback",
+          "name": "E2E: Template Adoption -- failure mid-adoption > handles adoption failure and triggers onFailed callback",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
@@ -519,238 +519,238 @@
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > shows the last line text",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > shows the last line text",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 19,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > shows running indicator when isRunning",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > shows running indicator when isRunning",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 5,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > hides running indicator when not running",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > hides running indicator when not running",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > shows expand button (ChevronDown) when collapsed",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > shows expand button (ChevronDown) when collapsed",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > shows copy button when not running and has lines",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > shows copy button when not running and has lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > hides copy button while running",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > hides copy button while running",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > shows dismiss button when not running and onClear provided",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > shows dismiss button when not running and onClear provided",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > hides dismiss button while running",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > hides dismiss button while running",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > renders counters slot",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > renders counters slot",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > expanded state > renders all lines in expanded panel",
+          "name": "E2E: TerminalStrip -- rendering > expanded state > renders all lines in expanded panel",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 6,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > expanded state > shows collapse button (ChevronUp) when expanded",
+          "name": "E2E: TerminalStrip -- rendering > expanded state > shows collapse button (ChevronUp) when expanded",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > expanded state > shows pulsing cursor when running and expanded",
+          "name": "E2E: TerminalStrip -- rendering > expanded state > shows pulsing cursor when running and expanded",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > expanded state > does not show pulsing cursor when completed",
+          "name": "E2E: TerminalStrip -- rendering > expanded state > does not show pulsing cursor when completed",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > callbacks > calls onToggle when expand/collapse button clicked",
+          "name": "E2E: TerminalStrip -- rendering > callbacks > calls onToggle when expand/collapse button clicked",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > callbacks > calls onClear when dismiss button clicked",
+          "name": "E2E: TerminalStrip -- rendering > callbacks > calls onClear when dismiss button clicked",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > callbacks > copies all lines on copy button click",
+          "name": "E2E: TerminalStrip -- rendering > callbacks > copies all lines on copy button click",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 5,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders AI healing lines in strip format",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders AI healing lines in strip format",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders query debug lines in strip format",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders query debug lines in strip format",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders API test runner lines with custom classifier",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders API test runner lines with custom classifier",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > idle state > shows idle text when no lines and phase is idle",
+          "name": "E2E: CliOutputPanel -- rendering > idle state > shows idle text when no lines and phase is idle",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > idle state > shows custom idle text",
+          "name": "E2E: CliOutputPanel -- rendering > idle state > shows custom idle text",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > waiting state > shows waiting text when running with no lines yet",
+          "name": "E2E: CliOutputPanel -- rendering > waiting state > shows waiting text when running with no lines yet",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > waiting state > shows custom waiting text",
+          "name": "E2E: CliOutputPanel -- rendering > waiting state > shows custom waiting text",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > running state with output > renders all output lines",
+          "name": "E2E: CliOutputPanel -- rendering > running state with output > renders all output lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > running state with output > shows pulsing cursor while running",
+          "name": "E2E: CliOutputPanel -- rendering > running state with output > shows pulsing cursor while running",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > running state with output > shows running indicator in header",
+          "name": "E2E: CliOutputPanel -- rendering > running state with output > shows running indicator in header",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > completed state > shows completed status with line count",
+          "name": "E2E: CliOutputPanel -- rendering > completed state > shows completed status with line count",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > completed state > shows truncated runId in header",
+          "name": "E2E: CliOutputPanel -- rendering > completed state > shows truncated runId in header",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > completed state > does not show pulsing cursor when completed",
+          "name": "E2E: CliOutputPanel -- rendering > completed state > does not show pulsing cursor when completed",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > completed state > shows Copy Log button when completed with lines",
+          "name": "E2E: CliOutputPanel -- rendering > completed state > shows Copy Log button when completed with lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > empty line rendering > renders empty lines as spacers",
+          "name": "E2E: CliOutputPanel -- rendering > empty line rendering > renders empty lines as spacers",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > healingStrip slot > renders healing strip between header and output",
+          "name": "E2E: CliOutputPanel -- rendering > healingStrip slot > renders healing strip between header and output",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — scenario rendering > renders N8N transform output with milestones",
+          "name": "E2E: CliOutputPanel -- scenario rendering > renders N8N transform output with milestones",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — scenario rendering > renders failed execution with error styling",
+          "name": "E2E: CliOutputPanel -- scenario rendering > renders failed execution with error styling",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
@@ -778,28 +778,28 @@
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — all CliRunPhase values > renders correctly in \"idle\" phase",
+          "name": "E2E: CliOutputPanel -- all CliRunPhase values > renders correctly in \"idle\" phase",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — all CliRunPhase values > renders correctly in \"running\" phase",
+          "name": "E2E: CliOutputPanel -- all CliRunPhase values > renders correctly in \"running\" phase",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — all CliRunPhase values > renders correctly in \"completed\" phase",
+          "name": "E2E: CliOutputPanel -- all CliRunPhase values > renders correctly in \"completed\" phase",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — all CliRunPhase values > renders correctly in \"failed\" phase",
+          "name": "E2E: CliOutputPanel -- all CliRunPhase values > renders correctly in \"failed\" phase",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
@@ -828,49 +828,49 @@
       "duration_ms": 36,
       "tests": [
         {
-          "name": "E2E: line classification — Claude execution > classifies Session started as status",
+          "name": "E2E: line classification -- Claude execution > classifies Session started as status",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: line classification — Claude execution > classifies tool use lines as tool",
+          "name": "E2E: line classification -- Claude execution > classifies tool use lines as tool",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: line classification — Claude execution > classifies Completed in as status",
+          "name": "E2E: line classification -- Claude execution > classifies Completed in as status",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: line classification — Claude execution > classifies Cost as status",
+          "name": "E2E: line classification -- Claude execution > classifies Cost as status",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: line classification — Claude execution > classifies [SUMMARY] as summary",
+          "name": "E2E: line classification -- Claude execution > classifies [SUMMARY] as summary",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: line classification — Claude execution > classifies assistant text as text",
+          "name": "E2E: line classification -- Claude execution > classifies assistant text as text",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: line classification — Claude execution > maps every line to a valid style",
+          "name": "E2E: line classification -- Claude execution > maps every line to a valid style",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
@@ -905,21 +905,21 @@
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: Query Debug — Claude provider > streams debug output, completes, and extracts result + corrected query",
+          "name": "E2E: Query Debug -- Claude provider > streams debug output, completes, and extracts result + corrected query",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 16,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: N8N Transform — Claude provider > streams full transform lifecycle with milestone markers",
+          "name": "E2E: N8N Transform -- Claude provider > streams full transform lifecycle with milestone markers",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: Template Adoption — default (Claude) provider > streams full adoption lifecycle with sandbox policy",
+          "name": "E2E: Template Adoption -- default (Claude) provider > streams full adoption lifecycle with sandbox policy",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
@@ -954,35 +954,35 @@
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders Claude Code execution output with correct line count",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders Claude Code execution output with correct line count",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders Claude Code failure output",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders Claude Code failure output",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: CliOutputPanel — provider execution rendering > Claude Code output > renders completed execution with all lines",
+          "name": "E2E: CliOutputPanel -- provider execution rendering > Claude Code output > renders completed execution with all lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: CliOutputPanel — provider execution rendering > Claude Code output > renders failed execution with error lines",
+          "name": "E2E: CliOutputPanel -- provider execution rendering > Claude Code output > renders failed execution with error lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: CliOutputPanel — scenario rendering > renders persona execution output (Claude)",
+          "name": "E2E: CliOutputPanel -- scenario rendering > renders persona execution output (Claude)",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
@@ -997,21 +997,21 @@
       "duration_ms": 25,
       "tests": [
         {
-          "name": "E2E: line classification — Gemini execution > classifies Gemini session start as status",
+          "name": "E2E: line classification -- Gemini execution > classifies Gemini session start as status",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: line classification — Gemini execution > classifies WebSearch tool use",
+          "name": "E2E: line classification -- Gemini execution > classifies WebSearch tool use",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: line classification — Gemini execution > maps every Gemini line to a valid style",
+          "name": "E2E: line classification -- Gemini execution > maps every Gemini line to a valid style",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
@@ -1053,14 +1053,14 @@
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: Query Debug — Gemini provider > streams Gemini-specific debug output with type casting fix",
+          "name": "E2E: Query Debug -- Gemini provider > streams Gemini-specific debug output with type casting fix",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: N8N Transform — Gemini provider > streams Gemini-specific transform output",
+          "name": "E2E: N8N Transform -- Gemini provider > streams Gemini-specific transform output",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
@@ -1095,35 +1095,35 @@
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders Gemini CLI execution output with correct line count",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders Gemini CLI execution output with correct line count",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders Gemini CLI failure output",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders Gemini CLI failure output",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: CliOutputPanel — provider execution rendering > Gemini CLI output > renders completed execution with all lines",
+          "name": "E2E: CliOutputPanel -- provider execution rendering > Gemini CLI output > renders completed execution with all lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 4,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: CliOutputPanel — provider execution rendering > Gemini CLI output > renders failed execution with error lines",
+          "name": "E2E: CliOutputPanel -- provider execution rendering > Gemini CLI output > renders failed execution with error lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: CliOutputPanel — scenario rendering > renders persona execution output (Gemini)",
+          "name": "E2E: CliOutputPanel -- scenario rendering > renders persona execution output (Gemini)",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 8,
@@ -1138,21 +1138,21 @@
       "duration_ms": 15,
       "tests": [
         {
-          "name": "E2E: line classification — Copilot execution > classifies Copilot session start as status",
+          "name": "E2E: line classification -- Copilot execution > classifies Copilot session start as status",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: line classification — Copilot execution > classifies Bash tool use",
+          "name": "E2E: line classification -- Copilot execution > classifies Bash tool use",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: line classification — Copilot execution > maps every Copilot line to a valid style",
+          "name": "E2E: line classification -- Copilot execution > maps every Copilot line to a valid style",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
@@ -1187,14 +1187,14 @@
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: Query Debug — Copilot provider > streams Copilot-specific debug output with GROUP BY fix",
+          "name": "E2E: Query Debug -- Copilot provider > streams Copilot-specific debug output with GROUP BY fix",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: Template Adoption — Copilot provider > streams Copilot adoption with different budget settings",
+          "name": "E2E: Template Adoption -- Copilot provider > streams Copilot adoption with different budget settings",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
@@ -1229,35 +1229,35 @@
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders Copilot CLI execution output with correct line count",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders Copilot CLI execution output with correct line count",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders Copilot CLI failure output",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders Copilot CLI failure output",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: CliOutputPanel — provider execution rendering > Copilot CLI output > renders completed execution with all lines",
+          "name": "E2E: CliOutputPanel -- provider execution rendering > Copilot CLI output > renders completed execution with all lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: CliOutputPanel — provider execution rendering > Copilot CLI output > renders failed execution with error lines",
+          "name": "E2E: CliOutputPanel -- provider execution rendering > Copilot CLI output > renders failed execution with error lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: CliOutputPanel — scenario rendering > renders persona execution output (Copilot)",
+          "name": "E2E: CliOutputPanel -- scenario rendering > renders persona execution output (Copilot)",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
@@ -1272,7 +1272,7 @@
       "duration_ms": 4,
       "tests": [
         {
-          "name": "E2E: N8N Transform — concurrent isolation > two transforms with different IDs do not interfere",
+          "name": "E2E: N8N Transform -- concurrent isolation > two transforms with different IDs do not interfere",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
@@ -1311,7 +1311,7 @@
       "duration_ms": 213,
       "tests": [
         {
-          "name": "E2E: useAiHealingStream — initial state > starts idle with empty state",
+          "name": "E2E: useAiHealingStream -- initial state > starts idle with empty state",
           "file": "cli-healing-stream.e2e.test.ts",
           "state": "pass",
           "duration_ms": 11,
@@ -1404,91 +1404,91 @@
       "duration_ms": 1,
       "tests": [
         {
-          "name": "E2E: line classification — Claude execution > classifies Session started as status",
+          "name": "E2E: line classification -- Claude execution > classifies Session started as status",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: line classification — Claude execution > classifies tool use lines as tool",
+          "name": "E2E: line classification -- Claude execution > classifies tool use lines as tool",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: line classification — Claude execution > classifies Completed in as status",
+          "name": "E2E: line classification -- Claude execution > classifies Completed in as status",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: line classification — Claude execution > classifies Cost as status",
+          "name": "E2E: line classification -- Claude execution > classifies Cost as status",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: line classification — Claude execution > classifies [SUMMARY] as summary",
+          "name": "E2E: line classification -- Claude execution > classifies [SUMMARY] as summary",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: line classification — Claude execution > classifies assistant text as text",
+          "name": "E2E: line classification -- Claude execution > classifies assistant text as text",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: line classification — Claude execution > maps every line to a valid style",
+          "name": "E2E: line classification -- Claude execution > maps every line to a valid style",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: line classification — Gemini execution > classifies Gemini session start as status",
+          "name": "E2E: line classification -- Gemini execution > classifies Gemini session start as status",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: line classification — Gemini execution > classifies WebSearch tool use",
+          "name": "E2E: line classification -- Gemini execution > classifies WebSearch tool use",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: line classification — Gemini execution > maps every Gemini line to a valid style",
+          "name": "E2E: line classification -- Gemini execution > maps every Gemini line to a valid style",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: line classification — Copilot execution > classifies Copilot session start as status",
+          "name": "E2E: line classification -- Copilot execution > classifies Copilot session start as status",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: line classification — Copilot execution > classifies Bash tool use",
+          "name": "E2E: line classification -- Copilot execution > classifies Bash tool use",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: line classification — Copilot execution > maps every Copilot line to a valid style",
+          "name": "E2E: line classification -- Copilot execution > maps every Copilot line to a valid style",
           "file": "cli-line-classification.e2e.test.ts",
           "state": "pass",
           "duration_ms": 0,
@@ -1763,77 +1763,77 @@
       "duration_ms": 53,
       "tests": [
         {
-          "name": "E2E: Query Debug — Claude provider > streams debug output, completes, and extracts result + corrected query",
+          "name": "E2E: Query Debug -- Claude provider > streams debug output, completes, and extracts result + corrected query",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 16,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: Query Debug — Gemini provider > streams Gemini-specific debug output with type casting fix",
+          "name": "E2E: Query Debug -- Gemini provider > streams Gemini-specific debug output with type casting fix",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: Query Debug — Copilot provider > streams Copilot-specific debug output with GROUP BY fix",
+          "name": "E2E: Query Debug -- Copilot provider > streams Copilot-specific debug output with GROUP BY fix",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: Query Debug — failure after retries > handles failed debug with max retries exceeded",
+          "name": "E2E: Query Debug -- failure after retries > handles failed debug with max retries exceeded",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: N8N Transform — Claude provider > streams full transform lifecycle with milestone markers",
+          "name": "E2E: N8N Transform -- Claude provider > streams full transform lifecycle with milestone markers",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: N8N Transform — Gemini provider > streams Gemini-specific transform output",
+          "name": "E2E: N8N Transform -- Gemini provider > streams Gemini-specific transform output",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: N8N Transform — parse failure > handles unsupported node type error",
+          "name": "E2E: N8N Transform -- parse failure > handles unsupported node type error",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: N8N Transform — concurrent isolation > two transforms with different IDs do not interfere",
+          "name": "E2E: N8N Transform -- concurrent isolation > two transforms with different IDs do not interfere",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
           "provider": "Cross-provider"
         },
         {
-          "name": "E2E: Template Adoption — default (Claude) provider > streams full adoption lifecycle with sandbox policy",
+          "name": "E2E: Template Adoption -- default (Claude) provider > streams full adoption lifecycle with sandbox policy",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: Template Adoption — Copilot provider > streams Copilot adoption with different budget settings",
+          "name": "E2E: Template Adoption -- Copilot provider > streams Copilot adoption with different budget settings",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: Template Adoption — failure mid-adoption > handles adoption failure and triggers onFailed callback",
+          "name": "E2E: Template Adoption -- failure mid-adoption > handles adoption failure and triggers onFailed callback",
           "file": "cli-scenario-streams.e2e.test.ts",
           "state": "pass",
           "duration_ms": 1,
@@ -2194,343 +2194,343 @@
       "duration_ms": 194,
       "tests": [
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > shows the last line text",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > shows the last line text",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 19,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > shows running indicator when isRunning",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > shows running indicator when isRunning",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 5,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > hides running indicator when not running",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > hides running indicator when not running",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > shows expand button (ChevronDown) when collapsed",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > shows expand button (ChevronDown) when collapsed",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > shows copy button when not running and has lines",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > shows copy button when not running and has lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > hides copy button while running",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > hides copy button while running",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > shows dismiss button when not running and onClear provided",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > shows dismiss button when not running and onClear provided",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > hides dismiss button while running",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > hides dismiss button while running",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > collapsed state > renders counters slot",
+          "name": "E2E: TerminalStrip -- rendering > collapsed state > renders counters slot",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > expanded state > renders all lines in expanded panel",
+          "name": "E2E: TerminalStrip -- rendering > expanded state > renders all lines in expanded panel",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 6,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > expanded state > shows collapse button (ChevronUp) when expanded",
+          "name": "E2E: TerminalStrip -- rendering > expanded state > shows collapse button (ChevronUp) when expanded",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > expanded state > shows pulsing cursor when running and expanded",
+          "name": "E2E: TerminalStrip -- rendering > expanded state > shows pulsing cursor when running and expanded",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > expanded state > does not show pulsing cursor when completed",
+          "name": "E2E: TerminalStrip -- rendering > expanded state > does not show pulsing cursor when completed",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > callbacks > calls onToggle when expand/collapse button clicked",
+          "name": "E2E: TerminalStrip -- rendering > callbacks > calls onToggle when expand/collapse button clicked",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > callbacks > calls onClear when dismiss button clicked",
+          "name": "E2E: TerminalStrip -- rendering > callbacks > calls onClear when dismiss button clicked",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — rendering > callbacks > copies all lines on copy button click",
+          "name": "E2E: TerminalStrip -- rendering > callbacks > copies all lines on copy button click",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 5,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders Claude Code execution output with correct line count",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders Claude Code execution output with correct line count",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders Claude Code failure output",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders Claude Code failure output",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders Gemini CLI execution output with correct line count",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders Gemini CLI execution output with correct line count",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders Gemini CLI failure output",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders Gemini CLI failure output",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders Copilot CLI execution output with correct line count",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders Copilot CLI execution output with correct line count",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders Copilot CLI failure output",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders Copilot CLI failure output",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders AI healing lines in strip format",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders AI healing lines in strip format",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders query debug lines in strip format",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders query debug lines in strip format",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: TerminalStrip — provider-specific rendering > renders API test runner lines with custom classifier",
+          "name": "E2E: TerminalStrip -- provider-specific rendering > renders API test runner lines with custom classifier",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > idle state > shows idle text when no lines and phase is idle",
+          "name": "E2E: CliOutputPanel -- rendering > idle state > shows idle text when no lines and phase is idle",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > idle state > shows custom idle text",
+          "name": "E2E: CliOutputPanel -- rendering > idle state > shows custom idle text",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > waiting state > shows waiting text when running with no lines yet",
+          "name": "E2E: CliOutputPanel -- rendering > waiting state > shows waiting text when running with no lines yet",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > waiting state > shows custom waiting text",
+          "name": "E2E: CliOutputPanel -- rendering > waiting state > shows custom waiting text",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > running state with output > renders all output lines",
+          "name": "E2E: CliOutputPanel -- rendering > running state with output > renders all output lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > running state with output > shows pulsing cursor while running",
+          "name": "E2E: CliOutputPanel -- rendering > running state with output > shows pulsing cursor while running",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > running state with output > shows running indicator in header",
+          "name": "E2E: CliOutputPanel -- rendering > running state with output > shows running indicator in header",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > completed state > shows completed status with line count",
+          "name": "E2E: CliOutputPanel -- rendering > completed state > shows completed status with line count",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > completed state > shows truncated runId in header",
+          "name": "E2E: CliOutputPanel -- rendering > completed state > shows truncated runId in header",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > completed state > does not show pulsing cursor when completed",
+          "name": "E2E: CliOutputPanel -- rendering > completed state > does not show pulsing cursor when completed",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > completed state > shows Copy Log button when completed with lines",
+          "name": "E2E: CliOutputPanel -- rendering > completed state > shows Copy Log button when completed with lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > empty line rendering > renders empty lines as spacers",
+          "name": "E2E: CliOutputPanel -- rendering > empty line rendering > renders empty lines as spacers",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — rendering > healingStrip slot > renders healing strip between header and output",
+          "name": "E2E: CliOutputPanel -- rendering > healingStrip slot > renders healing strip between header and output",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — provider execution rendering > Claude Code output > renders completed execution with all lines",
+          "name": "E2E: CliOutputPanel -- provider execution rendering > Claude Code output > renders completed execution with all lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: CliOutputPanel — provider execution rendering > Claude Code output > renders failed execution with error lines",
+          "name": "E2E: CliOutputPanel -- provider execution rendering > Claude Code output > renders failed execution with error lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: CliOutputPanel — provider execution rendering > Gemini CLI output > renders completed execution with all lines",
+          "name": "E2E: CliOutputPanel -- provider execution rendering > Gemini CLI output > renders completed execution with all lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 4,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: CliOutputPanel — provider execution rendering > Gemini CLI output > renders failed execution with error lines",
+          "name": "E2E: CliOutputPanel -- provider execution rendering > Gemini CLI output > renders failed execution with error lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: CliOutputPanel — provider execution rendering > Copilot CLI output > renders completed execution with all lines",
+          "name": "E2E: CliOutputPanel -- provider execution rendering > Copilot CLI output > renders completed execution with all lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: CliOutputPanel — provider execution rendering > Copilot CLI output > renders failed execution with error lines",
+          "name": "E2E: CliOutputPanel -- provider execution rendering > Copilot CLI output > renders failed execution with error lines",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: CliOutputPanel — scenario rendering > renders persona execution output (Claude)",
+          "name": "E2E: CliOutputPanel -- scenario rendering > renders persona execution output (Claude)",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "Claude Code (claude-sonnet-4-6)"
         },
         {
-          "name": "E2E: CliOutputPanel — scenario rendering > renders persona execution output (Gemini)",
+          "name": "E2E: CliOutputPanel -- scenario rendering > renders persona execution output (Gemini)",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 8,
           "provider": "Gemini CLI (gemini-3-flash-preview)"
         },
         {
-          "name": "E2E: CliOutputPanel — scenario rendering > renders persona execution output (Copilot)",
+          "name": "E2E: CliOutputPanel -- scenario rendering > renders persona execution output (Copilot)",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 3,
           "provider": "Copilot CLI (gpt-5.1-codex-mini)"
         },
         {
-          "name": "E2E: CliOutputPanel — scenario rendering > renders N8N transform output with milestones",
+          "name": "E2E: CliOutputPanel -- scenario rendering > renders N8N transform output with milestones",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 2,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — scenario rendering > renders failed execution with error styling",
+          "name": "E2E: CliOutputPanel -- scenario rendering > renders failed execution with error styling",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
@@ -2558,28 +2558,28 @@
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — all CliRunPhase values > renders correctly in \"idle\" phase",
+          "name": "E2E: CliOutputPanel -- all CliRunPhase values > renders correctly in \"idle\" phase",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — all CliRunPhase values > renders correctly in \"running\" phase",
+          "name": "E2E: CliOutputPanel -- all CliRunPhase values > renders correctly in \"running\" phase",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — all CliRunPhase values > renders correctly in \"completed\" phase",
+          "name": "E2E: CliOutputPanel -- all CliRunPhase values > renders correctly in \"completed\" phase",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,
           "provider": "General"
         },
         {
-          "name": "E2E: CliOutputPanel — all CliRunPhase values > renders correctly in \"failed\" phase",
+          "name": "E2E: CliOutputPanel -- all CliRunPhase values > renders correctly in \"failed\" phase",
           "file": "cli-terminal-rendering.e2e.test.tsx",
           "state": "pass",
           "duration_ms": 1,

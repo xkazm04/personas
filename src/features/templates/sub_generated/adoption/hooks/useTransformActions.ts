@@ -140,6 +140,7 @@ export function useTransformActions({
           ? JSON.stringify(state.connectorSwaps)
           : null;
 
+      console.debug(`[adopt:${adoptId}] transform start`, { templateName: state.templateName, isAdjustment: !!state.adjustmentRequest.trim() });
       await startTemplateAdoptBackground(
         adoptId,
         state.templateName,
@@ -149,13 +150,16 @@ export function useTransformActions({
         userAnswersJson,
         connectorSwapsJson,
       );
+      console.debug(`[adopt:${adoptId}] transform dispatched`);
 
       if (state.adjustmentRequest.trim()) wizard.setAdjustment('');
     } catch (err) {
+      const errMsg = err instanceof Error ? err.message : 'Failed to start template adoption.';
+      console.debug(`[adopt:${adoptId}] transform fail`, { error: errMsg });
       setTemplateAdoptActive(false);
       clearPersistedContext();
       void resetAdoptStream();
-      wizard.transformFailed(err instanceof Error ? err.message : 'Failed to start template adoption.');
+      wizard.transformFailed(errMsg);
     } finally {
       transformStartingRef.current = false;
     }
@@ -189,12 +193,16 @@ export function useTransformActions({
     const userAnswersJson = hasAnswers ? JSON.stringify(state.userAnswers) : '{}';
 
     try {
+      console.debug(`[adopt:${adoptId}] continue transform start`);
       wizard.transformStarted(adoptId);
       setTemplateAdoptActive(true);
       await continueTemplateAdopt(adoptId, userAnswersJson);
+      console.debug(`[adopt:${adoptId}] continue transform dispatched`);
     } catch (err) {
+      const errMsg = err instanceof Error ? err.message : 'Failed to continue template adoption.';
+      console.debug(`[adopt:${adoptId}] continue transform fail`, { error: errMsg });
       setTemplateAdoptActive(false);
-      wizard.transformFailed(err instanceof Error ? err.message : 'Failed to continue template adoption.');
+      wizard.transformFailed(errMsg);
     }
   }, [state.backgroundAdoptId, state.transforming, state.confirming, state.userAnswers, wizard, setTemplateAdoptActive]);
 

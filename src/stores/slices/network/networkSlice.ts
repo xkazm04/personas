@@ -5,6 +5,7 @@ import type { PeerIdentity, TrustedPeer } from "@/api/network/identity";
 import type { ExposedResource, ResourceProvenance } from "@/api/network/exposure";
 import type { BundleImportPreview } from "@/api/network/bundle";
 import type {
+  ConnectionHealth,
   DiscoveredPeer,
   PeerManifestEntry,
   ConnectionState,
@@ -14,6 +15,9 @@ import * as identityApi from "@/api/network/identity";
 import * as exposureApi from "@/api/network/exposure";
 import * as bundleApi from "@/api/network/bundle";
 import * as discoveryApi from "@/api/network/discovery";
+
+/** Number of consecutive poll failures before surfacing a staleness warning. */
+const STALE_THRESHOLD = 3;
 
 export interface NetworkSlice {
   // State (Phase 1)
@@ -28,6 +32,11 @@ export interface NetworkSlice {
   peerManifests: Record<string, PeerManifestEntry[]>;
   connectionStates: Record<string, ConnectionState>;
   networkStatus: NetworkStatusInfo | null;
+  connectionHealth: ConnectionHealth | null;
+
+  // Network health tracking
+  networkError: string | null;
+  networkConsecutiveFailures: number;
 
   // Identity actions
   fetchLocalIdentity: () => Promise<void>;
@@ -61,6 +70,7 @@ export interface NetworkSlice {
   fetchPeerManifest: (peerId: string) => Promise<void>;
   syncPeerManifest: (peerId: string) => Promise<void>;
   fetchNetworkStatus: () => Promise<void>;
+  fetchNetworkSnapshot: () => Promise<void>;
 }
 
 export const createNetworkSlice: StateCreator<PersonaStore, [], [], NetworkSlice> = (set, get) => ({
@@ -76,8 +86,13 @@ export const createNetworkSlice: StateCreator<PersonaStore, [], [], NetworkSlice
   peerManifests: {},
   connectionStates: {},
   networkStatus: null,
+  connectionHealth: null,
 
-  // ── Identity ────────────────────────────────────────────────────────
+  // Network health tracking
+  networkError: null,
+  networkConsecutiveFailures: 0,
+
+  // -- Identity --------------------------------------------------------
 
   fetchLocalIdentity: async () => {
     try {
@@ -107,7 +122,7 @@ export const createNetworkSlice: StateCreator<PersonaStore, [], [], NetworkSlice
     }
   },
 
-  // ── Trusted Peers ──────────────────────────────────────────────────
+  // -- Trusted Peers --------------------------------------------------
 
   fetchTrustedPeers: async () => {
     try {
@@ -149,7 +164,7 @@ export const createNetworkSlice: StateCreator<PersonaStore, [], [], NetworkSlice
     }
   },
 
-  // ── Exposure ───────────────────────────────────────────────────────
+  // -- Exposure -------------------------------------------------------
 
   fetchExposedResources: async () => {
     try {
@@ -191,7 +206,7 @@ export const createNetworkSlice: StateCreator<PersonaStore, [], [], NetworkSlice
     }
   },
 
-  // ── Provenance ─────────────────────────────────────────────────────
+  // -- Provenance -----------------------------------------------------
 
   fetchProvenance: async () => {
     try {
@@ -202,7 +217,7 @@ export const createNetworkSlice: StateCreator<PersonaStore, [], [], NetworkSlice
     }
   },
 
-  // ── Bundle ─────────────────────────────────────────────────────────
+  // -- Bundle ---------------------------------------------------------
 
   exportBundle: async (resourceIds, savePath) => {
     set({ networkLoading: true });
@@ -243,14 +258,20 @@ export const createNetworkSlice: StateCreator<PersonaStore, [], [], NetworkSlice
     }
   },
 
-  // ── Discovery (Phase 2) ────────────────────────────────────────────
+  // -- Discovery (Phase 2) --------------------------------------------
 
   fetchDiscoveredPeers: async () => {
     try {
       const peers = await discoveryApi.getDiscoveredPeers();
-      set({ discoveredPeers: peers });
+      set({ discoveredPeers: peers, networkConsecutiveFailures: 0, networkError: null });
     } catch (err) {
-      // Silently fail — network may not be running yet
+      const failures = get().networkConsecutiveFailures + 1;
+      set({
+        networkConsecutiveFailures: failures,
+        networkError: failures >= STALE_THRESHOLD
+          ? errMsg(err, "Network backend unreachable")
+          : null,
+      });
     }
   },
 
@@ -310,9 +331,36 @@ export const createNetworkSlice: StateCreator<PersonaStore, [], [], NetworkSlice
   fetchNetworkStatus: async () => {
     try {
       const status = await discoveryApi.getNetworkStatus();
-      set({ networkStatus: status });
+      set({ networkStatus: status, networkConsecutiveFailures: 0, networkError: null });
     } catch (err) {
-      // Silently fail
+      const failures = get().networkConsecutiveFailures + 1;
+      set({
+        networkConsecutiveFailures: failures,
+        networkError: failures >= STALE_THRESHOLD
+          ? errMsg(err, "Network backend unreachable")
+          : null,
+      });
+    }
+  },
+
+  fetchNetworkSnapshot: async () => {
+    try {
+      const snapshot = await discoveryApi.getNetworkSnapshot();
+      set({
+        networkStatus: snapshot.status,
+        connectionHealth: snapshot.health,
+        discoveredPeers: snapshot.discoveredPeers,
+        networkConsecutiveFailures: 0,
+        networkError: null,
+      });
+    } catch (err) {
+      const failures = get().networkConsecutiveFailures + 1;
+      set({
+        networkConsecutiveFailures: failures,
+        networkError: failures >= STALE_THRESHOLD
+          ? errMsg(err, "Network backend unreachable")
+          : null,
+      });
     }
   },
 });

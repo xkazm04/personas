@@ -52,7 +52,7 @@ function ToolCheckbox({
       animate={justToggled ? { scale: [1, 1.3, 1] } : undefined}
       transition={{ duration: 0.3 }}
       className={`flex-shrink-0 border flex items-center justify-center mt-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${classes} ${
-        checked ? 'bg-primary border-primary' : 'bg-background/50 border-primary/15'
+        checked ? 'bg-primary border-primary' : 'bg-background/50 border-primary/20'
       }`}
     >
       {checked && <Check className={`${checkClass} text-foreground`} />}
@@ -101,7 +101,7 @@ export function ToolCard({
           ? 'bg-secondary/20 border-primary/10 opacity-60 cursor-not-allowed'
           : isAssigned
             ? 'bg-primary/10 border-primary/30 shadow-[0_0_15px_rgba(59,130,246,0.08)] cursor-pointer'
-            : 'bg-secondary/40 border-primary/15 hover:border-primary/20 cursor-pointer'
+            : 'bg-secondary/40 border-primary/20 hover:border-primary/20 cursor-pointer'
       }`}
     >
       <div className="flex items-start gap-3">
@@ -145,7 +145,7 @@ export function ToolCard({
           )}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             {tool.category && (
-              <span className="inline-block px-2 py-0.5 rounded-lg text-sm font-mono bg-background/50 text-muted-foreground/80 border border-primary/15">
+              <span className="inline-block px-2 py-0.5 rounded-lg text-sm font-mono bg-background/50 text-muted-foreground/80 border border-primary/20">
                 {tool.category}
               </span>
             )}
@@ -240,7 +240,7 @@ export function GroupedToolRow({
           )}
         </div>
         {usageCount > 0 && (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm bg-primary/5 text-muted-foreground/80 border border-primary/8 flex-shrink-0">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm bg-primary/5 text-muted-foreground/80 border border-primary/10 flex-shrink-0">
             <BarChart3 className="w-2.5 h-2.5" />
             {usageCount.toLocaleString()}
           </span>

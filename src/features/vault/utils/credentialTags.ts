@@ -1,6 +1,6 @@
 import type { CredentialMetadata } from '@/lib/types/types';
 
-// ── Tag color presets ────────────────────────────────────────────────
+// -- Tag color presets ------------------------------------------------
 
 export const TAG_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   production:  { bg: 'bg-red-500/10',    text: 'text-red-400',    border: 'border-red-500/20' },
@@ -17,7 +17,7 @@ export function getTagStyle(tag: string) {
   return TAG_COLORS[tag.toLowerCase()] ?? DEFAULT_TAG_STYLE;
 }
 
-// ── Metadata helpers ─────────────────────────────────────────────────
+// -- Metadata helpers -------------------------------------------------
 
 function parseMetadata(metadata: string | null): Record<string, unknown> {
   if (!metadata) return {};
@@ -49,6 +49,6 @@ export function collectAllTags(credentials: CredentialMetadata[]): string[] {
   return [...set].sort();
 }
 
-// ── Suggested tags (pre-populated autocomplete) ──────────────────────
+// -- Suggested tags (pre-populated autocomplete) ----------------------
 
 export const SUGGESTED_TAGS = ['production', 'staging', 'development', 'personal', 'shared', 'testing'];

@@ -3,7 +3,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { formatElapsed } from '@/lib/utils/formatters';
 import type { PhaseEntry } from '../runnerTypes';
-import { dotColor, PHASE_META } from '../runnerTypes';
+import { PHASE_META } from '../runnerTypes';
+
+/** Phase-aware halo color for tool-call dots. */
+const PHASE_HALO: Record<string, string> = {
+  initializing:  'bg-blue-400 shadow-[0_0_4px_rgba(59,130,246,0.5)]',
+  thinking:      'bg-violet-400 shadow-[0_0_4px_rgba(139,92,246,0.5)]',
+  calling_tools: 'bg-emerald-400 shadow-[0_0_4px_rgba(16,185,129,0.5)]',
+  delegating:    'bg-cyan-400 shadow-[0_0_4px_rgba(6,182,212,0.5)]',
+  responding:    'bg-indigo-400 shadow-[0_0_4px_rgba(99,102,241,0.5)]',
+  finalizing:    'bg-teal-400 shadow-[0_0_4px_rgba(20,184,166,0.5)]',
+  error:         'bg-red-400 shadow-[0_0_4px_rgba(239,68,68,0.5)]',
+};
+
+function phaseHaloColor(phaseId: string): string {
+  return PHASE_HALO[phaseId] ?? 'bg-blue-400/70';
+}
 
 interface PhaseTimelineProps {
   phases: PhaseEntry[];
@@ -56,7 +71,7 @@ export function PhaseTimeline({
                   const duration = durations[i]!;
 
                   return (
-                    <Tooltip content={`${phase.label}: ${formatElapsed(duration)}${phase.toolCalls.length > 0 ? ` — ${phase.toolCalls.length} tool call${phase.toolCalls.length > 1 ? 's' : ''}` : ''}`} placement="bottom">
+                    <Tooltip content={`${phase.label}: ${formatElapsed(duration)}${phase.toolCalls.length > 0 ? ` -- ${phase.toolCalls.length} tool call${phase.toolCalls.length > 1 ? 's' : ''}` : ''}`} placement="bottom">
                     <motion.div
                       key={`${phase.id}-${i}`}
                       layout
@@ -91,7 +106,7 @@ export function PhaseTimeline({
                               <Tooltip content={`${tc.toolName}${tcDuration != null ? `: ${formatElapsed(tcDuration)}` : ''}`} placement="bottom">
                                 <span
                                   key={j}
-                                  className={`absolute top-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full ${dotColor(tcDuration)} opacity-90`}
+                                  className={`absolute top-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full ${phaseHaloColor(phase.id)} opacity-90`}
                                   style={{ left: `${pct}%` }}
                                   data-testid={`tool-dot-${i}-${j}`}
                                 />

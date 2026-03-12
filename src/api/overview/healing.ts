@@ -2,6 +2,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
+import type { HealingTimelineEvent } from "@/lib/bindings/HealingTimelineEvent";
 
 // ============================================================================
 // Healing
@@ -36,3 +37,10 @@ export const runHealingAnalysis = (personaId: string) =>
 
 export const getRetryChain = (executionId: string, callerPersonaId: string) =>
   invoke<PersonaExecution[]>("get_retry_chain", { executionId, callerPersonaId });
+
+// ============================================================================
+// Healing Timeline
+// ============================================================================
+
+export const getHealingTimeline = (personaId: string) =>
+  invoke<HealingTimelineEvent[]>("get_healing_timeline", { personaId });

@@ -1,5 +1,5 @@
 /**
- * Round 7: Auto-Credential Guided Mode — Tests the 3-layer auto-credential
+ * Round 7: Auto-Credential Guided Mode -- Tests the 3-layer auto-credential
  * setup approach against real catalog connectors.
  *
  * Layer 1: Playwright MCP availability check
@@ -36,9 +36,9 @@ afterEach(() => {
   workspace?.destroy();
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Test connector definitions (mirrors what's in the catalog)
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 interface TestConnector {
   name: string;
@@ -76,9 +76,9 @@ const TEST_CONNECTORS: TestConnector[] = [
   },
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Guided prompt builder (mirrors Rust build_guided_prompt)
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 function buildGuidedPrompt(connector: TestConnector): string {
   const fieldsDesc = connector.fields
@@ -101,11 +101,11 @@ Browser automation is NOT available. Instead, you will guide the user step-by-st
 
 You have special output prefixes that trigger actions in the desktop app:
 
-1. **OPEN_URL:https://example.com** — Opens the URL in the user's default browser.
+1. **OPEN_URL:https://example.com** -- Opens the URL in the user's default browser.
    Use this whenever you reference a URL the user should visit.
    Output it on its own line, with no surrounding text on that line.
 
-2. **WAITING: <message>** — Indicates you're waiting for the user to complete a step.
+2. **WAITING: <message>** -- Indicates you're waiting for the user to complete a step.
    After outputting a WAITING message, the app will pause for user confirmation.
 
 ## Starting Point
@@ -145,9 +145,9 @@ IMPORTANT:
 `;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // URL extraction helper (mirrors Rust extract_urls)
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 function extractUrls(text: string): string[] {
   const urls: string[] = [];
@@ -195,17 +195,17 @@ function extractJsonBlock(text: string): Record<string, unknown> | null {
   return null;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Tests
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 for (const provider of providers) {
-  describe(`${provider.displayName} — Auto-Cred Guided Mode`, () => {
+  describe(`${provider.displayName} -- Auto-Cred Guided Mode`, () => {
     for (const connector of TEST_CONNECTORS) {
       describe(`${connector.label}`, () => {
-        // ─────────────────────────────────────────────────────────────────
+        // -----------------------------------------------------------------
         // Test 1: Guided prompt produces OPEN_URL protocol lines
-        // ─────────────────────────────────────────────────────────────────
+        // -----------------------------------------------------------------
         it(`emits OPEN_URL: protocol for ${connector.label}`, async () => {
           workspace = createWorkspace('empty');
 
@@ -261,7 +261,7 @@ for (const provider of providers) {
           db.recordExecution({
             id: `round7-open-url-${connector.name}-${provider.name}`,
             round: 'round7',
-            testName: `OPEN_URL protocol — ${connector.label}`,
+            testName: `OPEN_URL protocol -- ${connector.label}`,
             provider: provider.name,
             model: provider.model,
             status: validation.passed ? 'pass' : 'fail',
@@ -279,9 +279,9 @@ for (const provider of providers) {
           expect(validation.passed, formatDiagnostic(result, validation)).toBe(true);
         }, 180_000);
 
-        // ─────────────────────────────────────────────────────────────────
+        // -----------------------------------------------------------------
         // Test 2: Guided prompt produces valid JSON with extracted_values
-        // ─────────────────────────────────────────────────────────────────
+        // -----------------------------------------------------------------
         it(`produces extracted_values JSON for ${connector.label}`, async () => {
           workspace = createWorkspace('empty');
 
@@ -348,7 +348,7 @@ for (const provider of providers) {
           db.recordExecution({
             id: `round7-json-extract-${connector.name}-${provider.name}`,
             round: 'round7',
-            testName: `JSON extraction — ${connector.label}`,
+            testName: `JSON extraction -- ${connector.label}`,
             provider: provider.name,
             model: provider.model,
             status: validation.passed ? 'pass' : 'fail',
@@ -366,9 +366,9 @@ for (const provider of providers) {
           expect(validation.passed, formatDiagnostic(result, validation)).toBe(true);
         }, 180_000);
 
-        // ─────────────────────────────────────────────────────────────────
+        // -----------------------------------------------------------------
         // Test 3: Guided instructions are specific and actionable
-        // ─────────────────────────────────────────────────────────────────
+        // -----------------------------------------------------------------
         it(`generates specific instructions for ${connector.label}`, async () => {
           workspace = createWorkspace('empty');
 
@@ -438,7 +438,7 @@ for (const provider of providers) {
           db.recordExecution({
             id: `round7-instructions-${connector.name}-${provider.name}`,
             round: 'round7',
-            testName: `Instruction quality — ${connector.label}`,
+            testName: `Instruction quality -- ${connector.label}`,
             provider: provider.name,
             model: provider.model,
             status: validation.passed ? 'pass' : 'fail',

@@ -80,7 +80,7 @@ export function BackgroundBanners({
                   Draft: {adoptionDraft.templateName}
                 </span>
                 <span className="text-sm text-muted-foreground/80">
-                  Step: {ADOPT_STEP_META[adoptionDraft.step].label} — click to resume
+                  Step: {ADOPT_STEP_META[adoptionDraft.step].label} -- click to resume
                 </span>
               </div>
             </button>
@@ -135,7 +135,7 @@ export function BackgroundBanners({
         </div>
       )}
 
-      {/* Background preview banner — shows while running, completed, or failed */}
+      {/* Background preview banner -- shows while running, completed, or failed */}
       {previewIsActive && !previewModalOpen && (() => {
         const isCompleted = previewPhase === 'completed';
         const isFailed = previewPhase === 'failed';

@@ -32,6 +32,7 @@ mod saved_views;
 mod dev_tools;
 mod identity;
 mod exposure;
+mod knowledge_base;
 
 pub use persona::*;
 pub use tool::*;
@@ -67,3 +68,4 @@ pub use saved_views::*;
 pub use dev_tools::*;
 pub use identity::*;
 pub use exposure::*;
+pub use knowledge_base::*;

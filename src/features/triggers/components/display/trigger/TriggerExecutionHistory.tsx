@@ -10,7 +10,7 @@ import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '
 import type { TriggerHistoryStats } from '../../../hooks/useTriggerHistory';
 import { useTriggerHistory } from '../../../hooks/useTriggerHistory';
 
-// ─── Stats Bar ──────────────────────────────────────────────────────
+// --- Stats Bar ------------------------------------------------------
 
 function StatsBar({ stats }: { stats: TriggerHistoryStats }) {
   if (stats.totalRuns === 0) return null;
@@ -47,7 +47,7 @@ function StatsBar({ stats }: { stats: TriggerHistoryStats }) {
   );
 }
 
-// ─── Payload Inspector ──────────────────────────────────────────────
+// --- Payload Inspector ----------------------------------------------
 
 function PayloadBlock({ label, data }: { label: string; data: string | null }) {
   if (!data) return null;
@@ -69,7 +69,7 @@ function PayloadBlock({ label, data }: { label: string; data: string | null }) {
   );
 }
 
-// ─── Execution Row ──────────────────────────────────────────────────
+// --- Execution Row --------------------------------------------------
 
 interface ExecutionRowProps {
   exec: PersonaExecution;
@@ -130,7 +130,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
                 <span className="font-mono">{exec.id.slice(0, 12)}</span>
                 {exec.model_used && <span>model: {exec.model_used}</span>}
                 {(exec.input_tokens > 0 || exec.output_tokens > 0) && (
-                  <span>{exec.input_tokens}→{exec.output_tokens} tokens</span>
+                  <span>{exec.input_tokens}{'→'}{exec.output_tokens} tokens</span>
                 )}
                 {exec.cost_usd > 0 && <span>${exec.cost_usd.toFixed(4)}</span>}
               </div>
@@ -175,7 +175,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
   );
 }
 
-// ─── Main Component ─────────────────────────────────────────────────
+// --- Main Component -------------------------------------------------
 
 interface TriggerExecutionHistoryProps {
   triggerId: string;

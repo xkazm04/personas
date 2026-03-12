@@ -25,7 +25,14 @@ export default function WorkflowsDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    let cancelled = false;
+    getWorkflowsOverview()
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch(() => { /* intentional: non-critical */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (data && data.running_count > 0) {

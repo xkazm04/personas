@@ -42,7 +42,7 @@ function ensureListener() {
 
 function teardownIfEmpty() {
   if (subscribers.size > 0) return;
-  // Don't tear down while setup is still in-flight — the setup completion
+  // Don't tear down while setup is still in-flight -- the setup completion
   // handler above will clean up when it resolves and finds zero subscribers.
   if (setupInFlight) return;
   if (singletonUnlisten) {
@@ -58,7 +58,7 @@ function teardownIfEmpty() {
 
 /**
  * Subscribes to the Tauri 'event-bus' channel and invokes a callback for each
- * incoming PersonaEvent. Uses a singleton listener internally — multiple calls
+ * incoming PersonaEvent. Uses a singleton listener internally -- multiple calls
  * share one Tauri subscription, eliminating duplicate events.
  *
  * Returns `true` once the Tauri listener is confirmed attached, `false` while

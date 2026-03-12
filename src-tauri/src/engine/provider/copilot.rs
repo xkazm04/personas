@@ -53,7 +53,7 @@ impl CliProvider for CopilotProvider {
         // copilot -p "<prompt>" --output-format json --yolo
         args.extend([
             "-p".to_string(),
-            String::new(), // placeholder — prompt injected by build_execution_args_with_prompt
+            String::new(), // placeholder -- prompt injected by build_execution_args_with_prompt
             "--output-format".to_string(),
             "json".to_string(),
             "--yolo".to_string(),
@@ -132,7 +132,7 @@ impl CliProvider for CopilotProvider {
         let line_type = value.get("type").and_then(|t| t.as_str()).unwrap_or("");
 
         match line_type {
-            // ── GitHub Copilot CLI (GA) events ───────────────────────────
+            // -- GitHub Copilot CLI (GA) events ---------------------------
 
             "assistant.turn_start" => {
                 let model = value
@@ -249,7 +249,7 @@ impl CliProvider for CopilotProvider {
                 )
             }
 
-            // ── Legacy Gemini-style events ───────────────────────────────
+            // -- Legacy Gemini-style events -------------------------------
 
             "system" => {
                 let subtype = value.get("subtype").and_then(|s| s.as_str()).unwrap_or("");
@@ -376,7 +376,7 @@ impl CliProvider for CopilotProvider {
                 )
             }
 
-            // ── Codex-style events ───────────────────────────────────────
+            // -- Codex-style events ---------------------------------------
 
             "thread.started" => {
                 let model = value

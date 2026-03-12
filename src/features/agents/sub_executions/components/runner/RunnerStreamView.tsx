@@ -57,7 +57,7 @@ export function RunnerPhaseTimeline({
                       const duration = durations[i]!;
 
                       return (
-                        <Tooltip content={`${phase.label}: ${formatElapsed(duration)}${phase.toolCalls.length > 0 ? ` — ${phase.toolCalls.length} tool call${phase.toolCalls.length > 1 ? 's' : ''}` : ''}`} placement="bottom" key={`${phase.id}-${i}`}>
+                        <Tooltip content={`${phase.label}: ${formatElapsed(duration)}${phase.toolCalls.length > 0 ? ` -- ${phase.toolCalls.length} tool call${phase.toolCalls.length > 1 ? 's' : ''}` : ''}`} placement="bottom" key={`${phase.id}-${i}`}>
                           <motion.div
                             layout
                             className={`relative flex items-center justify-center gap-1.5 px-2 overflow-hidden transition-colors ${

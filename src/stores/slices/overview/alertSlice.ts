@@ -1,7 +1,8 @@
 import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../../storeTypes";
+import { log } from "@/lib/log";
 
-// ── Alert Rule Types ──────────────────────────────────────────────────
+// -- Alert Rule Types --------------------------------------------------
 
 export type AlertMetric = 'error_rate' | 'success_rate' | 'cost' | 'cost_spike' | 'executions';
 export type AlertOperator = '>' | '<' | '>=' | '<=';
@@ -34,7 +35,7 @@ export interface FiredAlert {
   dismissed: boolean;
 }
 
-// ── Alert metric display helpers ──────────────────────────────────────
+// -- Alert metric display helpers --------------------------------------
 
 export const ALERT_METRIC_OPTIONS: { value: AlertMetric; label: string; unit: string }[] = [
   { value: 'error_rate', label: 'Error Rate', unit: '%' },
@@ -50,7 +51,7 @@ export const ALERT_SEVERITY_OPTIONS: { value: AlertSeverity; label: string; colo
   { value: 'critical', label: 'Critical', color: '#ef4444' },
 ];
 
-// ── Persistence ───────────────────────────────────────────────────────
+// -- Persistence -------------------------------------------------------
 
 const RULES_KEY = '__personas_alert_rules';
 const HISTORY_KEY = '__personas_alert_history';
@@ -60,29 +61,31 @@ function loadRules(): AlertRule[] {
   try {
     const raw = localStorage.getItem(RULES_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch {
+  } catch (err) {
+    log.warn('alertSlice', 'Failed to parse alert rules from localStorage', { key: RULES_KEY, error: String(err) });
     return [];
   }
 }
 
 function saveRules(rules: AlertRule[]) {
-  try { localStorage.setItem(RULES_KEY, JSON.stringify(rules)); } catch { /* noop */ }
+  try { localStorage.setItem(RULES_KEY, JSON.stringify(rules)); } catch (err) { log.warn('alertSlice', 'Failed to persist alert rules', { key: RULES_KEY, error: String(err) }); }
 }
 
 function loadHistory(): FiredAlert[] {
   try {
     const raw = localStorage.getItem(HISTORY_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch {
+  } catch (err) {
+    log.warn('alertSlice', 'Failed to parse alert history from localStorage', { key: HISTORY_KEY, error: String(err) });
     return [];
   }
 }
 
 function saveHistory(history: FiredAlert[]) {
-  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY))); } catch { /* noop */ }
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY))); } catch (err) { log.warn('alertSlice', 'Failed to persist alert history', { key: HISTORY_KEY, error: String(err) }); }
 }
 
-// ── Evaluation Engine ─────────────────────────────────────────────────
+// -- Evaluation Engine -------------------------------------------------
 
 interface MetricsSnapshot {
   totalExecutions: number;
@@ -137,7 +140,24 @@ function formatAlertMessage(rule: AlertRule, value: number): string {
   return `${label} is ${fmtValue} (threshold: ${rule.operator} ${fmtThreshold})`;
 }
 
-// ── Slice ─────────────────────────────────────────────────────────────
+// -- Evaluation Health -------------------------------------------------
+
+export interface AlertEvalHealth {
+  /** ISO timestamp of last successful evaluation */
+  lastEvalAt: string | null;
+  /** Duration of last evaluation in ms */
+  lastEvalDurationMs: number | null;
+  /** Number of rules evaluated in last pass */
+  rulesEvaluated: number;
+  /** Number of rules that triggered in last pass */
+  rulesTriggered: number;
+  /** Last evaluation error message, null if healthy */
+  lastError: string | null;
+  /** Total evaluation failures since session start */
+  totalFailures: number;
+}
+
+// -- Slice -------------------------------------------------------------
 
 export interface AlertSlice {
   // State
@@ -145,6 +165,8 @@ export interface AlertSlice {
   alertHistory: FiredAlert[];
   /** Alerts that are currently showing as toasts */
   activeToasts: FiredAlert[];
+  /** Health telemetry for the alert evaluation pipeline */
+  alertEvalHealth: AlertEvalHealth;
 
   // Rule CRUD
   addAlertRule: (rule: Omit<AlertRule, 'id' | 'createdAt'>) => void;
@@ -168,6 +190,14 @@ export const createAlertSlice: StateCreator<PersonaStore, [], [], AlertSlice> = 
   alertRules: loadRules(),
   alertHistory: loadHistory(),
   activeToasts: [],
+  alertEvalHealth: {
+    lastEvalAt: null,
+    lastEvalDurationMs: null,
+    rulesEvaluated: 0,
+    rulesTriggered: 0,
+    lastError: null,
+    totalFailures: 0,
+  },
 
   addAlertRule: (rule) => {
     const newRule: AlertRule = {
@@ -228,69 +258,112 @@ export const createAlertSlice: StateCreator<PersonaStore, [], [], AlertSlice> = 
   },
 
   evaluateAlertRules: () => {
-    const state = get();
-    const metrics = state.observabilityMetrics;
-    if (!metrics) return;
+    const startMs = performance.now();
+    let rulesEvaluated = 0;
+    let rulesTriggered = 0;
 
-    const summary = metrics.summary;
-    const chartData = metrics.chartData.chart_points;
+    try {
+      const state = get();
+      const metrics = state.observabilityMetrics;
+      if (!metrics) return;
 
-    // Compute average daily cost for cost_spike comparison
-    const avgDailyCost = chartData.length > 0
-      ? chartData.reduce((sum, p) => sum + p.cost, 0) / chartData.length
-      : 0;
+      const summary = metrics.summary;
+      const chartData = metrics.chartData.chart_points;
 
-    // Today's cost (last data point) for spike detection
-    const todayCost = chartData.length > 0 ? chartData[chartData.length - 1]!.cost : 0;
+      // Compute average daily cost for cost_spike comparison
+      const avgDailyCost = chartData.length > 0
+        ? chartData.reduce((sum, p) => sum + p.cost, 0) / chartData.length
+        : 0;
 
-    const snapshot: MetricsSnapshot = {
-      totalExecutions: summary.total_executions,
-      successfulExecutions: summary.successful_executions,
-      failedExecutions: summary.failed_executions,
-      totalCostUsd: summary.total_cost_usd,
-      avgCostUsd: avgDailyCost,
-    };
+      // Today's cost (last data point) for spike detection
+      const todayCost = chartData.length > 0 ? chartData[chartData.length - 1]!.cost : 0;
 
-    const newAlerts: FiredAlert[] = [];
+      const snapshot: MetricsSnapshot = {
+        totalExecutions: summary.total_executions,
+        successfulExecutions: summary.successful_executions,
+        failedExecutions: summary.failed_executions,
+        totalCostUsd: summary.total_cost_usd,
+        avgCostUsd: avgDailyCost,
+      };
 
-    for (const rule of state.alertRules) {
-      if (!rule.enabled) continue;
-      if (firedRuleIds.has(rule.id)) continue;
+      const newAlerts: FiredAlert[] = [];
 
-      // For cost_spike, override snapshot to use today vs average
-      const evalSnapshot = rule.metric === 'cost_spike'
-        ? { ...snapshot, totalCostUsd: todayCost }
-        : snapshot;
+      for (const rule of state.alertRules) {
+        if (!rule.enabled) continue;
+        if (firedRuleIds.has(rule.id)) continue;
+        rulesEvaluated++;
 
-      const { triggered, value } = evaluateRule(rule, evalSnapshot);
-      if (triggered) {
-        firedRuleIds.add(rule.id);
-        const alert: FiredAlert = {
-          id: crypto.randomUUID(),
-          ruleId: rule.id,
-          ruleName: rule.name,
-          metric: rule.metric,
-          severity: rule.severity,
-          message: formatAlertMessage(rule, value),
-          value,
-          threshold: rule.threshold,
-          personaId: rule.personaId,
-          firedAt: new Date().toISOString(),
-          dismissed: false,
-        };
-        newAlerts.push(alert);
+        // For cost_spike, override snapshot to use today vs average
+        const evalSnapshot = rule.metric === 'cost_spike'
+          ? { ...snapshot, totalCostUsd: todayCost }
+          : snapshot;
+
+        const { triggered, value } = evaluateRule(rule, evalSnapshot);
+        if (triggered) {
+          rulesTriggered++;
+          firedRuleIds.add(rule.id);
+          const alert: FiredAlert = {
+            id: crypto.randomUUID(),
+            ruleId: rule.id,
+            ruleName: rule.name,
+            metric: rule.metric,
+            severity: rule.severity,
+            message: formatAlertMessage(rule, value),
+            value,
+            threshold: rule.threshold,
+            personaId: rule.personaId,
+            firedAt: new Date().toISOString(),
+            dismissed: false,
+          };
+          newAlerts.push(alert);
+        }
       }
-    }
 
-    if (newAlerts.length > 0) {
-      set((state) => {
-        const history = [...newAlerts, ...state.alertHistory].slice(0, MAX_HISTORY);
-        saveHistory(history);
-        return {
-          alertHistory: history,
-          activeToasts: [...state.activeToasts, ...newAlerts],
-        };
-      });
+      const durationMs = Math.round(performance.now() - startMs);
+
+      if (newAlerts.length > 0) {
+        set((state) => {
+          const history = [...newAlerts, ...state.alertHistory].slice(0, MAX_HISTORY);
+          saveHistory(history);
+          return {
+            alertHistory: history,
+            activeToasts: [...state.activeToasts, ...newAlerts],
+            alertEvalHealth: {
+              lastEvalAt: new Date().toISOString(),
+              lastEvalDurationMs: durationMs,
+              rulesEvaluated,
+              rulesTriggered,
+              lastError: null,
+              totalFailures: state.alertEvalHealth.totalFailures,
+            },
+          };
+        });
+      } else {
+        set((state) => ({
+          alertEvalHealth: {
+            lastEvalAt: new Date().toISOString(),
+            lastEvalDurationMs: durationMs,
+            rulesEvaluated,
+            rulesTriggered: 0,
+            lastError: null,
+            totalFailures: state.alertEvalHealth.totalFailures,
+          },
+        }));
+      }
+    } catch (err) {
+      const durationMs = Math.round(performance.now() - startMs);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      log.warn('alertSlice', 'evaluateAlertRules failed', { error: errorMsg, durationMs });
+      set((state) => ({
+        alertEvalHealth: {
+          lastEvalAt: new Date().toISOString(),
+          lastEvalDurationMs: durationMs,
+          rulesEvaluated,
+          rulesTriggered,
+          lastError: errorMsg,
+          totalFailures: state.alertEvalHealth.totalFailures + 1,
+        },
+      }));
     }
   },
 });

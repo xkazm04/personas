@@ -1,12 +1,12 @@
 /**
- * English translations — source of truth for the Personas application.
+ * English translations -- source of truth for the Personas application.
  *
- * ═══════════════════════════════════════════════════════════════════════
+ * =======================================================================
  *  TRANSLATOR GUIDE
- * ═══════════════════════════════════════════════════════════════════════
+ * =======================================================================
  *
  * 1. Every key has a comment explaining WHERE and HOW the string is used.
- *    Read the comment before translating — context matters.
+ *    Read the comment before translating -- context matters.
  *
  * 2. Variables use {curly braces}: "You have {count} agents".
  *    Keep the variable names exactly as-is; only translate surrounding text.
@@ -14,7 +14,7 @@
  * 3. Pluralization uses suffixes: _one, _few, _many, _other (+ _zero, _two for Arabic).
  *    Provide all forms required by the target language's plural rules.
  *
- * 4. Keep translations concise — UI space is limited, especially in buttons,
+ * 4. Keep translations concise -- UI space is limited, especially in buttons,
  *    badges, and sidebar labels.
  *
  * 5. Do NOT translate:
@@ -45,15 +45,15 @@
  *
  * 13. "Design Wizard" = the AI-guided agent creation flow.
  *
- * 14. "Blast radius" = the impact scope — how many agents are affected
+ * 14. "Blast radius" = the impact scope -- how many agents are affected
  *     if a credential is changed or removed.
- * ═══════════════════════════════════════════════════════════════════════
+ * =======================================================================
  */
 export const en = {
 
-  // ───────────────────────────────────────────────────────────────────
-  //  COMMON — shared across the entire UI
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  COMMON -- shared across the entire UI
+  // -------------------------------------------------------------------
   common: {
     // Progress indicators shown during async operations
     loading: "Loading...",
@@ -61,7 +61,7 @@ export const en = {
     deleting: "Deleting...",
     creating: "Creating...",
 
-    // Generic action buttons — keep very short (1 word ideally)
+    // Generic action buttons -- keep very short (1 word ideally)
     retry: "Retry",
     cancel: "Cancel",
     save: "Save",
@@ -94,7 +94,7 @@ export const en = {
     required: "required",
 
     // Default select dropdown placeholder (the dashes are decorative)
-    select: "— select —",
+    select: "-- select --",
     no_results: "No results found",
 
     // Status labels used across multiple features
@@ -110,7 +110,7 @@ export const en = {
     enable_item: "Enable {name}",
     disable_item: "Disable {name}",
 
-    // Pluralized item counters — used in badges, summaries, tooltips
+    // Pluralized item counters -- used in badges, summaries, tooltips
     // {count} = numeric count
     agent_count_one: "{count} agent",
     agent_count_other: "{count} agents",
@@ -146,11 +146,11 @@ export const en = {
     none: "None",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  SIDEBAR — main app navigation (left panel)
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  SIDEBAR -- main app navigation (left panel)
+  // -------------------------------------------------------------------
   sidebar: {
-    // Top-level nav items — keep to 1–2 words max
+    // Top-level nav items -- keep to 1--2 words max
     home: "Home",
     overview: "Overview",
     agents: "Agents",
@@ -222,10 +222,10 @@ export const en = {
     pending_events_sr_other: "{count} pending events",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  HOME — landing page after login
+  // -------------------------------------------------------------------
+  //  HOME -- landing page after login
   //  (merged from src/features/home/i18n/en.ts)
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
   home: {
     welcome: "Welcome",
     greeting_morning: "Good Morning",
@@ -275,9 +275,9 @@ export const en = {
     },
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  AGENTS — agent listing, editor, creation wizard
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  AGENTS -- agent listing, editor, creation wizard
+  // -------------------------------------------------------------------
   agents: {
     title: "Personas",
     loading: "Loading...",
@@ -286,8 +286,8 @@ export const en = {
     overview: {
       title: "Agent Surface",
       // {count} = total agent count
-      subtitle_one: "{count} agent — sorted by relevance",
-      subtitle_other: "{count} agents — sorted by relevance",
+      subtitle_one: "{count} agent -- sorted by relevance",
+      subtitle_other: "{count} agents -- sorted by relevance",
       // Filter group labels shown above the agent grid
       needs_attention: "Needs Attention",
       active: "Active",
@@ -311,7 +311,7 @@ export const en = {
       no_description: "No description yet.",
       last_execution: "Last Execution",
       no_executions: "No executions yet",
-      // Stats row labels — daily execution breakdown
+      // Stats row labels -- daily execution breakdown
       today: "Today",
       ok: "OK",
       fail: "Fail",
@@ -342,7 +342,7 @@ export const en = {
       name_required: "Enter a name to continue",
     },
 
-    // Agent editor — tab bar labels
+    // Agent editor -- tab bar labels
     editor: {
       tabs: {
         use_cases: "Use Cases",
@@ -377,13 +377,13 @@ export const en = {
       set_up_cloud: "Set up Cloud",
     },
 
-    // Agent header bar (top of the editor — name, status toggle, warnings)
+    // Agent header bar (top of the editor -- name, status toggle, warnings)
     header: {
       // Warning tooltips shown next to the status toggle
       no_triggers_warning: "No triggers or event subscriptions configured",
       // {credentials} = comma-separated list of missing credential names
       missing_credentials: "Missing credentials: {credentials}",
-      toggle_failed: "Failed to toggle persona — check your connection",
+      toggle_failed: "Failed to toggle persona -- check your connection",
       cannot_enable: "Cannot enable persona",
     },
 
@@ -392,9 +392,9 @@ export const en = {
     sr_card: "{name}, {status}",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  VAULT — credential management (Keys section)
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  VAULT -- credential management (Keys section)
+  // -------------------------------------------------------------------
   vault: {
     title: "Vault",
     subtitle: "Choose how you want to add a credential",
@@ -462,7 +462,7 @@ export const en = {
       // {label} = the connector/service name (e.g. "GitHub", "Slack")
       start_description: "Let the AI guide you step-by-step through obtaining {label} API credentials. It will open the right pages, tell you exactly what to click, and auto-capture your keys.",
       start_button: "Start auto-provisioning",
-      // Estimated time — {minutes} is a number
+      // Estimated time -- {minutes} is a number
       estimated_time: "Takes ~{minutes} minutes",
       planning_description: "AI is analyzing the developer portal and generating a step-by-step provisioning plan...",
       // {label} = the connector/service name
@@ -484,12 +484,12 @@ export const en = {
       apply_credentials: "Apply credentials",
       // Individual step card
       open_in_browser: "Open in browser",
-      step_complete_captured: "Step complete — values captured",
+      step_complete_captured: "Step complete -- values captured",
       mark_complete: "Mark step complete",
       completed: "Completed",
     },
     playground: {
-      // Credential playground modal — tabs for exploring a credential
+      // Credential playground modal -- tabs for exploring a credential
       tab_overview: "Overview",
       tab_api_explorer: "API Explorer",
       tab_recipes: "Recipes",
@@ -511,9 +511,9 @@ export const en = {
     },
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  DEPLOYMENT — cloud, GitLab, deployment dashboard
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  DEPLOYMENT -- cloud, GitLab, deployment dashboard
+  // -------------------------------------------------------------------
   deployment: {
     title: "Deployment",
     orchestrator_url: "Orchestrator URL",
@@ -593,9 +593,9 @@ export const en = {
     },
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  OVERVIEW — dashboard, executions, messages, memories, schedules
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  OVERVIEW -- dashboard, executions, messages, memories, schedules
+  // -------------------------------------------------------------------
   overview: {
     title: "Overview",
     no_output: "No output yet",
@@ -641,7 +641,7 @@ export const en = {
     },
     realtime: {
       // {action} = a clickable action name (e.g. "Test Flow")
-      idle: "Idle — click {action} to simulate traffic",
+      idle: "Idle -- click {action} to simulate traffic",
       test_flow: "Test Flow",
       events_per_min: "events/min",
       pending: "pending",
@@ -653,7 +653,7 @@ export const en = {
       auto_resolved: "This issue was automatically resolved",
       mark_resolved: "Mark as Resolved",
       manual_fix: "(manual fix applied)",
-      metrics_unavailable: "Metrics unavailable — data shown may be stale",
+      metrics_unavailable: "Metrics unavailable -- data shown may be stale",
       no_open_issues: "No open issues",
       run_analysis: "Run analysis to check for problems.",
     },
@@ -692,8 +692,8 @@ export const en = {
       // Scheduler engine controls
       engine_on: "Engine On",
       engine_off: "Engine Off",
-      engine_on_tooltip: "Scheduler running — click to pause",
-      engine_off_tooltip: "Scheduler stopped — click to start",
+      engine_on_tooltip: "Scheduler running -- click to pause",
+      engine_off_tooltip: "Scheduler stopped -- click to start",
       // {count} = number of active/paused schedules
       active_count: "{count} active",
       paused_count: "{count} paused",
@@ -752,7 +752,7 @@ export const en = {
       recover: "Recover",
       run_once: "Run 1x",
       run_once_tooltip: "Run once now",
-      skip_tooltip: "Skip — don't recover",
+      skip_tooltip: "Skip -- don't recover",
       dismiss_all: "Dismiss all",
       // {count} = number of agents selected for recovery
       recover_selected: "Recover {count} selected",
@@ -778,7 +778,7 @@ export const en = {
       // {count} = number of known failure patterns
       known_patterns: "{count} known patterns",
       // {days} = number of days in the chart range
-      daily_success_rate: "Daily Success Rate — {days} Days",
+      daily_success_rate: "Daily Success Rate -- {days} Days",
       per_agent: "Per-Agent Reliability",
       no_agent_data: "No agents have executed in this period.",
       // SLA card metric labels
@@ -805,13 +805,13 @@ export const en = {
       failure_patterns_hint: "Known error signatures",
       model_insights: "Model Insights",
       model_insights_hint: "Performance by model",
-      // Persona filter — default option to show global data
+      // Persona filter -- default option to show global data
       all_personas: "All Personas (Global)",
       all_types: "All Types",
       // {date} = selected date for failure drill-down
       failure_drilldown: "Failure drill-down: {date}",
       failure_drilldown_hint: "Showing failure patterns active on or after this date.",
-      failure_drilldown_empty: "No matching patterns found — try selecting a specific persona above.",
+      failure_drilldown_empty: "No matching patterns found -- try selecting a specific persona above.",
       unavailable: "Knowledge data unavailable",
       empty: "No knowledge patterns yet",
       empty_hint: "Run executions to build the knowledge graph. Every execution teaches the system about tool sequences, failure patterns, and cost-quality tradeoffs.",
@@ -835,9 +835,9 @@ export const en = {
     },
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  TEMPLATES — gallery, detail modals, adoption wizard
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  TEMPLATES -- gallery, detail modals, adoption wizard
+  // -------------------------------------------------------------------
   templates: {
     // Gallery view
     gallery: {
@@ -856,7 +856,7 @@ export const en = {
       connectors: "Connectors",
       triggers: "Triggers",
       no_flows: "No flows",
-      // Readiness percentage tooltip — {percent}% of connectors are ready
+      // Readiness percentage tooltip -- {percent}% of connectors are ready
       readiness_tooltip: "{percent}% of connectors ready",
     },
 
@@ -886,7 +886,7 @@ export const en = {
       no_design_data_hint: "Design data unavailable for this template.",
     },
 
-    // Detail modal → Overview tab
+    // Detail modal -> Overview tab
     detail_overview: {
       use_case_flows: "Use Case Flows",
       suggested_adjustment: "Suggested Adjustment",
@@ -903,7 +903,7 @@ export const en = {
       // Tooltip on the close button during processing
       close_processing: "Close (processing continues in background)",
 
-      // Wizard sidebar step labels (short — shown in narrow sidebar)
+      // Wizard sidebar step labels (short -- shown in narrow sidebar)
       step_capabilities: "Pick capabilities",
       step_credentials: "Link credentials",
       step_preferences: "Set preferences",
@@ -911,7 +911,7 @@ export const en = {
       step_review: "Review & save",
     },
 
-    // Adoption → Choose step (select use cases from the template)
+    // Adoption -> Choose step (select use cases from the template)
     choose: {
       select_use_cases: "Select Use Cases",
       clear_all: "Clear All",
@@ -922,12 +922,12 @@ export const en = {
       examples: "Examples",
       tools: "Tools",
       // Warning when no use cases are selected
-      none_selected: "No use cases selected — select at least one to continue",
+      none_selected: "No use cases selected -- select at least one to continue",
     },
 
-    // Adoption → Connect step (link credentials to template connectors)
+    // Adoption -> Connect step (link credentials to template connectors)
     connect: {
-      all_set: "No connectors needed — you're all set!",
+      all_set: "No connectors needed -- you're all set!",
       title: "Connect Services",
       subtitle: "Link your credentials to the connectors this template requires.",
       service_flow: "Service flow",
@@ -943,7 +943,7 @@ export const en = {
       add_credential: "Add credential",
     },
 
-    // Adoption → Build step (AI generates the persona)
+    // Adoption -> Build step (AI generates the persona)
     build: {
       title: "Build Persona",
       subtitle: "Generating persona prompt, tools, triggers, and connectors based on your selections.",
@@ -956,17 +956,17 @@ export const en = {
       phase_validating: "Validating draft...",
       phase_finalizing: "Finalizing...",
       phase_generating: "Generating persona...",
-      // Shown below progress bar — {count} connectors being wired
+      // Shown below progress bar -- {count} connectors being wired
       connector_progress: "{count} connectors",
       // Message shown when user can close the dialog
-      close_hint: "You can close this dialog — processing continues in the background.",
+      close_hint: "You can close this dialog -- processing continues in the background.",
       // Prompt for optional user adjustments to the generated output
       adjustments_label: "Request adjustments (optional)",
       adjustments_placeholder: "Example: Change the schedule to run at 9 AM, remove ClickUp integration, add Slack notifications",
       discard_draft: "Discard draft and start over",
     },
 
-    // Adoption → Quick adopt confirmation (skip full wizard)
+    // Adoption -> Quick adopt confirmation (skip full wizard)
     quick_adopt: {
       all_matched: "All connectors matched",
       // {matched}/{total} connectors that have credentials
@@ -977,7 +977,7 @@ export const en = {
       full_wizard: "Full wizard",
     },
 
-    // Adoption → Data step (database table setup)
+    // Adoption -> Data step (database table setup)
     data: {
       title: "Data Setup",
       subtitle: "This template requires database tables. Choose to create new tables or use existing ones.",
@@ -989,7 +989,7 @@ export const en = {
       complete: "Data setup complete",
     },
 
-    // Adoption → Tune step (configure template variables, triggers, review policy)
+    // Adoption -> Tune step (configure template variables, triggers, review policy)
     tune: {
       title: "Configure Persona",
       subtitle: "Set template variables, triggers, review policy, and memory.",
@@ -1012,12 +1012,12 @@ export const en = {
       check_interval: "Check interval",
       check_interval_placeholder: "Every 5 minutes",
       // Manual trigger
-      manual_hint: "Triggered manually — no configuration needed",
+      manual_hint: "Triggered manually -- no configuration needed",
       // System event trigger
-      system_hint: "Triggered by system events — no configuration needed",
+      system_hint: "Triggered by system events -- no configuration needed",
     },
 
-    // Adoption → Tune step → Human review card
+    // Adoption -> Tune step -> Human review card
     review_policy: {
       title: "Human Review",
       require_approval: "Require approval",
@@ -1038,7 +1038,7 @@ export const en = {
       timeout_none: "No timeout",
     },
 
-    // Adoption → Tune step → Memory card
+    // Adoption -> Tune step -> Memory card
     memory: {
       title: "Memory",
       description: "Persona retains learned patterns and preferences across runs",
@@ -1053,7 +1053,7 @@ export const en = {
       scope_custom_placeholder: "Describe what to remember...",
     },
 
-    // Adoption → Create/Review step (final review before creating the agent)
+    // Adoption -> Create/Review step (final review before creating the agent)
     create: {
       use_cases: "Use Cases",
       tools_and_connectors: "Tools & Connectors",
@@ -1086,7 +1086,7 @@ export const en = {
       edit_details: "Edit Details",
     },
 
-    // Adoption → Review sections (collapsible sections in the review step)
+    // Adoption -> Review sections (collapsible sections in the review step)
     review: {
       // {count} = number of items in each section
       use_cases_header: "Use Cases ({count})",
@@ -1106,9 +1106,9 @@ export const en = {
       // {max} = maximum concurrent runs allowed
       restriction_concurrent_one: "Max {max} concurrent run",
       restriction_concurrent_other: "Max {max} concurrent runs",
-      // Banner titles — "Unverified" = from unknown source, "Community" = from community
+      // Banner titles -- "Unverified" = from unknown source, "Community" = from community
       title_unverified: "Unverified Template",
-      title_community: "Community Template — Sandbox Mode",
+      title_community: "Community Template -- Sandbox Mode",
       // Banner descriptions
       desc_unverified: "This template comes from an unknown source and has not been verified. It will run with restricted capabilities to protect your system.",
       desc_community: "This community template has not been officially verified. It will run in sandbox mode with restricted capabilities.",
@@ -1118,9 +1118,9 @@ export const en = {
     },
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  TRIGGERS — event triggers, chains, subscriptions
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  TRIGGERS -- event triggers, chains, subscriptions
+  // -------------------------------------------------------------------
   triggers: {
     title: "Triggers & Chains",
     subtitle: "Automate agent workflows with event triggers and chained actions",
@@ -1141,9 +1141,9 @@ export const en = {
     quick_templates: "Quick Templates",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  PIPELINE / TEAMS — multi-agent team pipelines
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  PIPELINE / TEAMS -- multi-agent team pipelines
+  // -------------------------------------------------------------------
   teams: {
     title: "Agent Teams",
     subtitle: "Design multi-agent pipelines with visual canvas",
@@ -1155,9 +1155,9 @@ export const en = {
     use_template: "Use Template",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  SETTINGS — account, appearance, notifications, engine, data
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  SETTINGS -- account, appearance, notifications, engine, data
+  // -------------------------------------------------------------------
   settings: {
     title: "Settings",
 
@@ -1215,13 +1215,13 @@ export const en = {
     },
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  DESIGN — AI design wizard, persona compilation stages
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  DESIGN -- AI design wizard, persona compilation stages
+  // -------------------------------------------------------------------
   design: {
     no_persona: "No persona selected",
 
-    // Compilation stage labels — shown during AI-powered persona generation
+    // Compilation stage labels -- shown during AI-powered persona generation
     stages: {
       assembling_label: "Assembling prompt",
       assembling_desc: "Building the LLM prompt from persona configuration and instruction",
@@ -1236,9 +1236,9 @@ export const en = {
     },
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  PROMPT LAB — prompt versioning, A/B testing, performance charts
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  PROMPT LAB -- prompt versioning, A/B testing, performance charts
+  // -------------------------------------------------------------------
   prompt_lab: {
     title: "Prompt Versions",
     no_persona: "No persona selected",
@@ -1306,9 +1306,9 @@ export const en = {
     },
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  TESTS — sandbox test runner, test suites
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  TESTS -- sandbox test runner, test suites
+  // -------------------------------------------------------------------
   tests: {
     title: "Sandbox Test Runner",
     subtitle: "Test your persona across multiple LLM models with auto-generated scenarios",
@@ -1346,16 +1346,16 @@ export const en = {
     progress: {
       generating: "Generating test scenarios...",
       // {model} = model name, {scenario} = scenario name
-      testing: "Testing {model} — {scenario}",
+      testing: "Testing {model} -- {scenario}",
       tool_prefix: "Tool: ",
       output_prefix: "Output: ",
       protocol_prefix: "Protocol: ",
     },
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  ONBOARDING — first-use setup flow
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  ONBOARDING -- first-use setup flow
+  // -------------------------------------------------------------------
   onboarding: {
     title: "Get Started",
     subtitle: "Create and run your first agent",
@@ -1365,9 +1365,9 @@ export const en = {
     adopt_button: "Adopt Template",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  SYSTEM HEALTH — environment checks (shown during first use)
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  SYSTEM HEALTH -- environment checks (shown during first use)
+  // -------------------------------------------------------------------
   system_health: {
     title: "System Checks",
     subtitle: "Verifying your environment is ready",
@@ -1382,10 +1382,10 @@ export const en = {
     partial_error: "Some checks reported issues. You can still continue, but some features may not work correctly.",
     // Optional configuration sections
     ollama_title: "Ollama Cloud API Key",
-    ollama_hint: "Optional — unlocks free cloud models (Qwen3 Coder, GLM-5, Kimi K2.5) for all agents.",
+    ollama_hint: "Optional -- unlocks free cloud models (Qwen3 Coder, GLM-5, Kimi K2.5) for all agents.",
     save_key: "Save Key",
     litellm_title: "LiteLLM Proxy Configuration",
-    litellm_hint: "Optional — route agents through your LiteLLM proxy for model management and cost tracking.",
+    litellm_hint: "Optional -- route agents through your LiteLLM proxy for model management and cost tracking.",
     save_config: "Save Configuration",
     litellm_note: "These settings are stored locally and shared across all agents configured to use the LiteLLM provider.",
     // Crash logs section
@@ -1413,9 +1413,9 @@ export const en = {
     signing_in: "Signing in...",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  COMMAND PALETTE — global search/command launcher (Ctrl+K)
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  COMMAND PALETTE -- global search/command launcher (Ctrl+K)
+  // -------------------------------------------------------------------
   command_palette: {
     placeholder: "Search agents, navigate... (type \">\" for commands)",
     // Section headers in search results
@@ -1434,15 +1434,15 @@ export const en = {
     hint_commands: "commands",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  SHARED COMPONENTS — error boundary, empty states, banners
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  SHARED COMPONENTS -- error boundary, empty states, banners
+  // -------------------------------------------------------------------
   errors: {
-    // Error boundary — shown when a component crashes
+    // Error boundary -- shown when a component crashes
     // {name} = component or section name that crashed
     boundary_title: "Something unexpected happened in {name}",
     boundary_title_generic: "Something unexpected happened",
-    boundary_body: "Don't worry — your data is safe. You can try again or head back to the dashboard.",
+    boundary_body: "Don't worry -- your data is safe. You can try again or head back to the dashboard.",
     boundary_retry: "Try Again",
     boundary_dashboard: "Go to Dashboard",
     boundary_copy: "Copy report for support",
@@ -1454,28 +1454,28 @@ export const en = {
     go_back: "Go back",
     dismiss_error: "Dismiss error",
 
-    // Backend error kind → user message mapping
+    // Backend error kind -> user message mapping
     not_found: "The requested resource was not found",
     validation: "Invalid input: {detail}",
-    auth: "Authentication failed — check your credentials",
-    rate_limited: "Too many requests — try again in a moment",
+    auth: "Authentication failed -- check your credentials",
+    rate_limited: "Too many requests -- try again in a moment",
     network_offline: "No internet connection",
-    database: "Database error — please restart the app",
+    database: "Database error -- please restart the app",
     internal: "An unexpected error occurred",
     cloud_error: "Cloud service error: {detail}",
     gitlab_error: "GitLab error: {detail}",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  EMPTY STATES — contextual guidance when a section has no content
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  EMPTY STATES -- contextual guidance when a section has no content
+  // -------------------------------------------------------------------
   empty_states: {
     // Credentials empty state (shown in agent editor when no keys are linked)
     credentials_title: "Your agents need credentials to run",
     credentials_subtitle: "Add API keys and service connections so your agents can interact with external tools.",
     // Triggers empty state
     triggers_title: "This agent runs manually only",
-    triggers_subtitle: "Add a trigger to automate it — schedules, webhooks, or event-driven.",
+    triggers_subtitle: "Add a trigger to automate it -- schedules, webhooks, or event-driven.",
     // Executions empty state (with onboarding steps)
     executions_title: "No executions yet",
     executions_subtitle: "Get started in three steps to see activity here.",
@@ -1490,21 +1490,21 @@ export const en = {
     tools_subtitle: "Link external services so your agent can take actions and access data.",
     // Use cases empty state
     use_cases_title: "No use cases defined yet",
-    use_cases_subtitle: "Define what this agent should do — import from a workflow or describe it in plain language.",
+    use_cases_subtitle: "Define what this agent should do -- import from a workflow or describe it in plain language.",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  CLI OUTPUT — terminal panel for CLI process output
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  CLI OUTPUT -- terminal panel for CLI process output
+  // -------------------------------------------------------------------
   cli: {
     idle: "No CLI output yet.",
-    waiting: "Waiting for Claude CLI output…",
+    waiting: "Waiting for Claude CLI output...",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  VALIDATION — form validation messages
+  // -------------------------------------------------------------------
+  //  VALIDATION -- form validation messages
   //  {field} = the field label, {min} = minimum value/length
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
   validation: {
     required: "{field} is required",
     min_length: "{field} must be at least {min} characters",
@@ -1517,10 +1517,10 @@ export const en = {
     fill_one_field: "Fill in at least one field to save",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  TOASTS — transient notification messages (snackbar-style)
-  //  Keep short — these disappear after a few seconds.
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  TOASTS -- transient notification messages (snackbar-style)
+  //  Keep short -- these disappear after a few seconds.
+  // -------------------------------------------------------------------
   toasts: {
     copied: "Copied to clipboard",
     // {name} = the name of the duplicated agent
@@ -1534,7 +1534,7 @@ export const en = {
     persona_deleted: "Agent deleted",
 
     // Agent operations
-    generation_failed: "Failed to generate agent — check your connection",
+    generation_failed: "Failed to generate agent -- check your connection",
     config_save_failed: "Failed to save configuration",
     model_switch_failed: "Failed to switch model",
     toggle_failed: "Failed to toggle agent",
@@ -1563,13 +1563,13 @@ export const en = {
     // {id} = execution ID started by trigger test
     trigger_config_ok: "Config OK. Execution {id} started",
     // {detail} = validation failure reason
-    trigger_validation_failed: "Validation failed — {detail}",
+    trigger_validation_failed: "Validation failed -- {detail}",
     dry_run_failed: "Dry run failed",
     activity_log_failed: "Failed to load activity log",
 
     // Schedule operations
     // {name} = agent/schedule name
-    budget_exceeded: "Budget exceeded for \"{name}\" — execution blocked",
+    budget_exceeded: "Budget exceeded for \"{name}\" -- execution blocked",
     triggered_manually: "Triggered \"{name}\" manually",
     // {name} = schedule name, {error} = error message
     execute_failed: "Failed to execute \"{name}\": {error}",
@@ -1615,10 +1615,10 @@ export const en = {
     recipe_test_failed: "Quick test failed",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  CONSENT — first-use consent/privacy modal
-  //  These are legal/privacy texts — translate carefully and accurately.
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  CONSENT -- first-use consent/privacy modal
+  //  These are legal/privacy texts -- translate carefully and accurately.
+  // -------------------------------------------------------------------
   consent: {
     title: "Welcome to Personas Desktop",
     subtitle: "Please review how this application works before continuing",
@@ -1666,7 +1666,7 @@ export const en = {
 
     // Section 6: Error Reporting & Telemetry
     telemetry_title: "Error Reporting & Telemetry",
-    telemetry_tldr: "Anonymous crash reports may be sent to help fix bugs — no personal data included.",
+    telemetry_tldr: "Anonymous crash reports may be sent to help fix bugs -- no personal data included.",
     telemetry_detail_1: "Crash reports may be sent to Sentry for error tracking. IP addresses, email addresses, and request bodies are stripped before transmission.",
     telemetry_detail_2: "Anonymous feature usage data (which sections and tabs you visit) is sent to Sentry to help prioritize development. No personal data, credential values, or execution content is included.",
     telemetry_detail_3: "No personal data, credential values, or execution content is included in any telemetry.",
@@ -1674,7 +1674,7 @@ export const en = {
 
     // Section 7: Deployment (Optional)
     deploy_title: "Deployment (Optional)",
-    deploy_tldr: "You can optionally run agents in the cloud — nothing is uploaded unless you choose to.",
+    deploy_tldr: "You can optionally run agents in the cloud -- nothing is uploaded unless you choose to.",
     deploy_detail_1: "You may optionally deploy personas to a cloud orchestrator, GitHub Actions, or GitLab CI/CD. This sends persona configuration (not credentials) to the selected platform.",
     deploy_detail_2: "Cloud deployment uses OAuth authentication with a deep-link callback (personas:// protocol).",
     deploy_detail_3: "Deployed personas run on the target platform under that platform's terms and security model.",
@@ -1692,9 +1692,9 @@ export const en = {
     accept_button: "I Understand, Continue",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  RECIPES — reusable LLM recipes
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
+  //  RECIPES -- reusable LLM recipes
+  // -------------------------------------------------------------------
   recipes: {
     no_match: "No matching recipes",
     empty: "No recipes yet",
@@ -1702,10 +1702,10 @@ export const en = {
     empty_hint: "Create your first reusable LLM recipe to get started.",
   },
 
-  // ───────────────────────────────────────────────────────────────────
-  //  EXECUTION STATUSES — used in execution lists, badges, filters
+  // -------------------------------------------------------------------
+  //  EXECUTION STATUSES -- used in execution lists, badges, filters
   //  These should be short labels (1-2 words).
-  // ───────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------
   execution_status: {
     queued: "Queued",
     running: "Running",

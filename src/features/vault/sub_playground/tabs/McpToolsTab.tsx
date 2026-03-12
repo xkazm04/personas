@@ -7,7 +7,7 @@ import { ToolRow } from './McpToolRow';
 import { ToolInputForm } from './McpToolInputForm';
 import { ToolResultDisplay, EmptyState } from './McpToolResultDisplay';
 
-// ── Component ────────────────────────────────────────────────────
+// -- Component ----------------------------------------------------
 
 interface McpToolsTabProps {
   credentialId: string;
@@ -27,7 +27,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
   const [result, setResult] = useState<McpToolResult | null>(null);
   const [execError, setExecError] = useState<string | null>(null);
 
-  // ── Refresh tools ──────────────────────────────────────────────
+  // -- Refresh tools ----------------------------------------------
 
   const handleRefresh = useCallback(async () => {
     setLoading(true);
@@ -43,7 +43,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
     }
   }, [credentialId]);
 
-  // ── Execute tool ───────────────────────────────────────────────
+  // -- Execute tool -----------------------------------------------
 
   const handleExecute = useCallback(async (toolName: string) => {
     setExecuting(true);
@@ -58,7 +58,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
         try {
           args[key] = JSON.parse(val);
         } catch {
-          // intentional: non-critical — JSON parse fallback
+          // intentional: non-critical -- JSON parse fallback
           args[key] = val;
         }
       }
@@ -71,7 +71,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
     }
   }, [credentialId, inputValues]);
 
-  // ── Select tool + generate form ────────────────────────────────
+  // -- Select tool + generate form --------------------------------
 
   const handleSelectTool = useCallback((tool: McpTool) => {
     setSelectedTool(tool.name);
@@ -95,7 +95,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
     [tools, selectedTool],
   );
 
-  // ── Render ─────────────────────────────────────────────────────
+  // -- Render -----------------------------------------------------
 
   return (
     <div className="flex flex-col h-full">

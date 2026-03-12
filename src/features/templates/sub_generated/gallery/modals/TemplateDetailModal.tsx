@@ -173,7 +173,7 @@ export function TemplateDetailModal({
           </TabTransition>
         </div>
 
-        {/* Footer — action buttons */}
+        {/* Footer -- action buttons */}
         <div className="px-6 py-4 border-t border-primary/10 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

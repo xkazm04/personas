@@ -61,8 +61,10 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
       const result = await exportBundle(Array.from(selected), savePath);
       addToast(`Bundle exported: ${result.resource_count} resource${result.resource_count !== 1 ? 's' : ''} (${formatBytes(result.byte_size)})`, 'success');
       onClose();
-    } catch {
-      addToast('Failed to export bundle', 'error');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn('[BundleExportDialog] Failed to export bundle', { selectedCount: selected.size, error: msg });
+      addToast(`Failed to export bundle: ${msg}`, 'error');
     } finally {
       setExporting(false);
     }

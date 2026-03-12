@@ -6,7 +6,7 @@ import type { DbPersona } from '@/lib/types/types';
 import { useContextMenuActions } from './ContextMenuActions';
 import { MenuItems, ModelSubmenu } from './ContextMenuSections';
 
-// ── Context Menu Component ────────────────────────────────────────────
+// -- Context Menu Component --------------------------------------------
 
 export interface ContextMenuState {
   persona: DbPersona;

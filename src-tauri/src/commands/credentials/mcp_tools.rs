@@ -30,6 +30,9 @@ pub async fn execute_mcp_tool(
         &credential_id,
         &tool_name,
         arguments,
+        Some(&state.rate_limiter),
+        None,
+        None,
     )
     .await
 }

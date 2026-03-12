@@ -27,12 +27,12 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
         {/* Welcome message */}
         {messages.length === 0 && (
           <div className="flex items-start gap-3">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
               <Bot className="w-3.5 h-3.5 text-primary/60" />
             </div>
             <div className="space-y-1.5">
               <p className="text-sm text-foreground/80">
-                Tell me what you need this agent to do. I'll build the full configuration — prompt, tools, triggers — from your description.
+                Tell me what you need this agent to do. I'll build the full configuration -- prompt, tools, triggers -- from your description.
               </p>
               <p className="text-sm text-muted-foreground/80">
                 Example: "Watch my GitHub PRs and post a summary to Slack every morning"
@@ -55,7 +55,7 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
                 <User className="w-3.5 h-3.5 text-muted-foreground/60" />
               </div>
             ) : (
-              <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
                 <Bot className="w-3.5 h-3.5 text-primary/60" />
               </div>
             )}
@@ -68,7 +68,7 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
         {/* Thinking indicator */}
         {isThinking && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start gap-3">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
               <Bot className="w-3.5 h-3.5 text-primary/60" />
             </div>
             <div className="flex items-center gap-2 pt-1.5">

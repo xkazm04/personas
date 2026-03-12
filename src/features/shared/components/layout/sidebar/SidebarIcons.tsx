@@ -8,7 +8,7 @@
 
 import React from 'react';
 
-// ── Animation styles ────────────────────────────────────────────────────
+// -- Animation styles ----------------------------------------------------
 
 export function SidebarIconStyles() {
   return (
@@ -36,11 +36,11 @@ export function SidebarIconStyles() {
 
 function a(cls: string, active: boolean) { return active ? cls : ''; }
 
-// ── Icon Props ──────────────────────────────────────────────────────────
+// -- Icon Props ----------------------------------------------------------
 
 interface IconProps { active?: boolean; className?: string }
 
-// ── Home: Hexagonal command hub ─────────────────────────────────────────
+// -- Home: Hexagonal command hub -----------------------------------------
 
 export function IconHome({ active = false, className = '' }: IconProps) {
   return (
@@ -64,7 +64,7 @@ export function IconHome({ active = false, className = '' }: IconProps) {
   );
 }
 
-// ── Overview: HUD panels with live readouts ─────────────────────────────
+// -- Overview: HUD panels with live readouts -----------------------------
 
 export function IconOverview({ active = false, className = '' }: IconProps) {
   return (
@@ -74,7 +74,7 @@ export function IconOverview({ active = false, className = '' }: IconProps) {
       <rect x="1" y="5" width="22" height="14" rx="2" fill="currentColor" opacity={active ? 0.06 : 0.03} />
       {/* Scan line */}
       <line x1="3" y1="9" x2="21" y2="9" stroke="currentColor" strokeWidth="0.7" className={a('pi-scan', active)} opacity={active ? 0.5 : 0.15} />
-      {/* Bar chart — large, prominent */}
+      {/* Bar chart -- large, prominent */}
       <rect x="4" y="13" width="3" height="4" rx="0.5" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? 0.7 : 0.4} />
       <rect x="8.5" y="11" width="3" height="6" rx="0.5" fill="currentColor" className={a('pi-pulse-d', active)} opacity={active ? 0.8 : 0.45} />
       <rect x="13" y="9" width="3" height="8" rx="0.5" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? 0.9 : 0.5} />
@@ -88,14 +88,14 @@ export function IconOverview({ active = false, className = '' }: IconProps) {
   );
 }
 
-// ── Agents: Neural face — brain network inside head silhouette ──────────
+// -- Agents: Neural face -- brain network inside head silhouette ----------
 
 export function IconAgents({ active = false, className = '' }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
       {/* Head silhouette */}
       <path d="M7 22v-2c0-2 -2-3.5 -2-6.5 0-4 3.2-7.5 7-7.5s7 3.5 7 7.5c0 3-2 4.5-2 6.5v2" stroke="currentColor" strokeWidth="1.3" opacity={active ? 0.35 : 0.2} strokeLinecap="round" />
-      {/* Neural nodes — large & visible */}
+      {/* Neural nodes -- large & visible */}
       <circle cx="12" cy="5" r="1.8" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? undefined : 0.4} />
       <circle cx="8" cy="9" r="1.6" fill="currentColor" className={a('pi-pulse-d', active)} opacity={active ? undefined : 0.4} />
       <circle cx="16" cy="9" r="1.6" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? undefined : 0.4} />
@@ -116,7 +116,7 @@ export function IconAgents({ active = false, className = '' }: IconProps) {
   );
 }
 
-// ── Events: Signal burst with lightning core ────────────────────────────
+// -- Events: Signal burst with lightning core ----------------------------
 
 export function IconEvents({ active = false, className = '' }: IconProps) {
   return (
@@ -136,7 +136,7 @@ export function IconEvents({ active = false, className = '' }: IconProps) {
   );
 }
 
-// ── Keys: Shield with quantum lock ──────────────────────────────────────
+// -- Keys: Shield with quantum lock --------------------------------------
 
 export function IconKeys({ active = false, className = '' }: IconProps) {
   return (
@@ -147,7 +147,7 @@ export function IconKeys({ active = false, className = '' }: IconProps) {
       {/* Shield */}
       <path d="M12 1.5l8 4v5.5c0 5.5-3.5 10-8 12-4.5-2-8-6.5-8-12V5.5z" stroke="currentColor" strokeWidth="1.5" opacity={active ? 0.6 : 0.4} />
       <path d="M12 1.5l8 4v5.5c0 5.5-3.5 10-8 12-4.5-2-8-6.5-8-12V5.5z" fill="currentColor" opacity={active ? 0.07 : 0.03} />
-      {/* Keyhole — prominent */}
+      {/* Keyhole -- prominent */}
       <circle cx="12" cy="10" r="2.5" fill="currentColor" opacity={active ? 0.2 : 0.1} />
       <circle cx="12" cy="10" r="2" fill="currentColor" className={a('pi-breathe', active)} opacity={active ? undefined : 0.5} />
       <rect x="11" y="11.5" width="2" height="5" rx="1" fill="currentColor" opacity={active ? 0.5 : 0.3} />
@@ -162,7 +162,7 @@ export function IconKeys({ active = false, className = '' }: IconProps) {
   );
 }
 
-// ── Templates: Blueprint layers with DNA helix ──────────────────────────
+// -- Templates: Blueprint layers with DNA helix --------------------------
 
 export function IconTemplates({ active = false, className = '' }: IconProps) {
   return (
@@ -190,7 +190,7 @@ export function IconTemplates({ active = false, className = '' }: IconProps) {
   );
 }
 
-// ── Teams: Constellation cluster ────────────────────────────────────────
+// -- Teams: Constellation cluster ----------------------------------------
 
 export function IconTeams({ active = false, className = '' }: IconProps) {
   return (
@@ -214,7 +214,7 @@ export function IconTeams({ active = false, className = '' }: IconProps) {
   );
 }
 
-// ── Cloud: Mesh network ─────────────────────────────────────────────────
+// -- Cloud: Mesh network -------------------------------------------------
 
 export function IconCloud({ active = false, className = '' }: IconProps) {
   return (
@@ -239,7 +239,7 @@ export function IconCloud({ active = false, className = '' }: IconProps) {
   );
 }
 
-// ── Settings: Quantum calibrator ────────────────────────────────────────
+// -- Settings: Quantum calibrator ----------------------------------------
 
 export function IconSettings({ active = false, className = '' }: IconProps) {
   return (
@@ -268,7 +268,7 @@ export function IconSettings({ active = false, className = '' }: IconProps) {
   );
 }
 
-/** Map section ID → custom icon */
+/** Map section ID -> custom icon */
 export const SIDEBAR_ICONS: Record<string, (props: IconProps) => React.JSX.Element> = {
   home: IconHome,
   overview: IconOverview,

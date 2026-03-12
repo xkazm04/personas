@@ -33,7 +33,7 @@ export const sections: SectionDef[] = [
 
 export const homeItems: Array<{ id: HomeTab; icon: LucideIcon; label: string }> = [
   { id: 'welcome', icon: Compass, label: 'Welcome' },
-  { id: 'system-check', icon: Monitor, label: 'System Check' },
+  ...(import.meta.env.DEV ? [{ id: 'system-check' as HomeTab, icon: Monitor, label: 'System Check' }] : []),
 ];
 
 export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: string; simpleHidden?: boolean }> = [

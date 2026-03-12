@@ -174,7 +174,7 @@ export function ExecutionList() {
       {executions.length === 0 ? (
         <ExecutionListEmptyState onTryIt={handleTryIt} />
       ) : (
-        <div className="overflow-hidden border border-primary/15 rounded-xl backdrop-blur-sm bg-secondary/40">
+        <div className="overflow-hidden border border-primary/20 rounded-xl backdrop-blur-sm bg-secondary/40">
           {/* Header (desktop only) */}
           <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2.5 bg-primary/8 border-b border-primary/10 text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">
             {compareMode && <div className="col-span-1" />}

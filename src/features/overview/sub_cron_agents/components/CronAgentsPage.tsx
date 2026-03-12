@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
-import { Cpu, Loader2 } from 'lucide-react';
+import { useEffect, useCallback } from 'react';
+import { Cpu, Loader2, Plus } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { usePersonaStore } from '@/stores/personaStore';
 import { AgentSection } from './CronAgentCard';
+import { seedMockCronAgent } from '@/api/pipeline/triggers';
 
 export default function CronAgentsPage() {
   const cronAgents = usePersonaStore((s) => s.cronAgents);
@@ -10,6 +11,11 @@ export default function CronAgentsPage() {
   const fetchCronAgents = usePersonaStore((s) => s.fetchCronAgents);
 
   useEffect(() => { fetchCronAgents(); }, [fetchCronAgents]);
+
+  const handleSeedCron = useCallback(async () => {
+    try { await seedMockCronAgent(); await fetchCronAgents(); }
+    catch (err) { console.error('Failed to seed mock cron agent:', err); }
+  }, [fetchCronAgents]);
 
   const headless = cronAgents.filter((a) => a.headless);
   const interactive = cronAgents.filter((a) => !a.headless);
@@ -23,6 +29,11 @@ export default function CronAgentsPage() {
         subtitle="Background agents running on scheduled intervals"
         actions={
           <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
+            {import.meta.env.DEV && (
+              <button onClick={handleSeedCron} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock schedule (dev only)">
+                <Plus className="w-3.5 h-3.5" /> Mock Schedule
+              </button>
+            )}
             <span className="px-2 py-0.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
               {cronAgents.length} scheduled
             </span>

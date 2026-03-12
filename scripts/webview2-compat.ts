@@ -1,11 +1,11 @@
 // WebView2 compatibility transform
 //
 // WebView2 treats inherited Object.prototype properties (toString, constructor,
-// valueOf …) as read-only AND non-configurable inside ESM strict-mode contexts.
+// valueOf ...) as read-only AND non-configurable inside ESM strict-mode contexts.
 // Libraries like es-toolkit, d3, and decimal.js assign to these properties
 // directly, which throws at runtime.
 //
-// Fix: rewrite `X.prop = value` → `Object.defineProperty(X, 'prop', { … })`
+// Fix: rewrite `X.prop = value` -> `Object.defineProperty(X, 'prop', { ... })`
 // For chained assignments like `P.toString = P.valueOf = P.val = fn;`, decompose
 // into an IIFE that assigns each target separately.
 
@@ -71,7 +71,7 @@ function getProtectedInfo(
  * Split a value string on depth-0 `=` signs to decompose chained assignments.
  * Returns null if there are no chains (no depth-0 `=`).
  *
- * Example: "P.valueOf = P.val = fn" → targets: ["P.valueOf", "P.val"], finalValue: "fn"
+ * Example: "P.valueOf = P.val = fn" -> targets: ["P.valueOf", "P.val"], finalValue: "fn"
  */
 function splitChain(
   valueStr: string,
@@ -203,7 +203,7 @@ export function transformForWebView2(code: string): string {
     const trimmedRest = rest.trimStart();
 
     if (trimmedRest.startsWith("function")) {
-      // Function literal — use brace matching
+      // Function literal -- use brace matching
       const braceIdx = rest.indexOf("{");
       if (braceIdx === -1) continue;
       const closeIdx = findMatchingBrace(rest, braceIdx);

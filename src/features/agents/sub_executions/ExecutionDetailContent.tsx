@@ -126,7 +126,7 @@ export function ExecutionDetailContent({ execution }: ExecutionDetailContentProp
       {isTerminalState(execution.status) && (
         <button
           onClick={() => setRerunInputData(execution.input_data || '{}')}
-          className="flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors"
+          className="flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors"
         >
           <RotateCw className="w-3.5 h-3.5" />
           {execution.status === 'cancelled' ? 'Re-run execution' : 'Re-run with same input'}

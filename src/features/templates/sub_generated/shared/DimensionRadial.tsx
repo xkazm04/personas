@@ -48,7 +48,7 @@ export function evaluateDimensions(designResult: AgentIR | null): Record<Dimensi
   if (!designResult) return result;
   const raw = designResult as unknown as Record<string, unknown>;
 
-  // 1. Prompt â€” structured_prompt with identity(>20), instructions(>50), and guidance
+  // 1. Prompt -- structured_prompt with identity(>20), instructions(>50), and guidance
   const sp = raw.structured_prompt as Record<string, unknown> | undefined;
   if (sp) {
     const identity = typeof sp.identity === 'string' && sp.identity.length > 20;
@@ -68,7 +68,7 @@ export function evaluateDimensions(designResult: AgentIR | null): Record<Dimensi
     (t: unknown) => typeof t === 'object' && t !== null && 'trigger_type' in (t as Record<string, unknown>),
   );
 
-  // 4. Connectors â€” need credential_fields + auth_type
+  // 4. Connectors -- need credential_fields + auth_type
   const connectors = Array.isArray(raw.suggested_connectors) ? raw.suggested_connectors : [];
   result.connectors = connectors.length > 0 && connectors.some((c: unknown) => {
     if (typeof c !== 'object' || c === null) return false;
@@ -78,7 +78,7 @@ export function evaluateDimensions(designResult: AgentIR | null): Record<Dimensi
     return hasCredFields && hasAuthType;
   });
 
-  // 5. Flows â€” need start node, end node, â‰¥5 nodes
+  // 5. Flows -- need start node, end node, ≥5 nodes
   const flows = Array.isArray(raw.use_case_flows) ? raw.use_case_flows : [];
   result.flows = flows.length > 0 && flows.some((flow: unknown) => {
     if (typeof flow !== 'object' || flow === null) return false;
@@ -104,7 +104,7 @@ export function evaluateDimensions(designResult: AgentIR | null): Record<Dimensi
   return result;
 }
 
-// â”€â”€ SVG Arc Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- SVG Arc Helpers ------------------------------------------------------
 
 const SEGMENT_COUNT = 9;
 const GAP_DEG = 4; // gap between segments
@@ -122,7 +122,7 @@ function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: nu
   return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 0 ${end.x} ${end.y}`;
 }
 
-// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Component ------------------------------------------------------------
 
 interface DimensionRadialProps {
   designResult: AgentIR | null;
@@ -142,7 +142,7 @@ export function DimensionRadial({ designResult, size = 32, className = '' }: Dim
 
   const filledNames = filled.map((d) => DIMENSION_LABELS[d]).join(', ');
   const missingNames = missing.map((d) => DIMENSION_LABELS[d]).join(', ');
-  const titleText = `${filled.length}/${SEGMENT_COUNT} dimensions â€” ${filledNames}${missing.length > 0 ? ` | Missing: ${missingNames}` : ''}`;
+  const titleText = `${filled.length}/${SEGMENT_COUNT} dimensions -- ${filledNames}${missing.length > 0 ? ` | Missing: ${missingNames}` : ''}`;
 
   return (
     <div

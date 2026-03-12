@@ -8,7 +8,7 @@ use ts_rs::TS;
 #[ts(export)]
 pub struct CredentialRecipe {
     pub id: String,
-    /// Connector name (e.g. "github", "slack") — unique key for lookup.
+    /// Connector name (e.g. "github", "slack") -- unique key for lookup.
     pub connector_name: String,
     /// Display label (e.g. "GitHub", "Slack").
     pub connector_label: String,

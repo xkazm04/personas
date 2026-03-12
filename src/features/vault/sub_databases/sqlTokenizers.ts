@@ -5,7 +5,7 @@ export interface Token {
   value: string;
 }
 
-// ── SQL Keywords ──────────────────────────────────────────────────────
+// -- SQL Keywords ------------------------------------------------------
 
 const SQL_KEYWORDS = new Set([
   'SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'NOT', 'IN', 'IS', 'NULL',
@@ -42,7 +42,7 @@ const REDIS_COMMANDS = new Set([
   'INFO', 'PING', 'ECHO', 'DBSIZE', 'FLUSHDB', 'FLUSHALL',
 ]);
 
-// ── Tokenizers ────────────────────────────────────────────────────────
+// -- Tokenizers --------------------------------------------------------
 
 function tokenizeSql(text: string): Token[] {
   const tokens: Token[] = [];

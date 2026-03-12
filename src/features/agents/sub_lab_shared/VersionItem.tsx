@@ -71,7 +71,7 @@ export function VersionItem({
       className={`group relative rounded-xl border transition-all cursor-pointer ${
         isSelected
           ? 'border-primary/30 bg-primary/5'
-          : 'border-primary/10 bg-secondary/20 hover:bg-secondary/30 hover:border-primary/15'
+          : 'border-primary/10 bg-secondary/20 hover:bg-secondary/30 hover:border-primary/20'
       } ${isCompareA ? 'ring-2 ring-blue-500/40' : ''} ${isCompareB ? 'ring-2 ring-violet-500/40' : ''}`}
     >
       <button
@@ -135,7 +135,7 @@ export function VersionItem({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="flex flex-wrap gap-1.5 px-3 pb-3 border-t border-primary/5 pt-2">
+            <div className="flex flex-wrap gap-1.5 px-3 pb-3 border-t border-primary/10 pt-2">
               {version.tag !== 'production' &&
                 actionBtn(
                   'promote',

@@ -48,7 +48,7 @@ export const bulkAssignTools = (personaId: string, toolIds: string[]) =>
 export const bulkUnassignTools = (personaId: string, toolIds: string[]) =>
   invoke<number>("bulk_unassign_tools", { personaId, toolIds });
 
-// ── Tool Usage Analytics ──────────────────────────────────────────────────
+// -- Tool Usage Analytics --------------------------------------------------
 
 export const getToolUsageSummary = (since: string, personaId?: string) =>
   invoke<ToolUsageSummary[]>("get_tool_usage_summary", { since, personaId: personaId ?? null });
@@ -59,7 +59,7 @@ export const getToolUsageOverTime = (since: string, personaId?: string) =>
 export const getToolUsageByPersona = (since: string) =>
   invoke<PersonaUsageSummary[]>("get_tool_usage_by_persona", { since });
 
-// ── Direct Tool Invocation ──────────────────────────────────────────────
+// -- Direct Tool Invocation ----------------------------------------------
 
 export interface ToolInvocationResult {
   success: boolean;

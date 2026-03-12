@@ -106,7 +106,7 @@ pub fn create(pool: &DbPool, input: CreateCredentialInput) -> Result<PersonaCred
 
 /// Create a credential and save its fields in a single SQLite transaction.
 /// If field encryption or insertion fails, the credential row is rolled back
-/// automatically — no orphaned rows.
+/// automatically -- no orphaned rows.
 pub fn create_with_fields(
     pool: &DbPool,
     input: CreateCredentialInput,
@@ -545,7 +545,7 @@ pub fn get_fields(pool: &DbPool, credential_id: &str) -> Result<Vec<CredentialFi
 
 /// Save (upsert) all fields for a credential from a `HashMap<String, String>`.
 /// Encrypts sensitive fields individually. Replaces any existing field rows
-/// by deleting first, then inserting — wrapped in a transaction to prevent
+/// by deleting first, then inserting -- wrapped in a transaction to prevent
 /// partial state if encryption or insertion fails mid-loop.
 pub fn save_fields(
     pool: &DbPool,
@@ -736,7 +736,7 @@ mod tests {
         let after_used = get_by_id(&pool, &cred.id).unwrap();
         assert!(after_used.last_used_at.is_some());
 
-        // Update (partial — only change name and encrypted_data)
+        // Update (partial -- only change name and encrypted_data)
         let updated = update(
             &pool,
             &cred.id,

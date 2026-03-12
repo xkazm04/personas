@@ -21,7 +21,7 @@ export function DesignPhaseRefining({ outputLines, result, onCancel }: DesignPha
       className="space-y-3"
     >
       {result && (
-        <div className="bg-secondary/30 rounded-xl px-4 py-3 border border-primary/15">
+        <div className="bg-secondary/30 rounded-xl px-4 py-3 border border-primary/20">
           <p className="text-sm text-muted-foreground/90 mb-1">Current design</p>
           <p className="text-sm text-foreground/90">{result.summary}</p>
         </div>

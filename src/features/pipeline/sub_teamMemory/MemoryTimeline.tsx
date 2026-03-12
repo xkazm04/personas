@@ -104,7 +104,7 @@ function shortRunId(runId: string): string {
   return runId.length > 8 ? runId.slice(0, 8) : runId;
 }
 
-// ── Run Marker ──────────────────────────────────────────────────────
+// -- Run Marker ------------------------------------------------------
 
 function RunMarker({
   group,
@@ -167,7 +167,7 @@ function RunMarker({
   );
 }
 
-// ── Manual Memory Group ─────────────────────────────────────────────
+// -- Manual Memory Group ---------------------------------------------
 
 function ManualGroup({ memories }: { memories: TeamMemory[] }) {
   return (
@@ -179,7 +179,7 @@ function ManualGroup({ memories }: { memories: TeamMemory[] }) {
   );
 }
 
-// ── Single Memory Entry ─────────────────────────────────────────────
+// -- Single Memory Entry ---------------------------------------------
 
 const CATEGORY_DOT: Record<string, string> = {
   observation: 'bg-cyan-500',
@@ -207,7 +207,7 @@ function MemoryEntry({ memory, isManual }: { memory: TeamMemory; isManual?: bool
   );
 }
 
-// ── Main Component ──────────────────────────────────────────────────
+// -- Main Component --------------------------------------------------
 
 interface MemoryTimelineProps {
   memories: TeamMemory[];

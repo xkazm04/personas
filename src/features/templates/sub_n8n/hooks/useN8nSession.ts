@@ -11,7 +11,7 @@ import {
 import { useToastStore } from '@/stores/toastStore';
 import type { N8nImportState, N8nImportAction } from './useN8nImportReducer';
 
-// ── Derived status from reducer state ──
+// -- Derived status from reducer state --
 
 function deriveSessionStatus(state: N8nImportState): string {
   if (state.created) return 'confirmed';
@@ -22,7 +22,7 @@ function deriveSessionStatus(state: N8nImportState): string {
   return 'draft';
 }
 
-// ── Slices for diffing (only sync when these actually change) ──
+// -- Slices for diffing (only sync when these actually change) --
 
 interface DbSlice {
   step: string;
@@ -59,7 +59,7 @@ function slicesEqual(a: DbSlice, b: DbSlice): boolean {
     && a.error === b.error;
 }
 
-// ── Public API ──
+// -- Public API --
 
 export interface N8nSessionApi {
   /** Ref to the current sessionId for async closures */
@@ -78,7 +78,7 @@ const LS_SYNC_DELAY = 300;
 /**
  * Watches reducer state slices and auto-syncs to both SQLite (via Tauri)
  * and localStorage through debounced writes. The reducer is the sole
- * source of truth — DB and localStorage become read-on-mount,
+ * source of truth -- DB and localStorage become read-on-mount,
  * write-on-change persistence layers.
  */
 export function useN8nSession(
@@ -95,7 +95,7 @@ export function useN8nSession(
   const latestStateRef = useRef(state);
   latestStateRef.current = state;
 
-  // ── Auto-sync to SQLite (debounced) ──
+  // -- Auto-sync to SQLite (debounced) --
 
   useEffect(() => {
     const id = state.sessionId;
@@ -129,7 +129,7 @@ export function useN8nSession(
           });
           lastSyncedSliceRef.current = freshSlice;
         } catch {
-          // intentional: non-critical — DB sync will be retried on next state change
+          // intentional: non-critical -- DB sync will be retried on next state change
         }
       })();
     }, DB_SYNC_DELAY);
@@ -154,7 +154,7 @@ export function useN8nSession(
     state.created,
   ]);
 
-  // ── Auto-sync to localStorage (debounced) — only during active transform ──
+  // -- Auto-sync to localStorage (debounced) -- only during active transform --
 
   useEffect(() => {
     if (!state.transforming || !state.backgroundTransformId || !state.rawWorkflowJson) {
@@ -174,7 +174,7 @@ export function useN8nSession(
         };
         window.localStorage.setItem(N8N_TRANSFORM_CONTEXT_KEY, JSON.stringify(context));
       } catch {
-        // intentional: non-critical — localStorage cleanup
+        // intentional: non-critical -- localStorage cleanup
       }
     }, LS_SYNC_DELAY);
 
@@ -192,7 +192,7 @@ export function useN8nSession(
     state.parsedResult,
   ]);
 
-  // ── Cleanup timers on unmount ──
+  // -- Cleanup timers on unmount --
 
   useEffect(() => {
     return () => {
@@ -230,17 +230,17 @@ export function useN8nSession(
             };
             window.localStorage.setItem(N8N_TRANSFORM_CONTEXT_KEY, JSON.stringify(context));
           } catch {
-            // intentional: non-critical — localStorage cleanup
+            // intentional: non-critical -- localStorage cleanup
           }
         }
       }
     };
   }, []);
 
-  // ── Manual operations ──
+  // -- Manual operations --
 
   const clearPersistedContext = useCallback(() => {
-    try { window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY); } catch { /* intentional: non-critical — localStorage cleanup */ }
+    try { window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY); } catch { /* intentional: non-critical -- localStorage cleanup */ }
   }, []);
 
   const create = useCallback(async (workflowName: string, rawJson: string): Promise<string | null> => {

@@ -88,11 +88,11 @@ export function PreviewPhase() {
           <div className="text-sm">
             <span className={`${AI_STATUS.color} font-medium`}>New connector discovered </span>
             <span className="text-foreground/80">
-              — no existing <span className="font-mono text-foreground/90">{result.connector.name}</span> connector was found in your catalog.
+              -- no existing <span className="font-mono text-foreground/90">{result.connector.name}</span> connector was found in your catalog.
             </span>
             <p className="text-foreground/70 text-sm mt-1">
               When you save this credential, the AI-generated connector definition will be
-              automatically registered in your connector catalog — making it reusable for
+              automatically registered in your connector catalog -- making it reusable for
               other personas and template adoption.
             </p>
           </div>
@@ -167,7 +167,7 @@ export function PreviewPhase() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-foreground/90">
                   <span className={`${AI_STATUS.color} font-medium`}>Auto-provision available</span>{' '}
-                  — let AI guide you through obtaining your {result.connector.label} credentials step-by-step.
+                  -- let AI guide you through obtaining your {result.connector.label} credentials step-by-step.
                 </p>
               </div>
               <button

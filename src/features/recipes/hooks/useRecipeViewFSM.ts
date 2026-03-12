@@ -1,7 +1,7 @@
 import { useReducer, useMemo } from 'react';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 
-// ── Discriminated union: each state carries exactly the data it needs ──
+// -- Discriminated union: each state carries exactly the data it needs --
 
 export type RecipeViewState =
   | { view: 'list' }
@@ -9,7 +9,7 @@ export type RecipeViewState =
   | { view: 'edit'; recipeId: string }
   | { view: 'playground'; recipeId: string };
 
-// ── Typed actions ──
+// -- Typed actions --
 
 export type RecipeViewAction =
   | { type: 'GO_LIST' }
@@ -17,7 +17,7 @@ export type RecipeViewAction =
   | { type: 'GO_EDIT'; recipeId: string }
   | { type: 'GO_PLAYGROUND'; recipeId: string };
 
-// ── Reducer ──
+// -- Reducer --
 
 const INITIAL_STATE: RecipeViewState = { view: 'list' };
 
@@ -36,7 +36,7 @@ function reducer(state: RecipeViewState, action: RecipeViewAction): RecipeViewSt
   }
 }
 
-// ── Hook ──
+// -- Hook --
 
 export function useRecipeViewFSM(recipes: RecipeDefinition[], search: string) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);

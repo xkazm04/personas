@@ -1,5 +1,5 @@
 /**
- * Round 6: Head-to-Head — All providers receive identical prompts and are
+ * Round 6: Head-to-Head -- All providers receive identical prompts and are
  * compared on the same tasks.
  *
  * Unlike other rounds which use per-provider describe blocks, this round
@@ -25,15 +25,15 @@ afterAll(() => {
   db.destroy();
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Test 1: Identical complex task — data analysis report
-// ═══════════════════════════════════════════════════════════════════════════
-describe('identical complex task — data analysis report', () => {
+// ===========================================================================
+// Test 1: Identical complex task -- data analysis report
+// ===========================================================================
+describe('identical complex task -- data analysis report', () => {
   const PROMPT =
     'You are an AI data analyst. Read sales_data.csv and produce a comprehensive analysis report. Your report MUST include: (1) Total revenue by product, (2) Top-performing region by total revenue, (3) Month-over-month trend analysis, (4) At least one actionable recommendation. Write the report to report.md.';
 
   for (const provider of providers) {
-    it(`${provider.displayName} — produces correct analysis report`, async () => {
+    it(`${provider.displayName} -- produces correct analysis report`, async () => {
       const workspace: WorkspaceContext = createWorkspace('data-analysis');
 
       try {
@@ -59,7 +59,7 @@ describe('identical complex task — data analysis report', () => {
         db.recordExecution({
           id: `round6-data-analysis-${provider.name}`,
           round: 'round6',
-          testName: 'identical complex task — data analysis',
+          testName: 'identical complex task -- data analysis',
           provider: provider.name,
           model: provider.model,
           status: validation.passed ? 'pass' : 'fail',
@@ -83,15 +83,15 @@ describe('identical complex task — data analysis report', () => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Test 2: Efficiency comparison — fibonacci implementation + tests
-// ═══════════════════════════════════════════════════════════════════════════
-describe('efficiency comparison — fibonacci implementation + tests', () => {
+// ===========================================================================
+// Test 2: Efficiency comparison -- fibonacci implementation + tests
+// ===========================================================================
+describe('efficiency comparison -- fibonacci implementation + tests', () => {
   const PROMPT =
     'Create a TypeScript function called fibonacci that calculates the nth Fibonacci number iteratively (not recursively). Write it to fibonacci.ts. Then verify it works by creating a test file fibonacci.test.ts that tests fib(0)=0, fib(1)=1, fib(10)=55.';
 
   for (const provider of providers) {
-    it(`${provider.displayName} — creates fibonacci with tests`, async () => {
+    it(`${provider.displayName} -- creates fibonacci with tests`, async () => {
       const workspace: WorkspaceContext = createWorkspace('empty');
 
       try {
@@ -120,7 +120,7 @@ describe('efficiency comparison — fibonacci implementation + tests', () => {
         db.recordExecution({
           id: `round6-fibonacci-${provider.name}`,
           round: 'round6',
-          testName: 'efficiency comparison — fibonacci',
+          testName: 'efficiency comparison -- fibonacci',
           provider: provider.name,
           model: provider.model,
           status: validation.passed ? 'pass' : 'fail',

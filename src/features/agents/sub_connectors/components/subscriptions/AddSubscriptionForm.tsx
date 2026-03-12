@@ -62,7 +62,7 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
   };
 
   return (
-    <div className="border border-primary/15 rounded-xl p-2.5 space-y-2 bg-secondary/30">
+    <div className="border border-primary/20 rounded-xl p-2.5 space-y-2 bg-secondary/30">
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-1">
           Event Type

@@ -12,7 +12,7 @@ export interface ForagingState {
   scanResult: ForagingScanResult | null;
   /** Subset the user has selected for import. */
   selected: Set<string>;
-  /** Map of foraged ID → import result (name, vault ID). */
+  /** Map of foraged ID -> import result (name, vault ID). */
   imported: Map<string, { id: string; name: string }>;
   /** IDs currently being imported. */
   importingIds: Set<string>;

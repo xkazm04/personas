@@ -1,5 +1,5 @@
 /**
- * SandboxWarningBanner — prominent security warning shown when adopting
+ * SandboxWarningBanner -- prominent security warning shown when adopting
  * templates from unverified or community origins.
  *
  * Displays the restricted capabilities and explains why sandbox mode is active.
@@ -47,7 +47,7 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h4 className={`text-sm font-semibold ${titleColor}`}>
-              {isUntrusted ? 'Unverified Template' : 'Community Template — Sandbox Mode'}
+              {isUntrusted ? 'Unverified Template' : 'Community Template -- Sandbox Mode'}
             </h4>
             <span className={`text-sm px-1.5 py-0.5 rounded ${isUntrusted ? 'bg-red-500/15 text-red-400/80' : 'bg-amber-500/15 text-amber-400/80'}`}>
               {ORIGIN_LABELS[origin]}

@@ -11,7 +11,7 @@ use super::github;
 use super::n8n;
 use super::zapier;
 
-// ── Input / Output ─────────────────────────────────────────────
+// -- Input / Output ---------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -34,7 +34,7 @@ pub struct DeployAutomationResult {
     pub deployment_message: String,
 }
 
-// ── Design result shape (from LLM) ────────────────────────────
+// -- Design result shape (from LLM) ----------------------------
 
 #[derive(Debug, Deserialize)]
 struct DesignResult {
@@ -59,7 +59,7 @@ struct DesignResult {
 fn default_timeout() -> i64 { 30 }
 fn default_fallback() -> String { "connector".into() }
 
-// ── Main dispatcher ────────────────────────────────────────────
+// -- Main dispatcher --------------------------------------------
 
 pub async fn deploy_automation(
     pool: &DbPool,
@@ -78,7 +78,7 @@ pub async fn deploy_automation(
     }
 }
 
-// ── n8n ────────────────────────────────────────────────────────
+// -- n8n --------------------------------------------------------
 
 async fn deploy_n8n(
     pool: &DbPool,
@@ -189,7 +189,7 @@ fn extract_n8n_webhook_url(workflow: &Value, base_url: &str) -> Option<String> {
     None
 }
 
-// ── GitHub Actions ─────────────────────────────────────────────
+// -- GitHub Actions ---------------------------------------------
 
 async fn deploy_github(
     pool: &DbPool,
@@ -299,7 +299,7 @@ fn parse_owner_repo(full: &str) -> Result<(&str, &str), AppError> {
     Ok((parts[0], parts[1]))
 }
 
-// ── Zapier ─────────────────────────────────────────────────────
+// -- Zapier -----------------------------------------------------
 
 async fn deploy_zapier(
     pool: &DbPool,
@@ -358,14 +358,14 @@ async fn deploy_zapier(
     })
 }
 
-// ── Custom ─────────────────────────────────────────────────────
+// -- Custom -----------------------------------------------------
 
 async fn deploy_custom(
     pool: &DbPool,
     input: &DeployAutomationInput,
     design: &DesignResult,
 ) -> Result<DeployAutomationResult, AppError> {
-    // Custom platform — save as draft, user handles setup manually
+    // Custom platform -- save as draft, user handles setup manually
     let create_input = CreateAutomationInput {
         persona_id: input.persona_id.clone(),
         use_case_id: input.use_case_id.clone(),
@@ -395,7 +395,7 @@ async fn deploy_custom(
     })
 }
 
-// ── Helpers ────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------
 
 /// Create an automation and immediately activate it.
 #[allow(clippy::too_many_arguments)]

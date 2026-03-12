@@ -49,7 +49,7 @@ export const createAutomationSlice: StateCreator<PersonaStore, [], [], Automatio
   createAutomation: async (input) => {
     try {
       const automation = await api.createAutomation(input);
-      set({ automations: [...get().automations, automation] });
+      set((state) => ({ automations: [...state.automations, automation] }));
       return automation;
     } catch (err) {
       set({ error: errMsg(err, "Failed to create automation") });
@@ -60,9 +60,9 @@ export const createAutomationSlice: StateCreator<PersonaStore, [], [], Automatio
   updateAutomation: async (id, input) => {
     try {
       const updated = await api.updateAutomation(id, input);
-      set({
-        automations: get().automations.map((a) => (a.id === id ? updated : a)),
-      });
+      set((state) => ({
+        automations: state.automations.map((a) => (a.id === id ? updated : a)),
+      }));
     } catch (err) {
       set({ error: errMsg(err, "Failed to update automation") });
     }
@@ -76,10 +76,13 @@ export const createAutomationSlice: StateCreator<PersonaStore, [], [], Automatio
     try {
       await api.deleteAutomation(id);
     } catch (err) {
-      set((state) => ({
-        automations: [...state.automations, itemToDelete],
-        error: errMsg(err, "Failed to delete automation")
-      }));
+      // Re-fetch from backend instead of appending stale item to avoid
+      // duplicates if a concurrent fetch already restored the list.
+      const personaId = itemToDelete.personaId;
+      if (personaId) {
+        await get().fetchAutomations(personaId);
+      }
+      set({ error: errMsg(err, "Failed to delete automation") });
     }
   },
 
@@ -110,6 +113,8 @@ export const createAutomationSlice: StateCreator<PersonaStore, [], [], Automatio
       const runs = await api.getAutomationRuns(automationId);
       set({
         automationRuns: { ...get().automationRuns, [automationId]: runs },
+        // Note: automationRuns uses get() intentionally -- runs are keyed by
+        // automationId and concurrent fetches for different IDs are safe.
       });
     } catch {
       useToastStore.getState().addToast('Failed to load automation runs', 'error');
@@ -119,7 +124,7 @@ export const createAutomationSlice: StateCreator<PersonaStore, [], [], Automatio
   deployAutomation: async (input) => {
     try {
       const result = await api.deployAutomation(input);
-      set({ automations: [...get().automations, result.automation] });
+      set((state) => ({ automations: [...state.automations, result.automation] }));
       return result;
     } catch (err) {
       set({ error: errMsg(err, "Failed to deploy automation") });

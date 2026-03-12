@@ -16,7 +16,7 @@ export function getAuthBadgeClasses(method: ConnectorAuthMethod): string {
   return 'bg-white/10 border-white/20 text-white/90';
 }
 
-/** Map auth type id → lucide icon component. */
+/** Map auth type id -> lucide icon component. */
 export function getAuthIcon(method: ConnectorAuthMethod): typeof Key {
   if (method.type === 'mcp') return Server;
   if (method.type === 'oauth' || method.label.toLowerCase() === 'oauth') return Shield;

@@ -55,6 +55,10 @@ pub mod clipboard_monitor;
 pub mod app_focus;
 pub mod composite;
 pub mod db_query;
+pub mod chunker;
+pub mod embedder;
+pub mod vector_store;
+pub mod kb_ingest;
 pub mod api_proxy;
 pub mod api_definition;
 pub mod mcp_tools;
@@ -92,7 +96,7 @@ use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
 
 /// Maximum retry attempts for DB status persistence.
 const PERSIST_MAX_RETRIES: u32 = 3;
-/// Initial backoff delay (doubles each retry: 200ms â†’ 400ms â†’ 800ms).
+/// Initial backoff delay (doubles each retry: 200ms -> 400ms -> 800ms).
 const PERSIST_INITIAL_BACKOFF_MS: u64 = 200;
 
 /// Try to write an execution status update to the DB with exponential backoff.
@@ -159,7 +163,7 @@ pub(crate) async fn persist_status_update(
             tracing::error!(
                 execution_id = %exec_id,
                 error = %e,
-                "Dead-letter write also failed â€” execution stuck in running state",
+                "Dead-letter write also failed -- execution stuck in running state",
             );
         }
     }
@@ -258,7 +262,7 @@ impl ExecutionEngine {
             Ok(stale) => {
                 let count = stale.len();
                 for exec in &stale {
-                    // Startup recovery uses a direct sync DB call â€” no async retry
+                    // Startup recovery uses a direct sync DB call -- no async retry
                     // needed because there is no contention during app init.
                     let _ = exec_repo::update_status(
                         pool,
@@ -345,7 +349,7 @@ impl ExecutionEngine {
 
         match admit_result {
             AdmitResult::Running => {
-                // Slot available â€” spawn the execution task immediately
+                // Slot available -- spawn the execution task immediately
                 self.spawn_execution_task(
                     app, pool, execution_id, persona, tools, input_data, continuation,
                 )
@@ -566,7 +570,7 @@ impl ExecutionEngine {
         pool: &DbPool,
         persona_id: Option<&str>,
     ) -> bool {
-        // 0. Check if execution is queued (not yet running) â€” just remove from queue
+        // 0. Check if execution is queued (not yet running) -- just remove from queue
         if let Some(pid) = persona_id {
             let was_queued = self.tracker.lock().await.remove_queued(pid, execution_id);
             if was_queued {
@@ -589,7 +593,7 @@ impl ExecutionEngine {
             }
         }
 
-        // 1. Set cancellation flag â€” tells the spawned task to write
+        // 1. Set cancellation flag -- tells the spawned task to write
         //    status='cancelled' with metrics instead of completed/failed
         if let Some(flag) = self.cancelled_flags.lock().await.get(execution_id) {
             flag.store(true, Ordering::Release);
@@ -622,7 +626,7 @@ impl ExecutionEngine {
             .await
             {
                 Ok(_) => {
-                    // Task finished normally â€” metrics written to DB
+                    // Task finished normally -- metrics written to DB
                 }
                 Err(_) => {
                     tracing::warn!(
@@ -944,7 +948,7 @@ fn drain_and_start_next(
                 },
             );
 
-            // Spawn the actual execution â€” reuse the saved context.
+            // Spawn the actual execution -- reuse the saved context.
             // We build a mini execution task inline since we don't have &self here.
             let persona = ctx.persona;
             let persona_id_owned = persona.id.clone();
@@ -1056,7 +1060,7 @@ fn drain_and_start_next(
 
             tasks.lock().await.insert(exec_id_for_tasks, handle);
         } else {
-            // Context was missing (e.g., cancelled while queued) â€” release the slot
+            // Context was missing (e.g., cancelled while queued) -- release the slot
             tracker.lock().await.remove_running(persona_id, &exec_id);
         }
     }
@@ -1105,7 +1109,7 @@ async fn handle_execution_result(
     )
     .await;
 
-    // Knowledge graph extraction â€” learn from every execution
+    // Knowledge graph extraction -- learn from every execution
     {
         let use_case_id = exec_repo::get_by_id(pool, exec_id)
             .ok()
@@ -1132,7 +1136,7 @@ async fn handle_execution_result(
         check_budget_enforcement(pool, persona_id, exec_id);
     }
 
-    // Chain triggers â€” extract chain depth/visited/trace_id from execution's input_data
+    // Chain triggers -- extract chain depth/visited/trace_id from execution's input_data
     // (propagated via chain event payloads to prevent infinite cycles)
     let (chain_depth, mut visited, existing_chain_trace_id) =
         exec_repo::get_by_id(pool, exec_id)
@@ -1280,7 +1284,8 @@ fn evaluate_healing_and_retry(
         Some(exec_id),
         diagnosis.suggested_fix.as_deref(),
     ) {
-        Ok(issue) => issue,
+        Ok(Some(issue)) => issue,
+        Ok(None) => return, // duplicate -- already handled
         Err(_) => return,
     };
 
@@ -1304,7 +1309,7 @@ fn evaluate_healing_and_retry(
     }
 
     if auto_fixed {
-        let _ = healing_repo::mark_auto_fixed(pool, &issue.id);
+        let _ = healing_repo::mark_auto_fix_pending(pool, &issue.id);
     }
 
     // Notify healing issue
@@ -1377,13 +1382,13 @@ fn evaluate_healing_and_retry(
         );
     }
 
-    // â”€â”€ AI Healing (dev-mode only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- AI Healing (dev-mode only) -----------------------------------
     // When rule-based healing can't resolve the issue, resume the original
     // Claude session as a chained execution to diagnose and fix.
     if cfg!(debug_assertions) || std::env::var("VITE_DEVELOPMENT").as_deref() == Ok("true") {
         let exec_state_str = if result.success { "incomplete" } else { "failed" };
         if ai_healing::should_trigger_ai_healing(&category, exec_state_str, consecutive) {
-            // Need a session ID to resume â€” if the original CLI never initialized, skip
+            // Need a session ID to resume -- if the original CLI never initialized, skip
             if let Some(ref session_id) = result.claude_session_id {
                 spawn_healing_chain(
                     pool.clone(),
@@ -1462,7 +1467,7 @@ fn check_circuit_breaker(
             description: Some(format!(
                 "Agent disabled after {consecutive} consecutive failures. Investigation required.",
             )),
-            strategy: Some("Persona disabled â€” manual intervention required".into()),
+            strategy: Some("Persona disabled -- manual intervention required".into()),
             backoff_seconds: None,
             retry_number: None,
             max_retries: Some(healing::MAX_RETRY_COUNT),
@@ -1968,7 +1973,7 @@ fn spawn_delayed_retry(
             child_pids.clone(),
             cancelled.clone(),
             None, // no continuation for healing retries
-            None, // chain_trace_id â€” healing retries don't inherit chain context
+            None, // chain_trace_id -- healing retries don't inherit chain context
             circuit_breaker,
         )
         .await;
@@ -2043,6 +2048,20 @@ fn spawn_delayed_retry(
                 );
             }
 
+            // Transition healing issues tied to the original execution:
+            // confirm (resolved) on success, revert (open) on failure.
+            let pending_issues = healing_repo::get_by_execution_id(&pool, &original_exec_id)
+                .unwrap_or_default();
+            for hi in &pending_issues {
+                if hi.status == "auto_fix_pending" {
+                    if result.success {
+                        let _ = healing_repo::confirm_auto_fix(&pool, &hi.id);
+                    } else {
+                        let _ = healing_repo::revert_auto_fix_pending(&pool, &hi.id);
+                    }
+                }
+            }
+
             // Notification
             {
                 let persona_for_notify =
@@ -2074,7 +2093,7 @@ fn spawn_delayed_retry(
 
 /// Find connector names whose `services` JSON lists at least one of the given tools.
 ///
-/// Iterates tools Ã— connectors, parsing each connector's `services` JSON array
+/// Iterates tools × connectors, parsing each connector's `services` JSON array
 /// and checking if any entry's `toolName` matches a tool name.
 fn find_matching_connector_names(
     tools: &[PersonaToolDefinition],

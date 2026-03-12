@@ -3,6 +3,7 @@ export * from "./design/core/useDesignAnalysis";
 export * from "./design/core/usePersonaCompiler";
 export * from "./design/core/useAiSearch";
 export * from "./design/core/useTauriStream";
+export * from "./design/core/useAiArtifactTask";
 export * from "./design/core/useAutomationDesign";
 export * from "./design/core/useBackgroundRebuild";
 export * from "./design/core/useBackgroundPreview";

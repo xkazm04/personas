@@ -40,7 +40,7 @@ export function NegotiatorStepCard({
     try {
       await openExternalUrl(safe);
     } catch {
-      // intentional: non-critical — Tauri shell open failed, fall back to window.open
+      // intentional: non-critical -- Tauri shell open failed, fall back to window.open
       window.open(safe, '_blank', 'noopener,noreferrer');
     }
   };
@@ -176,7 +176,7 @@ export function NegotiatorStepCard({
                     data-testid={`negotiator-step-${stepIndex}-complete-btn`}
                   >
                     <Check className="w-3.5 h-3.5" />
-                    {step.field_fills ? 'Step complete — values captured' : 'Mark step complete'}
+                    {step.field_fills ? 'Step complete -- values captured' : 'Mark step complete'}
                   </button>
                 )}
                 {isCompleted && (

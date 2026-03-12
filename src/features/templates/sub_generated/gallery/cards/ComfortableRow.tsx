@@ -171,7 +171,7 @@ export function ComfortableRow({
           </div>
         </div>
       </div>
-      {/* Expanded content — CSS-only fade-in, no framer-motion */}
+      {/* Expanded content -- CSS-only fade-in, no framer-motion */}
       {isExpanded && (
         <div className="border-b border-primary/10 bg-secondary/20 animate-expand-in">
           <ExpandedRowContent

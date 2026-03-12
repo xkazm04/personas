@@ -3,7 +3,7 @@ import type { ModelProfile } from '@/lib/types/frontendTypes';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { extractConnectorNames } from '@/lib/personas/utils';
 
-// ── Smart Tag Types ──────────────────────────────────────────────────
+// -- Smart Tag Types --------------------------------------------------
 
 export type TagCategory = 'status' | 'model' | 'health' | 'recency' | 'auto';
 
@@ -16,7 +16,7 @@ export interface SmartTag {
   auto: boolean;
 }
 
-// ── Tag Vocabulary ───────────────────────────────────────────────────
+// -- Tag Vocabulary ---------------------------------------------------
 
 const STATUS_TAGS: SmartTag[] = [
   { id: 'status:enabled', label: 'Enabled', color: '#10B981', category: 'status', auto: false },
@@ -55,7 +55,7 @@ export const TAG_GROUPS: { category: TagCategory; label: string; tags: SmartTag[
   { category: 'recency', label: 'Recency', tags: RECENCY_TAGS },
 ];
 
-// ── Persona Run State ─────────────────────────────────────────────────
+// -- Persona Run State -------------------------------------------------
 export type PersonaRunState = 'never_run' | 'active' | 'stale';
 
 export function getPersonaRunState(lastRun: string | null | undefined, staleDays: number): PersonaRunState {
@@ -65,7 +65,7 @@ export function getPersonaRunState(lastRun: string | null | undefined, staleDays
   return Date.now() - last > staleDays * 86_400_000 ? 'stale' : 'active';
 }
 
-// ── Filter State ─────────────────────────────────────────────────────
+// -- Filter State -----------------------------------------------------
 
 export interface FilterState {
   search: string;
@@ -74,7 +74,7 @@ export interface FilterState {
 
 export const defaultFilters: FilterState = { search: '', tags: new Set() };
 
-// ── Parse model profile ──────────────────────────────────────────────
+// -- Parse model profile ----------------------------------------------
 
 function parseModelProfile(persona: DbPersona): ModelProfile | null {
   if (!persona.model_profile) return null;
@@ -91,7 +91,7 @@ function getProviderLabel(persona: DbPersona): string {
   return mp.provider;
 }
 
-// ── Compute all tags for a persona ───────────────────────────────────
+// -- Compute all tags for a persona -----------------------------------
 
 export function computePersonaTags(
   persona: DbPersona,
@@ -146,7 +146,7 @@ export function computePersonaTags(
   return tags;
 }
 
-// ── Auto tag metadata ────────────────────────────────────────────────
+// -- Auto tag metadata ------------------------------------------------
 
 const AUTO_TAG_META: Record<string, { label: string; color: string }> = {
   'auto:slack': { label: 'slack', color: '#4A154B' },

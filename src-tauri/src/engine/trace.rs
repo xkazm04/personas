@@ -1,6 +1,6 @@
 //! Structured execution traces with span trees.
 //!
-//! Each execution produces a tree of typed spans: root span (execution) →
+//! Each execution produces a tree of typed spans: root span (execution) ->
 //! child spans (prompt assembly, credential resolution, CLI spawn, tool calls,
 //! protocol dispatch, chain evaluation). Each span records start/end time,
 //! cost attribution, token counts, and error info.
@@ -11,6 +11,7 @@
 //! For chain triggers, a `chain_trace_id` propagates through payloads so
 //! multi-persona execution chains appear as a single distributed trace.
 
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::Instant;
 
@@ -105,6 +106,10 @@ pub struct ExecutionTrace {
     /// Total trace duration in milliseconds.
     #[ts(type = "number | null")]
     pub total_duration_ms: Option<u64>,
+    /// Number of spans evicted due to the MAX_SPANS limit.
+    /// Non-zero means the trace is incomplete.
+    #[ts(type = "number")]
+    pub evicted_span_count: u64,
     /// When the trace was created (ISO 8601).
     pub created_at: String,
 }
@@ -123,7 +128,7 @@ pub struct TraceSpanEvent {
 }
 
 // =============================================================================
-// TraceCollector — accumulates spans during execution
+// TraceCollector -- accumulates spans during execution
 // =============================================================================
 
 /// Thread-safe collector that accumulates trace spans during execution.
@@ -139,6 +144,7 @@ pub struct TraceCollector {
     epoch: Instant,
     pub(crate) spans: Mutex<Vec<TraceSpan>>,
     root_span_id: String,
+    evicted_span_count: AtomicU64,
 }
 
 impl TraceCollector {
@@ -175,6 +181,7 @@ impl TraceCollector {
             epoch,
             spans: Mutex::new(vec![root_span]),
             root_span_id,
+            evicted_span_count: AtomicU64::new(0),
         }
     }
 
@@ -229,11 +236,28 @@ impl TraceCollector {
         let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
 
         // Evict oldest completed non-root spans when at capacity.
+        // Fallback: evict oldest open non-root span to prevent unbounded growth.
         if spans.len() >= MAX_SPANS {
-            if let Some(pos) = spans.iter().position(|s| {
-                s.span_id != self.root_span_id && s.end_ms.is_some()
-            }) {
+            let evict_pos = spans
+                .iter()
+                .position(|s| s.span_id != self.root_span_id && s.end_ms.is_some())
+                .or_else(|| {
+                    spans
+                        .iter()
+                        .position(|s| s.span_id != self.root_span_id)
+                });
+            if let Some(pos) = evict_pos {
                 spans.remove(pos);
+                // Rate-limit: warn only on the first eviction per trace.
+                let prev = self.evicted_span_count.fetch_add(1, Ordering::Relaxed);
+                if prev == 0 {
+                    tracing::warn!(
+                        trace_id = %self.trace_id,
+                        execution_id = %self.execution_id,
+                        max_spans = MAX_SPANS,
+                        "Trace span eviction started -- trace data will be incomplete"
+                    );
+                }
             }
         }
 
@@ -293,6 +317,24 @@ impl TraceCollector {
         let end_ms = self.epoch.elapsed().as_millis() as u64;
         let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
 
+        // Force-close orphaned spans (started but never ended).
+        let mut orphan_count = 0u32;
+        for span in spans.iter_mut() {
+            if span.span_id != self.root_span_id && span.end_ms.is_none() {
+                span.end_ms = Some(end_ms);
+                span.duration_ms = Some(end_ms.saturating_sub(span.start_ms));
+                span.error = Some("span not properly closed".to_string());
+                orphan_count += 1;
+            }
+        }
+        if orphan_count > 0 {
+            tracing::warn!(
+                trace_id = %self.trace_id,
+                orphan_count,
+                "Force-closed orphaned spans during finalize"
+            );
+        }
+
         // Close root span
         if let Some(root) = spans.iter_mut().find(|s| s.span_id == self.root_span_id) {
             root.end_ms = Some(end_ms);
@@ -303,6 +345,15 @@ impl TraceCollector {
             root.error = error;
         }
 
+        let evicted = self.evicted_span_count.load(Ordering::Relaxed);
+        if evicted > 0 {
+            tracing::warn!(
+                trace_id = %self.trace_id,
+                evicted_span_count = evicted,
+                "Finalized trace with evicted spans -- data is incomplete"
+            );
+        }
+
         ExecutionTrace {
             trace_id: self.trace_id.clone(),
             execution_id: self.execution_id.clone(),
@@ -310,6 +361,7 @@ impl TraceCollector {
             chain_trace_id: self.chain_trace_id.clone(),
             spans: spans.drain(..).collect(),
             total_duration_ms: Some(end_ms),
+            evicted_span_count: evicted,
             created_at: chrono::Utc::now().to_rfc3339(),
         }
     }
@@ -318,7 +370,7 @@ impl TraceCollector {
     pub fn get_span(&self, span_id: &str) -> Option<TraceSpan> {
         self.spans
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .iter()
             .find(|s| s.span_id == span_id)
             .cloned()

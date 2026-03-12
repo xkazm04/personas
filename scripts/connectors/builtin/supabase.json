@@ -12,7 +12,7 @@
       "type": "url",
       "required": true,
       "placeholder": "https://xxxx.supabase.co",
-      "helpText": "From Supabase Dashboard → Settings → API"
+      "helpText": "From Supabase Dashboard -> Settings -> API"
     },
     {
       "key": "anon_key",
@@ -56,7 +56,7 @@
     "auth_type": "api_key",
     "auth_type_label": "API Key",
     "docs_url": "https://supabase.com/dashboard/project/_/settings/api",
-    "setup_guide": "1. Go to your Supabase project dashboard → Settings → API\n2. Copy the Project URL\n3. Copy the anon/public key (and optionally the service_role key for admin access)\n4. Paste the project URL and key(s) here",
+    "setup_guide": "1. Go to your Supabase project dashboard -> Settings -> API\n2. Copy the Project URL\n3. Copy the anon/public key (and optionally the service_role key for admin access)\n4. Paste the project URL and key(s) here",
     "pricing_tier": "free",
     "auth_variants": [
       {

@@ -42,7 +42,7 @@ export function useAdoptDomainActions(update: UpdateFn, updateFn: UpdateWithPrev
 
   const awaitingAnswers = useCallback((questions: TransformQuestionResponse[]) => {
     // Stay on current step (build for full wizard, quick adopt doesn't use steps)
-    // — questions are rendered inline in the build step / command center
+    // -- questions are rendered inline in the build step / command center
     update({ transforming: false, transformPhase: 'idle', questions, questionGenerating: false, userAnswers: prefillDefaults(questions) });
   }, [update]);
 

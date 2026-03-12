@@ -11,7 +11,7 @@
 |-------|--------|--------|
 | **Phase 1:** Local Agent Marketplace | **COMPLETE** | `feature/invisible-apps` |
 | **Phase 2:** LAN Discovery & P2P Transport | **COMPLETE** | `feature/invisible-apps` |
-| **Phase 3:** Internet P2P | Not started | — |
+| **Phase 3:** Internet P2P & Data Exposure | Not started | — |
 | **Phase 4:** Dynamic UI & Full Protocol | Not started | — |
 
 ---
@@ -1070,13 +1070,13 @@ rmp-serde = "1.3"
 
 ---
 
-## Phase 3: Internet P2P
+## Phase 3: Internet P2P & Data Exposure
 
-> **Status: NOT STARTED** — Phase 2 complete; this phase is next. Proxy execution and remote chain triggers from Phase 2's stretch goals are included here.
+> **Status: NOT STARTED** — Phase 2 complete; this phase is next. Proxy execution and remote chain triggers from Phase 2's stretch goals are included here, combined with the new Data Exposure layer for live database/connector/KB querying across peers.
 
-**Goal:** Extend LAN networking to work across the internet with NAT traversal, relay fallback, and robust identity verification.
+**Goal:** Extend LAN networking to work across the internet with NAT traversal, relay fallback, and robust identity verification. Simultaneously introduce a Data Exposure system so peers can selectively share live data from any database connector or vector knowledge base — with column-level access control, sensitivity detection, and per-exposure policies.
 
-**Duration estimate:** 8-12 weeks
+**Duration estimate:** 10-14 weeks
 **Networking required:** Internet (WAN)
 **Risk level:** High
 
@@ -1144,6 +1144,7 @@ pub struct PersonasBehaviour {
     // Communication
     pub agent_protocol: request_response::cbor::Behaviour<AgentRequest, AgentResponse>,
     pub manifest_sync: request_response::cbor::Behaviour<ManifestRequest, ManifestResponse>,
+    pub data_query: request_response::cbor::Behaviour<DataQueryRequest, DataQueryResponse>,
 
     // Health
     pub ping: ping::Behaviour,
@@ -1211,7 +1212,8 @@ src-tauri/src/engine/p2p/
 │   ├── mod.rs
 │   ├── agent_protocol.rs      # Agent message request/response codec
 │   ├── manifest_sync.rs       # Manifest exchange codec
-│   └── bundle_transfer.rs     # Bundle streaming transfer codec
+│   ├── bundle_transfer.rs     # Bundle streaming transfer codec
+│   └── data_query.rs          # Data query request/response codec (NEW)
 ├── peer_manager.rs            # Connection tracking, health, reputation
 └── metrics.rs                 # Network metrics collection
 ```
@@ -1458,6 +1460,10 @@ pub struct PeerRateLimiter {
 
     // Reputation tracking
     pub peer_scores: HashMap<PeerId, f64>, // -100 to +100
+
+    // Data query-specific limits
+    pub max_data_queries_per_minute: u32,   // Default: 30
+    pub max_data_response_bytes: u64,       // Default: 5 MB per response
 }
 
 // Peers that exceed limits get temporarily blocked
@@ -1477,26 +1483,537 @@ pub struct CapabilityToken {
     pub subject: String,          // PeerId of the authorized peer
     pub resource_type: ResourceType,
     pub resource_id: String,
-    pub permissions: Vec<String>, // ["read", "execute"]
+    pub permissions: Vec<String>, // ["read", "execute", "query"]
+    pub data_scope: Option<DataScopeGrant>,  // NEW: data-specific grant
     pub issued_at: u64,
     pub expires_at: u64,
     pub signature: Vec<u8>,       // Issuer's Ed25519 signature
 }
 
-// Tokens are passed with AgentEnvelope requests
+/// Grants specific data access within a token. Subset of the full policy.
+pub struct DataScopeGrant {
+    pub tables_allowed: Vec<String>,   // Empty = all tables in policy
+    pub max_rows_per_query: u32,       // Hard cap for this grant
+}
+
+// Tokens are passed with AgentEnvelope and DataQueryRequest
 // Receiving peer verifies:
 //   1. Signature is valid for issuer's public key
 //   2. Token is not expired
 //   3. Requested action matches token permissions
 //   4. Subject PeerId matches the requester
+//   5. (For data queries) DataScopeGrant covers the requested table
 ```
 
 ---
 
-### 3.9 Phase 3 Deliverables Checklist
+### 3.9 Data Exposure Layer
+
+This section introduces per-exposure policies that control what data from database connectors, built-in SQLite, and vector knowledge bases can be queried by peers in real time.
+
+#### 3.9.1 Design Principles
+
+1. **The data owner always executes the query.** The peer sends a query request; the owner's instance runs it against the real connector, applies the policy, and returns the filtered result. The peer never touches credentials or raw data.
+2. **Policies are per-exposure, not global.** Each `ExposedResource` of type `connector` or `knowledge` optionally carries a `DataExposurePolicy`. No workspace-level defaults for now.
+3. **All connector types supported from day one.** External connectors (Postgres via Supabase, Redis via Upstash, Neon, PlanetScale, etc.), built-in SQLite, and vector knowledge bases are all supported. The existing `db_query.rs` REST execution engine handles external connectors; built-in SQLite and vector KBs use their respective local engines.
+4. **Real-time, not snapshot.** Peer queries execute live against the data source. This means the data owner's instance must be online.
+
+#### 3.9.2 Data Model: DataExposurePolicy
+
+```rust
+// src-tauri/src/db/models/data_exposure.rs
+
+/// Per-exposure policy defining what data a peer can access from a credential.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DataExposurePolicy {
+    pub id: String,                          // UUID
+    pub exposure_id: String,                 // FK → exposed_resources.id
+    pub credential_id: String,              // FK → persona_credentials.id (the data source)
+    pub source_type: DataSourceType,        // connector | vector_kb | builtin_sqlite
+
+    // Layer 1: Scope (what's visible)
+    pub tables_allowed: Vec<String>,        // Empty = all tables
+    pub tables_denied: Vec<String>,         // Overrides allowed (explicit block)
+    pub kb_ids_allowed: Vec<String>,        // For vector_kb source_type
+
+    // Layer 2: Column rules (per-table field control)
+    pub column_rules: Vec<ColumnRule>,
+
+    // Layer 3: Row filters (predicate per table)
+    pub row_filters: Vec<RowFilter>,
+
+    // Transfer limits
+    pub max_rows_per_query: u32,            // Default: 100
+    pub max_response_bytes: u64,            // Default: 2 MB
+    pub rate_limit_per_minute: u32,         // Default: 10 queries/min
+
+    // Audit
+    pub audit_enabled: bool,                // Log every query to audit_log table
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub enum DataSourceType {
+    Connector,      // External: Supabase, Neon, Upstash, PlanetScale, etc.
+    VectorKb,       // Built-in vector knowledge base (sqlite-vec)
+    BuiltinSqlite,  // Built-in SQLite user database
+}
+
+/// Controls what happens to a specific column when query results pass through.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ColumnRule {
+    pub table: String,              // Table name (or "*" for all tables)
+    pub column: String,             // Column name (or "*" for default rule)
+    pub action: ColumnAction,
+    pub action_config: Option<String>,  // For truncate: max_len; for generalize: strategy
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub enum ColumnAction {
+    Allow,                   // Pass through unchanged
+    Deny,                    // Column hidden from results entirely
+    Redact,                  // Replace with "***"
+    Hash,                    // SHA-256 (preserves uniqueness for joins)
+    Truncate,                // First N characters only (config: max_len)
+    Generalize,              // Reduce precision (date→month, zip→region, config: strategy)
+}
+
+/// A WHERE predicate applied server-side before returning rows.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct RowFilter {
+    pub table: String,
+    pub where_clause: String,       // SQL WHERE fragment, e.g. "status = 'active'"
+}
+
+/// Result of running sensitivity auto-detection on a table's columns.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SensitivityHint {
+    pub table: String,
+    pub column: String,
+    pub sensitivity: SensitivityLevel,
+    pub reason: String,             // "Column name matches PII pattern: email"
+    pub suggested_action: ColumnAction,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub enum SensitivityLevel {
+    Public,         // Safe to expose
+    Internal,       // Not secret, but not public
+    Sensitive,      // PII, financial, auth tokens
+    Critical,       // Passwords, private keys — should never be exposed
+}
+```
+
+#### 3.9.3 Database Schema
+
+```sql
+-- 3001: Data exposure policies
+CREATE TABLE IF NOT EXISTS data_exposure_policies (
+    id TEXT PRIMARY KEY,
+    exposure_id TEXT NOT NULL REFERENCES exposed_resources(id) ON DELETE CASCADE,
+    credential_id TEXT NOT NULL,
+    source_type TEXT NOT NULL DEFAULT 'connector',  -- connector | vector_kb | builtin_sqlite
+    tables_allowed TEXT NOT NULL DEFAULT '[]',       -- JSON array
+    tables_denied TEXT NOT NULL DEFAULT '[]',        -- JSON array
+    kb_ids_allowed TEXT NOT NULL DEFAULT '[]',       -- JSON array
+    column_rules TEXT NOT NULL DEFAULT '[]',         -- JSON array of ColumnRule
+    row_filters TEXT NOT NULL DEFAULT '[]',          -- JSON array of RowFilter
+    max_rows_per_query INTEGER NOT NULL DEFAULT 100,
+    max_response_bytes INTEGER NOT NULL DEFAULT 2097152,  -- 2 MB
+    rate_limit_per_minute INTEGER NOT NULL DEFAULT 10,
+    audit_enabled INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_data_policy_exposure ON data_exposure_policies(exposure_id);
+CREATE INDEX IF NOT EXISTS idx_data_policy_credential ON data_exposure_policies(credential_id);
+
+-- 3002: Data query audit log
+CREATE TABLE IF NOT EXISTS data_query_audit (
+    id TEXT PRIMARY KEY,
+    policy_id TEXT NOT NULL,
+    requester_peer_id TEXT NOT NULL,
+    query_type TEXT NOT NULL,       -- table_query | vector_search | schema_introspect
+    query_payload TEXT NOT NULL,    -- JSON of the request (no secrets)
+    rows_returned INTEGER NOT NULL DEFAULT 0,
+    bytes_returned INTEGER NOT NULL DEFAULT 0,
+    duration_ms INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL,           -- ok | denied | error | rate_limited
+    error_message TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_data_audit_policy ON data_query_audit(policy_id);
+CREATE INDEX IF NOT EXISTS idx_data_audit_peer ON data_query_audit(requester_peer_id);
+CREATE INDEX IF NOT EXISTS idx_data_audit_time ON data_query_audit(created_at);
+```
+
+#### 3.9.4 P2P Data Query Protocol
+
+New protocol messages for data exchange, routed through the libp2p `data_query` request-response behaviour:
+
+```rust
+// src-tauri/src/engine/p2p/protocols/data_query.rs
+
+/// Request from a peer to query data from an exposed credential.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DataQueryRequest {
+    pub request_id: String,
+    pub exposure_id: String,           // Which exposed resource
+    pub token: CapabilityToken,        // Auth token with data_scope
+    pub query: DataQuery,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DataQuery {
+    /// Introspect: "What tables/KBs can I see through this exposure?"
+    SchemaIntrospect,
+
+    /// Query rows from a table (SQL-backed connectors + built-in SQLite)
+    TableQuery {
+        table: String,
+        columns: Vec<String>,          // Empty = all allowed columns
+        where_clause: Option<String>,  // Additional peer-side filter (ANDed with policy row_filter)
+        order_by: Option<String>,
+        limit: u32,                    // Capped by policy max_rows_per_query
+        offset: u32,
+    },
+
+    /// Semantic search against a vector knowledge base
+    VectorSearch {
+        kb_id: String,
+        query_text: String,
+        top_k: u32,                    // Capped by policy max_rows_per_query
+    },
+}
+
+/// Response from the data owner back to the requesting peer.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DataQueryResponse {
+    pub request_id: String,
+    pub status: DataQueryStatus,
+
+    // Schema info (always present on success)
+    pub schema: Vec<ColumnDef>,
+
+    // Row data (already filtered + redacted by policy)
+    pub rows: Vec<Vec<serde_json::Value>>,
+
+    // For vector search results
+    pub vector_results: Vec<VectorSearchResultEntry>,
+
+    // Metadata
+    pub total_rows_available: Option<u64>,  // Estimated total (for pagination UI)
+    pub has_more: bool,
+    pub transfer_bytes: u64,
+    pub query_duration_ms: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ColumnDef {
+    pub name: String,
+    pub data_type: String,            // "text", "integer", "real", "blob", etc.
+    pub is_redacted: bool,            // True if policy applied redaction to this column
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VectorSearchResultEntry {
+    pub chunk_id: String,
+    pub document_title: String,
+    pub content: String,              // Already filtered by policy
+    pub score: f64,
+    pub source_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DataQueryStatus {
+    Ok,
+    AccessDenied,          // Token invalid or insufficient scope
+    TableNotAllowed,       // Table not in policy scope
+    RateLimited,           // Exceeded rate limit
+    SourceUnavailable,     // Connector unreachable
+    PolicyViolation,       // Query violates policy constraints
+    Error(String),         // Unexpected error (sanitized)
+}
+```
+
+#### 3.9.5 Query Execution Pipeline (Data Owner Side)
+
+When a `DataQueryRequest` arrives, the data owner runs it through a 6-stage pipeline:
+
+```
+1. AUTH:     Verify CapabilityToken (signature, expiry, subject, permissions)
+2. POLICY:   Load DataExposurePolicy for this exposure_id
+3. SCOPE:    Validate table/KB is in allowed scope, not in denied list
+4. REWRITE:  Inject policy row_filters into query WHERE clause (AND-merge)
+             Cap LIMIT to min(requested, policy.max_rows_per_query)
+5. EXECUTE:  Run query against actual data source:
+             - External connectors: via existing db_query.rs REST engine
+             - Built-in SQLite: via user_db pool
+             - Vector KB: via kb_search() / kb_list_documents()
+6. FILTER:   Apply column rules to result rows:
+             - Deny: strip column from response
+             - Redact: replace with "***"
+             - Hash: replace with hex(SHA-256(value))
+             - Truncate: value[..N]
+             - Generalize: apply strategy (date→YYYY-MM, zip→first 3 digits)
+7. AUDIT:    Write to data_query_audit table
+8. RESPOND:  Serialize and return DataQueryResponse
+```
+
+```rust
+// src-tauri/src/engine/data_exposure.rs
+
+pub struct DataExposureEngine {
+    db: DbPool,
+    user_db: UserDbPool,
+}
+
+impl DataExposureEngine {
+    /// Execute a data query request from a remote peer.
+    pub async fn handle_query(
+        &self,
+        request: DataQueryRequest,
+        local_identity: &PeerIdentity,
+    ) -> DataQueryResponse {
+        let timer = std::time::Instant::now();
+
+        // 1. Verify token
+        if let Err(e) = self.verify_token(&request.token, &request.exposure_id) {
+            return DataQueryResponse::denied(request.request_id, e);
+        }
+
+        // 2. Load policy
+        let policy = match self.load_policy(&request.exposure_id) {
+            Ok(p) => p,
+            Err(e) => return DataQueryResponse::error(request.request_id, e),
+        };
+
+        // 3. Rate limit check
+        if self.is_rate_limited(&policy, &request.token.subject) {
+            return DataQueryResponse::rate_limited(request.request_id);
+        }
+
+        // 4-6. Execute + filter
+        let result = match &request.query {
+            DataQuery::SchemaIntrospect => self.handle_introspect(&policy).await,
+            DataQuery::TableQuery { .. } => self.handle_table_query(&policy, &request.query).await,
+            DataQuery::VectorSearch { .. } => self.handle_vector_search(&policy, &request.query).await,
+        };
+
+        // 7. Audit
+        let duration_ms = timer.elapsed().as_millis() as u64;
+        self.write_audit(&policy, &request, &result, duration_ms);
+
+        result
+    }
+
+    /// Apply column rules to a row of data.
+    fn apply_column_filters(
+        &self,
+        columns: &[String],
+        row: Vec<serde_json::Value>,
+        rules: &[ColumnRule],
+        table: &str,
+    ) -> (Vec<String>, Vec<serde_json::Value>) {
+        // Build effective rule map: most specific wins (table+column > table+* > *+*)
+        // Filter columns and transform values according to actions
+        // ...
+    }
+}
+```
+
+#### 3.9.6 Sensitivity Auto-Detection
+
+Pattern-matching heuristic run when creating a policy to suggest column rules. No AI required.
+
+```rust
+// src-tauri/src/engine/sensitivity.rs
+
+/// Analyze table columns and suggest sensitivity classifications.
+pub fn detect_sensitivity(
+    table_name: &str,
+    columns: &[(String, String)],  // (name, data_type) pairs
+) -> Vec<SensitivityHint> {
+    let mut hints = Vec::new();
+
+    for (col_name, _col_type) in columns {
+        let lower = col_name.to_lowercase();
+
+        // PII patterns
+        if matches_any(&lower, &["email", "e_mail", "mail_address"]) {
+            hints.push(hint(table_name, col_name, Sensitive, Redact, "Email address pattern"));
+        } else if matches_any(&lower, &["phone", "mobile", "tel", "fax"]) {
+            hints.push(hint(table_name, col_name, Sensitive, Redact, "Phone number pattern"));
+        } else if matches_any(&lower, &["ssn", "social_security", "national_id", "tax_id"]) {
+            hints.push(hint(table_name, col_name, Critical, Deny, "Government ID pattern"));
+        } else if matches_any(&lower, &["ip_address", "ip_addr", "remote_addr", "client_ip"]) {
+            hints.push(hint(table_name, col_name, Sensitive, Hash, "IP address pattern"));
+        }
+
+        // Auth/secret patterns
+        else if matches_any(&lower, &["password", "passwd", "pwd", "secret", "token",
+                                       "api_key", "apikey", "private_key", "auth"]) {
+            hints.push(hint(table_name, col_name, Critical, Deny, "Credential/secret pattern"));
+        }
+
+        // Financial patterns
+        else if matches_any(&lower, &["card", "cvv", "cvc", "routing_number", "account_number",
+                                       "iban", "swift", "bank"]) {
+            hints.push(hint(table_name, col_name, Critical, Deny, "Financial data pattern"));
+        } else if matches_any(&lower, &["cost", "cost_price", "margin", "profit", "salary",
+                                          "wage", "compensation"]) {
+            hints.push(hint(table_name, col_name, Sensitive, Redact, "Sensitive financial metric"));
+        }
+
+        // Address patterns
+        else if matches_any(&lower, &["address", "street", "zip", "postal", "city", "state"]) {
+            hints.push(hint(table_name, col_name, Internal, Generalize, "Physical address pattern"));
+        }
+
+        // Date of birth
+        else if matches_any(&lower, &["dob", "date_of_birth", "birthdate", "birthday"]) {
+            hints.push(hint(table_name, col_name, Sensitive, Generalize, "Date of birth pattern"));
+        }
+
+        // Default: public
+        else {
+            hints.push(hint(table_name, col_name, Public, Allow, "No sensitive pattern detected"));
+        }
+    }
+
+    hints
+}
+```
+
+#### 3.9.7 Integration with Existing Exposure System
+
+The `ExposedResource` model gains an optional link to a `DataExposurePolicy`:
+
+```
+ExposedResource (existing, unchanged)
+  ├── resource_type: "persona" | "template" | ...  → works as before
+  └── resource_type: "connector" | "knowledge"
+       └── If exposure has a DataExposurePolicy → data queries are enabled
+           If no policy → only metadata is visible (no query access)
+```
+
+The manifest sync protocol is extended so peer manifests advertise which exposures have data query support:
+
+```rust
+// Extension to PeerManifestEntry (existing)
+pub struct PeerManifestEntry {
+    // ... existing fields ...
+    pub data_queryable: bool,           // NEW: true if exposure has a policy
+    pub available_tables: Vec<String>,  // NEW: summary for peer browsing UI
+    pub available_kbs: Vec<String>,     // NEW: KB names for vector search
+}
+```
+
+#### 3.9.8 Tauri Commands (Data Exposure)
+
+```rust
+// src-tauri/src/commands/network/data_exposure.rs
+
+// Policy CRUD
+#[tauri::command] create_data_exposure_policy(input: CreatePolicyInput) -> DataExposurePolicy
+#[tauri::command] get_data_exposure_policy(policy_id: String) -> DataExposurePolicy
+#[tauri::command] get_policy_for_exposure(exposure_id: String) -> Option<DataExposurePolicy>
+#[tauri::command] update_data_exposure_policy(policy_id: String, input: UpdatePolicyInput) -> DataExposurePolicy
+#[tauri::command] delete_data_exposure_policy(policy_id: String)
+
+// Sensitivity detection
+#[tauri::command] detect_column_sensitivity(credential_id: String) -> Vec<SensitivityHint>
+
+// Audit
+#[tauri::command] list_data_query_audit(policy_id: String, limit: u32, offset: u32) -> Vec<DataQueryAuditEntry>
+#[tauri::command] get_data_query_stats(policy_id: String) -> DataQueryStats
+
+// Remote query (peer side — issues query to a connected peer)
+#[tauri::command] query_remote_data(peer_id: String, exposure_id: String, query: DataQuery) -> DataQueryResponse
+```
+
+#### 3.9.9 Frontend: Data Exposure UI
+
+```
+src/features/sharing/components/data_exposure/
+├── DataExposurePolicyEditor.tsx      # Main policy creation/editing form
+│   ├── ScopeSection.tsx              # Tables allowed/denied picker
+│   ├── ColumnRulesSection.tsx        # Per-column action grid
+│   ├── RowFiltersSection.tsx         # WHERE clause builder
+│   └── TransferLimitsSection.tsx     # Rate limits, max rows, max bytes
+├── SensitivityReview.tsx             # Auto-detection results with Apply/Reject
+├── DataQueryAuditPanel.tsx           # Audit log viewer for policy owner
+├── RemoteDataBrowser.tsx             # Peer-side: browse exposed tables/KBs
+├── RemoteDataTable.tsx               # Peer-side: query results table with pagination
+├── RemoteVectorSearch.tsx            # Peer-side: semantic search against exposed KB
+└── DataExposureBadge.tsx             # Badge on ExposureManager showing data policy status
+```
+
+**UX Flow — Data Owner (exposing data):**
+
+```
+1. User creates an ExposedResource with resource_type: "connector"
+2. If connector is a database type, the UI shows "Configure Data Access" button
+3. Opens DataExposurePolicyEditor:
+   a. SCOPE: Select which tables to expose (fetched via existing introspection)
+   b. SENSITIVITY: Auto-detect button runs sensitivity scan, shows SensitivityReview
+      - User sees "⚠ users.email → PII (email pattern)" with suggested action
+      - Apply Suggestions → column rules auto-populated
+   c. COLUMN RULES: Fine-tune per-column actions (allow/deny/redact/hash/truncate/generalize)
+   d. ROW FILTERS: Add WHERE clauses (e.g. "is_active = 1")
+   e. LIMITS: Set max rows, rate limit, response size
+4. Save → policy created, exposure now shows "Data Queryable" badge
+5. Manifest re-syncs automatically → peers see available tables in their UI
+```
+
+**UX Flow — Peer (querying remote data):**
+
+```
+1. Peer opens PeerDetailDrawer → sees exposed resource with "Data" badge
+2. Clicks "Browse Data" → opens RemoteDataBrowser
+3. Sees available tables (from manifest summary)
+4. Selects a table → sends DataQueryRequest → gets DataQueryResponse
+5. Results shown in RemoteDataTable (redacted columns visually marked)
+6. For vector KBs: RemoteVectorSearch with query input
+```
+
+#### 3.9.10 Proxy Execution Model (Agent-Initiated Data Queries)
+
+Agents can also query exposed data programmatically during execution. When a persona needs data from a peer's exposed connector:
+
+```
+Agent A (on Peer X) is processing a task that requires CRM data.
+Agent A's connector_strategy checks:
+  1. Local credentials? → No CRM connector locally
+  2. Connected peers' manifests? → Peer Y exposes "crm-read" with data policy
+  3. Construct DataQueryRequest targeting Peer Y's exposure
+  4. Peer Y's DataExposureEngine runs the query, applies policy
+  5. Agent A receives filtered data and continues execution
+```
+
+This reuses the `connector_strategy.rs` extension from the original Phase 2 plan, now backed by real data policies.
+
+---
+
+### 3.10 Phase 3 Deliverables Checklist
 
 | Deliverable | Module | Key Dependency |
 |-------------|--------|---------------|
+| **Internet P2P** | | |
 | libp2p swarm | `engine/p2p/swarm.rs` | `libp2p` |
 | NAT traversal (AutoNAT + DCUtR) | `engine/p2p/nat.rs` | `libp2p`, `igd-next` |
 | DHT discovery | `engine/p2p/discovery.rs` | `libp2p` (kad) |
@@ -1505,15 +2022,29 @@ pub struct CapabilityToken {
 | Community relay settings | `engine/p2p/relay.rs` | — |
 | Capability routing via DHT | `engine/p2p/discovery.rs` | `libp2p` (kad) |
 | Noise protocol auth | built into libp2p | `libp2p` (noise) |
-| Capability tokens | `engine/p2p/auth.rs` | `ed25519-dalek` |
+| Capability tokens (with DataScopeGrant) | `engine/p2p/auth.rs` | `ed25519-dalek` |
 | Offline message queue | `db/repos/resources/message_queue.rs` | — |
 | Rate limiter + reputation | `engine/p2p/rate_limiter.rs` | — |
 | Manifest caching | `db/repos/resources/cached_manifests.rs` | — |
 | Network settings UI (expanded) | `features/network/NetworkSettings.tsx` | — |
 | Relay dashboard UI | `features/network/RelayDashboard.tsx` | — |
+| **Data Exposure** | | |
+| DataExposurePolicy model + DB schema | `db/models/data_exposure.rs`, `db/migrations.rs` | — |
+| Data exposure repo (CRUD) | `db/repos/resources/data_exposure.rs` | — |
+| Data query protocol (P2P codec) | `engine/p2p/protocols/data_query.rs` | `rmp-serde` / `libp2p` |
+| DataExposureEngine (query pipeline) | `engine/data_exposure.rs` | `db_query.rs`, `kb_ingest.rs` |
+| Column filter engine | in `data_exposure.rs` | — |
+| Sensitivity auto-detection | `engine/sensitivity.rs` | regex patterns |
+| Data exposure Tauri commands (10+) | `commands/network/data_exposure.rs` | — |
+| Data query audit log + stats | `db/repos/resources/data_audit.rs` | — |
+| Policy editor UI | `features/sharing/components/data_exposure/` (7 components) | — |
+| Remote data browser UI | `features/sharing/components/data_exposure/RemoteDataBrowser.tsx` | — |
+| Remote vector search UI | `features/sharing/components/data_exposure/RemoteVectorSearch.tsx` | — |
+| Proxy execution (agent-initiated queries) | extends `engine/connector_strategy.rs` | — |
 
-### 3.10 Phase 3 Success Criteria
+### 3.11 Phase 3 Success Criteria
 
+**Internet P2P:**
 - [ ] Two instances on different networks (behind NAT) connect successfully (>90% success rate)
 - [ ] DHT-based peer discovery works across the internet
 - [ ] Hole-punching works for cone NAT peers
@@ -1525,8 +2056,21 @@ pub struct CapabilityToken {
 - [ ] Rate limiting prevents abuse
 - [ ] Capability tokens enforce access control
 - [ ] Bootstrap node binary is deployable as standalone
-- [ ] All Phase 1 and Phase 2 features continue to work
 - [ ] Network status UI shows NAT type, relay status, connected peers
+
+**Data Exposure:**
+- [ ] Admin can create a data exposure policy for any connector type (external + built-in)
+- [ ] Sensitivity auto-detection correctly flags PII/financial/auth columns
+- [ ] Column rules work: allow, deny, redact, hash, truncate, generalize
+- [ ] Row filters restrict what rows are returned
+- [ ] Transfer limits (max rows, rate limiting) are enforced
+- [ ] Peer can browse exposed tables via RemoteDataBrowser
+- [ ] Peer can run semantic search against exposed vector KB
+- [ ] Schema introspect shows only policy-allowed tables/columns
+- [ ] Redacted columns are visually marked in the remote data table
+- [ ] Audit log captures all data queries with requester, duration, rows returned
+- [ ] Agent-initiated data queries work via connector_strategy proxy execution
+- [ ] All Phase 1 and Phase 2 features continue to work
 
 ---
 

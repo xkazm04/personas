@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-  X, Plug, Unplug, RefreshCw, ShieldCheck, ShieldQuestion,
+  X, RefreshCw,
   Loader2, Package, Clock,
 } from 'lucide-react';
+import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnectedIcon } from './NetworkIcons';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { DiscoveredPeer, ConnectionState, PeerManifestEntry } from '@/api/network/discovery';
@@ -80,9 +81,9 @@ export function PeerDetailDrawer({
                 {peer.display_name}
               </h2>
               {isTrusted ? (
-                <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <TrustVerifiedIcon className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               ) : (
-                <ShieldQuestion className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <TrustUnknownIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
               )}
             </div>
             <div className="text-xs font-mono text-muted-foreground mt-0.5">
@@ -114,7 +115,7 @@ export function PeerDetailDrawer({
                 onClick={() => onDisconnect(peer.peer_id)}
                 className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
               >
-                <Unplug className="w-3.5 h-3.5" />
+                <NodeDisconnectedIcon className="w-3.5 h-3.5" />
                 Disconnect
               </button>
             ) : (
@@ -122,7 +123,7 @@ export function PeerDetailDrawer({
                 onClick={() => onConnect(peer.peer_id)}
                 className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors flex items-center gap-1.5"
               >
-                <Plug className="w-3.5 h-3.5" />
+                <NodeConnectedIcon className="w-3.5 h-3.5" />
                 Connect
               </button>
             )}

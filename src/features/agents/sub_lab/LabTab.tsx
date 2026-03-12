@@ -6,7 +6,7 @@ import { Button } from '@/features/shared/components/buttons';
 import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 import type { LabMode } from '@/stores/slices/agents/labSlice';
 
-// Each mode panel is lazy-loaded — only the active one resolves.
+// Each mode panel is lazy-loaded -- only the active one resolves.
 const ArenaPanel = lazy(() => import('./panels/arena/ArenaPanel').then(m => ({ default: m.ArenaPanel })));
 const AbPanel = lazy(() => import('./panels/ab/AbPanel').then(m => ({ default: m.AbPanel })));
 const EvalPanel = lazy(() => import('./panels/eval/EvalPanel').then(m => ({ default: m.EvalPanel })));
@@ -80,7 +80,7 @@ export function LabTab() {
         })}
       </div>
 
-      {/* Mode content — lazy loaded with skeleton fallback */}
+      {/* Mode content -- lazy loaded with skeleton fallback */}
       <Suspense fallback={<PanelSkeleton variant="tab" />}>
         {labMode === 'arena' && <ArenaPanel />}
         {labMode === 'ab' && <AbPanel />}

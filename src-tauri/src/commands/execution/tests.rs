@@ -139,7 +139,7 @@ pub fn cancel_test_run(
     id: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    // Set cancellation flag â€” the test runner checks this between iterations
+    // Set cancellation flag -- the test runner checks this between iterations
     if let Ok(flags) = state.active_test_run_cancelled.lock() {
         if let Some(flag) = flags.get(&id) {
             flag.store(true, std::sync::atomic::Ordering::Release);
@@ -153,7 +153,7 @@ pub fn cancel_test_run(
     Ok(())
 }
 
-// â”€â”€ Draft Validation & Streaming Test â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Draft Validation & Streaming Test --------------------------
 
 #[derive(Serialize)]
 pub struct ToolIssue {
@@ -213,7 +213,7 @@ pub async fn validate_n8n_draft(
                 });
             }
         } else {
-            // Relative path â€” no mechanism creates these
+            // Relative path -- no mechanism creates these
             tool_issues.push(ToolIssue {
                 tool_name: tool.name.clone(),
                 issue: format!("Script '{script}' does not exist."),
@@ -367,14 +367,28 @@ pub async fn test_n8n_draft(
     // Write prompt to stdin
     write_prompt_to_stdin(&mut child, &prompt_text).await;
 
-    // Track whether the draft has tools â€” confused agents without tool use should fail
+    // Track whether the draft has tools -- confused agents without tool use should fail
     let has_tools = !tools.is_empty();
 
     // Background task: read stdout, emit events, determine result
     let test_id_bg = test_id.clone();
     let app_bg = app.clone();
     tokio::spawn(async move {
-        let stdout = child.stdout.take().expect("stdout was piped");
+        let stdout = match child.stdout.take() {
+            Some(s) => s,
+            None => {
+                let _ = app_bg.emit(
+                    "n8n-test-status",
+                    N8nTestStatusEvent {
+                        test_id: test_id_bg,
+                        status: "failed".to_string(),
+                        error: Some("Failed to capture stdout from CLI process".to_string()),
+                        passed: Some(false),
+                    },
+                );
+                return;
+            }
+        };
         let mut reader = BufReader::new(stdout).lines();
 
         let mut saw_init = false;
@@ -438,7 +452,7 @@ pub async fn test_n8n_draft(
         // Clean up temp dir
         let _ = std::fs::remove_dir_all(&exec_dir);
 
-        // Emit final status â€” enhanced validation with confusion detection
+        // Emit final status -- enhanced validation with confusion detection
         let (status, passed, error) = if read_result.is_err() {
             let _ = child.kill().await;
             ("failed".to_string(), Some(false), Some("Test timed out after 60 seconds".to_string()))
@@ -457,7 +471,7 @@ pub async fn test_n8n_draft(
             };
             ("failed".to_string(), Some(false), Some(err))
         } else {
-            // saw_init && saw_text â€” apply confusion detection via eval framework
+            // saw_init && saw_text -- apply confusion detection via eval framework
             let actual_tools_empty: Vec<String> = Vec::new();
             let actual_tools: &[String] = if saw_tool_use { &["_tool_used".to_string()] } else { &actual_tools_empty };
             let eval_input = eval::EvalInput {

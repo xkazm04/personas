@@ -8,7 +8,7 @@ import { TestComparisonTable } from './TestComparisonTable';
 import { statusBadge } from './testUtils';
 import type { PersonaTestRun } from '@/lib/bindings/PersonaTestRun';
 
-// ── Helpers ───────────────────────────────────────────────────────────
+// -- Helpers -----------------------------------------------------------
 
 function parseSummary(run: PersonaTestRun) {
   if (!run.summary) return null;
@@ -18,12 +18,12 @@ function parseSummary(run: PersonaTestRun) {
       best_value_model?: string;
       rankings?: Array<{ model_id: string; composite_score: number; total_cost_usd: number }>;
     };
-  } catch { // intentional: non-critical — JSON parse fallback
+  } catch { // intentional: non-critical -- JSON parse fallback
     return null;
   }
 }
 
-// ── Props ─────────────────────────────────────────────────────────────
+// -- Props -------------------------------------------------------------
 
 interface TestHistoryProps {
   expandedRunId: string | null;
@@ -45,8 +45,8 @@ export function TestHistory({ expandedRunId, onToggleExpand, onDelete }: TestHis
       </h4>
 
       {testRuns.length === 0 ? (
-        <div className="text-center py-12 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl">
-          <div className="w-14 h-14 rounded-xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-4">
+        <div className="text-center py-12 bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl">
+          <div className="w-14 h-14 rounded-xl bg-primary/8 border border-primary/20 flex items-center justify-center mx-auto mb-4">
             <FlaskConical className="w-7 h-7 text-primary/40" />
           </div>
           <p className="text-sm text-muted-foreground/80">No test runs yet</p>
@@ -58,7 +58,7 @@ export function TestHistory({ expandedRunId, onToggleExpand, onDelete }: TestHis
             const isExpanded = expandedRunId === run.id;
             const summary = parseSummary(run);
             const modelsList: string[] = (() => {
-              try { return JSON.parse(run.models_tested); } catch { /* intentional: non-critical — JSON parse fallback */ return []; }
+              try { return JSON.parse(run.models_tested); } catch { /* intentional: non-critical -- JSON parse fallback */ return []; }
             })();
 
             return (

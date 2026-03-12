@@ -1,14 +1,14 @@
 /**
- * MatrixCommandCenter — 9th cell centerpiece for PersonaMatrix.
+ * MatrixCommandCenter -- 9th cell centerpiece for PersonaMatrix.
  *
  * Two variants:
- *   'adoption' (default) — template adoption flow with build/questions
- *   'creation' — agent creation flow with intent/generate/completeness/refine
+ *   'adoption' (default) -- template adoption flow with build/questions
+ *   'creation' -- agent creation flow with intent/generate/completeness/refine
  *
  * Edit mode phases (adoption):
  *   1. Pre-build: prompt input + capability toggles + radial launch orb
  *   2. Building: clean status indicator
- *   3. Awaiting questions: Q&A button → modal
+ *   3. Awaiting questions: Q&A button -> modal
  *   4. Build completed: success indicator
  *
  * Edit mode phases (creation):
@@ -63,7 +63,7 @@ function CapabilityToggle({ icon: Icon, label, active, onToggle }: { icon: React
   );
 }
 
-/** Radial launch orb — the visual centerpiece of the matrix. */
+/** Radial launch orb -- the visual centerpiece of the matrix. */
 function LaunchOrb({ onClick, disabled, isRunning, label, icon }: { onClick?: () => void; disabled: boolean; isRunning: boolean; label: string; icon?: React.ReactNode }) {
   const blocked = disabled && !isRunning;
   return (
@@ -290,19 +290,19 @@ export function MatrixCommandCenter({
   const isCreation = variant === 'creation';
 
   if (isEditMode) {
-    // ─── Shared: Building/Generating ────────────────────────────────
+    // --- Shared: Building/Generating --------------------------------
     if (isRunning) {
       return (
         <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
           <BuildStatusIndicator
             phaseLabel={isCreation ? 'Designing agent...' : phaseLabel}
-            hint={isCreation ? undefined : 'You can close this dialog — processing continues in the background.'}
+            hint={isCreation ? undefined : 'You can close this dialog -- processing continues in the background.'}
           />
         </div>
       );
     }
 
-    // ─── Adoption: Awaiting questions ───────────────────────────────
+    // --- Adoption: Awaiting questions -------------------------------
     if (!isCreation && awaitingQuestions) {
       return (
         <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
@@ -315,7 +315,7 @@ export function MatrixCommandCenter({
       );
     }
 
-    // ─── Adoption: Build completed ──────────────────────────────────
+    // --- Adoption: Build completed ----------------------------------
     if (!isCreation && buildCompleted) {
       return (
         <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
@@ -324,7 +324,7 @@ export function MatrixCommandCenter({
       );
     }
 
-    // ─── Creation: Post-generation ──────────────────────────────────
+    // --- Creation: Post-generation ----------------------------------
     if (isCreation && hasDesignResult) {
       return (
         <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
@@ -333,7 +333,7 @@ export function MatrixCommandCenter({
       );
     }
 
-    // ─── Pre-build / Pre-generation ─────────────────────────────────
+    // --- Pre-build / Pre-generation ---------------------------------
     return (
       <div className="flex flex-col gap-3 w-full h-full items-center">
         <textarea
@@ -366,7 +366,7 @@ export function MatrixCommandCenter({
     );
   }
 
-  // ─── View mode — section chips ────────────────────────────────────
+  // --- View mode -- section chips ------------------------------------
   return (
     <div className="flex flex-col gap-3 w-full h-full">
       <div className="flex flex-wrap gap-1.5">

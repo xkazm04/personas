@@ -24,7 +24,7 @@ interface SchemaManagerModalProps {
 
 export function SchemaManagerModal({ credential, connector, onClose }: SchemaManagerModalProps) {
   const [activeTab, setActiveTab] = useState<SchemaTab>('tables');
-  // Track which tabs have been visited — mount lazily, keep mounted
+  // Track which tabs have been visited -- mount lazily, keep mounted
   const [visited, setVisited] = useState<Set<SchemaTab>>(() => new Set(['tables']));
   const fetchDbSchemaTables = usePersonaStore((s) => s.fetchDbSchemaTables);
   const fetchDbSavedQueries = usePersonaStore((s) => s.fetchDbSavedQueries);
@@ -87,7 +87,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
                 {credential.name}
               </h2>
               <p className="text-sm text-muted-foreground/60">
-                Schema Manager — {connector?.label || credential.service_type}
+                Schema Manager -- {connector?.label || credential.service_type}
               </p>
             </div>
             <button
@@ -127,7 +127,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
             })}
           </div>
 
-          {/* Content — lazy mount on first visit, keep mounted to preserve state */}
+          {/* Content -- lazy mount on first visit, keep mounted to preserve state */}
           <div className="flex-1 min-h-0 relative">
             {visited.has('tables') && (
               <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'tables' ? '' : 'hidden'}`}>

@@ -9,7 +9,7 @@ import type { DryRunResult } from '../components/creation/steps/builder/types';
 // Re-export builder types used by health check consumers
 export type { DryRunResult, DryRunIssue, DryRunProposal } from '../components/creation/steps/builder/types';
 
-// ── Per-persona health check ─────────────────────────────────────────
+// -- Per-persona health check -----------------------------------------
 
 export interface PersonaHealthCheck {
   personaId: string;
@@ -20,7 +20,7 @@ export interface PersonaHealthCheck {
   checkedAt: string; // ISO timestamp
 }
 
-// ── Scoring ──────────────────────────────────────────────────────────
+// -- Scoring ----------------------------------------------------------
 
 export type HealthGrade = 'healthy' | 'degraded' | 'unhealthy';
 
@@ -30,7 +30,7 @@ export interface HealthScore {
   grade: HealthGrade;
 }
 
-// ── Agent Health Digest (aggregated across all personas) ─────────────
+// -- Agent Health Digest (aggregated across all personas) -------------
 
 export interface AgentHealthDigest {
   generatedAt: string;
@@ -42,7 +42,7 @@ export interface AgentHealthDigest {
   infoCount: number;
 }
 
-// ── Health Check actions for applying fixes to existing personas ──────
+// -- Health Check actions for applying fixes to existing personas ------
 
 export interface HealthFixAction {
   /** Type of fix to apply */

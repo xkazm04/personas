@@ -86,11 +86,11 @@ pub async fn execute_persona(
     require_privileged(&state, "execute_persona").await?;
     use crate::engine::pipeline::{PipelineContext, PipelineStage};
 
-    // ── Stage: Initiate ──────────────────────────────────────────────
+    // -- Stage: Initiate ----------------------------------------------
     let mut pipeline = PipelineContext::new("pending", &persona_id);
     pipeline.enter_stage(PipelineStage::Initiate);
 
-    // ── Stage: Validate ──────────────────────────────────────────────
+    // -- Stage: Validate ----------------------------------------------
     pipeline.enter_stage(PipelineStage::Validate);
 
     // 1. Get persona
@@ -118,7 +118,7 @@ pub async fn execute_persona(
         crate::engine::prompt::parse_model_profile(persona.model_profile.as_deref())
             .and_then(|mp| mp.model);
 
-    // ── Stage: CreateRecord ──────────────────────────────────────────
+    // -- Stage: CreateRecord ------------------------------------------
     pipeline.enter_stage(PipelineStage::CreateRecord);
 
     // 4. Create execution record in DB (starts as "queued")
@@ -134,7 +134,7 @@ pub async fn execute_persona(
     // Update pipeline context with real execution ID
     pipeline.execution_id = execution.id.clone();
 
-    // ── Stage: SpawnEngine ───────────────────────────────────────────
+    // -- Stage: SpawnEngine -------------------------------------------
     pipeline.enter_stage(PipelineStage::SpawnEngine);
 
     // 5. Get tools + inject virtual tools from active automations
@@ -197,7 +197,7 @@ pub async fn cancel_execution(
     verify_execution_owner(&execution, &caller_persona_id)?;
     let persona_id = Some(execution.persona_id);
 
-    // Cancel via engine — handles flag, DB write, process kill, tracker cleanup, and abort
+    // Cancel via engine -- handles flag, DB write, process kill, tracker cleanup, and abort
     let cancelled = state
         .engine
         .cancel_execution(&id, &state.db, persona_id.as_deref())
@@ -235,7 +235,7 @@ pub fn get_execution_log(
         }
         match std::fs::read_to_string(&requested) {
             Ok(content) => Ok(Some(content)),
-            Err(_) => Ok(execution.log_file_path),
+            Err(_) => Ok(None),
         }
     } else {
         Ok(None)

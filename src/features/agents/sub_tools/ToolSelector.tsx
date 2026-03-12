@@ -81,7 +81,7 @@ export function ToolSelector() {
             </span>
             <button
               onClick={handleUndo}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-colors"
             >
               <Undo2 className="w-3 h-3" />
               Undo

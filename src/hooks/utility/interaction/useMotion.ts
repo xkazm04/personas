@@ -4,9 +4,9 @@ import { useReducedMotion, type Transition } from 'framer-motion';
 export interface MotionConfig {
   /** Whether animations should play. `false` when user prefers reduced motion. */
   shouldAnimate: boolean;
-  /** Transition duration — near-zero when reduced motion is preferred. */
+  /** Transition duration -- near-zero when reduced motion is preferred. */
   duration: number;
-  /** Spring config — instant tween when reduced motion is preferred. */
+  /** Spring config -- instant tween when reduced motion is preferred. */
   spring: { type: 'spring'; stiffness: number; damping: number } | { type: 'tween'; duration: number };
   /** Standard transition object usable in Framer Motion `transition` props. */
   transition: Transition;

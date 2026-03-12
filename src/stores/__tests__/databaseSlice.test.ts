@@ -3,7 +3,7 @@ import { usePersonaStore } from "../personaStore";
 import { mockInvokeMap, resetInvokeMocks, mockInvokeError } from "@/test/tauriMock";
 import type { DbSchemaTable, DbSavedQuery, QueryResult } from "@/api/vault/database/dbSchema";
 
-// ── Fixtures ──
+// -- Fixtures --
 
 function makeTable(overrides: Partial<DbSchemaTable> = {}): DbSchemaTable {
   return {
@@ -46,7 +46,7 @@ const emptyQueryResult: QueryResult = {
   truncated: false,
 };
 
-// ── Tests ──
+// -- Tests --
 
 describe("databaseSlice", () => {
   beforeEach(() => {

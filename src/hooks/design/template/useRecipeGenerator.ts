@@ -1,49 +1,31 @@
-import { useCallback } from 'react';
-import { useAiArtifactFlow, defaultGetLine, buildResolveStatus } from './useAiArtifactFlow';
+import { useAiArtifactTask } from '../core/useAiArtifactTask';
 import { startRecipeGeneration, cancelRecipeGeneration } from '@/api/templates/recipes';
 import type { RecipeDraft } from '@/lib/bindings/RecipeDraft';
 
-// ── Types ───────────────────────────────────────────────────────
+// -- Types -------------------------------------------------------
 
 export type RecipeGeneratorPhase = 'idle' | 'generating' | 'reviewing' | 'error';
 
-interface RecipeGenerationInput {
-  credentialId: string;
-  description: string;
-}
-
-// ── Hook ────────────────────────────────────────────────────────
+// -- Hook --------------------------------------------------------
 
 export function useRecipeGenerator() {
-  const flow = useAiArtifactFlow<RecipeGenerationInput, RecipeDraft>({
-    stream: {
-      progressEvent: 'recipe-generation-progress',
-      statusEvent: 'recipe-generation-status',
-      getLine: defaultGetLine,
-      resolveStatus: buildResolveStatus('Failed to generate recipe'),
-      completedPhase: 'reviewing',
-      runningPhase: 'generating',
-      startErrorMessage: 'Failed to start recipe generation',
-    },
-    startFn: ({ credentialId, description }) =>
-      startRecipeGeneration(credentialId, description),
+  const task = useAiArtifactTask<[string, string], RecipeDraft>({
+    progressEvent: 'recipe-generation-progress',
+    statusEvent: 'recipe-generation-status',
+    runningPhase: 'generating',
+    completedPhase: 'reviewing',
+    startFn: startRecipeGeneration,
+    cancelFn: cancelRecipeGeneration,
+    errorMessage: 'Failed to generate recipe',
   });
 
-  const start = useCallback(async (credentialId: string, description: string) => {
-    await flow.start({ credentialId, description });
-  }, [flow.start]);
-
-  const cancel = useCallback(() => {
-    flow.cancel(async () => { await cancelRecipeGeneration(); });
-  }, [flow.cancel]);
-
   return {
-    phase: flow.phase as RecipeGeneratorPhase,
-    lines: flow.lines,
-    draft: flow.result,
-    error: flow.error,
-    start,
-    cancel,
-    reset: flow.reset,
+    phase: task.phase as RecipeGeneratorPhase,
+    lines: task.lines,
+    draft: task.result,
+    error: task.error,
+    start: task.start,
+    cancel: task.cancel,
+    reset: task.reset,
   };
 }

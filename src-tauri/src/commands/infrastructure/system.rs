@@ -106,9 +106,9 @@ pub async fn system_health_check(
         }
         .into(),
         detail: Some(if ollama_key_configured {
-            "Configured — free Ollama Cloud models available for all agents".into()
+            "Configured -- free Ollama Cloud models available for all agents".into()
         } else {
-            "Not configured (optional) — add a free API key to unlock Ollama Cloud models like Qwen3 Coder, GLM-5, and Kimi K2.5"
+            "Not configured (optional) -- add a free API key to unlock Ollama Cloud models like Qwen3 Coder, GLM-5, and Kimi K2.5"
                 .into()
         }),
         installable: false,
@@ -135,13 +135,13 @@ pub async fn system_health_check(
         .into(),
         detail: Some(
             if litellm_configured {
-                "Configured — LiteLLM proxy available for all agents".into()
+                "Configured -- LiteLLM proxy available for all agents".into()
             } else if litellm_url_configured {
-                "Base URL set but master key missing — add master key to complete setup".into()
+                "Base URL set but master key missing -- add master key to complete setup".into()
             } else if litellm_key_configured {
-                "Master key set but base URL missing — add proxy URL to complete setup".into()
+                "Master key set but base URL missing -- add proxy URL to complete setup".into()
             } else {
-                "Not configured (optional) — add a LiteLLM proxy URL and master key to route agents through your proxy".into()
+                "Not configured (optional) -- add a LiteLLM proxy URL and master key to route agents through your proxy".into()
             },
         ),
         installable: false,
@@ -162,9 +162,9 @@ pub async fn system_health_check(
         label: "Cloud Orchestrator".into(),
         status: if cloud_connected { "ok" } else { "info" }.into(),
         detail: Some(if cloud_connected {
-            "Connected — agents can run when this device is off".into()
+            "Connected -- agents can run when this device is off".into()
         } else {
-            "Not deployed — agents only run while this app is open".into()
+            "Not deployed -- agents only run while this app is open".into()
         }),
         installable: false,
     });
@@ -208,7 +208,7 @@ pub async fn system_health_check(
             id: "google_auth".into(),
             label: "Google Account".into(),
             status: "inactive".into(),
-            detail: Some("Not signed in — optional, enables sync and extended features".into()),
+            detail: Some("Not signed in -- optional, enables sync and extended features".into()),
             installable: false,
         });
     }
@@ -228,9 +228,9 @@ pub async fn system_health_check(
     Ok(SystemHealthReport { sections, all_ok })
 }
 
-// ── Per-section health checks (cascade loading) ────────────────────────────
+// -- Per-section health checks (cascade loading) ----------------------------
 
-// ── Shared local-section builder (used by both full and cascade endpoints) ──
+// -- Shared local-section builder (used by both full and cascade endpoints) --
 
 struct EngineProbe {
     id: &'static str,
@@ -349,7 +349,7 @@ fn build_local_section(active_engine: &str, sched_running: bool) -> HealthCheckS
             label: "Node.js".into(),
             status: "warn".into(),
             detail: Some(
-                "Not found — required for Claude CLI. Click Install to set up automatically."
+                "Not found -- required for Claude CLI. Click Install to set up automatically."
                     .into(),
             ),
             installable: true,
@@ -361,7 +361,7 @@ fn build_local_section(active_engine: &str, sched_running: bool) -> HealthCheckS
         label: "Event Bus".into(),
         status: if sched_running { "ok" } else { "warn" }.into(),
         detail: Some(if sched_running {
-            "Running — processing events and triggers".into()
+            "Running -- processing events and triggers".into()
         } else {
             "Not started yet".into()
         }),
@@ -403,9 +403,9 @@ pub async fn health_check_agents(
         label: "Ollama Cloud API Key".into(),
         status: if ollama_key_configured { "ok" } else { "inactive" }.into(),
         detail: Some(if ollama_key_configured {
-            "Configured — free Ollama Cloud models available for all agents".into()
+            "Configured -- free Ollama Cloud models available for all agents".into()
         } else {
-            "Not configured (optional) — add a free API key to unlock Ollama Cloud models like Qwen3 Coder, GLM-5, and Kimi K2.5".into()
+            "Not configured (optional) -- add a free API key to unlock Ollama Cloud models like Qwen3 Coder, GLM-5, and Kimi K2.5".into()
         }),
         installable: false,
     });
@@ -426,13 +426,13 @@ pub async fn health_check_agents(
         status: if litellm_configured { "ok" } else { "inactive" }.into(),
         detail: Some(
             if litellm_configured {
-                "Configured — LiteLLM proxy available for all agents".into()
+                "Configured -- LiteLLM proxy available for all agents".into()
             } else if litellm_url_configured {
-                "Base URL set but master key missing — add master key to complete setup".into()
+                "Base URL set but master key missing -- add master key to complete setup".into()
             } else if litellm_key_configured {
-                "Master key set but base URL missing — add proxy URL to complete setup".into()
+                "Master key set but base URL missing -- add proxy URL to complete setup".into()
             } else {
-                "Not configured (optional) — add a LiteLLM proxy URL and master key to route agents through your proxy".into()
+                "Not configured (optional) -- add a LiteLLM proxy URL and master key to route agents through your proxy".into()
             },
         ),
         installable: false,
@@ -457,9 +457,9 @@ pub async fn health_check_cloud(
         label: "Cloud Orchestrator".into(),
         status: if cloud_connected { "ok" } else { "info" }.into(),
         detail: Some(if cloud_connected {
-            "Connected — agents can run when this device is off".into()
+            "Connected -- agents can run when this device is off".into()
         } else {
-            "Not deployed — agents only run while this app is open".into()
+            "Not deployed -- agents only run while this app is open".into()
         }),
         installable: false,
     });
@@ -507,7 +507,7 @@ pub async fn health_check_account(
             id: "google_auth".into(),
             label: "Google Account".into(),
             status: "inactive".into(),
-            detail: Some("Not signed in — optional, enables sync and extended features".into()),
+            detail: Some("Not signed in -- optional, enables sync and extended features".into()),
             installable: false,
         });
     }
@@ -536,7 +536,7 @@ pub async fn open_external_url(url: String) -> Result<(), AppError> {
     Ok(())
 }
 
-// ── Crash log commands ──────────────────────────────────────────
+// -- Crash log commands ------------------------------------------
 
 #[tauri::command]
 pub fn get_crash_logs(app: tauri::AppHandle) -> Result<Vec<crate::logging::CrashLogEntry>, AppError> {

@@ -9,7 +9,18 @@ import type { DryRunIssue, DryRunResult } from "@/features/agents/health/types";
 import type { Persona } from "@/lib/bindings/Persona";
 import type { DesignContextData } from "@/lib/types/frontendTypes";
 
-// ── Slice interface ──────────────────────────────────────────────────
+// -- Staleness threshold ----------------------------------------------
+
+/** Data older than 15 minutes is considered stale */
+export const DIGEST_STALENESS_MS = 15 * 60 * 1000;
+
+/** Check whether a ISO timestamp is older than the staleness threshold */
+export function isTimestampStale(iso: string | null, thresholdMs = DIGEST_STALENESS_MS): boolean {
+  if (!iso) return true;
+  return Date.now() - new Date(iso).getTime() > thresholdMs;
+}
+
+// -- Slice interface --------------------------------------------------
 
 export interface HealthCheckSlice {
   // State
@@ -22,7 +33,7 @@ export interface HealthCheckSlice {
   clearHealthDigest: () => void;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------------
 
 let issueSeq = 1;
 
@@ -106,7 +117,7 @@ function aggregateDigest(checks: PersonaHealthCheck[]): AgentHealthDigest {
   };
 }
 
-// ── Slice creator ────────────────────────────────────────────────────
+// -- Slice creator ----------------------------------------------------
 
 export const createHealthCheckSlice: StateCreator<PersonaStore, [], [], HealthCheckSlice> = (set, get) => ({
   healthDigest: null,

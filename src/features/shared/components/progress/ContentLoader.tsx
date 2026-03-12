@@ -1,13 +1,13 @@
 /**
- * ContentLoader — universal loading state for pages and panels.
+ * ContentLoader -- universal loading state for pages and panels.
  *
  * Uses one of three AI-themed illustrations with a CSS opacity pulse.
  * Centers within the nearest flex parent (content area), not the viewport,
  * so the sidebar never collides with the loader.
  *
  * Variants:
- *  - "page"  (default) — full content-area loader (Suspense fallbacks, page loads)
- *  - "panel" — smaller loader for sections/tabs within a page
+ *  - "page"  (default) -- full content-area loader (Suspense fallbacks, page loads)
+ *  - "panel" -- smaller loader for sections/tabs within a page
  */
 
 const ILLUSTRATIONS = [

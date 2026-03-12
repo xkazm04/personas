@@ -54,6 +54,26 @@ pub fn get_memory_stats(
 }
 
 #[tauri::command]
+pub fn list_memories_with_stats(
+    state: State<'_, Arc<AppState>>,
+    persona_id: Option<String>,
+    category: Option<String>,
+    search: Option<String>,
+    limit: Option<i64>,
+    offset: Option<i64>,
+) -> Result<repo::MemoriesWithStats, AppError> {
+    require_auth_sync(&state)?;
+    repo::get_all_with_stats(
+        &state.db,
+        persona_id.as_deref(),
+        category.as_deref(),
+        search.as_deref(),
+        limit,
+        offset,
+    )
+}
+
+#[tauri::command]
 pub fn list_memories_by_execution(
     state: State<'_, Arc<AppState>>,
     execution_id: String,
@@ -90,7 +110,7 @@ pub fn batch_delete_memories(
     repo::batch_delete(&state.db, &ids)
 }
 
-// ── LLM CLI Memory Review ──────────────────────────────────────────────────
+// -- LLM CLI Memory Review --------------------------------------------------
 
 #[derive(Debug, serde::Serialize)]
 pub struct MemoryReviewDetail {
@@ -325,6 +345,68 @@ Memories to review:
         updated: updated_count,
         details,
     })
+}
+
+// -- Dev seed: mock memory -------------------------------------------------------
+
+const MOCK_MEMORY_TITLES: &[&str] = &[
+    "Prefers JSON responses over XML",
+    "Retry failed API calls up to 3 times",
+    "Use UTC timezone for all timestamps",
+    "Customer prefers email over Slack",
+    "Rate limit: 100 req/min on external APIs",
+    "Always include correlation ID in logs",
+    "Summarize long documents to under 500 words",
+    "Skip weekend scheduling for notifications",
+];
+
+const MOCK_MEMORY_CONTENTS: &[&str] = &[
+    "When formatting output, always use JSON. The downstream consumers parse JSON and XML causes failures.",
+    "External API calls should retry with exponential backoff. Max 3 attempts with 1s, 2s, 4s delays.",
+    "All date/time values must be in UTC. Converting to local timezone happens on the frontend only.",
+    "Based on past interactions, this customer responds faster to email. Slack messages are often missed.",
+    "The third-party API enforces 100 requests per minute. Implement token-bucket rate limiting.",
+    "Every log entry must include the X-Correlation-ID header value for distributed tracing.",
+    "Long documents (>2000 words) should be summarized before processing to stay within token limits.",
+    "Business notifications should only be sent Mon-Fri 9am-6pm UTC. Queue weekend events for Monday.",
+];
+
+const MOCK_MEMORY_CATEGORIES: &[&str] = &[
+    "preference", "operational", "operational", "preference",
+    "constraint", "operational", "preference", "constraint",
+];
+
+const MOCK_MEMORY_TAGS: &[&str] = &[
+    "formatting,output", "reliability,api", "timezone,standard",
+    "communication,customer", "api,rate-limit", "logging,observability",
+    "summarization,nlp", "scheduling,notifications",
+];
+
+#[tauri::command]
+pub fn seed_mock_memory(
+    state: State<'_, Arc<AppState>>,
+) -> Result<PersonaMemory, AppError> {
+    require_auth_sync(&state)?;
+
+    let personas = crate::db::repos::core::personas::get_all(&state.db)?;
+    if personas.is_empty() {
+        return Err(AppError::Validation("No personas exist. Create an agent first.".into()));
+    }
+    let idx = (chrono::Utc::now().timestamp_millis() as usize) % personas.len();
+    let persona_id = personas[idx].id.clone();
+
+    let t = (chrono::Utc::now().timestamp_millis() as usize) / 7; // vary selection
+    let input = CreatePersonaMemoryInput {
+        persona_id,
+        title: MOCK_MEMORY_TITLES[t % MOCK_MEMORY_TITLES.len()].to_string(),
+        content: MOCK_MEMORY_CONTENTS[t % MOCK_MEMORY_CONTENTS.len()].to_string(),
+        category: Some(MOCK_MEMORY_CATEGORIES[t % MOCK_MEMORY_CATEGORIES.len()].to_string()),
+        source_execution_id: None,
+        importance: Some(((t % 5) + 1) as i32),
+        tags: Some(MOCK_MEMORY_TAGS[t % MOCK_MEMORY_TAGS.len()].to_string()),
+    };
+
+    repo::create(&state.db, input)
 }
 
 /// Extract the first top-level JSON array from mixed text output.

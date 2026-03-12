@@ -1,5 +1,5 @@
 /**
- * usePersonaCompiler — compiler-oriented wrapper around useDesignAnalysis.
+ * usePersonaCompiler -- compiler-oriented wrapper around useDesignAnalysis.
  *
  * Provides a clean API where:
  * - `compile()` starts an initial compilation from instruction
@@ -39,7 +39,7 @@ export function usePersonaCompiler() {
   );
 
   return {
-    // ── Compiler state ─────────────────────────────────────────
+    // -- Compiler state -----------------------------------------
     /** Current compilation stage (null when idle/applied). */
     currentStage,
     /** Index of the current stage in the pipeline (0-based, -1 when inactive). */
@@ -53,7 +53,7 @@ export function usePersonaCompiler() {
     /** All stages with metadata for progress display. */
     stages: COMPILATION_STAGES,
 
-    // ── Raw design state (pass-through) ────────────────────────
+    // -- Raw design state (pass-through) ------------------------
     phase: design.phase,
     outputLines: design.outputLines,
     result: design.result,
@@ -62,7 +62,7 @@ export function usePersonaCompiler() {
     failedOperations: design.failedOperations,
     question: design.question,
 
-    // ── Compiler actions ───────────────────────────────────────
+    // -- Compiler actions ---------------------------------------
     /** Start initial compilation from an instruction. */
     compile: design.startAnalysis,
     /** Compile a plain-language intent into a full persona configuration. */

@@ -1,4 +1,4 @@
-import { Zap, RefreshCw } from 'lucide-react';
+import { Zap, RefreshCw, Loader2 } from 'lucide-react';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 
@@ -15,7 +15,8 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
         const sevBadge = SEVERITY_COLORS[issue.severity] ?? SEVERITY_COLORS.medium!;
         const age = Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60));
         const ageLabel = age < 1 ? 'just now' : age < 24 ? `${age}h ago` : `${Math.floor(age / 24)}d ago`;
-        const isAutoFixed = issue.auto_fixed;
+        const isAutoFixed = issue.auto_fixed && issue.status === 'resolved';
+        const isAutoFixPending = issue.status === 'auto_fix_pending';
         const isCircuitBreaker = issue.is_circuit_breaker;
 
         return (
@@ -24,18 +25,26 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border bg-red-500/15 text-red-400 border-red-500/25">
                 <Zap className="w-3 h-3" /> breaker
               </span>
+            ) : isAutoFixPending ? (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border bg-amber-500/15 text-amber-400 border-amber-500/20">
+                <Loader2 className="w-3 h-3 animate-spin" /> retrying
+              </span>
             ) : isAutoFixed ? (
               <span className="inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border bg-emerald-500/15 text-emerald-400 border-emerald-500/20">
                 fixed
               </span>
             ) : (
-              <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg ${badgeClass(sevBadge)}`}>
+              <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg ${badgeClass(sevBadge)} ${
+                issue.severity === 'critical' ? 'animate-pulse' :
+                issue.severity === 'high' ? 'animate-pulse' :
+                issue.severity === 'medium' ? 'animate-[pulse_3s_ease-in-out_infinite]' : ''
+              }`}>
                 {issue.severity}
               </span>
             )}
-            {isAutoFixed && issue.execution_id && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title="Auto-healed via retry">
-                <RefreshCw className="w-2.5 h-2.5" /> retry
+            {(isAutoFixed || isAutoFixPending) && issue.execution_id && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={isAutoFixPending ? 'Retry in progress' : 'Auto-healed via retry'}>
+                <RefreshCw className={`w-2.5 h-2.5 ${isAutoFixPending ? 'animate-spin' : ''}`} /> retry
               </span>
             )}
             <button
@@ -48,7 +57,7 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
               {issue.category}
             </span>
             <span className="text-sm text-muted-foreground/80 w-16 text-right">{ageLabel}</span>
-            {!isAutoFixed && (
+            {!isAutoFixed && !isAutoFixPending && (
               <button
                 onClick={() => onResolve(issue.id)}
                 className="px-2 py-1 text-sm font-medium text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"

@@ -168,21 +168,21 @@ export default class CliE2eReporter implements Reporter {
       writeFileSync(outPath, JSON.stringify(report, null, 2), 'utf-8');
 
       // Print summary to console
-      console.log('\n╔══════════════════════════════════════════════════════════╗');
-      console.log('║           CLI E2E Report: cli-e2e-report.json           ║');
-      console.log('╠══════════════════════════════════════════════════════════╣');
-      console.log(`║  Total: ${report.summary.total}  ✓ ${report.summary.passed}  ✗ ${report.summary.failed}  ⊘ ${report.summary.skipped}  ⏱ ${report.summary.duration_ms}ms`);
-      console.log('╠══════════════════════════════════════════════════════════╣');
+      console.log('\n+==========================================================+');
+      console.log('|           CLI E2E Report: cli-e2e-report.json           |');
+      console.log('+==========================================================+');
+      console.log(`|  Total: ${report.summary.total}  [v] ${report.summary.passed}  [x] ${report.summary.failed}  - ${report.summary.skipped}  T ${report.summary.duration_ms}ms`);
+      console.log('+==========================================================+');
       for (const [name, prov] of Object.entries(providers)) {
-        const icon = prov.failed > 0 ? '✗' : '✓';
-        console.log(`║  ${icon} ${name}: ${prov.passed}/${prov.passed + prov.failed + prov.skipped} passed (${prov.duration_ms}ms)`);
+        const icon = prov.failed > 0 ? '[x]' : '[v]';
+        console.log(`|  ${icon} ${name}: ${prov.passed}/${prov.passed + prov.failed + prov.skipped} passed (${prov.duration_ms}ms)`);
       }
-      console.log('╠══════════════════════════════════════════════════════════╣');
+      console.log('+==========================================================+');
       for (const [name, fileSummary] of Object.entries(fileMap)) {
-        const icon = fileSummary.failed > 0 ? '✗' : '✓';
-        console.log(`║  ${icon} ${name}: ${fileSummary.passed}/${fileSummary.total} (${fileSummary.duration_ms}ms)`);
+        const icon = fileSummary.failed > 0 ? '[x]' : '[v]';
+        console.log(`|  ${icon} ${name}: ${fileSummary.passed}/${fileSummary.total} (${fileSummary.duration_ms}ms)`);
       }
-      console.log('╚══════════════════════════════════════════════════════════╝');
+      console.log('+==========================================================+');
       console.log(`\n  Report saved to: ${outPath}\n`);
     } catch (err) {
       console.error('[CliE2eReporter] Failed to generate report:', err);

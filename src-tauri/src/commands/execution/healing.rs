@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{HealingKnowledge, PersonaExecution, PersonaHealingIssue};
+use crate::db::models::{HealingKnowledge, HealingTimelineEvent, PersonaExecution, PersonaHealingIssue};
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as repo;
 use crate::engine::healing;
@@ -74,25 +74,14 @@ pub async fn run_healing_analysis(
     let mut auto_fixed = 0u32;
     let mut auto_retried = 0u32;
 
-    // Load existing issues once to avoid duplicates
-    let existing = repo::get_all(pool, Some(&persona_id), None)?;
-
     // Only retry the most recent auto-fixable failure to avoid spawning
     // multiple concurrent retries from a single scan.
     let mut retry_scheduled = false;
 
-    // Consecutive failure count is stable for a single scan — compute once.
+    // Consecutive failure count is stable for a single scan -- compute once.
     let consecutive = exec_repo::get_consecutive_failure_count(pool, &persona_id)?;
 
     for exec in &failures {
-        // Skip if a healing issue already exists for this execution
-        if existing
-            .iter()
-            .any(|i| i.execution_id.as_deref() == Some(&exec.id))
-        {
-            continue;
-        }
-
         let error = exec.error_message.as_deref().unwrap_or("");
         let timed_out = error.contains("timed out");
         let session_limit = error.contains("Session limit");
@@ -101,7 +90,9 @@ pub async fn run_healing_analysis(
         let category = healing::classify_error(error, timed_out, session_limit);
         let diagnosis = healing::diagnose(&category, error, timeout_ms, consecutive, exec.retry_count);
 
-        let issue = repo::create(
+        // INSERT OR IGNORE: returns None if a duplicate already exists for
+        // this (persona_id, execution_id), preventing concurrent-scan races.
+        let issue = match repo::create(
             pool,
             &persona_id,
             &diagnosis.title,
@@ -111,7 +102,10 @@ pub async fn run_healing_analysis(
             Some(&diagnosis.db_category),
             Some(&exec.id),
             diagnosis.suggested_fix.as_deref(),
-        )?;
+        )? {
+            Some(issue) => issue,
+            None => continue, // duplicate -- already handled by another scan
+        };
 
         created += 1;
 
@@ -121,7 +115,7 @@ pub async fn run_healing_analysis(
             && matches!(diagnosis.action, HealingAction::RetryWithBackoff { .. } | HealingAction::RetryWithTimeout { .. });
 
         if is_auto_fixable {
-            let _ = repo::mark_auto_fixed(pool, &issue.id);
+            let _ = repo::mark_auto_fix_pending(pool, &issue.id);
             auto_fixed += 1;
 
             // Execute the healing action: schedule an actual retry
@@ -221,6 +215,199 @@ pub async fn trigger_ai_healing(
 
     Ok(serde_json::json!({
         "status": "started",
-        "message": "AI healing chain started — watch ai-healing-status events for progress",
+        "message": "AI healing chain started -- watch ai-healing-status events for progress",
     }))
+}
+
+/// Build a resilience timeline for a persona: trigger -> classify -> diagnose ->
+/// retry/heal -> outcome, linking healing issues to retry chains, AI healing
+/// sessions, and knowledge-base entries.
+#[tauri::command]
+pub fn get_healing_timeline(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<Vec<HealingTimelineEvent>, AppError> {
+    require_auth_sync(&state)?;
+    let pool = &state.db;
+
+    let issues = repo::get_all(pool, Some(&persona_id), None)?;
+    let knowledge = repo::get_all_knowledge(pool)?;
+    let mut events: Vec<HealingTimelineEvent> = Vec::new();
+
+    for issue in &issues {
+        let chain_id = issue
+            .execution_id
+            .clone()
+            .unwrap_or_else(|| issue.id.clone());
+
+        // 1. Trigger event -- the original failure
+        events.push(HealingTimelineEvent {
+            id: format!("{}-trigger", issue.id),
+            chain_id: chain_id.clone(),
+            event_type: "trigger".into(),
+            timestamp: issue.created_at.clone(),
+            title: issue.title.clone(),
+            description: issue
+                .description
+                .lines()
+                .next()
+                .unwrap_or(&issue.description)
+                .to_string(),
+            severity: Some(issue.severity.clone()),
+            category: Some(issue.category.clone()),
+            status: Some(issue.status.clone()),
+            execution_id: issue.execution_id.clone(),
+            issue_id: Some(issue.id.clone()),
+            knowledge_id: None,
+            auto_fixed: issue.auto_fixed,
+            is_circuit_breaker: issue.is_circuit_breaker,
+            retry_count: None,
+            suggested_fix: None,
+        });
+
+        // 2. Classify event
+        events.push(HealingTimelineEvent {
+            id: format!("{}-classify", issue.id),
+            chain_id: chain_id.clone(),
+            event_type: "classify".into(),
+            timestamp: issue.created_at.clone(),
+            title: format!("{} / {}", issue.category, issue.severity),
+            description: format!(
+                "Classified as {} severity {} issue",
+                issue.severity, issue.category
+            ),
+            severity: Some(issue.severity.clone()),
+            category: Some(issue.category.clone()),
+            status: None,
+            execution_id: issue.execution_id.clone(),
+            issue_id: Some(issue.id.clone()),
+            knowledge_id: None,
+            auto_fixed: false,
+            is_circuit_breaker: issue.is_circuit_breaker,
+            retry_count: None,
+            suggested_fix: issue.suggested_fix.clone(),
+        });
+
+        // 3. Retry chain events (if execution_id present)
+        if let Some(ref exec_id) = issue.execution_id {
+            if let Ok(chain) = exec_repo::get_retry_chain(pool, exec_id) {
+                for exec in &chain {
+                    if exec.retry_count > 0 {
+                        let outcome_label = match exec.status.as_str() {
+                            "success" | "completed" => "succeeded",
+                            "failed" | "error" => "failed",
+                            "running" => "running",
+                            _ => &exec.status,
+                        };
+                        events.push(HealingTimelineEvent {
+                            id: format!("{}-retry-{}", issue.id, exec.retry_count),
+                            chain_id: chain_id.clone(),
+                            event_type: "retry".into(),
+                            timestamp: exec
+                                .started_at
+                                .clone()
+                                .or_else(|| Some(exec.created_at.clone()))
+                                .unwrap(),
+                            title: format!("Retry #{} {}", exec.retry_count, outcome_label),
+                            description: exec
+                                .error_message
+                                .clone()
+                                .unwrap_or_else(|| format!("Retry attempt {}", outcome_label)),
+                            severity: Some(issue.severity.clone()),
+                            category: Some(issue.category.clone()),
+                            status: Some(exec.status.clone()),
+                            execution_id: Some(exec.id.clone()),
+                            issue_id: Some(issue.id.clone()),
+                            knowledge_id: None,
+                            auto_fixed: false,
+                            is_circuit_breaker: false,
+                            retry_count: Some(exec.retry_count),
+                            suggested_fix: None,
+                        });
+                    }
+                }
+            }
+        }
+
+        // 4. Outcome event
+        let outcome_status = if issue.is_circuit_breaker {
+            "circuit_breaker"
+        } else if issue.auto_fixed && issue.status == "resolved" {
+            "auto_healed"
+        } else if issue.status == "resolved" {
+            "resolved"
+        } else if issue.status == "auto_fix_pending" {
+            "retrying"
+        } else {
+            "open"
+        };
+        let outcome_ts = issue
+            .resolved_at
+            .clone()
+            .unwrap_or_else(|| issue.created_at.clone());
+        events.push(HealingTimelineEvent {
+            id: format!("{}-outcome", issue.id),
+            chain_id: chain_id.clone(),
+            event_type: "outcome".into(),
+            timestamp: outcome_ts,
+            title: format!("Outcome: {}", outcome_status.replace('_', " ")),
+            description: match outcome_status {
+                "auto_healed" => "Issue automatically resolved via retry".into(),
+                "resolved" => "Issue manually resolved".into(),
+                "circuit_breaker" => "Persona auto-disabled after repeated failures".into(),
+                "retrying" => "Auto-fix in progress".into(),
+                _ => "Issue remains open".into(),
+            },
+            severity: Some(issue.severity.clone()),
+            category: Some(issue.category.clone()),
+            status: Some(outcome_status.into()),
+            execution_id: issue.execution_id.clone(),
+            issue_id: Some(issue.id.clone()),
+            knowledge_id: None,
+            auto_fixed: issue.auto_fixed,
+            is_circuit_breaker: issue.is_circuit_breaker,
+            retry_count: None,
+            suggested_fix: None,
+        });
+    }
+
+    // 5. Knowledge entries that match categories seen in this persona's issues
+    let seen_categories: std::collections::HashSet<&str> =
+        issues.iter().map(|i| i.category.as_str()).collect();
+    for k in &knowledge {
+        if seen_categories.contains(k.service_type.as_str())
+            || seen_categories.contains(k.pattern_key.split(':').next().unwrap_or(""))
+        {
+            events.push(HealingTimelineEvent {
+                id: format!("kb-{}", k.id),
+                chain_id: format!("kb-{}", k.service_type),
+                event_type: "knowledge".into(),
+                timestamp: k.last_seen_at.clone(),
+                title: format!("{}: {}", k.service_type, k.pattern_key),
+                description: format!(
+                    "{} (seen {} time{})",
+                    k.description,
+                    k.occurrence_count,
+                    if k.occurrence_count != 1 { "s" } else { "" }
+                ),
+                severity: None,
+                category: Some(k.service_type.clone()),
+                status: None,
+                execution_id: None,
+                issue_id: None,
+                knowledge_id: Some(k.id.clone()),
+                auto_fixed: false,
+                is_circuit_breaker: false,
+                retry_count: None,
+                suggested_fix: k
+                    .recommended_delay_secs
+                    .map(|d| format!("Recommended delay: {}s", d)),
+            });
+        }
+    }
+
+    // Sort chronologically (newest first)
+    events.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+
+    Ok(events)
 }

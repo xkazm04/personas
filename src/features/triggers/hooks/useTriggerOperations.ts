@@ -4,7 +4,7 @@ import * as api from "@/api/tauriApi";
 import type { DryRunResult } from "@/api/pipeline/triggers";
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 
-// ─── Result types ────────────────────────────────────────────────────────
+// --- Result types --------------------------------------------------------
 
 export interface TriggerOpResult<T = void> {
   ok: boolean;
@@ -17,14 +17,14 @@ export interface TestFireResult {
   validationFailures?: string;
 }
 
-// ─── Hook ────────────────────────────────────────────────────────────────
+// --- Hook ----------------------------------------------------------------
 
 /**
  * Centralises all trigger CRUD + test operations.
  *
  * Every operation returns `{ ok, data?, error? }` so callers get a
  * consistent shape and can decide how to present the outcome (toast,
- * inline message, ignore, …).
+ * inline message, ignore, ...).
  */
 export function useTriggerOperations(personaId: string) {
   const storeCreate = usePersonaStore((s) => s.createTrigger);
@@ -32,7 +32,7 @@ export function useTriggerOperations(personaId: string) {
   const storeDelete = usePersonaStore((s) => s.deleteTrigger);
   const fetchTriggerChains = usePersonaStore((s) => s.fetchTriggerChains);
 
-  // ── Create ─────────────────────────────────────────────────────────────
+  // -- Create -------------------------------------------------------------
 
   const create = useCallback(
     async (
@@ -55,7 +55,7 @@ export function useTriggerOperations(personaId: string) {
     [personaId, storeCreate],
   );
 
-  // ── Toggle ─────────────────────────────────────────────────────────────
+  // -- Toggle -------------------------------------------------------------
 
   const toggle = useCallback(
     async (triggerId: string, currentEnabled: boolean): Promise<TriggerOpResult> => {
@@ -69,7 +69,7 @@ export function useTriggerOperations(personaId: string) {
     [personaId, storeUpdate],
   );
 
-  // ── Delete ─────────────────────────────────────────────────────────────
+  // -- Delete -------------------------------------------------------------
 
   const remove = useCallback(
     async (triggerId: string): Promise<TriggerOpResult> => {
@@ -83,7 +83,7 @@ export function useTriggerOperations(personaId: string) {
     [personaId, storeDelete],
   );
 
-  // ── Delete chain (also refreshes chain list) ───────────────────────────
+  // -- Delete chain (also refreshes chain list) ---------------------------
 
   const removeChain = useCallback(
     async (triggerId: string, targetPersonaId: string): Promise<TriggerOpResult> => {
@@ -98,7 +98,7 @@ export function useTriggerOperations(personaId: string) {
     [storeDelete, fetchTriggerChains],
   );
 
-  // ── Create chain (also refreshes chain list) ──────────────────────────
+  // -- Create chain (also refreshes chain list) --------------------------
 
   const createChain = useCallback(
     async (
@@ -126,7 +126,7 @@ export function useTriggerOperations(personaId: string) {
     [storeCreate, fetchTriggerChains],
   );
 
-  // ── Validate ───────────────────────────────────────────────────────────
+  // -- Validate -----------------------------------------------------------
 
   const validate = useCallback(
     async (triggerId: string): Promise<TriggerOpResult<{ valid: boolean; failures: string }>> => {
@@ -147,7 +147,7 @@ export function useTriggerOperations(personaId: string) {
     [],
   );
 
-  // ── Test Fire (validate → execute) ─────────────────────────────────────
+  // -- Test Fire (validate -> execute) -------------------------------------
 
   const testFire = useCallback(
     async (triggerId: string, triggerPersonaId?: string): Promise<TriggerOpResult<TestFireResult>> => {
@@ -159,7 +159,7 @@ export function useTriggerOperations(personaId: string) {
             .filter((c) => !c.passed)
             .map((c) => `${c.label}: ${c.message}`)
             .join("; ");
-          return { ok: false, data: { validationFailures: failedChecks }, error: `Validation failed — ${failedChecks}` };
+          return { ok: false, data: { validationFailures: failedChecks }, error: `Validation failed -- ${failedChecks}` };
         }
         const execution = await api.executePersona(pid, triggerId);
         return { ok: true, data: { execution } };
@@ -170,7 +170,7 @@ export function useTriggerOperations(personaId: string) {
     [personaId],
   );
 
-  // ── Dry Run ────────────────────────────────────────────────────────────
+  // -- Dry Run ------------------------------------------------------------
 
   const dryRun = useCallback(
     async (triggerId: string): Promise<TriggerOpResult<DryRunResult>> => {
@@ -184,7 +184,7 @@ export function useTriggerOperations(personaId: string) {
     [],
   );
 
-  // ── Activity log ───────────────────────────────────────────────────────
+  // -- Activity log -------------------------------------------------------
 
   const fetchActivity = useCallback(
     async (triggerId: string, triggerPersonaId?: string): Promise<TriggerOpResult<PersonaExecution[]>> => {
@@ -213,7 +213,7 @@ export function useTriggerOperations(personaId: string) {
   } as const;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────
+// --- Helpers -------------------------------------------------------------
 
 function errStr(err: unknown): string {
   if (err instanceof Error) return err.message;

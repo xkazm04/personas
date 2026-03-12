@@ -84,7 +84,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
                   value={inputJson}
                   onChange={(e) => setInputJson(e.target.value)}
                   rows={4}
-                  className="w-full rounded-xl border border-primary/15 bg-background/60 px-3 py-2 text-sm font-mono text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-violet-500/30 resize-y"
+                  className="w-full rounded-xl border border-primary/20 bg-background/60 px-3 py-2 text-sm font-mono text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-violet-500/30 resize-y"
                   placeholder='{ "key": "value" }'
                 />
               </div>
@@ -170,7 +170,7 @@ function buildDefaultInput(tool: PersonaToolDefinition): string {
         }
         return JSON.stringify(defaults, null, 2);
       }
-    } catch { /* intentional: non-critical — JSON parse fallback */ }
+    } catch { /* intentional: non-critical -- JSON parse fallback */ }
   }
   return '{}';
 }
@@ -179,7 +179,7 @@ function formatOutput(output: string): string {
   try {
     return JSON.stringify(JSON.parse(output), null, 2);
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical -- JSON parse fallback
     return output;
   }
 }

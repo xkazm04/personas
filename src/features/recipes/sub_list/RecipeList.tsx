@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BookOpen, Loader2, X } from 'lucide-react';
+import { BookOpen, X } from 'lucide-react';
+import { RecipePageFlipLoader } from '../shared/RecipePageFlipLoader';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import type { RecipeExecutionResult } from '@/lib/bindings/RecipeExecutionResult';
 import { RecipeCard } from './RecipeCard';
@@ -89,7 +90,7 @@ export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: 
             {/* Quick test loading */}
             {quickTestLoading[recipe.id] && (
               <div className="mt-2 flex items-center gap-2 rounded-xl border border-border/40 bg-card/30 px-3 py-2 text-sm text-muted-foreground">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Running quick test...
+                <RecipePageFlipLoader className="text-primary" /> Running quick test...
               </div>
             )}
 

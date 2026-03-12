@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useDebouncedSave } from '@/hooks';
 import { useEditorDirty } from './EditorDocument';
 
-// ── Types ──────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------
 
 /** Save semantics for a tab section. */
 export type TabSaveMode = 'debounced' | 'immediate' | 'explicit';
@@ -22,9 +22,9 @@ export interface TabSectionConfig {
   save: () => Promise<void>;
   /**
    * Save semantics:
-   * - `'debounced'`  — auto-saves after `delay` ms of inactivity.
-   * - `'immediate'`  — saves inline on every mutation (no dirty tracking needed).
-   * - `'explicit'`   — saves only on manual trigger (button click / saveAll).
+   * - `'debounced'`  -- auto-saves after `delay` ms of inactivity.
+   * - `'immediate'`  -- saves inline on every mutation (no dirty tracking needed).
+   * - `'explicit'`   -- saves only on manual trigger (button click / saveAll).
    */
   mode: TabSaveMode;
   /** Debounce delay in ms (`mode: 'debounced'` only, default 800). */
@@ -43,7 +43,7 @@ export interface TabSectionHandle {
   cancel: () => void;
 }
 
-// ── Hook ───────────────────────────────────────────────────────────
+// -- Hook -----------------------------------------------------------
 
 const noop = () => {};
 

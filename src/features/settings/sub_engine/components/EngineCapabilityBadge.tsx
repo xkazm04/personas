@@ -8,7 +8,7 @@ import type { CliEngine } from '@/lib/types/types';
 interface EngineCapabilityBadgeProps {
   /** Which CLI operation this UI dispatches */
   operation: CliOperation;
-  /** Compact mode — just icon + provider name */
+  /** Compact mode -- just icon + provider name */
   compact?: boolean;
 }
 

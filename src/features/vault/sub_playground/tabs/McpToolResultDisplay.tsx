@@ -1,7 +1,7 @@
 import { RefreshCw, AlertCircle, Clock, Check, Server } from 'lucide-react';
 import type { McpToolResult } from '@/api/agents/mcpTools';
 
-// ── Helpers ──────────────────────────────────────────────────────
+// -- Helpers ------------------------------------------------------
 
 export function formatContent(text: string | null): string {
   if (!text) return '(empty)';
@@ -10,12 +10,12 @@ export function formatContent(text: string | null): string {
     const parsed = JSON.parse(text);
     return JSON.stringify(parsed, null, 2);
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical -- JSON parse fallback
     return text;
   }
 }
 
-// ── Tool result display ──────────────────────────────────────────
+// -- Tool result display ------------------------------------------
 
 export function ToolResultDisplay({ result }: { result: McpToolResult }) {
   return (
@@ -56,7 +56,7 @@ export function ToolResultDisplay({ result }: { result: McpToolResult }) {
   );
 }
 
-// ── Empty state ──────────────────────────────────────────────────
+// -- Empty state --------------------------------------------------
 
 export function EmptyState({ onDiscover }: { onDiscover: () => void }) {
   return (

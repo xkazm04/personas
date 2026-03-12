@@ -3,7 +3,7 @@ import { Play, Loader2, Plus, Trash2 } from 'lucide-react';
 import { SqlEditor } from '@/features/vault/sub_databases/SqlEditor';
 import type { ApiEndpoint, ApiParameter } from '@/api/system/apiProxy';
 
-// ── Types ────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------
 
 interface KeyValue {
   key: string;
@@ -16,11 +16,11 @@ interface RequestBuilderProps {
   isSending: boolean;
 }
 
-// ── HTTP Methods ─────────────────────────────────────────────────
+// -- HTTP Methods -------------------------------------------------
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
-// ── Component ────────────────────────────────────────────────────
+// -- Component ----------------------------------------------------
 
 export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderProps) {
   const [method, setMethod] = useState(endpoint?.method.toUpperCase() || 'GET');
@@ -149,13 +149,13 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
 
       {/* Resolved URL preview */}
       <div className="text-sm font-mono text-muted-foreground/50 truncate">
-        → {method} {resolvedPath}
+        {'→'} {method} {resolvedPath}
       </div>
     </div>
   );
 }
 
-// ── Section wrapper ──────────────────────────────────────────────
+// -- Section wrapper ----------------------------------------------
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -168,7 +168,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-// ── Key-Value editor ─────────────────────────────────────────────
+// -- Key-Value editor ---------------------------------------------
 
 function KeyValueEditor({
   entries,
@@ -228,7 +228,7 @@ function KeyValueEditor({
   );
 }
 
-// ── Helpers ──────────────────────────────────────────────────────
+// -- Helpers ------------------------------------------------------
 
 function initQueryParams(endpoint: ApiEndpoint | null): KeyValue[] {
   if (!endpoint) return [];
@@ -241,7 +241,7 @@ function formatSchema(schemaJson: string): string {
   try {
     return JSON.stringify(JSON.parse(schemaJson), null, 2);
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical -- JSON parse fallback
     return schemaJson;
   }
 }

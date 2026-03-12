@@ -156,7 +156,7 @@ export function VersionsPanel() {
             <div className="flex-1">
               <div className="flex items-center justify-between text-sm text-muted-foreground/70 mb-1">
                 <span>Last 10 executions</span>
-                <span>{healthLoading ? '...' : healthErrorRate != null ? `${(healthErrorRate * 100).toFixed(0)}%` : '—'}</span>
+                <span>{healthLoading ? '...' : healthErrorRate != null ? `${(healthErrorRate * 100).toFixed(0)}%` : '--'}</span>
               </div>
               <div className="w-full h-2 rounded-full bg-secondary/60 overflow-hidden">
                 <div

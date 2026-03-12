@@ -83,7 +83,7 @@ export function AutoCredReview({
             Review Extracted Credentials
           </h3>
           <p className="text-sm text-muted-foreground/70">
-            Values extracted from browser — verify before saving
+            Values extracted from browser -- verify before saving
           </p>
         </div>
       </div>

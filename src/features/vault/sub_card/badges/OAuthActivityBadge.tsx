@@ -47,7 +47,7 @@ export function OAuthActivityBadge({
       await refreshCredentialOAuthNow(credentialId);
       onRefreshed?.();
     } catch {
-      // Refresh failed silently — badge will still show old status
+      // Refresh failed silently -- badge will still show old status
     } finally {
       setIsRefreshing(false);
     }

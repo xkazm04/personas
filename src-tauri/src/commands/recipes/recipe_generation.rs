@@ -1,12 +1,12 @@
 //! LLM-powered recipe generation via the AI artifact flow.
 //!
 //! Follows the same pattern as credential_design and negotiator:
-//! spawn Claude CLI → stream progress → extract structured JSON result.
+//! spawn Claude CLI -> stream progress -> extract structured JSON result.
 
 use crate::commands::credentials::ai_artifact_flow::AiArtifactMessages;
 use crate::engine::design::extract_json_by_key;
 
-// ── Messages ────────────────────────────────────────────────────
+// -- Messages ----------------------------------------------------
 
 pub const RECIPE_GENERATION_MESSAGES: AiArtifactMessages = AiArtifactMessages {
     status_event: "recipe-generation-status",
@@ -23,7 +23,7 @@ pub const RECIPE_GENERATION_MESSAGES: AiArtifactMessages = AiArtifactMessages {
     timeout_secs: 300,
 };
 
-// ── Prompt builder ──────────────────────────────────────────────
+// -- Prompt builder ----------------------------------------------
 
 pub fn build_recipe_generation_prompt(
     description: &str,
@@ -41,7 +41,7 @@ Your task:
 2. Design a recipe that accomplishes the user's intent
 3. Create a clear prompt template with {{{{variable}}}} placeholders for dynamic inputs
 4. Determine the input schema (what the user needs to provide)
-5. Run a mental integration test — verify the approach would work
+5. Run a mental integration test -- verify the approach would work
 6. Provide a realistic example result showing what the output would look like
 
 Return ONLY a JSON object (in a ```json fenced block) with these exact fields:
@@ -67,7 +67,7 @@ Important:
     )
 }
 
-// ── Extractor ───────────────────────────────────────────────────
+// -- Extractor ---------------------------------------------------
 
 pub fn extract_recipe_generation_result(output: &str) -> Option<serde_json::Value> {
     extract_json_by_key(output, &["name", "prompt_template"])

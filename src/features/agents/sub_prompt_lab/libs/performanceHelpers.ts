@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { PromptPerformancePoint } from '@/lib/bindings/PromptPerformancePoint';
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// --- Constants ---------------------------------------------------------------
 
 export const PERIOD_OPTIONS = [7, 14, 30, 60, 90] as const;
 
@@ -20,7 +20,7 @@ export const ANOMALY_LABEL: Record<string, string> = {
   latency: 'Latency spike',
 };
 
-// ─── Formatters ──────────────────────────────────────────────────────────────
+// --- Formatters --------------------------------------------------------------
 
 export function fmtDate(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -38,7 +38,7 @@ export function fmtPct(v: number) {
   return `${(v * 100).toFixed(1)}%`;
 }
 
-// ─── Computed summaries ──────────────────────────────────────────────────────
+// --- Computed summaries ------------------------------------------------------
 
 export function useSummaryTotals(points: PromptPerformancePoint[]) {
   return useMemo(() => {

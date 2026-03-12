@@ -6,7 +6,7 @@ import type {
   DesignUseCase,
 } from '@/lib/types/frontendTypes';
 
-// â”€â”€ Re-exports for backward compatibility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Re-exports for backward compatibility ---------------------------
 // These types are now canonically defined in frontendTypes.ts.
 // Consumers that imported them from here continue to work.
 export type { DesignContextData } from '@/lib/types/frontendTypes';
@@ -16,7 +16,7 @@ export type { UseCaseInputField } from '@/lib/types/frontendTypes';
 export type { UseCaseTimeFilter } from '@/lib/types/frontendTypes';
 export type { UseCaseSuggestedTrigger } from '@/lib/types/frontendTypes';
 
-// â”€â”€ Parser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Parser ----------------------------------------------------------
 
 // LRU(1) cache: avoids re-parsing the same design_context string across
 // multiple hooks/components in the same render cycle.
@@ -52,10 +52,10 @@ export function parseDesignContext(raw: string | null | undefined): DesignContex
       return store(parsed as unknown as DesignContextData);
     }
 
-    // Legacy format: snake_case top-level keys â†’ migrate to camelCase envelope
+    // Legacy format: snake_case top-level keys -> migrate to camelCase envelope
     const result: DesignContextData = {};
 
-    // Legacy: top-level "files"/"references" â†’ designFiles
+    // Legacy: top-level "files"/"references" -> designFiles
     if ('files' in parsed || 'references' in parsed) {
       result.designFiles = {
         files: (parsed.files as DesignFilesSection['files']) ?? [],
@@ -80,7 +80,7 @@ export function parseDesignContext(raw: string | null | undefined): DesignContex
 
     return store(result);
   } catch {
-    // intentional: non-critical â€” JSON parse fallback (treat raw text as summary)
+    // intentional: non-critical -- JSON parse fallback (treat raw text as summary)
     return store({ summary: raw });
   }
 }
@@ -105,7 +105,7 @@ export function mergeCredentialLink(
   });
 }
 
-// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Component -------------------------------------------------------
 
 const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
   notification:   { bg: 'bg-rose-500/10 border-rose-500/15',   text: 'text-rose-400/70' },

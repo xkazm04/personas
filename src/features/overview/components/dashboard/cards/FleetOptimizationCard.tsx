@@ -25,7 +25,7 @@ import {
   type RecommendationType,
 } from '@/lib/fleet/fleetOptimizer';
 
-// ── Icon/style mapping ──────────────────────────────────────────────
+// -- Icon/style mapping ----------------------------------------------
 
 const TYPE_CONFIG: Record<RecommendationType, {
   icon: typeof Sparkles;
@@ -84,7 +84,7 @@ const SEVERITY_LABEL: Record<string, string> = {
   info: 'Insight',
 };
 
-// ── Component ───────────────────────────────────────────────────────
+// -- Component -------------------------------------------------------
 
 function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
   const [expanded, setExpanded] = useState(false);

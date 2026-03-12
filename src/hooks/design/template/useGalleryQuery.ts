@@ -175,17 +175,19 @@ export function useGalleryQuery(
 
   const hasMore = items.length < total;
 
-  // Fetch available connectors, categories, and trending templates once.
+  // Fetch available connectors, categories, and trending templates.
   useEffect(() => {
+    let cancelled = false;
+
     backfillReviewCategories().catch(() => {});
     listReviewConnectors()
-      .then(setAvailableConnectors)
+      .then((data) => { if (!cancelled) setAvailableConnectors(data); })
       .catch(() => {});
     listReviewCategories()
-      .then(setAvailableCategories)
+      .then((data) => { if (!cancelled) setAvailableCategories(data); })
       .catch(() => {});
     getTrendingTemplates(8)
-      .then(setTrendingTemplates)
+      .then((data) => { if (!cancelled) setTrendingTemplates(data); })
       .catch(() => {});
 
     if (coverageServiceTypes && coverageServiceTypes.length > 0) {
@@ -197,7 +199,7 @@ export function useGalleryQuery(
         coverageFilter: 'full',
         coverageServiceTypes,
       })
-        .then((r) => setReadyTemplates(r.items))
+        .then((r) => { if (!cancelled) setReadyTemplates(r.items); })
         .catch(() => {});
 
       listDesignReviewsPaginated({
@@ -209,12 +211,16 @@ export function useGalleryQuery(
         coverageServiceTypes,
       })
         .then((r) => {
-          const scored = scoreRecommendations(r.items, coverageServiceTypes);
-          setRecommendedTemplates(scored);
+          if (!cancelled) {
+            const scored = scoreRecommendations(r.items, coverageServiceTypes);
+            setRecommendedTemplates(scored);
+          }
         })
         .catch(() => {});
     }
-  }, []);
+
+    return () => { cancelled = true; };
+  }, [coverageServiceTypes]);
 
   const refresh = useCallback(() => {
     if (aiSearchActive) return;

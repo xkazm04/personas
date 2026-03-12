@@ -22,7 +22,7 @@ function parseSummary(run: LabArenaRun) {
       best_quality_model?: string;
       rankings?: Array<{ model_id: string; composite_score: number }>;
     };
-  } catch { /* intentional: non-critical — JSON parse fallback */ return null; }
+  } catch { /* intentional: non-critical -- JSON parse fallback */ return null; }
 }
 
 export function ArenaHistory({
@@ -41,8 +41,8 @@ export function ArenaHistory({
       </h4>
 
       {arenaRuns.length === 0 ? (
-        <div className="text-center py-12 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl">
-          <div className="w-14 h-14 rounded-xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-4">
+        <div className="text-center py-12 bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl">
+          <div className="w-14 h-14 rounded-xl bg-primary/8 border border-primary/20 flex items-center justify-center mx-auto mb-4">
             <FlaskConical className="w-7 h-7 text-primary/40" />
           </div>
           <p className="text-sm text-muted-foreground/80">No arena runs yet</p>
@@ -54,7 +54,7 @@ export function ArenaHistory({
             const isExpanded = expandedRunId === run.id;
             const summary = parseSummary(run);
             const modelsList: string[] = (() => {
-              try { return JSON.parse(run.modelsTested); } catch { /* intentional: non-critical — JSON parse fallback */ return []; }
+              try { return JSON.parse(run.modelsTested); } catch { /* intentional: non-critical -- JSON parse fallback */ return []; }
             })();
 
             return (

@@ -61,7 +61,7 @@ export function PerformanceCharts({
     return 'bg-red-500/25 text-red-200 border-red-500/35';
   };
 
-  const fmtDelta = (v: number | null) => (v == null ? '—' : `${v > 0 ? '+' : ''}${v.toFixed(1)}%`);
+  const fmtDelta = (v: number | null) => (v == null ? '--' : `${v > 0 ? '+' : ''}${v.toFixed(1)}%`);
 
   return (
     <div className="grid grid-cols-2 gap-4">

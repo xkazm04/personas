@@ -36,7 +36,7 @@ pub struct CompositeCondition {
 /// Parsed, typed representation of a trigger's `config` JSON.
 ///
 /// Each variant carries only the fields that trigger type needs, making invalid
-/// states unrepresentable. Produced by `PersonaTrigger::parse_config()` — call
+/// states unrepresentable. Produced by `PersonaTrigger::parse_config()` -- call
 /// once, reuse everywhere.
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type")]
@@ -75,7 +75,7 @@ pub enum TriggerConfig {
         event_type: Option<String>,
         payload: Option<serde_json::Value>,
     },
-    /// Unified event listener — replaces persona_event_subscriptions.
+    /// Unified event listener -- replaces persona_event_subscriptions.
     /// Listens for events matching `listen_event_type` with optional source wildcard.
     #[serde(rename = "event_listener")]
     EventListener {

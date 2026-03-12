@@ -1,5 +1,5 @@
 /**
- * TriggerEditCell — trigger configuration cell for PersonaMatrix edit mode.
+ * TriggerEditCell -- trigger configuration cell for PersonaMatrix edit mode.
  */
 import { useMemo, useState, useRef } from 'react';
 import { Pencil, X } from 'lucide-react';
@@ -8,7 +8,7 @@ import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
 import type { MatrixEditState, MatrixEditCallbacks } from './matrixEditTypes';
 import { TRIGGER_ICONS } from './matrixEditTypes';
 
-// ── Trigger Popup ─────────────────────────────────────────────────────
+// -- Trigger Popup -----------------------------------------------------
 
 function TriggerPopup({
   trigger,
@@ -107,7 +107,7 @@ function TriggerPopup({
   );
 }
 
-// ── Trigger cell (edit mode) ──────────────────────────────────────────
+// -- Trigger cell (edit mode) ------------------------------------------
 
 interface TriggerEditCellProps {
   designResult: AgentIR;
@@ -119,7 +119,7 @@ export function TriggerEditCell({ designResult, editState, callbacks }: TriggerE
   const triggers = designResult.suggested_triggers ?? [];
   const [openPopupIndex, setOpenPopupIndex] = useState<number | null>(null);
 
-  // Deduplicate by type — show one per type
+  // Deduplicate by type -- show one per type
   const uniqueTriggers = useMemo(() => {
     const seen = new Set<string>();
     return triggers

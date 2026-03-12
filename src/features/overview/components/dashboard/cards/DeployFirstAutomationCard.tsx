@@ -142,7 +142,7 @@ export default function DeployFirstAutomationCard() {
     }
   };
 
-  // ── Success state ──────────────────────────────────────────────────────
+  // -- Success state ------------------------------------------------------
   if (phase === 'success' && deployResult) {
     return (
       <motion.div
@@ -171,7 +171,7 @@ export default function DeployFirstAutomationCard() {
     );
   }
 
-  // ── Loading state ──────────────────────────────────────────────────────
+  // -- Loading state ------------------------------------------------------
   if (phase === 'designing' || phase === 'deploying') {
     return (
       <div className="rounded-xl border border-primary/10 bg-secondary/20 p-5">
@@ -190,7 +190,7 @@ export default function DeployFirstAutomationCard() {
     );
   }
 
-  // ── Error state ────────────────────────────────────────────────────────
+  // -- Error state --------------------------------------------------------
   if (phase === 'error') {
     return (
       <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-5 space-y-3">
@@ -208,7 +208,7 @@ export default function DeployFirstAutomationCard() {
     );
   }
 
-  // ── Simple mode: single CTA ───────────────────────────────────────────
+  // -- Simple mode: single CTA -------------------------------------------
   if (isSimple) {
     return (
       <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm p-5">
@@ -235,7 +235,7 @@ export default function DeployFirstAutomationCard() {
     );
   }
 
-  // ── Prompt state (default) ─────────────────────────────────────────────
+  // -- Prompt state (default) ---------------------------------------------
   return (
     <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden relative">
       <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/5 blur-3xl rounded-full pointer-events-none" />

@@ -1,6 +1,6 @@
 import type { DiscoveredSource } from '../../libs/visualizationHelpers';
 
-// ── SVG status badges at the bottom of the visualization ─────────
+// -- SVG status badges at the bottom of the visualization ---------
 
 interface BadgesProps {
   inFlightCount: number;

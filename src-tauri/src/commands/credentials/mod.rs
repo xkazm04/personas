@@ -20,3 +20,4 @@ pub mod query_debug;
 pub mod schema_proposal;
 pub mod auth_detect;
 pub mod credential_recipes;
+pub mod vector_kb;

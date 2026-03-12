@@ -39,7 +39,7 @@ export function TableSelectorModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 8 }}
         transition={{ duration: 0.15 }}
-        className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden"
+        className="bg-background border border-primary/20 rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -53,7 +53,7 @@ export function TableSelectorModal({
                 Select Tables
               </h3>
               <p className="text-sm text-muted-foreground/65">
-                {meta.label} — choose tables to watch
+                {meta.label} -- choose tables to watch
               </p>
             </div>
           </div>
@@ -80,7 +80,7 @@ export function TableSelectorModal({
           <p className="text-sm text-muted-foreground/50">
             {count > 0
               ? `${count} table${count !== 1 ? 's' : ''} selected`
-              : 'No tables selected — agent watches all'}
+              : 'No tables selected -- agent watches all'}
           </p>
           <div className="flex items-center gap-2">
             <button

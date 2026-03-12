@@ -103,7 +103,7 @@ struct GlobalState {
 ///
 /// The global failure counter tracks total failures across ALL providers
 /// within a rolling window. When the threshold is reached, all failover
-/// attempts are paused until the cooldown expires — preventing the failover
+/// attempts are paused until the cooldown expires -- preventing the failover
 /// chain from amplifying load on already-stressed services.
 pub struct ProviderCircuitBreaker {
     states: Mutex<(HashMap<EngineKind, CircuitState>, GlobalState)>,
@@ -133,7 +133,7 @@ impl ProviderCircuitBreaker {
             if paused_at.elapsed() < CIRCUIT_COOLDOWN {
                 return false;
             }
-            // Global cooldown elapsed — reset
+            // Global cooldown elapsed -- reset
             tracing::info!("Global circuit breaker reset after cooldown");
             global.paused_at = None;
             global.failure_times.clear();
@@ -145,7 +145,7 @@ impl ProviderCircuitBreaker {
             None => true,
             Some(opened) => {
                 if opened.elapsed() >= CIRCUIT_COOLDOWN {
-                    // Cooldown elapsed — half-open: allow one probe
+                    // Cooldown elapsed -- half-open: allow one probe
                     tracing::info!(
                         provider = ?kind,
                         "Circuit breaker half-open: allowing probe after cooldown",
@@ -178,7 +178,7 @@ impl ProviderCircuitBreaker {
         }
     }
 
-    /// Record a successful execution — resets the per-provider failure counter.
+    /// Record a successful execution -- resets the per-provider failure counter.
     pub fn record_success(&self, kind: EngineKind) {
         let mut guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
         let (ref mut states, _) = *guard;
@@ -221,7 +221,7 @@ impl ProviderCircuitBreaker {
             tracing::warn!(
                 total_failures = global.failure_times.len(),
                 window_secs = GLOBAL_FAILURE_WINDOW.as_secs(),
-                "Global circuit breaker tripped: {} failures across all providers in {}s — \
+                "Global circuit breaker tripped: {} failures across all providers in {}s -- \
                  pausing all failover attempts",
                 global.failure_times.len(),
                 GLOBAL_FAILURE_WINDOW.as_secs(),
@@ -255,7 +255,7 @@ pub struct FailoverCandidate {
 // Model fallback chains per provider
 // =============================================================================
 
-/// Claude model fallback chain (higher capability → lower).
+/// Claude model fallback chain (higher capability -> lower).
 const CLAUDE_MODEL_CHAIN: &[&str] = &[
     "claude-opus-4-20250514",
     "claude-sonnet-4-20250514",
@@ -282,7 +282,7 @@ pub fn build_failover_chain(
         label: format!("{primary:?} (configured)"),
     });
 
-    // 2. Within-provider model fallback (Claude only — other providers have single model families)
+    // 2. Within-provider model fallback (Claude only -- other providers have single model families)
     if primary == EngineKind::ClaudeCode {
         // Find where the configured model sits in the chain, add everything below it
         let start_idx = configured_model
@@ -444,14 +444,14 @@ mod tests {
         for _ in 0..4 {
             cb.record_failure(EngineKind::GeminiCli);
         }
-        // 8 total failures — still under global threshold (10)
+        // 8 total failures -- still under global threshold (10)
         assert!(!cb.is_globally_paused());
         assert!(cb.try_acquire(EngineKind::CodexCli));
 
         // Push past global threshold
         cb.record_failure(EngineKind::CodexCli);
         cb.record_failure(EngineKind::CodexCli);
-        // 10 total failures — global breaker should trip
+        // 10 total failures -- global breaker should trip
         assert!(cb.is_globally_paused());
 
         // All providers should be blocked

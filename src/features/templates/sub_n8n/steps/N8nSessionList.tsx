@@ -92,7 +92,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         try {
           return JSON.parse(raw) as T;
         } catch {
-          // intentional: non-critical â€” JSON parse fallback
+          // intentional: non-critical -- JSON parse fallback
           parseErrors.push(label);
           return null;
         }
@@ -109,7 +109,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       const stepMap: Record<string, N8nWizardStep> = {
         upload: 'upload',
         analyze: 'analyze',
-        configure: 'transform',  // legacy sessions â€” configure merged into transform
+        configure: 'transform',  // legacy sessions -- configure merged into transform
         transform: 'transform',
         edit: 'edit',
         confirm: 'confirm',

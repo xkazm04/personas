@@ -5,18 +5,182 @@ const MIN_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 10000;
 const BACKOFF_FACTOR = 1.5;
 
+// ============================================================================
+// Generic background task snapshot
+// ============================================================================
+
 /**
- * Shape common to both N8nTransformSnapshot and TemplateAdoptSnapshot.
+ * Common fields present in every background task snapshot returned from Rust.
+ * Job-specific extras are accessed via the generic parameter `T`.
+ */
+export interface BackgroundTaskSnapshot<T = Record<string, unknown>> {
+  job_id: string;
+  status: 'idle' | 'running' | 'completed' | 'failed' | 'awaiting_answers';
+  error: string | null;
+  lines: string[];
+  elapsed_secs: number;
+  /** Job-specific extra fields (flattened by serde on Rust side). */
+  extras: T;
+}
+
+/**
+ * @deprecated Use `BackgroundTaskSnapshot` instead. Kept for backward
+ * compatibility during migration.
  */
 export interface SnapshotLike {
   status: 'idle' | 'running' | 'completed' | 'failed' | 'awaiting_answers';
   error: string | null;
   lines: string[];
-  draft: N8nPersonaDraft | null;
+  draft?: N8nPersonaDraft | null;
   questions?: unknown[] | null;
-  /** Streaming sections from section-by-section transform. */
   sections?: unknown[] | null;
 }
+
+// ============================================================================
+// Generic polling hook
+// ============================================================================
+
+export interface UseBackgroundJobPollingOptions<T> {
+  /** The background job ID to poll for. Polling starts when this is truthy. */
+  jobId: string | null;
+  /** Fetches the current snapshot from the backend. */
+  getSnapshot: (id: string) => Promise<T>;
+  /** Called with each new snapshot while the job is active. */
+  onSnapshot: (snapshot: T) => void;
+  /** Called when the snapshot reaches a terminal state. */
+  onTerminal?: (snapshot: T) => void;
+  /** Called when polling hits consecutive fetch errors (session lost). */
+  onSessionLost?: () => void;
+  /** Extract the status string from the snapshot. */
+  getStatus: (snapshot: T) => string;
+  /** Polling interval in ms. Defaults to 1000. */
+  interval?: number;
+  /** Number of consecutive fetch failures before treating session as lost. Defaults to 3. */
+  maxFailures?: number;
+  /** Increment to force polling restart (e.g. after user answers questions). */
+  epoch?: number;
+  /** Statuses that should pause polling (e.g. 'awaiting_answers'). */
+  pauseOnStatuses?: string[];
+}
+
+/**
+ * Generic background job polling hook. Polls a snapshot endpoint at
+ * regular intervals with adaptive backoff, handling terminal states,
+ * session loss, and configurable pause conditions.
+ *
+ * This replaces the template-specific `useBackgroundSnapshot` with a
+ * fully generic implementation that works for any async job type.
+ */
+export function useBackgroundJobPolling<T>({
+  jobId,
+  getSnapshot,
+  onSnapshot,
+  onTerminal,
+  onSessionLost,
+  getStatus,
+  interval = 1000,
+  maxFailures = 3,
+  epoch = 0,
+  pauseOnStatuses = [],
+}: UseBackgroundJobPollingOptions<T>) {
+  const pollTimerRef = useRef<number | null>(null);
+  const backoffRef = useRef<number>(Math.max(interval, MIN_BACKOFF_MS));
+  const consecutiveRunningRef = useRef(0);
+  const notFoundCountRef = useRef(0);
+  const pauseDeliveredRef = useRef(false);
+
+  useEffect(() => {
+    if (!jobId) return;
+
+    notFoundCountRef.current = 0;
+    pauseDeliveredRef.current = false;
+    consecutiveRunningRef.current = 0;
+    backoffRef.current = Math.max(interval, MIN_BACKOFF_MS);
+
+    const clearPollTimer = () => {
+      if (pollTimerRef.current !== null) {
+        window.clearTimeout(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+
+    const scheduleNextPoll = (delayMs: number) => {
+      clearPollTimer();
+      pollTimerRef.current = window.setTimeout(() => {
+        void syncSnapshot();
+      }, delayMs);
+    };
+
+    const syncSnapshot = async () => {
+      try {
+        const snapshot = await getSnapshot(jobId);
+        notFoundCountRef.current = 0;
+        const status = getStatus(snapshot);
+
+        onSnapshot(snapshot);
+
+        // Handle pause statuses (e.g. awaiting_answers)
+        if (pauseOnStatuses.includes(status) && !pauseDeliveredRef.current) {
+          pauseDeliveredRef.current = true;
+          clearPollTimer();
+          return;
+        }
+
+        // Stop polling on terminal states
+        if (status === 'completed' || status === 'failed') {
+          onTerminal?.(snapshot);
+          clearPollTimer();
+          return;
+        }
+
+        // Adaptive backoff for running state
+        if (status === 'running') {
+          consecutiveRunningRef.current += 1;
+          if (consecutiveRunningRef.current >= 2) {
+            backoffRef.current = Math.min(
+              MAX_BACKOFF_MS,
+              Math.max(MIN_BACKOFF_MS, Math.round(backoffRef.current * BACKOFF_FACTOR)),
+            );
+          }
+        } else {
+          consecutiveRunningRef.current = 0;
+          backoffRef.current = Math.max(interval, MIN_BACKOFF_MS);
+        }
+
+        scheduleNextPoll(backoffRef.current);
+      } catch {
+        // intentional: non-critical -- polling retries with backoff until maxFailures
+        notFoundCountRef.current += 1;
+        if (notFoundCountRef.current >= maxFailures) {
+          onSessionLost?.();
+          clearPollTimer();
+          return;
+        }
+        scheduleNextPoll(backoffRef.current);
+      }
+    };
+
+    void syncSnapshot();
+
+    return () => {
+      clearPollTimer();
+    };
+  }, [jobId, getSnapshot, onSnapshot, onTerminal, onSessionLost, getStatus, interval, maxFailures, epoch, pauseOnStatuses]);
+
+  // Cleanup poll timer on unmount
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current !== null) {
+        window.clearTimeout(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+  }, []);
+}
+
+// ============================================================================
+// Legacy useBackgroundSnapshot (delegates to useBackgroundJobPolling)
+// ============================================================================
 
 export interface UseBackgroundSnapshotOptions {
   /** The background job ID to poll for. Polling starts when this is truthy. */
@@ -48,11 +212,8 @@ export interface UseBackgroundSnapshotOptions {
 }
 
 /**
- * Polls a background snapshot endpoint at a regular interval, dispatching
- * callbacks for lines, phase changes, draft availability, and errors.
- *
- * Used by both AdoptionWizardModal and N8nImportTab to track background
- * transformation jobs.
+ * @deprecated Use `useBackgroundJobPolling` for new code. This wrapper
+ * preserves the original callback-based API for existing consumers.
  */
 export function useBackgroundSnapshot({
   snapshotId,
@@ -120,7 +281,7 @@ export function useBackgroundSnapshot({
           if (questions.length > 0) {
             questionsDeliveredRef.current = true;
             onQuestions(questions);
-            // Stop polling — user needs to answer before we continue
+            // Stop polling -- user needs to answer before we continue
             clearPollTimer();
             return;
           }
@@ -157,7 +318,7 @@ export function useBackgroundSnapshot({
 
         scheduleNextPoll(backoffRef.current);
       } catch {
-        // intentional: non-critical — polling retries with backoff until maxFailures
+        // intentional: non-critical -- polling retries with backoff until maxFailures
         notFoundCountRef.current += 1;
         if (notFoundCountRef.current >= maxFailures) {
           onSessionLost();

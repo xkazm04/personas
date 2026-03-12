@@ -1,5 +1,5 @@
 /**
- * E2E: Terminal component rendering — TerminalStrip + CliOutputPanel.
+ * E2E: Terminal component rendering -- TerminalStrip + CliOutputPanel.
  *
  * Tests that the terminal display components correctly render CLI output
  * from each scenario and provider. Validates line classification, color
@@ -33,11 +33,11 @@ beforeEach(() => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PART 1: TerminalStrip — collapsible strip used for healing, debug, tests
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// PART 1: TerminalStrip -- collapsible strip used for healing, debug, tests
+// ===========================================================================
 
-describe('E2E: TerminalStrip — rendering', () => {
+describe('E2E: TerminalStrip -- rendering', () => {
   describe('collapsed state', () => {
     it('shows the last line text', () => {
       render(
@@ -56,8 +56,8 @@ describe('E2E: TerminalStrip — rendering', () => {
     it('shows running indicator when isRunning', () => {
       const { container } = render(
         <TerminalStrip
-          lastLine="Running…"
-          lines={['Running…']}
+          lastLine="Running..."
+          lines={['Running...']}
           isRunning={true}
           isExpanded={false}
           onToggle={() => {}}
@@ -115,7 +115,7 @@ describe('E2E: TerminalStrip — rendering', () => {
     it('hides copy button while running', () => {
       render(
         <TerminalStrip
-          lastLine="Running…"
+          lastLine="Running..."
           lines={['Line 1']}
           isRunning={true}
           isExpanded={false}
@@ -144,7 +144,7 @@ describe('E2E: TerminalStrip — rendering', () => {
     it('hides dismiss button while running', () => {
       render(
         <TerminalStrip
-          lastLine="Running…"
+          lastLine="Running..."
           lines={['Line 1']}
           isRunning={true}
           isExpanded={false}
@@ -209,7 +209,7 @@ describe('E2E: TerminalStrip — rendering', () => {
     it('shows pulsing cursor when running and expanded', () => {
       const { container } = render(
         <TerminalStrip
-          lastLine="Running…"
+          lastLine="Running..."
           lines={['Line 1']}
           isRunning={true}
           isExpanded={true}
@@ -291,11 +291,11 @@ describe('E2E: TerminalStrip — rendering', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // PART 2: TerminalStrip with provider-specific content
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
-describe('E2E: TerminalStrip — provider-specific rendering', () => {
+describe('E2E: TerminalStrip -- provider-specific rendering', () => {
   for (const provider of PROVIDER_FIXTURES) {
     it(`renders ${provider.name} execution output with correct line count`, () => {
       const { container } = render(
@@ -366,8 +366,8 @@ describe('E2E: TerminalStrip — provider-specific rendering', () => {
 
   it('renders API test runner lines with custom classifier', () => {
     const apiTestLineClassName = (line: string): string => {
-      if (line.includes('✓')) return 'text-emerald-400';
-      if (line.includes('✗')) return 'text-red-400';
+      if (line.includes('[v]')) return 'text-emerald-400';
+      if (line.includes('[x]')) return 'text-red-400';
       if (line.includes('Skipped')) return 'text-amber-400';
       return 'text-muted-foreground';
     };
@@ -404,11 +404,11 @@ describe('E2E: TerminalStrip — provider-specific rendering', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PART 3: CliOutputPanel — full terminal panel with header
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// PART 3: CliOutputPanel -- full terminal panel with header
+// ===========================================================================
 
-describe('E2E: CliOutputPanel — rendering', () => {
+describe('E2E: CliOutputPanel -- rendering', () => {
   describe('idle state', () => {
     it('shows idle text when no lines and phase is idle', () => {
       render(<CliOutputPanel phase="idle" lines={[]} />);
@@ -416,15 +416,15 @@ describe('E2E: CliOutputPanel — rendering', () => {
     });
 
     it('shows custom idle text', () => {
-      render(<CliOutputPanel phase="idle" lines={[]} idleText="Waiting for persona execution…" />);
-      expect(screen.getByText('Waiting for persona execution…')).toBeInTheDocument();
+      render(<CliOutputPanel phase="idle" lines={[]} idleText="Waiting for persona execution..." />);
+      expect(screen.getByText('Waiting for persona execution...')).toBeInTheDocument();
     });
   });
 
   describe('waiting state', () => {
     it('shows waiting text when running with no lines yet', () => {
       render(<CliOutputPanel phase="running" lines={[]} />);
-      expect(screen.getByText('Waiting for Claude CLI output…')).toBeInTheDocument();
+      expect(screen.getByText('Waiting for Claude CLI output...')).toBeInTheDocument();
     });
 
     it('shows custom waiting text', () => {
@@ -432,10 +432,10 @@ describe('E2E: CliOutputPanel — rendering', () => {
         <CliOutputPanel
           phase="running"
           lines={[]}
-          waitingText="Connecting to Gemini CLI…"
+          waitingText="Connecting to Gemini CLI..."
         />,
       );
-      expect(screen.getByText('Connecting to Gemini CLI…')).toBeInTheDocument();
+      expect(screen.getByText('Connecting to Gemini CLI...')).toBeInTheDocument();
     });
   });
 
@@ -541,11 +541,11 @@ describe('E2E: CliOutputPanel — rendering', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // PART 4: CliOutputPanel with provider-specific content
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
-describe('E2E: CliOutputPanel — provider execution rendering', () => {
+describe('E2E: CliOutputPanel -- provider execution rendering', () => {
   for (const provider of PROVIDER_FIXTURES) {
     describe(`${provider.name} output`, () => {
       it('renders completed execution with all lines', () => {
@@ -586,11 +586,11 @@ describe('E2E: CliOutputPanel — provider execution rendering', () => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PART 5: CliOutputPanel — scenario-specific rendering
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// PART 5: CliOutputPanel -- scenario-specific rendering
+// ===========================================================================
 
-describe('E2E: CliOutputPanel — scenario rendering', () => {
+describe('E2E: CliOutputPanel -- scenario rendering', () => {
   it('renders persona execution output (Claude)', () => {
     render(
       <CliOutputPanel
@@ -660,19 +660,19 @@ describe('E2E: CliOutputPanel — scenario rendering', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // PART 6: Line classification integration
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 describe('E2E: line classification in CliOutputPanel', () => {
   it('applies correct CSS classes based on line content', () => {
     const testLines = [
-      '[System] Initializing',           // meta → italic
-      '> Using tool: Read',              // tool → cyan
-      '[ERROR] Something broke',          // error → red
-      'Session started (claude-3)',       // status → emerald
-      '> Analyzing data',                // info → blue
-      'Regular output text',              // text → foreground
+      '[System] Initializing',           // meta -> italic
+      '> Using tool: Read',              // tool -> cyan
+      '[ERROR] Something broke',          // error -> red
+      'Session started (claude-3)',       // status -> emerald
+      '> Analyzing data',                // info -> blue
+      'Regular output text',              // text -> foreground
     ];
 
     const { container } = render(
@@ -699,9 +699,9 @@ describe('E2E: line classification in CliOutputPanel', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PART 7: Full integration — CliOutputPanel with healingStrip as TerminalStrip
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// PART 7: Full integration -- CliOutputPanel with healingStrip as TerminalStrip
+// ===========================================================================
 
 describe('E2E: CliOutputPanel + TerminalStrip healing integration', () => {
   it('renders execution panel with embedded healing strip', () => {
@@ -735,8 +735,8 @@ describe('E2E: CliOutputPanel + TerminalStrip healing integration', () => {
   it('renders execution panel with running healing strip', () => {
     const healingStrip = (
       <TerminalStrip
-        lastLine="Diagnosing…"
-        lines={['> Starting AI healing diagnosis…', 'Diagnosing…']}
+        lastLine="Diagnosing..."
+        lines={['> Starting AI healing diagnosis...', 'Diagnosing...']}
         isRunning={true}
         isExpanded={false}
         onToggle={() => {}}
@@ -752,15 +752,15 @@ describe('E2E: CliOutputPanel + TerminalStrip healing integration', () => {
     );
 
     expect(screen.getByText('Running')).toBeInTheDocument();
-    expect(screen.getByText('Diagnosing…')).toBeInTheDocument();
+    expect(screen.getByText('Diagnosing...')).toBeInTheDocument();
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // PART 8: Phase-specific rendering across all CLI phases
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
-describe('E2E: CliOutputPanel — all CliRunPhase values', () => {
+describe('E2E: CliOutputPanel -- all CliRunPhase values', () => {
   const phases: CliRunPhase[] = ['idle', 'running', 'completed', 'failed'];
 
   for (const phase of phases) {
@@ -779,9 +779,9 @@ describe('E2E: CliOutputPanel — all CliRunPhase values', () => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // PART 9: Large output rendering
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 describe('E2E: large output rendering', () => {
   it('renders 500 lines without crashing', () => {

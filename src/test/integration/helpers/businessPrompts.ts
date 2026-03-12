@@ -3,9 +3,9 @@
  * These mirror what the app actually sends to CLI providers.
  */
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 1. Persona Design — mirrors engine/design.rs DESIGN_OUTPUT_SCHEMA
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 1. Persona Design -- mirrors engine/design.rs DESIGN_OUTPUT_SCHEMA
+// ===========================================================================
 
 export function buildPersonaDesignPrompt(input: {
   personaName: string;
@@ -102,7 +102,7 @@ Important rules:
 2. Each connector MUST include \`credential_fields\` with at least one field
 3. Each connector MUST include \`auth_type\`
 4. \`full_prompt_markdown\` must be the complete, ready-to-use system prompt
-5. Output ONLY the JSON block — no additional text before or after
+5. Output ONLY the JSON block -- no additional text before or after
 6. \`use_case_flows\` MUST contain 1-3 flow diagrams
 7. Flow node types: "start", "end", "action", "decision", "connector", "event", "error"
 
@@ -117,9 +117,9 @@ If the instruction is ambiguous, you MAY output a question instead:
 }
 \`\`\``;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 2. Credential Design — mirrors engine/credential_design.rs
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 2. Credential Design -- mirrors engine/credential_design.rs
+// ===========================================================================
 
 export function buildCredentialDesignPrompt(input: {
   serviceDescription: string;
@@ -176,15 +176,15 @@ You MUST output your result as a single JSON code block:
 \`\`\`
 
 Rules:
-1. \`match_existing\` — set to existing connector name if match found, else null
-2. \`connector.name\` — lowercase snake_case
-3. \`connector.fields[].type\` — "password" for secrets, "text" for identifiers
-4. \`connector.healthcheck_config\` — use \`{{field_key}}\` placeholders in headers
+1. \`match_existing\` -- set to existing connector name if match found, else null
+2. \`connector.name\` -- lowercase snake_case
+3. \`connector.fields[].type\` -- "password" for secrets, "text" for identifiers
+4. \`connector.healthcheck_config\` -- use \`{{field_key}}\` placeholders in headers
 5. Output ONLY the JSON block`;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 3. Credential Healthcheck — mirrors engine/credential_design.rs
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 3. Credential Healthcheck -- mirrors engine/credential_design.rs
+// ===========================================================================
 
 export function buildCredentialHealthcheckPrompt(input: {
   serviceDescription: string;
@@ -229,9 +229,9 @@ Rules:
 3. Prefer identity/profile endpoints over write operations.
 4. Output ONLY the JSON block.`;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 4. N8N Transform Turn 1 — mirrors n8n_transform/prompts.rs
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 4. N8N Transform Turn 1 -- mirrors n8n_transform/prompts.rs
+// ===========================================================================
 
 export function buildN8nTransformPrompt(input: {
   workflowName: string;
@@ -271,9 +271,9 @@ Question rules:
 Choose ONE: output TRANSFORM_QUESTIONS or output the persona JSON. Not both.`;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 5. N8N Transform Turn 2 (Section-Delimited) — mirrors wrap_prompt_with_sections
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 5. N8N Transform Turn 2 (Section-Delimited) -- mirrors wrap_prompt_with_sections
+// ===========================================================================
 
 export function buildN8nSectionedPrompt(input: {
   workflowName: string;
@@ -282,7 +282,7 @@ export function buildN8nSectionedPrompt(input: {
 }): string {
   const answersJson = JSON.stringify(input.userAnswers, null, 2);
 
-  return `IMPORTANT OUTPUT FORMAT — SECTION-BY-SECTION STREAMING:
+  return `IMPORTANT OUTPUT FORMAT -- SECTION-BY-SECTION STREAMING:
 
 Do NOT output a single monolithic JSON object. Instead, emit each section separately:
 
@@ -328,9 +328,9 @@ ${answersJson}
 Now generate the full persona using section-by-section format above.`;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 6. Test Scenario Generation — mirrors engine/test_runner.rs
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 6. Test Scenario Generation -- mirrors engine/test_runner.rs
+// ===========================================================================
 
 export function buildTestScenarioPrompt(input: {
   agentName: string;
@@ -379,16 +379,16 @@ Output a JSON array:
 \`\`\`
 
 Rules:
-1. Each scenario must be realistic — something a real user would trigger
+1. Each scenario must be realistic -- something a real user would trigger
 2. Include at least one happy path and one error/edge case
 3. mock_tools must reference tools from the Available Tools list
 4. expected_tool_sequence is the expected order of tool calls
 5. Output ONLY the JSON array`;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 7. Persona Execution — mirrors engine/prompt.rs assemble_prompt()
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 7. Persona Execution -- mirrors engine/prompt.rs assemble_prompt()
+// ===========================================================================
 
 export function buildPersonaExecutionPrompt(input: {
   personaName: string;
@@ -443,9 +443,9 @@ ${input.inputData}
 Process the input data according to your system prompt. Use the communication protocols above to structure your output. You MUST end with an outcome_assessment.`;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 8. Template Adoption — mirrors template_adopt.rs build_template_adopt_unified_prompt()
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 8. Template Adoption -- mirrors template_adopt.rs build_template_adopt_unified_prompt()
+// ===========================================================================
 
 export function buildTemplateAdoptPrompt(input: {
   templateName: string;
@@ -474,7 +474,7 @@ ${toolsSection}${triggersSection}${connectorsSection}## Your Task
 
 Analyze this template and either:
 
-**Option A — Ask Questions:** If the template has external integrations, ambiguous configuration, or needs user preferences, output 4-8 clarifying questions using this EXACT format:
+**Option A -- Ask Questions:** If the template has external integrations, ambiguous configuration, or needs user preferences, output 4-8 clarifying questions using this EXACT format:
 
 TRANSFORM_QUESTIONS
 [{"id":"q1","category":"credentials","question":"Your question","type":"select","options":["Option A","Option B"],"default":"Option A","context":"Why this matters"}]
@@ -485,7 +485,7 @@ Question rules:
 - MUST include at least one question about human-in-the-loop preferences
 - MUST include at least one question about memory/learning strategy
 
-**Option B — Generate Persona:** If the template is straightforward, output a JSON object with this EXACT schema:
+**Option B -- Generate Persona:** If the template is straightforward, output a JSON object with this EXACT schema:
 
 \`\`\`json
 {
@@ -512,12 +512,12 @@ Question rules:
 \`\`\`
 
 Choose ONE: output TRANSFORM_QUESTIONS or output the persona JSON. Not both.
-Output ONLY the chosen format — no additional text.`;
+Output ONLY the chosen format -- no additional text.`;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 9. Query Debug — mirrors credentials/query_debug.rs build_prompt()
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 9. Query Debug -- mirrors credentials/query_debug.rs build_prompt()
+// ===========================================================================
 
 export function buildQueryDebugPrompt(input: {
   serviceType: string;
@@ -543,6 +543,6 @@ ${input.queryText}
 ${errorSection}## Instructions
 1. Identify and fix all issues (syntax, table/column names, dialect-specific syntax)
 2. Output ONLY the corrected database query in a single \`\`\`sql code block
-3. Do NOT output JavaScript, TypeScript, or client library code — ONLY the raw SQL query
+3. Do NOT output JavaScript, TypeScript, or client library code -- ONLY the raw SQL query
 4. Briefly explain what you fixed`;
 }

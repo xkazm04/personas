@@ -1,7 +1,7 @@
 import type { ModelProfile, ModelProvider } from '@/lib/types/frontendTypes';
 import { profileToDropdownValue } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 
-// ── Draft type for all editable persona fields ─────────────────────────
+// -- Draft type for all editable persona fields -------------------------
 
 export interface PersonaDraft {
   name: string;
@@ -21,7 +21,7 @@ export interface PersonaDraft {
   maxTurns: number | '';
 }
 
-// ── Key groups for dirty detection ────────────────────────────────
+// -- Key groups for dirty detection --------------------------------
 
 /** Fields that belong to the Settings tab (name, appearance, limits). */
 export const SETTINGS_KEYS = [
@@ -34,7 +34,7 @@ export const MODEL_KEYS = [
   'maxBudget', 'maxTurns',
 ] as const satisfies readonly (keyof PersonaDraft)[];
 
-// ── Compile-time exhaustiveness check ────────────────────────────
+// -- Compile-time exhaustiveness check ----------------------------
 // If a new field is added to PersonaDraft but not to SETTINGS_KEYS or
 // MODEL_KEYS, this line will produce a TypeScript error.
 type _CoveredKeys = (typeof SETTINGS_KEYS)[number] | (typeof MODEL_KEYS)[number];
@@ -72,7 +72,7 @@ export function buildDraft(persona: { name: string; description?: string | null;
       customModelName = mp.model;
     }
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical -- JSON parse fallback
   }
   return {
     name: persona.name,

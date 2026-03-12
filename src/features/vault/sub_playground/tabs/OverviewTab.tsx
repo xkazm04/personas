@@ -59,7 +59,7 @@ export function OverviewTab({
       setCopiedId(true);
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       copiedTimerRef.current = setTimeout(() => setCopiedId(false), 1500);
-    } catch { /* intentional: non-critical — clipboard copy may be denied by browser */ }
+    } catch { /* intentional: non-critical -- clipboard copy may be denied by browser */ }
   }, [credential.id]);
 
   useEffect(() => {

@@ -32,7 +32,7 @@ export function ExportSection({
       <p className="text-sm text-muted-foreground/70">
         Export your workspace to a portable ZIP archive containing all personas, teams,
         tools, connectors, memories, and test suites. Import restores from a previously
-        exported archive — imported items are created as new entities (disabled by default).
+        exported archive -- imported items are created as new entities (disabled by default).
       </p>
 
       <div className="flex flex-wrap gap-3">

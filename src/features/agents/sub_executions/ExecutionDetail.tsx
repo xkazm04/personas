@@ -26,7 +26,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
           onClick={() => setActiveTab('detail')}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
             activeTab === 'detail'
-              ? 'bg-primary/15 text-foreground/90 border border-primary/25'
+              ? 'bg-primary/15 text-foreground/90 border border-primary/30'
               : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
           }`}
         >
@@ -38,7 +38,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
             onClick={() => setActiveTab('inspector')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
               activeTab === 'inspector'
-                ? 'bg-primary/15 text-foreground/90 border border-primary/25'
+                ? 'bg-primary/15 text-foreground/90 border border-primary/30'
                 : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
             }`}
           >
@@ -50,7 +50,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
           onClick={() => setActiveTab('trace')}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
             activeTab === 'trace'
-              ? 'bg-primary/15 text-foreground/90 border border-primary/25'
+              ? 'bg-primary/15 text-foreground/90 border border-primary/30'
               : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
           }`}
         >
@@ -61,7 +61,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
           onClick={() => setActiveTab('pipeline')}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
             activeTab === 'pipeline'
-              ? 'bg-primary/15 text-foreground/90 border border-primary/25'
+              ? 'bg-primary/15 text-foreground/90 border border-primary/30'
               : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
           }`}
         >

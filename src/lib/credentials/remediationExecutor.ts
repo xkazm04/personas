@@ -14,7 +14,7 @@ import { rotateCredentialNow, listRotationPolicies, updateRotationPolicy } from 
 import { sendOsNotification } from '@/lib/utils/platform/osNotification';
 import { remediationBus, type RemediationEvent, type RemediationAction } from './remediationBus';
 
-// ── Action Handlers ─────────────────────────────────────────────────
+// -- Action Handlers -------------------------------------------------
 
 async function executeAutoRotate(event: RemediationEvent): Promise<void> {
   try {
@@ -77,7 +77,7 @@ function executeBackoff(event: RemediationEvent): void {
   remediationBus.updateOutcome(event.id, 'success', 'Backoff signal recorded');
 }
 
-// ── Executor Dispatch ───────────────────────────────────────────────
+// -- Executor Dispatch -----------------------------------------------
 
 const ACTION_HANDLERS: Record<RemediationAction, (event: RemediationEvent) => void | Promise<void>> = {
   auto_rotate: executeAutoRotate,

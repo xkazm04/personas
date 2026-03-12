@@ -94,7 +94,7 @@ export function N8nEditStep({
     onConnectorsMissingChange?.(count);
   }, [onConnectorsMissingChange]);
 
-  // Use Cases tab â€” inserted after Identity
+  // Use Cases tab -- inserted after Identity
   const earlyTabs: DraftEditTab[] = useMemo(() => [
     {
       id: 'use-cases',
@@ -120,7 +120,7 @@ export function N8nEditStep({
     <span className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" />
   ) : null;
 
-  // N8n-specific tabs: entities (tools+connectors+triggers) â€” inserted after Settings
+  // N8n-specific tabs: entities (tools+connectors+triggers) -- inserted after Settings
   const additionalTabs: DraftEditTab[] = useMemo(() => [
     {
       id: 'entities',
@@ -175,9 +175,9 @@ export function N8nEditStep({
         />
       </div>
 
-      {/* Test output panel â€” below editor so user can see test CLI log */}
+      {/* Test output panel -- below editor so user can see test CLI log */}
       {showTestPanel && (
-        <div className="flex-shrink-0 border-t border-primary/10">
+        <div className="flex-shrink-0 mt-4 border-t border-primary/10" role="region" aria-label="Test output" aria-busy={testPhase === 'running'}>
           <button
             onClick={() => setTestPanelOpen((p) => !p)}
             className="flex items-center justify-between w-full px-4 py-2 bg-primary/5 hover:bg-secondary/40 transition-colors cursor-pointer"

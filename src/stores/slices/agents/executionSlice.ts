@@ -49,7 +49,7 @@ export interface ExecutionSlice {
   queueDepth: number | null;
   /** Design drift events detected from execution outcomes. */
   designDriftEvents: DesignDriftEvent[];
-  /** Last completed/cancelled execution ID â€” survives state reset so Resume can fetch its session. */
+  /** Last completed/cancelled execution ID -- survives state reset so Resume can fetch its session. */
   lastExecutionId: string | null;
 
   // Actions
@@ -87,7 +87,7 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
 
   executePersona: async (personaId, inputData, useCaseId, continuation) => {
     // Guard: reject concurrent executions. The store tracks a single active
-    // execution â€” a second call would overwrite activeExecutionId and
+    // execution -- a second call would overwrite activeExecutionId and
     // executionPersonaId, corrupting terminal output with interleaved lines.
     if (get().isExecuting) {
       set({ error: "Another execution is already running. Wait for it to complete or cancel it first." });
@@ -101,6 +101,11 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
       return null;
     }
 
+    // Lock execution state immediately before any async work to close the
+    // race-window where a second call could pass the isExecuting guard.
+    executionSink.reset();
+    set({ isExecuting: true, executionOutput: [], executionOutputBytes: 0, error: null, executionPersonaId: personaId, activeUseCaseId: useCaseId ?? null });
+
     // Pipeline: initiate stage
     let trace = createPipelineTrace('pending');
     trace = traceStage(trace, 'initiate', { personaId });
@@ -109,10 +114,9 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
     const initiatePayload: InitiatePayload = { personaId, inputData, useCaseId };
     await runMiddleware('initiate', initiatePayload, trace);
 
-    executionSink.reset();
-    set({ isExecuting: true, executionOutput: [], executionOutputBytes: 0, error: null, executionPersonaId: personaId, activeUseCaseId: useCaseId ?? null, pipelineTrace: trace });
+    set({ pipelineTrace: trace });
     try {
-      // Pipeline: validate stage â€” middleware can enrich inputData (e.g. knowledge injection)
+      // Pipeline: validate stage -- middleware can enrich inputData (e.g. knowledge injection)
       trace = traceStage(trace, 'validate');
       const validateResult = await runMiddleware('validate', {
         personaId,
@@ -189,23 +193,29 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
       trace = completeTrace(trace);
       set({ pipelineTrace: trace });
 
-      // Run frontend_complete middleware (fire-and-forget â€” non-blocking)
+      // Run frontend_complete middleware (fire-and-forget -- non-blocking)
       const completePayload: FrontendCompletePayload = { executionId: execId ?? '', finalStatus: _status ?? '' };
-      void runMiddleware('frontend_complete', completePayload, trace).catch(() => {/* non-critical */});
+      void runMiddleware('frontend_complete', completePayload, trace).catch((err) => {
+        console.warn('[execution] frontend_complete middleware failed', { executionId: execId, personaId: execPersonaId, error: String(err) });
+      });
     }
     set({ isExecuting: false, activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
     const personaId = get().selectedPersona?.id;
-    if (personaId) get().fetchExecutions(personaId);
+    const fetchPromise = personaId ? get().fetchExecutions(personaId) : Promise.resolve();
     // Notify guided tour that an execution completed
     get().emitTourEvent('tour:execution-complete');
 
-    // Design drift detection â€” async, non-blocking
+    // Invalidate budget cache so spend data refreshes after execution
+    get().invalidateBudgetCache(execPersonaId ?? undefined);
+
+    // Design drift detection -- runs after fetchExecutions resolves so
+    // state.executions includes the execution that just finished.
     if (execPersonaId && execId && _status) {
       const durationMs = statusData?.durationMs ?? null;
       const costUsd = statusData?.costUsd ?? 0;
       const errorMessage = statusData?.errorMessage ?? null;
 
-      queueMicrotask(() => {
+      void fetchPromise.then(() => {
         try {
           const state = get();
           const persona = state.personas.find(p => p.id === execPersonaId);
@@ -250,8 +260,8 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
             saveDriftEvents(all);
             set({ designDriftEvents: all });
           }
-        } catch {
-          // Drift detection is non-critical â€” never break execution flow
+        } catch (err) {
+          console.warn('[execution] drift detection failed', { executionId: execId, personaId: execPersonaId, error: String(err) });
         }
       });
     }
@@ -271,6 +281,12 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
   },
 
   clearExecutionOutput: () => {
+    // If an execution is still running, cancel it on the backend first to
+    // avoid orphaning the engine (which would keep consuming API credits).
+    const activeId = get().activeExecutionId;
+    if (activeId && get().isExecuting) {
+      get().cancelExecution(activeId);
+    }
     executionSink.clear();
     set({ executionOutput: [], executionOutputBytes: 0, activeExecutionId: null, isExecuting: false, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: null, queuePosition: null, queueDepth: null });
   },

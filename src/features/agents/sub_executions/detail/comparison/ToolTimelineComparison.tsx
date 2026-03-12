@@ -36,7 +36,7 @@ export function ToolTimelineComparison({
                   )}
                 </>
               ) : (
-                <span className="text-muted-foreground/60 text-sm">—</span>
+                <span className="text-muted-foreground/60 text-sm">--</span>
               )}
             </div>
 
@@ -51,7 +51,7 @@ export function ToolTimelineComparison({
                   {durDelta > 0 ? '+' : ''}{formatDuration(durDelta)}
                 </span>
               ) : l && r ? (
-                <span className="text-muted-foreground/60 text-sm">—</span>
+                <span className="text-muted-foreground/60 text-sm">--</span>
               ) : null}
             </div>
 
@@ -66,7 +66,7 @@ export function ToolTimelineComparison({
                   )}
                 </>
               ) : (
-                <span className="text-muted-foreground/60 text-sm">—</span>
+                <span className="text-muted-foreground/60 text-sm">--</span>
               )}
             </div>
           </div>

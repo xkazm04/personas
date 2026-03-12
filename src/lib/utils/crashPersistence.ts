@@ -17,7 +17,7 @@ export function readCrashLogs(): Array<{ timestamp: string; component: string; m
     }
     return trimmed as Array<{ timestamp: string; component: string; message: string; stack?: string }>;
   } catch {
-    // intentional: corrupted data â€” wipe and return empty
+    // intentional: corrupted data -- wipe and return empty
     localStorage.removeItem(CRASH_STORAGE_KEY);
     return [];
   }
@@ -50,7 +50,7 @@ export function persistCrash(
     try {
       localStorage.setItem(CRASH_STORAGE_KEY, JSON.stringify(sliced));
     } catch {
-      // Quota exceeded â€” halve entries and retry once
+      // Quota exceeded -- halve entries and retry once
       const halved = sliced.slice(0, Math.max(1, Math.floor(CRASH_MAX_ENTRIES / 2)));
       localStorage.setItem(CRASH_STORAGE_KEY, JSON.stringify(halved));
     }

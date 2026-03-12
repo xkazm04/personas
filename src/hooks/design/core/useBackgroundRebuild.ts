@@ -78,7 +78,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
   }, [setRebuildActive, onCompleted]);
 
   const handleSessionLost = useCallback(() => {
-    setError('Connection lost — the rebuild may still be running in the background.');
+    setError('Connection lost -- the rebuild may still be running in the background.');
     setPhase('failed');
     setRebuildActive(false);
   }, [setRebuildActive]);
@@ -124,7 +124,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
       try {
         await cancelRebuild(rebuildId);
       } catch {
-        // intentional: non-critical — cancellation is best-effort
+        // intentional: non-critical -- cancellation is best-effort
       }
     }
     setPhase('failed');

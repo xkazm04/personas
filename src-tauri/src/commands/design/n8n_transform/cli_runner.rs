@@ -22,7 +22,7 @@ use super::types::N8nPersonaOutput;
 
 use crate::commands::design::analysis::extract_display_text;
 
-// ── Tauri commands ──────────────────────────────────────────────
+// -- Tauri commands ----------------------------------------------
 
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
@@ -130,7 +130,7 @@ pub async fn start_n8n_transform_background(
     let session_id_for_task = session_id.clone();
     tokio::spawn(async move {
         if is_adjustment {
-            // ── Adjustment re-run: single-prompt path (no interactive questions) ──
+            // -- Adjustment re-run: single-prompt path (no interactive questions) --
             let result = tokio::select! {
                 _ = token_for_task.cancelled() => {
                     Err(AppError::Internal("Transform cancelled by user".into()))
@@ -157,7 +157,7 @@ pub async fn start_n8n_transform_background(
                 session_id_for_task.as_deref(),
             );
         } else {
-            // ── Initial transform: unified prompt (may produce questions or persona) ──
+            // -- Initial transform: unified prompt (may produce questions or persona) --
             let result = tokio::select! {
                 _ = token_for_task.cancelled() => {
                     Err(AppError::Internal("Transform cancelled by user".into()))
@@ -186,11 +186,11 @@ pub async fn start_n8n_transform_background(
                     );
                 }
                 Ok((None, true)) => {
-                    // Questions were produced and stored — status is awaiting_answers
+                    // Questions were produced and stored -- status is awaiting_answers
                     // Nothing else to do; frontend will poll and pick up the questions
                 }
                 Ok((None, false)) => {
-                    // No questions and no persona — unusual, treat as failure
+                    // No questions and no persona -- unusual, treat as failure
                     handle_transform_result(
                         Err(AppError::Internal("No output from unified transform".into())),
                         &app_handle,
@@ -268,7 +268,7 @@ pub async fn continue_n8n_transform(
     Ok(json!({ "transform_id": transform_id }))
 }
 
-// ── Internal helpers ────────────────────────────────────────────
+// -- Internal helpers --------------------------------------------
 
 /// Build on_line and on_section callbacks for sectioned CLI streaming.
 /// Both callbacks emit to n8n transform lines; on_section also stores the section.
@@ -295,7 +295,7 @@ fn build_section_callbacks(
             &app2,
             &id2,
             format!(
-                "[Section] {} — {}",
+                "[Section] {} -- {}",
                 section.label,
                 if section.validation.valid { "valid" } else { "errors detected" }
             ),
@@ -404,7 +404,7 @@ async fn run_unified_transform_turn1(
         return Ok((None, true));
     }
 
-    // No questions — try to parse persona output directly
+    // No questions -- try to parse persona output directly
     emit_n8n_transform_line(
         app,
         transform_id,
@@ -596,7 +596,7 @@ async fn run_n8n_transform_job(
     Ok(draft)
 }
 
-// ── Shared utilities (pub for template_adopt) ────────────
+// -- Shared utilities (pub for template_adopt) ------------
 
 pub fn should_surface_n8n_output_line(line: &str) -> bool {
     let trimmed = line.trim();

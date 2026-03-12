@@ -249,7 +249,7 @@ export function BuildStep() {
         onCancel={() => void cancelTransform()}
       />
 
-      {/* Questionnaire — shown when CLI asks questions */}
+      {/* Questionnaire -- shown when CLI asks questions */}
       {hasQuestions && (
         <BuildQuestionnaire
           questions={state.questions!}
@@ -281,7 +281,7 @@ export function BuildStep() {
         <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
           <Sparkles className="w-4 h-4 text-blue-400/60 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-blue-300/60 leading-relaxed">
-            You can close this dialog — processing continues in the background.
+            You can close this dialog -- processing continues in the background.
           </p>
         </div>
       )}

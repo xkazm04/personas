@@ -51,7 +51,7 @@ export function emitDeploymentEvent(opts: EmitOptions): void {
     use_case_id: null,
   };
 
-  // Emit through Tauri's event system — the singleton listener picks it up
+  // Emit through Tauri's event system -- the singleton listener picks it up
   emit('event-bus', event).catch(() => {
     // If Tauri emit fails (e.g. in tests), silently ignore
   });

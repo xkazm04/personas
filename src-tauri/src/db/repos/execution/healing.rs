@@ -60,7 +60,7 @@ pub fn get_all(
 
     let mut stmt = conn.prepare(&sql)?;
     let rows = stmt.query_map(params_ref.as_slice(), row_to_healing_issue)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    Ok(crate::db::repos::utils::collect_rows(rows, "healing_issues_list"))
 }
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaHealingIssue, AppError> {
@@ -89,7 +89,7 @@ pub fn create(
     category: Option<&str>,
     execution_id: Option<&str>,
     suggested_fix: Option<&str>,
-) -> Result<PersonaHealingIssue, AppError> {
+) -> Result<Option<PersonaHealingIssue>, AppError> {
     if title.trim().is_empty() {
         return Err(AppError::Validation("Title cannot be empty".into()));
     }
@@ -104,8 +104,8 @@ pub fn create(
     let is_circuit_breaker = if is_circuit_breaker { 1 } else { 0 };
 
     let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO persona_healing_issues
+    let rows = conn.execute(
+        "INSERT OR IGNORE INTO persona_healing_issues
          (id, persona_id, execution_id, title, description, is_circuit_breaker, severity, category, suggested_fix, auto_fixed, status, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0, 'open', ?10)",
         params![
@@ -122,7 +122,12 @@ pub fn create(
         ],
     )?;
 
-    get_by_id(pool, &id)
+    if rows == 0 {
+        // Duplicate -- a healing issue already exists for this (persona_id, execution_id).
+        return Ok(None);
+    }
+
+    Ok(Some(get_by_id(pool, &id)?))
 }
 
 pub fn update_status(pool: &DbPool, id: &str, status: &str) -> Result<(), AppError> {
@@ -155,6 +160,52 @@ pub fn mark_auto_fixed(pool: &DbPool, id: &str) -> Result<(), AppError> {
         params![now, id],
     )?;
     Ok(())
+}
+
+/// Mark a healing issue as pending auto-fix. Called at schedule time before the
+/// retry actually runs. The issue stays in `auto_fix_pending` until
+/// [`confirm_auto_fix`] (on success) or [`revert_auto_fix_pending`] (on failure).
+pub fn mark_auto_fix_pending(pool: &DbPool, id: &str) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_healing_issues SET auto_fixed = 1, status = 'auto_fix_pending' WHERE id = ?1",
+        params![id],
+    )?;
+    Ok(())
+}
+
+/// Transition a healing issue from `auto_fix_pending` to `resolved` after the
+/// retry execution succeeds.
+pub fn confirm_auto_fix(pool: &DbPool, id: &str) -> Result<(), AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_healing_issues SET status = 'resolved', resolved_at = ?1 WHERE id = ?2 AND status = 'auto_fix_pending'",
+        params![now, id],
+    )?;
+    Ok(())
+}
+
+/// Revert a healing issue from `auto_fix_pending` back to `open` after the
+/// retry execution fails — the problem was not actually fixed.
+pub fn revert_auto_fix_pending(pool: &DbPool, id: &str) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_healing_issues SET auto_fixed = 0, status = 'open' WHERE id = ?1 AND status = 'auto_fix_pending'",
+        params![id],
+    )?;
+    Ok(())
+}
+
+/// Find healing issues associated with an execution ID (used to update status
+/// after a retry completes).
+pub fn get_by_execution_id(pool: &DbPool, execution_id: &str) -> Result<Vec<PersonaHealingIssue>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM persona_healing_issues WHERE execution_id = ?1",
+    )?;
+    let rows = stmt.query_map(params![execution_id], row_to_healing_issue)?;
+    Ok(crate::db::repos::utils::collect_rows(rows, "healing_issues_by_exec"))
 }
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
@@ -324,7 +375,8 @@ mod tests {
             None,
             Some("Split the prompt into sections and use structured_prompt."),
         )
-        .unwrap();
+        .unwrap()
+        .expect("should create new issue");
         assert_eq!(issue1.title, "Prompt too long");
         assert_eq!(issue1.severity, "high");
         assert_eq!(issue1.category, "prompt");
@@ -344,7 +396,8 @@ mod tests {
             None,
             None,
         )
-        .unwrap();
+        .unwrap()
+        .expect("should create new issue");
         assert_eq!(issue2.severity, "low");
         assert_eq!(issue2.category, "config");
 
@@ -392,5 +445,56 @@ mod tests {
 
         let remaining = get_all(&pool, None, None).unwrap();
         assert_eq!(remaining.len(), 1);
+    }
+
+    #[test]
+    fn test_duplicate_execution_id_prevented() {
+        let pool = init_test_db().unwrap();
+
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Dup Test".into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap();
+
+        let exec_id = "exec-001";
+
+        // First insert succeeds
+        let first = create(
+            &pool, &persona.id, "Error A", "desc", false,
+            None, None, Some(exec_id), None,
+        )
+        .unwrap();
+        assert!(first.is_some(), "first insert should succeed");
+
+        // Second insert with same (persona_id, execution_id) returns None
+        let second = create(
+            &pool, &persona.id, "Error B", "desc2", false,
+            None, None, Some(exec_id), None,
+        )
+        .unwrap();
+        assert!(second.is_none(), "duplicate should be silently ignored");
+
+        // Only one row exists
+        let all = get_all(&pool, Some(&persona.id), None).unwrap();
+        assert_eq!(all.len(), 1);
+        assert_eq!(all[0].title, "Error A");
     }
 }

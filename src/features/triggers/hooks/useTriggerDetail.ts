@@ -40,7 +40,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
     };
   }, []);
 
-  // ── Test fire ──────────────────────────────────────────────────────────
+  // -- Test fire ----------------------------------------------------------
 
   const handleTestFire = useCallback(async () => {
     setTesting(true);
@@ -52,7 +52,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
       } else if (result.data?.execution) {
         setTestResult({ success: true, message: `Config OK. Execution ${result.data.execution.id.slice(0, 8)} started` });
       } else if (result.data?.validationFailures) {
-        setTestResult({ success: false, message: `Validation failed — ${result.data.validationFailures}` });
+        setTestResult({ success: false, message: `Validation failed -- ${result.data.validationFailures}` });
       }
     } catch (err) {
       setTestResult({ success: false, message: err instanceof Error ? err.message : 'Failed to fire trigger' });
@@ -62,7 +62,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
     }
   }, [triggerId, ops]);
 
-  // ── Dry run ────────────────────────────────────────────────────────────
+  // -- Dry run ------------------------------------------------------------
 
   const handleDryRun = useCallback(async () => {
     setDryRunning(true);
@@ -83,7 +83,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
     }
   }, [triggerId, ops]);
 
-  // ── Activity log ───────────────────────────────────────────────────────
+  // -- Activity log -------------------------------------------------------
 
   const toggleActivityLog = useCallback(async () => {
     if (activityOpen) {
@@ -120,7 +120,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
     }
   }, [triggerId, ops]);
 
-  // ── Delete confirmation ────────────────────────────────────────────────
+  // -- Delete confirmation ------------------------------------------------
 
   const startDeleteConfirm = useCallback(() => {
     setConfirmingDelete(true);
@@ -139,7 +139,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
     setConfirmingDelete(false);
   }, []);
 
-  // ── Clipboard ──────────────────────────────────────────────────────────
+  // -- Clipboard ----------------------------------------------------------
 
   const copyWebhookUrl = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -147,7 +147,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
       await navigator.clipboard.writeText(getWebhookUrl(triggerId));
       setCopiedUrl(true);
       setTimeout(() => setCopiedUrl(false), 2000);
-    } catch { /* intentional: non-critical — clipboard write best-effort */ }
+    } catch { /* intentional: non-critical -- clipboard write best-effort */ }
   }, [triggerId]);
 
   const copyCurlCommand = useCallback(async (e: React.MouseEvent) => {
@@ -158,7 +158,7 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
       await navigator.clipboard.writeText(cmd);
       setCopiedCurl(true);
       setTimeout(() => setCopiedCurl(false), 2000);
-    } catch { /* intentional: non-critical — clipboard write best-effort */ }
+    } catch { /* intentional: non-critical -- clipboard write best-effort */ }
   }, [triggerId]);
 
   const clearDryRunResult = useCallback(() => setDryRunResult(null), []);

@@ -21,7 +21,7 @@ use super::cron;
 // Windowed anomaly scoring constants
 // ---------------------------------------------------------------------------
 
-/// Ring buffer capacity — last N healthcheck results per credential.
+/// Ring buffer capacity -- last N healthcheck results per credential.
 const HEALTHCHECK_RING_BUFFER_SIZE: usize = 20;
 
 /// Default failure-rate threshold for permanent errors (disables policy).
@@ -47,7 +47,7 @@ pub enum ErrorClass {
     Transient,
     /// Permanent: unauthorized (401), forbidden (403), not found (404 for auth endpoints).
     Permanent,
-    /// Unknown — could not classify.
+    /// Unknown -- could not classify.
     Unknown,
 }
 
@@ -148,15 +148,15 @@ pub struct AnomalyScore {
 /// Remediation action recommended by the anomaly scorer.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub enum Remediation {
-    /// Credential is healthy — no action needed.
+    /// Credential is healthy -- no action needed.
     Healthy,
-    /// Transient failures detected — apply backoff and retry.
+    /// Transient failures detected -- apply backoff and retry.
     BackoffRetry,
-    /// Sustained degradation — trigger pre-emptive rotation.
+    /// Sustained degradation -- trigger pre-emptive rotation.
     PreemptiveRotation,
-    /// Permanent failure — attempt rotation, then alert if that fails.
+    /// Permanent failure -- attempt rotation, then alert if that fails.
     RotateThenAlert,
-    /// Disable the policy — sustained permanent failures above threshold.
+    /// Disable the policy -- sustained permanent failures above threshold.
     Disable,
 }
 
@@ -239,7 +239,7 @@ pub fn compute_anomaly_score(entries: &[HealthcheckEntry], tolerance: Option<f64
                 }
             }
         } else {
-            // No parseable timestamp — count against totals only
+            // No parseable timestamp -- count against totals only
             if !entry.success {
                 // Already counted above
             }
@@ -295,7 +295,7 @@ pub fn compute_anomaly_score(entries: &[HealthcheckEntry], tolerance: Option<f64
 }
 
 /// Determine the tolerance threshold for a credential based on metadata hints.
-/// Returns a fraction (0.0–1.0) representing the maximum acceptable failure rate.
+/// Returns a fraction (0.0--1.0) representing the maximum acceptable failure rate.
 pub fn resolve_tolerance(metadata: &serde_json::Value) -> f64 {
     // Check for explicit tolerance override
     if let Some(t) = metadata.get("anomaly_tolerance").and_then(|v| v.as_f64()) {
@@ -442,7 +442,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool) {
 
                 tracing::info!(
                     credential_id = %policy.credential_id,
-                    "Rotation: successful — {}",
+                    "Rotation: successful -- {}",
                     detail
                 );
             }
@@ -456,7 +456,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool) {
                     Some(&msg),
                 );
 
-                // ── Windowed anomaly scoring ──
+                // -- Windowed anomaly scoring --
                 // Append failure to the credential's healthcheck ring buffer
                 let metadata: serde_json::Value = credential
                     .metadata
@@ -502,7 +502,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool) {
                             credential_id = %policy.credential_id,
                             perm_rate_1h = %format!("{:.2}", score.permanent_failure_rate_1h),
                             sample_count = score.sample_count,
-                            "Rotation: disabled — permanent failure rate {:.0}% exceeds threshold",
+                            "Rotation: disabled -- permanent failure rate {:.0}% exceeds threshold",
                             score.permanent_failure_rate_1h * 100.0
                         );
                     }
@@ -522,11 +522,11 @@ pub async fn evaluate_due_rotations(pool: &DbPool) {
                         tracing::warn!(
                             credential_id = %policy.credential_id,
                             perm_rate_1h = %format!("{:.2}", score.permanent_failure_rate_1h),
-                            "Rotation: permanent errors — scheduling rotation attempt"
+                            "Rotation: permanent errors -- scheduling rotation attempt"
                         );
                     }
                     Remediation::BackoffRetry => {
-                        // Transient failures — exponential backoff
+                        // Transient failures -- exponential backoff
                         let consecutive = rotation_repo::get_consecutive_rotation_failures(
                             pool,
                             &policy.credential_id,
@@ -536,11 +536,11 @@ pub async fn evaluate_due_rotations(pool: &DbPool) {
                         tracing::warn!(
                             credential_id = %policy.credential_id,
                             transient_rate_1h = %format!("{:.2}", score.transient_failure_rate_1h),
-                            "Rotation: transient failures — backoff retry scheduled"
+                            "Rotation: transient failures -- backoff retry scheduled"
                         );
                     }
                     Remediation::PreemptiveRotation => {
-                        // Sustained degradation — try a pre-emptive rotation
+                        // Sustained degradation -- try a pre-emptive rotation
                         let _ = rotation_repo::record_rotation(
                             pool,
                             &policy.credential_id,
@@ -556,11 +556,11 @@ pub async fn evaluate_due_rotations(pool: &DbPool) {
                         tracing::warn!(
                             credential_id = %policy.credential_id,
                             failure_rate_1h = %format!("{:.2}", score.failure_rate_1h),
-                            "Rotation: sustained degradation — pre-emptive rotation"
+                            "Rotation: sustained degradation -- pre-emptive rotation"
                         );
                     }
                     Remediation::Healthy => {
-                        // Occasional failure within tolerance — just retry normally
+                        // Occasional failure within tolerance -- just retry normally
                         let consecutive = rotation_repo::get_consecutive_rotation_failures(
                             pool,
                             &policy.credential_id,
@@ -570,7 +570,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool) {
                         tracing::warn!(
                             credential_id = %policy.credential_id,
                             failure_rate_1h = %format!("{:.2}", score.failure_rate_1h),
-                            "Rotation: failed but within tolerance — retry scheduled"
+                            "Rotation: failed but within tolerance -- retry scheduled"
                         );
                     }
                 }
@@ -600,7 +600,7 @@ pub async fn detect_anomalies(pool: &DbPool) {
 
         let entries = parse_healthcheck_entries(&metadata);
         if entries.is_empty() {
-            // No healthcheck data — fall back to legacy binary check
+            // No healthcheck data -- fall back to legacy binary check
             let last_success = metadata
                 .get("healthcheck_last_success")
                 .and_then(|v| v.as_bool());
@@ -623,7 +623,7 @@ pub async fn detect_anomalies(pool: &DbPool) {
                             &cred.id,
                             "anomaly",
                             "failed",
-                            Some("Credential suddenly failing after previous success — possible revocation"),
+                            Some("Credential suddenly failing after previous success -- possible revocation"),
                         );
                         tracing::warn!(
                             credential_id = %cred.id,
@@ -636,7 +636,7 @@ pub async fn detect_anomalies(pool: &DbPool) {
             continue;
         }
 
-        // ── Windowed anomaly scoring ──
+        // -- Windowed anomaly scoring --
         let tolerance = resolve_tolerance(&metadata);
         let score = compute_anomaly_score(&entries, Some(tolerance));
 
@@ -649,7 +649,7 @@ pub async fn detect_anomalies(pool: &DbPool) {
         let updated_meta = serde_json::to_string(&meta_obj).ok();
         let _ = cred_repo::update_metadata(pool, &cred.id, updated_meta.as_deref());
 
-        // Skip stale data — windowed scores are unreliable if healthchecks are delayed
+        // Skip stale data -- windowed scores are unreliable if healthchecks are delayed
         if score.data_stale {
             tracing::debug!(
                 credential_id = %cred.id,
@@ -875,7 +875,7 @@ pub async fn evaluate_credential_events(pool: &DbPool) {
                 Ok(detail) => {
                     tracing::info!(
                         credential_id = %event.credential_id,
-                        "Credential events: rotation successful — {}",
+                        "Credential events: rotation successful -- {}",
                         detail
                     );
                 }

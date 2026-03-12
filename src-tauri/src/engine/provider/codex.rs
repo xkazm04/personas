@@ -53,7 +53,7 @@ impl CliProvider for CodexProvider {
         // Codex uses: codex exec "<prompt>" --json --full-auto
         args.extend([
             "exec".to_string(),
-            String::new(), // placeholder — prompt injected by build_execution_args_with_prompt
+            String::new(), // placeholder -- prompt injected by build_execution_args_with_prompt
             "--json".to_string(),
             "--full-auto".to_string(),
         ]);
@@ -138,7 +138,7 @@ impl CliProvider for CodexProvider {
         let event_type = value.get("type").and_then(|t| t.as_str()).unwrap_or("");
 
         match event_type {
-            // Thread started — maps to SystemInit
+            // Thread started -- maps to SystemInit
             "thread.started" => {
                 let model = value
                     .get("model")
@@ -157,12 +157,12 @@ impl CliProvider for CodexProvider {
                 )
             }
 
-            // Item events — can contain text, function calls, or function call output
+            // Item events -- can contain text, function calls, or function call output
             t if t.starts_with("item.") => {
                 parse_codex_item(&value)
             }
 
-            // Turn completed — maps to Result
+            // Turn completed -- maps to Result
             "turn.completed" => {
                 let usage = value.get("usage");
                 let input_tokens = usage

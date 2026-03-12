@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use serde::Serialize;
 use tauri::State;
+use tracing::{info, instrument};
 use ts_rs::TS;
 
 use crate::db::models::{MetricsChartData, PersonaPromptVersion, PromptPerformanceData, ExecutionDashboardData};
@@ -19,23 +20,31 @@ pub struct PersonaMonthlySpend {
 }
 
 #[tauri::command]
+#[instrument(skip(state), fields(days, persona_id))]
 pub fn get_metrics_summary(
     state: State<'_, Arc<AppState>>,
     days: Option<i64>,
     persona_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
-    repo::get_summary(&state.db, days, persona_id.as_deref())
+    let start = std::time::Instant::now();
+    let result = repo::get_summary(&state.db, days, persona_id.as_deref());
+    info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_metrics_summary");
+    result
 }
 
 #[tauri::command]
+#[instrument(skip(state), fields(days, persona_id))]
 pub fn get_metrics_chart_data(
     state: State<'_, Arc<AppState>>,
     days: Option<i64>,
     persona_id: Option<String>,
 ) -> Result<MetricsChartData, AppError> {
     require_auth_sync(&state)?;
-    repo::get_chart_data(&state.db, days, persona_id.as_deref())
+    let start = std::time::Instant::now();
+    let result = repo::get_chart_data(&state.db, days, persona_id.as_deref());
+    info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_metrics_chart_data");
+    result
 }
 
 #[tauri::command]
@@ -49,10 +58,12 @@ pub fn get_prompt_versions(
 }
 
 #[tauri::command]
+#[instrument(skip(state))]
 pub fn get_all_monthly_spend(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<PersonaMonthlySpend>, AppError> {
     require_auth_sync(&state)?;
+    let start = std::time::Instant::now();
     let conn = state.db.get()?;
     let mut stmt = conn.prepare(
         "SELECT p.id, COALESCE(e.spend, 0.0), p.max_budget_usd, p.name
@@ -74,7 +85,9 @@ pub fn get_all_monthly_spend(
             name: row.get(3)?,
         })
     })?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    let result: Vec<PersonaMonthlySpend> = rows.filter_map(|r| r.ok()).collect();
+    info!(duration_ms = start.elapsed().as_millis() as u64, rows = result.len(), "cmd::get_all_monthly_spend");
+    Ok(result)
 }
 
 // =============================================================================
@@ -84,13 +97,17 @@ pub fn get_all_monthly_spend(
 /// Returns aggregated prompt performance data for a single persona,
 /// including daily metrics with percentiles, version markers, and anomalies.
 #[tauri::command]
+#[instrument(skip(state), fields(persona_id, days))]
 pub fn get_prompt_performance(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     days: Option<i64>,
 ) -> Result<PromptPerformanceData, AppError> {
     require_auth_sync(&state)?;
-    repo::get_prompt_performance(&state.db, &persona_id, days.unwrap_or(30))
+    let start = std::time::Instant::now();
+    let result = repo::get_prompt_performance(&state.db, &persona_id, days.unwrap_or(30));
+    info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_prompt_performance");
+    result
 }
 
 // =============================================================================
@@ -101,16 +118,20 @@ pub fn get_prompt_performance(
 /// including daily time-series, latency percentiles, top-5 personas by cost,
 /// and cost anomaly detection.
 #[tauri::command]
+#[instrument(skip(state), fields(days))]
 pub fn get_execution_dashboard(
     state: State<'_, Arc<AppState>>,
     days: Option<i64>,
 ) -> Result<ExecutionDashboardData, AppError> {
     require_auth_sync(&state)?;
-    repo::get_execution_dashboard(&state.db, days.unwrap_or(30))
+    let start = std::time::Instant::now();
+    let result = repo::get_execution_dashboard(&state.db, days.unwrap_or(30));
+    info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_execution_dashboard");
+    result
 }
 
 // =============================================================================
-// Prompt Lab — Version Management
+// Prompt Lab -- Version Management
 // =============================================================================
 
 /// Tag a prompt version as production, experimental, or archived.
@@ -185,17 +206,21 @@ pub fn rollback_prompt_version(
 
 /// Get the recent error rate for a persona.
 #[tauri::command]
+#[instrument(skip(state), fields(persona_id, window))]
 pub fn get_prompt_error_rate(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     window: Option<i64>,
 ) -> Result<f64, AppError> {
     require_auth_sync(&state)?;
-    repo::get_recent_error_rate(&state.db, &persona_id, window.unwrap_or(10))
+    let start = std::time::Instant::now();
+    let result = repo::get_recent_error_rate(&state.db, &persona_id, window.unwrap_or(10));
+    info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_prompt_error_rate");
+    result
 }
 
 // =============================================================================
-// Prompt Lab — A/B Test
+// Prompt Lab -- A/B Test
 // =============================================================================
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -302,7 +327,7 @@ pub async fn run_prompt_ab_test(
         engine.start_execution(app, db_b, exec_b_id.clone(), persona_b, tools, input_json, None),
     );
 
-    // Allow execution failures — we still want to report results
+    // Allow execution failures -- we still want to report results
     let _ = res_a;
     let _ = res_b;
 

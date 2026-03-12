@@ -1,52 +1,34 @@
-import { useCallback } from 'react';
-import { useAiArtifactFlow, defaultGetLine, buildResolveStatus } from './useAiArtifactFlow';
+import { useAiArtifactTask } from '../core/useAiArtifactTask';
 import { startRecipeExecution, cancelRecipeExecution } from '@/api/templates/recipes';
 
-// ── Types ───────────────────────────────────────────────────────
+// -- Types -------------------------------------------------------
 
 export type RecipeExecutionPhase = 'idle' | 'executing' | 'done' | 'error';
-
-interface RecipeExecutionInput {
-  recipeId: string;
-  inputData: Record<string, unknown>;
-}
 
 interface RecipeExecutionOutput {
   output: string;
 }
 
-// ── Hook ────────────────────────────────────────────────────────
+// -- Hook --------------------------------------------------------
 
 export function useRecipeExecution() {
-  const flow = useAiArtifactFlow<RecipeExecutionInput, RecipeExecutionOutput>({
-    stream: {
-      progressEvent: 'recipe-execution-progress',
-      statusEvent: 'recipe-execution-status',
-      getLine: defaultGetLine,
-      resolveStatus: buildResolveStatus('Failed to execute recipe'),
-      completedPhase: 'done',
-      runningPhase: 'executing',
-      startErrorMessage: 'Failed to start recipe execution',
-    },
-    startFn: ({ recipeId, inputData }) =>
-      startRecipeExecution(recipeId, inputData),
+  const task = useAiArtifactTask<[string, Record<string, unknown>], RecipeExecutionOutput>({
+    progressEvent: 'recipe-execution-progress',
+    statusEvent: 'recipe-execution-status',
+    runningPhase: 'executing',
+    completedPhase: 'done',
+    startFn: startRecipeExecution,
+    cancelFn: cancelRecipeExecution,
+    errorMessage: 'Failed to execute recipe',
   });
 
-  const start = useCallback(async (recipeId: string, inputData: Record<string, unknown>) => {
-    await flow.start({ recipeId, inputData });
-  }, [flow.start]);
-
-  const cancel = useCallback(() => {
-    flow.cancel(async () => { await cancelRecipeExecution(); });
-  }, [flow.cancel]);
-
   return {
-    phase: flow.phase as RecipeExecutionPhase,
-    lines: flow.lines,
-    output: flow.result?.output ?? null,
-    error: flow.error,
-    start,
-    cancel,
-    reset: flow.reset,
+    phase: task.phase as RecipeExecutionPhase,
+    lines: task.lines,
+    output: task.result?.output ?? null,
+    error: task.error,
+    start: task.start,
+    cancel: task.cancel,
+    reset: task.reset,
   };
 }

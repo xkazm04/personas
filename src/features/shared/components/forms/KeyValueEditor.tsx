@@ -8,7 +8,7 @@ interface KeyValuePair {
 }
 
 interface KeyValueEditorProps {
-  /** JSON string — component keeps this in sync */
+  /** JSON string -- component keeps this in sync */
   value: string;
   onChange: (json: string) => void;
   placeholder?: string;
@@ -24,7 +24,7 @@ function jsonToRows(json: string): KeyValuePair[] | null {
     // Only support flat string/number/bool values
     const rows: KeyValuePair[] = [];
     for (const [k, v] of Object.entries(parsed)) {
-      if (v !== null && typeof v === 'object') return null; // nested — bail to advanced
+      if (v !== null && typeof v === 'object') return null; // nested -- bail to advanced
       rows.push({ key: k, value: v == null ? '' : String(v) });
     }
     return rows;
@@ -53,7 +53,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
     if (parsed !== null) {
       setRows(parsed.length > 0 ? parsed : [{ key: '', value: '' }]);
     } else {
-      // Can't represent as key-value — flip to advanced
+      // Can't represent as key-value -- flip to advanced
       setIsAdvanced(true);
     }
   }, [value]);

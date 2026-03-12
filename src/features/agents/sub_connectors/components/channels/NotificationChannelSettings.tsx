@@ -6,6 +6,7 @@ import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types'
 import { useEditorDirty } from '@/features/agents/sub_editor';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { ChannelList, channelTypes } from './ChannelList';
+import { TOOLS_BORDER } from '@/lib/utils/designTokens';
 
 interface NotificationChannelSettingsProps {
   personaId?: string;
@@ -61,7 +62,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
 
   const validateChannels = (): string[] => {
     const errors: string[] = [];
-    for (const channel of channels) {
+    for (const channel of effectiveChannels) {
       if (!channel.enabled) continue;
       const typeDef = channelTypes.find(t => t.type === channel.type);
       if (!typeDef) continue;
@@ -92,7 +93,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
   const existingTypes = new Set(effectiveChannels.map(c => c.type));
 
   return (
-    <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-4">
+    <div className={`bg-secondary/40 backdrop-blur-sm border ${TOOLS_BORDER} rounded-xl p-4`}>
       <SectionHeader className="mb-6" icon={<Bell className="w-3.5 h-3.5" />} label="Notification Channels" />
       <ChannelList
         channels={effectiveChannels} credentials={credentials} connectorDefinitions={connectorDefinitions}

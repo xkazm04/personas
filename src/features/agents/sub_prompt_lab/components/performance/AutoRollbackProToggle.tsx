@@ -8,7 +8,7 @@ interface AutoRollbackProToggleProps {
 
 export function AutoRollbackProToggle({ enabled, loading, onToggle }: AutoRollbackProToggleProps) {
   return (
-    <div className="rounded-lg border border-primary/8 bg-secondary/30 p-3">
+    <div className="rounded-lg border border-primary/10 bg-secondary/30 p-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Shield className="w-3.5 h-3.5 text-violet-400/70" />

@@ -20,7 +20,7 @@ export function useGalleryActions(
   connectorDefinitions: ConnectorDefinition[],
   refresh: () => void,
 ) {
-  // ── Readiness scoring ────────────────────────────────────────────
+  // -- Readiness scoring --------------------------------------------
   const installedConnectorNames = useMemo(
     () => new Set(connectorDefinitions.map((c) => c.name)),
     [connectorDefinitions],
@@ -60,7 +60,7 @@ export function useGalleryActions(
     });
   }, [isReadinessSort, allItems, readinessScores]);
 
-  // ── Credential modal ─────────────────────────────────────────────
+  // -- Credential modal ---------------------------------------------
   const [credentialModalTarget, setCredentialModalTarget] = useState<CredentialModalTarget | null>(null);
 
   const handleCredentialSave = useCallback(
@@ -87,7 +87,7 @@ export function useGalleryActions(
     [connectorDefinitions],
   );
 
-  // ── Admin actions ────────────────────────────────────────────────
+  // -- Admin actions ------------------------------------------------
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [isBackfillingPipeline, setIsBackfillingPipeline] = useState(false);
   const [isBackfillingTools, setIsBackfillingTools] = useState(false);

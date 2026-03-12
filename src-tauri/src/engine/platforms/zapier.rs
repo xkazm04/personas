@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::error::AppError;
 
-/// Minimal Zapier client — Zapier has no public API for creating Zaps,
+/// Minimal Zapier client -- Zapier has no public API for creating Zaps,
 /// so we just validate that a catch hook URL is reachable.
 pub struct ZapierClient {
     http: reqwest::Client,

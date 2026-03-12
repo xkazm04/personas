@@ -1,5 +1,5 @@
 /**
- * Template Catalog — single source of truth for all template JSON files.
+ * Template Catalog -- single source of truth for all template JSON files.
  *
  * Uses Vite glob import to eagerly load every JSON under scripts/templates/,
  * excluding debug directories. Also registers all built-in template IDs

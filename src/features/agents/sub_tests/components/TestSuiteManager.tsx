@@ -87,7 +87,7 @@ export function TestSuiteManager({
       <AnimatePresence>
         {savingFromRun && canSave && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-            <div className="p-4 rounded-xl bg-primary/5 border border-primary/15 space-y-3">
+            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3">
               <p className="text-sm text-muted-foreground/90">Save the {lastGeneratedScenarios!.length} generated scenarios as a reusable test suite.</p>
               <div className="flex items-center gap-2">
                 <input type="text" value={saveNameInput} onChange={(e) => setSaveNameInput(e.target.value)} placeholder="Suite name (optional)"
@@ -114,8 +114,8 @@ export function TestSuiteManager({
       </AnimatePresence>
 
       {testSuites.length === 0 ? (
-        <div className="text-center py-8 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl">
-          <div className="w-12 h-12 rounded-xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-3">
+        <div className="text-center py-8 bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl">
+          <div className="w-12 h-12 rounded-xl bg-primary/8 border border-primary/20 flex items-center justify-center mx-auto mb-3">
             <BookOpen className="w-6 h-6 text-primary/40" />
           </div>
           <p className="text-sm text-muted-foreground/80">No saved test suites</p>
@@ -165,7 +165,7 @@ export function TestSuiteManager({
                         {scenarios.length === 0 ? (
                           <p className="text-sm text-muted-foreground/60 text-center py-4">No scenarios in this suite</p>
                         ) : scenarios.map((scenario, idx) => (
-                          <div key={`${scenario.name}-${idx}`} className="flex items-start gap-3 p-3 rounded-lg bg-background/20 border border-primary/5">
+                          <div key={`${scenario.name}-${idx}`} className="flex items-start gap-3 p-3 rounded-lg bg-background/20 border border-primary/10">
                             <FileText className="w-4 h-4 text-primary/40 mt-0.5 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                               <div className="text-sm font-medium text-foreground/80">{scenario.name}</div>

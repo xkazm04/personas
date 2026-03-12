@@ -5,7 +5,7 @@ import { ResponseViewer } from '../ResponseViewer';
 import type { TestProgress } from '../useApiTestRunner';
 import type { ApiEndpoint, ApiProxyResponse } from '@/api/system/apiProxy';
 
-// ── Empty state ──────────────────────────────────────────────────
+// -- Empty state --------------------------------------------------
 
 export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPaste: () => void }) {
   return (
@@ -40,7 +40,7 @@ export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPast
   );
 }
 
-// ── Test-run counters (passed into TerminalStrip.counters) ──────
+// -- Test-run counters (passed into TerminalStrip.counters) ------
 
 export function TestRunCounters({ progress }: { progress: TestProgress }) {
   return (
@@ -70,7 +70,7 @@ export function TestRunCounters({ progress }: { progress: TestProgress }) {
   );
 }
 
-// ── Paste modal ─────────────────────────────────────────────────
+// -- Paste modal -------------------------------------------------
 
 interface PasteSpecModalProps {
   pasteContent: string;
@@ -80,7 +80,7 @@ interface PasteSpecModalProps {
   onSubmit: () => void;
 }
 
-// ── Request / Response panel ────────────────────────────────────
+// -- Request / Response panel ------------------------------------
 
 interface RequestResponsePanelProps {
   selectedEndpoint: ApiEndpoint;

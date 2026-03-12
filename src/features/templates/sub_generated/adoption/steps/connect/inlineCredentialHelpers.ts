@@ -6,7 +6,7 @@ import type { CredentialDesignResult } from '@/hooks/design/credential/useCreden
 import type { ConnectorDefinition } from '@/lib/types/types';
 import type { RequiredConnector } from './ConnectStep';
 
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
 export type PanelMode = 'pick' | 'design-query' | 'designing' | 'manual' | 'auto';
 
@@ -24,7 +24,7 @@ export interface InlineCredentialPanelProps {
   onClose: () => void;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────
+// -- Helpers ------------------------------------------------------------
 
 export function findConnectorDefinition(
   connectorName: string,

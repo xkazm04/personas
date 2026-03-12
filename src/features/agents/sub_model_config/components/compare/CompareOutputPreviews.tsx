@@ -35,7 +35,7 @@ export function OutputPreviews({
               onClick={() => setExpandedScenario(expandedScenario === s ? null : s)}
               className={`px-2 py-1 text-xs rounded-lg border transition-colors cursor-pointer ${
                 expandedScenario === s
-                  ? 'bg-primary/15 border-primary/25 text-primary'
+                  ? 'bg-primary/15 border-primary/30 text-primary'
                   : 'bg-secondary/30 border-primary/10 text-muted-foreground/70 hover:bg-secondary/50'
               }`}
             >

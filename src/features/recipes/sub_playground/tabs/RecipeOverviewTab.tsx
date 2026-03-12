@@ -1,31 +1,10 @@
 import { Tag, Cpu, FileText } from 'lucide-react';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
+import { parseTags, parseInputSchema } from '@/features/recipes/shared/recipeParseUtils';
 
 interface RecipeOverviewTabProps {
   recipe: RecipeDefinition;
-}
-
-function parseTags(tags: string | null): string[] {
-  if (!tags) return [];
-  try {
-    const parsed = JSON.parse(tags);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    // intentional: non-critical — JSON parse fallback
-    return [];
-  }
-}
-
-function parseInputSchema(schema: string | null): Array<{ key: string; type: string; label: string }> {
-  if (!schema) return [];
-  try {
-    const parsed = JSON.parse(schema);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    // intentional: non-critical — JSON parse fallback
-    return [];
-  }
 }
 
 export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {

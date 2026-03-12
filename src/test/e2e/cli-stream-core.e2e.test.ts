@@ -1,5 +1,5 @@
 /**
- * E2E: useCorrelatedCliStream — Core lifecycle tests.
+ * E2E: useCorrelatedCliStream -- Core lifecycle tests.
  *
  * Tests the foundational CLI streaming hook that powers every CLI scenario
  * in the app. Validates event correlation, phase transitions, buffering,
@@ -29,9 +29,9 @@ import {
   PROVIDER_FIXTURES,
 } from '../helpers/cliFixtures';
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Setup / teardown
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 beforeEach(() => {
   installTauriEventEmitter();
@@ -41,9 +41,9 @@ afterEach(() => {
   teardownTauriEventEmitter();
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 1. Full lifecycle: idle → running → lines → completed
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 1. Full lifecycle: idle -> running -> lines -> completed
+// ===========================================================================
 
 describe('E2E: useCorrelatedCliStream lifecycle', () => {
   it('starts in idle phase with no lines', () => {
@@ -263,9 +263,9 @@ describe('E2E: useCorrelatedCliStream lifecycle', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 2. Event correlation — only matched IDs are processed
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 2. Event correlation -- only matched IDs are processed
+// ===========================================================================
 
 describe('E2E: event correlation by ID field', () => {
   it('ignores output events with non-matching IDs', async () => {
@@ -373,9 +373,9 @@ describe('E2E: event correlation by ID field', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 3. Multi-provider execution — full streams per provider
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 3. Multi-provider execution -- full streams per provider
+// ===========================================================================
 
 describe('E2E: multi-provider full execution streams', () => {
   for (const provider of PROVIDER_FIXTURES) {
@@ -472,9 +472,9 @@ describe('E2E: multi-provider full execution streams', () => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 4. Callback invocations — onOutputLine, onStatusEvent
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 4. Callback invocations -- onOutputLine, onStatusEvent
+// ===========================================================================
 
 describe('E2E: callback invocations', () => {
   it('calls onOutputLine for each correlated line', async () => {
@@ -559,9 +559,9 @@ describe('E2E: callback invocations', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 5. bufferLines: false — external buffer mode
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 5. bufferLines: false -- external buffer mode
+// ===========================================================================
 
 describe('E2E: external buffer mode (bufferLines: false)', () => {
   it('does not accumulate lines internally when bufferLines is false', async () => {
@@ -615,9 +615,9 @@ describe('E2E: external buffer mode (bufferLines: false)', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 6. Deduplication — consecutive duplicate lines are skipped
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 6. Deduplication -- consecutive duplicate lines are skipped
+// ===========================================================================
 
 describe('E2E: line deduplication', () => {
   it('skips consecutive duplicate lines', async () => {
@@ -669,9 +669,9 @@ describe('E2E: line deduplication', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 7. Line truncation — oversized lines are trimmed
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 7. Line truncation -- oversized lines are trimmed
+// ===========================================================================
 
 describe('E2E: oversized line truncation', () => {
   it('truncates lines exceeding 4096 characters and appends marker', async () => {
@@ -719,9 +719,9 @@ describe('E2E: oversized line truncation', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 8. Buffer overflow — MAX_STREAM_LINES = 5000
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 8. Buffer overflow -- MAX_STREAM_LINES = 5000
+// ===========================================================================
 
 describe('E2E: buffer overflow (MAX_STREAM_LINES)', () => {
   it('evicts oldest lines when buffer exceeds 5000', async () => {
@@ -752,9 +752,9 @@ describe('E2E: buffer overflow (MAX_STREAM_LINES)', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 9. Whitespace / empty line filtering
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 describe('E2E: empty and whitespace line filtering', () => {
   it('ignores empty and whitespace-only lines', async () => {
@@ -803,9 +803,9 @@ describe('E2E: empty and whitespace line filtering', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 10. Re-start — start() called while already running
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 10. Re-start -- start() called while already running
+// ===========================================================================
 
 describe('E2E: re-start mid-stream', () => {
   it('cleans up previous listeners and resets buffer on re-start', async () => {
@@ -850,9 +850,9 @@ describe('E2E: re-start mid-stream', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 11. setLines / setPhase — manual override
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 11. setLines / setPhase -- manual override
+// ===========================================================================
 
 describe('E2E: manual state overrides', () => {
   it('setLines replaces the buffer', async () => {
@@ -888,9 +888,9 @@ describe('E2E: manual state overrides', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 12. Concurrent streams — isolated by event names
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 12. Concurrent streams -- isolated by event names
+// ===========================================================================
 
 describe('E2E: concurrent isolated streams', () => {
   it('two hooks with different event names do not interfere', async () => {
@@ -927,9 +927,9 @@ describe('E2E: concurrent isolated streams', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 13. Full provider execution streams — complete output validation
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 13. Full provider execution streams -- complete output validation
+// ===========================================================================
 
 describe('E2E: complete Claude execution stream', () => {
   it('streams full Claude output and reaches completed', async () => {
@@ -1024,9 +1024,9 @@ describe('E2E: complete Copilot execution stream', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 14. Timeout and error recovery streams
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 describe('E2E: timeout and error execution streams', () => {
   it('handles timeout execution correctly', async () => {

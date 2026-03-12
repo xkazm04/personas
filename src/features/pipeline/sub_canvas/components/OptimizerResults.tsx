@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Sparkles, Check, X } from 'lucide-react';
 import type { TopologySuggestion } from '@/lib/bindings/TopologySuggestion';
 
-// ── Shared constants ─────────────────────────────────────────────────
+// -- Shared constants -------------------------------------------------
 
 import {
   GitBranch,
@@ -31,7 +31,7 @@ const SUGGESTION_COLORS: Record<string, { bg: string; border: string; text: stri
 
 const DEFAULT_COLORS = { bg: 'bg-indigo-500/8', border: 'border-indigo-500/20', text: 'text-indigo-400', dot: 'bg-indigo-500' };
 
-// ── Sub-components ───────────────────────────────────────────────────
+// -- Sub-components ---------------------------------------------------
 
 function ConfidenceBar({ value }: { value: number }) {
   return (
@@ -63,7 +63,7 @@ function ImpactBadge({ impact }: { impact: string }) {
   );
 }
 
-// ── Main ─────────────────────────────────────────────────────────────
+// -- Main -------------------------------------------------------------
 
 interface OptimizerResultsProps {
   suggestions: TopologySuggestion[];

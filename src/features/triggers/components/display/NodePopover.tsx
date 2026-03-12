@@ -11,7 +11,7 @@ function tryParseJson(str: string): string {
     const parsed = JSON.parse(str);
     return typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2);
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical -- JSON parse fallback
     return str;
   }
 }

@@ -15,6 +15,56 @@ const PROVIDER_COLORS: Record<string, string> = {
   custom: '#3B82F6',
 };
 
+// -- Provider logo SVGs (16x16) --
+function AnthropicLogo({ color }: { color: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="inline-block flex-shrink-0">
+      <defs><linearGradient id="ms-anth" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor={color} /><stop offset="100%" stopColor="#fff" stopOpacity="0.7" /></linearGradient></defs>
+      <path d="M8 2L3 14h2.5l1.2-3.2h4.6L12.5 14H15L8 2zm-.5 7L8 5.8l.5 3.2H7.5z" fill="url(#ms-anth)" fillRule="evenodd" />
+    </svg>
+  );
+}
+
+function OllamaLogo({ color }: { color: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="inline-block flex-shrink-0">
+      <defs><linearGradient id="ms-oll" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor={color} /><stop offset="100%" stopColor="#fff" stopOpacity="0.7" /></linearGradient></defs>
+      <path d="M8 2C6 2 4.5 3 4 5c-.3 1.2 0 2.5.5 3.5L3 13c-.2.5.1 1 .6 1H6l.5-2h3l.5 2h2.4c.5 0 .8-.5.6-1l-1.5-4.5C12 7.5 12.3 6.2 12 5c-.5-2-2-3-4-3z" fill="url(#ms-oll)" />
+      <circle cx="6.5" cy="5.5" r="0.7" fill="#fff" fillOpacity="0.8" />
+      <circle cx="9.5" cy="5.5" r="0.7" fill="#fff" fillOpacity="0.8" />
+    </svg>
+  );
+}
+
+function CopilotLogo({ color }: { color: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="inline-block flex-shrink-0">
+      <defs><linearGradient id="ms-cop" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor={color} /><stop offset="100%" stopColor="#fff" stopOpacity="0.7" /></linearGradient></defs>
+      <path d="M3 8c0-2 1-4 3-5l2 1.5L10 3c2 1 3 3 3 5v3c0 1.5-1 2.5-2.5 2.5h-5C4 13.5 3 12.5 3 11V8z" fill="url(#ms-cop)" />
+      <path d="M6 9h4" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeOpacity="0.8" />
+    </svg>
+  );
+}
+
+function CustomGearLogo({ color }: { color: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="inline-block flex-shrink-0">
+      <defs><linearGradient id="ms-cust" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor={color} /><stop offset="100%" stopColor="#fff" stopOpacity="0.7" /></linearGradient></defs>
+      <path d="M7.2 2h1.6l.3 1.3 1.2.5 1.1-.6 1.1 1.1-.6 1.1.5 1.2 1.3.3v1.6l-1.3.3-1.2.5.6 1.1-1.1 1.1-1.1-.6-1.2.5-.3 1.3H7.2l-.3-1.3-1.2-.5-1.1.6-1.1-1.1.6-1.1-.5-1.2L2.3 9.2V7.6l1.3-.3.5-1.2-.6-1.1 1.1-1.1 1.1.6 1.2-.5L7.2 2z" fill="url(#ms-cust)" />
+      <circle cx="8" cy="8.4" r="1.8" fill="none" stroke="#fff" strokeWidth="1" strokeOpacity="0.8" />
+      <path d="M12 2.5l.8 1.2" stroke={color} strokeWidth="1.2" strokeLinecap="round" />
+      <circle cx="13.2" cy="2" r="0.8" fill={color} fillOpacity="0.5" />
+    </svg>
+  );
+}
+
+const PROVIDER_LOGOS: Record<string, (props: { color: string }) => ReturnType<typeof AnthropicLogo>> = {
+  anthropic: AnthropicLogo,
+  ollama: OllamaLogo,
+  copilot: CopilotLogo,
+  custom: CustomGearLogo,
+};
+
 // -- Model definitions --
 interface ModelDef {
   value: string;
@@ -110,16 +160,19 @@ export function ModelSelector({
           Model &amp; Provider
         </h4>
       )}
-      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-3 space-y-3">
+      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
         {/* Three provider columns side by side */}
         <div className="grid grid-cols-4 gap-2">
-          {COLUMNS.map((col) => (
-            <div key={col.key} className="space-y-1">
+          {COLUMNS.map((col) => {
+            const Logo = PROVIDER_LOGOS[col.key];
+            return (
+            <div key={col.key} className="space-y-1 rounded-lg" style={{ backgroundColor: col.color + '08' }}>
               {/* Column header */}
               <div
-                className="text-sm font-semibold uppercase tracking-wider px-2 py-1 rounded-lg text-center"
+                className="flex items-center justify-center gap-1.5 text-sm font-semibold uppercase tracking-wider px-2 py-1.5 rounded-lg"
                 style={{ color: col.color, backgroundColor: col.color + '12' }}
               >
+                {Logo && <Logo color={col.color} />}
                 {col.label}
               </div>
 
@@ -133,7 +186,7 @@ export function ModelSelector({
                     onClick={() => onSelectModel(model.value)}
                     className={`w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-lg border transition-all transition-shadow duration-300 text-left ${
                       isSelected
-                        ? 'pl-2.5 border-primary/35 bg-primary/8'
+                        ? 'pl-2.5 border-primary/30 bg-primary/8'
                         : 'pl-2 border-transparent hover:bg-secondary/40 hover:border-primary/10'
                     }`}
                     style={{
@@ -164,7 +217,8 @@ export function ModelSelector({
                 );
               })}
             </div>
-          ))}
+          );
+          })}
         </div>
 
         {/* Provider credential fields */}

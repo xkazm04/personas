@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use ts_rs::TS;
 
 // ============================================================================
-// Design Context â€” typed envelope for the design_context JSON column
+// Design Context -- typed envelope for the design_context JSON column
 // ============================================================================
 
 /// A file attached during design analysis (API spec, schema, etc.).
@@ -70,11 +70,11 @@ pub struct ConnectorPipelineStep {
 /// Structured envelope for the `design_context` JSON column.
 ///
 /// Independent sections:
-/// - `design_files` â€” files & references for the AI design prompt
-/// - `credential_links` â€” connector name â†’ credential ID mappings
-/// - `use_cases` â€” structured workflow descriptions from design results
-/// - `summary` â€” optional human-readable summary (legacy compat)
-/// - `connector_pipeline` â€” chronological connector interaction sequence
+/// - `design_files` -- files & references for the AI design prompt
+/// - `credential_links` -- connector name -> credential ID mappings
+/// - `use_cases` -- structured workflow descriptions from design results
+/// - `summary` -- optional human-readable summary (legacy compat)
+/// - `connector_pipeline` -- chronological connector interaction sequence
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -185,7 +185,7 @@ pub fn parse_design_context(raw: Option<&str>) -> DesignContextData {
         if let Some(obj) = val.as_object() {
             let mut result = DesignContextData::default();
 
-            // Legacy: top-level "files" and "references" â†’ designFiles section
+            // Legacy: top-level "files" and "references" -> designFiles section
             if obj.contains_key("files") || obj.contains_key("references") {
                 let files: Vec<DesignFile> = obj
                     .get("files")
@@ -229,7 +229,7 @@ pub fn parse_design_context(raw: Option<&str>) -> DesignContextData {
         }
     }
 
-    // Completely unparseable â€” treat raw text as summary
+    // Completely unparseable -- treat raw text as summary
     DesignContextData {
         summary: Some(raw.to_string()),
         ..Default::default()
@@ -259,10 +259,10 @@ pub struct CreatePersonaInput {
 
 /// Canonical health level for a persona, derived from recent execution outcomes.
 ///
-/// - `healthy`  â€” all recent executions succeeded (or no failures)
-/// - `degraded` â€” some recent executions failed (failure rate < 60%)
-/// - `failing`  â€” majority of recent executions failed (failure rate >= 60%)
-/// - `dormant`  â€” no recent executions at all
+/// - `healthy`  -- all recent executions succeeded (or no failures)
+/// - `degraded` -- some recent executions failed (failure rate < 60%)
+/// - `failing`  -- majority of recent executions failed (failure rate >= 60%)
+/// - `dormant`  -- no recent executions at all
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -271,7 +271,7 @@ pub struct PersonaHealth {
     pub status: String,
     /// Last N execution statuses (e.g. ["completed","failed","completed"]), newest first
     pub recent_statuses: Vec<String>,
-    /// Success rate from recent executions (0.0â€“1.0)
+    /// Success rate from recent executions (0.0--1.0)
     pub success_rate: f64,
     /// Total number of recent executions examined
     pub total_recent: i64,

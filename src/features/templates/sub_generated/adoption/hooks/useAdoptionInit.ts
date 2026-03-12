@@ -1,5 +1,5 @@
 /**
- * useAdoptionInit — handles wizard initialization on open and draft restoration.
+ * useAdoptionInit -- handles wizard initialization on open and draft restoration.
  *
  * Extracted from AdoptionWizardContext to isolate init/restore concerns.
  */
@@ -36,7 +36,7 @@ export function useAdoptionInit({
   const setAdoptionDraft = usePersonaStore((s) => s.setAdoptionDraft);
   const draftRestoredRef = useRef(false);
 
-  // ── Initialize on open ──
+  // -- Initialize on open --
   useEffect(() => {
     if (!isOpen || !review) return;
     if (state.backgroundAdoptId) return;
@@ -51,15 +51,15 @@ export function useAdoptionInit({
     wizard.init(review.test_case_name, review.id, designResult, review.design_result ?? '');
   }, [isOpen, review, wizard.init, state.backgroundAdoptId, manualSelectionsRef, autoResolveRanRef, highWaterMarkRef]);
 
-  // ── Restore saved draft (runs once after init or context restoration) ──
+  // -- Restore saved draft (runs once after init or context restoration) --
   useEffect(() => {
     if (draftRestoredRef.current) return;
     if (!isOpen || !storedDraft || !review) return;
     if (storedDraft.reviewId !== review.id) return;
 
-    // Case 1: Normal restore — init completed, step='choose', designResult ready
+    // Case 1: Normal restore -- init completed, step='choose', designResult ready
     const normalRestore = state.step === 'choose' && !!state.designResult;
-    // Case 2: Context restore — background transform resumed, backgroundAdoptId set
+    // Case 2: Context restore -- background transform resumed, backgroundAdoptId set
     const contextRestore = !!state.backgroundAdoptId;
 
     if (!normalRestore && !contextRestore) return;
@@ -94,7 +94,7 @@ export function useAdoptionInit({
       wizard.updatePreference('userAnswers', storedDraft.userAnswers);
     }
 
-    // Restore entity selections (Phase C fix — Area #13)
+    // Restore entity selections (Phase C fix -- Area #13)
     if (storedDraft.selectedUseCaseIds) {
       wizard.selectAllUseCases(storedDraft.selectedUseCaseIds);
     }

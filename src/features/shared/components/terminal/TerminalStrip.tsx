@@ -31,7 +31,7 @@ interface TerminalStripProps {
   lineClassName?: (line: string) => string;
   /** Max-height class for the expanded panel. Default `"max-h-40"`. */
   expandedMaxHeight?: string;
-  /** CLI operation type â€” when set, shows the engine capability badge. */
+  /** CLI operation type -- when set, shows the engine capability badge. */
   operation?: CliOperation;
 }
 
@@ -63,7 +63,7 @@ export function TerminalStrip({
 
   return (
     <div className="border-b border-primary/8 bg-secondary/10 shrink-0">
-      {/* â”€â”€ Collapsed strip (always visible) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* -- Collapsed strip (always visible) ------------------------ */}
       <div className="flex items-center gap-2 px-4 py-2">
         {/* Running indicator */}
         {isRunning && (
@@ -123,7 +123,7 @@ export function TerminalStrip({
         )}
       </div>
 
-      {/* â”€â”€ Expanded log panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* -- Expanded log panel -------------------------------------- */}
       {isExpanded && (
         <div
           ref={scrollRef}

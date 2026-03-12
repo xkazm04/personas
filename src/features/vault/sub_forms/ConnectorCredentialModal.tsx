@@ -148,7 +148,7 @@ export function ConnectorCredentialModal({
           </div>
         )}
 
-        {/* Setup URL — prominent for first-time, subtle for updates */}
+        {/* Setup URL -- prominent for first-time, subtle for updates */}
         {connector.setup_url && !existingCredential && (
           <a
             href={connector.setup_url}

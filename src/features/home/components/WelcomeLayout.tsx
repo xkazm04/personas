@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import HeroHeader from './HeroHeader';
+import SetupCards from './SetupCards';
 import NavigationGrid, { type NavCard } from './NavigationGrid';
 
 interface WelcomeLayoutProps {
@@ -38,6 +39,8 @@ export default function WelcomeLayout({
       <div className="flex-1 overflow-y-auto relative z-10">
         <div className="w-full px-6 py-4 space-y-4">
           <HeroHeader greeting={greeting} displayName={displayName} />
+
+          <SetupCards />
 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35, duration: 0.3 }} className="flex items-center gap-3">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />

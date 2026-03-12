@@ -4,7 +4,7 @@ import type { DryRunResult, DryRunIssue } from './builder/types';
 import type { BuilderAction } from './builder/builderReducer';
 import { FEASIBILITY_COLORS, SEVERITY_STYLES } from '@/lib/utils/designTokens';
 
-// ── Severity styling ────────────────────────────────────────────────
+// -- Severity styling ------------------------------------------------
 
 const SEVERITY_ICONS: Record<DryRunIssue['severity'], typeof AlertTriangle> = {
   error: XCircle,
@@ -12,7 +12,7 @@ const SEVERITY_ICONS: Record<DryRunIssue['severity'], typeof AlertTriangle> = {
   info: Info,
 };
 
-// ── IssueCard ───────────────────────────────────────────────────────
+// -- IssueCard -------------------------------------------------------
 
 interface IssueCardProps {
   issue: DryRunIssue;
@@ -71,7 +71,7 @@ function IssueCard({ issue, dispatch, onResolved }: IssueCardProps) {
   );
 }
 
-// ── DryRunPanel ─────────────────────────────────────────────────────
+// -- DryRunPanel -----------------------------------------------------
 
 interface DryRunPanelProps {
   result: DryRunResult;

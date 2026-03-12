@@ -34,7 +34,7 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
   const testRunner = useApiTestRunner();
   const [showLogPanel, setShowLogPanel] = useState(false);
 
-  // ── Load saved definition on mount ─────────────────────────────
+  // -- Load saved definition on mount -----------------------------
 
   useEffect(() => {
     let cancelled = false;
@@ -45,7 +45,7 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
           setEndpoints((prev) => mergeEndpoints(prev, saved));
         }
       } catch {
-        // intentional: non-critical — no saved API definition to restore
+        // intentional: non-critical -- no saved API definition to restore
       }
       // Merge catalog endpoints
       if (!cancelled && catalogEndpoints?.length) {
@@ -56,7 +56,7 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
     return () => { cancelled = true; };
   }, [credentialId, catalogEndpoints]);
 
-  // ── File upload handler ────────────────────────────────────────
+  // -- File upload handler ----------------------------------------
 
   const handleFileUpload = useCallback(async (file: File) => {
     setParseError(null);
@@ -79,7 +79,7 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
     e.target.value = '';
   }, [handleFileUpload]);
 
-  // ── Paste spec handler ─────────────────────────────────────────
+  // -- Paste spec handler -----------------------------------------
 
   const handlePasteSubmit = useCallback(async () => {
     if (!pasteContent.trim()) return;
@@ -98,7 +98,7 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
     }
   }, [credentialId, pasteContent]);
 
-  // ── Send request ───────────────────────────────────────────────
+  // -- Send request -----------------------------------------------
 
   const handleSend = useCallback(async (method: string, path: string, headers: Record<string, string>, body?: string) => {
     setIsSending(true);
@@ -115,7 +115,7 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
     }
   }, [credentialId]);
 
-  // ── Filtered endpoints ─────────────────────────────────────────
+  // -- Filtered endpoints -----------------------------------------
 
   const filtered = useMemo(() => {
     if (!search.trim()) return endpoints;
@@ -128,7 +128,7 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
     );
   }, [endpoints, search]);
 
-  // ── Close request panel helper ─────────────────────────────────
+  // -- Close request panel helper ---------------------------------
 
   const closeRequestPanel = useCallback(() => {
     setSelectedEndpoint(null);

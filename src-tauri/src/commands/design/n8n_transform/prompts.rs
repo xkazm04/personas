@@ -5,7 +5,7 @@ use crate::engine::platform_rules;
 /// Wraps a persona-generation prompt with section-delimited output instructions.
 pub fn wrap_prompt_with_sections(base_prompt: &str) -> String {
     format!(
-        r#"IMPORTANT OUTPUT FORMAT — SECTION-BY-SECTION STREAMING:
+        r#"IMPORTANT OUTPUT FORMAT -- SECTION-BY-SECTION STREAMING:
 
 Do NOT output a single monolithic JSON object. Instead, emit each section of the persona
 separately, using section delimiters. Output sections in this EXACT order:
@@ -66,11 +66,11 @@ fn format_credential_section(credentials_json: Option<&str>) -> String {
         .unwrap_or_default()
 }
 
-// ── Shared prompt builder functions ────────────────────────────────
+// -- Shared prompt builder functions --------------------------------
 
 /// Rules for adapting tools to the user's actual credentials.
 fn build_credential_adaptation_rules() -> &'static str {
-    r#"IMPORTANT — Adapt tools to the user's ACTUAL credentials:
+    r#"IMPORTANT -- Adapt tools to the user's ACTUAL credentials:
 1. Check "User's Available Credentials" below. If the user has a credential with
    service_type matching a connector (e.g., service_type "google"), set has_credential=true
    on that connector and generate tools that use it.
@@ -86,7 +86,7 @@ fn build_credential_adaptation_rules() -> &'static str {
 
 /// Persona protocol system documentation (user_message, agent_memory, manual_review, events).
 fn build_protocol_docs() -> &'static str {
-    r#"## Persona Protocol System (CRITICAL — use these in the system prompt)
+    r#"## Persona Protocol System (CRITICAL -- use these in the system prompt)
 
 During execution, the persona can output special JSON protocol messages to communicate
 with the user, persist knowledge, and request human approval. You MUST weave these into
@@ -101,7 +101,7 @@ Use for: status updates, summaries, alerts, draft previews, completion reports.
 Maps from n8n: "Send Email" notification nodes, Slack/Telegram notification nodes,
 "Set" nodes that store status for display, any node whose purpose is to inform the user.
 
-### Protocol 2: Agent Memory (ACTIVE business knowledge — improves every run)
+### Protocol 2: Agent Memory (ACTIVE business knowledge -- improves every run)
 Output this JSON on its own line to save a memory:
 {"agent_memory": {"title": "string", "content": "string", "category": "fact|preference|instruction|context|learned", "importance": 1-10, "tags": ["tag1"]}}
 
@@ -114,7 +114,7 @@ Use for:
 - Decision optimization: "Batch processing at 2 AM reduces API rate limit issues"
 - Stakeholder preferences: "CFO prefers summary tables over charts in reports"
 - Process improvements: "Adding order confirmation step reduced support tickets 40%"
-- Domain knowledge: "Q4 has 3x email volume — adjust batch sizes accordingly"
+- Domain knowledge: "Q4 has 3x email volume -- adjust batch sizes accordingly"
 
 Maps from n8n: "Set" variable nodes that store state, data extraction results,
 classification outputs, any node that captures information for reuse.
@@ -123,14 +123,14 @@ Memory categories:
 - "fact": Business facts extracted from data (e.g., "Client X prefers morning meetings", "Average order value is $450")
 - "preference": Stakeholder and system preferences (e.g., "Marketing team wants Slack over email for alerts")
 - "instruction": Learned procedures and rules (e.g., "Always CC legal on contract emails above $10k")
-- "context": Ongoing business situations (e.g., "Q4 budget freeze — hold non-critical purchases")
-- "learned": Patterns and optimizations discovered through operation (e.g., "Gmail API rate limit hit at 100/min — use 80/min with exponential backoff")
+- "context": Ongoing business situations (e.g., "Q4 budget freeze -- hold non-critical purchases")
+- "learned": Patterns and optimizations discovered through operation (e.g., "Gmail API rate limit hit at 100/min -- use 80/min with exponential backoff")
 
 IMPORTANT: In the system_prompt, instruct the persona to:
-1. CHECK memories BEFORE making decisions — look for relevant past experience
+1. CHECK memories BEFORE making decisions -- look for relevant past experience
 2. STORE business outcomes, not just technical errors
 3. TRACK what approaches worked and what failed for the specific domain
-4. BUILD progressive expertise — each run should reference and extend prior knowledge
+4. BUILD progressive expertise -- each run should reference and extend prior knowledge
 
 ### Protocol 3: Manual Review (human-in-the-loop approval gate)
 Output this JSON on its own line to request human approval:
@@ -154,24 +154,24 @@ Maps from n8n: Webhook output nodes, "Execute Workflow" nodes, any node that cha
 to other workflows."#
 }
 
-/// n8n → Persona pattern mapping rules.
+/// n8n -> Persona pattern mapping rules.
 fn build_pattern_mapping() -> &'static str {
-    r#"## n8n → Persona Pattern Mapping
+    r#"## n8n -> Persona Pattern Mapping
 
 Apply these patterns when analyzing the n8n workflow:
 
 1. HUMAN-IN-THE-LOOP: If the workflow sends emails, posts to Slack, modifies databases,
-   or performs any externally-visible action → add manual_review before the action.
+   or performs any externally-visible action -> add manual_review before the action.
    The instructions should say: "Draft the action, send it as a user_message for preview,
    then create a manual_review. Only proceed with the action after approval."
 
 2. KNOWLEDGE EXTRACTION: If the workflow processes data (emails, documents, API responses)
-   → add agent_memory instructions to extract and store BUSINESS-RELEVANT information.
+   -> add agent_memory instructions to extract and store BUSINESS-RELEVANT information.
    Example: "After processing each email, evaluate if it contains key decisions,
    commitments, deadlines, or business context. Store as agent_memory with category
    'fact' or 'context' and importance based on business impact."
 
-3. PROGRESSIVE LEARNING: If the workflow handles recurring tasks → add instructions for
+3. PROGRESSIVE LEARNING: If the workflow handles recurring tasks -> add instructions for
    the persona to ACTIVELY check its memories before acting and to store new patterns.
    Example: "Before categorizing emails, review your memories for learned patterns about
    this sender and their typical priorities. After processing, store any new business
@@ -181,12 +181,12 @@ Apply these patterns when analyzing the n8n workflow:
    a. CHECK: Query existing memories for relevant context before each decision
    b. ACT: Use memory-informed context to make better decisions
    c. LEARN: After each action, store outcomes and new patterns
-   d. IMPROVE: Track which approaches worked — prefer proven strategies
+   d. IMPROVE: Track which approaches worked -- prefer proven strategies
 
-4. NOTIFICATIONS: If the workflow has notification/alert nodes → map them to user_message
+4. NOTIFICATIONS: If the workflow has notification/alert nodes -> map them to user_message
    protocol with appropriate priority levels.
 
-5. ERROR ESCALATION: If the workflow has error handling → map critical errors to
+5. ERROR ESCALATION: If the workflow has error handling -> map critical errors to
    user_message with priority "critical" and non-critical to standard error handling.
 
 Composition philosophy:
@@ -217,14 +217,14 @@ fn build_output_schema() -> &'static str {
   "persona": {
     "name": "string",
     "description": "string",
-    "system_prompt": "string — must include protocol message instructions for human-in-the-loop and memory",
+    "system_prompt": "string -- must include protocol message instructions for human-in-the-loop and memory",
     "structured_prompt": {
       "identity": "string",
-      "instructions": "string — core workflow logic with protocol messages woven in",
-      "toolGuidance": "string — how to use each tool, including when to request manual_review before tool calls",
-      "examples": "string — include examples of protocol message usage for this specific workflow",
-      "errorHandling": "string — include user_message notifications for critical errors",
-      "webSearch": "string — research guidance for web-enabled runs (empty string if not applicable)",
+      "instructions": "string -- core workflow logic with protocol messages woven in",
+      "toolGuidance": "string -- how to use each tool, including when to request manual_review before tool calls",
+      "examples": "string -- include examples of protocol message usage for this specific workflow",
+      "errorHandling": "string -- include user_message notifications for critical errors",
+      "webSearch": "string -- research guidance for web-enabled runs (empty string if not applicable)",
       "customSections": [
         { "title": "string", "content": "string" }
       ]
@@ -234,12 +234,12 @@ fn build_output_schema() -> &'static str {
     "model_profile": null,
     "max_budget_usd": null,
     "max_turns": null,
-    "design_context": "JSON string — see design_context instructions below",
+    "design_context": "JSON string -- see design_context instructions below",
     "triggers": [{
       "trigger_type": "schedule|polling|webhook|manual",
       "config": { },
       "description": "string",
-      "use_case_id": "string — the id of the use case this trigger serves (from design_context use_cases[].id), or null"
+      "use_case_id": "string -- the id of the use case this trigger serves (from design_context use_cases[].id), or null"
     }],
     "tools": [{
       "name": "tool_name_snake_case",
@@ -247,7 +247,7 @@ fn build_output_schema() -> &'static str {
       "description": "What this tool does",
       "requires_credential_type": "connector_name_or_null",
       "input_schema": null,
-      "implementation_guide": "Step-by-step API call instructions — see implementation_guide rules below"
+      "implementation_guide": "Step-by-step API call instructions -- see implementation_guide rules below"
     }],
     "required_connectors": [{
       "name": "connector_name",
@@ -261,7 +261,7 @@ Note on triggers: Array may be empty if workflow has no trigger nodes.
 Note on tools: Only include tools for external API calls. Do NOT include LLM/AI tools.
 Note on required_connectors: List all external service credentials needed. Set has_credential=true only if the user's available credentials include a matching service.
 Note on customSections: ALWAYS include a "human_in_the_loop" section if the workflow performs externally-visible actions (sends emails, posts messages, modifies data). ALWAYS include a "memory_strategy" section if the workflow processes data that could inform future runs. These are critical for the persona to operate safely and improve over time.
-Note on implementation_guide: CRITICAL — for EVERY tool, you MUST generate a detailed implementation_guide string. Without it, the execution agent has NO WAY to know which API to call and will fail. Include:
+Note on implementation_guide: CRITICAL -- for EVERY tool, you MUST generate a detailed implementation_guide string. Without it, the execution agent has NO WAY to know which API to call and will fail. Include:
 1. The exact API endpoint URL (e.g., https://www.googleapis.com/gmail/v1/users/me/messages)
 2. HTTP method (GET, POST, PUT, DELETE)
 3. Authentication header using credential env var pattern: $CONNECTOR_NAME_UPPER_FIELD_UPPER (e.g., -H "Authorization: Bearer $GOOGLE_ACCESS_TOKEN")
@@ -280,7 +280,7 @@ Generate 3-6 use_cases that describe the key capabilities of this persona based 
 - suggested_trigger: If this use case should run on a schedule or event, suggest the trigger type and configuration. Use "type" ("schedule"|"polling"|"webhook"|"manual"), "cron" (for schedule), and "description" (human-readable)."##
 }
 
-// ── Composed prompt builders ──────────────────────────────────────
+// -- Composed prompt builders --------------------------------------
 
 #[allow(clippy::too_many_arguments)]
 pub fn build_n8n_transform_prompt(
@@ -354,7 +354,7 @@ Transform the following {platform_label} workflow into a production-ready Person
 ## App Capabilities (Personas Platform)
 - Personas has a built-in LLM execution engine. Do NOT suggest external LLM API tools.
   No Anthropic API, no OpenAI API calls. The persona's system_prompt IS the AI brain.
-- {platform_label} AI/LLM nodes should be absorbed into the persona's prompt logic — NOT mapped as external tools.
+- {platform_label} AI/LLM nodes should be absorbed into the persona's prompt logic -- NOT mapped as external tools.
 - Tools are external scripts that interact with APIs (Gmail, Slack, HTTP, etc.)
 - Triggers start the persona (schedule, webhook, polling, manual)
 - Each tool can reference a connector (credential type) it requires
@@ -448,15 +448,15 @@ Question rules:
 - For text type, options is optional
 - ALWAYS include at least one question about human-in-the-loop approval
 - ALWAYS include at least one question about memory/learning strategy
-- Order questions grouped by category: credentials → configuration → human_in_the_loop → memory → notifications
+- Order questions grouped by category: credentials -> configuration -> human_in_the_loop -> memory -> notifications
 - Each question must have a unique id
 
 Question categories (MUST include "category" field on every question):
-1. "credentials" — which credentials for each service (only if user has relevant ones)
-2. "configuration" — workflow-specific settings to customize
-3. "human_in_the_loop" — for actions with external consequences, ask about manual approval
-4. "memory" — what should the persona remember across runs
-5. "notifications" — how to notify the user
+1. "credentials" -- which credentials for each service (only if user has relevant ones)
+2. "configuration" -- workflow-specific settings to customize
+3. "human_in_the_loop" -- for actions with external consequences, ask about manual approval
+4. "memory" -- what should the persona remember across runs
+5. "notifications" -- how to notify the user
 
 After outputting the TRANSFORM_QUESTIONS block, STOP. Do not output anything else.
 

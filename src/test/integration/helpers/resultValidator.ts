@@ -217,9 +217,9 @@ export function validateResult(
   return { passed, score, details, penalties };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Quality scoring — business + technical dimensions
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// Quality scoring -- business + technical dimensions
+// ===========================================================================
 
 export function scoreQuality(
   result: CliRunResult,
@@ -294,11 +294,11 @@ export function formatQualityReport(report: QualityReport): string {
   const lines: string[] = [`Grade: ${report.grade} (${(report.overallScore * 100).toFixed(0)}%)`];
   lines.push('  Technical:');
   for (const d of report.technical) {
-    lines.push(`    ${d.name}: ${(d.score * 100).toFixed(0)}% — ${d.detail}`);
+    lines.push(`    ${d.name}: ${(d.score * 100).toFixed(0)}% -- ${d.detail}`);
   }
   lines.push('  Business:');
   for (const d of report.business) {
-    lines.push(`    ${d.name}: ${(d.score * 100).toFixed(0)}% — ${d.detail}`);
+    lines.push(`    ${d.name}: ${(d.score * 100).toFixed(0)}% -- ${d.detail}`);
   }
   return lines.join('\n');
 }

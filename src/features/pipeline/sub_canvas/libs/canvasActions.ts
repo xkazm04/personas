@@ -12,7 +12,7 @@ export interface MemberWithPersonaInfo extends PersonaTeamMember {
   persona_color?: string;
 }
 
-// ── Sticky Note ──────────────────────────────────────────────────────
+// -- Sticky Note ------------------------------------------------------
 
 export interface StickyNote {
   id: string;
@@ -22,7 +22,7 @@ export interface StickyNote {
   category: StickyNoteCategory;
 }
 
-// ── Canvas State ─────────────────────────────────────────────────────
+// -- Canvas State -----------------------------------------------------
 
 export interface CanvasState {
   // Save
@@ -65,7 +65,7 @@ export interface CanvasState {
   assistantApplying: boolean;
 }
 
-// ── Actions ──────────────────────────────────────────────────────────
+// -- Actions ----------------------------------------------------------
 
 export type CanvasAction =
   | { type: 'SET_SAVE_STATUS'; status: CanvasState['saveStatus'] }
@@ -94,7 +94,7 @@ export type CanvasAction =
   | { type: 'SET_ASSISTANT_APPLYING'; applying: boolean }
   | { type: 'RESET_ON_TEAM_SWITCH' };
 
-// ── Initial State ────────────────────────────────────────────────────
+// -- Initial State ----------------------------------------------------
 
 export const initialCanvasState: CanvasState = {
   saveStatus: 'saved',
@@ -118,7 +118,7 @@ export const initialCanvasState: CanvasState = {
   assistantApplying: false,
 };
 
-// ── Reducer ──────────────────────────────────────────────────────────
+// -- Reducer ----------------------------------------------------------
 
 export function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
   switch (action.type) {

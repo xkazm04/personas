@@ -27,7 +27,7 @@
   "events": [],
   "metadata": {
     "template_enabled": true,
-    "summary": "VS Code editor integration — open files, manage extensions, run tasks, and diff via desktop bridge.",
+    "summary": "VS Code editor integration -- open files, manage extensions, run tasks, and diff via desktop bridge.",
     "auth_type": "desktop_bridge",
     "auth_type_label": "Desktop Bridge",
     "connection_mode": "desktop_bridge",

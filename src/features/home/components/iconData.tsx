@@ -6,7 +6,7 @@ import {
   CustomTemplates, CustomTeams, CustomCloud, CustomSettings,
 } from './CustomIcons';
 
-// ── Types ────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------
 
 export interface IconEntry {
   id: string;
@@ -18,7 +18,7 @@ export interface IconEntry {
 
 export type IconMode = 'lucide' | 'custom';
 
-// ── Data ────────────────────────────────────────────────────────────────
+// -- Data ----------------------------------------------------------------
 
 export const ICONS: IconEntry[] = [
   { id: 'home', label: 'Home', desc: 'Command hub', lucide: <Home className="w-full h-full" />, custom: <CustomHome /> },

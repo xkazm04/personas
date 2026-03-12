@@ -23,7 +23,7 @@ export function UseCaseCardContent({
 }: UseCaseCardContentProps) {
   return (
     <div
-      className={`border border-primary/12 rounded-xl bg-secondary/20 ${
+      className={`border border-primary/20 rounded-xl bg-secondary/20 ${
         isDragging ? 'opacity-40 border-dashed border-primary/30' : ''
       }`}
     >

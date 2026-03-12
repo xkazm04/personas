@@ -134,7 +134,7 @@ describe("SchemaManagerModal", () => {
 
     // Click "Console" tab
     fireEvent.click(screen.getByText("Console"));
-    // Console tab should now be active — the ConsoleTab component renders
+    // Console tab should now be active -- the ConsoleTab component renders
     // (we can check that the "Run Query" button appears which is part of ConsoleTab)
     expect(screen.getByText("Run Query")).toBeInTheDocument();
   });

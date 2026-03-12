@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { X, Zap, Rocket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAutomationSetup } from '../../libs/useAutomationSetup';
@@ -21,12 +22,46 @@ export function AutomationSetupModal({
 
   const handleClose = () => { s.handleClose(); onClose(); };
 
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [open]);
+
+  // Capture return-focus target on open & auto-focus dialog
+  useEffect(() => {
+    if (open) {
+      s.returnFocusRef.current = document.activeElement as HTMLElement | null;
+      const frame = requestAnimationFrame(() => {
+        s.dialogRef.current?.focus();
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [open]);
+
+  // Restore focus on close
+  useEffect(() => {
+    if (open) return;
+    s.returnFocusRef.current?.focus();
+    s.returnFocusRef.current = null;
+  }, [open]);
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
       <motion.div
+        ref={s.dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="automation-setup-title"
+        tabIndex={-1}
+        onKeyDown={s.handleFocusTrap}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
@@ -36,7 +71,7 @@ export function AutomationSetupModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/60">
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-accent" />
-            <h2 className="text-sm font-semibold text-foreground/90">
+            <h2 id="automation-setup-title" className="text-sm font-semibold text-foreground/90">
               {s.phase === 'idle' && (s.editAutomation ? 'Configure Automation' : 'Add Automation')}
               {s.phase === 'analyzing' && 'Designing Automation...'}
               {s.phase === 'preview' && 'Review Automation'}

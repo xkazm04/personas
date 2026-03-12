@@ -8,7 +8,7 @@ pub enum PlatformFormat {
 }
 
 // ============================================================================
-// Platform Definition — config-driven platform rules for workflow import
+// Platform Definition -- config-driven platform rules for workflow import
 // ============================================================================
 
 /// A complete platform definition that replaces hardcoded rules in prompts.rs
@@ -30,7 +30,7 @@ pub struct PlatformDefinition {
     pub node_role_classification: Vec<NodeRolePattern>,
     /// Credential types that should NOT be mapped (built-in LLM, etc.)
     pub excluded_credential_types: Vec<String>,
-    /// Protocol mapping rules (platform-specific patterns → Persona protocols)
+    /// Protocol mapping rules (platform-specific patterns -> Persona protocols)
     pub protocol_map_rules: Vec<ProtocolMapRule>,
     /// Whether this is a built-in (non-deletable) definition
     pub is_builtin: bool,
@@ -40,7 +40,7 @@ pub struct PlatformDefinition {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeTypeMapping {
-    /// Source pattern — matched against the node type identifier.
+    /// Source pattern -- matched against the node type identifier.
     /// Supports prefix matching (e.g., "gmail" matches "gmailTrigger").
     pub source_pattern: String,
     /// Target connector service name in Personas

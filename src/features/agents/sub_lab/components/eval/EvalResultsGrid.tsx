@@ -65,7 +65,7 @@ export function EvalResultsGrid({ results }: Props) {
                 const agg = versionAggs.find((a) => a.versionId === vId);
                 const isWinner = vId === winnerId;
                 return (
-                  <tr key={vId} className={`border-b border-primary/5 transition-colors ${isWinner ? 'bg-primary/5' : 'hover:bg-secondary/10'}`}>
+                  <tr key={vId} className={`border-b border-primary/10 transition-colors ${isWinner ? 'bg-primary/5' : 'hover:bg-secondary/10'}`}>
                     <td className="px-3 py-2.5 font-medium">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-foreground/80">v{agg?.versionNumber}</span>

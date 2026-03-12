@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Segment → Sources → your source → Settings → API Keys"
+      "helpText": "From Segment -> Sources -> your source -> Settings -> API Keys"
     },
     {
       "key": "access_token",
@@ -40,7 +40,7 @@
     "auth_type": "write_key",
     "auth_type_label": "Write Key",
     "docs_url": "https://segment.com/docs/connections/sources/catalog/",
-    "setup_guide": "1. Go to app.segment.com and sign in\n2. Navigate to Connections → Sources → select your source\n3. Go to Settings → API Keys → Write Key\n4. Copy the Write Key value",
+    "setup_guide": "1. Go to app.segment.com and sign in\n2. Navigate to Connections -> Sources -> select your source\n3. Go to Settings -> API Keys -> Write Key\n4. Copy the Write Key value",
     "pricing_tier": "paid",
     "auth_variants": [
       {

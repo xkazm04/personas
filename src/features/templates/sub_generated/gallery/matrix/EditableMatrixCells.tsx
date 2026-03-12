@@ -1,11 +1,11 @@
 /**
- * EditableMatrixCells — re-exports for interactive cell renderers used by PersonaMatrix edit mode.
+ * EditableMatrixCells -- re-exports for interactive cell renderers used by PersonaMatrix edit mode.
  *
  * Split into:
- * - matrixEditTypes.ts — types, presets, and constants
- * - ConnectorEditCell.tsx — connector credential selection
- * - TriggerEditCell.tsx — trigger configuration
- * - PresetEditCells.tsx — review, memory, and messages preset cells
+ * - matrixEditTypes.ts -- types, presets, and constants
+ * - ConnectorEditCell.tsx -- connector credential selection
+ * - TriggerEditCell.tsx -- trigger configuration
+ * - PresetEditCells.tsx -- review, memory, and messages preset cells
  */
 
 // Types & constants

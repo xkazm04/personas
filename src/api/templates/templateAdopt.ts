@@ -5,7 +5,7 @@ import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { N8nPersonaDraft, TransformQuestionResponse } from "@/api/templates/n8nTransform";
 
 // ============================================================================
-// Template Adoption — types
+// Template Adoption -- types
 // ============================================================================
 
 export interface TemplateAdoptStartResult {
@@ -22,7 +22,7 @@ export interface TemplateAdoptSnapshot {
 }
 
 // ============================================================================
-// Template Adoption — commands
+// Template Adoption -- commands
 // ============================================================================
 
 export const startTemplateAdoptBackground = (
@@ -96,7 +96,7 @@ export const instantAdoptTemplate = (
   });
 
 // ============================================================================
-// Template Generation — types
+// Template Generation -- types
 // ============================================================================
 
 export interface TemplateGenerateSnapshot {
@@ -108,7 +108,7 @@ export interface TemplateGenerateSnapshot {
 }
 
 // ============================================================================
-// Template Generation — commands
+// Template Generation -- commands
 // ============================================================================
 
 export const generateTemplateBackground = (

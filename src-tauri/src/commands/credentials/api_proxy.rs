@@ -57,7 +57,11 @@ pub async fn execute_api_request(
 // ============================================================================
 
 #[tauri::command]
-pub fn parse_api_definition(raw_spec: String) -> Result<Vec<ApiEndpoint>, AppError> {
+pub fn parse_api_definition(
+    state: State<'_, Arc<AppState>>,
+    raw_spec: String,
+) -> Result<Vec<ApiEndpoint>, AppError> {
+    require_privileged_sync(&state, "parse_api_definition")?;
     crate::engine::api_definition::parse_openapi_spec(&raw_spec)
 }
 

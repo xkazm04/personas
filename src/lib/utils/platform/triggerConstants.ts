@@ -20,7 +20,7 @@ export const TRIGGER_TYPE_META: Record<string, TriggerTypeMeta> = {
 
 export const DEFAULT_TRIGGER_META: TriggerTypeMeta = { Icon: Zap, color: 'text-purple-400' };
 
-// ── Trigger category taxonomy ────────────────────────────────────────
+// -- Trigger category taxonomy ----------------------------------------
 //
 // The 10 trigger types decompose into 3 intuitive categories:
 //  - Pull (Watch): poll on intervals (schedule, polling, clipboard, app_focus, file_watcher)
@@ -107,7 +107,7 @@ export const TRIGGER_TYPE_OPTIONS: TriggerTypeOption[] = [
   { type: 'composite', label: 'Composite', description: 'Multiple conditions + time window' },
 ];
 
-// ── Webhook URL configuration ────────────────────────────────────────
+// -- Webhook URL configuration ----------------------------------------
 
 /** Base URL for the webhook server. Override via VITE_WEBHOOK_BASE_URL env var for production. */
 export const WEBHOOK_BASE_URL: string =
@@ -121,7 +121,7 @@ export function getWebhookUrl(triggerId: string): string {
   return `${WEBHOOK_BASE_URL}/webhook/${triggerId}`;
 }
 
-// ── Typed trigger config discriminated union ────────────────────────────
+// -- Typed trigger config discriminated union ----------------------------
 
 export interface ScheduleConfig {
   type: 'schedule';
@@ -217,7 +217,7 @@ export type TriggerConfig =
   | AppFocusConfig
   | CompositeConfig;
 
-// ── Rate Limit Configuration ─────────────────────────────────────────
+// -- Rate Limit Configuration -----------------------------------------
 
 export interface TriggerRateLimitConfig {
   /** Max executions allowed per window. 0 = unlimited. */
@@ -262,7 +262,7 @@ export function hasActiveRateLimit(rl: TriggerRateLimitConfig): boolean {
   return rl.max_per_window > 0 || rl.cooldown_seconds > 0 || rl.max_concurrent > 0;
 }
 
-// ── Pre-built trigger templates ──────────────────────────────────────
+// -- Pre-built trigger templates --------------------------------------
 
 export interface TriggerTemplate {
   id: string;

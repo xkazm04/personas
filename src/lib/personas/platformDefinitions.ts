@@ -6,7 +6,7 @@
  * defined here as data rather than scattered across individual parsers.
  */
 
-// ── Types ──────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------
 
 export interface NodeTypeMapping {
   sourcePattern: string;
@@ -45,7 +45,7 @@ export interface PlatformDefinition {
   isBuiltin: boolean;
 }
 
-// ── Service map helper ─────────────────────────────────────────
+// -- Service map helper -----------------------------------------
 
 /** Convert a PlatformDefinition's nodeTypeMap into a flat Record for backward-compat usage. */
 export function toServiceMap(def: PlatformDefinition): Record<string, string> {
@@ -59,7 +59,7 @@ export function toServiceMap(def: PlatformDefinition): Record<string, string> {
 /** Resolve a node type string to its target service using a PlatformDefinition. */
 export function resolveNodeType(def: PlatformDefinition, nodeType: string): string {
   const lower = nodeType.toLowerCase();
-  // Strip platform prefix (e.g., "n8n-nodes-base.gmailTrigger" → "gmailtrigger")
+  // Strip platform prefix (e.g., "n8n-nodes-base.gmailTrigger" -> "gmailtrigger")
   const parts = lower.split('.');
   const name = parts[parts.length - 1] || lower;
   // Remove common suffixes
@@ -123,7 +123,7 @@ export function extractProtocolsFromNodes(
   return result;
 }
 
-// ── Built-in definitions ────────────────────────────────────────
+// -- Built-in definitions ----------------------------------------
 
 export const N8N_DEFINITION: PlatformDefinition = {
   id: 'n8n',
@@ -174,17 +174,17 @@ export const N8N_DEFINITION: PlatformDefinition = {
     {
       sourcePatterns: ['gmailOAuth2', 'googleSheetsOAuth2Api', 'googleCalendarOAuth2Api', 'googleDriveOAuth2Api', 'google*'],
       targetConnector: 'google',
-      description: "All Google OAuth credential types → single 'google' connector",
+      description: "All Google OAuth credential types -> single 'google' connector",
     },
     {
       sourcePatterns: ['slackOAuth2Api', 'slackApi'],
       targetConnector: 'slack',
-      description: "All Slack credential types → single 'slack' connector",
+      description: "All Slack credential types -> single 'slack' connector",
     },
     {
       sourcePatterns: ['microsoftOutlookOAuth2Api', 'microsoftOneDriveOAuth2Api', 'microsoftTeamsOAuth2Api'],
       targetConnector: 'microsoft',
-      description: "All Microsoft credential types → single 'microsoft' connector",
+      description: "All Microsoft credential types -> single 'microsoft' connector",
     },
   ],
   nodeRoleClassification: [
@@ -256,17 +256,17 @@ export const ZAPIER_DEFINITION: PlatformDefinition = {
     {
       sourcePatterns: ['gmail', 'google-mail', 'google-sheets', 'google-drive', 'google-calendar', 'google-contacts', 'google*'],
       targetConnector: 'google',
-      description: "All Zapier Google app types → single 'google' connector",
+      description: "All Zapier Google app types -> single 'google' connector",
     },
     {
       sourcePatterns: ['slack', 'slack-*'],
       targetConnector: 'slack',
-      description: "All Zapier Slack app types → single 'slack' connector",
+      description: "All Zapier Slack app types -> single 'slack' connector",
     },
     {
       sourcePatterns: ['microsoft-outlook', 'microsoft-onedrive', 'microsoft-teams', 'microsoft-*'],
       targetConnector: 'microsoft',
-      description: "All Zapier Microsoft app types → single 'microsoft' connector",
+      description: "All Zapier Microsoft app types -> single 'microsoft' connector",
     },
   ],
   nodeRoleClassification: [
@@ -325,17 +325,17 @@ export const MAKE_DEFINITION: PlatformDefinition = {
     {
       sourcePatterns: ['google:*', 'gmail:*', 'google-sheets:*', 'google-drive:*'],
       targetConnector: 'google',
-      description: "All Make Google module types → single 'google' connector",
+      description: "All Make Google module types -> single 'google' connector",
     },
     {
       sourcePatterns: ['slack:*'],
       targetConnector: 'slack',
-      description: "All Make Slack module types → single 'slack' connector",
+      description: "All Make Slack module types -> single 'slack' connector",
     },
     {
       sourcePatterns: ['microsoft-*:*'],
       targetConnector: 'microsoft',
-      description: "All Make Microsoft module types → single 'microsoft' connector",
+      description: "All Make Microsoft module types -> single 'microsoft' connector",
     },
   ],
   nodeRoleClassification: [

@@ -55,7 +55,7 @@ export function AbResultsView({ results }: Props) {
     aggs.sort((a, b) => b.compositeScore - a.compositeScore);
     const winnerId = aggs[0]?.versionId ?? null;
 
-    // Build matrix: scenario → versionId → result (per model)
+    // Build matrix: scenario -> versionId -> result (per model)
     const mtx: Record<string, Record<string, LabAbResult[]>> = {};
     for (const r of results) {
       if (!mtx[r.scenarioName]) mtx[r.scenarioName] = {};
@@ -167,14 +167,14 @@ export function AbResultsView({ results }: Props) {
             </thead>
             <tbody>
               {scenarios.map((scenario) => (
-                <tr key={scenario} className="border-b border-primary/5 hover:bg-secondary/10 transition-colors">
+                <tr key={scenario} className="border-b border-primary/10 hover:bg-secondary/10 transition-colors">
                   <td className="px-3 py-2.5 text-foreground/80 font-medium max-w-[200px] truncate">
                     {scenario}
                   </td>
                   {versionAggs.map((agg) => {
                     const rows = matrix[scenario]?.[agg.versionId] ?? [];
                     if (rows.length === 0) {
-                      return <td key={agg.versionId} className="px-3 py-2.5 text-center text-muted-foreground/80">—</td>;
+                      return <td key={agg.versionId} className="px-3 py-2.5 text-center text-muted-foreground/80">--</td>;
                     }
                     const avgTA = rows.reduce((s, r) => s + (r.toolAccuracyScore ?? 0), 0) / rows.length;
                     const avgOQ = rows.reduce((s, r) => s + (r.outputQualityScore ?? 0), 0) / rows.length;

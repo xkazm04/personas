@@ -112,7 +112,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
         </div>
       </div>
 
-      {/* Docs link — uses Tauri open_external_url instead of <a href> */}
+      {/* Docs link -- uses Tauri open_external_url instead of <a href> */}
       {ctx.docsUrl && (
         <button
           onClick={handleDocsClick}

@@ -81,16 +81,11 @@ pub async fn clipboard_tick(
         return;
     }
 
-    // Load all enabled clipboard triggers
-    let triggers = match trigger_repo::get_all(pool) {
+    // Load enabled clipboard triggers (SQL-filtered)
+    let clipboard_triggers = match trigger_repo::get_enabled_by_type(pool, "clipboard") {
         Ok(t) => t,
         Err(_) => return,
     };
-
-    let clipboard_triggers: Vec<_> = triggers
-        .into_iter()
-        .filter(|t| t.trigger_type == "clipboard" && t.enabled)
-        .collect();
 
     if clipboard_triggers.is_empty() {
         return;
@@ -128,7 +123,7 @@ pub async fn clipboard_tick(
                 }
             }
 
-            // Publish event — store only a hash, never plaintext clipboard content
+            // Publish event -- store only a hash, never plaintext clipboard content
             let payload = serde_json::json!({
                 "content_type": content_type,
                 "content_hash": format!("{:016x}", current_hash),

@@ -20,7 +20,7 @@
       "type": "password",
       "required": false,
       "placeholder": "tk_...",
-      "helpText": "Optional — only needed for access-controlled topics"
+      "helpText": "Optional -- only needed for access-controlled topics"
     }
   ],
   "healthcheck_config": {
@@ -37,7 +37,7 @@
     "auth_type": "pat",
     "auth_type_label": "Access Token",
     "docs_url": "https://docs.ntfy.sh/",
-    "setup_guide": "1. Go to ntfy.sh (or your self-hosted instance).\n2. Optionally create an account for access-controlled topics.\n3. Generate an access token under Account → Access Tokens.\n4. Paste the token and server URL here.",
+    "setup_guide": "1. Go to ntfy.sh (or your self-hosted instance).\n2. Optionally create an account for access-controlled topics.\n3. Generate an access token under Account -> Access Tokens.\n4. Paste the token and server URL here.",
     "pricing_tier": "free",
     "auth_methods": [
       {"id": "pat", "label": "Access Token", "type": "credential", "is_default": true}

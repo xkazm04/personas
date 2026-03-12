@@ -11,10 +11,10 @@ import {
 } from './libs/visualizationHelpers';
 import type { PersonaInfo } from './event_bus/state/EventBusTypes';
 
-// ── Hook: all state logic for EventBusVisualization ──────────────
+// -- Hook: all state logic for EventBusVisualization --------------
 
 export function useEventBusState(events: RealtimeEvent[], personas: PersonaInfo[]) {
-  // ── Discovered source topology ──
+  // -- Discovered source topology --
   const discoveredSourcesRef = useRef(new Map<string, DiscoveredSource>());
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export function useEventBusState(events: RealtimeEvent[], personas: PersonaInfo[
     }
   }, [events]);
 
-  // ── Build rings ──
+  // -- Build rings --
   const toolNodes = useMemo(() => {
     const discovered = discoveredSourcesRef.current;
     if (discovered.size === 0) return distributeOnRing(DEFAULT_TOOLS, TOOL_RING_R);
@@ -72,7 +72,7 @@ export function useEventBusState(events: RealtimeEvent[], personas: PersonaInfo[
     return distributeOnRing(raw, PERSONA_RING_R, offset);
   }, [personas]);
 
-  // ── Position maps ──
+  // -- Position maps --
   const toolPositionMap = useMemo(() => {
     const m = new Map<string, { x: number; y: number }>();
     for (const n of toolNodes) m.set(n.id, { x: n.x, y: n.y });
@@ -85,7 +85,7 @@ export function useEventBusState(events: RealtimeEvent[], personas: PersonaInfo[
     return m;
   }, [personaNodes]);
 
-  // ── Active events + seen types ──
+  // -- Active events + seen types --
   const { activeEvents, seenTypes, inFlightCount } = useMemo(() => {
     const active: RealtimeEvent[] = [];
     const types = new Set<string>();
@@ -96,7 +96,7 @@ export function useEventBusState(events: RealtimeEvent[], personas: PersonaInfo[
     return { activeEvents: active, seenTypes: [...types], inFlightCount: active.length };
   }, [events]);
 
-  // ── Source / target helpers ──
+  // -- Source / target helpers --
   const getSourcePos = useCallback((evt: RealtimeEvent) => {
     const sourceKey = evt.source_id || evt.source_type;
     if (sourceKey) {
@@ -118,7 +118,7 @@ export function useEventBusState(events: RealtimeEvent[], personas: PersonaInfo[
     return pn ? { x: pn.x, y: pn.y } : null;
   }, [personaPositionMap, personaNodes]);
 
-  // ── Processing state + return flows ──
+  // -- Processing state + return flows --
   const [processingSet, setProcessingSet] = useState<Map<string, ProcessingInfo>>(new Map());
   const [returnFlows, setReturnFlows] = useState<ReturnFlow[]>([]);
   const spawnedRef = useRef(new Set<string>());

@@ -55,9 +55,9 @@ pub fn build_design_prompt(
         prompt.push('\n');
     }
 
-    // Available connectors (grouped by category — connectors in the same category are interchangeable)
+    // Available connectors (grouped by category -- connectors in the same category are interchangeable)
     if !connectors.is_empty() {
-        prompt.push_str("## Available Connectors (grouped by category — connectors in the same category are interchangeable)\n");
+        prompt.push_str("## Available Connectors (grouped by category -- connectors in the same category are interchangeable)\n");
         let mut groups: std::collections::BTreeMap<&str, Vec<&ConnectorDefinition>> =
             std::collections::BTreeMap::new();
         for conn in connectors {
@@ -137,7 +137,7 @@ pub fn build_refinement_prompt_with_history(
         }
     }
 
-    // Include conversation history if available — this gives the LLM the full
+    // Include conversation history if available -- this gives the LLM the full
     // multi-turn thread so refinement quality improves across rounds.
     if let Some(history) = conversation_history {
         if !history.is_empty() && history != "[]" {
@@ -170,7 +170,7 @@ pub fn build_refinement_prompt_with_history(
                             };
                             // For results, truncate to avoid blowing up prompt size
                             if msg_type == "result" && content.len() > 500 {
-                                prompt.push_str(&format!("**{}**: [Design result — {} chars, see Current Design below]\n\n", label, content.len()));
+                                prompt.push_str(&format!("**{}**: [Design result -- {} chars, see Current Design below]\n\n", label, content.len()));
                             } else {
                                 prompt.push_str(&format!("**{label}**: {content}\n\n"));
                             }
@@ -524,13 +524,13 @@ You MUST output your result as a single JSON code block. The JSON must conform t
 
 Important rules:
 1. `suggested_tools` must only reference tools from the Available Tools list above
-2. Each external service MUST have its own named connector (e.g., "slack", "github", "stripe") — never use "http_generic"
+2. Each external service MUST have its own named connector (e.g., "slack", "github", "stripe") -- never use "http_generic"
 3. Each connector MUST include `credential_fields` with at least one field
 4. Each connector MUST include `auth_type` matching its authentication method
-5. `file_read`/`file_write` are LOCAL filesystem only — for cloud storage use `http_request` with the appropriate connector
+5. `file_read`/`file_write` are LOCAL filesystem only -- for cloud storage use `http_request` with the appropriate connector
 6. `service_flow` must list connector interactions in chronological data-pipeline order. Each entry has `connector_name` (matching a suggested_connectors name), `action_label` (short verb phrase like "Watch alerts" or "Create ticket"), and `order` (0-based position)
 7. `full_prompt_markdown` must be the complete, ready-to-use system prompt in markdown format
-8. Output ONLY the JSON block — no additional text before or after
+8. Output ONLY the JSON block -- no additional text before or after
 9. `use_case_flows` MUST contain 1-3 flow diagrams documenting the persona's primary workflows
 10. Each flow MUST have "start" and "end" nodes, with 5-10 nodes total showing the workflow
 11. Flow node types: "start", "end", "action", "decision", "connector" (set `connector` to slug), "event", "error"
@@ -635,7 +635,7 @@ mod tests {
         r##"{"structured_prompt":{"identity":"Email monitor agent","instructions":"Check emails periodically","toolGuidance":"Use gmail_reader","examples":"","errorHandling":"Retry on failure","customSections":[]},"suggested_tools":["gmail_reader"],"suggested_triggers":[{"trigger_type":"schedule","config":{"cron":"*/5 * * * *"},"description":"Check every 5 minutes"}],"full_prompt_markdown":"# Email Monitor\n\nYou monitor emails.","summary":"An email monitoring persona","suggested_connectors":[{"name":"gmail","setup_instructions":"Configure OAuth"}]}"##
     }
 
-    // ── Prompt Builder Tests ──────────────────────────────────────
+    // -- Prompt Builder Tests --------------------------------------
 
     #[test]
     fn test_build_design_prompt_basic() {
@@ -725,7 +725,7 @@ mod tests {
         assert!(prompt.contains("Add error reporting to Slack"));
     }
 
-    // ── Result Parser Tests ──────────────────────────────────────
+    // -- Result Parser Tests --------------------------------------
 
     #[test]
     fn test_extract_result_fenced_json() {
@@ -759,7 +759,7 @@ mod tests {
         assert!(result.is_none());
     }
 
-    // ── Question Extraction Tests ─────────────────────────────────
+    // -- Question Extraction Tests ---------------------------------
 
     #[test]
     fn test_extract_question_fenced_json() {
@@ -798,7 +798,7 @@ mod tests {
         assert!(question.is_none());
     }
 
-    // ── Feasibility Checker Tests ────────────────────────────────
+    // -- Feasibility Checker Tests --------------------------------
 
     #[test]
     fn test_feasibility_all_available() {

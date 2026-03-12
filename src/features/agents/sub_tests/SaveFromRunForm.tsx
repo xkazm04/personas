@@ -36,7 +36,7 @@ export function SaveFromRunForm({
         exit={{ opacity: 0, height: 0 }}
         className="overflow-hidden"
       >
-        <div className="p-4 rounded-xl bg-primary/5 border border-primary/15 space-y-3">
+        <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3">
           <p className="text-sm text-muted-foreground/90">
             Save the {lastGeneratedScenarios.length} generated scenarios as a reusable test suite.
           </p>

@@ -48,7 +48,7 @@ export function useAdoptionCompletionNotifier(
           void sendOsNotification('Input Required', `${name} needs your answers to continue.`);
         }
       } catch {
-        /* intentional: non-critical — polling failure */
+        /* intentional: non-critical -- polling failure */
       }
     };
 

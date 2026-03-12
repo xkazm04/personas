@@ -133,7 +133,7 @@ export function TriggerConfigPanel({
 
               {trigger.trigger_type === 'manual' && (
                 <p className="text-sm text-muted-foreground italic pt-1.5">
-                  Triggered manually â€” no configuration needed
+                  Triggered manually -- no configuration needed
                 </p>
               )}
             </div>

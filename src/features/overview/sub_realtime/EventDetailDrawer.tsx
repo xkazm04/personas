@@ -24,7 +24,7 @@ function formatPayload(payload: string | null): string {
   try {
     return JSON.stringify(JSON.parse(payload), null, 2);
   } catch {
-    // intentional: non-critical — JSON parse fallback
+    // intentional: non-critical -- JSON parse fallback
     return payload;
   }
 }

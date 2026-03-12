@@ -14,7 +14,7 @@ const CATEGORY_COLORS: Record<string, { dot: string; bg: string }> = {
 
 const DEFAULT_COLOR = { dot: 'bg-gray-400', bg: 'bg-gray-400/10' };
 
-// ── Revision types ───────────────────────────────────────────────────
+// -- Revision types ---------------------------------------------------
 
 interface Revision {
   title: string;
@@ -37,7 +37,7 @@ function parseRevisions(tags: string | null): { source: string; revisions: Revis
   return { source: tags, revisions: [] };
 }
 
-// ── Props ────────────────────────────────────────────────────────────
+// -- Props ------------------------------------------------------------
 
 interface TeamMemoryRowProps {
   memory: TeamMemory;
@@ -46,7 +46,7 @@ interface TeamMemoryRowProps {
   onEdit?: (id: string, title: string, content: string, category: string, importance: number) => void;
 }
 
-// ── Component ────────────────────────────────────────────────────────
+// -- Component --------------------------------------------------------
 
 export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, onEdit }: TeamMemoryRowProps) {
   const [hovered, setHovered] = useState(false);
@@ -92,7 +92,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
     setEditing(false);
   }, [onEdit, memory.id, editTitle, editContent, editCategory, editImportance]);
 
-  // ── Edit mode ──────────────────────────────────────────────────
+  // -- Edit mode --------------------------------------------------
   if (editing) {
     return (
       <div className="px-2.5 py-2 rounded-xl border border-violet-500/25 bg-violet-500/5 space-y-1.5">
@@ -153,7 +153,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
     );
   }
 
-  // ── Read mode ──────────────────────────────────────────────────
+  // -- Read mode --------------------------------------------------
   return (
     <div
       className="group relative px-2.5 py-2 rounded-xl border border-primary/5 hover:border-primary/15 transition-colors"

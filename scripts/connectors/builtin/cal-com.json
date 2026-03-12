@@ -32,7 +32,7 @@
     "auth_type": "api_key",
     "auth_type_label": "API Key",
     "docs_url": "https://cal.com/docs/api-reference/v2/introduction",
-    "setup_guide": "1. Go to cal.com and sign in to your account\n2. Navigate to Settings → Developer → API Keys\n3. Click 'Create new API key'\n4. Copy the generated key (starts with cal_live_)",
+    "setup_guide": "1. Go to cal.com and sign in to your account\n2. Navigate to Settings -> Developer -> API Keys\n3. Click 'Create new API key'\n4. Copy the generated key (starts with cal_live_)",
     "pricing_tier": "freemium",
     "auth_methods": [
       {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true},

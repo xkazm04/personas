@@ -36,7 +36,7 @@ export function useUndoDelete({ onDelete, onError }: UseUndoDeleteOptions): Undo
       const events = await api.listCredentialEvents(credential.id);
       setDeleteConfirm({ credential, eventCount: events.length, eventCountVerified: true });
     } catch {
-      // intentional: non-critical — event count preload failed, show dialog with unverified count
+      // intentional: non-critical -- event count preload failed, show dialog with unverified count
       setDeleteConfirm({ credential, eventCount: 0, eventCountVerified: false });
     }
   }, []);
@@ -94,7 +94,7 @@ export function useUndoDelete({ onDelete, onError }: UseUndoDeleteOptions): Undo
     setUndoToast(null);
   }, [clearUndoTimer]);
 
-  // Cleanup timer on unmount — mark cancelled so a racing interval tick won't fire onDelete
+  // Cleanup timer on unmount -- mark cancelled so a racing interval tick won't fire onDelete
   useEffect(() => {
     return () => {
       undoCancelledRef.current = true;

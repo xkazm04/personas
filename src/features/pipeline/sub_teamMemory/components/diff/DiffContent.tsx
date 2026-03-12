@@ -62,7 +62,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
               <div key={cd.category} className="flex items-center justify-between text-xs px-1.5 py-0.5">
                 <span className={`capitalize ${CATEGORY_COLORS[cd.category] ?? 'text-muted-foreground/60'}`}>{cd.category}</span>
                 <span className="flex items-center gap-2">
-                  <span className="text-muted-foreground/60">{cd.countA} → {cd.countB}</span>
+                  <span className="text-muted-foreground/60">{cd.countA} {'→'} {cd.countB}</span>
                   {cd.delta !== 0 && <span className={cd.delta > 0 ? 'text-emerald-400' : 'text-red-400'}>{cd.delta > 0 ? '+' : ''}{cd.delta}</span>}
                 </span>
               </div>
@@ -80,7 +80,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
               <div key={s.category} className="flex items-center justify-between text-xs px-1.5 py-0.5">
                 <span className={`capitalize ${CATEGORY_COLORS[s.category] ?? 'text-muted-foreground/60'}`}>{s.category}</span>
                 <span className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/60">{s.avgA.toFixed(1)} → {s.avgB.toFixed(1)}</span>
+                  <span className="text-muted-foreground/60">{s.avgA.toFixed(1)} {'→'} {s.avgB.toFixed(1)}</span>
                   {s.delta > 0 ? <TrendingUp className="w-3 h-3 text-emerald-400" /> : <TrendingDown className="w-3 h-3 text-amber-400" />}
                 </span>
               </div>

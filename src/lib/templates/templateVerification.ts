@@ -17,7 +17,7 @@ import type {
 } from '@/lib/types/templateTypes';
 import { SANDBOX_POLICY } from '@/lib/types/templateTypes';
 
-// ── Content hashing ──────────────────────────────────────────────────
+// -- Content hashing --------------------------------------------------
 
 /**
  * Compute a SHA-256 hex digest of a string using the Web Crypto API.
@@ -50,7 +50,7 @@ export function computeContentHashSync(content: string): string {
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(16, '0');
 }
 
-// ── Known built-in template IDs ──────────────────────────────────────
+// -- Known built-in template IDs --------------------------------------
 
 /** Set of template IDs that ship with the application (populated at build time) */
 const builtinTemplateIds = new Set<string>();
@@ -77,7 +77,7 @@ export function isBuiltinTemplate(id: string): boolean {
   return builtinTemplateIds.has(id);
 }
 
-// ── Origin detection ─────────────────────────────────────────────────
+// -- Origin detection -------------------------------------------------
 
 /** Well-known seed run IDs that indicate built-in templates */
 const BUILTIN_RUN_IDS = new Set(['seed-category-v1']);
@@ -111,7 +111,7 @@ export function detectTemplateOrigin(params: {
   return 'unknown';
 }
 
-// ── Trust level derivation ───────────────────────────────────────────
+// -- Trust level derivation -------------------------------------------
 
 /**
  * Derive the trust level from a template's origin and integrity status.
@@ -154,7 +154,7 @@ export function getSandboxPolicy(trustLevel: TemplateTrustLevel): SandboxPolicy 
   }
 }
 
-// ── Full verification ────────────────────────────────────────────────
+// -- Full verification ------------------------------------------------
 
 /**
  * Build a complete TemplateVerification for a template.
@@ -186,7 +186,7 @@ export function verifyTemplate(params: {
   };
 }
 
-// ── Sandbox enforcement helpers ──────────────────────────────────────
+// -- Sandbox enforcement helpers --------------------------------------
 
 /**
  * Filter suggested triggers based on sandbox policy restrictions.
@@ -246,7 +246,7 @@ export function applySandboxOverrides(
   return { maxConcurrent, requireApproval, maxBudgetUsd, overrides };
 }
 
-// ── Display helpers ──────────────────────────────────────────────────
+// -- Display helpers --------------------------------------------------
 
 /** Human-readable labels for trust levels */
 export const TRUST_LEVEL_LABELS: Record<TemplateTrustLevel, string> = {

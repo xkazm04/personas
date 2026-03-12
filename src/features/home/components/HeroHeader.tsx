@@ -31,13 +31,13 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
       </motion.div>
 
       <div className="relative z-10">
-        {/* Top bar — language on left, tour on right */}
+        {/* Top bar -- language on left, tour on right */}
         <div className="flex items-center justify-between">
           <LanguageSwitcher />
           <TourLauncher />
         </div>
 
-        {/* Logo + greeting — centered row */}
+        {/* Logo + greeting -- centered row */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}

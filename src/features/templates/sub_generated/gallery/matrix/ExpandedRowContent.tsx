@@ -27,7 +27,7 @@ interface SectionDef {
   items: string[];
 }
 
-// â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Main Component ----------------------------------------------
 
 export function ExpandedRowContent({
   review,
@@ -147,7 +147,7 @@ export function ExpandedRowContent({
           );
         })}
 
-        {/* Action buttons â€” right-aligned */}
+        {/* Action buttons -- right-aligned */}
         <div className="ml-auto flex items-center gap-2">
           {allConnectorsReady && (
             <button

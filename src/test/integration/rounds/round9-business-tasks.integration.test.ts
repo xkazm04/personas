@@ -6,21 +6,21 @@
  * EXACT parsers the backend runs. This tests real business output quality.
  *
  * Business tasks tested:
- *   1. Persona Design         — DESIGN_OUTPUT_SCHEMA JSON
- *   2. Credential Design      — CREDENTIAL_DESIGN_OUTPUT_SCHEMA JSON
- *   3. Credential Healthcheck — Healthcheck endpoint JSON
- *   4. N8N Transform (Turn 1) — TRANSFORM_QUESTIONS or persona JSON
- *   5. N8N Transform (Turn 2) — Section-delimited streaming output
- *   6. Test Scenario Gen      — TestScenario[] JSON array
- *   7. Persona Execution      — Protocol compliance (outcome_assessment, user_message, agent_memory)
- *   8. Template Adoption      — TRANSFORM_QUESTIONS or persona JSON from template
- *   9. Query Debug            — SQL fix with code block extraction
+ *   1. Persona Design         -- DESIGN_OUTPUT_SCHEMA JSON
+ *   2. Credential Design      -- CREDENTIAL_DESIGN_OUTPUT_SCHEMA JSON
+ *   3. Credential Healthcheck -- Healthcheck endpoint JSON
+ *   4. N8N Transform (Turn 1) -- TRANSFORM_QUESTIONS or persona JSON
+ *   5. N8N Transform (Turn 2) -- Section-delimited streaming output
+ *   6. Test Scenario Gen      -- TestScenario[] JSON array
+ *   7. Persona Execution      -- Protocol compliance (outcome_assessment, user_message, agent_memory)
+ *   8. Template Adoption      -- TRANSFORM_QUESTIONS or persona JSON from template
+ *   9. Query Debug            -- SQL fix with code block extraction
  *
  * Scoped via environment variables:
- *   CLI_TEST_PROVIDERS  — e.g. "claude,copilot"
- *   CLI_TEST_MODELS     — e.g. "claude-sonnet-4-6,gpt-5.4"
- *   CLI_TEST_TIERS      — e.g. "budget,standard"
- *   CLI_TEST_FEATURES   — e.g. "persona-design,credential-design"
+ *   CLI_TEST_PROVIDERS  -- e.g. "claude,copilot"
+ *   CLI_TEST_MODELS     -- e.g. "claude-sonnet-4-6,gpt-5.4"
+ *   CLI_TEST_TIERS      -- e.g. "budget,standard"
+ *   CLI_TEST_FEATURES   -- e.g. "persona-design,credential-design"
  */
 import { buildTestMatrix, getScopedFeatures } from '../helpers/providerDetection';
 import { runCli } from '../helpers/cliRunner';
@@ -127,19 +127,19 @@ function recordResult(
   console.log(`  Business Grade: ${grade} (${(overallScore * 100).toFixed(0)}%)`);
   for (const d of businessDims) {
     const icon = d.score >= 0.8 ? 'PASS' : d.score >= 0.4 ? 'PARTIAL' : 'FAIL';
-    console.log(`    [${icon}] ${d.name}: ${(d.score * 100).toFixed(0)}% — ${d.detail}`);
+    console.log(`    [${icon}] ${d.name}: ${(d.score * 100).toFixed(0)}% -- ${d.detail}`);
   }
 
   return { overallScore, grade };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Business-level tests
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 for (const entry of matrix) {
   describe(`${entry.provider.displayName} / ${entry.model.label} [Business]`, () => {
-    // ─── 1. Persona Design (real DESIGN_OUTPUT_SCHEMA) ─────────────────
+    // --- 1. Persona Design (real DESIGN_OUTPUT_SCHEMA) -----------------
     if (isFeatureEnabled('persona-design')) {
       it('persona-design: produces parseable DESIGN_OUTPUT_SCHEMA JSON', async () => {
         workspace = createWorkspace('empty');
@@ -156,7 +156,7 @@ for (const entry of matrix) {
 
         const result = await runCli({
           provider: entry.provider.name,
-          prompt: `Read prompt.txt and follow the instructions exactly. Output ONLY the JSON as specified — no extra text.`,
+          prompt: `Read prompt.txt and follow the instructions exactly. Output ONLY the JSON as specified -- no extra text.`,
           cwd: workspace.rootDir,
           model: entry.model.id,
           timeoutMs: 180_000,
@@ -171,7 +171,7 @@ for (const entry of matrix) {
       }, 240_000);
     }
 
-    // ─── 2. Credential Design (real CREDENTIAL_DESIGN_OUTPUT_SCHEMA) ──
+    // --- 2. Credential Design (real CREDENTIAL_DESIGN_OUTPUT_SCHEMA) --
     if (isFeatureEnabled('credential-design')) {
       it('credential-design: produces parseable CREDENTIAL_DESIGN_OUTPUT_SCHEMA JSON', async () => {
         workspace = createWorkspace('empty');
@@ -185,7 +185,7 @@ for (const entry of matrix) {
 
         const result = await runCli({
           provider: entry.provider.name,
-          prompt: `Read prompt.txt and follow the instructions exactly. Output ONLY the JSON as specified — no extra text.`,
+          prompt: `Read prompt.txt and follow the instructions exactly. Output ONLY the JSON as specified -- no extra text.`,
           cwd: workspace.rootDir,
           model: entry.model.id,
           timeoutMs: 180_000,
@@ -199,7 +199,7 @@ for (const entry of matrix) {
       }, 240_000);
     }
 
-    // ─── 3. Credential Healthcheck ────────────────────────────────────
+    // --- 3. Credential Healthcheck ------------------------------------
     if (isFeatureEnabled('credential-healthcheck')) {
       it('credential-healthcheck: produces parseable healthcheck JSON', async () => {
         workspace = createWorkspace('empty');
@@ -224,7 +224,7 @@ for (const entry of matrix) {
 
         const result = await runCli({
           provider: entry.provider.name,
-          prompt: `Read prompt.txt and follow the instructions exactly. Output ONLY the JSON as specified — no extra text.`,
+          prompt: `Read prompt.txt and follow the instructions exactly. Output ONLY the JSON as specified -- no extra text.`,
           cwd: workspace.rootDir,
           model: entry.model.id,
           timeoutMs: 120_000,
@@ -238,7 +238,7 @@ for (const entry of matrix) {
       }, 180_000);
     }
 
-    // ─── 4. N8N Transform Turn 1 (questions or persona) ──────────────
+    // --- 4. N8N Transform Turn 1 (questions or persona) --------------
     if (isFeatureEnabled('n8n-transform')) {
       it('n8n-transform: produces TRANSFORM_QUESTIONS or persona from workflow', async () => {
         workspace = createWorkspace('n8n-workflow');
@@ -254,7 +254,7 @@ for (const entry of matrix) {
 
         const result = await runCli({
           provider: entry.provider.name,
-          prompt: `Read prompt.txt and follow the instructions exactly. Output either TRANSFORM_QUESTIONS or a persona JSON — not both.`,
+          prompt: `Read prompt.txt and follow the instructions exactly. Output either TRANSFORM_QUESTIONS or a persona JSON -- not both.`,
           cwd: workspace.rootDir,
           model: entry.model.id,
           timeoutMs: 180_000,
@@ -268,7 +268,7 @@ for (const entry of matrix) {
       }, 240_000);
     }
 
-    // ─── 5. N8N Transform Turn 2 (section-delimited) ─────────────────
+    // --- 5. N8N Transform Turn 2 (section-delimited) -----------------
     if (isFeatureEnabled('automation-design')) {
       it('automation-design: produces section-delimited persona output', async () => {
         workspace = createWorkspace('n8n-workflow');
@@ -302,7 +302,7 @@ for (const entry of matrix) {
       }, 240_000);
     }
 
-    // ─── 6. Test Scenario Generation ─────────────────────────────────
+    // --- 6. Test Scenario Generation ---------------------------------
     if (isFeatureEnabled('persona-testing')) {
       it('persona-testing: generates parseable TestScenario[] JSON', async () => {
         workspace = createWorkspace('empty');
@@ -323,7 +323,7 @@ for (const entry of matrix) {
 
         const result = await runCli({
           provider: entry.provider.name,
-          prompt: `Read prompt.txt and follow the instructions exactly. Output ONLY the JSON array — no extra text.`,
+          prompt: `Read prompt.txt and follow the instructions exactly. Output ONLY the JSON array -- no extra text.`,
           cwd: workspace.rootDir,
           model: entry.model.id,
           timeoutMs: 180_000,
@@ -337,7 +337,7 @@ for (const entry of matrix) {
       }, 240_000);
     }
 
-    // ─── 7. Persona Execution (protocol compliance) ───────────────────
+    // --- 7. Persona Execution (protocol compliance) -------------------
     if (isFeatureEnabled('persona-execution')) {
       it('persona-execution: produces protocol-compliant output with outcome_assessment', async () => {
         workspace = createWorkspace('empty');
@@ -373,7 +373,7 @@ for (const entry of matrix) {
       }, 240_000);
     }
 
-    // ─── 8. Template Adoption (TRANSFORM_QUESTIONS or persona) ────────
+    // --- 8. Template Adoption (TRANSFORM_QUESTIONS or persona) --------
     if (isFeatureEnabled('template-adopt')) {
       it('template-adopt: produces TRANSFORM_QUESTIONS or persona JSON from template', async () => {
         workspace = createWorkspace('empty');
@@ -393,7 +393,7 @@ for (const entry of matrix) {
 
         const result = await runCli({
           provider: entry.provider.name,
-          prompt: `Read prompt.txt and follow the instructions exactly. Output ONLY the chosen format (TRANSFORM_QUESTIONS or persona JSON) — no additional text.`,
+          prompt: `Read prompt.txt and follow the instructions exactly. Output ONLY the chosen format (TRANSFORM_QUESTIONS or persona JSON) -- no additional text.`,
           cwd: workspace.rootDir,
           model: entry.model.id,
           timeoutMs: 180_000,
@@ -407,7 +407,7 @@ for (const entry of matrix) {
       }, 240_000);
     }
 
-    // ─── 9. Query Debug (SQL fix + code block extraction) ─────────────
+    // --- 9. Query Debug (SQL fix + code block extraction) -------------
     if (isFeatureEnabled('query-debug')) {
       it('query-debug: fixes broken SQL and returns corrected query in code block', async () => {
         workspace = createWorkspace('empty');

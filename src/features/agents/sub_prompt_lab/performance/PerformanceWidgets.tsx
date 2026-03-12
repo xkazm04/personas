@@ -4,7 +4,7 @@ import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
 import type { VersionMarker } from '@/lib/bindings/VersionMarker';
 import { ANOMALY_LABEL, VERSION_COLORS, PERIOD_OPTIONS, fmtDate, fmtCost, fmtMs, fmtPct, useSummaryTotals } from './performanceHelpers';
 
-// ─── Tooltip ─────────────────────────────────────────────────────────────────
+// --- Tooltip -----------------------------------------------------------------
 
 export interface TipEntry { name: string; value: number; color: string; dataKey: string }
 
@@ -33,7 +33,7 @@ export function DashTooltip({
   );
 }
 
-// ─── Anomaly Dots ────────────────────────────────────────────────────────────
+// --- Anomaly Dots ------------------------------------------------------------
 
 export function AnomalyDot({
   anomaly,
@@ -46,7 +46,7 @@ export function AnomalyDot({
     <button
       onClick={() => anomaly.execution_id && onNavigate?.(anomaly.execution_id)}
       className="group relative"
-      title={`${ANOMALY_LABEL[anomaly.metric] ?? anomaly.metric}: ${anomaly.deviation_pct.toFixed(0)}% above baseline${anomaly.execution_id ? ' — click to inspect' : ''}`}
+      title={`${ANOMALY_LABEL[anomaly.metric] ?? anomaly.metric}: ${anomaly.deviation_pct.toFixed(0)}% above baseline${anomaly.execution_id ? ' -- click to inspect' : ''}`}
     >
       <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm font-medium bg-red-500/15 text-red-400 border border-red-500/20 group-hover:bg-red-500/25 transition-colors">
         <AlertTriangle className="w-2.5 h-2.5" />
@@ -56,7 +56,7 @@ export function AnomalyDot({
   );
 }
 
-// ─── Summary Cards ───────────────────────────────────────────────────────────
+// --- Summary Cards -----------------------------------------------------------
 
 export function SummaryCards({ points }: { points: PromptPerformancePoint[] }) {
   const totals = useSummaryTotals(points);
@@ -82,7 +82,7 @@ export function SummaryCards({ points }: { points: PromptPerformancePoint[] }) {
   );
 }
 
-// ─── Dashboard Toolbar ──────────────────────────────────────────────────────
+// --- Dashboard Toolbar ------------------------------------------------------
 
 interface DashboardToolbarProps {
   anomalyCount: number;
@@ -122,7 +122,7 @@ export function DashboardToolbar({ anomalyCount, days, setDays, compareMode, tog
   );
 }
 
-// ─── Version Timeline ────────────────────────────────────────────────────────
+// --- Version Timeline --------------------------------------------------------
 
 export function VersionTimeline({ markers }: { markers: VersionMarker[] }) {
   if (markers.length === 0) return null;

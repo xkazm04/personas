@@ -69,7 +69,7 @@ pub struct UpdateRecipeInput {
 }
 
 // ============================================================================
-// Persona ↔ Recipe Links
+// Persona <-> Recipe Links
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

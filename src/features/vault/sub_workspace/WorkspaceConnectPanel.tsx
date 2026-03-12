@@ -150,7 +150,7 @@ function ProviderSection({
         </div>
       </div>
 
-      {/* Select phase — service checkboxes */}
+      {/* Select phase -- service checkboxes */}
       {isSelectPhase && (
         <>
           <div className="flex items-center justify-between">
@@ -208,7 +208,7 @@ function ProviderSection({
         </div>
       )}
 
-      {/* Provisioning / Done / Error — show per-service progress */}
+      {/* Provisioning / Done / Error -- show per-service progress */}
       {(ws.phase === 'provisioning' || isDone || isError) && (
         <>
           <ProvisionProgress states={ws.provisionStates} />

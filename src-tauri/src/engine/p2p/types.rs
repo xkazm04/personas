@@ -59,6 +59,8 @@ pub struct DiscoveredPeer {
     pub first_seen_at: String,
     pub is_connected: bool,
     pub metadata: Option<String>,
+    /// Trust status: "trusted" if peer_id is in trusted_peers, "unknown" otherwise.
+    pub trust_status: String,
 }
 
 /// An entry in a peer's synced manifest.
@@ -94,5 +96,27 @@ pub struct PeerConnectionInfo {
     pub state: ConnectionState,
     pub connected_at: Option<chrono::DateTime<chrono::Utc>>,
     pub last_ping: Option<chrono::DateTime<chrono::Utc>>,
+    pub last_latency_ms: Option<u64>,
     pub retry_count: u32,
+}
+
+/// Aggregate connection health across all peers.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ConnectionHealth {
+    pub avg_latency_ms: Option<f64>,
+    pub missed_ping_count: u32,
+    pub connected_count: u32,
+}
+
+/// Combined snapshot of network status, health, and discovered peers.
+/// Used to batch 3 separate polls into a single IPC call.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct NetworkSnapshot {
+    pub status: NetworkStatusInfo,
+    pub health: ConnectionHealth,
+    pub discovered_peers: Vec<DiscoveredPeer>,
 }

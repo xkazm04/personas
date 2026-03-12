@@ -57,7 +57,7 @@ export function DonePhase({
           <PackagePlus className="w-4 h-4 shrink-0 text-violet-400" />
           <p className="text-sm text-foreground/80">
             <span className="text-violet-400 font-medium">{registeredConnectorName}</span>
-            {' '}connector added to your catalog — now available for other personas and template adoption.
+            {' '}connector added to your catalog -- now available for other personas and template adoption.
           </p>
         </motion.div>
       )}

@@ -4,14 +4,14 @@ import {
   cancelCredentialNegotiation,
   getNegotiationStepHelp,
 } from '@/api/vault/negotiator';
-import { useAiArtifactFlow, defaultGetLine, buildResolveStatus } from '../template/useAiArtifactFlow';
+import { useAiArtifactTask } from '../core/useAiArtifactTask';
 import { useStepProgress } from '@/hooks/useStepProgress';
 import { lookupPlaybook, savePlaybook, markPlaybookUsed } from '../core/playbookCache';
 import { resolveStepGraph, type StepGraphContext, type ResolvedSteps } from './negotiatorStepGraph';
 import { saveRecipeFromDesign } from '@/lib/credentials/credentialRecipeRegistry';
 import type { CredentialDesignConnector } from './useCredentialDesign';
 
-// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Types -------------------------------------------------------
 
 export type NegotiatorPhase = 'idle' | 'planning' | 'guiding' | 'done' | 'error';
 
@@ -35,13 +35,6 @@ export interface NegotiationPlan {
   tips: string[];
 }
 
-/** Prompt input for the negotiator flow: (serviceName, connector, fieldKeys) */
-interface NegotiationInput {
-  serviceName: string;
-  connector: Record<string, unknown>;
-  fieldKeys: string[];
-}
-
 /** Runtime context passed to the hook for step graph evaluation. */
 export interface NegotiatorContext {
   /** Values already captured by autoCred or previously saved credentials */
@@ -59,7 +52,7 @@ const EMPTY_RESOLVED: ResolvedSteps = {
   originalToVisible: new Map(),
 };
 
-// â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Hook --------------------------------------------------------
 
 export function useCredentialNegotiator(context?: NegotiatorContext) {
   const [stepHelp, setStepHelp] = useState<{ answer: string; stepIndex: number } | null>(null);
@@ -71,21 +64,17 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
   /** Tracks completed steps via ref to avoid stale closure in completeStep callback. */
   const completedStepsRef = useRef<Set<number>>(new Set());
 
-  const flow = useAiArtifactFlow<NegotiationInput, NegotiationPlan>({
-    stream: {
-      progressEvent: 'credential-negotiation-progress',
-      statusEvent: 'credential-negotiation-status',
-      getLine: defaultGetLine,
-      resolveStatus: buildResolveStatus('Failed to generate provisioning plan'),
-      completedPhase: 'guiding',
-      runningPhase: 'planning',
-      startErrorMessage: 'Failed to start negotiation',
-    },
-    startFn: ({ serviceName, connector, fieldKeys }) =>
-      startCredentialNegotiation(serviceName, connector, fieldKeys),
+  const flow = useAiArtifactTask<[string, Record<string, unknown>, string[]], NegotiationPlan>({
+    progressEvent: 'credential-negotiation-progress',
+    statusEvent: 'credential-negotiation-status',
+    runningPhase: 'planning',
+    completedPhase: 'guiding',
+    startFn: startCredentialNegotiation,
+    cancelFn: cancelCredentialNegotiation,
+    errorMessage: 'Failed to generate provisioning plan',
   });
 
-  // â”€â”€ Step graph resolution â”€â”€
+  // -- Step graph resolution --
   // Resolve which steps are visible vs skipped based on runtime context.
   // Re-evaluates when the plan or captured values change so steps can
   // become skipped mid-flow (e.g. after autoCred fills fields).
@@ -150,14 +139,10 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
       summary: '',
     }, 'negotiator').catch(() => {/* non-critical */});
 
-    await flow.start({ serviceName, connector, fieldKeys });
+    await flow.start(serviceName, connector, fieldKeys);
   }, [flow.start, flow.setResult, flow.setPhase, sp.reset]);
 
-  const cancel = useCallback(() => {
-    flow.cancel(() => cancelCredentialNegotiation());
-  }, [flow.cancel]);
-
-  // completeStep operates on visible indices â€” translates to original for refs/playbook
+  // completeStep operates on visible indices -- translates to original for refs/playbook
   const completeStep = useCallback((visibleIndex: number) => {
     sp.completeStep(visibleIndex);
 
@@ -242,7 +227,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
     /** Steps that were skipped with reasons */
     skippedSteps: resolved.skipped,
     start,
-    cancel,
+    cancel: flow.cancel,
     completeStep,
     captureValue: sp.captureValue,
     goToStep,

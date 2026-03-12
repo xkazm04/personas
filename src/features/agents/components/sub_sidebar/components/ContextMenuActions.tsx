@@ -6,7 +6,7 @@ import type { DbPersona } from '@/lib/types/types';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { profileToDropdownValue, OLLAMA_CLOUD_PRESETS, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 
-// ── Quick-switch model definitions ────────────────────────────────────
+// -- Quick-switch model definitions ------------------------------------
 
 export interface QuickModel {
   value: string;
@@ -131,7 +131,7 @@ export function useContextMenuActions(personaId: string, enabled: boolean, onClo
         });
         exposureId = resource.id;
       } catch {
-        // Already exposed — find existing
+        // Already exposed -- find existing
         await fetchExposedResources();
         const existing = usePersonaStore.getState().exposedResources
           .find((r) => r.resource_type === 'persona' && r.resource_id === personaId);

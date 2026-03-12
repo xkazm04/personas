@@ -23,7 +23,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-// ── Architectural categories ─────────────────────────────────────
+// -- Architectural categories -------------------------------------
 // Maps connector names to high-level architectural categories.
 // These categories match the section headers from ConnectorMeta.tsx.
 
@@ -170,7 +170,7 @@ export function userHasCategoryCredential(
   categoryKey: string,
   userCredentialServiceTypes: Set<string>,
 ): boolean {
-  // Built-in components — always available without external credentials
+  // Built-in components -- always available without external credentials
   if (categoryKey === 'messaging') return true;  // in-app messaging
   if (categoryKey === 'database') return true;   // built-in SQLite database
 

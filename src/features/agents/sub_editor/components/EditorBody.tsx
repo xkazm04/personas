@@ -4,7 +4,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { type PersonaDraft, buildDraft } from '../libs/PersonaDraft';
-import { useEditorDirtyState, TabSaveError } from '../libs/EditorDocument';
+import { useEditorDirtyState, useEditorHistory, TabSaveError } from '../libs/EditorDocument';
 import { tabIdsToLabels } from '../libs/editorTabConstants';
 import { useEditorSave } from '../libs/useEditorSave';
 import { UnsavedChangesBanner, DesignNudgeBanner, CloudNudgeBanner } from './EditorBanners';
@@ -38,14 +38,24 @@ export function EditorBody() {
   const dirtyRef = useRef(false);
   const isSwitchingRef = useRef(false);
 
+  const patch = useCallback((updates: Partial<PersonaDraft>) => {
+    setDraft((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  const { isSaving, modelDirty } = useEditorSave({ draft, baseline, setDraft, setBaseline, pendingPersonaId });
+  const { isDirty, dirtyTabs: allDirtyTabs, saveAll: saveAllTabs, cancelAll: cancelAllDebouncedSaves, clearAll: clearAllDirty } = useEditorDirtyState();
+  const { undo, redo, clearHistory } = useEditorHistory();
+
   useEffect(() => {
     if (selectedPersona && !pendingPersonaId) {
       const d = buildDraft(selectedPersona);
       setDraft(d);
       setBaseline(d);
       prevPersonaIdRef.current = selectedPersona.id;
+      // New persona -- clear undo history so old entries don't leak across personas
+      clearHistory();
     }
-  }, [selectedPersona?.id, pendingPersonaId]);
+  }, [selectedPersona?.id, pendingPersonaId, clearHistory]);
 
   useEffect(() => {
     if (!selectedPersona) {
@@ -58,13 +68,6 @@ export function EditorBody() {
       setBaseline(empty);
     }
   }, [selectedPersona]);
-
-  const patch = useCallback((updates: Partial<PersonaDraft>) => {
-    setDraft((prev) => ({ ...prev, ...updates }));
-  }, []);
-
-  const { isSaving, modelDirty } = useEditorSave({ draft, baseline, setBaseline, pendingPersonaId });
-  const { isDirty, dirtyTabs: allDirtyTabs, saveAll: saveAllTabs, cancelAll: cancelAllDebouncedSaves, clearAll: clearAllDirty } = useEditorDirtyState();
   dirtyRef.current = isDirty;
 
   useEffect(() => {
@@ -78,6 +81,26 @@ export function EditorBody() {
     });
     return unsub;
   }, [cancelAllDebouncedSaves]);
+
+  // Ctrl+Z / Ctrl+Shift+Z for undo/redo across all editor tabs
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Only fire when no text input is focused (avoid hijacking undo inside textareas)
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [undo, redo]);
 
   if (!selectedPersona) {
     return (

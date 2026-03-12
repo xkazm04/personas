@@ -1,5 +1,5 @@
 /**
- * Round 1: Foundation — Auth smoke test and structured JSON output.
+ * Round 1: Foundation -- Auth smoke test and structured JSON output.
  *
  * These tests verify basic CLI connectivity and response formatting
  * for each available provider. No tool use is expected.
@@ -30,10 +30,10 @@ afterEach(() => {
 
 for (const provider of providers) {
   describe(`${provider.displayName}`, () => {
-    // ─────────────────────────────────────────────────────────────────────
+    // ---------------------------------------------------------------------
     // Test 1: Auth smoke test
-    // ─────────────────────────────────────────────────────────────────────
-    it('auth smoke test — responds with READY and model name', async () => {
+    // ---------------------------------------------------------------------
+    it('auth smoke test -- responds with READY and model name', async () => {
       workspace = createWorkspace('empty');
 
       const result = await runCli({
@@ -73,10 +73,10 @@ for (const provider of providers) {
       expect(validation.passed, formatDiagnostic(result, validation)).toBe(true);
     }, 60_000);
 
-    // ─────────────────────────────────────────────────────────────────────
+    // ---------------------------------------------------------------------
     // Test 2: Structured JSON output
-    // ─────────────────────────────────────────────────────────────────────
-    it('structured JSON output — returns valid JSON with required fields', async () => {
+    // ---------------------------------------------------------------------
+    it('structured JSON output -- returns valid JSON with required fields', async () => {
       workspace = createWorkspace('empty');
 
       const result = await runCli({
@@ -93,7 +93,7 @@ for (const provider of providers) {
         custom: (res) => {
           const text = res.assistantText.trim();
 
-          // Try to extract JSON from the response — it may be wrapped in markdown fences
+          // Try to extract JSON from the response -- it may be wrapped in markdown fences
           let jsonStr = text;
           const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
           if (fenceMatch) {

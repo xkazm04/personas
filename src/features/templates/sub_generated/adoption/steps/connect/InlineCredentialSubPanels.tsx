@@ -9,7 +9,7 @@ import { MOTION } from '@/features/templates/animationPresets';
 // Re-export ManualForm from its own file for convenience
 export { ManualForm } from './ManualCredentialForm';
 
-// ── Method Card ────────────────────────────────────────────────────────
+// -- Method Card --------------------------------------------------------
 
 function MethodCard({
   icon,
@@ -55,7 +55,7 @@ function MethodCard({
   );
 }
 
-// ── Method Picker ──────────────────────────────────────────────────────
+// -- Method Picker ------------------------------------------------------
 
 export function MethodPicker({
   hasKnownFields,
@@ -76,10 +76,10 @@ export function MethodPicker({
       <MethodCard
         icon={<PenTool className="w-4 h-4 text-foreground/60" />}
         label="Manual Input"
-        description={hasKnownFields ? 'Fill in credential fields' : 'No fields — use Design'}
+        description={hasKnownFields ? 'Fill in credential fields' : 'No fields -- use Design'}
         onClick={onManual}
         disabled={!hasKnownFields}
-        disabledHint={!hasKnownFields ? 'No fields defined — use Design with AI' : undefined}
+        disabledHint={!hasKnownFields ? 'No fields defined -- use Design with AI' : undefined}
       />
       <MethodCard
         icon={<Sparkles className="w-4 h-4 text-violet-400" />}
@@ -92,7 +92,7 @@ export function MethodPicker({
   );
 }
 
-// ── Design Query Input ─────────────────────────────────────────────────
+// -- Design Query Input -------------------------------------------------
 
 export function DesignQueryInput({
   query,

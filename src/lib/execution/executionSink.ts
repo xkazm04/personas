@@ -1,5 +1,5 @@
 /**
- * ExecutionSink — self-contained terminal output subsystem that owns the ring
+ * ExecutionSink -- self-contained terminal output subsystem that owns the ring
  * buffer, batching, byte budget, and flush scheduling.
  *
  * Extracted from executionSlice.ts to eliminate module-level mutable state and
@@ -16,7 +16,7 @@ const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
 const OUTPUT_TRUNCATION_NOTICE = "[SYSTEM] Output truncated - 10MB limit reached. Execution continues in background.";
 
 // ---------------------------------------------------------------------------
-// Ring buffer – fixed-capacity store for terminal lines with O(1) append/evict
+// Ring buffer -- fixed-capacity store for terminal lines with O(1) append/evict
 // ---------------------------------------------------------------------------
 
 class TerminalRingBuffer {
@@ -142,12 +142,12 @@ export class ExecutionSink {
     this.ring.clear();
   }
 
-  // ── Private ────────────────────────────────────────────────────────
+  // -- Private --------------------------------------------------------
 
   private flush(expectedGeneration: number): void {
     this.batchScheduled = false;
 
-    // Stale microtask from a previous execution — discard
+    // Stale microtask from a previous execution -- discard
     if (expectedGeneration !== this.generation) return;
     if (this.batchLines.length === 0 || !this.onFlush) return;
 

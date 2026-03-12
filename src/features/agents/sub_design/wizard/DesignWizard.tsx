@@ -98,7 +98,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
                   {summary.map((item) => (
                     <div
                       key={item.label}
-                      className="flex items-start gap-3 px-3 py-2 rounded-xl bg-secondary/30 border border-primary/5"
+                      className="flex items-start gap-3 px-3 py-2 rounded-xl bg-secondary/30 border border-primary/10"
                     >
                       <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/80 w-24 flex-shrink-0 mt-0.5">
                         {item.label}
@@ -123,7 +123,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
                   onChange={(e) => setAdditionalContext(e.target.value)}
                   placeholder="Add any specific requirements, domain knowledge, or constraints..."
                   rows={4}
-                  className="w-full bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-sm text-foreground resize-y focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/30 transition-all placeholder-muted-foreground/30"
+                  className="w-full bg-background/50 border border-primary/20 rounded-xl px-3 py-2 text-sm text-foreground resize-y focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/30 transition-all placeholder-muted-foreground/30"
                 />
               </div>
             </div>

@@ -200,7 +200,7 @@ pub async fn validate_trigger(
                     passed: false,
                     message: format!("Malformed JSON in config: {e}"),
                 });
-                // Return early — all downstream checks depend on valid config
+                // Return early -- all downstream checks depend on valid config
                 checks.push(TriggerValidationCheck {
                     label: "Target persona".into(),
                     passed: true,
@@ -219,7 +219,7 @@ pub async fn validate_trigger(
                 match crate::engine::cron::parse_cron(cron_expr) {
                     Ok(schedule) => {
                         let next_msg = crate::engine::cron::next_fire_time(&schedule, chrono::Utc::now())
-                            .map(|t| format!("Valid — next fire: {}", t.format("%Y-%m-%d %H:%M UTC")))
+                            .map(|t| format!("Valid -- next fire: {}", t.format("%Y-%m-%d %H:%M UTC")))
                             .unwrap_or_else(|| "Valid syntax (no upcoming fire time)".into());
                         checks.push(TriggerValidationCheck {
                             label: "Cron syntax".into(),
@@ -297,7 +297,7 @@ pub async fn validate_trigger(
                         }
                         Ok(()) => match url::Url::parse(endpoint) {
                             Ok(_) => {
-                                // Use HEAD only — never GET, which can trigger
+                                // Use HEAD only -- never GET, which can trigger
                                 // side effects on OAuth callbacks, webhook confirmations, etc.
                                 // Redirects disabled to prevent SSRF via redirect to internal IPs.
                                 let client = reqwest::Client::builder()
@@ -354,7 +354,7 @@ pub async fn validate_trigger(
             }
         }
         "webhook" => {
-            // Webhook triggers are passive — validate that the webhook server is alive
+            // Webhook triggers are passive -- validate that the webhook server is alive
             let webhook_alive = state.scheduler.is_webhook_alive();
             checks.push(TriggerValidationCheck {
                 label: "Webhook listener".into(),
@@ -362,7 +362,7 @@ pub async fn validate_trigger(
                 message: if webhook_alive {
                     format!("Active on http://localhost:9420/webhook/{}", trigger.id)
                 } else {
-                    "Webhook server is not running — webhook won't receive events".into()
+                    "Webhook server is not running -- webhook won't receive events".into()
                 },
             });
             if let Some(secret) = config.get("hmac_secret").or(config.get("webhook_secret")).and_then(|v| v.as_str()) {
@@ -1039,7 +1039,7 @@ pub async fn dry_run_trigger(
 }
 
 // =============================================================================
-// Cron Agents — unified view of personas with schedule triggers
+// Cron Agents -- unified view of personas with schedule triggers
 // =============================================================================
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -1142,4 +1142,65 @@ pub fn list_cron_agents(
     })?;
 
     Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
+// -- Dev seed: mock schedule trigger -------------------------------------------
+
+const MOCK_CRON_EXPRESSIONS: &[&str] = &[
+    "*/5 * * * *",   // every 5 minutes
+    "0 * * * *",     // every hour
+    "0 */6 * * *",   // every 6 hours
+    "0 9 * * 1-5",   // weekdays at 9am
+    "0 0 * * *",     // daily at midnight
+    "*/15 * * * *",  // every 15 minutes
+];
+
+#[tauri::command]
+pub fn seed_mock_cron_agent(
+    state: State<'_, Arc<AppState>>,
+) -> Result<CronAgent, AppError> {
+    require_auth_sync(&state)?;
+
+    let personas = crate::db::repos::core::personas::get_all(&state.db)?;
+    if personas.is_empty() {
+        return Err(AppError::Validation("No personas exist. Create an agent first.".into()));
+    }
+    let t = chrono::Utc::now().timestamp_millis() as usize;
+    let idx = t % personas.len();
+    let persona = &personas[idx];
+
+    let cron_expr = MOCK_CRON_EXPRESSIONS[t % MOCK_CRON_EXPRESSIONS.len()];
+    let config = serde_json::json!({ "cron": cron_expr }).to_string();
+    let trigger_id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now();
+    let now_str = now.to_rfc3339();
+    let next = (now + chrono::Duration::minutes(((t % 60) + 5) as i64)).to_rfc3339();
+
+    let conn = state.db.get()?;
+    conn.execute(
+        "INSERT INTO persona_triggers
+         (id, persona_id, trigger_type, config, enabled, last_triggered_at, next_trigger_at, created_at, updated_at)
+         VALUES (?1, ?2, 'schedule', ?3, 1, ?4, ?5, ?4, ?4)",
+        rusqlite::params![trigger_id, persona.id, config, now_str, next],
+    )?;
+
+    let description = cron_to_human(cron_expr);
+
+    Ok(CronAgent {
+        persona_id: persona.id.clone(),
+        persona_name: persona.name.clone(),
+        persona_icon: persona.icon.clone(),
+        persona_color: persona.color.clone(),
+        persona_enabled: persona.enabled,
+        headless: persona.headless,
+        trigger_id,
+        cron_expression: Some(cron_expr.to_string()),
+        interval_seconds: None,
+        trigger_enabled: true,
+        last_triggered_at: Some(now_str.clone()),
+        next_trigger_at: Some(next),
+        description,
+        recent_executions: 0,
+        recent_failures: 0,
+    })
 }

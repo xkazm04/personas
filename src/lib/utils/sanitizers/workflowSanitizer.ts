@@ -11,7 +11,7 @@
  * 5. Validating structural integrity of workflow JSON
  */
 
-// ── Allowlists & Limits ──────────────────────────────────────────────
+// -- Allowlists & Limits ----------------------------------------------
 
 /** Safe characters for workflow and node names */
 const SAFE_NAME_RE = /[^a-zA-Z0-9\s\-_.()/&+:,#@!]/g;
@@ -26,7 +26,7 @@ const MAX_LENGTHS = {
   parameterValue: 5000,
 } as const;
 
-// ── Prompt Injection Patterns ────────────────────────────────────────
+// -- Prompt Injection Patterns ----------------------------------------
 
 /**
  * Patterns that indicate prompt injection attempts.
@@ -54,7 +54,7 @@ const INJECTION_PATTERNS: RegExp[] = [
   /\x1b\[[0-9;]*[a-zA-Z]/g,
 ];
 
-// ── Core Sanitization Functions ──────────────────────────────────────
+// -- Core Sanitization Functions --------------------------------------
 
 /**
  * Sanitize a workflow or node name using a character allowlist.
@@ -132,7 +132,7 @@ export function sanitizeParamValue(value: unknown, depth = 0): unknown {
   return null;
 }
 
-// ── Injection Pattern Stripping ──────────────────────────────────────
+// -- Injection Pattern Stripping --------------------------------------
 
 /**
  * Strip known prompt injection patterns from text.
@@ -156,10 +156,10 @@ function escapeForPrompt(text: string): string {
     // Escape triple backticks (could break markdown code fences)
     .replace(/```/g, '\\`\\`\\`')
     // Escape section-like delimiters
-    .replace(/^---+$/gm, '———');
+    .replace(/^---+$/gm, '------');
 }
 
-// ── JSON Sanitization ────────────────────────────────────────────────
+// -- JSON Sanitization ------------------------------------------------
 
 /**
  * Sanitize an entire JSON string for safe embedding in prompts.
@@ -183,7 +183,7 @@ export function sanitizeJsonForPrompt(jsonStr: string, maxLen = 50_000): string 
   return JSON.stringify(sanitized);
 }
 
-// ── Workflow-Level Sanitization ──────────────────────────────────────
+// -- Workflow-Level Sanitization --------------------------------------
 
 export interface SanitizedWorkflow {
   name: string;
@@ -201,7 +201,7 @@ export interface SanitizedNode {
 
 /**
  * Sanitize an entire n8n workflow JSON object.
- * This is the main entry point — call this on the raw parsed workflow
+ * This is the main entry point -- call this on the raw parsed workflow
  * before passing it to the parser or embedding in prompts.
  */
 export function sanitizeWorkflow(raw: unknown): SanitizedWorkflow {

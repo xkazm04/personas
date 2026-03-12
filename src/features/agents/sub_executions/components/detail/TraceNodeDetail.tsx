@@ -20,7 +20,7 @@ export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-3 3xl:gap-4 4xl:gap-5">
-      <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
+      <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" />
           Duration
@@ -30,7 +30,7 @@ export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
         </div>
       </div>
 
-      <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
+      <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <DollarSign className="w-2.5 h-2.5" />
           Cost
@@ -40,7 +40,7 @@ export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
         </div>
       </div>
 
-      <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
+      <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Activity className="w-2.5 h-2.5" />
           Spans
@@ -50,7 +50,7 @@ export function TraceSummary({ trace }: { trace: UnifiedTrace }) {
         </div>
       </div>
 
-      <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
+      <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <AlertCircle className="w-2.5 h-2.5" />
           Errors

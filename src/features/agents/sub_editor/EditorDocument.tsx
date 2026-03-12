@@ -1,7 +1,7 @@
 import { createContext, useContext, useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 
 /**
- * EditorDocument — unified dirty-state & save registry for the persona edit session.
+ * EditorDocument -- unified dirty-state & save registry for the persona edit session.
  *
  * Every editor tab registers its dirty flag and save callback via `useEditorDirty`.
  * PersonaEditor reads `isDirty` and `dirtyTabs` to gate persona switches
@@ -49,7 +49,7 @@ function createDirtyStore(): DirtyStore {
   const cancelMap = new Map<string, () => void>();
   const listeners = new Set<Listener>();
 
-  // Cache for getDirtyTabs — must be referentially stable between notifications
+  // Cache for getDirtyTabs -- must be referentially stable between notifications
   let dirtyTabsCacheValid = false;
   let cachedDirtyTabs: string[] = [];
 
@@ -153,8 +153,8 @@ function useDirtyStore(): DirtyStore | null {
 export function useEditorDirty(tab: string, isDirty: boolean, save?: () => Promise<void>, cancel?: () => void) {
   const store = useDirtyStore();
 
-  // Sync dirty state via effect — calling setTabDirty during render would
-  // trigger notify() → useSyncExternalStore re-subscribe → infinite loop.
+  // Sync dirty state via effect -- calling setTabDirty during render would
+  // trigger notify() -> useSyncExternalStore re-subscribe -> infinite loop.
   useEffect(() => {
     if (store) store.setTabDirty(tab, isDirty);
   }, [store, tab, isDirty]);
@@ -163,7 +163,7 @@ export function useEditorDirty(tab: string, isDirty: boolean, save?: () => Promi
   if (store && save) store.registerSave(tab, save);
   if (store && cancel) store.registerCancel(tab, cancel);
 
-  // Cleanup on unmount — wrapped in useCallback to stabilize
+  // Cleanup on unmount -- wrapped in useCallback to stabilize
   const unregister = useCallback(() => {
     store?.unregister(tab);
   }, [store, tab]);

@@ -1,6 +1,6 @@
 import { CX, CY, CORE_OUTER_R, CORE_INNER_R } from '../../libs/visualizationHelpers';
 
-// ── SVG <defs> and central core hub ──────────────────────────────
+// -- SVG <defs> and central core hub ------------------------------
 
 interface SvgDefsProps {
   uid: string;

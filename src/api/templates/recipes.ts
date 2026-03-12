@@ -9,6 +9,11 @@ import type { RecipeExecutionInput } from "@/lib/bindings/RecipeExecutionInput";
 import type { RecipeExecutionResult } from "@/lib/bindings/RecipeExecutionResult";
 import type { RecipeVersion } from "@/lib/bindings/RecipeVersion";
 
+export interface CancelResult {
+  was_running: boolean;
+  cancelled_id: string | null;
+}
+
 // ============================================================================
 // Recipe CRUD
 // ============================================================================
@@ -29,7 +34,7 @@ export const deleteRecipe = (id: string) =>
   invoke<boolean>("delete_recipe", { id });
 
 // ============================================================================
-// Persona ↔ Recipe Links
+// Persona <-> Recipe Links
 // ============================================================================
 
 export const linkRecipeToPersona = (input: CreatePersonaRecipeLinkInput) =>
@@ -52,7 +57,7 @@ export const startRecipeExecution = (recipeId: string, inputData: Record<string,
   invoke<{ execution_id: string }>("start_recipe_execution", { recipeId, inputData });
 
 export const cancelRecipeExecution = () =>
-  invoke<boolean>("cancel_recipe_execution");
+  invoke<CancelResult>("cancel_recipe_execution");
 
 // ============================================================================
 // Credential-Level Recipes
@@ -65,10 +70,10 @@ export const startRecipeGeneration = (credentialId: string, description: string)
   invoke<{ generation_id: string }>("start_recipe_generation", { credentialId, description });
 
 export const cancelRecipeGeneration = () =>
-  invoke<boolean>("cancel_recipe_generation");
+  invoke<CancelResult>("cancel_recipe_generation");
 
 // ============================================================================
-// Use Case ↔ Recipe Connection
+// Use Case <-> Recipe Connection
 // ============================================================================
 
 export const getUseCaseRecipes = (useCaseId: string) =>
@@ -85,7 +90,7 @@ export const startRecipeVersioning = (recipeId: string, changeRequirements: stri
   invoke<{ versioning_id: string }>("start_recipe_versioning", { recipeId, changeRequirements });
 
 export const cancelRecipeVersioning = () =>
-  invoke<boolean>("cancel_recipe_versioning");
+  invoke<CancelResult>("cancel_recipe_versioning");
 
 export const acceptRecipeVersion = (
   recipeId: string,
@@ -103,7 +108,7 @@ export const revertRecipeVersion = (recipeId: string, versionId: string) =>
   invoke<RecipeDefinition>("revert_recipe_version", { recipeId, versionId });
 
 // ============================================================================
-// Use Case ↔ Recipe Connection
+// Use Case <-> Recipe Connection
 // ============================================================================
 
 export const promoteUseCaseToRecipe = (

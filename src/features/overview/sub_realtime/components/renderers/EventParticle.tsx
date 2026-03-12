@@ -40,7 +40,7 @@ function EventParticleComponent({ event, sourcePos, busY, targetPos, color, onCl
   }, [onClick]);
 
   return (
-    <g onClick={onClick} onKeyDown={handleKeyDown} tabIndex={0} role="button" aria-label={`Event: ${event.event_type} – ${event.status}`} style={{ cursor: 'pointer' }}>
+    <g onClick={onClick} onKeyDown={handleKeyDown} tabIndex={0} role="button" aria-label={`Event: ${event.event_type} -- ${event.status}`} style={{ cursor: 'pointer' }}>
       <motion.circle animate={{ cx: position.cx, cy: position.cy }} transition={{ duration: 0.8, ease: 'easeInOut' }} r={HIT_AREA_R} fill="transparent" />
       {TRAIL_COUNT > 0 && event._phase !== 'done' && (
         <>

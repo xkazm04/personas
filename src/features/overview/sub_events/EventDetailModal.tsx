@@ -62,7 +62,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                     ).then(() => {
                       setCopiedPayload(true);
                       setTimeout(() => setCopiedPayload(false), 2000);
-                    }).catch(() => { /* intentional: non-critical — clipboard copy fallback */ });
+                    }).catch(() => { /* intentional: non-critical -- clipboard copy fallback */ });
                   }}
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
                   title="Copy payload"

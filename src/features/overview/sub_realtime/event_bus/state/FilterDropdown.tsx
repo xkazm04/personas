@@ -1,7 +1,7 @@
 import { Filter, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// ── Dropdown wrapper ──────────────────────────────────────────────
+// -- Dropdown wrapper ----------------------------------------------
 
 interface FilterDropdownProps {
   label: string;
@@ -58,7 +58,7 @@ export function FilterDropdown({
   );
 }
 
-// ── Filter option row ─────────────────────────────────────────────
+// -- Filter option row ---------------------------------------------
 
 interface FilterOptionProps {
   label: string;

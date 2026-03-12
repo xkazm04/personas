@@ -2,8 +2,8 @@ import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { AgentIR } from '@/lib/types/designTypes';
 
-// ── Cached review field parsing ──────────────────────────────────────
-// WeakMap keyed by review object identity — entries are GC'd when the
+// -- Cached review field parsing --------------------------------------
+// WeakMap keyed by review object identity -- entries are GC'd when the
 // review object is no longer referenced (e.g. after a gallery refresh).
 
 export interface CachedReviewFields {
@@ -27,7 +27,7 @@ export function getCachedLightFields(review: PersonaDesignReview): CachedReviewF
   return cached;
 }
 
-/** Lazily parse & cache the heavy design_result — only called on expansion. */
+/** Lazily parse & cache the heavy design_result -- only called on expansion. */
 export function getCachedDesignResult(review: PersonaDesignReview): AgentIR | null {
   const cached = getCachedLightFields(review);
   if (cached.designResult === undefined) {

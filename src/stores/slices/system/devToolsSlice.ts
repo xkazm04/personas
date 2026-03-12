@@ -15,7 +15,7 @@ import type { TriageRule } from "@/lib/bindings/TriageRule";
 import * as devApi from "@/api/devTools/devTools";
 
 export interface DevToolsSlice {
-  // ── Projects ────────────────────────────────────────────────────────
+  // -- Projects --------------------------------------------------------
   projects: DevProject[];
   activeProjectId: string | null;
   projectsLoading: boolean;
@@ -27,7 +27,7 @@ export interface DevToolsSlice {
   setActiveProject: (id: string | null) => Promise<void>;
   scanDirectory: (path: string) => Promise<DirectoryScanResult>;
 
-  // ── Goals ───────────────────────────────────────────────────────────
+  // -- Goals -----------------------------------------------------------
   goals: DevGoal[];
   goalsLoading: boolean;
   goalSignals: DevGoalSignal[];
@@ -40,7 +40,7 @@ export interface DevToolsSlice {
   recordGoalSignal: (goalId: string, signalType: string, delta?: number, message?: string, sourceId?: string) => Promise<DevGoalSignal>;
   fetchGoalSignals: (goalId: string) => Promise<void>;
 
-  // ── Context Map ─────────────────────────────────────────────────────
+  // -- Context Map -----------------------------------------------------
   contextGroups: DevContextGroup[];
   contexts: DevContext[];
   contextGroupRelationships: DevContextGroupRelationship[];
@@ -65,7 +65,7 @@ export interface DevToolsSlice {
   createContextGroupRelationship: (projectId: string, sourceGroupId: string, targetGroupId: string) => Promise<DevContextGroupRelationship>;
   deleteContextGroupRelationship: (id: string) => Promise<void>;
 
-  // ── Scanner ─────────────────────────────────────────────────────────
+  // -- Scanner ---------------------------------------------------------
   scanAgentSelection: string[];
   scanPhase: "idle" | "running" | "complete" | "error";
   scanResults: DevIdea[];
@@ -77,7 +77,7 @@ export interface DevToolsSlice {
   fetchScan: (id: string) => Promise<DevScan>;
   fetchScans: (projectId?: string, limit?: number) => Promise<DevScan[]>;
 
-  // ── Ideas ───────────────────────────────────────────────────────────
+  // -- Ideas -----------------------------------------------------------
   ideas: DevIdea[];
   ideasLoading: boolean;
 
@@ -87,7 +87,7 @@ export interface DevToolsSlice {
   deleteIdea: (id: string) => Promise<void>;
   bulkDeleteIdeas: (ids: string[]) => Promise<number>;
 
-  // ── Triage ──────────────────────────────────────────────────────────
+  // -- Triage ----------------------------------------------------------
   triageItems: DevIdea[];
   triageCursor: string | null;
   triageHasMore: boolean;
@@ -103,7 +103,7 @@ export interface DevToolsSlice {
   setTriageFilterCategory: (category: string | null) => void;
   setTriageFilterScanType: (scanType: string | null) => void;
 
-  // ── Triage Rules ────────────────────────────────────────────────────
+  // -- Triage Rules ----------------------------------------------------
   triageRules: TriageRule[];
 
   fetchTriageRules: (projectId?: string) => Promise<void>;
@@ -112,7 +112,7 @@ export interface DevToolsSlice {
   deleteTriageRule: (id: string) => Promise<void>;
   runTriageRules: (projectId: string) => Promise<{ applied: number; ideas_affected: number }>;
 
-  // ── Tasks ───────────────────────────────────────────────────────────
+  // -- Tasks -----------------------------------------------------------
   tasks: DevTask[];
   tasksLoading: boolean;
   activeBatchId: string | null;
@@ -127,7 +127,7 @@ export interface DevToolsSlice {
 }
 
 export const createDevToolsSlice: StateCreator<PersonaStore, [], [], DevToolsSlice> = (set, get) => ({
-  // ── Projects state ──────────────────────────────────────────────────
+  // -- Projects state --------------------------------------------------
   projects: [],
   activeProjectId: null,
   projectsLoading: false,
@@ -197,7 +197,7 @@ export const createDevToolsSlice: StateCreator<PersonaStore, [], [], DevToolsSli
     }
   },
 
-  // ── Goals state ─────────────────────────────────────────────────────
+  // -- Goals state -----------------------------------------------------
   goals: [],
   goalsLoading: false,
   goalSignals: [],
@@ -277,7 +277,7 @@ export const createDevToolsSlice: StateCreator<PersonaStore, [], [], DevToolsSli
     }
   },
 
-  // ── Context Map state ───────────────────────────────────────────────
+  // -- Context Map state -----------------------------------------------
   contextGroups: [],
   contexts: [],
   contextGroupRelationships: [],
@@ -458,7 +458,7 @@ export const createDevToolsSlice: StateCreator<PersonaStore, [], [], DevToolsSli
     }
   },
 
-  // ── Scanner state ───────────────────────────────────────────────────
+  // -- Scanner state ---------------------------------------------------
   scanAgentSelection: [],
   scanPhase: "idle",
   scanResults: [],
@@ -514,7 +514,7 @@ export const createDevToolsSlice: StateCreator<PersonaStore, [], [], DevToolsSli
     }
   },
 
-  // ── Ideas state ─────────────────────────────────────────────────────
+  // -- Ideas state -----------------------------------------------------
   ideas: [],
   ideasLoading: false,
 
@@ -579,7 +579,7 @@ export const createDevToolsSlice: StateCreator<PersonaStore, [], [], DevToolsSli
     }
   },
 
-  // ── Triage state ────────────────────────────────────────────────────
+  // -- Triage state ----------------------------------------------------
   triageItems: [],
   triageCursor: null,
   triageHasMore: false,
@@ -674,7 +674,7 @@ export const createDevToolsSlice: StateCreator<PersonaStore, [], [], DevToolsSli
     set({ triageFilterScanType: scanType });
   },
 
-  // ── Triage Rules state ──────────────────────────────────────────────
+  // -- Triage Rules state ----------------------------------------------
   triageRules: [],
 
   fetchTriageRules: async (projectId) => {
@@ -733,7 +733,7 @@ export const createDevToolsSlice: StateCreator<PersonaStore, [], [], DevToolsSli
     }
   },
 
-  // ── Tasks state ─────────────────────────────────────────────────────
+  // -- Tasks state -----------------------------------------------------
   tasks: [],
   tasksLoading: false,
   activeBatchId: null,

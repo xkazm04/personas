@@ -17,21 +17,23 @@ const platform = process.env.TAURI_ANDROID
     : "desktop";
 
 // WebView2 compatibility uses TWO layers:
-// 1. Runtime shim (public/webview2-compat.js) — converts Object.prototype
+// 1. Runtime shim (public/webview2-compat.js) -- converts Object.prototype
 //    properties to getter/setters. Handles ALL patterns if properties are
 //    configurable.
-// 2. esbuild source transform (below) — rewrites simple assignments during
+// 2. esbuild source transform (below) -- rewrites simple assignments during
 //    dep pre-bundling as a fallback for non-configurable properties.
-// NO Vite transform plugin — it double-processes pre-bundled deps and breaks
+// NO Vite transform plugin -- it double-processes pre-bundled deps and breaks
 // comma expressions in minified code.
 
 export default defineConfig(async () => ({
+  // Use relative paths so assets resolve under tauri:// protocol in production
+  base: "./",
   plugins: [
     react(),
     tailwindcss(),
     // Remove crossorigin attribute and type="module" from built HTML.
     // Android WebView's shouldInterceptRequest has issues with ES module
-    // loading via custom protocols — IIFE format + regular script tags work.
+    // loading via custom protocols -- IIFE format + regular script tags work.
     {
       name: "android-webview-compat",
       transformIndexHtml(html) {
@@ -63,7 +65,7 @@ export default defineConfig(async () => ({
   build: {
     sourcemap: "hidden",
     chunkSizeWarningLimit: 1500,
-    // Disable module preload polyfill — injects crossorigin links at runtime
+    // Disable module preload polyfill -- injects crossorigin links at runtime
     // which breaks Tauri Android WebView's custom protocol
     modulePreload: false,
     // Strip console.log and console.debug from production builds

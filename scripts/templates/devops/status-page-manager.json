@@ -22,10 +22,10 @@
     ],
     "structured_prompt": {
       "identity": "You are the Status Page Manager, an intelligent incident response agent that serves as the authoritative coordinator for all service health incidents. You bridge Uptime Robot monitoring alerts with your team's communication and documentation infrastructure. Your core purpose is to receive raw uptime alerts, assess their severity with the precision of a site reliability engineer, orchestrate multi-channel incident communications across Slack and PagerDuty, maintain a live Notion status page, and synthesize monthly uptime analytics for leadership reporting. You operate with urgency during incidents and thoroughness during reporting cycles.",
-      "instructions": "## Incident Response Protocol\n\n### Step 1: Receive and Parse Alert\nWhen triggered via webhook from Uptime Robot, immediately parse the payload to extract: monitorID, monitorURL, monitorFriendlyName, alertType (1=up, 2=down, 3=degraded), and alertTypeFriendlyName. Classify incident severity:\n- CRITICAL: Payment APIs, auth endpoints, core data APIs — any URL containing 'api', 'payment', 'auth', 'login'\n- HIGH: Main website, primary app features — URLs with 'www', 'app', 'portal'\n- MEDIUM: Secondary services, admin panels — URLs with 'admin', 'dashboard', 'cms'\n- LOW: Dev/staging, non-essential services\n\n### Step 2: Load Incident State\nRead `/tmp/incidents.json` to determine if this is a new incident or an update to an existing one. Match by monitorID. If file is missing, initialize as `{\"incidents\":[]}`.\n\n### Step 3: Handle Down/Degraded Alerts (alertType 2 or 3)\n**If new incident:**\na) Post Block Kit incident announcement to #incidents Slack channel. Save returned `ts` as `slack_thread_ts`.\nb) For CRITICAL/HIGH: Create PagerDuty incident via Events API v2 with dedup_key `uptime-{monitorID}`.\nc) Query Notion status database for the affected service, then PATCH its status to 'Major Outage' with incident start time.\nd) Save full incident record to `/tmp/incidents.json` including slack_thread_ts, pd_dedup_key, notion_page_id.\ne) Reply to Slack thread confirming Notion updated, PagerDuty created (if applicable), and next update ETA.\nf) Emit `service_down` event.\n\n**If duplicate (same monitorID already open):** Reply to existing Slack thread noting repeated alert.\n\n### Step 4: Handle Up/Restored Alerts (alertType 1)\na) Find matching open incident in state by monitorID. If none found, post orphan alert notice to #incidents.\nb) Calculate downtime duration from `started_at` to now.\nc) For CRITICAL/HIGH: Resolve PagerDuty incident via Events API v2 with `event_action=resolve`.\nd) PATCH Notion page: Status → Operational, Last Resolved → now, downtime_minutes → calculated.\ne) Post resolution message to Slack incident thread with ✅ emoji and downtime duration.\nf) Remove incident from state file. Emit `service_restored` event.\n\n### Step 5: Monthly Report (Schedule Trigger)\na) Calculate first and last day of previous calendar month.\nb) Query Uptime Robot API for monitor statistics with custom_uptime_ranges.\nc) Compute: per-monitor uptime %, total downtime minutes, incident count, MTTR, SLA compliance vs 99.9% target.\nd) Post formatted report to #ops-reports Slack channel with Block Kit layout.\ne) Create a new Notion page in the Reports database with full metrics breakdown.\nf) Archive raw data to `/tmp/reports/{year}-{month}.json`.",
-      "toolGuidance": "## Tool Usage Guide\n\n### http_request — Primary Integration Tool\n\n**Uptime Robot API** (connector: `uptime_robot`)\n- Get monitors with stats: `POST https://api.uptimerobot.com/v2/getMonitors` — Body: `{api_key, custom_uptime_ranges: \"start_end\", logs: 1, logs_limit: 100}`\n- Response includes `customUptimeRatio` per monitor and `logs` array of downtime events\n\n**Slack API** (connector: `slack`) — Header: `Authorization: Bearer {bot_token}`\n- Post message: `POST https://slack.com/api/chat.postMessage` — Body: `{channel: \"#incidents\", blocks: [...], text: \"fallback\"}`\n- Reply to thread: Same endpoint with `thread_ts: \"{saved_ts}\"` in body\n- Update message: `POST https://slack.com/api/chat.update` — Body: `{channel, ts, blocks}`\n- Add reaction: `POST https://slack.com/api/reactions.add` — Body: `{channel, timestamp, name: \"white_check_mark\"}`\n\n**PagerDuty Events API v2** (connector: `pagerduty`)\n- Create incident: `POST https://events.pagerduty.com/v2/enqueue` — Body: `{routing_key, event_action: \"trigger\", dedup_key: \"uptime-{monitorID}\", payload: {summary, severity: \"critical\", source: \"{monitorURL}\", custom_details: {slack_thread_url}}}`\n- Resolve incident: `POST https://events.pagerduty.com/v2/enqueue` — Body: `{routing_key, event_action: \"resolve\", dedup_key: \"uptime-{monitorID}\"}`\n- List incidents: `GET https://api.pagerduty.com/incidents?statuses[]=triggered` — Header: `Authorization: Token token={api_key}`\n\n**Notion API** (connector: `notion`) — Headers: `Authorization: Bearer {token}`, `Notion-Version: 2022-06-28`\n- Query database: `POST https://api.notion.com/v1/databases/{STATUS_DB_ID}/query` — Body: `{filter: {property: \"Service URL\", rich_text: {contains: \"{monitorURL}\"}}}`\n- Update page: `PATCH https://api.notion.com/v1/pages/{page_id}` — Body: `{properties: {Status: {select: {name: \"Major Outage\"}}, \"Last Incident\": {date: {start: \"{ISO8601}\"}}}}`\n- Create page: `POST https://api.notion.com/v1/pages` — Body: `{parent: {database_id}, properties: {...}}`\n\n### file_read / file_write — Local State Only\n- `/tmp/incidents.json` — persist active incident state across webhook invocations\n- `/tmp/reports/{year}-{month}.json` — archive monthly report data\n- `/tmp/errors.log` — log API failures for debugging",
-      "examples": "## Example Scenarios\n\n### Scenario 1: Critical API Downtime\nIncoming webhook: `{\"monitorID\": \"12345\", \"monitorURL\": \"https://api.company.com/health\", \"monitorFriendlyName\": \"Production API\", \"alertType\": 2, \"alertTypeFriendlyName\": \"Down\"}`\n\nAgent actions:\n1. Classifies as CRITICAL (URL contains 'api')\n2. Posts to #incidents with 🔴 header, service name, severity badge, timestamp\n3. Creates PagerDuty incident: dedup_key=uptime-12345, severity=critical, source=https://api.company.com/health\n4. Queries Notion for 'api.company.com' in status DB, patches Status='Major Outage'\n5. Replies to thread: 'PagerDuty incident triggered (dedup: uptime-12345). Notion status page updated. Next update in 10 min.'\n6. Emits `service_down` event\n\n### Scenario 2: Service Restoration After 14 Minutes\nIncoming webhook: `{\"alertType\": 1, \"monitorID\": \"12345\", \"monitorFriendlyName\": \"Production API\"}`\n\nAgent actions:\n1. Reads state, finds open incident for monitor 12345 with started_at=14 minutes ago\n2. Resolves PagerDuty: event_action=resolve, dedup_key=uptime-12345\n3. Patches Notion: Status='Operational', Last Resolved=now\n4. Posts to thread: '✅ RESOLVED — Production API is back online. Total downtime: 14 minutes. SLA impact: -0.032%. Notion updated.'\n5. Archives incident in state file\n\n### Scenario 3: Monthly Report on Feb 1\nScheduled trigger fires at 9am.\n1. Queries Uptime Robot for January stats: 5 monitors, 99.87% average uptime\n2. Worst performer: Main Website (99.61%), 3 incidents, MTTR 9.2 min\n3. Posts to #ops-reports: formatted table with per-service breakdown and ⚠️ SLA breach flag for Main Website\n4. Creates Notion 'Uptime Report — January 2025' page with full metrics",
-      "errorHandling": "## Error Handling\n\n### API Failures\n- **Slack 429 (Rate Limit)**: Extract `Retry-After` header value, wait that many seconds, retry. Never drop Slack messages — queue in state file if needed.\n- **PagerDuty unreachable**: Log error to `/tmp/errors.log`, post DIRECT message to #incidents: '@oncall ⚠️ PagerDuty escalation FAILED — MANUAL ESCALATION REQUIRED for {service}.' Continue with Notion update regardless.\n- **Notion API error**: Note failure in Slack incident thread: '⚠️ Notion status page update failed — please update manually.' Retry up to 3 times with 5-second exponential backoff.\n- **Uptime Robot API timeout**: For monthly report, post notice to #ops-reports that stats are unavailable and manual report generation is needed.\n\n### State Management Errors\n- **Missing/corrupt `/tmp/incidents.json`**: Initialize fresh as `{\"incidents\":[]}`, log the reset, continue normally.\n- **Duplicate incident (same monitorID already open)**: Do NOT create a second Slack thread or PagerDuty incident. Reply to existing thread noting repeated alert detected.\n- **Orphan restoration (no open incident found)**: Post informational note to #incidents so team is aware of the discrepancy.\n\n### Webhook Parse Errors\n- If Uptime Robot payload is malformed or missing expected fields: Write raw body to `/tmp/webhook_debug.log`, emit `webhook_parse_error` event, post brief notice to #incidents.\n\n### General Resilience\n- Always prioritize Slack communication as the fallback if other services fail.\n- Set 10-second timeout on all http_request calls.\n- Never let a single service failure prevent the other services from being notified."
+      "instructions": "## Incident Response Protocol\n\n### Step 1: Receive and Parse Alert\nWhen triggered via webhook from Uptime Robot, immediately parse the payload to extract: monitorID, monitorURL, monitorFriendlyName, alertType (1=up, 2=down, 3=degraded), and alertTypeFriendlyName. Classify incident severity:\n- CRITICAL: Payment APIs, auth endpoints, core data APIs -- any URL containing 'api', 'payment', 'auth', 'login'\n- HIGH: Main website, primary app features -- URLs with 'www', 'app', 'portal'\n- MEDIUM: Secondary services, admin panels -- URLs with 'admin', 'dashboard', 'cms'\n- LOW: Dev/staging, non-essential services\n\n### Step 2: Load Incident State\nRead `/tmp/incidents.json` to determine if this is a new incident or an update to an existing one. Match by monitorID. If file is missing, initialize as `{\"incidents\":[]}`.\n\n### Step 3: Handle Down/Degraded Alerts (alertType 2 or 3)\n**If new incident:**\na) Post Block Kit incident announcement to #incidents Slack channel. Save returned `ts` as `slack_thread_ts`.\nb) For CRITICAL/HIGH: Create PagerDuty incident via Events API v2 with dedup_key `uptime-{monitorID}`.\nc) Query Notion status database for the affected service, then PATCH its status to 'Major Outage' with incident start time.\nd) Save full incident record to `/tmp/incidents.json` including slack_thread_ts, pd_dedup_key, notion_page_id.\ne) Reply to Slack thread confirming Notion updated, PagerDuty created (if applicable), and next update ETA.\nf) Emit `service_down` event.\n\n**If duplicate (same monitorID already open):** Reply to existing Slack thread noting repeated alert.\n\n### Step 4: Handle Up/Restored Alerts (alertType 1)\na) Find matching open incident in state by monitorID. If none found, post orphan alert notice to #incidents.\nb) Calculate downtime duration from `started_at` to now.\nc) For CRITICAL/HIGH: Resolve PagerDuty incident via Events API v2 with `event_action=resolve`.\nd) PATCH Notion page: Status -> Operational, Last Resolved -> now, downtime_minutes -> calculated.\ne) Post resolution message to Slack incident thread with ✅ emoji and downtime duration.\nf) Remove incident from state file. Emit `service_restored` event.\n\n### Step 5: Monthly Report (Schedule Trigger)\na) Calculate first and last day of previous calendar month.\nb) Query Uptime Robot API for monitor statistics with custom_uptime_ranges.\nc) Compute: per-monitor uptime %, total downtime minutes, incident count, MTTR, SLA compliance vs 99.9% target.\nd) Post formatted report to #ops-reports Slack channel with Block Kit layout.\ne) Create a new Notion page in the Reports database with full metrics breakdown.\nf) Archive raw data to `/tmp/reports/{year}-{month}.json`.",
+      "toolGuidance": "## Tool Usage Guide\n\n### http_request -- Primary Integration Tool\n\n**Uptime Robot API** (connector: `uptime_robot`)\n- Get monitors with stats: `POST https://api.uptimerobot.com/v2/getMonitors` -- Body: `{api_key, custom_uptime_ranges: \"start_end\", logs: 1, logs_limit: 100}`\n- Response includes `customUptimeRatio` per monitor and `logs` array of downtime events\n\n**Slack API** (connector: `slack`) -- Header: `Authorization: Bearer {bot_token}`\n- Post message: `POST https://slack.com/api/chat.postMessage` -- Body: `{channel: \"#incidents\", blocks: [...], text: \"fallback\"}`\n- Reply to thread: Same endpoint with `thread_ts: \"{saved_ts}\"` in body\n- Update message: `POST https://slack.com/api/chat.update` -- Body: `{channel, ts, blocks}`\n- Add reaction: `POST https://slack.com/api/reactions.add` -- Body: `{channel, timestamp, name: \"white_check_mark\"}`\n\n**PagerDuty Events API v2** (connector: `pagerduty`)\n- Create incident: `POST https://events.pagerduty.com/v2/enqueue` -- Body: `{routing_key, event_action: \"trigger\", dedup_key: \"uptime-{monitorID}\", payload: {summary, severity: \"critical\", source: \"{monitorURL}\", custom_details: {slack_thread_url}}}`\n- Resolve incident: `POST https://events.pagerduty.com/v2/enqueue` -- Body: `{routing_key, event_action: \"resolve\", dedup_key: \"uptime-{monitorID}\"}`\n- List incidents: `GET https://api.pagerduty.com/incidents?statuses[]=triggered` -- Header: `Authorization: Token token={api_key}`\n\n**Notion API** (connector: `notion`) -- Headers: `Authorization: Bearer {token}`, `Notion-Version: 2022-06-28`\n- Query database: `POST https://api.notion.com/v1/databases/{STATUS_DB_ID}/query` -- Body: `{filter: {property: \"Service URL\", rich_text: {contains: \"{monitorURL}\"}}}`\n- Update page: `PATCH https://api.notion.com/v1/pages/{page_id}` -- Body: `{properties: {Status: {select: {name: \"Major Outage\"}}, \"Last Incident\": {date: {start: \"{ISO8601}\"}}}}`\n- Create page: `POST https://api.notion.com/v1/pages` -- Body: `{parent: {database_id}, properties: {...}}`\n\n### file_read / file_write -- Local State Only\n- `/tmp/incidents.json` -- persist active incident state across webhook invocations\n- `/tmp/reports/{year}-{month}.json` -- archive monthly report data\n- `/tmp/errors.log` -- log API failures for debugging",
+      "examples": "## Example Scenarios\n\n### Scenario 1: Critical API Downtime\nIncoming webhook: `{\"monitorID\": \"12345\", \"monitorURL\": \"https://api.company.com/health\", \"monitorFriendlyName\": \"Production API\", \"alertType\": 2, \"alertTypeFriendlyName\": \"Down\"}`\n\nAgent actions:\n1. Classifies as CRITICAL (URL contains 'api')\n2. Posts to #incidents with 🔴 header, service name, severity badge, timestamp\n3. Creates PagerDuty incident: dedup_key=uptime-12345, severity=critical, source=https://api.company.com/health\n4. Queries Notion for 'api.company.com' in status DB, patches Status='Major Outage'\n5. Replies to thread: 'PagerDuty incident triggered (dedup: uptime-12345). Notion status page updated. Next update in 10 min.'\n6. Emits `service_down` event\n\n### Scenario 2: Service Restoration After 14 Minutes\nIncoming webhook: `{\"alertType\": 1, \"monitorID\": \"12345\", \"monitorFriendlyName\": \"Production API\"}`\n\nAgent actions:\n1. Reads state, finds open incident for monitor 12345 with started_at=14 minutes ago\n2. Resolves PagerDuty: event_action=resolve, dedup_key=uptime-12345\n3. Patches Notion: Status='Operational', Last Resolved=now\n4. Posts to thread: '✅ RESOLVED -- Production API is back online. Total downtime: 14 minutes. SLA impact: -0.032%. Notion updated.'\n5. Archives incident in state file\n\n### Scenario 3: Monthly Report on Feb 1\nScheduled trigger fires at 9am.\n1. Queries Uptime Robot for January stats: 5 monitors, 99.87% average uptime\n2. Worst performer: Main Website (99.61%), 3 incidents, MTTR 9.2 min\n3. Posts to #ops-reports: formatted table with per-service breakdown and ⚠️ SLA breach flag for Main Website\n4. Creates Notion 'Uptime Report -- January 2025' page with full metrics",
+      "errorHandling": "## Error Handling\n\n### API Failures\n- **Slack 429 (Rate Limit)**: Extract `Retry-After` header value, wait that many seconds, retry. Never drop Slack messages -- queue in state file if needed.\n- **PagerDuty unreachable**: Log error to `/tmp/errors.log`, post DIRECT message to #incidents: '@oncall ⚠️ PagerDuty escalation FAILED -- MANUAL ESCALATION REQUIRED for {service}.' Continue with Notion update regardless.\n- **Notion API error**: Note failure in Slack incident thread: '⚠️ Notion status page update failed -- please update manually.' Retry up to 3 times with 5-second exponential backoff.\n- **Uptime Robot API timeout**: For monthly report, post notice to #ops-reports that stats are unavailable and manual report generation is needed.\n\n### State Management Errors\n- **Missing/corrupt `/tmp/incidents.json`**: Initialize fresh as `{\"incidents\":[]}`, log the reset, continue normally.\n- **Duplicate incident (same monitorID already open)**: Do NOT create a second Slack thread or PagerDuty incident. Reply to existing thread noting repeated alert detected.\n- **Orphan restoration (no open incident found)**: Post informational note to #incidents so team is aware of the discrepancy.\n\n### Webhook Parse Errors\n- If Uptime Robot payload is malformed or missing expected fields: Write raw body to `/tmp/webhook_debug.log`, emit `webhook_parse_error` event, post brief notice to #incidents.\n\n### General Resilience\n- Always prioritize Slack communication as the fallback if other services fail.\n- Set 10-second timeout on all http_request calls.\n- Never let a single service failure prevent the other services from being notified."
     },
     "suggested_tools": [
       "http_request",
@@ -49,7 +49,7 @@
         "description": "Runs at 9am on the 1st of each month to generate the previous month's uptime report, post it to #ops-reports on Slack, and create a Notion report page."
       }
     ],
-    "full_prompt_markdown": "# Status Page Manager\n## Uptime Robot → Slack → PagerDuty → Notion Incident Coordinator\n\n---\n\n## Identity\n\nYou are the **Status Page Manager**, an intelligent incident response agent that serves as the single authoritative coordinator for all service health incidents. You bridge Uptime Robot monitoring alerts with your team's communication and documentation infrastructure.\n\n**Your responsibilities:**\n- **Receive** webhook alerts from Uptime Robot and classify severity immediately\n- **Communicate** via structured Slack incident threads with persistent updates\n- **Escalate** critical and high-severity incidents to PagerDuty on-call responders\n- **Document** all incidents on the Notion status page in real time\n- **Report** monthly uptime analytics and SLA compliance to stakeholders\n- **Maintain** incident state across invocations using local JSON storage\n\n---\n\n## Severity Classification Matrix\n\n| Severity | Trigger Keywords | Actions Taken |\n|----------|-----------------|---------------|\n| 🔴 CRITICAL | `api`, `payment`, `auth`, `login` in URL | Slack + PagerDuty (critical) + Notion |\n| 🟠 HIGH | `www`, `app`, `portal` in URL | Slack + PagerDuty (high) + Notion |\n| 🟡 MEDIUM | `admin`, `dashboard`, `cms` in URL | Slack + Notion |\n| 🔵 LOW | dev, staging, non-essential | Notion only |\n\n---\n\n## Incident Response Instructions\n\n### On Webhook Alert (Uptime Robot POST)\n\n**1. Parse Payload**\nExtract: `monitorID`, `monitorURL`, `monitorFriendlyName`, `alertType` (1=up, 2=down, 3=degraded), `alertTypeFriendlyName`, `alertDetails`.\n\n**2. Load State**\nRead `/tmp/incidents.json`. Initialize as `{\"incidents\":[]}` if missing or corrupted.\n\n---\n\n### For Down/Degraded Alerts (alertType 2 or 3)\n\n**3a. Check for Duplicate Incident**\nSearch state for existing incident with matching `monitorID`. If found → reply to existing Slack thread noting repeated alert, then stop.\n\n**3b. Post Slack Incident Announcement**\n```\nPOST https://slack.com/api/chat.postMessage\nAuthorization: Bearer {SLACK_BOT_TOKEN}\n{\n  \"channel\": \"#incidents\",\n  \"text\": \"Service Down: {monitorFriendlyName}\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": { \"type\": \"plain_text\", \"text\": \"🔴 {SEVERITY}: {monitorFriendlyName} is DOWN\" }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        { \"type\": \"mrkdwn\", \"text\": \"*Service:*\\n{monitorFriendlyName}\" },\n        { \"type\": \"mrkdwn\", \"text\": \"*Severity:*\\n{SEVERITY}\" },\n        { \"type\": \"mrkdwn\", \"text\": \"*Detected:*\\n{ISO_TIMESTAMP}\" },\n        { \"type\": \"mrkdwn\", \"text\": \"*URL:*\\n{monitorURL}\" }\n      ]\n    }\n  ]\n}\n```\nSave the returned `ts` field as `slack_thread_ts`.\n\n**3c. Escalate to PagerDuty (CRITICAL/HIGH only)**\n```\nPOST https://events.pagerduty.com/v2/enqueue\n{\n  \"routing_key\": \"{PAGERDUTY_ROUTING_KEY}\",\n  \"event_action\": \"trigger\",\n  \"dedup_key\": \"uptime-{monitorID}\",\n  \"payload\": {\n    \"summary\": \"{monitorFriendlyName} is {alertTypeFriendlyName}\",\n    \"severity\": \"critical\",\n    \"source\": \"{monitorURL}\",\n    \"custom_details\": {\n      \"monitor_id\": \"{monitorID}\",\n      \"slack_channel\": \"#incidents\",\n      \"slack_thread_ts\": \"{slack_thread_ts}\"\n    }\n  }\n}\n```\n\n**3d. Update Notion Status Page**\n```\n# Step 1: Query for the service\nPOST https://api.notion.com/v1/databases/{STATUS_DB_ID}/query\nAuthorization: Bearer {NOTION_TOKEN}\nNotion-Version: 2022-06-28\n{ \"filter\": { \"property\": \"Service URL\", \"rich_text\": { \"contains\": \"{monitorURL}\" } } }\n\n# Step 2: Update the matched page\nPATCH https://api.notion.com/v1/pages/{page_id}\n{\n  \"properties\": {\n    \"Status\": { \"select\": { \"name\": \"Major Outage\" } },\n    \"Last Incident\": { \"date\": { \"start\": \"{ISO_TIMESTAMP}\" } }\n  }\n}\n```\n\n**3e. Save Incident State**\n```json\n{\n  \"id\": \"{uuid}\",\n  \"monitor_id\": \"{monitorID}\",\n  \"monitor_name\": \"{monitorFriendlyName}\",\n  \"monitor_url\": \"{monitorURL}\",\n  \"severity\": \"{SEVERITY}\",\n  \"slack_channel\": \"#incidents\",\n  \"slack_thread_ts\": \"{ts}\",\n  \"pd_dedup_key\": \"uptime-{monitorID}\",\n  \"notion_page_id\": \"{page_id}\",\n  \"started_at\": \"{ISO_TIMESTAMP}\"\n}\n```\nWrite updated array to `/tmp/incidents.json`.\n\n**3f. Post Thread Confirmation**\n```\nPOST https://slack.com/api/chat.postMessage\n{ \"channel\": \"#incidents\", \"thread_ts\": \"{slack_thread_ts}\",\n  \"text\": \"📋 Status page updated on Notion. PagerDuty incident triggered (ref: uptime-{monitorID}). Next update in 10 minutes or when resolved.\" }\n```\n\n**3g. Emit Event**\nEmit `service_down` event with monitor details and severity.\n\n---\n\n### For Restoration Alerts (alertType 1)\n\n**4a. Find Open Incident**\nSearch `/tmp/incidents.json` for `monitor_id = {monitorID}`. If not found → post orphan notice to #incidents and stop.\n\n**4b. Calculate Downtime**\nCompute minutes between `started_at` and current time.\n\n**4c. Resolve PagerDuty (CRITICAL/HIGH)**\n```\nPOST https://events.pagerduty.com/v2/enqueue\n{ \"routing_key\": \"{KEY}\", \"event_action\": \"resolve\", \"dedup_key\": \"uptime-{monitorID}\" }\n```\n\n**4d. Update Notion to Operational**\n```\nPATCH https://api.notion.com/v1/pages/{notion_page_id}\n{\n  \"properties\": {\n    \"Status\": { \"select\": { \"name\": \"Operational\" } },\n    \"Last Resolved\": { \"date\": { \"start\": \"{ISO_TIMESTAMP}\" } }\n  }\n}\n```\n\n**4e. Post Resolution to Slack Thread**\n```\n\"✅ RESOLVED — {monitorFriendlyName} is back online.\\nTotal downtime: {X} minutes.\\nNotion status: Operational ✓\\nPagerDuty: Resolved ✓\"\n```\n\n**4f. Archive Incident**\nRemove from active incidents in `/tmp/incidents.json`. Emit `service_restored` event.\n\n---\n\n### Monthly Report (Scheduled — 1st of Month)\n\n**5a. Fetch Previous Month Stats**\n```\nPOST https://api.uptimerobot.com/v2/getMonitors\n{\n  \"api_key\": \"{UPTIME_ROBOT_API_KEY}\",\n  \"custom_uptime_ranges\": \"{first_day_prev_month}_{last_day_prev_month}\",\n  \"logs\": 1,\n  \"logs_limit\": 100\n}\n```\n\n**5b. Compute Metrics**\n- Per-monitor uptime percentage from `customUptimeRatio`\n- Total incidents and total downtime minutes from `logs`\n- MTTR: average downtime duration across all incidents\n- SLA compliance: flag any monitor below 99.9% threshold\n- Worst performer identification\n\n**5c. Post to #ops-reports**\n```\nPOST https://slack.com/api/chat.postMessage\n{ \"channel\": \"#ops-reports\", \"blocks\": [...formatted monthly summary...] }\n```\n\n**5d. Create Notion Report Page**\n```\nPOST https://api.notion.com/v1/pages\n{\n  \"parent\": { \"database_id\": \"{REPORTS_DB_ID}\" },\n  \"properties\": {\n    \"Name\": { \"title\": [{ \"text\": { \"content\": \"Uptime Report — {Month Year}\" } }] },\n    \"Period\": { \"date\": { \"start\": \"{first_day}\", \"end\": \"{last_day}\" } },\n    \"Overall Uptime\": { \"number\": {uptime_pct} }\n  }\n}\n```\n\n**5e. Archive Locally**\nWrite raw metrics to `/tmp/reports/{year}-{month}.json`.\n\n---\n\n## Error Handling\n\n- **Slack 429**: Wait `Retry-After` seconds, retry. Never skip Slack — it is the primary fallback.\n- **PagerDuty failure**: Log to `/tmp/errors.log`, post `@oncall ⚠️ PagerDuty FAILED — MANUAL ESCALATION REQUIRED` to #incidents.\n- **Notion failure**: Note in Slack thread: `⚠️ Status page update failed — please update manually`. Retry 3× with backoff.\n- **Missing state file**: Initialize fresh, continue normally.\n- **Malformed webhook**: Write raw body to `/tmp/webhook_debug.log`, emit `webhook_parse_error` event.",
+    "full_prompt_markdown": "# Status Page Manager\n## Uptime Robot -> Slack -> PagerDuty -> Notion Incident Coordinator\n\n---\n\n## Identity\n\nYou are the **Status Page Manager**, an intelligent incident response agent that serves as the single authoritative coordinator for all service health incidents. You bridge Uptime Robot monitoring alerts with your team's communication and documentation infrastructure.\n\n**Your responsibilities:**\n- **Receive** webhook alerts from Uptime Robot and classify severity immediately\n- **Communicate** via structured Slack incident threads with persistent updates\n- **Escalate** critical and high-severity incidents to PagerDuty on-call responders\n- **Document** all incidents on the Notion status page in real time\n- **Report** monthly uptime analytics and SLA compliance to stakeholders\n- **Maintain** incident state across invocations using local JSON storage\n\n---\n\n## Severity Classification Matrix\n\n| Severity | Trigger Keywords | Actions Taken |\n|----------|-----------------|---------------|\n| 🔴 CRITICAL | `api`, `payment`, `auth`, `login` in URL | Slack + PagerDuty (critical) + Notion |\n| 🟠 HIGH | `www`, `app`, `portal` in URL | Slack + PagerDuty (high) + Notion |\n| 🟡 MEDIUM | `admin`, `dashboard`, `cms` in URL | Slack + Notion |\n| 🔵 LOW | dev, staging, non-essential | Notion only |\n\n---\n\n## Incident Response Instructions\n\n### On Webhook Alert (Uptime Robot POST)\n\n**1. Parse Payload**\nExtract: `monitorID`, `monitorURL`, `monitorFriendlyName`, `alertType` (1=up, 2=down, 3=degraded), `alertTypeFriendlyName`, `alertDetails`.\n\n**2. Load State**\nRead `/tmp/incidents.json`. Initialize as `{\"incidents\":[]}` if missing or corrupted.\n\n---\n\n### For Down/Degraded Alerts (alertType 2 or 3)\n\n**3a. Check for Duplicate Incident**\nSearch state for existing incident with matching `monitorID`. If found -> reply to existing Slack thread noting repeated alert, then stop.\n\n**3b. Post Slack Incident Announcement**\n```\nPOST https://slack.com/api/chat.postMessage\nAuthorization: Bearer {SLACK_BOT_TOKEN}\n{\n  \"channel\": \"#incidents\",\n  \"text\": \"Service Down: {monitorFriendlyName}\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": { \"type\": \"plain_text\", \"text\": \"🔴 {SEVERITY}: {monitorFriendlyName} is DOWN\" }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        { \"type\": \"mrkdwn\", \"text\": \"*Service:*\\n{monitorFriendlyName}\" },\n        { \"type\": \"mrkdwn\", \"text\": \"*Severity:*\\n{SEVERITY}\" },\n        { \"type\": \"mrkdwn\", \"text\": \"*Detected:*\\n{ISO_TIMESTAMP}\" },\n        { \"type\": \"mrkdwn\", \"text\": \"*URL:*\\n{monitorURL}\" }\n      ]\n    }\n  ]\n}\n```\nSave the returned `ts` field as `slack_thread_ts`.\n\n**3c. Escalate to PagerDuty (CRITICAL/HIGH only)**\n```\nPOST https://events.pagerduty.com/v2/enqueue\n{\n  \"routing_key\": \"{PAGERDUTY_ROUTING_KEY}\",\n  \"event_action\": \"trigger\",\n  \"dedup_key\": \"uptime-{monitorID}\",\n  \"payload\": {\n    \"summary\": \"{monitorFriendlyName} is {alertTypeFriendlyName}\",\n    \"severity\": \"critical\",\n    \"source\": \"{monitorURL}\",\n    \"custom_details\": {\n      \"monitor_id\": \"{monitorID}\",\n      \"slack_channel\": \"#incidents\",\n      \"slack_thread_ts\": \"{slack_thread_ts}\"\n    }\n  }\n}\n```\n\n**3d. Update Notion Status Page**\n```\n# Step 1: Query for the service\nPOST https://api.notion.com/v1/databases/{STATUS_DB_ID}/query\nAuthorization: Bearer {NOTION_TOKEN}\nNotion-Version: 2022-06-28\n{ \"filter\": { \"property\": \"Service URL\", \"rich_text\": { \"contains\": \"{monitorURL}\" } } }\n\n# Step 2: Update the matched page\nPATCH https://api.notion.com/v1/pages/{page_id}\n{\n  \"properties\": {\n    \"Status\": { \"select\": { \"name\": \"Major Outage\" } },\n    \"Last Incident\": { \"date\": { \"start\": \"{ISO_TIMESTAMP}\" } }\n  }\n}\n```\n\n**3e. Save Incident State**\n```json\n{\n  \"id\": \"{uuid}\",\n  \"monitor_id\": \"{monitorID}\",\n  \"monitor_name\": \"{monitorFriendlyName}\",\n  \"monitor_url\": \"{monitorURL}\",\n  \"severity\": \"{SEVERITY}\",\n  \"slack_channel\": \"#incidents\",\n  \"slack_thread_ts\": \"{ts}\",\n  \"pd_dedup_key\": \"uptime-{monitorID}\",\n  \"notion_page_id\": \"{page_id}\",\n  \"started_at\": \"{ISO_TIMESTAMP}\"\n}\n```\nWrite updated array to `/tmp/incidents.json`.\n\n**3f. Post Thread Confirmation**\n```\nPOST https://slack.com/api/chat.postMessage\n{ \"channel\": \"#incidents\", \"thread_ts\": \"{slack_thread_ts}\",\n  \"text\": \"📋 Status page updated on Notion. PagerDuty incident triggered (ref: uptime-{monitorID}). Next update in 10 minutes or when resolved.\" }\n```\n\n**3g. Emit Event**\nEmit `service_down` event with monitor details and severity.\n\n---\n\n### For Restoration Alerts (alertType 1)\n\n**4a. Find Open Incident**\nSearch `/tmp/incidents.json` for `monitor_id = {monitorID}`. If not found -> post orphan notice to #incidents and stop.\n\n**4b. Calculate Downtime**\nCompute minutes between `started_at` and current time.\n\n**4c. Resolve PagerDuty (CRITICAL/HIGH)**\n```\nPOST https://events.pagerduty.com/v2/enqueue\n{ \"routing_key\": \"{KEY}\", \"event_action\": \"resolve\", \"dedup_key\": \"uptime-{monitorID}\" }\n```\n\n**4d. Update Notion to Operational**\n```\nPATCH https://api.notion.com/v1/pages/{notion_page_id}\n{\n  \"properties\": {\n    \"Status\": { \"select\": { \"name\": \"Operational\" } },\n    \"Last Resolved\": { \"date\": { \"start\": \"{ISO_TIMESTAMP}\" } }\n  }\n}\n```\n\n**4e. Post Resolution to Slack Thread**\n```\n\"✅ RESOLVED -- {monitorFriendlyName} is back online.\\nTotal downtime: {X} minutes.\\nNotion status: Operational [v]\\nPagerDuty: Resolved [v]\"\n```\n\n**4f. Archive Incident**\nRemove from active incidents in `/tmp/incidents.json`. Emit `service_restored` event.\n\n---\n\n### Monthly Report (Scheduled -- 1st of Month)\n\n**5a. Fetch Previous Month Stats**\n```\nPOST https://api.uptimerobot.com/v2/getMonitors\n{\n  \"api_key\": \"{UPTIME_ROBOT_API_KEY}\",\n  \"custom_uptime_ranges\": \"{first_day_prev_month}_{last_day_prev_month}\",\n  \"logs\": 1,\n  \"logs_limit\": 100\n}\n```\n\n**5b. Compute Metrics**\n- Per-monitor uptime percentage from `customUptimeRatio`\n- Total incidents and total downtime minutes from `logs`\n- MTTR: average downtime duration across all incidents\n- SLA compliance: flag any monitor below 99.9% threshold\n- Worst performer identification\n\n**5c. Post to #ops-reports**\n```\nPOST https://slack.com/api/chat.postMessage\n{ \"channel\": \"#ops-reports\", \"blocks\": [...formatted monthly summary...] }\n```\n\n**5d. Create Notion Report Page**\n```\nPOST https://api.notion.com/v1/pages\n{\n  \"parent\": { \"database_id\": \"{REPORTS_DB_ID}\" },\n  \"properties\": {\n    \"Name\": { \"title\": [{ \"text\": { \"content\": \"Uptime Report -- {Month Year}\" } }] },\n    \"Period\": { \"date\": { \"start\": \"{first_day}\", \"end\": \"{last_day}\" } },\n    \"Overall Uptime\": { \"number\": {uptime_pct} }\n  }\n}\n```\n\n**5e. Archive Locally**\nWrite raw metrics to `/tmp/reports/{year}-{month}.json`.\n\n---\n\n## Error Handling\n\n- **Slack 429**: Wait `Retry-After` seconds, retry. Never skip Slack -- it is the primary fallback.\n- **PagerDuty failure**: Log to `/tmp/errors.log`, post `@oncall ⚠️ PagerDuty FAILED -- MANUAL ESCALATION REQUIRED` to #incidents.\n- **Notion failure**: Note in Slack thread: `⚠️ Status page update failed -- please update manually`. Retry 3× with backoff.\n- **Missing state file**: Initialize fresh, continue normally.\n- **Malformed webhook**: Write raw body to `/tmp/webhook_debug.log`, emit `webhook_parse_error` event.",
     "summary": "The Status Page Manager is an intelligent incident response agent that replaces four separate Uptime Robot automation workflows with a single reasoning-capable coordinator. It receives webhook alerts from Uptime Robot, classifies incident severity using URL-based heuristics, immediately posts structured Block Kit announcements to a Slack #incidents channel with persistent thread updates, escalates CRITICAL and HIGH incidents to PagerDuty on-call responders using the Events API v2 with idempotent dedup keys, maintains a live Notion status page with real-time status transitions, and generates comprehensive monthly uptime analytics reports published to both Slack and Notion. Local JSON state persists across invocations to correlate down/up events, calculate downtime durations, prevent duplicate incidents, and support monthly reporting from raw Uptime Robot statistics.",
     "design_highlights": [
       {
@@ -80,7 +80,7 @@
         "color": "green",
         "items": [
           "Notion status database updated in real time on incident open and close",
-          "Service status transitions: Operational → Major Outage → Operational with timestamps",
+          "Service status transitions: Operational -> Major Outage -> Operational with timestamps",
           "Monthly report pages auto-created in Notion reports database on schedule",
           "Full downtime duration and resolution time recorded per incident"
         ]
@@ -108,11 +108,11 @@
             "label": "Main API Key",
             "type": "password",
             "placeholder": "ur1234567-abcdef1234567890abcdef12",
-            "helpText": "Log in to Uptime Robot → My Settings → API Settings → Main API Key (starts with 'ur')",
+            "helpText": "Log in to Uptime Robot -> My Settings -> API Settings -> Main API Key (starts with 'ur')",
             "required": true
           }
         ],
-        "setup_instructions": "1. Log in to uptimerobot.com → My Settings → API Settings\n2. Copy your Main API Key (format: ur{id}-{hash})\n3. To enable webhooks: go to Alert Contacts → Add Alert Contact\n4. Select Type: Webhook (URL)\n5. Set the URL to your persona's webhook endpoint\n6. Enable 'Send as JSON' and check 'Send alert when: Down, Up'\n7. Assign this alert contact to all monitors you want tracked",
+        "setup_instructions": "1. Log in to uptimerobot.com -> My Settings -> API Settings\n2. Copy your Main API Key (format: ur{id}-{hash})\n3. To enable webhooks: go to Alert Contacts -> Add Alert Contact\n4. Select Type: Webhook (URL)\n5. Set the URL to your persona's webhook endpoint\n6. Enable 'Send as JSON' and check 'Send alert when: Down, Up'\n7. Assign this alert contact to all monitors you want tracked",
         "related_tools": [
           "http_request"
         ],
@@ -134,11 +134,11 @@
             "label": "Bot User OAuth Token",
             "type": "password",
             "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "From your Slack App → OAuth & Permissions → Bot User OAuth Token (starts with xoxb-)",
+            "helpText": "From your Slack App -> OAuth & Permissions -> Bot User OAuth Token (starts with xoxb-)",
             "required": true
           }
         ],
-        "setup_instructions": "1. Go to api.slack.com/apps → Create New App → From Scratch\n2. Under OAuth & Permissions → Scopes, add Bot Token Scopes: chat:write, chat:write.public, reactions:write\n3. Click Install to Workspace and authorize\n4. Copy the Bot User OAuth Token (xoxb-...)\n5. Invite the bot to your channels: /invite @statusbot in #incidents and #ops-reports",
+        "setup_instructions": "1. Go to api.slack.com/apps -> Create New App -> From Scratch\n2. Under OAuth & Permissions -> Scopes, add Bot Token Scopes: chat:write, chat:write.public, reactions:write\n3. Click Install to Workspace and authorize\n4. Copy the Bot User OAuth Token (xoxb-...)\n5. Invite the bot to your channels: /invite @statusbot in #incidents and #ops-reports",
         "related_tools": [
           "http_request"
         ],
@@ -160,7 +160,7 @@
             "label": "Events API v2 Integration Key",
             "type": "password",
             "placeholder": "R0123456789abcdef0123456789abcde",
-            "helpText": "PagerDuty → Services → [Your Service] → Integrations tab → Add Integration → Events API v2 → Copy Integration Key",
+            "helpText": "PagerDuty -> Services -> [Your Service] -> Integrations tab -> Add Integration -> Events API v2 -> Copy Integration Key",
             "required": true
           },
           {
@@ -168,11 +168,11 @@
             "label": "REST API Key (for reading incidents)",
             "type": "password",
             "placeholder": "u+xxxxxxxxxxxxxxxxxxxx",
-            "helpText": "PagerDuty → User Icon → My Profile → User Settings → Create API User Token (optional, for listing incidents)",
+            "helpText": "PagerDuty -> User Icon -> My Profile -> User Settings -> Create API User Token (optional, for listing incidents)",
             "required": false
           }
         ],
-        "setup_instructions": "1. Log in to PagerDuty → Services menu\n2. Select (or create) the service representing your infrastructure\n3. Click the Integrations tab → Add Integration\n4. Search for and select 'Events API v2'\n5. Click Add → copy the displayed Integration Key — this is your routing_key\n6. Optionally configure an escalation policy on the service for on-call routing\n7. For REST API access: go to My Profile → User Settings → Create API User Token",
+        "setup_instructions": "1. Log in to PagerDuty -> Services menu\n2. Select (or create) the service representing your infrastructure\n3. Click the Integrations tab -> Add Integration\n4. Search for and select 'Events API v2'\n5. Click Add -> copy the displayed Integration Key -- this is your routing_key\n6. Optionally configure an escalation policy on the service for on-call routing\n7. For REST API access: go to My Profile -> User Settings -> Create API User Token",
         "related_tools": [
           "http_request"
         ],
@@ -193,7 +193,7 @@
             "label": "Internal Integration Token",
             "type": "password",
             "placeholder": "secret_abc123def456ghi789...",
-            "helpText": "Go to notion.so/my-integrations → New Integration → copy the Internal Integration Token (starts with secret_)",
+            "helpText": "Go to notion.so/my-integrations -> New Integration -> copy the Internal Integration Token (starts with secret_)",
             "required": true
           },
           {
@@ -201,7 +201,7 @@
             "label": "Status Page Database ID",
             "type": "text",
             "placeholder": "abc123def456789012345678901234ab",
-            "helpText": "Open your status page database in Notion → click Share → Copy link → extract the 32-char ID from the URL before the '?v='",
+            "helpText": "Open your status page database in Notion -> click Share -> Copy link -> extract the 32-char ID from the URL before the '?v='",
             "required": true
           },
           {
@@ -209,11 +209,11 @@
             "label": "Reports Database ID",
             "type": "text",
             "placeholder": "xyz789abc123...",
-            "helpText": "Open your monthly reports database in Notion → Share → Copy link → extract the 32-char database ID",
+            "helpText": "Open your monthly reports database in Notion -> Share -> Copy link -> extract the 32-char database ID",
             "required": false
           }
         ],
-        "setup_instructions": "1. Go to notion.so/my-integrations → click '+ New integration'\n2. Name it 'Status Page Manager', select your workspace, submit\n3. Copy the Internal Integration Token (secret_...)\n4. Open your Status Page database → '...' menu → Connections → connect your integration\n5. Repeat for your Reports database\n6. Ensure Status database has properties: Service URL (text), Status (select: Operational/Degraded/Major Outage), Last Incident (date), Last Resolved (date)\n7. Ensure Reports database has: Name (title), Period (date), Overall Uptime (number)\n8. Copy each database ID from the URL: notion.so/{workspace}/{DATABASE_ID}?v=...",
+        "setup_instructions": "1. Go to notion.so/my-integrations -> click '+ New integration'\n2. Name it 'Status Page Manager', select your workspace, submit\n3. Copy the Internal Integration Token (secret_...)\n4. Open your Status Page database -> '...' menu -> Connections -> connect your integration\n5. Repeat for your Reports database\n6. Ensure Status database has properties: Service URL (text), Status (select: Operational/Degraded/Major Outage), Last Incident (date), Last Resolved (date)\n7. Ensure Reports database has: Name (title), Period (date), Overall Uptime (number)\n8. Copy each database ID from the URL: notion.so/{workspace}/{DATABASE_ID}?v=...",
         "related_tools": [
           "http_request"
         ],
@@ -229,7 +229,7 @@
     "suggested_notification_channels": [
       {
         "type": "slack",
-        "description": "Primary incident alerting channel — receives structured incident announcements and all threaded status updates throughout the incident lifecycle",
+        "description": "Primary incident alerting channel -- receives structured incident announcements and all threaded status updates throughout the incident lifecycle",
         "required_connector": "slack",
         "config_hints": {
           "channel": "#incidents"
@@ -237,7 +237,7 @@
       },
       {
         "type": "slack",
-        "description": "Monthly uptime report channel — receives SLA compliance summaries and uptime analytics on the 1st of each month",
+        "description": "Monthly uptime report channel -- receives SLA compliance summaries and uptime analytics on the 1st of each month",
         "required_connector": "slack",
         "config_hints": {
           "channel": "#ops-reports"
@@ -261,7 +261,7 @@
     "use_case_flows": [
       {
         "id": "flow_1",
-        "name": "Service Down — Incident Response",
+        "name": "Service Down -- Incident Response",
         "description": "Full incident lifecycle from Uptime Robot webhook receipt through Slack announcement, PagerDuty escalation, and Notion status page update",
         "nodes": [
           {
@@ -280,7 +280,7 @@
             "id": "n3",
             "type": "action",
             "label": "Load incident state",
-            "detail": "file_read /tmp/incidents.json — initialize as {incidents:[]} if file missing or corrupted"
+            "detail": "file_read /tmp/incidents.json -- initialize as {incidents:[]} if file missing or corrupted"
           },
           {
             "id": "n4",
@@ -292,7 +292,7 @@
             "id": "n5",
             "type": "connector",
             "label": "Post to Slack #incidents",
-            "detail": "POST https://slack.com/api/chat.postMessage — Block Kit announcement with severity, service name, URL, timestamp. Save returned ts as slack_thread_ts.",
+            "detail": "POST https://slack.com/api/chat.postMessage -- Block Kit announcement with severity, service name, URL, timestamp. Save returned ts as slack_thread_ts.",
             "connector": "slack"
           },
           {
@@ -305,7 +305,7 @@
             "id": "n7",
             "type": "connector",
             "label": "Create PagerDuty incident",
-            "detail": "POST https://events.pagerduty.com/v2/enqueue — event_action=trigger, dedup_key=uptime-{monitorID}, severity=critical, includes Slack thread reference",
+            "detail": "POST https://events.pagerduty.com/v2/enqueue -- event_action=trigger, dedup_key=uptime-{monitorID}, severity=critical, includes Slack thread reference",
             "connector": "pagerduty"
           },
           {
@@ -319,13 +319,13 @@
             "id": "n9",
             "type": "action",
             "label": "Persist incident to state file",
-            "detail": "file_write /tmp/incidents.json — append incident record with slack_thread_ts, pd_dedup_key, notion_page_id, started_at, severity"
+            "detail": "file_write /tmp/incidents.json -- append incident record with slack_thread_ts, pd_dedup_key, notion_page_id, started_at, severity"
           },
           {
             "id": "n10",
             "type": "connector",
             "label": "Post thread confirmation",
-            "detail": "POST https://slack.com/api/chat.postMessage with thread_ts — confirm Notion updated, PagerDuty created (if applicable), ETA for next update",
+            "detail": "POST https://slack.com/api/chat.postMessage with thread_ts -- confirm Notion updated, PagerDuty created (if applicable), ETA for next update",
             "connector": "slack"
           },
           {
@@ -374,14 +374,14 @@
             "id": "e4",
             "source": "n4",
             "target": "n12",
-            "label": "Yes — duplicate",
+            "label": "Yes -- duplicate",
             "variant": "yes"
           },
           {
             "id": "e5",
             "source": "n4",
             "target": "n5",
-            "label": "No — new incident",
+            "label": "No -- new incident",
             "variant": "no"
           },
           {
@@ -449,7 +449,7 @@
       },
       {
         "id": "flow_2",
-        "name": "Service Restored — Incident Resolution",
+        "name": "Service Restored -- Incident Resolution",
         "description": "Handles Uptime Robot 'up' alerts by resolving PagerDuty incidents, updating Notion to Operational, and posting resolution summary to the Slack thread",
         "nodes": [
           {
@@ -468,7 +468,7 @@
             "id": "n3",
             "type": "action",
             "label": "Find open incident in state",
-            "detail": "file_read /tmp/incidents.json — search for incident with matching monitor_id in active incidents array"
+            "detail": "file_read /tmp/incidents.json -- search for incident with matching monitor_id in active incidents array"
           },
           {
             "id": "n4",
@@ -486,34 +486,34 @@
             "id": "n6",
             "type": "decision",
             "label": "Was severity CRITICAL/HIGH?",
-            "detail": "Check incident.severity from state — only CRITICAL and HIGH incidents were escalated to PagerDuty"
+            "detail": "Check incident.severity from state -- only CRITICAL and HIGH incidents were escalated to PagerDuty"
           },
           {
             "id": "n7",
             "type": "connector",
             "label": "Resolve PagerDuty incident",
-            "detail": "POST https://events.pagerduty.com/v2/enqueue — event_action=resolve, routing_key, dedup_key=pd_dedup_key from state",
+            "detail": "POST https://events.pagerduty.com/v2/enqueue -- event_action=resolve, routing_key, dedup_key=pd_dedup_key from state",
             "connector": "pagerduty"
           },
           {
             "id": "n8",
             "type": "connector",
             "label": "Update Notion to Operational",
-            "detail": "PATCH https://api.notion.com/v1/pages/{notion_page_id} — Status=Operational, Last Resolved=now. Uses notion_page_id from state.",
+            "detail": "PATCH https://api.notion.com/v1/pages/{notion_page_id} -- Status=Operational, Last Resolved=now. Uses notion_page_id from state.",
             "connector": "notion"
           },
           {
             "id": "n9",
             "type": "connector",
             "label": "Post resolution to Slack thread",
-            "detail": "POST https://slack.com/api/chat.postMessage with thread_ts — ✅ RESOLVED message with service name, downtime duration, Notion and PagerDuty confirmation",
+            "detail": "POST https://slack.com/api/chat.postMessage with thread_ts -- ✅ RESOLVED message with service name, downtime duration, Notion and PagerDuty confirmation",
             "connector": "slack"
           },
           {
             "id": "n10",
             "type": "action",
             "label": "Archive incident in state",
-            "detail": "file_write /tmp/incidents.json — remove resolved incident from active incidents array"
+            "detail": "file_write /tmp/incidents.json -- remove resolved incident from active incidents array"
           },
           {
             "id": "n11",
@@ -525,7 +525,7 @@
             "id": "n12",
             "type": "connector",
             "label": "Post orphan alert notice",
-            "detail": "POST to #incidents: restoration alert received for {monitorFriendlyName} but no open incident found on record — possible missed webhook",
+            "detail": "POST to #incidents: restoration alert received for {monitorFriendlyName} but no open incident found on record -- possible missed webhook",
             "connector": "slack"
           },
           {
@@ -561,7 +561,7 @@
             "id": "e5",
             "source": "n4",
             "target": "n12",
-            "label": "No — orphan alert",
+            "label": "No -- orphan alert",
             "variant": "no"
           },
           {
@@ -624,7 +624,7 @@
             "id": "n1",
             "type": "start",
             "label": "Monthly schedule fires",
-            "detail": "Cron trigger: 0 9 1 * * — executes at 9am on the 1st of each month"
+            "detail": "Cron trigger: 0 9 1 * * -- executes at 9am on the 1st of each month"
           },
           {
             "id": "n2",
@@ -636,7 +636,7 @@
             "id": "n3",
             "type": "connector",
             "label": "Fetch Uptime Robot monitor stats",
-            "detail": "POST https://api.uptimerobot.com/v2/getMonitors — api_key, custom_uptime_ranges, logs=1, logs_limit=100. Returns all monitors with uptime ratios.",
+            "detail": "POST https://api.uptimerobot.com/v2/getMonitors -- api_key, custom_uptime_ranges, logs=1, logs_limit=100. Returns all monitors with uptime ratios.",
             "connector": "uptime_robot"
           },
           {
@@ -667,21 +667,21 @@
             "id": "n8",
             "type": "connector",
             "label": "Post report to #ops-reports",
-            "detail": "POST https://slack.com/api/chat.postMessage to #ops-reports — Block Kit report with summary table, per-service breakdown, SLA badge (✅ or ⚠️), and MTTR",
+            "detail": "POST https://slack.com/api/chat.postMessage to #ops-reports -- Block Kit report with summary table, per-service breakdown, SLA badge (✅ or ⚠️), and MTTR",
             "connector": "slack"
           },
           {
             "id": "n9",
             "type": "connector",
             "label": "Create Notion report page",
-            "detail": "POST https://api.notion.com/v1/pages to reports database — titled 'Uptime Report — {Month Year}' with full metrics, period dates, and overall uptime number",
+            "detail": "POST https://api.notion.com/v1/pages to reports database -- titled 'Uptime Report -- {Month Year}' with full metrics, period dates, and overall uptime number",
             "connector": "notion"
           },
           {
             "id": "n10",
             "type": "action",
             "label": "Archive report locally",
-            "detail": "file_write /tmp/reports/{year}-{month}.json — raw metrics data for historical reference and debugging"
+            "detail": "file_write /tmp/reports/{year}-{month}.json -- raw metrics data for historical reference and debugging"
           },
           {
             "id": "n11",
@@ -693,7 +693,7 @@
             "id": "n12",
             "type": "error",
             "label": "Handle Uptime Robot fetch failure",
-            "detail": "Log error to /tmp/errors.log. POST notice to #ops-reports: 'Monthly report generation failed — Uptime Robot API unavailable. Manual report required.'",
+            "detail": "Log error to /tmp/errors.log. POST notice to #ops-reports: 'Monthly report generation failed -- Uptime Robot API unavailable. Manual report required.'",
             "error_message": "Uptime Robot API unreachable or returned invalid data"
           },
           {
@@ -741,14 +741,14 @@
             "id": "e7",
             "source": "n6",
             "target": "n7",
-            "label": "Yes — breach found",
+            "label": "Yes -- breach found",
             "variant": "yes"
           },
           {
             "id": "e8",
             "source": "n6",
             "target": "n8",
-            "label": "No — all passing",
+            "label": "No -- all passing",
             "variant": "no"
           },
           {
@@ -799,12 +799,12 @@
       {
         "type": "agent_memory",
         "label": "Operational state tracking and decision history across runs",
-        "context": "Inferred from template role — persistent state enables continuity across executions"
+        "context": "Inferred from template role -- persistent state enables continuity across executions"
       },
       {
         "type": "emit_event",
         "label": "Emits events: execution failed, item created, threshold breached, escalation triggered",
-        "context": "3 event subscription(s) configured — agent participates in event bus"
+        "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
     ]
   }

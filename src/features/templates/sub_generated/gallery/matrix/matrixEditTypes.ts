@@ -4,14 +4,14 @@
 import type { SuggestedTrigger } from '@/lib/types/designTypes';
 import { Clock, Webhook, MousePointerClick, Radio, Activity } from 'lucide-react';
 
-// ── Public interface ──────────────────────────────────────────────────
+// -- Public interface --------------------------------------------------
 
 export interface MatrixEditState {
-  /** Connector name → credential ID mapping */
+  /** Connector name -> credential ID mapping */
   connectorCredentialMap: Record<string, string>;
-  /** Original connector name → active swap name */
+  /** Original connector name -> active swap name */
   connectorSwaps: Record<string, string>;
-  /** Trigger index → user config overrides */
+  /** Trigger index -> user config overrides */
   triggerConfigs: Record<number, Record<string, string>>;
   /** Whether human review is required */
   requireApproval: boolean;
@@ -53,7 +53,7 @@ export interface MatrixEditCallbacks {
   onUseCaseUpdate?: (id: string, title: string) => void;
 }
 
-// ── Preset templates ──────────────────────────────────────────────────
+// -- Preset templates --------------------------------------------------
 // Derived from patterns across 90+ templates in scripts/templates/
 
 export const REVIEW_PRESETS = [
@@ -78,7 +78,7 @@ export const MESSAGE_PRESETS = [
   { value: 'silent', label: 'Silent Logger' },
 ] as const;
 
-// ── Trigger icons ─────────────────────────────────────────────────────
+// -- Trigger icons -----------------------------------------------------
 
 export const TRIGGER_ICONS: Record<SuggestedTrigger['trigger_type'], typeof Clock> = {
   schedule: Clock,

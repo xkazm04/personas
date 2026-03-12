@@ -265,7 +265,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     try {
       const offset = get().teamMemories.length;
       const more = await api.listTeamMemories(teamId, undefined, category, search, 100, offset);
-      set({ teamMemories: [...get().teamMemories, ...more] });
+      set((state) => ({ teamMemories: [...state.teamMemories, ...more] }));
     } catch {
       useToastStore.getState().addToast('Failed to load more memories', 'error');
     }
@@ -286,22 +286,30 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
 
   deleteTeamMemory: async (id) => {
     const prev = get().teamMemories;
-    set({ teamMemories: prev.filter((m) => m.id !== id), teamMemoriesTotal: get().teamMemoriesTotal - 1 });
+    const prevTotal = get().teamMemoriesTotal;
+    set((state) => ({
+      teamMemories: state.teamMemories.filter((m) => m.id !== id),
+      teamMemoriesTotal: Math.max(0, state.teamMemoriesTotal - 1),
+    }));
     try {
       await api.deleteTeamMemory(id);
     } catch {
-      set({ teamMemories: prev, teamMemoriesTotal: get().teamMemoriesTotal + 1 });
+      set({ teamMemories: prev, teamMemoriesTotal: prevTotal });
       useToastStore.getState().addToast('Failed to delete team memory', 'error');
     }
   },
 
   batchDeleteTeamMemories: async (ids) => {
     const prev = get().teamMemories;
-    set({ teamMemories: prev.filter((m) => !ids.includes(m.id)), teamMemoriesTotal: get().teamMemoriesTotal - ids.length });
+    const prevTotal = get().teamMemoriesTotal;
+    set((state) => ({
+      teamMemories: state.teamMemories.filter((m) => !ids.includes(m.id)),
+      teamMemoriesTotal: Math.max(0, state.teamMemoriesTotal - ids.length),
+    }));
     try {
       await api.batchDeleteTeamMemories(ids);
     } catch {
-      set({ teamMemories: prev, teamMemoriesTotal: get().teamMemoriesTotal + ids.length });
+      set({ teamMemories: prev, teamMemoriesTotal: prevTotal });
       useToastStore.getState().addToast('Failed to delete team memories', 'error');
     }
   },

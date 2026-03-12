@@ -1,5 +1,5 @@
 /**
- * negotiatorStepGraph — replaces linear step traversal with a lightweight
+ * negotiatorStepGraph -- replaces linear step traversal with a lightweight
  * directed graph where edges have predicates.  The negotiator evaluates
  * predicates at each node to determine the next step, skipping irrelevant
  * branches (e.g. OAuth when API key exists, capture when autoCred filled
@@ -7,7 +7,7 @@
  */
 import type { NegotiationStep } from './useCredentialNegotiator';
 
-// ── Runtime context for predicate evaluation ──────────────────────
+// -- Runtime context for predicate evaluation ----------------------
 
 export interface StepGraphContext {
   /** Values already captured by autoCred or manual entry */
@@ -20,7 +20,7 @@ export interface StepGraphContext {
   hasHealthcheck: boolean;
 }
 
-// ── Graph types ───────────────────────────────────────────────────
+// -- Graph types ---------------------------------------------------
 
 export interface StepNode {
   /** Original index in the plan's step array */
@@ -34,14 +34,14 @@ export interface StepNode {
 
 type SkipPredicate = (step: NegotiationStep, ctx: StepGraphContext) => string | null;
 
-// ── Skip predicates ──────────────────────────────────────────────
+// -- Skip predicates ----------------------------------------------
 // Each returns a human-readable skip reason, or null if the step is active.
 
 const SKIP_PREDICATES: SkipPredicate[] = [
   // Skip OAuth/authorize steps when connector doesn't use OAuth
   (step, ctx) => {
     if (step.action_type !== 'authorize') return null;
-    if (!ctx.hasOAuth) return 'No OAuth required — API key authentication';
+    if (!ctx.hasOAuth) return 'No OAuth required -- API key authentication';
     return null;
   },
 
@@ -70,7 +70,7 @@ const SKIP_PREDICATES: SkipPredicate[] = [
   },
 ];
 
-// ── Graph builder ────────────────────────────────────────────────
+// -- Graph builder ------------------------------------------------
 
 /**
  * Build a step graph from a flat step array, evaluating skip predicates
@@ -95,16 +95,16 @@ export function buildStepGraph(
   });
 }
 
-// ── Resolved view ────────────────────────────────────────────────
+// -- Resolved view ------------------------------------------------
 
 export interface ResolvedSteps {
   /** Only the steps that should be shown to the user */
   visible: StepNode[];
   /** Steps that were skipped with reasons */
   skipped: StepNode[];
-  /** Map from visible index → original plan index */
+  /** Map from visible index -> original plan index */
   visibleToOriginal: number[];
-  /** Map from original plan index → visible index (or -1 if skipped) */
+  /** Map from original plan index -> visible index (or -1 if skipped) */
   originalToVisible: Map<number, number>;
 }
 

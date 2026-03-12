@@ -440,7 +440,7 @@ pub fn create_connection(
     condition: Option<String>,
     label: Option<String>,
 ) -> Result<PersonaTeamConnection, AppError> {
-    // Reject self-loops — they break topological sort and are never valid in a DAG.
+    // Reject self-loops -- they break topological sort and are never valid in a DAG.
     if source_member_id == target_member_id {
         return Err(AppError::Validation(
             "Self-loop not allowed: source and target must be different members".into(),
@@ -468,7 +468,7 @@ pub fn create_connection(
     }
 
     // Cycle detection: reject non-feedback edges that would create a cycle.
-    // Feedback edges are intentional back-edges (e.g. reviewer → orchestrator)
+    // Feedback edges are intentional back-edges (e.g. reviewer -> orchestrator)
     // and are excluded from topological sort during execution.
     if conn_type != "feedback" {
         let existing = get_connections(pool, team_id)?;

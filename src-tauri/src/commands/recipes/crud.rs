@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use serde_json::json;
-use tauri::State;
+use tauri::{Emitter, State};
 
 use crate::commands::credentials::ai_artifact_flow::{AiArtifactParams, run_ai_artifact_task};
 use crate::commands::credentials::shared::build_credential_task_cli_args;
@@ -19,6 +19,32 @@ use crate::AppState;
 use super::recipe_execution;
 use super::recipe_generation;
 use super::recipe_versioning;
+
+/// Scan rendered prompt for unreplaced `{{variable}}` placeholders and return
+/// an error listing the missing variables if any are found.
+fn validate_no_unreplaced_placeholders(rendered: &str) -> Result<(), AppError> {
+    let mut missing = Vec::new();
+    let mut rest = rendered;
+    while let Some(start) = rest.find("{{") {
+        if let Some(end) = rest[start..].find("}}") {
+            let name = &rest[start + 2..start + end];
+            if !name.is_empty() && !missing.contains(&name.to_string()) {
+                missing.push(name.to_string());
+            }
+            rest = &rest[start + end + 2..];
+        } else {
+            break;
+        }
+    }
+    if missing.is_empty() {
+        Ok(())
+    } else {
+        Err(AppError::Validation(format!(
+            "Template has unreplaced placeholder(s): {}. Provide values for these variables.",
+            missing.join(", ")
+        )))
+    }
+}
 
 #[tauri::command]
 pub fn list_recipes(
@@ -112,6 +138,8 @@ pub fn execute_recipe(
         rendered = rendered.replace(&placeholder, &replacement);
     }
 
+    validate_no_unreplaced_placeholders(&rendered)?;
+
     Ok(RecipeExecutionResult {
         recipe_id: recipe.id,
         recipe_name: recipe.name,
@@ -143,6 +171,8 @@ pub async fn start_recipe_execution(
         rendered = rendered.replace(&placeholder, &replacement);
     }
 
+    validate_no_unreplaced_placeholders(&rendered)?;
+
     let cli_args = build_credential_task_cli_args();
     let execution_id = uuid::Uuid::new_v4().to_string();
 
@@ -153,8 +183,10 @@ pub async fn start_recipe_execution(
     }
 
     let exec_id = execution_id.clone();
+    let log_exec_id = execution_id.clone();
 
     tokio::spawn(async move {
+        tracing::info!(execution_id = %log_exec_id, "Recipe execution task started");
         run_ai_artifact_task(AiArtifactParams {
             app,
             task_id: exec_id,
@@ -166,6 +198,7 @@ pub async fn start_recipe_execution(
             extractor: recipe_execution::extract_recipe_execution_result,
         })
         .await;
+        tracing::info!(execution_id = %log_exec_id, "Recipe execution task completed");
     });
 
     Ok(json!({ "execution_id": execution_id }))
@@ -174,11 +207,26 @@ pub async fn start_recipe_execution(
 #[tauri::command]
 pub async fn cancel_recipe_execution(
     state: State<'_, Arc<AppState>>,
-) -> Result<bool, AppError> {
+    app: tauri::AppHandle,
+) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
     let mut guard = state.active_credential_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    *guard = None;
-    Ok(true)
+    let cancelled_id = guard.take();
+    let was_running = cancelled_id.is_some();
+
+    if let Some(ref id) = cancelled_id {
+        tracing::info!(cancelled_id = %id, "Cancelled recipe execution");
+        let _ = app.emit("recipe-execution-status", json!({
+            "execution_id": id,
+            "status": "cancelled",
+            "result": null,
+            "error": null,
+        }));
+    } else {
+        tracing::debug!("cancel_recipe_execution called but nothing was running");
+    }
+
+    Ok(json!({ "was_running": was_running, "cancelled_id": cancelled_id }))
 }
 
 #[tauri::command]
@@ -218,8 +266,10 @@ pub async fn start_recipe_generation(
     }
 
     let gen_id = generation_id.clone();
+    let log_gen_id = generation_id.clone();
 
     tokio::spawn(async move {
+        tracing::info!(generation_id = %log_gen_id, "Recipe generation task started");
         run_ai_artifact_task(AiArtifactParams {
             app,
             task_id: gen_id,
@@ -231,6 +281,7 @@ pub async fn start_recipe_generation(
             extractor: recipe_generation::extract_recipe_generation_result,
         })
         .await;
+        tracing::info!(generation_id = %log_gen_id, "Recipe generation task completed");
     });
 
     Ok(json!({ "generation_id": generation_id }))
@@ -239,11 +290,26 @@ pub async fn start_recipe_generation(
 #[tauri::command]
 pub async fn cancel_recipe_generation(
     state: State<'_, Arc<AppState>>,
-) -> Result<bool, AppError> {
+    app: tauri::AppHandle,
+) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
     let mut guard = state.active_credential_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    *guard = None;
-    Ok(true)
+    let cancelled_id = guard.take();
+    let was_running = cancelled_id.is_some();
+
+    if let Some(ref id) = cancelled_id {
+        tracing::info!(cancelled_id = %id, "Cancelled recipe generation");
+        let _ = app.emit("recipe-generation-status", json!({
+            "generation_id": id,
+            "status": "cancelled",
+            "result": null,
+            "error": null,
+        }));
+    } else {
+        tracing::debug!("cancel_recipe_generation called but nothing was running");
+    }
+
+    Ok(json!({ "was_running": was_running, "cancelled_id": cancelled_id }))
 }
 
 #[tauri::command]
@@ -334,8 +400,10 @@ pub async fn start_recipe_versioning(
     }
 
     let ver_id = versioning_id.clone();
+    let log_ver_id = versioning_id.clone();
 
     tokio::spawn(async move {
+        tracing::info!(versioning_id = %log_ver_id, "Recipe versioning task started");
         run_ai_artifact_task(AiArtifactParams {
             app,
             task_id: ver_id,
@@ -347,6 +415,7 @@ pub async fn start_recipe_versioning(
             extractor: recipe_versioning::extract_recipe_versioning_result,
         })
         .await;
+        tracing::info!(versioning_id = %log_ver_id, "Recipe versioning task completed");
     });
 
     Ok(json!({ "versioning_id": versioning_id }))
@@ -355,11 +424,26 @@ pub async fn start_recipe_versioning(
 #[tauri::command]
 pub async fn cancel_recipe_versioning(
     state: State<'_, Arc<AppState>>,
-) -> Result<bool, AppError> {
+    app: tauri::AppHandle,
+) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
     let mut guard = state.active_credential_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    *guard = None;
-    Ok(true)
+    let cancelled_id = guard.take();
+    let was_running = cancelled_id.is_some();
+
+    if let Some(ref id) = cancelled_id {
+        tracing::info!(cancelled_id = %id, "Cancelled recipe versioning");
+        let _ = app.emit("recipe-versioning-status", json!({
+            "versioning_id": id,
+            "status": "cancelled",
+            "result": null,
+            "error": null,
+        }));
+    } else {
+        tracing::debug!("cancel_recipe_versioning called but nothing was running");
+    }
+
+    Ok(json!({ "was_running": was_running, "cancelled_id": cancelled_id }))
 }
 
 #[tauri::command]

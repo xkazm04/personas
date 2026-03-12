@@ -12,7 +12,7 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
 
-/// Model for smart search — cheap and fast, this is a ranking task.
+/// Model for smart search -- cheap and fast, this is a ranking task.
 const SMART_SEARCH_MODEL: &str = "claude-haiku-4-5-20251001";
 const SMART_SEARCH_TIMEOUT_SECS: u64 = 60;
 
@@ -42,7 +42,7 @@ pub struct SmartSearchResult {
     pub cli_log: Vec<String>,
 }
 
-/// Raw shape Claude outputs (snake_case) — used only for deserialization.
+/// Raw shape Claude outputs (snake_case) -- used only for deserialization.
 #[derive(Deserialize)]
 struct RawSearchResult {
     ranked_ids: Vec<String>,
@@ -103,7 +103,7 @@ pub async fn smart_search_templates(
         ));
     }
 
-    // Load all templates (compact query — we only need summary fields)
+    // Load all templates (compact query -- we only need summary fields)
     let reviews = repo::get_reviews(&state.db, None, Some(500))?;
     if reviews.is_empty() {
         return Ok(SmartSearchResult {
@@ -117,8 +117,9 @@ pub async fn smart_search_templates(
     let summaries: Vec<TemplateSummary> = reviews
         .iter()
         .map(|r| {
-            let instruction_snippet = if r.instruction.len() > 200 {
-                format!("{}...", &r.instruction[..200])
+            let instruction_snippet = if r.instruction.chars().count() > 200 {
+                let truncated: String = r.instruction.chars().take(200).collect();
+                format!("{truncated}...")
             } else {
                 r.instruction.clone()
             };

@@ -48,7 +48,7 @@
     "auth_type": "connection_string",
     "auth_type_label": "Connection URL",
     "docs_url": "https://redis.io/docs/latest/develop/connect/",
-    "setup_guide": "1. For Redis Cloud: go to app.redislabs.com → Database → Connect\n2. Copy the connection URL (redis://default:pass@host:port)\n3. Or provide host, port, and password separately\n4. Use rediss:// prefix for TLS connections",
+    "setup_guide": "1. For Redis Cloud: go to app.redislabs.com -> Database -> Connect\n2. Copy the connection URL (redis://default:pass@host:port)\n3. Or provide host, port, and password separately\n4. Use rediss:// prefix for TLS connections",
     "pricing_tier": "free",
     "auth_variants": [
       {

@@ -4,12 +4,13 @@ import { usePersonaStore } from '@/stores/personaStore';
 import type { OnboardingStep } from '@/stores/slices/system/onboardingSlice';
 
 const STEP_LABELS: Record<OnboardingStep, string> = {
+  'discover': 'Detect desktop apps',
   'pick-template': 'Pick template',
   'adopt': 'Adopt agent',
   'execute': 'First run',
 };
 
-const STEP_ORDER: OnboardingStep[] = ['pick-template', 'adopt', 'execute'];
+const STEP_ORDER: OnboardingStep[] = ['discover', 'pick-template', 'adopt', 'execute'];
 
 export default function OnboardingProgressBar() {
   const onboardingActive = usePersonaStore((s) => s.onboardingActive);
@@ -39,7 +40,7 @@ export default function OnboardingProgressBar() {
         <div className="flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-violet-400" />
           <span className="text-sm font-medium text-violet-300">Getting Started</span>
-          <span className="ml-auto text-sm text-violet-400/60">{completedCount}/3</span>
+          <span className="ml-auto text-sm text-violet-400/60">{completedCount}/{STEP_ORDER.length}</span>
         </div>
 
         {/* Progress bar */}

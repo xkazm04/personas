@@ -110,7 +110,7 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
   useEffect(() => {
     if (phase !== 'analyzing' || design.phase !== 'idle') return;
     if (recipeLookedUpRef.current) {
-      // Recipe lookup already ran and missed â€” proceed with AI
+      // Recipe lookup already ran and missed -- proceed with AI
       design.start(`Analyze ${connector.label} (${connector.name}) connector and discover setup procedures for creating API credentials.`);
       return;
     }
@@ -121,7 +121,7 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
         setDesignResult({ ...cached, match_existing: connector.name });
         setPhase('auto');
       } else {
-        // No recipe â€” fall back to AI analysis
+        // No recipe -- fall back to AI analysis
         design.start(`Analyze ${connector.label} (${connector.name}) connector and discover setup procedures for creating API credentials.`);
       }
     });
@@ -140,7 +140,7 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
     }
   }, [phase, design.phase, design.result, connector.name]);
 
-  // Handle AI error â€” fall back to synthetic result
+  // Handle AI error -- fall back to synthetic result
   useEffect(() => {
     if (phase === 'analyzing' && design.phase === 'error') {
       setDesignResult(buildDesignResult(connector));

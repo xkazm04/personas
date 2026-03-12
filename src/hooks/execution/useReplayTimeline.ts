@@ -1,5 +1,5 @@
 /**
- * useReplayTimeline — Core hook for execution replay with time-scrubbing.
+ * useReplayTimeline -- Core hook for execution replay with time-scrubbing.
  *
  * Reconstructs a unified timeline from tool_steps and log lines,
  * providing scrubbing, playback, and fork-point selection.
@@ -80,7 +80,7 @@ function parseToolSteps(raw: string | null): ToolCallStep[] {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
-    // intentional: non-critical — malformed JSON returns empty array
+    // intentional: non-critical -- malformed JSON returns empty array
     return [];
   }
 }

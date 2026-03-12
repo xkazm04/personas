@@ -24,6 +24,35 @@ pub struct PersonaHealingIssue {
 }
 
 // ============================================================================
+// Healing Timeline Events (resilience narrative)
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct HealingTimelineEvent {
+    pub id: String,
+    /// Groups related events into a single resilience chain (original execution_id).
+    pub chain_id: String,
+    /// "trigger" | "classify" | "retry" | "ai_heal" | "outcome" | "knowledge"
+    pub event_type: String,
+    pub timestamp: String,
+    pub title: String,
+    pub description: String,
+    pub severity: Option<String>,
+    pub category: Option<String>,
+    pub status: Option<String>,
+    pub execution_id: Option<String>,
+    pub issue_id: Option<String>,
+    pub knowledge_id: Option<String>,
+    pub auto_fixed: bool,
+    pub is_circuit_breaker: bool,
+    #[ts(type = "number | null")]
+    pub retry_count: Option<i64>,
+    pub suggested_fix: Option<String>,
+}
+
+// ============================================================================
 // Healing Knowledge Base (fleet-wide failure patterns)
 // ============================================================================
 

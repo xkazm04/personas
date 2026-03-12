@@ -1,5 +1,5 @@
 /**
- * ExecutionPipeline — First-class definition of the execution data flow.
+ * ExecutionPipeline -- First-class definition of the execution data flow.
  *
  * The execution flow traverses 7 boundaries:
  *   Frontend Initiate -> Tauri Command -> Engine Spawn -> CLI Process
@@ -330,7 +330,7 @@ export function mergeBackendSpans(
     metadata: s.metadata as Record<string, unknown> | null,
   }));
 
-  // Deduplicate by span_id — backend may re-send spans we already have
+  // Deduplicate by span_id -- backend may re-send spans we already have
   const existingIds = new Set(trace.spans.map((s) => s.span_id));
   const newSpans = converted.filter((s) => !existingIds.has(s.span_id));
 

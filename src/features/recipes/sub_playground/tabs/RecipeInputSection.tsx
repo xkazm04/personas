@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { Play, Loader2, Download, Save, Check, Database } from 'lucide-react';
+import { Play, Download, Save, Check, Database } from 'lucide-react';
+import { RecipePageFlipLoader } from '../../shared/RecipePageFlipLoader';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { updateRecipe } from '@/api/templates/recipes';
 import type { InputField } from './recipeTestHelpers';
@@ -88,7 +89,7 @@ export function RecipeInputSection({
             className="flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           >
             {running || executionPhase === 'executing' ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <RecipePageFlipLoader className="text-emerald-400" />
             ) : (
               <Play className="w-3.5 h-3.5" />
             )}

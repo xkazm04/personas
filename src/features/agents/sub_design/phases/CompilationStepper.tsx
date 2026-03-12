@@ -3,17 +3,17 @@ import { motion } from 'framer-motion';
 import { Check, Loader2 } from 'lucide-react';
 import { COMPILATION_STAGES } from '@/lib/compiler/personaCompiler';
 
-// ── Stage inference from output lines ────────────────────────────
+// -- Stage inference from output lines ----------------------------
 
 /**
  * Infer the active compilation stage index (0-4) from streaming output lines.
  *
  * The backend doesn't emit explicit stage events, so we use content heuristics:
- *   0 = prompt_assembly  — initial lines, "starting", "initializing", "assembling"
- *   1 = llm_generation   — once we see LLM output flowing (default while running)
- *   2 = result_parsing   — "parsing", "extracting", "transform_persona", JSON markers
- *   3 = feasibility_check — "feasibility", "validating", "checking"
- *   4 = persist          — "saving", "persisting", "writing"
+ *   0 = prompt_assembly  -- initial lines, "starting", "initializing", "assembling"
+ *   1 = llm_generation   -- once we see LLM output flowing (default while running)
+ *   2 = result_parsing   -- "parsing", "extracting", "transform_persona", JSON markers
+ *   3 = feasibility_check -- "feasibility", "validating", "checking"
+ *   4 = persist          -- "saving", "persisting", "writing"
  */
 function inferStageIndex(lines: string[]): number {
   // Walk backwards through lines to find the latest stage marker
@@ -25,11 +25,11 @@ function inferStageIndex(lines: string[]): number {
   }
   // If we have lines flowing but no specific marker, assume LLM generation
   if (lines.length > 2) return 1;
-  // Very early — prompt assembly
+  // Very early -- prompt assembly
   return 0;
 }
 
-// ── Elapsed timer hook ───────────────────────────────────────────
+// -- Elapsed timer hook -------------------------------------------
 
 function useElapsedSeconds(isRunning: boolean): number {
   const [elapsed, setElapsed] = useState(0);
@@ -55,7 +55,7 @@ function formatElapsed(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-// ── Main Component ───────────────────────────────────────────────
+// -- Main Component -----------------------------------------------
 
 interface CompilationStepperProps {
   outputLines: string[];

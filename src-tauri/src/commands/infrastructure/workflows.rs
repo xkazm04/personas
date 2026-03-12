@@ -1,13 +1,18 @@
+use std::sync::Arc;
+
 use serde::Serialize;
+use tauri::State;
 
 use crate::error::AppError;
+use crate::ipc_auth::require_auth_sync;
+use crate::AppState;
 
 use crate::commands::design::n8n_transform::job_state::list_n8n_transform_jobs;
 use crate::commands::design::template_adopt::{list_adopt_jobs, list_generate_jobs};
 use crate::commands::credentials::query_debug::list_query_debug_jobs;
 use crate::commands::credentials::schema_proposal::list_schema_proposal_jobs;
 
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
 #[derive(Clone, Serialize)]
 pub struct WorkflowJob {
@@ -29,12 +34,15 @@ pub struct WorkflowsOverview {
     pub total_count: usize,
 }
 
-// ── Commands ───────────────────────────────────────────────────────────
+// -- Commands -----------------------------------------------------------
 
 /// List all background jobs across every manager, aggregated into a
 /// unified workflows overview.
 #[tauri::command]
-pub fn get_workflows_overview() -> Result<WorkflowsOverview, AppError> {
+pub fn get_workflows_overview(
+    state: State<'_, Arc<AppState>>,
+) -> Result<WorkflowsOverview, AppError> {
+    require_auth_sync(&state)?;
     let mut jobs: Vec<WorkflowJob> = Vec::new();
 
     // Collect from all four managers
@@ -121,7 +129,12 @@ pub fn get_workflows_overview() -> Result<WorkflowsOverview, AppError> {
 
 /// Get full output lines for a specific job by type and ID.
 #[tauri::command]
-pub fn get_workflow_job_output(job_type: String, job_id: String) -> Result<Vec<String>, AppError> {
+pub fn get_workflow_job_output(
+    state: State<'_, Arc<AppState>>,
+    job_type: String,
+    job_id: String,
+) -> Result<Vec<String>, AppError> {
+    require_auth_sync(&state)?;
     let snapshots = match job_type.as_str() {
         "n8n_transform" => list_n8n_transform_jobs(),
         "template_adopt" => list_adopt_jobs(),
@@ -141,10 +154,12 @@ pub fn get_workflow_job_output(job_type: String, job_id: String) -> Result<Vec<S
 /// Cancel a running job by type and ID.
 #[tauri::command]
 pub fn cancel_workflow_job(
+    state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     job_type: String,
     job_id: String,
 ) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     match job_type.as_str() {
         "n8n_transform" => {
             use crate::commands::design::n8n_transform::job_state::manager;

@@ -24,9 +24,9 @@ pub struct BridgeActionResult {
     pub action: String,
 }
 
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 // VS Code Bridge
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 
 pub mod vscode {
     use super::*;
@@ -114,9 +114,9 @@ pub mod vscode {
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 // Docker Bridge
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 
 pub mod docker {
     use super::*;
@@ -262,9 +262,9 @@ pub mod docker {
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 // Terminal Bridge
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 
 pub mod terminal {
     use super::*;
@@ -480,9 +480,9 @@ pub mod terminal {
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 // Obsidian Bridge
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 
 pub mod obsidian {
     use super::*;
@@ -515,14 +515,15 @@ pub mod obsidian {
 
         // Try REST API first, fall back to filesystem
         let result = if let (Some(port), Some(key)) = (api_port, api_key) {
-            execute_via_api(port, key, &action).await
-                .or_else(|_| {
+            match execute_via_api(port, key, &action).await {
+                Ok(v) => Ok(v),
+                Err(_) => {
                     tracing::debug!("Obsidian REST API unavailable, falling back to filesystem");
-                    // Wrap the sync result in a future-compatible format
-                    execute_via_filesystem(vault_path, &action)
-                })
+                    execute_via_filesystem(vault_path, &action).await
+                }
+            }
         } else {
-            execute_via_filesystem(vault_path, &action)
+            execute_via_filesystem(vault_path, &action).await
         };
 
         let duration_ms = start.elapsed().as_millis() as u64;
@@ -611,84 +612,94 @@ pub mod obsidian {
     }
 
     /// Execute via direct filesystem access to the vault directory.
-    fn execute_via_filesystem(vault_path: &str, action: &ObsidianAction) -> Result<String, AppError> {
-        let vault = std::path::Path::new(vault_path);
-        if !vault.exists() {
-            return Err(AppError::NotFound(format!("Vault path not found: {vault_path}")));
-        }
+    ///
+    /// All filesystem I/O is offloaded to a blocking thread via
+    /// `tokio::task::spawn_blocking` so the async runtime is never starved,
+    /// even for large vaults with thousands of notes.
+    async fn execute_via_filesystem(vault_path: &str, action: &ObsidianAction) -> Result<String, AppError> {
+        let vault_path = vault_path.to_owned();
+        let action = action.clone();
 
-        match action {
-            ObsidianAction::ListNotes { folder } => {
-                let search_path = match folder {
-                    Some(f) => vault.join(f),
-                    None => vault.to_path_buf(),
-                };
-                let mut notes = Vec::new();
-                collect_markdown_files(&search_path, vault, &mut notes)?;
-                Ok(notes.join("\n"))
+        tokio::task::spawn_blocking(move || {
+            let vault = std::path::Path::new(&vault_path);
+            if !vault.exists() {
+                return Err(AppError::NotFound(format!("Vault path not found: {vault_path}")));
             }
-            ObsidianAction::ReadNote { path } => {
-                let full_path = vault.join(path);
-                if !full_path.starts_with(vault) {
-                    return Err(AppError::Forbidden("Path traversal detected".into()));
-                }
-                std::fs::read_to_string(&full_path)
-                    .map_err(AppError::Io)
-            }
-            ObsidianAction::WriteNote { path, content } => {
-                let full_path = vault.join(path);
-                if !full_path.starts_with(vault) {
-                    return Err(AppError::Forbidden("Path traversal detected".into()));
-                }
-                if let Some(parent) = full_path.parent() {
-                    std::fs::create_dir_all(parent).map_err(AppError::Io)?;
-                }
-                std::fs::write(&full_path, content).map_err(AppError::Io)?;
-                Ok(format!("Note saved: {path}"))
-            }
-            ObsidianAction::SearchNotes { query, max_results } => {
-                let max = max_results.unwrap_or(20);
-                let query_lower = query.to_lowercase();
-                let mut results = Vec::new();
-                let mut all_notes = Vec::new();
-                collect_markdown_files(vault, vault, &mut all_notes)?;
 
-                for note_path in all_notes {
-                    if results.len() >= max { break; }
-                    let full = vault.join(&note_path);
-                    if let Ok(content) = std::fs::read_to_string(&full) {
-                        if content.to_lowercase().contains(&query_lower) {
-                            // Extract matching line for context
-                            let context = content.lines()
-                                .find(|line| line.to_lowercase().contains(&query_lower))
-                                .unwrap_or("")
-                                .chars().take(200).collect::<String>();
-                            results.push(format!("{note_path}\t{context}"));
+            match &action {
+                ObsidianAction::ListNotes { folder } => {
+                    let search_path = match folder {
+                        Some(f) => vault.join(f),
+                        None => vault.to_path_buf(),
+                    };
+                    let mut notes = Vec::new();
+                    collect_markdown_files(&search_path, vault, &mut notes)?;
+                    Ok(notes.join("\n"))
+                }
+                ObsidianAction::ReadNote { path } => {
+                    let full_path = vault.join(path);
+                    if !full_path.starts_with(vault) {
+                        return Err(AppError::Forbidden("Path traversal detected".into()));
+                    }
+                    std::fs::read_to_string(&full_path)
+                        .map_err(AppError::Io)
+                }
+                ObsidianAction::WriteNote { path, content } => {
+                    let full_path = vault.join(path);
+                    if !full_path.starts_with(vault) {
+                        return Err(AppError::Forbidden("Path traversal detected".into()));
+                    }
+                    if let Some(parent) = full_path.parent() {
+                        std::fs::create_dir_all(parent).map_err(AppError::Io)?;
+                    }
+                    std::fs::write(&full_path, content).map_err(AppError::Io)?;
+                    Ok(format!("Note saved: {path}"))
+                }
+                ObsidianAction::SearchNotes { query, max_results } => {
+                    let max = max_results.unwrap_or(20);
+                    let query_lower = query.to_lowercase();
+                    let mut results = Vec::new();
+                    let mut all_notes = Vec::new();
+                    collect_markdown_files(vault, vault, &mut all_notes)?;
+
+                    for note_path in all_notes {
+                        if results.len() >= max { break; }
+                        let full = vault.join(&note_path);
+                        if let Ok(content) = std::fs::read_to_string(&full) {
+                            if content.to_lowercase().contains(&query_lower) {
+                                let context = content.lines()
+                                    .find(|line| line.to_lowercase().contains(&query_lower))
+                                    .unwrap_or("")
+                                    .chars().take(200).collect::<String>();
+                                results.push(format!("{note_path}\t{context}"));
+                            }
                         }
                     }
+                    Ok(results.join("\n"))
                 }
-                Ok(results.join("\n"))
-            }
-            ObsidianAction::VaultStructure => {
-                let mut dirs = Vec::new();
-                collect_directories(vault, vault, &mut dirs)?;
-                Ok(dirs.join("\n"))
-            }
-            ObsidianAction::AppendToNote { path, content } => {
-                let full_path = vault.join(path);
-                if !full_path.starts_with(vault) {
-                    return Err(AppError::Forbidden("Path traversal detected".into()));
+                ObsidianAction::VaultStructure => {
+                    let mut dirs = Vec::new();
+                    collect_directories(vault, vault, &mut dirs)?;
+                    Ok(dirs.join("\n"))
                 }
-                use std::io::Write;
-                let mut file = std::fs::OpenOptions::new()
-                    .append(true)
-                    .create(true)
-                    .open(&full_path)
-                    .map_err(AppError::Io)?;
-                writeln!(file, "\n{content}").map_err(AppError::Io)?;
-                Ok(format!("Appended to: {path}"))
+                ObsidianAction::AppendToNote { path, content } => {
+                    let full_path = vault.join(path);
+                    if !full_path.starts_with(vault) {
+                        return Err(AppError::Forbidden("Path traversal detected".into()));
+                    }
+                    use std::io::Write;
+                    let mut file = std::fs::OpenOptions::new()
+                        .append(true)
+                        .create(true)
+                        .open(&full_path)
+                        .map_err(AppError::Io)?;
+                    writeln!(file, "\n{content}").map_err(AppError::Io)?;
+                    Ok(format!("Appended to: {path}"))
+                }
             }
-        }
+        })
+        .await
+        .map_err(|e| AppError::Internal(format!("Blocking task panicked: {e}")))?
     }
 
     fn collect_markdown_files(
@@ -734,15 +745,15 @@ pub mod obsidian {
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 // Shared CLI runner
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 
 /// Maximum output size from a bridge CLI command (2 MB).
 const MAX_OUTPUT_BYTES: usize = 2 * 1024 * 1024;
 
 /// Run a CLI command and capture its output.
-/// No shell involved — args are passed directly to prevent injection.
+/// No shell involved -- args are passed directly to prevent injection.
 async fn run_cli(binary: &str, args: &[&str]) -> Result<String, AppError> {
     let mut cmd = tokio::process::Command::new(binary);
     cmd.args(args);

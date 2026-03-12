@@ -32,13 +32,13 @@ export function PersonaSettingsTab({
 }: PersonaSettingsTabProps) {
   return (
     <div className="max-w-3xl 3xl:max-w-4xl 4xl:max-w-5xl space-y-4">
-      {/* Identity — relative z-10 so icon/color picker popups render above cards below */}
+      {/* Identity -- relative z-10 so icon/color picker popups render above cards below */}
       <div className="space-y-3 relative z-10">
         <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           Identity
         </h4>
-        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-3 space-y-3">
+        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
           <div>
             <label className="block text-sm font-medium text-foreground/80 mb-1">Name</label>
             <input
@@ -85,14 +85,14 @@ export function PersonaSettingsTab({
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           Execution
         </h4>
-        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-3 space-y-3">
+        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-sm font-medium text-foreground/80 mb-1">
                 Max Concurrent
                 <FieldHint
                   text="Maximum parallel executions for this persona. Limits how many runs can happen at the same time to prevent API rate limits."
-                  range="1–10"
+                  range="1--10"
                   example="3"
                 />
               </label>
@@ -110,7 +110,7 @@ export function PersonaSettingsTab({
                 Timeout (sec)
                 <FieldHint
                   text="How long a single execution can run before being cancelled. Prevents stuck runs from consuming resources."
-                  range="10–3600 seconds"
+                  range="10--3600 seconds"
                   example="1000"
                 />
               </label>

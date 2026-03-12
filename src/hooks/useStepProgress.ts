@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 
-// ── Types ───────────────────────────────────────────────────────
+// -- Types -------------------------------------------------------
 
 export type StepStatus = 'pending' | 'active' | 'completed';
 
@@ -20,14 +20,14 @@ export interface StepProgressResult {
   completedCount: number;
   /** Total number of steps. */
   totalSteps: number;
-  /** Progress percentage 0–100. */
+  /** Progress percentage 0--100. */
   progressPercent: number;
   /** Whether all steps are complete. */
   allDone: boolean;
-  /** Optional captured values (key→value map). */
+  /** Optional captured values (key->value map). */
   capturedValues: Record<string, string>;
 
-  // ── Actions ──────────────────────────────────────────────────
+  // -- Actions --------------------------------------------------
   /** Toggle a step completed/uncompleted (manual mode). */
   toggleStep: (index: number) => void;
   /** Mark a step completed and auto-advance activeStepIndex. */
@@ -36,13 +36,13 @@ export interface StepProgressResult {
   goToStep: (index: number) => void;
   /** Set active step from a derived value (e.g. from output line keywords). */
   setDerivedIndex: (index: number) => void;
-  /** Capture a key→value pair. */
+  /** Capture a key->value pair. */
   captureValue: (key: string, value: string) => void;
   /** Reset all state to initial. */
   reset: () => void;
 }
 
-// ── Hook ────────────────────────────────────────────────────────
+// -- Hook --------------------------------------------------------
 
 /**
  * Unified step-progress hook that supports three completion modes:

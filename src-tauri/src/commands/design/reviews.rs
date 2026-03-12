@@ -23,7 +23,7 @@ use crate::AppState;
 
 use super::analysis::extract_display_text;
 
-// ── Event payloads ──────────────────────────────────────────────
+// -- Event payloads ----------------------------------------------
 
 #[derive(Clone, Serialize)]
 struct DesignReviewStatusEvent {
@@ -43,7 +43,7 @@ struct DesignReviewOutputEvent {
     line: String,
 }
 
-// ── Commands ────────────────────────────────────────────────────
+// -- Commands ----------------------------------------------------
 
 #[tauri::command]
 pub fn list_design_reviews(
@@ -298,7 +298,7 @@ pub async fn start_design_review_run(
                     if design::extract_design_question(&full_output).is_some() {
                         tracing::warn!(
                             test_case = %test_case_name,
-                            "Claude asked a question during batch generation — skipping"
+                            "Claude asked a question during batch generation -- skipping"
                         );
                         input.structural_score = Some(0);
                         input.semantic_score = Some(0);
@@ -492,7 +492,7 @@ pub fn cancel_design_review_run(
     Ok(())
 }
 
-// ── Rebuild ─────────────────────────────────────────────────────
+// -- Rebuild -----------------------------------------------------
 
 fn build_rebuild_prompt(
     test_case_name: &str,
@@ -548,7 +548,7 @@ fn build_rebuild_prompt(
 - Triggers start the persona (schedule, webhook, polling, manual)
 - Each tool can reference a connector (credential type) it requires
 
-## Persona Protocol System (CRITICAL — embed these in the structured_prompt)
+## Persona Protocol System (CRITICAL -- embed these in the structured_prompt)
 
 During execution, the persona can output special JSON protocol messages to communicate
 with the user, persist knowledge, and request human approval. You MUST reference these
@@ -560,7 +560,7 @@ Output: {{"user_message": {{"title": "string", "content": "string", "content_typ
 
 Use for: status updates, summaries, alerts, draft previews, completion reports.
 
-### Protocol 2: Agent Memory (ACTIVE business knowledge — improves every run)
+### Protocol 2: Agent Memory (ACTIVE business knowledge -- improves every run)
 Output: {{"agent_memory": {{"title": "string", "content": "string", "category": "fact|preference|instruction|context|learned", "importance": 1-10, "tags": ["tag1"]}}}}
 
 CRITICAL: Memory is the persona's competitive advantage. Each execution should
@@ -571,7 +571,7 @@ Categories:
 - "fact": Business facts extracted from data (e.g., "Client X prefers morning meetings")
 - "preference": Stakeholder and system preferences (e.g., "Marketing team wants Slack over email")
 - "instruction": Learned procedures and rules (e.g., "Always CC legal on contracts above $10k")
-- "context": Ongoing business situations (e.g., "Q4 budget freeze — hold non-critical purchases")
+- "context": Ongoing business situations (e.g., "Q4 budget freeze -- hold non-critical purchases")
 - "learned": Patterns and optimizations discovered through operation
 
 ### Protocol 3: Manual Review (human-in-the-loop approval gate)
@@ -589,15 +589,15 @@ Use for: multi-agent coordination, triggering downstream workflows.
 Apply these patterns when designing:
 
 1. HUMAN-IN-THE-LOOP: If the persona sends emails, posts messages, modifies databases,
-   or performs any externally-visible action → add manual_review BEFORE the action.
+   or performs any externally-visible action -> add manual_review BEFORE the action.
    Include a "human_in_the_loop" customSection in structured_prompt.
 
 2. KNOWLEDGE EXTRACTION: If the persona processes data (emails, documents, API responses)
-   → add agent_memory instructions to extract and store BUSINESS-RELEVANT information.
+   -> add agent_memory instructions to extract and store BUSINESS-RELEVANT information.
 
-3. PROGRESSIVE LEARNING: For recurring tasks → instruct the persona to CHECK memories
+3. PROGRESSIVE LEARNING: For recurring tasks -> instruct the persona to CHECK memories
    before acting and STORE new patterns after. Create a feedback loop:
-   CHECK → ACT → LEARN → IMPROVE.
+   CHECK -> ACT -> LEARN -> IMPROVE.
    ALWAYS include a "memory_strategy" customSection describing what to capture and when.
 
 4. NOTIFICATIONS: Map status updates to user_message with appropriate priority levels.
@@ -730,7 +730,7 @@ pub async fn rebuild_design_review(
 
                         n8n_job_state::emit_n8n_transform_line(
                             &app, &rebuild_id,
-                            format!("[Milestone] Rebuild complete — quality: {structural_score}%"),
+                            format!("[Milestone] Rebuild complete -- quality: {structural_score}%"),
                         );
                         n8n_job_state::set_n8n_transform_status(&app, &rebuild_id, "completed", None);
                     }
@@ -802,7 +802,7 @@ pub fn cancel_rebuild(
         .cancel_or_preempt(&app, &rebuild_id, crate::commands::design::n8n_transform::job_state::N8nTransformExtra::default())
 }
 
-// ── Manual Review Commands ───────────────────────────────────
+// -- Manual Review Commands -----------------------------------
 
 #[tauri::command]
 pub fn list_manual_reviews(
@@ -861,7 +861,7 @@ pub fn get_pending_review_count(
     manual_repo::get_pending_count(&state.db, persona_id.as_deref())
 }
 
-// ── Review Message Commands (Conversational Thread) ──────────
+// -- Review Message Commands (Conversational Thread) ----------
 
 #[tauri::command]
 pub fn list_review_messages(
@@ -896,7 +896,7 @@ pub fn add_review_message(
     Ok(msg)
 }
 
-// ── Dev Seed: create a mock manual review ────────────────────
+// -- Dev Seed: create a mock manual review --------------------
 
 const MOCK_TITLES: &[&str] = &[
     "Verify email notification content before sending",
@@ -955,17 +955,20 @@ pub fn seed_mock_manual_review(
     let suggested_actions = Some(MOCK_ACTIONS[t % MOCK_ACTIONS.len()].to_string());
     let context_data = Some(MOCK_CONTEXT[t % MOCK_CONTEXT.len()].to_string());
 
-    // Insert directly — skip FK constraint on execution since this is a dev seed
+    // Insert directly -- disable FK checks for dev seed (execution_id is fake)
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     let conn = state.db.get()?;
-    conn.execute(
+    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
+    let result = conn.execute(
         "INSERT INTO persona_manual_reviews
          (id, execution_id, persona_id, title, description, severity, status,
           context_data, suggested_actions, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?9)",
         rusqlite::params![id, execution_id, persona_id, title, description, sev, context_data, suggested_actions, now],
-    )?;
+    );
+    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+    result?;
 
     manual_repo::get_by_id(&state.db, &id)
 }
@@ -996,7 +999,7 @@ pub fn backfill_review_categories(
 
 /// Backfill `service_flow` for all reviews whose design_result is missing it
 /// or has it in the legacy string-array format.
-/// Converts `["Slack", "GitHub"]` → `[{ connector_name: "slack", action_label: "Slack", order: 0 }, ...]`
+/// Converts `["Slack", "GitHub"]` -> `[{ connector_name: "slack", action_label: "Slack", order: 0 }, ...]`
 /// and derives from `suggested_connectors` when no service_flow exists at all.
 #[tauri::command]
 pub fn backfill_service_flow(
@@ -1239,7 +1242,7 @@ pub fn import_design_review(
     repo::create_review(&state.db, &review_input)
 }
 
-// ── CLI Runner ─────────────────────────────────────────────────
+// -- CLI Runner -------------------------------------------------
 
 /// Spawn Claude CLI for a single template and return the full output string.
 async fn run_cli_for_template(
@@ -1350,7 +1353,7 @@ async fn run_cli_for_template(
     Ok(full_output)
 }
 
-// ── Helper Functions ───────────────────────────────────────────
+// -- Helper Functions -------------------------------------------
 
 #[allow(clippy::too_many_arguments)]
 fn emit_status(
@@ -1386,7 +1389,7 @@ fn emit_status(
 fn infer_template_category(instruction: &str, connectors_used: Option<&str>) -> String {
     let text = instruction.to_lowercase();
 
-    // Ordered by specificity — more specific patterns first.
+    // Ordered by specificity -- more specific patterns first.
     static RULES: &[(&[&str], &str)] = &[
         (&["security", "vulnerability", "audit", "cve", "penetration", "pentest"], "security"),
         (&["deploy", "ci/cd", "ci-cd", "infrastructure", "docker", "kubernetes", "k8s", "terraform"], "devops"),
@@ -1527,7 +1530,7 @@ fn score_design_result(result: &serde_json::Value) -> (i32, i32) {
     let mut semantic_passed = 0i32;
     let semantic_total = 4i32;
 
-    // 1. Prompt dimension — structured_prompt with meaningful identity + instructions
+    // 1. Prompt dimension -- structured_prompt with meaningful identity + instructions
     if let Some(sp) = result.get("structured_prompt") {
         let identity_ok = sp
             .get("identity")
@@ -1550,7 +1553,7 @@ fn score_design_result(result: &serde_json::Value) -> (i32, i32) {
         }
     }
 
-    // 2. Tools dimension — non-empty suggested_tools array
+    // 2. Tools dimension -- non-empty suggested_tools array
     if result
         .get("suggested_tools")
         .and_then(|v| v.as_array())
@@ -1559,7 +1562,7 @@ fn score_design_result(result: &serde_json::Value) -> (i32, i32) {
         structural_passed += 1;
     }
 
-    // 3. Triggers dimension — items with valid trigger_type
+    // 3. Triggers dimension -- items with valid trigger_type
     if result
         .get("suggested_triggers")
         .and_then(|v| v.as_array())
@@ -1573,7 +1576,7 @@ fn score_design_result(result: &serde_json::Value) -> (i32, i32) {
         structural_passed += 1;
     }
 
-    // 4. Connectors dimension — items with credential_fields + auth_type
+    // 4. Connectors dimension -- items with credential_fields + auth_type
     if result
         .get("suggested_connectors")
         .and_then(|v| v.as_array())
@@ -1590,7 +1593,7 @@ fn score_design_result(result: &serde_json::Value) -> (i32, i32) {
         structural_passed += 1;
     }
 
-    // 5. Flows dimension — at least one flow with start/end nodes and ≥5 nodes
+    // 5. Flows dimension -- at least one flow with start/end nodes and ≥5 nodes
     if result
         .get("use_case_flows")
         .and_then(|v| v.as_array())
@@ -1614,7 +1617,7 @@ fn score_design_result(result: &serde_json::Value) -> (i32, i32) {
         structural_passed += 1;
     }
 
-    // 6. Events dimension — non-empty suggested_event_subscriptions
+    // 6. Events dimension -- non-empty suggested_event_subscriptions
     if result
         .get("suggested_event_subscriptions")
         .and_then(|v| v.as_array())
@@ -1623,7 +1626,7 @@ fn score_design_result(result: &serde_json::Value) -> (i32, i32) {
         semantic_passed += 1;
     }
 
-    // 7. Notifications dimension — non-empty suggested_notification_channels
+    // 7. Notifications dimension -- non-empty suggested_notification_channels
     if result
         .get("suggested_notification_channels")
         .and_then(|v| v.as_array())
@@ -1632,7 +1635,7 @@ fn score_design_result(result: &serde_json::Value) -> (i32, i32) {
         semantic_passed += 1;
     }
 
-    // 8. Summary dimension — summary string >50 chars
+    // 8. Summary dimension -- summary string >50 chars
     if result
         .get("summary")
         .and_then(|v| v.as_str())
@@ -1641,7 +1644,7 @@ fn score_design_result(result: &serde_json::Value) -> (i32, i32) {
         semantic_passed += 1;
     }
 
-    // 9. Service Flow dimension — non-empty service_flow array
+    // 9. Service Flow dimension -- non-empty service_flow array
     if result
         .get("service_flow")
         .and_then(|v| v.as_array())

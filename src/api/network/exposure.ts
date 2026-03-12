@@ -1,17 +1,24 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 // ============================================================================
+// Enums
+// ============================================================================
+
+export type AccessLevel = "read" | "execute" | "fork";
+export type ResourceType = "persona" | "template" | "execution_result" | "knowledge" | "connector";
+
+// ============================================================================
 // Types
 // ============================================================================
 
 export interface ExposedResource {
   id: string;
-  resource_type: string;
+  resource_type: ResourceType;
   resource_id: string;
   display_name: string;
   description: string | null;
   fields_exposed: string;
-  access_level: string;
+  access_level: AccessLevel;
   requires_auth: boolean;
   tags: string;
   created_at: string;
@@ -19,12 +26,12 @@ export interface ExposedResource {
 }
 
 export interface CreateExposedResourceInput {
-  resource_type: string;
+  resource_type: ResourceType;
   resource_id: string;
   display_name: string;
   description?: string | null;
   fields_exposed: string[];
-  access_level: string;
+  access_level: AccessLevel;
   requires_auth: boolean;
   tags: string[];
   expires_at?: string | null;
@@ -34,7 +41,7 @@ export interface UpdateExposedResourceInput {
   display_name?: string | null;
   description?: string | null;
   fields_exposed?: string[] | null;
-  access_level?: string | null;
+  access_level?: AccessLevel | null;
   requires_auth?: boolean | null;
   tags?: string[] | null;
   expires_at?: string | null;

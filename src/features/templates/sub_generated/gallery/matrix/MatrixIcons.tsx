@@ -83,7 +83,7 @@ export function TriggersIcon({ className }: IconProps) {
 export function HumanReviewIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 64 64" fill="none" className={className}>
-      {/* Eye outline — almond shape */}
+      {/* Eye outline -- almond shape */}
       <path
         d="M8 32 Q20 18 32 18 Q44 18 56 32 Q44 46 32 46 Q20 46 8 32 Z"
         stroke="currentColor"

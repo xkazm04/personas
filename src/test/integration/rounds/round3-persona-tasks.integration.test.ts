@@ -1,5 +1,5 @@
 /**
- * Round 3: Persona Simulation — Data Analyst and Code Reviewer personas.
+ * Round 3: Persona Simulation -- Data Analyst and Code Reviewer personas.
  *
  * These tests verify that each CLI provider can adopt a persona role,
  * analyze domain-specific content, and produce structured deliverables.
@@ -30,10 +30,10 @@ afterEach(() => {
 
 for (const provider of providers) {
   describe(`${provider.displayName}`, () => {
-    // ─────────────────────────────────────────────────────────────────────
+    // ---------------------------------------------------------------------
     // Test 1: Data Analyst persona
-    // ─────────────────────────────────────────────────────────────────────
-    it('data analyst persona — analyzes sales CSV and writes report', async () => {
+    // ---------------------------------------------------------------------
+    it('data analyst persona -- analyzes sales CSV and writes report', async () => {
       workspace = createWorkspace('data-analysis');
 
       const result = await runCli({
@@ -87,10 +87,10 @@ for (const provider of providers) {
       expect(validation.passed, formatDiagnostic(result, validation)).toBe(true);
     }, 180_000);
 
-    // ─────────────────────────────────────────────────────────────────────
+    // ---------------------------------------------------------------------
     // Test 2: Code Reviewer persona
-    // ─────────────────────────────────────────────────────────────────────
-    it('code reviewer persona — identifies bugs in utils.ts', async () => {
+    // ---------------------------------------------------------------------
+    it('code reviewer persona -- identifies bugs in utils.ts', async () => {
       workspace = createWorkspace('code-review');
 
       const result = await runCli({

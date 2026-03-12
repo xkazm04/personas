@@ -12,7 +12,7 @@
       "type": "text",
       "required": true,
       "placeholder": "AKIA...",
-      "helpText": "From AWS IAM → Users → Security credentials → Access keys"
+      "helpText": "From AWS IAM -> Users -> Security credentials -> Access keys"
     },
     {
       "key": "secret_access_key",
@@ -47,7 +47,7 @@
     "auth_type": "api_key",
     "auth_type_label": "Access Key",
     "docs_url": "https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html",
-    "setup_guide": "1. Log in to the AWS Console.\n2. Go to IAM → Users → select your user.\n3. Under Security credentials, click 'Create access key'.\n4. Choose 'Application running outside AWS'.\n5. Copy the Access Key ID and Secret Access Key.\n6. Paste both values and your preferred region here.",
+    "setup_guide": "1. Log in to the AWS Console.\n2. Go to IAM -> Users -> select your user.\n3. Under Security credentials, click 'Create access key'.\n4. Choose 'Application running outside AWS'.\n5. Copy the Access Key ID and Secret Access Key.\n6. Paste both values and your preferred region here.",
     "pricing_tier": "freemium",
     "auth_methods": [
       {"id": "api_key", "label": "Access Key", "type": "credential", "is_default": true}

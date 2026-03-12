@@ -22,8 +22,8 @@ export interface FilterBarProps<T extends string = string> {
   onChange: (value: T) => void;
   /**
    * How to render the badge count:
-   * - `'badge'`  — rounded pill to the right (default)
-   * - `'paren'`  — parenthetical suffix, e.g. "Pending (3)"
+   * - `'badge'`  -- rounded pill to the right (default)
+   * - `'paren'`  -- parenthetical suffix, e.g. "Pending (3)"
    */
   badgeStyle?: 'badge' | 'paren';
   /** Optional summary text rendered at the far right, e.g. "Showing 5 of 20". */
@@ -75,7 +75,7 @@ export function FilterBar<T extends string = string>({
             {isActive && (
               <motion.div
                 layoutId={`${layoutIdPrefix}-active`}
-                className="absolute inset-0 rounded-lg bg-primary/15 border border-primary/30"
+                className="absolute inset-0 rounded-xl bg-primary/15 border border-primary/30"
                 transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
               />
             )}

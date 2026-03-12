@@ -2,7 +2,7 @@ import { DollarSign, AlertTriangle } from 'lucide-react';
 import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
 import { fmtCost, fmtDate } from '../libs/executionMetricsHelpers';
 
-// ── Summary Card ─────────────────────────────────────────────────────
+// -- Summary Card -----------------------------------------------------
 
 interface SummaryCardProps {
   icon: typeof DollarSign;
@@ -35,7 +35,7 @@ export function SummaryCard({ icon: Icon, label, value, color }: SummaryCardProp
   );
 }
 
-// ── Anomaly Badge ────────────────────────────────────────────────────
+// -- Anomaly Badge ----------------------------------------------------
 
 interface AnomalyBadgeProps {
   anomaly: DashboardCostAnomaly;
@@ -72,7 +72,7 @@ export function AnomalyBadge({ anomaly, onClickExecution }: AnomalyBadgeProps) {
   );
 }
 
-// ── Chart Tooltip ────────────────────────────────────────────────────
+// -- Chart Tooltip ----------------------------------------------------
 
 export function ChartTooltipContent({ active, payload, label }: {
   active?: boolean;

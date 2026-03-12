@@ -4,7 +4,7 @@
  * Registers a pipeline middleware at the `validate` stage that queries the
  * execution knowledge graph and attaches learned guidance to the payload.
  * This enriches the execution with fleet intelligence accumulated from all
- * prior runs — tool sequence preferences, known failure patterns, and
+ * prior runs -- tool sequence preferences, known failure patterns, and
  * cost-quality tradeoffs.
  */
 
@@ -68,7 +68,7 @@ const knowledgeInjectionMiddleware: PipelineMiddleware<'validate'> = async (
     if (entries.length > 0) {
       const guidance = compileGuidance(entries);
       if (guidance) {
-        // Attach guidance as metadata — the execution hook can access this
+        // Attach guidance as metadata -- the execution hook can access this
         // to prepend to the prompt or include in the input data.
         return {
           ...payload,

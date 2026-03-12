@@ -2,13 +2,13 @@ import { useMemo } from 'react';
 import type { DbPersona } from '@/lib/types/types';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 
-// ── Relevance Score ─────────────────────────────────────────────────
+// -- Relevance Score -------------------------------------------------
 // Composite urgency score: higher = more relevant / needs attention first.
 // Components:
-//   - Health urgency (0–40): failing > degraded > dormant > healthy
-//   - Recency boost (0–30): recently run agents float up, stale ones get moderate urgency
-//   - Trigger density (0–15): more triggers = more important
-//   - Active bonus (0–15): enabled agents rank above disabled
+//   - Health urgency (0--40): failing > degraded > dormant > healthy
+//   - Recency boost (0--30): recently run agents float up, stale ones get moderate urgency
+//   - Trigger density (0--15): more triggers = more important
+//   - Active bonus (0--15): enabled agents rank above disabled
 
 export interface ScoredPersona {
   persona: DbPersona;
@@ -35,7 +35,7 @@ function computeRelevanceScore(
   let score = 0;
   let section: 'attention' | 'active' | 'idle' = 'idle';
 
-  // Health urgency (0–40)
+  // Health urgency (0--40)
   const status = health?.status ?? 'dormant';
   score += HEALTH_SCORES[status] ?? 10;
 
@@ -44,12 +44,12 @@ function computeRelevanceScore(
     score += 15;
   }
 
-  // Recency (0–30)
+  // Recency (0--30)
   if (lastRun) {
     const age = Date.now() - new Date(lastRun).getTime();
     if (!isNaN(age)) {
       if (age <= MS_PER_DAY) {
-        // Ran today — high recency, active agent
+        // Ran today -- high recency, active agent
         score += 30;
         section = 'active';
       } else if (age <= 3 * MS_PER_DAY) {
@@ -59,16 +59,16 @@ function computeRelevanceScore(
         score += 15;
         section = 'active';
       } else {
-        // Stale — moderate urgency bump (might need attention)
+        // Stale -- moderate urgency bump (might need attention)
         score += 18;
       }
     }
   }
 
-  // Trigger density (0–15)
+  // Trigger density (0--15)
   score += Math.min(15, triggerCount * 3);
 
-  // Active bonus (0–15)
+  // Active bonus (0--15)
   if (persona.enabled) {
     score += 15;
   }

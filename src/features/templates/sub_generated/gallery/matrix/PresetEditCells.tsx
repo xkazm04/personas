@@ -1,8 +1,8 @@
 /**
- * Preset edit cells — Review, Memory, Messages, Error Strategy, and Use Case cells
+ * Preset edit cells -- Review, Memory, Messages, Error Strategy, and Use Case cells
  * for PersonaMatrix edit mode.
  *
- * Each cell shows only a ThemedSelect dropdown or inline list — the dimension label
+ * Each cell shows only a ThemedSelect dropdown or inline list -- the dimension label
  * is already rendered by the cell header, so we avoid duplicating the selected value.
  */
 import { useState, useMemo, useCallback } from 'react';
@@ -19,7 +19,7 @@ const ERROR_STRATEGY_OPTIONS = [
   { value: 'skip', label: 'Skip failed step' },
 ] as const;
 
-// ── Review preset cell (edit mode) ────────────────────────────────────
+// -- Review preset cell (edit mode) ------------------------------------
 
 interface ReviewEditCellProps {
   editState: MatrixEditState;
@@ -63,7 +63,7 @@ export function ReviewEditCell({ editState, callbacks }: ReviewEditCellProps) {
   );
 }
 
-// ── Memory preset cell (edit mode) ────────────────────────────────────
+// -- Memory preset cell (edit mode) ------------------------------------
 
 interface MemoryEditCellProps {
   editState: MatrixEditState;
@@ -102,7 +102,7 @@ export function MemoryEditCell({ editState, callbacks }: MemoryEditCellProps) {
   );
 }
 
-// ── Messages preset cell (edit mode) ──────────────────────────────────
+// -- Messages preset cell (edit mode) ----------------------------------
 
 interface MessagesEditCellProps {
   editState: MatrixEditState;
@@ -133,7 +133,7 @@ export function MessagesEditCell({ editState, callbacks }: MessagesEditCellProps
   );
 }
 
-// ── Error strategy cell (edit mode) ──────────────────────────────────
+// -- Error strategy cell (edit mode) ----------------------------------
 
 interface ErrorEditCellProps {
   editState: MatrixEditState;
@@ -164,7 +164,7 @@ export function ErrorEditCell({ editState, callbacks }: ErrorEditCellProps) {
   );
 }
 
-// ── Use case cell (edit mode) ────────────────────────────────────────
+// -- Use case cell (edit mode) ----------------------------------------
 
 interface UseCaseEditCellProps {
   editState: MatrixEditState;

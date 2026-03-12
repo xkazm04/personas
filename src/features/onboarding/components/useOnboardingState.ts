@@ -2,6 +2,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { listDesignReviews, getTrendingTemplates } from '@/api/overview/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import {
+  discoverDesktopApps,
+  getDesktopConnectorManifest,
+  approveDesktopCapabilities,
+  type DiscoveredApp,
+} from '@/api/system/desktop';
 
 export function useOnboardingState() {
   const onboardingActive = usePersonaStore((s) => s.onboardingActive);
@@ -25,6 +31,52 @@ export function useOnboardingState() {
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
   const [showAdoptionWizard, setShowAdoptionWizard] = useState(false);
   const [selectedReview, setSelectedReview] = useState<PersonaDesignReview | null>(null);
+
+  // -- Desktop discovery state --
+  const [discoveredApps, setDiscoveredApps] = useState<DiscoveredApp[]>([]);
+  const [isScanning, setIsScanning] = useState(true);
+  const [approvedApps, setApprovedApps] = useState<Set<string>>(new Set());
+  const [approvingApp, setApprovingApp] = useState<string | null>(null);
+
+  // Run desktop discovery on mount
+  useEffect(() => {
+    if (!onboardingActive) return;
+    let cancelled = false;
+    setIsScanning(true);
+
+    discoverDesktopApps()
+      .then((apps) => {
+        if (!cancelled) setDiscoveredApps(apps);
+      })
+      .catch(() => {
+        if (!cancelled) setDiscoveredApps([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsScanning(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [onboardingActive]);
+
+  const handleApproveApp = useCallback(async (connectorName: string) => {
+    setApprovingApp(connectorName);
+    try {
+      const manifest = await getDesktopConnectorManifest(connectorName);
+      if (manifest) {
+        await approveDesktopCapabilities(connectorName, manifest.capabilities);
+      }
+      setApprovedApps((prev) => new Set([...prev, connectorName]));
+    } catch {
+      // intentional: non-critical — user can approve later from Connectors tab
+    } finally {
+      setApprovingApp(null);
+    }
+  }, []);
+
+  const handleNextFromDiscover = useCallback(() => {
+    completeOnboardingStep('discover');
+    setOnboardingStep('pick-template');
+  }, [completeOnboardingStep, setOnboardingStep]);
 
   // Load top 3 starter templates
   useEffect(() => {
@@ -126,6 +178,14 @@ export function useOnboardingState() {
     showAdoptionWizard,
     selectedReview,
     createdPersona,
+    // Desktop discovery
+    discoveredApps,
+    isScanning,
+    approvedApps,
+    approvingApp,
+    handleApproveApp,
+    handleNextFromDiscover,
+    // Template / adoption / execution
     handleTemplateSelect,
     handleNextFromPick,
     handleAdoptionComplete,

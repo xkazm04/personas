@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Sparkles, Loader2, Check, RotateCcw, Clock } from 'lucide-react';
+import { Sparkles, Loader2, Check, RotateCcw } from 'lucide-react';
+import { RecipePageFlipLoader } from '../../shared/RecipePageFlipLoader';
 import { useToastStore } from '@/stores/toastStore';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import type { RecipeVersion } from '@/lib/bindings/RecipeVersion';
@@ -8,6 +9,7 @@ import { useRecipeVersioning } from '@/hooks/design/template/useRecipeVersioning
 import { EstimatedProgressBar } from '@/features/shared/components/progress/EstimatedProgressBar';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
+import { VersionTimelineIllustration } from '../../shared/VersionTimelineIllustration';
 
 interface RecipeVersionsTabProps {
   recipe: RecipeDefinition;
@@ -126,6 +128,10 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
         {/* Progress */}
         {versioning.phase === 'versioning' && (
           <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <RecipePageFlipLoader className="text-primary" />
+              <span>Generating new version...</span>
+            </div>
             <EstimatedProgressBar isRunning estimatedSeconds={30} />
             <TerminalStrip
               lastLine={versioning.lines[versioning.lines.length - 1] ?? 'Starting...'}
@@ -216,56 +222,83 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
           </div>
         ) : versions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-sm text-muted-foreground/60 gap-2">
-            <Clock className="w-5 h-5" />
+            <VersionTimelineIllustration />
             No versions yet. Generate a new version to start tracking changes.
           </div>
         ) : (
-          <div className="space-y-2">
-            {versions.map((version, idx) => (
-              <div
-                key={version.id}
-                className="rounded-xl border border-border/40 bg-card/30 px-4 py-3 hover:border-border/60 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-foreground">
-                      v{version.version_number}
-                    </span>
-                    {idx === 0 && (
-                      <span className="rounded-lg bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-sm text-primary font-medium">
-                        Latest
-                      </span>
-                    )}
+          <div className="relative">
+            {/* Timeline connector line */}
+            {versions.length > 1 && (
+              <div className="absolute left-3 top-3 bottom-3 w-px bg-border/40" />
+            )}
+
+            <div className="space-y-2">
+              {versions.map((version, idx) => {
+                const isLatest = idx === 0;
+                const isRevertTarget = reverting === version.id;
+
+                return (
+                  <div key={version.id} className="relative flex gap-3">
+                    {/* Timeline node */}
+                    <div className="relative z-10 flex-shrink-0 mt-3">
+                      <div
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all ${
+                          isLatest
+                            ? 'bg-primary border-primary text-primary-foreground'
+                            : isRevertTarget
+                              ? 'bg-muted border-primary/30 text-muted-foreground ring-2 ring-primary/30 animate-pulse'
+                              : 'bg-muted border-border/60 text-muted-foreground'
+                        }`}
+                      >
+                        {version.version_number}
+                      </div>
+                    </div>
+
+                    {/* Version card */}
+                    <div className="flex-1 rounded-xl border border-border/40 bg-card/30 px-4 py-3 hover:border-border/60 transition-colors">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-foreground">
+                            v{version.version_number}
+                          </span>
+                          {isLatest && (
+                            <span className="rounded-lg bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-sm text-primary font-medium">
+                              Latest
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm text-muted-foreground/50">
+                          {new Date(version.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      {version.description && (
+                        <p className="text-sm text-foreground/70 mb-1">{version.description}</p>
+                      )}
+
+                      {version.changes_summary && (
+                        <p className="text-sm text-muted-foreground/60 mb-2">{version.changes_summary}</p>
+                      )}
+
+                      {!isLatest && (
+                        <button
+                          onClick={() => handleRevert(version.id)}
+                          disabled={isRevertTarget}
+                          className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
+                        >
+                          {isRevertTarget ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <RotateCcw className="w-3 h-3" />
+                          )}
+                          Revert to this version
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-sm text-muted-foreground/50">
-                    {new Date(version.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-
-                {version.description && (
-                  <p className="text-sm text-foreground/70 mb-1">{version.description}</p>
-                )}
-
-                {version.changes_summary && (
-                  <p className="text-sm text-muted-foreground/60 mb-2">{version.changes_summary}</p>
-                )}
-
-                {idx > 0 && (
-                  <button
-                    onClick={() => handleRevert(version.id)}
-                    disabled={reverting === version.id}
-                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
-                  >
-                    {reverting === version.id ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <RotateCcw className="w-3 h-3" />
-                    )}
-                    Revert to this version
-                  </button>
-                )}
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

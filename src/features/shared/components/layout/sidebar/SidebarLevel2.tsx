@@ -40,6 +40,8 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
   const setSettingsTab = usePersonaStore((s) => s.setSettingsTab);
   const devToolsTab = usePersonaStore((s) => s.devToolsTab);
   const setDevToolsTab = usePersonaStore((s) => s.setDevToolsTab);
+  const activeProjectId = usePersonaStore((s) => s.activeProjectId);
+  const projects = usePersonaStore((s) => s.projects);
 
   const isDev = import.meta.env.DEV;
   const isSimple = useSimpleMode();
@@ -181,8 +183,6 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
       );
 
     case 'dev-tools': {
-      const activeProjectId = usePersonaStore.getState().activeProjectId;
-      const projects = usePersonaStore.getState().projects;
       const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
       return (
         <>

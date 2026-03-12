@@ -60,7 +60,7 @@ export function ExecutionListRow({
               <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-sm font-bold ${
                 compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
               }`}>{compareLabel}</span>
-            ) : <span className="w-5 h-5 rounded-lg border border-primary/15 bg-background/30" />}
+            ) : <span className="w-5 h-5 rounded-lg border border-primary/20 bg-background/30" />}
           </div>
         )}
         <div className={`${compareMode ? 'col-span-2' : 'col-span-2'} flex items-center gap-2`}>{chevron}{statusBadge}{retryBadge}</div>
@@ -133,7 +133,7 @@ export function ExecutionListRow({
                 </div>
               )}
               <div className="flex items-center gap-2 pt-1">
-                <button onClick={(e) => { e.stopPropagation(); onRerun(execution.input_data); }} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors">
+                <button onClick={(e) => { e.stopPropagation(); onRerun(execution.input_data); }} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
                   <RotateCw className="w-3 h-3" />Re-run with same input
                 </button>
                 {execution.retry_count > 0 && (

@@ -1,4 +1,5 @@
 use rusqlite::{params, Row};
+use tracing::instrument;
 
 use crate::db::models::{
     CreateExposedResourceInput, CreateProvenanceInput, ExposedResource, ResourceProvenance,
@@ -7,17 +8,23 @@ use crate::db::models::{
 use crate::db::DbPool;
 use crate::error::AppError;
 
-// ── Row mappers ─────────────────────────────────────────────────────────
+// -- Row mappers ---------------------------------------------------------
 
 fn row_to_exposed_resource(row: &Row) -> rusqlite::Result<ExposedResource> {
+    let rt_str: String = row.get("resource_type")?;
+    let al_str: String = row.get("access_level")?;
     Ok(ExposedResource {
         id: row.get("id")?,
-        resource_type: row.get("resource_type")?,
+        resource_type: rt_str.parse().map_err(|e: AppError| {
+            rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e))
+        })?,
         resource_id: row.get("resource_id")?,
         display_name: row.get("display_name")?,
         description: row.get("description")?,
         fields_exposed: row.get("fields_exposed")?,
-        access_level: row.get("access_level")?,
+        access_level: al_str.parse().map_err(|e: AppError| {
+            rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e))
+        })?,
         requires_auth: row.get::<_, i32>("requires_auth")? != 0,
         tags: row.get("tags")?,
         created_at: row.get("created_at")?,
@@ -37,17 +44,33 @@ fn row_to_provenance(row: &Row) -> rusqlite::Result<ResourceProvenance> {
     })
 }
 
-// ── Exposed Resources ───────────────────────────────────────────────────
+// -- Exposed Resources ---------------------------------------------------
 
+#[instrument(skip(pool))]
 pub fn list_exposed_resources(pool: &DbPool) -> Result<Vec<ExposedResource>, AppError> {
     let conn = pool.get()?;
-    let mut stmt =
-        conn.prepare("SELECT * FROM exposed_resources ORDER BY created_at DESC")?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM exposed_resources
+         WHERE expires_at IS NULL OR expires_at > datetime('now')
+         ORDER BY created_at DESC",
+    )?;
     let rows = stmt.query_map([], row_to_exposed_resource)?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(AppError::Database)
 }
 
+/// Remove all exposed resources whose expiration time has passed.
+#[instrument(skip(pool))]
+pub fn cleanup_expired_exposures(pool: &DbPool) -> Result<u64, AppError> {
+    let conn = pool.get()?;
+    let deleted = conn.execute(
+        "DELETE FROM exposed_resources WHERE expires_at IS NOT NULL AND expires_at <= datetime('now')",
+        [],
+    )?;
+    Ok(deleted as u64)
+}
+
+#[instrument(skip(pool))]
 pub fn get_exposed_resource(pool: &DbPool, id: &str) -> Result<ExposedResource, AppError> {
     let conn = pool.get()?;
     conn.query_row(
@@ -63,6 +86,7 @@ pub fn get_exposed_resource(pool: &DbPool, id: &str) -> Result<ExposedResource, 
     })
 }
 
+#[instrument(skip(pool))]
 pub fn get_by_resource(
     pool: &DbPool,
     resource_type: &str,
@@ -78,6 +102,7 @@ pub fn get_by_resource(
     .map_err(AppError::Database)
 }
 
+#[instrument(skip(pool, input), fields(resource_type = %input.resource_type, resource_id = %input.resource_id))]
 pub fn create_exposed_resource(
     pool: &DbPool,
     input: CreateExposedResourceInput,
@@ -92,12 +117,12 @@ pub fn create_exposed_resource(
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
         params![
             id,
-            input.resource_type,
+            input.resource_type.to_string(),
             input.resource_id,
             input.display_name,
             input.description,
             fields_json,
-            input.access_level,
+            input.access_level.to_string(),
             input.requires_auth as i32,
             tags_json,
             input.expires_at,
@@ -106,6 +131,7 @@ pub fn create_exposed_resource(
     get_exposed_resource(pool, &id)
 }
 
+#[instrument(skip(pool, input))]
 pub fn update_exposed_resource(
     pool: &DbPool,
     id: &str,
@@ -113,53 +139,64 @@ pub fn update_exposed_resource(
 ) -> Result<ExposedResource, AppError> {
     let conn = pool.get()?;
 
-    if let Some(name) = &input.display_name {
-        conn.execute(
-            "UPDATE exposed_resources SET display_name = ?1 WHERE id = ?2",
-            params![name, id],
-        )?;
+    // Serialize JSON fields upfront so errors surface before any SQL runs.
+    let fields_json = input
+        .fields_exposed
+        .as_ref()
+        .map(|f| serde_json::to_string(f))
+        .transpose()?;
+    let tags_json = input
+        .tags
+        .as_ref()
+        .map(|t| serde_json::to_string(t))
+        .transpose()?;
+
+    // Build a single UPDATE with only the supplied columns to ensure atomicity.
+    let mut clauses: Vec<&str> = Vec::new();
+    let mut values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+
+    if let Some(ref name) = input.display_name {
+        clauses.push("display_name = ?");
+        values.push(Box::new(name.clone()));
     }
-    if let Some(desc) = &input.description {
-        conn.execute(
-            "UPDATE exposed_resources SET description = ?1 WHERE id = ?2",
-            params![desc, id],
-        )?;
+    if let Some(ref desc) = input.description {
+        clauses.push("description = ?");
+        values.push(Box::new(desc.clone()));
     }
-    if let Some(fields) = &input.fields_exposed {
-        let json = serde_json::to_string(fields)?;
-        conn.execute(
-            "UPDATE exposed_resources SET fields_exposed = ?1 WHERE id = ?2",
-            params![json, id],
-        )?;
+    if let Some(ref json) = fields_json {
+        clauses.push("fields_exposed = ?");
+        values.push(Box::new(json.clone()));
     }
-    if let Some(level) = &input.access_level {
-        conn.execute(
-            "UPDATE exposed_resources SET access_level = ?1 WHERE id = ?2",
-            params![level, id],
-        )?;
+    if let Some(ref level) = input.access_level {
+        clauses.push("access_level = ?");
+        values.push(Box::new(level.to_string()));
     }
-    if let Some(auth) = &input.requires_auth {
-        conn.execute(
-            "UPDATE exposed_resources SET requires_auth = ?1 WHERE id = ?2",
-            params![*auth as i32, id],
-        )?;
+    if let Some(auth) = input.requires_auth {
+        clauses.push("requires_auth = ?");
+        values.push(Box::new(auth as i32));
     }
-    if let Some(tags) = &input.tags {
-        let json = serde_json::to_string(tags)?;
-        conn.execute(
-            "UPDATE exposed_resources SET tags = ?1 WHERE id = ?2",
-            params![json, id],
-        )?;
+    if let Some(ref json) = tags_json {
+        clauses.push("tags = ?");
+        values.push(Box::new(json.clone()));
     }
-    if let Some(exp) = &input.expires_at {
-        conn.execute(
-            "UPDATE exposed_resources SET expires_at = ?1 WHERE id = ?2",
-            params![exp, id],
-        )?;
+    if let Some(ref exp) = input.expires_at {
+        clauses.push("expires_at = ?");
+        values.push(Box::new(exp.clone()));
     }
+
+    if !clauses.is_empty() {
+        values.push(Box::new(id.to_string()));
+        let sql = format!(
+            "UPDATE exposed_resources SET {} WHERE id = ?",
+            clauses.join(", ")
+        );
+        conn.execute(&sql, rusqlite::params_from_iter(values.iter().map(|v| v.as_ref())))?;
+    }
+
     get_exposed_resource(pool, id)
 }
 
+#[instrument(skip(pool))]
 pub fn delete_exposed_resource(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let changed = conn.execute(
@@ -169,6 +206,7 @@ pub fn delete_exposed_resource(pool: &DbPool, id: &str) -> Result<bool, AppError
     Ok(changed > 0)
 }
 
+#[instrument(skip(pool))]
 pub fn delete_by_resource(
     pool: &DbPool,
     resource_type: &str,
@@ -182,8 +220,9 @@ pub fn delete_by_resource(
     Ok(changed > 0)
 }
 
-// ── Provenance ──────────────────────────────────────────────────────────
+// -- Provenance ----------------------------------------------------------
 
+#[instrument(skip(pool))]
 pub fn list_provenance(pool: &DbPool) -> Result<Vec<ResourceProvenance>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
@@ -194,6 +233,7 @@ pub fn list_provenance(pool: &DbPool) -> Result<Vec<ResourceProvenance>, AppErro
         .map_err(AppError::Database)
 }
 
+#[instrument(skip(pool))]
 pub fn get_provenance(
     pool: &DbPool,
     resource_type: &str,
@@ -209,6 +249,7 @@ pub fn get_provenance(
     .map_err(AppError::Database)
 }
 
+#[instrument(skip(pool, input), fields(resource_type = %input.resource_type, resource_id = %input.resource_id))]
 pub fn upsert_provenance(
     pool: &DbPool,
     input: CreateProvenanceInput,
@@ -237,6 +278,6 @@ pub fn upsert_provenance(
         .ok_or_else(|| AppError::Internal("Provenance upsert failed".into()))
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────
+// -- Helpers -------------------------------------------------------------
 
 use rusqlite::OptionalExtension;

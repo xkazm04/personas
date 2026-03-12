@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
-// ── Types ───────────────────────────────────────────────────────
+// -- Types -------------------------------------------------------
 
 export interface TauriStreamOptions<TResult> {
   /** Tauri event name for progress/output lines. */
@@ -10,7 +10,7 @@ export interface TauriStreamOptions<TResult> {
   statusEvent: string;
   /** Extract the text line from a progress payload. */
   getLine: (payload: Record<string, unknown>) => string;
-  /** Handle a status payload — return a result to transition to `completedPhase`, or null to ignore. */
+  /** Handle a status payload -- return a result to transition to `completedPhase`, or null to ignore. */
   resolveStatus: (payload: Record<string, unknown>) => { result: TResult } | { error: string } | null;
   /** Phase to transition to when resolveStatus returns a result. */
   completedPhase: string;
@@ -119,7 +119,7 @@ export function useTauriStream<TResult>(
 
       unlistenersRef.current = [unlistenProgress, unlistenStatus];
 
-      // Start negotiation timeout — auto-reset to idle if no completion arrives.
+      // Start negotiation timeout -- auto-reset to idle if no completion arrives.
       clearTimeout_();
       timeoutRef.current = setTimeout(() => {
         cleanup();

@@ -4,10 +4,10 @@
  * from skeleton to real content is seamless.
  *
  * Variants:
- *  - "panel"  (default) — full page skeleton with header bar + content blocks
- *  - "tab"    — smaller skeleton for editor tab content (no header bar)
- *  - "subtab" — minimal skeleton for sub-tab content (list/grid placeholder)
- *  - "section" — full-height centered spinner for top-level section loads
+ *  - "panel"  (default) -- full page skeleton with header bar + content blocks
+ *  - "tab"    -- smaller skeleton for editor tab content (no header bar)
+ *  - "subtab" -- minimal skeleton for sub-tab content (list/grid placeholder)
+ *  - "section" -- full-height centered spinner for top-level section loads
  */
 
 interface PanelSkeletonProps {
@@ -63,7 +63,7 @@ export default function PanelSkeleton({ variant = 'panel' }: PanelSkeletonProps)
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-      {/* Header skeleton — matches ContentHeader height */}
+      {/* Header skeleton -- matches ContentHeader height */}
       <div className="flex items-center gap-3 px-6 py-4 border-b border-primary/10">
         <ShimmerBlock className="h-10 w-10 !rounded-xl" />
         <div className="space-y-2">
@@ -74,7 +74,7 @@ export default function PanelSkeleton({ variant = 'panel' }: PanelSkeletonProps)
         <ShimmerBlock className="h-8 w-24 !rounded-lg" />
       </div>
 
-      {/* Body skeleton — matches ContentBody padding */}
+      {/* Body skeleton -- matches ContentBody padding */}
       <div className="flex-1 p-6 space-y-4">
         <ShimmerBlock className="h-48" />
         <div className="grid grid-cols-2 gap-4">

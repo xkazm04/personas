@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ToolImpactData } from '../libs/toolImpactTypes';
+import { TOOLS_BORDER, TOOLS_INNER_SPACE, TOOLS_SECTION_GAP } from '@/lib/utils/designTokens';
 
 interface ToolImpactPanelProps {
   impact: ToolImpactData | undefined;
@@ -41,7 +42,7 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
         transition={{ duration: 0.2, ease: 'easeOut' }}
         className="overflow-hidden"
       >
-        <div className="px-3 pb-3 pt-1 space-y-2.5 border-t border-primary/8 mt-2">
+        <div className={`px-3 pb-3 pt-1 ${TOOLS_INNER_SPACE} border-t ${TOOLS_BORDER} ${TOOLS_SECTION_GAP}`}>
           <ImpactSection icon={<Layers className="w-3 h-3" />} label="Use Cases" badge={hasUseCases ? String(useCaseRefs.length) : undefined}>
             {hasUseCases ? (
               <div className="space-y-1">
@@ -119,7 +120,7 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
                 {coUsedTools.map((co) => (
                   <span
                     key={co.toolName}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm bg-primary/5 border border-primary/10 text-foreground/60"
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm bg-primary/5 border ${TOOLS_BORDER} text-foreground/60`}
                     title={`Co-used ${co.coOccurrences} time${co.coOccurrences !== 1 ? 's' : ''}`}
                   >
                     {co.toolName}
@@ -149,7 +150,7 @@ function ImpactSection({
         <span className="text-muted-foreground/50">{icon}</span>
         <span className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider">{label}</span>
         {badge && (
-          <span className="ml-auto text-sm font-mono px-1 py-px rounded bg-primary/8 text-muted-foreground/60 border border-primary/10">
+          <span className={`ml-auto text-sm font-mono px-1 py-px rounded bg-primary/8 text-muted-foreground/60 border ${TOOLS_BORDER}`}>
             {badge}
           </span>
         )}
@@ -161,7 +162,7 @@ function ImpactSection({
 
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col items-center px-2 py-1 rounded-lg bg-background/30 border border-primary/8">
+    <div className={`flex flex-col items-center px-2 py-1 rounded-lg bg-background/30 border ${TOOLS_BORDER}`}>
       <span className="text-sm font-mono text-foreground/70 tabular-nums">{value}</span>
       <span className="text-sm text-muted-foreground/50 uppercase tracking-wider">{label}</span>
     </div>

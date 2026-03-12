@@ -115,3 +115,6 @@ export const dryRunTrigger = (id: string) =>
 
 export const listCronAgents = () =>
   invoke<CronAgent[]>("list_cron_agents");
+
+export const seedMockCronAgent = () =>
+  invoke<CronAgent>("seed_mock_cron_agent", {});

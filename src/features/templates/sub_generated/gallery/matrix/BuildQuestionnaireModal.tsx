@@ -1,5 +1,5 @@
 /**
- * BuildQuestionnaireModal — portal-based questionnaire for CLI-generated
+ * BuildQuestionnaireModal -- portal-based questionnaire for CLI-generated
  * questions during persona build. Renders one question at a time with
  * card-based carousel animation, adapted from N8nQuestionStepper.
  */

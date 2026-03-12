@@ -7,7 +7,7 @@ use crate::db::models::{Persona, PersonaDesignReview};
 use super::topology::{BlueprintConnection, BlueprintMember, TopologyBlueprint, compute_dag_layout};
 
 // ============================================================================
-// LLM response types (internal — parsed from Claude output)
+// LLM response types (internal -- parsed from Claude output)
 // ============================================================================
 
 #[derive(Debug, Deserialize)]
@@ -101,16 +101,16 @@ pub fn build_llm_topology_prompt(
 {template_catalog_json}
 
 ## Available Pipeline Patterns
-1. "code-review-chain" — Linear: coder -> reviewer -> merger (with feedback)
-2. "content-pipeline" — Linear: researcher -> writer -> editor -> publisher (with feedback)
-3. "support-triage" — Router with conditional paths to specialists
-4. "etl-pipeline" — Linear: collector -> transformer -> validator -> loader
-5. "orchestrated-team" — Central orchestrator with parallel workers
-6. "quality-gate" — Build-test-review-deploy with feedback loop
-7. "research-synthesis" — Parallel researchers -> analyst -> reviewer (with feedback)
-8. "creative-studio" — Ideation -> design -> critique -> refine (with feedback)
-9. "approval-workflow" — Multi-level approval with escalation
-10. "custom" — Custom topology not matching any pattern
+1. "code-review-chain" -- Linear: coder -> reviewer -> merger (with feedback)
+2. "content-pipeline" -- Linear: researcher -> writer -> editor -> publisher (with feedback)
+3. "support-triage" -- Router with conditional paths to specialists
+4. "etl-pipeline" -- Linear: collector -> transformer -> validator -> loader
+5. "orchestrated-team" -- Central orchestrator with parallel workers
+6. "quality-gate" -- Build-test-review-deploy with feedback loop
+7. "research-synthesis" -- Parallel researchers -> analyst -> reviewer (with feedback)
+8. "creative-studio" -- Ideation -> design -> critique -> refine (with feedback)
+9. "approval-workflow" -- Multi-level approval with escalation
+10. "custom" -- Custom topology not matching any pattern
 
 ## Task
 Based on the user's request, compose an optimal team:
@@ -118,10 +118,10 @@ Based on the user's request, compose an optimal team:
 1. **Select agents**: Pick from "Available Personas" that best fit the user's needs. Select 2-6 agents.
 2. **Assign roles**: Each agent gets exactly one role: "orchestrator", "worker", "reviewer", or "router". At most one orchestrator.
 3. **Design connections**: Define how agents connect. Use connection types:
-   - "sequential" — output of source feeds input of target
-   - "conditional" — route based on conditions
-   - "parallel" — source fans out to multiple targets simultaneously
-   - "feedback" — target sends review/corrections back to source
+   - "sequential" -- output of source feeds input of target
+   - "conditional" -- route based on conditions
+   - "parallel" -- source fans out to multiple targets simultaneously
+   - "feedback" -- target sends review/corrections back to source
 4. **Suggest pattern**: Which of the 10 pipeline patterns best fits, or "custom".
 
 Return ONLY a JSON object:

@@ -1,5 +1,5 @@
 /**
- * DatabaseSetupCard — inline database setup within ConnectStep.
+ * DatabaseSetupCard -- inline database setup within ConnectStep.
  */
 import { useMemo } from 'react';
 import {

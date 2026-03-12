@@ -386,7 +386,7 @@ impl SectionAccumulator {
     }
 }
 
-// ── Section Validation ──────────────────────────────────────────
+// -- Section Validation ------------------------------------------
 
 fn validate_identity(data: &serde_json::Value) -> SectionValidation {
     let mut warnings = vec![];
@@ -398,7 +398,7 @@ fn validate_identity(data: &serde_json::Value) -> SectionValidation {
         .trim()
         .is_empty()
     {
-        warnings.push("Missing persona name — will use workflow name".into());
+        warnings.push("Missing persona name -- will use workflow name".into());
     }
 
     if data
@@ -469,7 +469,7 @@ fn validate_tool(data: &serde_json::Value, known_connectors: &[String]) -> Secti
         .trim()
         .is_empty()
     {
-        warnings.push("Missing implementation_guide — execution may fail".into());
+        warnings.push("Missing implementation_guide -- execution may fail".into());
     }
 
     // Validate connector reference against known connectors
@@ -506,7 +506,7 @@ fn validate_trigger(data: &serde_json::Value) -> SectionValidation {
     let valid_types = ["schedule", "polling", "webhook", "manual"];
     if !valid_types.contains(&trigger_type) {
         errors.push(format!(
-            "Invalid trigger type '{}' — must be one of: {}",
+            "Invalid trigger type '{}' -- must be one of: {}",
             trigger_type,
             valid_types.join(", ")
         ));

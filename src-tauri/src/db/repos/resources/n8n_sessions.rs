@@ -4,7 +4,7 @@ use crate::db::models::{CreateN8nSessionInput, N8nTransformSession, UpdateN8nSes
 use crate::db::DbPool;
 use crate::error::AppError;
 
-// ── Row mapper ────────────────────────────────────────────────
+// -- Row mapper ------------------------------------------------
 
 fn row_to_session(row: &Row) -> rusqlite::Result<N8nTransformSession> {
     Ok(N8nTransformSession {
@@ -25,7 +25,7 @@ fn row_to_session(row: &Row) -> rusqlite::Result<N8nTransformSession> {
     })
 }
 
-// ── CRUD ──────────────────────────────────────────────────────
+// -- CRUD ------------------------------------------------------
 
 pub fn create(
     pool: &DbPool,
@@ -126,9 +126,9 @@ pub fn update(
 /// the `transform_id`s that were active so the caller can clear in-memory job
 /// state (dead cancellation tokens, expired status channels, etc.).
 ///
-/// Sessions in 'awaiting_answers' are preserved — they have persisted questions
+/// Sessions in 'awaiting_answers' are preserved -- they have persisted questions
 /// and can resume without re-running the transform.
-/// Called at startup — their CLI processes died when the app last exited.
+/// Called at startup -- their CLI processes died when the app last exited.
 pub fn recover_interrupted_sessions(pool: &DbPool) -> Result<Vec<String>, AppError> {
     let conn = pool.get()?;
 
@@ -147,7 +147,7 @@ pub fn recover_interrupted_sessions(pool: &DbPool) -> Result<Vec<String>, AppErr
     conn.execute(
         "UPDATE n8n_transform_sessions
          SET status = 'failed',
-             error = 'App closed during transform — click Retry to resume',
+             error = 'App closed during transform -- click Retry to resume',
              updated_at = ?1
          WHERE status IN ('transforming', 'analyzing')",
         params![now],

@@ -50,7 +50,7 @@ export function MetricsCharts({ chartData, pieData, annotations = [], onFailureB
                   if (!viewBox) return null;
                   return (
                     <g>
-                      <title>{`${annotation.label} • ${new Date(annotation.timestamp).toLocaleString()}`}</title>
+                      <title>{`${annotation.label} * ${new Date(annotation.timestamp).toLocaleString()}`}</title>
                       <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={getAnnotationColor(annotation.type, annotation.color)} />
                     </g>
                   );
@@ -119,7 +119,7 @@ export function MetricsCharts({ chartData, pieData, annotations = [], onFailureB
                 if (!viewBox) return null;
                 return (
                   <g>
-                    <title>{`${annotation.label} • ${new Date(annotation.timestamp).toLocaleString()}`}</title>
+                    <title>{`${annotation.label} * ${new Date(annotation.timestamp).toLocaleString()}`}</title>
                     <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={getAnnotationColor(annotation.type, annotation.color)} />
                   </g>
                 );

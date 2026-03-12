@@ -22,7 +22,7 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
   const createTeamConnection = usePersonaStore((s) => s.createTeamConnection);
   const fetchTeamMemories = usePersonaStore((s) => s.fetchTeamMemories);
 
-  // ── Analytics ──────────────────────────────────────────────────────
+  // -- Analytics ------------------------------------------------------
   const fetchAnalytics = useCallback(async () => {
     if (!selectedTeamId) return;
     dispatch({ type: 'SET_ANALYTICS_LOADING', loading: true });
@@ -39,7 +39,7 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
 
   useEffect(() => { dispatch({ type: 'RESET_ON_TEAM_SWITCH' }); }, [selectedTeamId, dispatch]);
 
-  // ── Pipeline status listener ───────────────────────────────────────
+  // -- Pipeline status listener ---------------------------------------
   useEffect(() => {
     let cancelled = false;
     let unlistenFn: (() => void) | null = null;
@@ -67,14 +67,14 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
     return () => { cancelled = true; unlistenFn?.(); };
   }, [selectedTeamId, fetchAnalytics, fetchTeamMemories, dispatch]);
 
-  // ── Pipeline execution ─────────────────────────────────────────────
+  // -- Pipeline execution ---------------------------------------------
   const handleExecuteTeam = useCallback(async () => {
     if (!selectedTeamId || cs.pipelineRunning) return;
     try { dispatch({ type: 'SET_PIPELINE_RUNNING', running: true }); await api.executeTeam(selectedTeamId); }
     catch (err) { console.error('Failed to execute team:', err); dispatch({ type: 'SET_PIPELINE_RUNNING', running: false }); }
   }, [selectedTeamId, cs.pipelineRunning, dispatch]);
 
-  // ── Optimizer suggestions ──────────────────────────────────────────
+  // -- Optimizer suggestions ------------------------------------------
   const handleAcceptSuggestion = useCallback(async (suggestion: TopologySuggestion) => {
     if (!selectedTeamId) return;
     if (suggestion.suggested_source && suggestion.suggested_target) {
@@ -88,7 +88,7 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
     dispatch({ type: 'DISMISS_SUGGESTION', suggestionId });
   }, [dispatch]);
 
-  // ── Canvas assistant ───────────────────────────────────────────────
+  // -- Canvas assistant -----------------------------------------------
   const handleAssistantSuggest = useCallback(async (query: string) => {
     try { return await api.suggestTopologyLlm(query, selectedTeamId ?? undefined); }
     catch (err) { console.warn('LLM topology failed, falling back to keyword-based:', err); return api.suggestTopology(query, selectedTeamId ?? undefined); }
@@ -106,7 +106,7 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
     finally { dispatch({ type: 'SET_ASSISTANT_APPLYING', applying: false }); }
   }, [selectedTeamId, addTeamMember, createTeamConnection, fetchAnalytics, dispatch]);
 
-  // ── Dry-run ────────────────────────────────────────────────────────
+  // -- Dry-run --------------------------------------------------------
   const handleStartDryRun = useCallback(() => {
     if (cs.pipelineRunning || teamMembers.length === 0) return;
     dispatch({ type: 'SET_DRY_RUN_ACTIVE', active: true });

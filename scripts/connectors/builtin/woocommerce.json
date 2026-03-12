@@ -20,7 +20,7 @@
       "type": "text",
       "required": true,
       "placeholder": "ck_...",
-      "helpText": "From WooCommerce → Settings → Advanced → REST API → Add Key"
+      "helpText": "From WooCommerce -> Settings -> Advanced -> REST API -> Add Key"
     },
     {
       "key": "consumer_secret",
@@ -45,7 +45,7 @@
     "auth_type": "api_key",
     "auth_type_label": "API Key",
     "docs_url": "https://woocommerce.github.io/woocommerce-rest-api-docs/",
-    "setup_guide": "1. In your WordPress admin, go to WooCommerce → Settings → Advanced → REST API.\n2. Click 'Add Key'.\n3. Enter a description, select a user, and set permissions to Read/Write.\n4. Click 'Generate API key'.\n5. Copy the Consumer Key and Consumer Secret.\n6. Paste both values and your store URL here.",
+    "setup_guide": "1. In your WordPress admin, go to WooCommerce -> Settings -> Advanced -> REST API.\n2. Click 'Add Key'.\n3. Enter a description, select a user, and set permissions to Read/Write.\n4. Click 'Generate API key'.\n5. Copy the Consumer Key and Consumer Secret.\n6. Paste both values and your store URL here.",
     "pricing_tier": "free",
     "auth_methods": [
       {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}

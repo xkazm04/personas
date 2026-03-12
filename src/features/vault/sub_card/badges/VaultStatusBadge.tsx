@@ -165,7 +165,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
             }`}>
               {migrationResult.failed > 0
                 ? `Encrypted ${migrationResult.migrated}, failed ${migrationResult.failed}. Try again or restart the app.`
-                : `Done — ${migrationResult.migrated} credential${migrationResult.migrated !== 1 ? 's' : ''} encrypted.`}
+                : `Done -- ${migrationResult.migrated} credential${migrationResult.migrated !== 1 ? 's' : ''} encrypted.`}
             </div>
           )}
         </div>

@@ -3,6 +3,8 @@ use std::sync::Arc;
 use tauri::{Emitter, State};
 use tokio_util::sync::CancellationToken;
 
+use serde::Serialize;
+
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::n8n_transform::run_claude_prompt_text_inner;
 use crate::engine::db_query;
@@ -11,7 +13,7 @@ use crate::error::AppError;
 use crate::ipc_auth::require_privileged;
 use crate::AppState;
 
-// ── Job-specific extra state ────────────────────────────────────────────
+// -- Job-specific extra state --------------------------------------------
 
 #[derive(Clone, Default)]
 pub struct SchemaProposalExtra {
@@ -19,7 +21,14 @@ pub struct SchemaProposalExtra {
     pub explanation: Option<String>,
 }
 
-// ── Static job manager ──────────────────────────────────────────────────
+/// Schema proposal-specific extras flattened into BackgroundTaskSnapshot.
+#[derive(Clone, Serialize)]
+struct SchemaProposalSnapshotExtras {
+    proposed_sql: Option<String>,
+    explanation: Option<String>,
+}
+
+// -- Static job manager --------------------------------------------------
 
 static SCHEMA_PROPOSAL_JOBS: BackgroundJobManager<SchemaProposalExtra> =
     BackgroundJobManager::new(
@@ -38,7 +47,7 @@ pub fn cancel_schema_proposal_job(app: &tauri::AppHandle, proposal_id: &str) -> 
     SCHEMA_PROPOSAL_JOBS.cancel(app, proposal_id)
 }
 
-// ── Tauri commands ──────────────────────────────────────────────────────
+// -- Tauri commands ------------------------------------------------------
 
 #[tauri::command]
 pub async fn start_schema_proposal(
@@ -89,27 +98,24 @@ pub async fn get_schema_proposal_snapshot(
 ) -> Result<serde_json::Value, AppError> {
     require_privileged(&state, "get_schema_proposal_snapshot").await?;
 
-    let snapshot = SCHEMA_PROPOSAL_JOBS.get_snapshot_with(&proposal_id, |id, job| {
-        serde_json::json!({
-            "job_id": id,
-            "status": if job.status.is_empty() { "idle" } else { &job.status },
-            "error": job.error,
-            "lines": job.lines,
-            "proposed_sql": job.extra.proposed_sql,
-            "explanation": job.extra.explanation,
-        })
+    let snapshot = SCHEMA_PROPOSAL_JOBS.get_task_snapshot(&proposal_id, |extra| {
+        SchemaProposalSnapshotExtras {
+            proposed_sql: extra.proposed_sql.clone(),
+            explanation: extra.explanation.clone(),
+        }
     });
 
-    Ok(snapshot.unwrap_or_else(|| {
-        serde_json::json!({
+    Ok(match snapshot {
+        Some(s) => serde_json::to_value(s).unwrap_or_else(|_| serde_json::json!({})),
+        None => serde_json::json!({
             "job_id": proposal_id,
             "status": "idle",
             "error": null,
             "lines": [],
             "proposed_sql": null,
             "explanation": null,
-        })
-    }))
+        }),
+    })
 }
 
 #[tauri::command]
@@ -168,7 +174,7 @@ pub async fn validate_db_schema(
     }))
 }
 
-// ── Internal logic ──────────────────────────────────────────────────────
+// -- Internal logic ------------------------------------------------------
 
 struct RunParams {
     app: tauri::AppHandle,
@@ -319,7 +325,7 @@ async fn run_schema_proposal(params: RunParams) {
     }
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────
+// -- Helpers --------------------------------------------------------------
 
 fn emit_line(app: &tauri::AppHandle, proposal_id: &str, line: &str) {
     SCHEMA_PROPOSAL_JOBS.emit_line(app, proposal_id, line);
@@ -366,7 +372,7 @@ fn build_prompt(
          7. Output ALL SQL in a single ```sql code block\n\
          8. After the SQL block, briefly explain each table's purpose (2-3 sentences per table)\n\
          9. Do NOT recreate any tables that already exist\n\
-         10. Keep the schema minimal — only create tables the agent actually needs\n"
+         10. Keep the schema minimal -- only create tables the agent actually needs\n"
     ));
 
     prompt

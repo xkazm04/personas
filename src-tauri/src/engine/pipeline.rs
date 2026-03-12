@@ -1,4 +1,4 @@
-//! ExecutionPipeline — First-class definition of the backend execution flow.
+//! ExecutionPipeline -- First-class definition of the backend execution flow.
 //!
 //! The execution pipeline has 7 stages:
 //!   Initiate -> Validate -> CreateRecord -> SpawnEngine

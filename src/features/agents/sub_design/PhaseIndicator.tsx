@@ -37,7 +37,7 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
 
   const isError = phase === 'error';
 
-  // Don't render when idle — the indicator is only useful once the workflow starts
+  // Don't render when idle -- the indicator is only useful once the workflow starts
   if (phase === 'idle') return null;
 
   return (

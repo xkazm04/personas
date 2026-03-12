@@ -13,7 +13,7 @@ use crate::engine::desktop_security::{self, DesktopCapability};
 use crate::error::AppError;
 use crate::AppState;
 
-// ── Single bridge action ─────────────────────────────────────────────
+// -- Single bridge action ---------------------------------------------
 
 /// Execute a single action on a desktop bridge.
 ///
@@ -81,7 +81,7 @@ pub async fn execute_desktop_bridge(
     }
 }
 
-// ── Plan execution (runtime) ─────────────────────────────────────────
+// -- Plan execution (runtime) -----------------------------------------
 
 /// Execute a multi-step desktop plan via the local agent runtime.
 #[tauri::command]

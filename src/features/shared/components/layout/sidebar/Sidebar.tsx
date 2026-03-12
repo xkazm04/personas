@@ -123,6 +123,13 @@ export default function Sidebar() {
     setSidebarSection('personas');
   }, [selectPersona, setIsCreatingPersona, setSidebarSection]);
 
+  // Expose total sidebar width as a CSS variable so fixed-position elements
+  // (e.g. GuidedTour) can dock to the sidebar edge without hardcoded offsets.
+  useEffect(() => {
+    const width = IS_MOBILE ? 0 : collapsed ? 52 : 328; // Level1 + Level2
+    document.documentElement.style.setProperty('--sidebar-width', `${width}px`);
+  }, [collapsed]);
+
   const handleMobileDrawerToggle = useCallback((section: SidebarSection) => {
     if (sidebarSection === section) {
       setMobileDrawerOpen((o) => !o);

@@ -42,18 +42,18 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
     <div className="space-y-4">
       {/* Tab Switcher */}
       <div className="flex gap-1 p-1 rounded-xl bg-secondary/40 border border-primary/10 w-fit">
-        <button onClick={() => setActiveTab('detail')} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'detail' ? 'bg-primary/15 text-foreground/90 border border-primary/25' : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'}`}>
+        <button onClick={() => setActiveTab('detail')} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'detail' ? 'bg-primary/15 text-foreground/90 border border-primary/30' : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'}`}>
           <ListTree className="w-3.5 h-3.5" />Detail
         </button>
         {hasToolSteps && (
-          <button onClick={() => setActiveTab('inspector')} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'inspector' ? 'bg-primary/15 text-foreground/90 border border-primary/25' : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'}`}>
+          <button onClick={() => setActiveTab('inspector')} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'inspector' ? 'bg-primary/15 text-foreground/90 border border-primary/30' : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'}`}>
             <Search className="w-3.5 h-3.5" />Inspector
           </button>
         )}
-        <button onClick={() => setActiveTab('trace')} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'trace' ? 'bg-primary/15 text-foreground/90 border border-primary/25' : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'}`}>
+        <button onClick={() => setActiveTab('trace')} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'trace' ? 'bg-primary/15 text-foreground/90 border border-primary/30' : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'}`}>
           <Activity className="w-3.5 h-3.5" />Trace
         </button>
-        <button onClick={() => setActiveTab('pipeline')} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'pipeline' ? 'bg-primary/15 text-foreground/90 border border-primary/25' : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'}`}>
+        <button onClick={() => setActiveTab('pipeline')} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'pipeline' ? 'bg-primary/15 text-foreground/90 border border-primary/30' : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'}`}>
           <Zap className="w-3.5 h-3.5" />Pipeline
         </button>
         {isTerminalState(execution.status) && (
@@ -113,7 +113,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
           {execution.error_message && <ErrorDisplay errorMessage={execution.error_message} showRaw={showRaw} onErrorAction={handleErrorAction} />}
 
           {isTerminalState(execution.status) && (
-            <button onClick={() => setRerunInputData(execution.input_data || '{}')} className="flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/15 hover:bg-primary/20 hover:text-primary transition-colors">
+            <button onClick={() => setRerunInputData(execution.input_data || '{}')} className="flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
               <RotateCw className="w-3.5 h-3.5" />{execution.status === 'cancelled' ? 'Re-run execution' : 'Re-run with same input'}
             </button>
           )}

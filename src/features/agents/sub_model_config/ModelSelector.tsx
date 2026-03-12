@@ -7,7 +7,7 @@ import { CopilotTokenField } from './credentials/CopilotTokenField';
 import { CustomModelConfigForm } from './CustomModelConfigForm';
 import { BudgetControls } from './BudgetControls';
 
-// ── Provider brand colors ─────────────────────────────────────────────
+// -- Provider brand colors ---------------------------------------------
 const PROVIDER_COLORS: Record<string, string> = {
   anthropic: '#D97706',
   ollama: '#10B981',
@@ -15,7 +15,7 @@ const PROVIDER_COLORS: Record<string, string> = {
   custom: '#3B82F6',
 };
 
-// ── Model definitions ─────────────────────────────────────────────────
+// -- Model definitions -------------------------------------------------
 interface ModelDef {
   value: string;
   name: string;
@@ -58,7 +58,7 @@ const COLUMNS: ProviderColumn[] = [
   { key: 'custom', label: 'Custom', color: PROVIDER_COLORS.custom!, models: CUSTOM_MODELS },
 ];
 
-// ── Custom model config props ─────────────────────────────────────────
+// -- Custom model config props -----------------------------------------
 export interface CustomModelConfig {
   selectedProvider: ModelProvider;
   customModelName: string;
@@ -70,11 +70,11 @@ export interface CustomModelConfig {
   onAuthTokenChange: (t: string) => void;
 }
 
-// ── Main Component ────────────────────────────────────────────────────
+// -- Main Component ----------------------------------------------------
 interface ModelSelectorProps {
   selectedModel: string;
   onSelectModel: (value: string) => void;
-  /** Custom model expanded config — only needed in agent editor */
+  /** Custom model expanded config -- only needed in agent editor */
   customConfig?: CustomModelConfig;
   /** Budget controls */
   maxBudget?: number | null | '';
@@ -110,7 +110,7 @@ export function ModelSelector({
           Model &amp; Provider
         </h4>
       )}
-      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-3 space-y-3">
+      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
         {/* Three provider columns side by side */}
         <div className="grid grid-cols-4 gap-2">
           {COLUMNS.map((col) => (
@@ -133,7 +133,7 @@ export function ModelSelector({
                     onClick={() => onSelectModel(model.value)}
                     className={`w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-lg border transition-all transition-shadow duration-300 text-left ${
                       isSelected
-                        ? 'pl-2.5 border-primary/35 bg-primary/8'
+                        ? 'pl-2.5 border-primary/30 bg-primary/8'
                         : 'pl-2 border-transparent hover:bg-secondary/40 hover:border-primary/10'
                     }`}
                     style={{

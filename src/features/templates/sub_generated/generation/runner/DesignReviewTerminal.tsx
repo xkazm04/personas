@@ -13,7 +13,7 @@ interface TestRunResult {
   errored: number;
 }
 
-// ── Terminal Output ──────────────────────────────────────────────────
+// -- Terminal Output --------------------------------------------------
 
 interface TerminalOutputProps {
   lines: string[];
@@ -103,7 +103,7 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
   );
 }
 
-// ── Result Summary ──────────────────────────────────────────────────
+// -- Result Summary --------------------------------------------------
 
 export function ResultSummary({ result }: { result: TestRunResult }) {
   return (

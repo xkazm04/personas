@@ -32,7 +32,7 @@ function hydrate() {
       cache.set(normalise(entry.serviceName), entry);
     }
   } catch {
-    // corrupted data — start fresh
+    // corrupted data -- start fresh
   }
 }
 
@@ -40,7 +40,7 @@ function persist() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...cache.values()]));
   } catch {
-    // storage full or unavailable — cache still works in-memory
+    // storage full or unavailable -- cache still works in-memory
   }
 }
 

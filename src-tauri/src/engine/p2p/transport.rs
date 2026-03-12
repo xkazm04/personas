@@ -72,7 +72,7 @@ impl QuicTransport {
             AppError::Internal("QUIC endpoint not bound".into())
         })?;
 
-        // Use "personas" as the server name (SNI) — our verifier ignores it
+        // Use "personas" as the server name (SNI) -- our verifier ignores it
         let conn = endpoint
             .connect(addr, "personas")
             .map_err(|e| AppError::Internal(format!("QUIC connect error: {e}")))?

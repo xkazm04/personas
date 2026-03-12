@@ -12,7 +12,7 @@
 
 import type { AdoptionRequirement } from '@/lib/types/designTypes';
 
-// ── Type-Specific Validators ──────────────────────────────────────────
+// -- Type-Specific Validators ------------------------------------------
 
 /**
  * Cron expression: 5-6 fields separated by spaces.
@@ -20,7 +20,7 @@ import type { AdoptionRequirement } from '@/lib/types/designTypes';
  */
 const CRON_RE = /^(\*|[0-9*/,\-LW#]+)\s+(\*|[0-9*/,\-LW#]+)\s+(\*|[0-9*/,\-LW#?]+)\s+(\*|[0-9*/,\-LWa-zA-Z]+)\s+(\*|[0-9*/,\-a-zA-Z]+)(\s+(\*|[0-9*/,-]+))?$/;
 
-/** Email: basic RFC 5322 pattern — intentionally simple to avoid ReDoS */
+/** Email: basic RFC 5322 pattern -- intentionally simple to avoid ReDoS */
 const EMAIL_RE = /^[^\s@<>'"`;(){}[\]\\]+@[^\s@<>'"`;(){}[\]\\]+\.[a-zA-Z]{2,}$/;
 
 /** Maximum length for any single variable value */
@@ -29,7 +29,7 @@ const MAX_VALUE_LENGTH = 2000;
 /** Maximum length for JSON variable values (larger to accommodate structured data) */
 const MAX_JSON_VALUE_LENGTH = 10_000;
 
-// ── Structural Sanitisation Patterns ─────────────────────────────────────
+// -- Structural Sanitisation Patterns -------------------------------------
 // Uses structural patterns that target prompt *structure* exploits rather
 // than a blocklist of specific injection phrases (which are trivially
 // bypassed via synonyms, word-splitting, homoglyphs, and encoding tricks).
@@ -53,7 +53,7 @@ const STRUCTURAL_PATTERNS: RegExp[] = [
   // ANSI escape sequences
   // eslint-disable-next-line no-control-regex
   /\x1b\[[0-9;]*[a-zA-Z]/g,
-  // Non-BMP Unicode (homoglyph defence — e.g. Mathematical Alphanumeric Symbols)
+  // Non-BMP Unicode (homoglyph defence -- e.g. Mathematical Alphanumeric Symbols)
   /[\u{10000}-\u{10FFFF}]/gu,
 ];
 
@@ -61,7 +61,7 @@ const STRUCTURAL_PATTERNS: RegExp[] = [
 const BLOCKED_HOSTNAME_RE =
   /^(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+|0\.0\.0\.0|\[::1?\]|.*\.local)$/i;
 
-// ── Validation Result ──────────────────────────────────────────────────
+// -- Validation Result --------------------------------------------------
 
 export interface VariableValidation {
   valid: boolean;
@@ -69,7 +69,7 @@ export interface VariableValidation {
   error: string;
 }
 
-// ── Type Validators ────────────────────────────────────────────────────
+// -- Type Validators ----------------------------------------------------
 
 function validateUrl(value: string): VariableValidation {
   const trimmed = value.trim();
@@ -181,7 +181,7 @@ function validateJson(value: string): VariableValidation {
   return { valid: true, error: '' };
 }
 
-// ── Public API ──────────────────────────────────────────────────────────
+// -- Public API ----------------------------------------------------------
 
 /**
  * Validate a single variable value against its declared type schema.
@@ -228,7 +228,7 @@ export function validateVariable(
 
 /**
  * Validate all variable values against their requirements.
- * Returns a map of key → validation result (only for variables with errors).
+ * Returns a map of key -> validation result (only for variables with errors).
  */
 export function validateAllVariables(
   requirements: AdoptionRequirement[],
@@ -247,7 +247,7 @@ export function validateAllVariables(
   return { valid: Object.keys(errors).length === 0, errors };
 }
 
-// ── Sanitization ────────────────────────────────────────────────────────
+// -- Sanitization --------------------------------------------------------
 
 /**
  * Strip structural patterns from a variable value.
@@ -271,7 +271,7 @@ function escapeForPromptContext(text: string): string {
     // Escape triple backticks (could break markdown code fences)
     .replace(/```/g, '\\`\\`\\`')
     // Escape section-like delimiters
-    .replace(/^---+$/gm, '———')
+    .replace(/^---+$/gm, '------')
     // Neutralize {{...}} patterns to prevent recursive substitution
     .replace(/\{\{(\w+)\}\}/g, '{ {$1} }');
 }
@@ -309,17 +309,17 @@ export function sanitizeVariableValue(
       break;
     }
     case 'cron': {
-      // Cron expressions are tightly formatted — just trim whitespace
+      // Cron expressions are tightly formatted -- just trim whitespace
       clean = clean.trim().replace(/\s+/g, ' ');
       break;
     }
     case 'email': {
-      // Email is tightly formatted — just trim
+      // Email is tightly formatted -- just trim
       clean = clean.trim();
       break;
     }
     case 'number': {
-      // Numbers are tightly constrained — trim and strip non-numeric noise
+      // Numbers are tightly constrained -- trim and strip non-numeric noise
       clean = clean.trim();
       break;
     }
@@ -330,7 +330,7 @@ export function sanitizeVariableValue(
       break;
     }
     case 'select': {
-      // Select values come from a predefined list — strip injection only
+      // Select values come from a predefined list -- strip injection only
       clean = stripStructuralPatterns(clean);
       break;
     }
@@ -366,7 +366,7 @@ export function sanitizeVariableValues(
   return sanitized;
 }
 
-// ── Display Sanitization (UI XSS prevention) ────────────────────────────
+// -- Display Sanitization (UI XSS prevention) ----------------------------
 
 /**
  * Sanitize a variable value for safe rendering in the UI.

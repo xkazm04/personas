@@ -35,7 +35,7 @@ pub struct PersonaSlaStats {
     pub successful: i64,
     pub failed: i64,
     pub cancelled: i64,
-    /// Success rate as 0.0–1.0.
+    /// Success rate as 0.0--1.0.
     pub success_rate: f64,
     pub avg_duration_ms: f64,
     pub p95_duration_ms: f64,
@@ -97,7 +97,7 @@ pub fn get_sla_dashboard(
     let days = days.unwrap_or(30);
     let date_filter = format!("-{} days", days);
 
-    // ── Per-persona aggregates ──────────────────────────────────────────
+    // -- Per-persona aggregates ------------------------------------------
     let mut stmt = conn.prepare(
         "SELECT
             e.persona_id,
@@ -143,7 +143,7 @@ pub fn get_sla_dashboard(
         .filter_map(|r| r.ok())
         .collect();
 
-    // ── P95 duration per persona (separate query for percentile) ────────
+    // -- P95 duration per persona (separate query for percentile) --------
     let mut p95_stmt = conn.prepare(
         "SELECT duration_ms FROM persona_executions
          WHERE persona_id = ?1
@@ -153,7 +153,7 @@ pub fn get_sla_dashboard(
          ORDER BY duration_ms ASC",
     )?;
 
-    // ── MTBF per persona: timestamps of failures ────────────────────────
+    // -- MTBF per persona: timestamps of failures ------------------------
     let mut fail_ts_stmt = conn.prepare(
         "SELECT created_at FROM persona_executions
          WHERE persona_id = ?1
@@ -162,7 +162,7 @@ pub fn get_sla_dashboard(
          ORDER BY created_at ASC",
     )?;
 
-    // ── Consecutive failures per persona ────────────────────────────────
+    // -- Consecutive failures per persona --------------------------------
     let mut consec_stmt = conn.prepare(
         "SELECT status FROM persona_executions
          WHERE persona_id = ?1
@@ -170,7 +170,7 @@ pub fn get_sla_dashboard(
          LIMIT 20",
     )?;
 
-    // ── Auto-healed count per persona ───────────────────────────────────
+    // -- Auto-healed count per persona -----------------------------------
     let mut healed_stmt = conn.prepare(
         "SELECT COUNT(*) FROM persona_healing_issues
          WHERE persona_id = ?1 AND auto_fixed = 1",
@@ -231,7 +231,7 @@ pub fn get_sla_dashboard(
         });
     }
 
-    // ── Global aggregates ───────────────────────────────────────────────
+    // -- Global aggregates -----------------------------------------------
     let g_total: i64 = persona_stats.iter().map(|p| p.total_executions).sum();
     let g_success: i64 = persona_stats.iter().map(|p| p.successful).sum();
     let g_failed: i64 = persona_stats.iter().map(|p| p.failed).sum();
@@ -256,7 +256,7 @@ pub fn get_sla_dashboard(
         active_persona_count: persona_stats.len() as i64,
     };
 
-    // ── Healing summary ─────────────────────────────────────────────────
+    // -- Healing summary -------------------------------------------------
     let open_issues: i64 = conn
         .query_row(
             "SELECT COUNT(*) FROM persona_healing_issues WHERE status = 'open'",
@@ -296,7 +296,7 @@ pub fn get_sla_dashboard(
         knowledge_patterns,
     };
 
-    // ── Daily trend ─────────────────────────────────────────────────────
+    // -- Daily trend -----------------------------------------------------
     let mut daily_stmt = conn.prepare(
         "SELECT
             DATE(created_at) AS date,

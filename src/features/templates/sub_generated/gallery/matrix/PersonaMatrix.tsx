@@ -13,7 +13,7 @@ import type { MatrixEditState, MatrixEditCallbacks } from './EditableMatrixCells
 import { ConnectorEditCell, TriggerEditCell, ReviewEditCell, MemoryEditCell, MessagesEditCell, ErrorEditCell, UseCaseEditCell } from './EditableMatrixCells';
 import { MatrixCommandCenter } from './MatrixCommandCenter';
 
-/** @deprecated Single theme — kept for backward compatibility */
+/** @deprecated Single theme -- kept for backward compatibility */
 export type MatrixTheme = 'neon';
 /** @deprecated */
 export type MatrixLayout = 'orbit';
@@ -80,7 +80,7 @@ interface PersonaMatrixEditProps extends PersonaMatrixBaseProps {
 
 export type PersonaMatrixProps = PersonaMatrixViewProps | PersonaMatrixEditProps;
 
-// ── Extraction helpers ───────────────────────────────────────────────
+// -- Extraction helpers -----------------------------------------------
 
 function describeCron(cron: string): string {
   const p = cron.trim().split(/\s+/);
@@ -168,7 +168,7 @@ const TRIGGER_LABELS: Record<string, string> = {
   manual: 'Manually triggered', event: 'Reacts to events',
 };
 
-// ── Cell renderer (Neon, dark+light aware) ───────────────────────────
+// -- Cell renderer (Neon, dark+light aware) ---------------------------
 
 function MatrixCellRenderer({ cell, isEditMode, buildLocked }: { cell: MatrixCell; isEditMode: boolean; buildLocked?: boolean }) {
   const Watermark = cell.watermark;
@@ -203,7 +203,7 @@ function MatrixCellRenderer({ cell, isEditMode, buildLocked }: { cell: MatrixCel
   );
 }
 
-// ── Main Component ───────────────────────────────────────────────────
+// -- Main Component ---------------------------------------------------
 
 export function PersonaMatrix(props: PersonaMatrixProps) {
   const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine } = props;
@@ -276,7 +276,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
       <div className="grid grid-cols-[1fr_1.3fr_1fr] gap-2.5">
         {firstFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} />))}
         <div className="relative rounded-xl border border-primary/30 p-5 ring-1 ring-primary/10 shadow-2xl shadow-primary/5 overflow-hidden">
-          {/* Neon background — theme-colored radial glow */}
+          {/* Neon background -- theme-colored radial glow */}
           <div className="absolute inset-0 bg-card-bg" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_70%)] opacity-[0.07]" />
           <div className="relative z-10">{commandCenter}</div>

@@ -1,4 +1,5 @@
 import {
+  Monitor,
   FlaskConical,
   Download,
   Play,
@@ -8,6 +9,7 @@ import {
 import type { OnboardingStep } from '@/stores/slices/system/onboardingSlice';
 
 export const STEPS: { key: OnboardingStep; label: string; icon: typeof FlaskConical }[] = [
+  { key: 'discover', label: 'Desktop', icon: Monitor },
   { key: 'pick-template', label: 'Pick Template', icon: FlaskConical },
   { key: 'adopt', label: 'Adopt Agent', icon: Download },
   { key: 'execute', label: 'First Run', icon: Play },

@@ -88,7 +88,7 @@ export function ExecutionListRow({
                 {compareLabel}
               </span>
             ) : (
-              <span className="w-5 h-5 rounded-lg border border-primary/15 bg-background/30" />
+              <span className="w-5 h-5 rounded-lg border border-primary/20 bg-background/30" />
             )}
           </div>
         )}

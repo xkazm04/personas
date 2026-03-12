@@ -6,7 +6,7 @@ import {
 } from '@/api/vault/database/schemaProposal';
 import { executeDbQuery } from '@/api/vault/database/dbSchema';
 
-// ── Types ────────────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------------
 
 export type SchemaPhase =
   | 'idle'
@@ -44,7 +44,7 @@ interface UseSchemaProposalReturn {
   setProposedSQL: (sql: string) => void;
 }
 
-// ── Hook ─────────────────────────────────────────────────────────────
+// -- Hook -------------------------------------------------------------
 
 export function useSchemaProposal({
   templateName,
@@ -102,7 +102,7 @@ export function useSchemaProposal({
         if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
           if (pollingRef.current) clearInterval(pollingRef.current);
           setPhase('failed');
-          setError('Schema proposal timed out — backend unreachable after repeated failures.');
+          setError('Schema proposal timed out -- backend unreachable after repeated failures.');
         }
       }
     }, 1500);
@@ -112,7 +112,7 @@ export function useSchemaProposal({
     // If predefined SQL is provided (from template database_setup), skip CLI
     if (predefinedSQL) {
       setProposedSQL(predefinedSQL);
-      setExplanation('Schema defined by template — ready to create tables.');
+      setExplanation('Schema defined by template -- ready to create tables.');
       setPhase('proposed');
       setError(null);
       return;

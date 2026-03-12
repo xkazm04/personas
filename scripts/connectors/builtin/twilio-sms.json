@@ -12,7 +12,7 @@
       "type": "text",
       "required": true,
       "placeholder": "AC...",
-      "helpText": "From Twilio Console → Account → Account SID"
+      "helpText": "From Twilio Console -> Account -> Account SID"
     },
     {
       "key": "auth_token",
@@ -20,7 +20,7 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Twilio Console → Account → Auth Token"
+      "helpText": "From Twilio Console -> Account -> Auth Token"
     }
   ],
   "healthcheck_config": {

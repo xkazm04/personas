@@ -45,7 +45,7 @@ function avgImportance(memories: TeamMemory[]): number {
 
 /**
  * Compute a diff between two sets of memories from different runs.
- * Matching is by memory ID — memories created in different runs have different IDs.
+ * Matching is by memory ID -- memories created in different runs have different IDs.
  */
 export function computeMemoryDiff(memoriesA: TeamMemory[], memoriesB: TeamMemory[]): MemoryRunDiff {
   const idsA = new Set(memoriesA.map((m) => m.id));

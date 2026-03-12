@@ -24,7 +24,7 @@ export function ConnectorIconButton({
   return (
     <div
       className="relative flex-shrink-0"
-      title={`${meta.label}${isReady ? '' : ' — click to add credential'}`}
+      title={`${meta.label}${isReady ? '' : ' -- click to add credential'}`}
       data-testid={`connector-readiness-dot-${connectorName}`}
     >
       <div

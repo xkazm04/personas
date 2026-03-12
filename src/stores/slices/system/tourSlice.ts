@@ -1,7 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { PersonaStore } from "../../storeTypes";
 
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
 export type TourStepId =
   | "credentials-catalog"
@@ -38,7 +38,7 @@ export const TOUR_STEPS: TourStepDef[] = [
     id: "template-gallery",
     title: "Agentic Templates",
     description:
-      "Templates are pre-built agent blueprints. Look for the 'AI Weekly Research' template — it's marked as Ready because it needs no external connectors. It combines LLM research, database storage, and messaging into one agent.",
+      "Templates are pre-built agent blueprints. Look for the 'AI Weekly Research' template -- it's marked as Ready because it needs no external connectors. It combines LLM research, database storage, and messaging into one agent.",
     hint: "Find the 'AI Weekly Research' template and click 'Adopt' to create your first agent.",
     nav: { sidebarSection: "design-reviews", subTab: "generated", subTabSetter: "setTemplateTab" },
     completeOn: "tour:template-adopted",
@@ -47,7 +47,7 @@ export const TOUR_STEPS: TourStepDef[] = [
     id: "agent-execution",
     title: "Your First Agent",
     description:
-      "This is your newly created agent. From here you can review its prompt, connectors, and triggers. Let's run it manually to see it in action — click the play button in the Lab tab.",
+      "This is your newly created agent. From here you can review its prompt, connectors, and triggers. Let's run it manually to see it in action -- click the play button in the Lab tab.",
     hint: "Navigate to the Lab tab and click 'Run' to execute your agent.",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:execution-complete",
@@ -90,7 +90,7 @@ function persistState(state: PersistedTourState) {
   }
 }
 
-// ── Slice interface ─────────────────────────────────────────────────────
+// -- Slice interface -----------------------------------------------------
 
 export interface TourSlice {
   tourActive: boolean;

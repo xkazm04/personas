@@ -32,7 +32,7 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
     <div className="space-y-6">
       {/* Metrics Summary Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 3xl:gap-5 4xl:gap-6">
-        <div className="rounded-xl border border-primary/15 bg-secondary/40 p-4 space-y-1.5">
+        <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
           <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Zap className="w-3 h-3" />
             Input Tokens
@@ -42,7 +42,7 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
           </div>
         </div>
 
-        <div className="rounded-xl border border-primary/15 bg-secondary/40 p-4 space-y-1.5">
+        <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
           <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Zap className="w-3 h-3" />
             Output Tokens
@@ -52,7 +52,7 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
           </div>
         </div>
 
-        <div className="rounded-xl border border-primary/15 bg-secondary/40 p-4 space-y-1.5">
+        <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
           <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <DollarSign className="w-3 h-3" />
             Cost
@@ -62,7 +62,7 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
           </div>
         </div>
 
-        <div className="rounded-xl border border-primary/15 bg-secondary/40 p-4 space-y-1.5">
+        <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
           <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Clock className="w-3 h-3" />
             Duration
@@ -74,7 +74,7 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
       </div>
 
       {/* Cost Breakdown Bar */}
-      <div className="rounded-xl border border-primary/15 bg-secondary/40 p-4">
+      <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4">
         <CostBreakdownBar model={model} inputTokens={execution.input_tokens} outputTokens={execution.output_tokens} />
       </div>
 
@@ -144,7 +144,7 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
 
       {steps.length === 0 && (
         <div className="text-center py-8">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/15 flex items-center justify-center">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
             <Wrench className="w-6 h-6 text-muted-foreground/80" />
           </div>
           <p className="text-sm text-muted-foreground/90">No tool calls recorded</p>

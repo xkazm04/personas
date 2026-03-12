@@ -3,15 +3,15 @@
  * These validate that CLI responses can be parsed by the app's actual parsing logic.
  *
  * Mirrors:
- *   - engine/design.rs           → extractDesignResult
- *   - engine/credential_design.rs → extractCredentialDesignResult, extractHealthcheckResult
- *   - n8n_transform/prompts.rs   → extractTransformQuestions, parseSections
- *   - engine/test_runner.rs      → parseTestScenarios
+ *   - engine/design.rs           -> extractDesignResult
+ *   - engine/credential_design.rs -> extractCredentialDesignResult, extractHealthcheckResult
+ *   - n8n_transform/prompts.rs   -> extractTransformQuestions, parseSections
+ *   - engine/test_runner.rs      -> parseTestScenarios
  */
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Shared helpers
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 /** Extract the first JSON block from text (inside ```json ... ``` or bare). */
 function extractJsonBlock(text: string): unknown | null {
@@ -50,9 +50,9 @@ function extractJsonBlock(text: string): unknown | null {
   return null;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 1. Persona Design — mirrors extract_design_result()
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 1. Persona Design -- mirrors extract_design_result()
+// ===========================================================================
 
 export interface DesignResult {
   structured_prompt: {
@@ -134,9 +134,9 @@ export function extractDesignResult(text: string): DesignOutput | null {
   return null;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 2. Credential Design — mirrors extract_credential_design_result()
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 2. Credential Design -- mirrors extract_credential_design_result()
+// ===========================================================================
 
 export interface CredentialDesignResult {
   match_existing: string | null;
@@ -182,9 +182,9 @@ export function extractCredentialDesignResult(text: string): CredentialDesignRes
   return obj as unknown as CredentialDesignResult;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 3. Credential Healthcheck — mirrors extract_healthcheck_result()
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 3. Credential Healthcheck -- mirrors extract_healthcheck_result()
+// ===========================================================================
 
 export interface HealthcheckResult {
   skip: boolean;
@@ -211,9 +211,9 @@ export function extractHealthcheckResult(text: string): HealthcheckResult | null
   return obj as unknown as HealthcheckResult;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 4. N8N Transform Questions — mirrors extract_questions_output()
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 4. N8N Transform Questions -- mirrors extract_questions_output()
+// ===========================================================================
 
 export interface TransformQuestion {
   id: string;
@@ -274,9 +274,9 @@ export function extractTransformOutput(text: string): N8nTransformOutput | null 
   return null;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 5. Section-Delimited Output — mirrors SectionAccumulator / parse_persona_output()
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 5. Section-Delimited Output -- mirrors SectionAccumulator / parse_persona_output()
+// ===========================================================================
 
 export type SectionType = 'identity' | 'prompt' | 'tool' | 'trigger' | 'connector' | 'design_context' | 'end';
 
@@ -317,9 +317,9 @@ export function parseSections(text: string): ParsedSection[] {
   return sections;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 6. Test Scenarios — mirrors parse_scenarios_from_output()
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 6. Test Scenarios -- mirrors parse_scenarios_from_output()
+// ===========================================================================
 
 export interface TestScenario {
   name: string;
@@ -349,9 +349,9 @@ export function parseTestScenarios(text: string): TestScenario[] | null {
   return json as TestScenario[];
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 7. Persona Execution — mirrors engine/parser.rs protocol extraction
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 7. Persona Execution -- mirrors engine/parser.rs protocol extraction
+// ===========================================================================
 
 export interface OutcomeAssessment {
   accomplished: boolean;
@@ -439,18 +439,18 @@ export function extractPersonaExecutionResult(text: string): PersonaExecutionRes
   return result;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 8. Template Adoption — reuses extractTransformOutput + TransformPersona
+// ===========================================================================
+// 8. Template Adoption -- reuses extractTransformOutput + TransformPersona
 //    (same TRANSFORM_QUESTIONS / persona JSON dual format as n8n transform)
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 // Template adoption uses the same output format as N8N transform.
 // Re-export extractTransformOutput for use as extractTemplateAdoptResult.
 export const extractTemplateAdoptResult = extractTransformOutput;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 9. Query Debug — mirrors query_debug.rs extract_code_block()
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 9. Query Debug -- mirrors query_debug.rs extract_code_block()
+// ===========================================================================
 
 export interface QueryDebugResult {
   correctedQuery: string;

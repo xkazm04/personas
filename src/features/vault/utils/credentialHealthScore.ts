@@ -1,12 +1,12 @@
 import type { AnomalyScore, Remediation, RotationStatus } from '@/api/vault/rotation';
 import type { HealthResult } from '@/features/vault/hooks/health/useCredentialHealth';
 
-// ── Score tiers ──────────────────────────────────────────────────────
+// -- Score tiers ------------------------------------------------------
 
 export type HealthTier = 'critical' | 'degraded' | 'warning' | 'healthy' | 'unknown';
 
 export interface CompositeHealthScore {
-  /** 0 – 100 numeric score (lower = worse). */
+  /** 0 -- 100 numeric score (lower = worse). */
   score: number;
   /** Tier derived from the score. */
   tier: HealthTier;
@@ -16,13 +16,13 @@ export interface CompositeHealthScore {
   worstSignal: 'healthcheck' | 'anomaly' | 'rotation' | 'none';
 }
 
-// ── Weights ──────────────────────────────────────────────────────────
+// -- Weights ----------------------------------------------------------
 
 const WEIGHT_HEALTHCHECK = 0.4;
 const WEIGHT_ANOMALY = 0.4;
 const WEIGHT_ROTATION = 0.2;
 
-// ── Remediation severity mapping ─────────────────────────────────────
+// -- Remediation severity mapping -------------------------------------
 
 const REMEDIATION_SCORE: Record<Remediation, number> = {
   healthy: 100,
@@ -32,7 +32,7 @@ const REMEDIATION_SCORE: Record<Remediation, number> = {
   disable: 0,
 };
 
-// ── Helpers ──────────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------------
 
 function healthcheckScore(result: HealthResult | null): number {
   if (result === null) return 50; // untested = neutral
@@ -64,7 +64,7 @@ function tierFromScore(score: number): HealthTier {
   return 'healthy';
 }
 
-// ── Public API ───────────────────────────────────────────────────────
+// -- Public API -------------------------------------------------------
 
 /**
  * Compute a composite credential health score from all three observability signals.
@@ -138,7 +138,7 @@ function rotationReason(status: RotationStatus | null): string {
   return `Key expires in ${days}d`;
 }
 
-// ── Tier styling ─────────────────────────────────────────────────────
+// -- Tier styling -----------------------------------------------------
 
 export interface TierStyle {
   dotColor: string;

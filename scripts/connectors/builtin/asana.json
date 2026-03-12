@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "1/12345:abcdef...",
-      "helpText": "From Asana → My Settings → Apps → Manage Developer Apps → Personal Access Tokens"
+      "helpText": "From Asana -> My Settings -> Apps -> Manage Developer Apps -> Personal Access Tokens"
     }
   ],
   "healthcheck_config": {
@@ -31,7 +31,7 @@
     "auth_type": "pat",
     "auth_type_label": "PAT",
     "docs_url": "https://developers.asana.com/docs/personal-access-token",
-    "setup_guide": "1. Open Asana and click your profile photo (top right)\n2. Go to My Settings → Apps → Manage Developer Apps\n3. Under Personal Access Tokens, click 'Create new token'\n4. Give it a description and click 'Create token'\n5. Copy the token (format: 1/12345:abcdef...) and paste it here",
+    "setup_guide": "1. Open Asana and click your profile photo (top right)\n2. Go to My Settings -> Apps -> Manage Developer Apps\n3. Under Personal Access Tokens, click 'Create new token'\n4. Give it a description and click 'Create token'\n5. Copy the token (format: 1/12345:abcdef...) and paste it here",
     "pricing_tier": "freemium",
     "auth_methods": [
       {"id": "pat", "label": "PAT", "type": "credential", "is_default": true},

@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Wand2, Loader2, X } from 'lucide-react';
 
-// ── Streaming Log Panel ────────────────────────────────────────────
+// -- Streaming Log Panel --------------------------------------------
 
 interface StreamingLogPanelProps {
   outputLines: string[];
@@ -43,7 +43,7 @@ export function StreamingLogPanel({ outputLines, isGenerating, error, onDismiss 
   );
 }
 
-// ── Builder Action Bar ─────────────────────────────────────────────
+// -- Builder Action Bar ---------------------------------------------
 
 interface BuilderActionBarProps {
   hasIntent: boolean;

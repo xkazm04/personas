@@ -29,7 +29,7 @@ export const deleteTestRun = (id: string) =>
 export const cancelTestRun = (id: string) =>
   invoke<void>("cancel_test_run", { id });
 
-// â”€â”€ Draft Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Draft Validation --------------------------------------------
 
 export interface ToolIssue {
   tool_name: string;

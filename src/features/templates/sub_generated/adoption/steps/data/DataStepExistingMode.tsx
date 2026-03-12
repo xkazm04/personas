@@ -1,5 +1,5 @@
 /**
- * DataStepExistingMode — use-existing-tables section for DataStep.
+ * DataStepExistingMode -- use-existing-tables section for DataStep.
  */
 import {
   Table2,

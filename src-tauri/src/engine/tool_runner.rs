@@ -6,9 +6,14 @@ use ts_rs::TS;
 
 use crate::db::models::PersonaToolDefinition;
 use crate::db::repos::resources::automations as automation_repo;
+use crate::db::repos::resources::tool_audit_log;
 use crate::db::DbPool;
 use crate::engine::automation_runner::invoke_automation;
+use crate::engine::rate_limiter::{RateLimiter, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW};
 use crate::error::AppError;
+
+/// Default timeout for direct tool invocations (script and API calls).
+const DIRECT_TOOL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
 
 /// Result of a direct (no-LLM) tool invocation.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -29,13 +34,34 @@ pub struct ToolInvocationResult {
 /// For **API** tools (has `implementation_guide` with a `Curl:` line): extracts the curl command,
 /// tokenizes it, substitutes `$ENV_VAR` placeholders, and executes via `Command::new("curl")`
 /// with individual `.arg()` calls (no shell involved, preventing command injection).
+///
+/// Applies per-tool rate limiting, wraps invocations in a timeout, and logs
+/// structured audit entries for every execution.
 pub async fn invoke_tool_direct(
     pool: &DbPool,
     tool: &PersonaToolDefinition,
     persona_id: &str,
     persona_name: &str,
     input_json: &str,
+    rate_limiter: Option<&RateLimiter>,
 ) -> Result<ToolInvocationResult, AppError> {
+    // Per-tool rate limiting
+    if let Some(rl) = rate_limiter {
+        let rate_key = format!("tool:{}", tool.id);
+        if let Err(retry_after) = rl.check(&rate_key, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW) {
+            tracing::warn!(
+                tool_name = %tool.name,
+                tool_id = %tool.id,
+                retry_after_secs = retry_after,
+                "Direct tool execution rate limited"
+            );
+            return Err(AppError::RateLimited(format!(
+                "Tool '{}' rate limited. Retry after {retry_after}s.",
+                tool.name
+            )));
+        }
+    }
+
     let start = Instant::now();
 
     // Resolve credential env vars using the existing runner infrastructure
@@ -58,43 +84,73 @@ pub async fn invoke_tool_direct(
     let result = if tool.category == "automation" {
         invoke_automation_tool(pool, tool, input_json).await
     } else if !tool.script_path.is_empty() {
-        invoke_script(tool, input_json, &env_map).await
+        // Wrap script execution in a timeout
+        tokio::time::timeout(DIRECT_TOOL_TIMEOUT, invoke_script(tool, input_json, &env_map))
+            .await
+            .map_err(|_| AppError::Execution(format!(
+                "Tool '{}' timed out after {}s",
+                tool.name, DIRECT_TOOL_TIMEOUT.as_secs()
+            )))?
     } else if let Some(ref guide) = tool.implementation_guide {
-        invoke_api(tool, guide, input_json, &env_map).await
+        // Wrap API execution in a timeout
+        tokio::time::timeout(DIRECT_TOOL_TIMEOUT, invoke_api(tool, guide, input_json, &env_map))
+            .await
+            .map_err(|_| AppError::Execution(format!(
+                "Tool '{}' timed out after {}s",
+                tool.name, DIRECT_TOOL_TIMEOUT.as_secs()
+            )))?
     } else {
         Err(AppError::Execution(format!(
-            "Tool '{}' has no script_path and no implementation_guide — cannot invoke directly",
+            "Tool '{}' has no script_path and no implementation_guide -- cannot invoke directly",
             tool.name
         )))
     };
 
     let duration_ms = start.elapsed().as_millis() as u64;
 
-    match result {
-        Ok((output, tool_type)) => Ok(ToolInvocationResult {
+    let invocation_result = match result {
+        Ok((output, tool_type)) => ToolInvocationResult {
             success: true,
             output,
             error: None,
             duration_ms,
             tool_name: tool.name.clone(),
             tool_type,
-        }),
+        },
         Err(e) => {
             let tool_type = if !tool.script_path.is_empty() {
                 "script"
             } else {
                 "api"
             };
-            Ok(ToolInvocationResult {
+            ToolInvocationResult {
                 success: false,
                 output: String::new(),
                 error: Some(e.to_string()),
                 duration_ms,
                 tool_name: tool.name.clone(),
                 tool_type: tool_type.to_string(),
-            })
+            }
         }
+    };
+
+    // Structured audit logging (best-effort, never fails the call)
+    if let Err(log_err) = tool_audit_log::insert(
+        pool,
+        &tool.id,
+        &tool.name,
+        &invocation_result.tool_type,
+        Some(persona_id),
+        Some(persona_name),
+        None,
+        if invocation_result.success { "success" } else { "error" },
+        Some(duration_ms),
+        invocation_result.error.as_deref(),
+    ) {
+        tracing::warn!("Failed to write tool audit log: {log_err}");
     }
+
+    Ok(invocation_result)
 }
 
 /// Invoke a script-based tool via `npx tsx`.
@@ -157,7 +213,7 @@ async fn invoke_api(
 ) -> Result<(String, String), AppError> {
     let curl_line = extract_curl_line(guide).ok_or_else(|| {
         AppError::Execution(format!(
-            "Tool '{}' implementation_guide has no 'Curl:' line — cannot invoke directly",
+            "Tool '{}' implementation_guide has no 'Curl:' line -- cannot invoke directly",
             tool.name
         ))
     })?;
@@ -182,10 +238,10 @@ async fn invoke_api(
         .map(|token| resolve_placeholders(token, env_map, input_json))
         .collect();
 
-    // Validate resolved arguments — block dangerous curl flags and URL schemes
+    // Validate resolved arguments -- block dangerous curl flags and URL schemes
     validate_curl_args(&resolved_tokens, &tool.name)?;
 
-    // Execute directly via Command::new("curl") — no shell involved.
+    // Execute directly via Command::new("curl") -- no shell involved.
     // Inject --proto to restrict to safe URL schemes (blocks file://, gopher://, etc.)
     let mut cmd = tokio::process::Command::new("curl");
     cmd.arg("--proto").arg("=https,http");
@@ -311,9 +367,9 @@ fn validate_curl_args(args: &[String], tool_name: &str) -> Result<(), AppError> 
 /// Tokenize a command string into arguments, respecting single and double quotes.
 ///
 /// Examples:
-/// - `curl -s -H 'Authorization: Bearer tok'` → `["curl", "-s", "-H", "Authorization: Bearer tok"]`
-/// - `curl -d "hello world"` → `["curl", "-d", "hello world"]`
-/// - `curl -sS https://example.com` → `["curl", "-sS", "https://example.com"]`
+/// - `curl -s -H 'Authorization: Bearer tok'` -> `["curl", "-s", "-H", "Authorization: Bearer tok"]`
+/// - `curl -d "hello world"` -> `["curl", "-d", "hello world"]`
+/// - `curl -sS https://example.com` -> `["curl", "-sS", "https://example.com"]`
 fn shell_tokenize(input: &str) -> Vec<String> {
     let mut tokens = Vec::new();
     let mut current = String::new();

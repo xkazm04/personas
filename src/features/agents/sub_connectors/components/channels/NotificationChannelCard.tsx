@@ -4,6 +4,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { CredentialPicker, channelIcon } from '../connectors/CredentialPicker';
 import type { CredentialMetadata } from '@/lib/types/types';
+import { TOOLS_BORDER, TOOLS_BTN_STANDARD, TOOLS_INNER_SPACE } from '@/lib/utils/designTokens';
 
 interface ConfigField {
   key: string;
@@ -58,8 +59,8 @@ export function NotificationChannelCard({
 
   return (
     <div
-      className={`border rounded-xl p-2.5 space-y-2 transition-colors ${
-        enabled ? 'bg-secondary/30 border-primary/15' : 'bg-secondary/10 border-primary/15 opacity-60'
+      className={`border rounded-xl p-2.5 ${TOOLS_INNER_SPACE} transition-colors ${
+        enabled ? `bg-secondary/30 ${TOOLS_BORDER}` : `bg-secondary/10 ${TOOLS_BORDER} opacity-60`
       }`}
     >
       {/* Header row */}
@@ -91,7 +92,7 @@ export function NotificationChannelCard({
               value={config[field.key] || ''}
               onChange={(e) => onConfigChange(field.key, e.target.value)}
               placeholder={field.placeholder}
-              className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-primary/30 ${isEmpty ? 'border-red-500/50' : 'border-primary/15'}`}
+              className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-primary/30 ${isEmpty ? 'border-red-500/50' : TOOLS_BORDER}`}
             />
           </div>
         );
@@ -117,12 +118,12 @@ export function NotificationChannelCard({
         <button
           onClick={handleTestNotification}
           disabled={!enabled || testStatus === 'sending'}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+          className={`inline-flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} rounded-xl text-sm font-medium transition-all ${
             testStatus === 'success'
               ? 'bg-emerald-500/15 border border-emerald-500/25 text-emerald-300'
               : testStatus === 'error'
                 ? 'bg-red-500/15 border border-red-500/25 text-red-300'
-                : 'bg-secondary/60 border border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/80'
+                : `bg-secondary/60 border ${TOOLS_BORDER} text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/80`
           } disabled:opacity-40 disabled:cursor-not-allowed`}
         >
           {testStatus === 'sending' ? (

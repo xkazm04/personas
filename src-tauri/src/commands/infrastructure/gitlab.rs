@@ -282,7 +282,7 @@ pub async fn gitlab_list_agents(
     match client.list_duo_agents(project_id).await {
         Ok(agents) => Ok(agents),
         Err(_) => {
-            // Duo Agent API not available — return empty list
+            // Duo Agent API not available -- return empty list
             Ok(vec![])
         }
     }

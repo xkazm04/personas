@@ -63,7 +63,7 @@ export function ExamplePairCollector({
           const isCollapsed = collapsed.has(pair.id);
           const hasContent = pair.input.trim() || pair.output.trim();
           const preview = hasContent
-            ? (pair.input.trim().slice(0, 40) || '(no input)') + ' → ' + (pair.output.trim().slice(0, 40) || '(no output)')
+            ? (pair.input.trim().slice(0, 40) || '(no input)') + ' -> ' + (pair.output.trim().slice(0, 40) || '(no output)')
             : null;
 
           return (
@@ -107,7 +107,7 @@ export function ExamplePairCollector({
                   <div className="space-y-1">
                     <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground/70">
                       <FileInput className="w-3 h-3" />
-                      Input — what the agent receives
+                      Input -- what the agent receives
                     </label>
                     <textarea
                       value={pair.input}
@@ -128,7 +128,7 @@ export function ExamplePairCollector({
                   <div className="space-y-1">
                     <label className="flex items-center gap-1 text-xs font-medium text-muted-foreground/70">
                       <FileOutput className="w-3 h-3" />
-                      Output — what you want the agent to produce
+                      Output -- what you want the agent to produce
                     </label>
                     <textarea
                       value={pair.output}
@@ -158,7 +158,7 @@ export function ExamplePairCollector({
             <FileOutput className="w-4 h-4" />
           </div>
           <span className="text-sm text-muted-foreground/60 group-hover:text-muted-foreground/80 transition-colors">
-            Add your first input → output example
+            Add your first input {'->'} output example
           </span>
         </button>
       )}

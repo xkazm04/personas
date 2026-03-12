@@ -1,6 +1,6 @@
 import type { AgentIR } from './designTypes';
 
-// â”€â”€ Template Origin & Trust â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Template Origin & Trust ------------------------------------------
 
 /** Where a template came from */
 export type TemplateOrigin = 'builtin' | 'generated' | 'community' | 'unknown';
@@ -60,7 +60,7 @@ export interface TemplateVerification {
   sandboxPolicy: SandboxPolicy | null;
 }
 
-// â”€â”€ Persona Trust (extends template trust to personas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Persona Trust (extends template trust to personas) --------------
 
 /** Trust metadata on a persona (persisted in DB) */
 export interface PersonaTrustMetadata {
@@ -88,7 +88,7 @@ export function getPersonaSandboxPolicy(trustLevel: TemplateTrustLevel): Sandbox
   }
 }
 
-// â”€â”€ Template Catalog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Template Catalog -------------------------------------------------
 
 export interface TemplateCatalogEntry {
   id: string;

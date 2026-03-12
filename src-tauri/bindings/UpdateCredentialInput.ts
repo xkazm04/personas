@@ -2,7 +2,7 @@
 
 export type UpdateCredentialInput = { name: string | null, service_type: string | null, encrypted_data: string | null, 
 /**
- * Derived from encryption — never set by callers.
+ * Derived from encryption -- never set by callers.
  * skip_deserializing ensures this is always None from IPC input;
  * the command layer sets it from the encryption result.
  */

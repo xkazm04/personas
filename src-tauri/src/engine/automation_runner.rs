@@ -4,6 +4,7 @@ use std::time::Instant;
 use crate::db::models::{AutomationRun, PersonaAutomation};
 use crate::db::repos::resources::automations as repo;
 use crate::db::repos::resources::credentials as cred_repo;
+use crate::db::repos::resources::tool_audit_log;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -29,13 +30,21 @@ pub async fn invoke_automation(
         ))
     })?;
 
+    // SSRF protection: reject private/internal/metadata URLs
+    crate::engine::url_safety::validate_url_safety(webhook_url).map_err(|reason| {
+        AppError::Validation(format!(
+            "Automation '{}' webhook URL blocked: {}",
+            automation.name, reason
+        ))
+    })?;
+
     // Create run record
     let run = repo::create_run(pool, &automation.id, execution_id, input_json)?;
 
     let start = Instant::now();
 
     // Resolve auth headers from platform credential
-    let auth_headers = resolve_auth_headers(pool, automation).await;
+    let auth_headers = resolve_auth_headers(pool, automation).await?;
 
     // Execute the webhook
     let method = automation.webhook_method.as_str();
@@ -46,7 +55,7 @@ pub async fn invoke_automation(
 
     let duration_ms = start.elapsed().as_millis() as i64;
 
-    match result {
+    let completed_run = match result {
         Ok((output, _status_code)) => {
             let completed_run = repo::complete_run(
                 pool,
@@ -62,7 +71,7 @@ pub async fn invoke_automation(
             // Update automation's last trigger status
             let _ = repo::record_trigger_result(pool, &automation.id, "success", None);
 
-            Ok(completed_run)
+            completed_run
         }
         Err(e) => {
             let error_msg = e.to_string();
@@ -79,44 +88,105 @@ pub async fn invoke_automation(
 
             let _ = repo::record_trigger_result(pool, &automation.id, "failed", Some(&error_msg));
 
-            Ok(completed_run)
+            completed_run
         }
+    };
+
+    // Structured audit logging (best-effort)
+    let (status, err_msg) = if completed_run.status == "completed" {
+        ("success", None)
+    } else {
+        ("error", completed_run.error_message.as_deref())
+    };
+    if let Err(log_err) = tool_audit_log::insert(
+        pool,
+        &automation.id,
+        &automation.name,
+        "automation",
+        None, // persona_id not available at this layer
+        None,
+        automation.platform_credential_id.as_deref(),
+        status,
+        Some(duration_ms as u64),
+        err_msg,
+    ) {
+        tracing::warn!("Failed to write automation audit log: {log_err}");
     }
+
+    Ok(completed_run)
+}
+
+/// Check if a header name is valid per RFC 7230 (token: alphanumeric + subset of symbols).
+fn is_valid_header_name(name: &str) -> bool {
+    !name.is_empty()
+        && name
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b))
+}
+
+/// Strip control characters (CR, LF, NUL) from header values to prevent injection.
+fn sanitize_header_value(value: &str) -> String {
+    value.chars().filter(|c| !c.is_control()).collect()
 }
 
 /// Resolve authentication headers from the automation's platform credential.
 async fn resolve_auth_headers(
     pool: &DbPool,
     automation: &PersonaAutomation,
-) -> HashMap<String, String> {
+) -> Result<HashMap<String, String>, AppError> {
     let mut headers = HashMap::new();
 
     let cred_id = match automation.platform_credential_id.as_deref() {
         Some(id) if !id.is_empty() => id,
-        _ => return headers,
+        _ => return Ok(headers),
     };
 
-    // Load credential record, then decrypt fields
+    // Load credential record, then decrypt fields.
+    // Fall back to empty headers if credential is missing (e.g., public webhooks with stale ref).
     let credential = match cred_repo::get_by_id(pool, cred_id) {
         Ok(c) => c,
-        Err(_) => return headers,
+        Err(e) => {
+            tracing::warn!(
+                automation = %automation.name,
+                credential_id = %cred_id,
+                error = %e,
+                "Credential not found, proceeding without auth headers"
+            );
+            return Ok(headers);
+        }
     };
     let fields = match cred_repo::get_decrypted_fields(pool, &credential) {
         Ok(f) => f,
-        Err(_) => return headers,
+        Err(e) => {
+            tracing::warn!(
+                automation = %automation.name,
+                credential_id = %cred_id,
+                error = %e,
+                "Failed to decrypt credential, proceeding without auth headers"
+            );
+            return Ok(headers);
+        }
     };
 
     // Common patterns for webhook auth
     if let Some(token) = fields.get("api_key").or(fields.get("access_token")).or(fields.get("token")) {
-        headers.insert("Authorization".into(), format!("Bearer {token}"));
+        headers.insert("Authorization".into(), sanitize_header_value(&format!("Bearer {token}")));
     }
     if let Some(header_name) = fields.get("header_name") {
         if let Some(header_value) = fields.get("header_value") {
-            headers.insert(header_name.clone(), header_value.clone());
+            if !is_valid_header_name(header_name) {
+                tracing::warn!(
+                    automation = %automation.name,
+                    header_name = %header_name,
+                    "Skipping custom header with invalid name"
+                );
+            } else {
+                headers.insert(header_name.clone(), sanitize_header_value(header_value));
+            }
         }
     }
 
-    headers
+    Ok(headers)
 }
 
 /// POST/GET to a webhook URL and return the response body.
@@ -128,7 +198,7 @@ async fn invoke_webhook(
     timeout_ms: i64,
 ) -> Result<(String, u16), AppError> {
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_millis(timeout_ms as u64))
+        .timeout(std::time::Duration::from_millis(timeout_ms.max(1000) as u64))
         .build()
         .map_err(|e| AppError::Execution(format!("Failed to create HTTP client: {e}")))?;
 
@@ -192,7 +262,7 @@ pub fn automation_to_virtual_tool(
     };
 
     let description = format!(
-        "{} [Automation — {}. Runs instantly without using your tokens.]",
+        "{} [Automation -- {}. Runs instantly without using your tokens.]",
         auto.description, platform_label
     );
 
@@ -204,7 +274,7 @@ pub fn automation_to_virtual_tool(
 
     let guide = format!(
         "This tool delegates to an external {platform_label} workflow.\n\
-         It will be invoked automatically — do NOT construct HTTP requests yourself.\n\
+         It will be invoked automatically -- do NOT construct HTTP requests yourself.\n\
          Simply call this tool with the expected input JSON.{fallback_note}"
     );
 

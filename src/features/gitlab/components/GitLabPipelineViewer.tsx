@@ -36,7 +36,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
     return () => clearPipelineState();
   }, [projectId, fetchPipelines, clearPipelineState]);
 
-  // Auto-refresh running pipelines — use scalar deps to avoid interval churn
+  // Auto-refresh running pipelines -- use scalar deps to avoid interval churn
   const activePipelineId = activePipeline?.id ?? null;
   const activePipelineStatus = activePipeline?.status ?? null;
   useEffect(() => {

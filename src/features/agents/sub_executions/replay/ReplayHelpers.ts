@@ -1,4 +1,4 @@
-// ── Replay Helpers ──────────────────────────────────────────────────────
+// -- Replay Helpers ------------------------------------------------------
 
 export function formatMs(ms: number): string {
   if (ms < 1000) return `${Math.round(ms)}ms`;

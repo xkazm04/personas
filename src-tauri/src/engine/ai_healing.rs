@@ -2,8 +2,8 @@
 //!
 //! When the rule-based healing engine cannot resolve a failure, this module
 //! resumes the original Claude session to diagnose and fix the issue. The
-//! healing runs as a chained execution — a tracked continuation of the failed
-//! run — so the healer has full context of what the original CLI attempted and
+//! healing runs as a chained execution -- a tracked continuation of the failed
+//! run -- so the healer has full context of what the original CLI attempted and
 //! can be observed in the execution list.
 
 use serde::{Deserialize, Serialize};
@@ -82,12 +82,12 @@ pub fn should_trigger_ai_healing(
         return false;
     }
 
-    // Incomplete state — CLI ran but couldn't complete the task
+    // Incomplete state -- CLI ran but couldn't complete the task
     if execution_state == "incomplete" {
         return true;
     }
 
-    // Unknown or credential errors — AI can diagnose
+    // Unknown or credential errors -- AI can diagnose
     if matches!(
         category,
         FailureCategory::Unknown | FailureCategory::CredentialError
@@ -95,7 +95,7 @@ pub fn should_trigger_ai_healing(
         return true;
     }
 
-    // Pattern detection — 2+ consecutive failures of any type
+    // Pattern detection -- 2+ consecutive failures of any type
     if consecutive_failures >= 2 {
         return true;
     }
@@ -135,7 +135,7 @@ Valid targets for modify_prompt: system_prompt, instructions, structured_prompt,
 Valid targets for update_config: timeout_ms, max_turns, enabled
 
 ## Rules
-- Be surgical — fix the minimum needed
+- Be surgical -- fix the minimum needed
 - Explain your diagnosis before applying fixes
 - End with: {{"healing_complete": {{"should_retry": true/false, "diagnosis": "one-sentence root cause"}}}}
 "#,
@@ -305,7 +305,7 @@ fn apply_db_fixes(
             },
             "modify_file" | "run_command" => {
                 // File modifications and commands are handled directly by the CLI's
-                // own tool use — we just log that they were requested.
+                // own tool use -- we just log that they were requested.
                 applied.push(format!(
                     "CLI handled {}: {} ({})",
                     fix.fix_type, fix.target, fix.description

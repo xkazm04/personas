@@ -5,7 +5,7 @@ import { toCredentialMetadata } from '@/lib/types/types';
 import { usePersonaStore } from '@/stores/personaStore';
 import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/useModuleSubscription';
 
-// ── Types ─────────────────────────────────────────────────────────────
+// -- Types -------------------------------------------------------------
 
 /**
  * Health result storage contract
@@ -13,13 +13,13 @@ import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/u
  * Health results exist in three layers with the following priority:
  *
  * 1. **Module cache** (authoritative for the current session)
- *    `resultCache` — a module-level `ModuleCache<string, HealthResult>`.
+ *    `resultCache` -- a module-level `ModuleCache<string, HealthResult>`.
  *    Populated by `checkStored`, `checkPreview`, `checkDesign`, or `setResult`.
  *    Cleared on page reload. This is the source of truth when present.
  *
  * 2. **Credential metadata** (persisted, possibly stale)
  *    `credential.healthcheck_last_success` / `healthcheck_last_message` /
- *    `healthcheck_last_tested_at` — written by `checkStored` via
+ *    `healthcheck_last_tested_at` -- written by `checkStored` via
  *    `patchCredentialMetadata` after each healthcheck. Survives reloads.
  *    Used as a fallback in `CredentialCard` when the module cache has
  *    no entry for that credential ID.
@@ -50,7 +50,7 @@ type CredentialHealthPreviewTarget = {
 
 type CredentialHealthTarget = string | CredentialHealthPreviewTarget;
 
-// ── Shared module-level caches ───────────────────────────────────────
+// -- Shared module-level caches ---------------------------------------
 
 const resultCache = createModuleCache<string, HealthResult>();
 const loadingRefCounts = new Map<string, number>();
@@ -65,7 +65,7 @@ function endLoading(key: string) {
   else loadingRefCounts.set(key, next);
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────
+// -- Hook --------------------------------------------------------------
 
 /**
  * Unified credential health service.
@@ -229,7 +229,7 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
   };
 }
 
-// ── Static helpers (read cache without subscribing) ───────────────────
+// -- Static helpers (read cache without subscribing) -------------------
 
 export function getHealthResult(key: string): HealthResult | null {
   return resultCache.get(key) ?? null;

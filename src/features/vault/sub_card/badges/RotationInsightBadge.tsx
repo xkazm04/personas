@@ -46,11 +46,11 @@ function buildTooltip(score: AnomalyScore, consecutiveFailures: number): string 
   if (score.remediation === 'disable') {
     parts.push('Auto-disabled: sustained permanent failures above threshold.');
   } else if (score.remediation === 'rotate_then_alert') {
-    parts.push('Permanent errors detected — rotation attempted, alerting.');
+    parts.push('Permanent errors detected -- rotation attempted, alerting.');
   } else if (score.remediation === 'preemptive_rotation') {
-    parts.push('Sustained degradation — pre-emptive rotation triggered.');
+    parts.push('Sustained degradation -- pre-emptive rotation triggered.');
   } else if (score.remediation === 'backoff_retry') {
-    parts.push('Transient failures — exponential backoff active.');
+    parts.push('Transient failures -- exponential backoff active.');
   }
 
   parts.push(`Failure rates: 5m ${pct(score.failure_rate_5m)} · 1h ${pct(score.failure_rate_1h)} · 24h ${pct(score.failure_rate_24h)}`);

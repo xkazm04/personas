@@ -1,6 +1,6 @@
 import type { ApiEndpoint } from '@/api/system/apiProxy';
 
-// â”€â”€ Catalog-bundled API endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Catalog-bundled API endpoints ------------------------------------
 // Curated 5-10 most useful endpoints per connector, sourced from
 // official OpenAPI specs. These are merged with user-uploaded specs
 // in the API Explorer tab.
@@ -19,7 +19,7 @@ const ep = (method: string, path: string, summary: string, params: EP['parameter
 const jsonBody = (required = true): EP['request_body'] =>
   ({ content_type: 'application/json', schema_json: null, required });
 
-// â”€â”€ Azure DevOps â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Azure DevOps ----------------------------------------------------
 
 const azure_devops: EP[] = [
   ep('GET', '/_apis/projects', 'List projects', [
@@ -53,7 +53,7 @@ const azure_devops: EP[] = [
   ], ['Work Items'], jsonBody(), 'Body: [{ "op": "add", "path": "/fields/System.Title", "value": "..." }]'),
 ];
 
-// â”€â”€ GitHub â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- GitHub -----------------------------------------------------------
 
 const github: EP[] = [
   ep('GET', '/user', 'Get authenticated user', [], ['Users']),
@@ -85,7 +85,7 @@ const github: EP[] = [
   ], ['Actions']),
 ];
 
-// â”€â”€ Slack â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Slack ------------------------------------------------------------
 
 const slack: EP[] = [
   ep('POST', '/chat.postMessage', 'Send a message to a channel', [], ['Chat'], jsonBody(), 'Body: { "channel": "C01...", "text": "Hello!" }'),
@@ -107,7 +107,7 @@ const slack: EP[] = [
   ep('POST', '/reactions.add', 'Add a reaction', [], ['Reactions'], jsonBody(), 'Body: { "channel": "C01...", "name": "thumbsup", "timestamp": "..." }'),
 ];
 
-// â”€â”€ Discord â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Discord ----------------------------------------------------------
 
 const discord: EP[] = [
   ep('GET', '/users/@me', 'Get current user', [], ['Users']),
@@ -128,7 +128,7 @@ const discord: EP[] = [
   ], ['Members']),
 ];
 
-// â”€â”€ Cloudflare â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Cloudflare -------------------------------------------------------
 
 const cloudflare: EP[] = [
   ep('GET', '/user/tokens/verify', 'Verify API token', [], ['User']),
@@ -149,7 +149,7 @@ const cloudflare: EP[] = [
   ], ['Analytics']),
 ];
 
-// â”€â”€ Vercel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Vercel -----------------------------------------------------------
 
 const vercel: EP[] = [
   ep('GET', '/v2/user', 'Get current user', [], ['User']),
@@ -167,7 +167,7 @@ const vercel: EP[] = [
   ep('GET', '/v1/edge-config', 'List edge configs', [], ['Edge Config']),
 ];
 
-// â”€â”€ Netlify â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Netlify ----------------------------------------------------------
 
 const netlify: EP[] = [
   ep('GET', '/api/v1/user', 'Get current user', [], ['User']),
@@ -186,7 +186,7 @@ const netlify: EP[] = [
   ], ['Builds']),
 ];
 
-// â”€â”€ HubSpot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- HubSpot ----------------------------------------------------------
 
 const hubspot: EP[] = [
   ep('GET', '/crm/v3/objects/contacts', 'List contacts', [
@@ -205,7 +205,7 @@ const hubspot: EP[] = [
   ep('POST', '/crm/v3/objects/contacts/search', 'Search contacts', [], ['CRM'], jsonBody(), 'Body: { "filterGroups": [...], "limit": 10 }'),
 ];
 
-// â”€â”€ Sentry â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Sentry -----------------------------------------------------------
 
 const sentry: EP[] = [
   ep('GET', '/organizations/{organization_slug}/', 'Get organization', [
@@ -229,7 +229,7 @@ const sentry: EP[] = [
   ], ['Projects']),
 ];
 
-// â”€â”€ PostHog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- PostHog ----------------------------------------------------------
 
 const posthog: EP[] = [
   ep('GET', '/api/projects/', 'List projects', [], ['Projects']),
@@ -251,7 +251,7 @@ const posthog: EP[] = [
   ], ['Persons']),
 ];
 
-// â”€â”€ SendGrid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- SendGrid ---------------------------------------------------------
 
 const sendgrid: EP[] = [
   ep('POST', '/v3/mail/send', 'Send email', [], ['Mail'], jsonBody(), 'Body: { "personalizations": [{"to":[{"email":"..."}]}], "from":{"email":"..."}, "subject":"...", "content":[{"type":"text/plain","value":"..."}] }'),
@@ -266,7 +266,7 @@ const sendgrid: EP[] = [
   ep('GET', '/v3/suppression/bounces', 'List bounces', [], ['Suppressions']),
 ];
 
-// â”€â”€ Twilio SMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Twilio SMS -------------------------------------------------------
 
 const twilio_sms: EP[] = [
   ep('POST', '/2010-04-01/Accounts/{AccountSid}/Messages.json', 'Send SMS', [
@@ -287,7 +287,7 @@ const twilio_sms: EP[] = [
   ], ['Phone Numbers']),
 ];
 
-// â”€â”€ Jira â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Jira -------------------------------------------------------------
 
 const jira: EP[] = [
   ep('GET', '/rest/api/3/myself', 'Get current user', [], ['Users']),
@@ -308,7 +308,7 @@ const jira: EP[] = [
   ], ['Issues']),
 ];
 
-// â”€â”€ Confluence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Confluence -------------------------------------------------------
 
 const confluence: EP[] = [
   ep('GET', '/wiki/rest/api/space', 'List spaces', [
@@ -331,7 +331,7 @@ const confluence: EP[] = [
   ], ['Content']),
 ];
 
-// â”€â”€ CircleCI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- CircleCI ---------------------------------------------------------
 
 const circleci: EP[] = [
   ep('GET', '/me', 'Get current user', [], ['User']),
@@ -352,7 +352,7 @@ const circleci: EP[] = [
   ], ['Projects']),
 ];
 
-// â”€â”€ Figma â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Figma ------------------------------------------------------------
 
 const figma: EP[] = [
   ep('GET', '/v1/me', 'Get current user', [], ['Users']),
@@ -378,7 +378,7 @@ const figma: EP[] = [
   ], ['Projects']),
 ];
 
-// â”€â”€ Supabase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Supabase ---------------------------------------------------------
 
 const supabase: EP[] = [
   ep('GET', '/v1/projects', 'List projects', [], ['Projects']),
@@ -395,7 +395,7 @@ const supabase: EP[] = [
   ], ['Projects']),
 ];
 
-// â”€â”€ Neon â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Neon -------------------------------------------------------------
 
 const neon: EP[] = [
   ep('GET', '/projects', 'List projects', [], ['Projects']),
@@ -418,7 +418,7 @@ const neon: EP[] = [
   ], ['Databases']),
 ];
 
-// â”€â”€ ClickUp â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- ClickUp ----------------------------------------------------------
 
 const clickup: EP[] = [
   ep('GET', '/user', 'Get current user', [], ['User']),
@@ -440,7 +440,7 @@ const clickup: EP[] = [
   ], ['Tasks']),
 ];
 
-// â”€â”€ Resend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Resend -----------------------------------------------------------
 
 const resend: EP[] = [
   ep('POST', '/emails', 'Send email', [], ['Emails'], jsonBody(), 'Body: { "from": "you@example.com", "to": ["user@example.com"], "subject": "...", "html": "<p>...</p>" }'),
@@ -453,7 +453,7 @@ const resend: EP[] = [
   ep('GET', '/audiences', 'List audiences', [], ['Audiences']),
 ];
 
-// â”€â”€ Mixpanel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Mixpanel ---------------------------------------------------------
 
 const mixpanel: EP[] = [
   ep('GET', '/app/me', 'Get current user (service account)', [], ['Auth']),
@@ -473,7 +473,7 @@ const mixpanel: EP[] = [
   ], ['Profiles']),
 ];
 
-// â”€â”€ Twilio Segment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Twilio Segment ---------------------------------------------------
 
 const twilio_segment: EP[] = [
   ep('GET', '/sources', 'List sources', [], ['Sources']),
@@ -486,7 +486,7 @@ const twilio_segment: EP[] = [
   ep('GET', '/spaces', 'List spaces', [], ['Spaces']),
 ];
 
-// â”€â”€ PlanetScale â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- PlanetScale ------------------------------------------------------
 
 const planetscale: EP[] = [
   ep('GET', '/v1/organizations', 'List organizations', [], ['Organizations']),
@@ -504,7 +504,7 @@ const planetscale: EP[] = [
   ], ['Deploy Requests']),
 ];
 
-// â”€â”€ Notion (community spec) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Notion (community spec) -----------------------------------------
 
 const notion: EP[] = [
   ep('GET', '/v1/users/me', 'Get current user', [], ['Users']),
@@ -524,7 +524,7 @@ const notion: EP[] = [
   ], ['Blocks']),
 ];
 
-// â”€â”€ Cal.com â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Cal.com ----------------------------------------------------------
 
 const cal_com: EP[] = [
   ep('GET', '/v2/me', 'Get current user profile', [], ['Users']),
@@ -546,7 +546,7 @@ const cal_com: EP[] = [
   ], ['Availability']),
 ];
 
-// â”€â”€ Calendly (community spec) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Calendly (community spec) ----------------------------------------
 
 const calendly: EP[] = [
   ep('GET', '/users/me', 'Get current user', [], ['Users']),
@@ -566,7 +566,7 @@ const calendly: EP[] = [
   ], ['Organizations']),
 ];
 
-// â”€â”€ Telegram Bot API (community spec) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Telegram Bot API (community spec) --------------------------------
 
 const telegram: EP[] = [
   ep('POST', '/getMe', 'Get bot info', [], ['Bot']),
@@ -577,7 +577,7 @@ const telegram: EP[] = [
   ep('POST', '/getChatMemberCount', 'Get member count', [], ['Chat'], jsonBody(), 'Body: { "chat_id": 123 }'),
 ];
 
-// â”€â”€ Buffer (community spec) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Buffer (community spec) -----------------------------------------
 
 const buffer: EP[] = [
   ep('GET', '/1/user.json', 'Get user', [], ['User']),
@@ -591,7 +591,7 @@ const buffer: EP[] = [
   ], ['Schedules']),
 ];
 
-// â”€â”€ Airtable (Web API) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Airtable (Web API) ----------------------------------------------
 
 const airtable: EP[] = [
   ep('GET', '/v0/meta/whoami', 'Get current user info', [], ['Auth']),
@@ -619,7 +619,7 @@ const airtable: EP[] = [
   ep('POST', '/v0/meta/bases', 'Create a base', [], ['Bases'], jsonBody(), 'Body: { "name": "...", "workspaceId": "wspXXX", "tables": [{ "name": "...", "fields": [...] }] }'),
 ];
 
-// â”€â”€ Better Stack (Uptime API) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Better Stack (Uptime API) ---------------------------------------
 
 const betterstack: EP[] = [
   ep('GET', '/api/v2/monitors', 'List monitors', [
@@ -638,27 +638,27 @@ const betterstack: EP[] = [
   ep('GET', '/api/v2/monitor-groups', 'List monitor groups', [], ['Groups']),
 ];
 
-// â”€â”€ Linear â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Linear ----------------------------------------------------------
 
 const linear: EP[] = [
-  ep('POST', '/graphql', 'GraphQL query â€” viewer', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ viewer { id name email } }" }'),
-  ep('POST', '/graphql', 'GraphQL query â€” list issues', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ issues(first: 10) { nodes { id title state { name } } } }" }'),
-  ep('POST', '/graphql', 'GraphQL query â€” list teams', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ teams { nodes { id name key } } }" }'),
-  ep('POST', '/graphql', 'GraphQL query â€” list projects', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ projects(first: 10) { nodes { id name state } } }" }'),
-  ep('POST', '/graphql', 'GraphQL mutation â€” create issue', [], ['GraphQL'], jsonBody(), 'Body: { "query": "mutation { issueCreate(input: { teamId: \\"...\\" title: \\"...\\" }) { issue { id identifier title } } }" }'),
+  ep('POST', '/graphql', 'GraphQL query -- viewer', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ viewer { id name email } }" }'),
+  ep('POST', '/graphql', 'GraphQL query -- list issues', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ issues(first: 10) { nodes { id title state { name } } } }" }'),
+  ep('POST', '/graphql', 'GraphQL query -- list teams', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ teams { nodes { id name key } } }" }'),
+  ep('POST', '/graphql', 'GraphQL query -- list projects', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ projects(first: 10) { nodes { id name state } } }" }'),
+  ep('POST', '/graphql', 'GraphQL mutation -- create issue', [], ['GraphQL'], jsonBody(), 'Body: { "query": "mutation { issueCreate(input: { teamId: \\"...\\" title: \\"...\\" }) { issue { id identifier title } } }" }'),
 ];
 
-// â”€â”€ Monday.com â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Monday.com ------------------------------------------------------
 
 const monday: EP[] = [
-  ep('POST', '/v2', 'GraphQL query â€” me', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ me { id name email } }" }'),
-  ep('POST', '/v2', 'GraphQL query â€” list boards', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ boards(limit: 10) { id name state } }" }'),
-  ep('POST', '/v2', 'GraphQL query â€” list items', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ boards(ids: [123]) { items_page(limit: 10) { items { id name } } } }" }'),
-  ep('POST', '/v2', 'GraphQL mutation â€” create item', [], ['GraphQL'], jsonBody(), 'Body: { "query": "mutation { create_item(board_id: 123, item_name: \\"New task\\") { id } }" }'),
-  ep('POST', '/v2', 'GraphQL query â€” list workspaces', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ workspaces { id name } }" }'),
+  ep('POST', '/v2', 'GraphQL query -- me', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ me { id name email } }" }'),
+  ep('POST', '/v2', 'GraphQL query -- list boards', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ boards(limit: 10) { id name state } }" }'),
+  ep('POST', '/v2', 'GraphQL query -- list items', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ boards(ids: [123]) { items_page(limit: 10) { items { id name } } } }" }'),
+  ep('POST', '/v2', 'GraphQL mutation -- create item', [], ['GraphQL'], jsonBody(), 'Body: { "query": "mutation { create_item(board_id: 123, item_name: \\"New task\\") { id } }" }'),
+  ep('POST', '/v2', 'GraphQL query -- list workspaces', [], ['GraphQL'], jsonBody(), 'Body: { "query": "{ workspaces { id name } }" }'),
 ];
 
-// â”€â”€ Dropbox â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Dropbox ---------------------------------------------------------
 
 const dropbox: EP[] = [
   ep('POST', '/2/users/get_current_account', 'Get current account', [], ['Users']),
@@ -669,7 +669,7 @@ const dropbox: EP[] = [
   ep('POST', '/2/files/delete_v2', 'Delete file or folder', [], ['Files'], jsonBody(), 'Body: { "path": "/path/to/delete" }'),
 ];
 
-// â”€â”€ Convex â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Convex ----------------------------------------------------------
 
 const convex: EP[] = [
   ep('POST', '/api/query', 'Run a query function', [], ['Functions'], jsonBody(), 'Body: { "path": "messages:list", "args": {} }'),
@@ -691,7 +691,7 @@ const convex: EP[] = [
   ep('GET', '/version', 'Get deployment version', [], ['System']),
 ];
 
-// â”€â”€ n8n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- n8n -------------------------------------------------------------
 
 const n8n: EP[] = [
   ep('GET', '/api/v1/workflows', 'List workflows', [
@@ -713,7 +713,7 @@ const n8n: EP[] = [
   ep('GET', '/api/v1/credentials', 'List credentials', [], ['Credentials']),
 ];
 
-// â”€â”€ Zapier â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Zapier ----------------------------------------------------------
 
 const zapier: EP[] = [
   ep('GET', '/v1/profiles/me', 'Get current user profile', [], ['Profiles']),
@@ -723,7 +723,7 @@ const zapier: EP[] = [
   ], ['Zaps']),
 ];
 
-// â”€â”€ Upstash (Redis REST API) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Upstash (Redis REST API) ----------------------------------------
 
 const upstash: EP[] = [
   ep('POST', '/', 'Execute Redis command', [], ['Redis'], jsonBody(), 'Body: ["SET", "key", "value"]'),
@@ -738,7 +738,7 @@ const upstash: EP[] = [
   ep('POST', '/pipeline', 'Execute pipeline', [], ['Redis'], jsonBody(), 'Body: [["SET","k","v"],["GET","k"]]'),
 ];
 
-// â”€â”€ GitHub Actions (reuses github token, different base) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- GitHub Actions (reuses github token, different base) ------------
 
 const github_actions: EP[] = [
   ep('GET', '/user', 'Get authenticated user', [], ['Users']),
@@ -760,7 +760,7 @@ const github_actions: EP[] = [
   ], ['Jobs']),
 ];
 
-// â”€â”€ Asana â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Asana --------------------------------------------------------------
 
 const asana: EP[] = [
   ep('GET', '/users/me', 'Get current user', [], ['Users']),
@@ -783,7 +783,7 @@ const asana: EP[] = [
   ], ['Tasks'], jsonBody(), 'Body: { "data": { "name": "Updated title", "completed": true } }'),
 ];
 
-// â”€â”€ Kubernetes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Kubernetes -------------------------------------------------------
 
 const kubernetes: EP[] = [
   ep('GET', '/api', 'Get API versions', [], ['Core']),
@@ -806,7 +806,7 @@ const kubernetes: EP[] = [
   ], ['Core']),
 ];
 
-// â”€â”€ Leonardo AI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Leonardo AI ------------------------------------------------------
 
 const leonardo_ai: EP[] = [
   ep('GET', '/me', 'Get current user info', [], ['Users']),
@@ -827,7 +827,7 @@ const leonardo_ai: EP[] = [
   ep('POST', '/variations/upscale', 'Upscale an image', [], ['Variations'], jsonBody(), 'Body: { "id": "generation-id" }'),
 ];
 
-// â”€â”€ Gmail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Gmail -----------------------------------------------------------
 
 const gmail: EP[] = [
   ep('GET', '/gmail/v1/users/{userId}/messages', 'List messages', [
@@ -866,7 +866,7 @@ const gmail: EP[] = [
   ], ['Users']),
 ];
 
-// â”€â”€ Google Sheets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Google Sheets ---------------------------------------------------
 
 const google_sheets: EP[] = [
   ep('POST', '/v4/spreadsheets', 'Create a spreadsheet', [], ['Spreadsheets'], jsonBody(), 'Body: { "properties": { "title": "My Spreadsheet" } }'),
@@ -904,7 +904,7 @@ const google_sheets: EP[] = [
   ], ['Spreadsheets'], jsonBody(), 'Body: { "requests": [{ "addSheet": { "properties": { "title": "New Sheet" } } }] }'),
 ];
 
-// â”€â”€ Microsoft Outlook (Graph API) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Microsoft Outlook (Graph API) -----------------------------------
 
 const microsoft_outlook: EP[] = [
   ep('GET', '/v1.0/me', 'Get current user profile', [], ['Users']),
@@ -934,7 +934,7 @@ const microsoft_outlook: EP[] = [
   ], ['Contacts']),
 ];
 
-// â”€â”€ LinkedIn â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- LinkedIn --------------------------------------------------------
 
 const linkedin: EP[] = [
   ep('GET', '/v2/userinfo', 'Get authenticated user info', [], ['User']),
@@ -944,9 +944,9 @@ const linkedin: EP[] = [
   ep('GET', '/v2/organizationalEntityAcls?q=roleAssignee', 'List managed pages', [], ['Organizations']),
 ];
 
-// â”€â”€ Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Export ------------------------------------------------------------
 
-// ── Canva ────────────────────────────────────────────────────────────
+// -- Canva ------------------------------------------------------------
 
 const canva: EP[] = [
   ep('GET', '/users/me', 'Get current user profile', [], ['Users']),
@@ -957,7 +957,7 @@ const canva: EP[] = [
   ep('GET', '/exports/{exportId}', 'Get export status', [pathP('exportId')], ['Exports']),
 ];
 
-// ── Pipedrive ────────────────────────────────────────────────────────
+// -- Pipedrive --------------------------------------------------------
 
 const pipedrive: EP[] = [
   ep('GET', '/users/me', 'Get current user', [], ['Users']),
@@ -970,7 +970,7 @@ const pipedrive: EP[] = [
   ep('GET', '/pipelines', 'List pipelines', [], ['Pipelines']),
 ];
 
-// ── Attio ────────────────────────────────────────────────────────────
+// -- Attio ------------------------------------------------------------
 
 const attio: EP[] = [
   ep('GET', '/self', 'Get current workspace', [], ['Self']),
@@ -982,7 +982,7 @@ const attio: EP[] = [
   ep('POST', '/notes', 'Create note', [], ['Notes'], jsonBody()),
 ];
 
-// ── Crisp ────────────────────────────────────────────────────────────
+// -- Crisp ------------------------------------------------------------
 
 const crisp: EP[] = [
   ep('GET', '/website', 'List websites', [], ['Websites']),
@@ -992,7 +992,7 @@ const crisp: EP[] = [
   ep('GET', '/website/{websiteId}/people/profiles', 'List people', [pathP('websiteId')], ['People']),
 ];
 
-// ── WooCommerce ─────────────────────────────────────────────────────
+// -- WooCommerce -----------------------------------------------------
 
 const woocommerce: EP[] = [
   ep('GET', '/wp-json/wc/v3/orders', 'List orders', [queryP('status', false, 'pending, processing, completed'), queryP('per_page', false)], ['Orders']),
@@ -1003,7 +1003,7 @@ const woocommerce: EP[] = [
   ep('GET', '/wp-json/wc/v3/reports/sales', 'Sales report', [queryP('period', false, 'week, month, year')], ['Reports']),
 ];
 
-// ── Lemon Squeezy ───────────────────────────────────────────────────
+// -- Lemon Squeezy ---------------------------------------------------
 
 const lemonsqueezy: EP[] = [
   ep('GET', '/users/me', 'Get current user', [], ['Users']),
@@ -1014,7 +1014,7 @@ const lemonsqueezy: EP[] = [
   ep('GET', '/customers', 'List customers', [], ['Customers']),
 ];
 
-// ── Novu ────────────────────────────────────────────────────────────
+// -- Novu ------------------------------------------------------------
 
 const novu: EP[] = [
   ep('GET', '/environments/me', 'Get current environment', [], ['Environments']),
@@ -1025,7 +1025,7 @@ const novu: EP[] = [
   ep('GET', '/notifications', 'List notifications', [queryP('page', false)], ['Notifications']),
 ];
 
-// ── Knock ───────────────────────────────────────────────────────────
+// -- Knock -----------------------------------------------------------
 
 const knock: EP[] = [
   ep('GET', '/users', 'List users', [queryP('page_size', false)], ['Users']),
@@ -1065,7 +1065,7 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   calendly,
   telegram,
   buffer,
-  // Added â€” previously missing
+  // Added -- previously missing
   airtable,
   betterstack,
   linear,

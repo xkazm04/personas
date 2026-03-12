@@ -5,7 +5,7 @@ import { useState, useCallback } from 'react';
  * multiple modals with a single stack supporting open/close/replace.
  *
  * The stack handles Z-ordering (most recent on top) and typed lookups.
- * New modals only need a type discriminant added to the entry union —
+ * New modals only need a type discriminant added to the entry union --
  * zero new state variables or handlers in the parent component.
  *
  * @example

@@ -14,7 +14,7 @@ use super::ai_artifact_flow::{
 };
 use super::shared::build_credential_task_cli_args;
 
-// ── Negotiation messages ────────────────────────────────────────
+// -- Negotiation messages ----------------------------------------
 
 const NEGOTIATION_MESSAGES: AiArtifactMessages = AiArtifactMessages {
     status_event: "credential-negotiation-status",
@@ -30,9 +30,9 @@ const NEGOTIATION_MESSAGES: AiArtifactMessages = AiArtifactMessages {
     timeout_secs: 300,
 };
 
-// ── Commands ────────────────────────────────────────────────────
+// -- Commands ----------------------------------------------------
 
-/// Start a credential negotiation — generates a step-by-step provisioning plan.
+/// Start a credential negotiation -- generates a step-by-step provisioning plan.
 #[tauri::command]
 pub async fn start_credential_negotiation(
     state: State<'_, Arc<AppState>>,

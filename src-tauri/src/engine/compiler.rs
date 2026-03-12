@@ -1,7 +1,7 @@
-//! PersonaCompiler — explicit multi-stage compilation pipeline for persona design.
+//! PersonaCompiler -- explicit multi-stage compilation pipeline for persona design.
 //!
 //! The design workflow is structurally a compiler:
-//!   wizard input → NL instruction → LLM prompt → Claude CLI → raw output → parsed JSON → feasibility check → DB persist
+//!   wizard input -> NL instruction -> LLM prompt -> Claude CLI -> raw output -> parsed JSON -> feasibility check -> DB persist
 //!
 //! This module makes the stages explicit so that refinement is simply
 //! recompilation with additional constraints, and new stages (validation,
@@ -93,7 +93,7 @@ pub struct CompilationInput<'a> {
 /// `build_refinement_prompt_with_history`.
 pub fn assemble_prompt(input: &CompilationInput) -> String {
     if let Some(existing) = input.existing_result {
-        // Refinement / recompilation — instruction is the feedback
+        // Refinement / recompilation -- instruction is the feedback
         design::build_refinement_prompt_with_history(
             existing,
             input.instruction,
@@ -117,7 +117,7 @@ pub fn assemble_prompt(input: &CompilationInput) -> String {
 // Result Parsing (Stage 3)
 // ============================================================================
 
-/// The outcome of parsing LLM output — either a design result, a question, or failure.
+/// The outcome of parsing LLM output -- either a design result, a question, or failure.
 pub enum ParseOutcome {
     /// A complete design result was extracted.
     Result(serde_json::Value),

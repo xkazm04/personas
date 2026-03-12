@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import type { ToolCallStep } from '@/hooks/execution/useReplayTimeline';
 import { formatMs } from './ReplayHelpers';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /** Timeline scrub bar with tool step markers. */
 export function TimelineScrubber({
@@ -63,29 +64,36 @@ export function TimelineScrubber({
           const x = totalMs > 0 ? (s.started_at_ms / totalMs) * 100 : 0;
           const isFork = forkPoint === s.step_index;
           return (
-            <div
+            <Tooltip
               key={s.step_index}
-              className={`absolute top-0 h-full w-[3px] transition-colors cursor-pointer ${
-                isFork
-                  ? 'bg-amber-400/90 z-10'
-                  : activeStepIndex === s.step_index
-                    ? 'bg-blue-400/80'
-                    : 'bg-primary/25'
-              }`}
-              style={{ left: `${x}%` }}
-              title={`Step ${s.step_index + 1}: ${s.tool_name}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSetForkPoint(isFork ? null : s.step_index);
-              }}
-            />
+              content={`Step ${s.step_index + 1}: ${s.tool_name}`}
+              placement="bottom"
+            >
+              <div
+                className={`absolute top-0 h-full w-[3px] transition-colors cursor-pointer ${
+                  isFork
+                    ? 'bg-amber-400/90 z-10'
+                    : activeStepIndex === s.step_index
+                      ? 'bg-blue-400/80'
+                      : 'bg-primary/25'
+                }`}
+                style={{ left: `${x}%` }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSetForkPoint(isFork ? null : s.step_index);
+                }}
+              />
+            </Tooltip>
           );
         })}
 
-        {/* Playhead */}
+        {/* Playhead -- branded diamond marker */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-blue-500 shadow-md shadow-blue-500/30 transition-[left] duration-75 z-20"
-          style={{ left: `calc(${pct}% - 7px)` }}
+          className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rotate-45 bg-white border-2 border-violet-500 transition-[left] duration-75 z-20"
+          style={{
+            left: `calc(${pct}% - 7px)`,
+            boxShadow: '0 1px 4px rgba(139, 92, 246, 0.4), 0 0 8px rgba(139, 92, 246, 0.15)',
+          }}
         />
       </div>
 

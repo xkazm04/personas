@@ -2,21 +2,32 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/icons/icon.ico" />
+    <link rel="icon" href="./icons/icon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Personas</title>
-    <script src="/webview2-compat.js"></script>
-    <script src="/theme-init.js"></script>
+    <script src="./webview2-compat.js"></script>
+    <script src="./theme-init.js"></script>
     <script>
-      // Global error handler to catch uncaught errors (helps debug Android WebView)
+      // Global error handler — persists errors to Rust log file via IPC
+      function __logToRust(level, message) {
+        try {
+          if (window.__TAURI_INTERNALS__) {
+            window.__TAURI_INTERNALS__.invoke('log_frontend_error', { level: level, message: message });
+          }
+        } catch (_) { /* IPC not ready yet */ }
+      }
       window.onerror = function(msg, url, line, col, err) {
-        console.error('[GLOBAL ERROR] ' + msg + ' at ' + url + ':' + line + ':' + col);
-        if (err && err.stack) console.error('[GLOBAL ERROR] Stack: ' + err.stack);
+        var text = '[GLOBAL ERROR] ' + msg + ' at ' + url + ':' + line + ':' + col;
+        if (err && err.stack) text += '\n' + err.stack;
+        console.error(text);
+        __logToRust('error', text);
       };
       window.addEventListener('unhandledrejection', function(e) {
         var r = e.reason;
         var msg = r instanceof Error ? r.message : (r && typeof r === 'object' ? (r.message || r.error || JSON.stringify(r)) : String(r));
-        console.error('[UNHANDLED PROMISE] ' + msg);
+        var text = '[UNHANDLED PROMISE] ' + msg;
+        console.error(text);
+        __logToRust('error', text);
       });
     </script>
   </head>

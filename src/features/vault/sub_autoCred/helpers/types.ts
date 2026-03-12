@@ -26,7 +26,7 @@ export type AutoCredMode = 'playwright' | 'guided';
 /** Values extracted from the browser session, keyed by field key */
 export type ExtractedValues = Record<string, string>;
 
-// ── Partial Extraction Contract ──────────────────────────────────────
+// -- Partial Extraction Contract --------------------------------------
 
 /**
  * An extraction is **partial** when the adapter could not fill every
@@ -106,7 +106,7 @@ export interface SessionContext {
   last_assistant_text: string | null;
 }
 
-/** Parse backend error string — returns structured info or wraps raw string */
+/** Parse backend error string -- returns structured info or wraps raw string */
 export function parseAutoCredError(raw: string): AutoCredErrorInfo {
   try {
     const parsed = JSON.parse(raw);

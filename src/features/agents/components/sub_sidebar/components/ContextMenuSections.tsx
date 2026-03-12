@@ -3,7 +3,7 @@ import { Cpu, Copy, Power, PowerOff, Trash2, ChevronRight, Check, AlertTriangle,
 import type { DbPersona } from '@/lib/types/types';
 import { QUICK_MODELS, currentModelValue } from './ContextMenuActions';
 
-// ── Model Submenu ─────────────────────────────────────────────────────
+// -- Model Submenu -----------------------------------------------------
 
 interface ModelSubmenuProps {
   persona: DbPersona;
@@ -69,7 +69,7 @@ export function ModelSubmenu({ persona, subMenuRef, subPos, showModelSub, setSho
   );
 }
 
-// ── Menu Item Sections ────────────────────────────────────────────────
+// -- Menu Item Sections ------------------------------------------------
 
 interface MenuItemsProps {
   persona: DbPersona;

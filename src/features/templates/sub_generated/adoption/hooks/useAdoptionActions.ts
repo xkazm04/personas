@@ -1,5 +1,5 @@
 /**
- * useAdoptionActions — step transitions, credential wrappers, quick adopt,
+ * useAdoptionActions -- step transitions, credential wrappers, quick adopt,
  * draft recovery, and convenience helpers.
  *
  * Extracted from AdoptionWizardContext to isolate action/handler concerns.
@@ -38,7 +38,7 @@ export function useAdoptionActions({
   const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
   const setAdoptionDraft = usePersonaStore((s) => s.setAdoptionDraft);
 
-  // ── Step transition handler ──
+  // -- Step transition handler --
 
   const handleNext = useCallback(() => {
     const transition = STEP_TRANSITIONS[state.step](state);
@@ -60,7 +60,7 @@ export function useAdoptionActions({
     }
   }, [state, wizard, asyncOps]);
 
-  // ── Credential wrappers (manual-selection-aware) ──
+  // -- Credential wrappers (manual-selection-aware) --
 
   const setConnectorCredential = useCallback((connectorName: string, credentialId: string) => {
     manualSelectionsRef.current.add(connectorName);
@@ -88,7 +88,7 @@ export function useAdoptionActions({
     [state.draft, wizard],
   );
 
-  // ── Auto-adoption helpers ──
+  // -- Auto-adoption helpers --
 
   const quickAdoptingRef = useRef(false);
   const quickAdoptPendingRef = useRef(false);
@@ -131,7 +131,7 @@ export function useAdoptionActions({
     wizard.setAutoResolved(false);
   }, [wizard]);
 
-  // ── Draft recovery ──
+  // -- Draft recovery --
 
   const saveDraftToStore = useCallback(() => {
     if (state.step === 'choose' && Object.keys(state.connectorCredentialMap).length === 0) return;

@@ -1,5 +1,5 @@
 /**
- * Round 5: Resilience — Large input processing and graceful failure handling.
+ * Round 5: Resilience -- Large input processing and graceful failure handling.
  *
  * These tests evaluate how each provider handles edge cases: processing a
  * large dataset (1000 records) and recovering gracefully from a missing file.
@@ -30,10 +30,10 @@ afterEach(() => {
 
 for (const provider of providers) {
   describe(`${provider.displayName}`, () => {
-    // ─────────────────────────────────────────────────────────────────────
-    // Test 1: Large input processing — count active records in 1000 lines
-    // ─────────────────────────────────────────────────────────────────────
-    it('large input processing — counts 334 active records from 1000-line file', async () => {
+    // ---------------------------------------------------------------------
+    // Test 1: Large input processing -- count active records in 1000 lines
+    // ---------------------------------------------------------------------
+    it('large input processing -- counts 334 active records from 1000-line file', async () => {
       workspace = createWorkspace('large-input');
 
       const result = await runCli({
@@ -78,10 +78,10 @@ for (const provider of providers) {
       expect(validation.passed, formatDiagnostic(result, validation)).toBe(true);
     }, 180_000);
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Test 2: Graceful failure handling — read a nonexistent file
-    // ─────────────────────────────────────────────────────────────────────
-    it('graceful failure handling — explains missing file without crashing', async () => {
+    // ---------------------------------------------------------------------
+    // Test 2: Graceful failure handling -- read a nonexistent file
+    // ---------------------------------------------------------------------
+    it('graceful failure handling -- explains missing file without crashing', async () => {
       workspace = createWorkspace('empty');
 
       const result = await runCli({

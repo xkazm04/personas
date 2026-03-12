@@ -3,7 +3,7 @@ import type { PipelineTemplate } from './pipelineTemplateTypes';
 import { EDGE_COLORS, NODE_ROLE_FILLS } from './pipelineTemplateTypes';
 
 // ============================================================================
-// Mini Canvas SVG — renders topology shape
+// Mini Canvas SVG -- renders topology shape
 // ============================================================================
 
 export function MiniCanvas({ template, hovered }: { template: PipelineTemplate; hovered: boolean }) {

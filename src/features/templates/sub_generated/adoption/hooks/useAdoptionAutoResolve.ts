@@ -1,5 +1,5 @@
 /**
- * useAdoptionAutoResolve — auto-swaps connectors to credentialed alternatives
+ * useAdoptionAutoResolve -- auto-swaps connectors to credentialed alternatives
  * and auto-resolves single-match credentials for required connectors.
  *
  * Extracted from AdoptionWizardContext to isolate auto-matching concerns.
@@ -36,7 +36,7 @@ export function useAdoptionAutoResolve({
   draftRestoredRef,
   review,
 }: UseAdoptionAutoResolveOptions) {
-  // ── Auto-swap connectors without credentials ──
+  // -- Auto-swap connectors without credentials --
   const autoSwapRanRef = useRef(false);
   useEffect(() => {
     if (state.step !== 'choose' || autoSwapRanRef.current || !requiredConnectors.length) return;
@@ -65,8 +65,8 @@ export function useAdoptionAutoResolve({
     }
   }, [requiredConnectors, liveCredentials, state.step, wizard]);
 
-  // ── Auto-resolve credentials ──
-  // Deferred until after draft restore completes to avoid race condition (Phase E fix — Area #11)
+  // -- Auto-resolve credentials --
+  // Deferred until after draft restore completes to avoid race condition (Phase E fix -- Area #11)
   useEffect(() => {
     if (state.step !== 'choose' || state.autoResolved || !requiredConnectors.length) return;
     if (autoResolveRanRef.current) return;

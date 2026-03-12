@@ -35,7 +35,7 @@ export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
     try {
       await openExternalUrl(docsUrl);
     } catch {
-      // intentional: non-critical — Tauri shell open failed, fall back to window.open
+      // intentional: non-critical -- Tauri shell open failed, fall back to window.open
       window.open(docsUrl, '_blank', 'noopener,noreferrer');
     }
   };

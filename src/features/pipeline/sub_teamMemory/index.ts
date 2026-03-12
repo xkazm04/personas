@@ -1,4 +1,4 @@
-// ── Components ──────────────────────────────────────────────
+// -- Components ----------------------------------------------
 export { default as TeamMemoryPanel } from './components/panel/TeamMemoryPanel';
 export { default as TeamMemoryBadge } from './components/panel/TeamMemoryBadge';
 export { default as TeamMemoryRow } from './components/panel/TeamMemoryRow';
@@ -14,7 +14,7 @@ export { default as MemoryRowActions } from './components/panel/MemoryRowActions
 export { MemoryEntry as TimelineItem, ManualGroup, formatTime } from './components/timeline/TimelineItem';
 export { RunMarker as TimelineControls, type RunGroup } from './components/timeline/TimelineControls';
 
-// ── Libs ────────────────────────────────────────────────────
+// -- Libs ----------------------------------------------------
 export { computeMemoryDiff } from './libs/memoryDiff';
 export type { MemoryRunDiff } from './libs/memoryDiff';
 export {

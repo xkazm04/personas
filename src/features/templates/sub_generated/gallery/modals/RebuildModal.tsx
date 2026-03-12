@@ -137,7 +137,7 @@ export function RebuildModal({
               </div>
 
               <p className="text-sm text-muted-foreground/60 text-center">
-                You can close this dialog — the rebuild will continue in the background.
+                You can close this dialog -- the rebuild will continue in the background.
               </p>
             </div>
           )}

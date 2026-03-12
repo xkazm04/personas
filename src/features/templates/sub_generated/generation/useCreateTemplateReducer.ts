@@ -3,7 +3,7 @@ import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { useWizardReducer } from '@/hooks/useWizardReducer';
 
-// ── Persistence ──
+// -- Persistence --
 
 export const CREATE_TEMPLATE_CONTEXT_KEY = 'create-template-context-v1';
 export const CREATE_TEMPLATE_CONTEXT_MAX_AGE_MS = 10 * 60 * 1000;
@@ -15,7 +15,7 @@ export interface PersistedCreateTemplateContext {
   savedAt: number;
 }
 
-// ── Wizard Steps ──
+// -- Wizard Steps --
 
 export type CreateTemplateStep = 'describe' | 'generate' | 'review';
 
@@ -31,7 +31,7 @@ export const CREATE_TEMPLATE_STEP_META: Record<CreateTemplateStep, { label: stri
   review:   { label: 'Review',   index: 2 },
 };
 
-// ── State ──
+// -- State --
 
 export interface CreateTemplateState {
   step: CreateTemplateStep;
@@ -79,7 +79,7 @@ const INITIAL_STATE: CreateTemplateState = {
   error: null,
 };
 
-// ── Hook ──
+// -- Hook --
 
 export function useCreateTemplateReducer() {
   const core = useWizardReducer<CreateTemplateState>({

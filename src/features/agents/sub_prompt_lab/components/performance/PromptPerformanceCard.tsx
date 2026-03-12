@@ -144,7 +144,7 @@ export function PromptPerformanceCard({ personaId, onOpenLab }: PromptPerformanc
           const isHigh = rate > 0.2;
           const isMedium = rate > 0.05 && rate <= 0.2;
           return (
-            <div key={window} className="p-2 rounded-lg bg-secondary/40 border border-primary/8">
+            <div key={window} className="p-2 rounded-lg bg-secondary/40 border border-primary/10">
               <div className="text-[11px] text-muted-foreground/50 mb-0.5 uppercase tracking-wider">{window}</div>
               <div className={`text-sm font-semibold font-mono ${isHigh ? 'text-red-400' : isMedium ? 'text-amber-400' : 'text-emerald-400'}`}>
                 {fmtPct(rate)}

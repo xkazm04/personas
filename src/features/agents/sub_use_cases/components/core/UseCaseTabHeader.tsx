@@ -22,7 +22,7 @@ export function UseCaseGeneralHistory({ personaId, refreshSignal }: UseCaseGener
       // Show executions with no use_case_id
       setGeneralHistory(all.filter((e) => !e.use_case_id));
     } catch {
-      // intentional: non-critical — background history fetch
+      // intentional: non-critical -- background history fetch
       setGeneralHistory([]);
     } finally {
       setGeneralHistoryLoading(false);

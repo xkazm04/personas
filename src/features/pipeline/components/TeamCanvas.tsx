@@ -42,7 +42,7 @@ export default function TeamCanvas() {
     fetchAnalytics: pipeline.fetchAnalytics,
   });
 
-  // ── Derived canvas state (nodes + edges from source data) ──────────
+  // -- Derived canvas state (nodes + edges from source data) ----------
   const derived = useDerivedCanvasState({
     selectedTeamId, teamMembers, teamConnections, personas,
     pipelineNodeStatuses: cs.pipelineNodeStatuses,
@@ -52,7 +52,7 @@ export default function TeamCanvas() {
     snapToGrid,
   });
 
-  // ── Build sticky note nodes ────────────────────────────────────────
+  // -- Build sticky note nodes ----------------------------------------
   const handleUpdateNote = useCallback((id: string, text: string, category: StickyNoteCategory) => {
     dispatch({ type: 'UPDATE_STICKY_NOTE', id, text, category });
   }, [dispatch]);
@@ -71,7 +71,7 @@ export default function TeamCanvas() {
     })),
   [cs.stickyNotes, handleUpdateNote, handleDeleteNote]);
 
-  // ── Sync derived + sticky nodes into React Flow ────────────────────
+  // -- Sync derived + sticky nodes into React Flow --------------------
   useEffect(() => {
     setNodes((prev) => {
       const posMap = new Map(prev.map((n) => [n.id, n.position]));

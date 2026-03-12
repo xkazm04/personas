@@ -169,7 +169,7 @@ pub async fn execute_db_query(
     let result = crate::engine::db_query::execute_query(&state.db, &credential_id, &query_text, Some(&state.user_db)).await;
 
     // Update last_run stats if we have a saved query ID
-    // (fire-and-forget — don't fail the execution if this errors)
+    // (fire-and-forget -- don't fail the execution if this errors)
     if let Some(id) = saved_query_id {
         let db = state.db.clone();
         let success = result.is_ok();

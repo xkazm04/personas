@@ -17,7 +17,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
       setCopiedHmac(true);
       setTimeout(() => setCopiedHmac(false), 2000);
     } catch {
-      // intentional: non-critical — clipboard write best-effort
+      // intentional: non-critical -- clipboard write best-effort
     }
   };
 

@@ -1,4 +1,4 @@
-/** Mirrors src-tauri/src/db/models/automation.rs — PersonaAutomation */
+/** Mirrors src-tauri/src/db/models/automation.rs -- PersonaAutomation */
 export interface PersonaAutomation {
   id: string;
   personaId: string;

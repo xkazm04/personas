@@ -2,7 +2,7 @@
 
 export type PersonaSlaStats = { persona_id: string, persona_name: string, total_executions: bigint, successful: bigint, failed: bigint, cancelled: bigint, 
 /**
- * Success rate as 0.0–1.0.
+ * Success rate as 0.0--1.0.
  */
 success_rate: number, avg_duration_ms: number, p95_duration_ms: number, total_cost_usd: number, 
 /**

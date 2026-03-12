@@ -1,7 +1,7 @@
 import type { CredentialDesignPhase } from '@/hooks/design/credential/useCredentialDesign';
 import type { CredentialDesignContextValue } from '@/features/vault/sub_design/CredentialDesignContext';
 
-// ── Return type ─────────────────────────────────────────────────────
+// -- Return type -----------------------------------------------------
 export interface CredentialDesignOrchestrator {
   /** Ready-made context value for CredentialDesignProvider (null before result). */
   contextValue: CredentialDesignContextValue | null;

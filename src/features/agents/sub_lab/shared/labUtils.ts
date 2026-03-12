@@ -1,4 +1,4 @@
-// ── Shared primitives (single source of truth) ──
+// -- Shared primitives (single source of truth) --
 export {
   TAG_STYLES,
   formatRelative,
@@ -6,7 +6,7 @@ export {
   diffStrings,
 } from '@/features/agents/sub_lab_shared/labPrimitives';
 
-// ── Scoring utilities — delegated to unified eval framework ──
+// -- Scoring utilities -- delegated to unified eval framework --
 // These are re-exported from the single source of truth.
 export {
   compositeScore,

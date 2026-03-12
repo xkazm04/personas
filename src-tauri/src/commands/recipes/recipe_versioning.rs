@@ -5,7 +5,7 @@
 use crate::commands::credentials::ai_artifact_flow::AiArtifactMessages;
 use crate::engine::design::extract_json_by_key;
 
-// ── Messages ────────────────────────────────────────────────────
+// -- Messages ----------------------------------------------------
 
 pub const RECIPE_VERSIONING_MESSAGES: AiArtifactMessages = AiArtifactMessages {
     status_event: "recipe-versioning-status",
@@ -22,7 +22,7 @@ pub const RECIPE_VERSIONING_MESSAGES: AiArtifactMessages = AiArtifactMessages {
     timeout_secs: 300,
 };
 
-// ── Prompt builder ──────────────────────────────────────────────
+// -- Prompt builder ----------------------------------------------
 
 pub fn build_recipe_versioning_prompt(
     recipe_name: &str,
@@ -72,7 +72,7 @@ Important:
     )
 }
 
-// ── Extractor ───────────────────────────────────────────────────
+// -- Extractor ---------------------------------------------------
 
 pub fn extract_recipe_versioning_result(output: &str) -> Option<serde_json::Value> {
     extract_json_by_key(output, &["prompt_template", "changes_summary"])

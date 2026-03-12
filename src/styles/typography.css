@@ -1,4 +1,4 @@
-/* ══════════════════════════════════════════════════════════════════════════════
+/* ==============================================================================
    Typography System
    Single source of truth for fonts, text styles, and script-aware rendering.
 
@@ -12,13 +12,13 @@
      <h1 className="typo-hero">Welcome</h1>
      <p className="typo-body">Description text</p>
      <span className="typo-data">$1,234.56</span>
-   ══════════════════════════════════════════════════════════════════════════════ */
+   ============================================================================== */
 
-/* ── Font Loading ──────────────────────────────────────────────────────────── */
+/* -- Font Loading ------------------------------------------------------------ */
 /* Fonts are loaded on-demand via i18nStore when a language is selected.
-   No static @import — this avoids loading ~200KB+ of unused fonts on startup. */
+   No static @import -- this avoids loading ~200KB+ of unused fonts on startup. */
 
-/* ── Language Font Stacks ────────────────────────────────────────────────────
+/* -- Language Font Stacks ----------------------------------------------------
    Driven by [data-lang] on <html>, set by applyLangAttributes().
    Each language gets its preferred font first, falling back to the app default. */
 
@@ -41,23 +41,23 @@
 [data-lang="ja"]  { --font-lang: 'Noto Sans JP', var(--font-sans); }
 [data-lang="ko"]  { --font-lang: 'Noto Sans KR', var(--font-sans); }
 
-/* Apply language font to body — everything inherits */
+/* Apply language font to body -- everything inherits */
 body {
   font-family: var(--font-lang);
 }
 
-/* ── RTL & Script-Specific Tuning ────────────────────────────────────────────
+/* -- RTL & Script-Specific Tuning --------------------------------------------
    Arabic needs RTL direction + looser line heights.
    CJK/Devanagari need taller line heights for readability. */
 
-/* Arabic text direction — scoped to text content only, not app layout.
+/* Arabic text direction -- scoped to text content only, not app layout.
    Apply .typo-rtl on text containers that need right-to-left flow. */
 .typo-rtl {
   direction: rtl;
   text-align: right;
 }
 
-/* Script-aware line height adjustments — complex scripts need more breathing room */
+/* Script-aware line height adjustments -- complex scripts need more breathing room */
 [data-lang="zh"] .typo-body,
 [data-lang="ja"] .typo-body,
 [data-lang="ko"] .typo-body,
@@ -85,7 +85,7 @@ body {
   line-height: 1.45;
 }
 
-/* Arabic letter spacing — tighter tracking suits Arabic calligraphic flow */
+/* Arabic letter spacing -- tighter tracking suits Arabic calligraphic flow */
 [data-lang="ar"] .typo-label {
   letter-spacing: 0.02em;
 }
@@ -98,11 +98,11 @@ body {
   letter-spacing: 0.05em;
 }
 
-/* ── Semantic Typography Classes ─────────────────────────────────────────────
+/* -- Semantic Typography Classes ---------------------------------------------
    Use these instead of raw Tailwind combos. Each class defines a complete
    text role: size, weight, line-height, tracking, and features. */
 
-/* Hero — main page greeting (e.g. "Good Morning, Alex") */
+/* Hero -- main page greeting (e.g. "Good Morning, Alex") */
 .typo-hero {
   font-size: 2.25rem;            /* text-4xl */
   font-weight: 700;
@@ -111,7 +111,7 @@ body {
   font-feature-settings: "kern" 1, "liga" 1;
 }
 
-/* Heading — section titles, card headers */
+/* Heading -- section titles, card headers */
 .typo-heading {
   font-size: 0.875rem;           /* text-sm */
   font-weight: 700;
@@ -120,7 +120,7 @@ body {
   font-feature-settings: "kern" 1, "liga" 1;
 }
 
-/* Heading large — page-level headings */
+/* Heading large -- page-level headings */
 .typo-heading-lg {
   font-size: 1.25rem;            /* text-xl */
   font-weight: 700;
@@ -129,7 +129,7 @@ body {
   font-feature-settings: "kern" 1, "liga" 1;
 }
 
-/* Body — paragraphs, descriptions */
+/* Body -- paragraphs, descriptions */
 .typo-body {
   font-size: 0.875rem;           /* text-sm */
   font-weight: 400;
@@ -137,7 +137,7 @@ body {
   font-feature-settings: "kern" 1, "liga" 1;
 }
 
-/* Body large — prominent descriptions, summaries */
+/* Body large -- prominent descriptions, summaries */
 .typo-body-lg {
   font-size: 1rem;               /* text-base */
   font-weight: 400;
@@ -145,7 +145,7 @@ body {
   font-feature-settings: "kern" 1, "liga" 1;
 }
 
-/* Caption — small secondary text, timestamps, hints */
+/* Caption -- small secondary text, timestamps, hints */
 .typo-caption {
   font-size: 0.75rem;            /* text-xs */
   font-weight: 500;
@@ -153,7 +153,7 @@ body {
   font-feature-settings: "kern" 1, "liga" 1;
 }
 
-/* Label — uppercase category markers, dividers, badges */
+/* Label -- uppercase category markers, dividers, badges */
 .typo-label {
   font-size: 0.75rem;            /* text-xs */
   font-weight: 700;
@@ -163,7 +163,7 @@ body {
   font-feature-settings: "kern" 1, "liga" 1, "smcp" 0;
 }
 
-/* Data — numbers, stats, metrics. Tabular nums for alignment. */
+/* Data -- numbers, stats, metrics. Tabular nums for alignment. */
 .typo-data {
   font-size: 0.875rem;           /* text-sm */
   font-weight: 500;
@@ -172,7 +172,7 @@ body {
   font-feature-settings: "kern" 1, "tnum" 1, "lnum" 1;
 }
 
-/* Data large — hero metrics, big counters */
+/* Data large -- hero metrics, big counters */
 .typo-data-lg {
   font-size: 1.5rem;             /* text-2xl */
   font-weight: 700;
@@ -181,7 +181,7 @@ body {
   font-feature-settings: "kern" 1, "tnum" 1, "lnum" 1;
 }
 
-/* Code — monospace text, IDs, technical values */
+/* Code -- monospace text, IDs, technical values */
 .typo-code {
   font-family: var(--font-mono);
   font-size: 0.75rem;            /* text-xs */
@@ -190,34 +190,34 @@ body {
   font-feature-settings: "kern" 1, "zero" 1, "liga" 0;
 }
 
-/* ── Font Feature Presets ────────────────────────────────────────────────────
-   Composable modifiers — add to any element for OpenType polish.
+/* -- Font Feature Presets ----------------------------------------------------
+   Composable modifiers -- add to any element for OpenType polish.
    Leverages Tailwind 4.2 font-feature-settings utilities where possible,
    and provides classes for combinations not available as single utilities. */
 
-/* Tabular + lining nums — for aligned numeric columns */
+/* Tabular + lining nums -- for aligned numeric columns */
 .font-data {
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
-/* Slashed zero — distinguish 0 from O in technical contexts */
+/* Slashed zero -- distinguish 0 from O in technical contexts */
 .font-code {
   font-feature-settings: "zero" 1, "liga" 0;
 }
 
-/* Display — ligatures + kerning for large decorative text */
+/* Display -- ligatures + kerning for large decorative text */
 .font-display {
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
 }
 
-/* Small caps — elegant label variant */
+/* Small caps -- elegant label variant */
 .font-smallcaps {
   font-feature-settings: "smcp" 1, "kern" 1;
   text-transform: lowercase; /* smcp works on lowercase letters */
 }
 
-/* ── Text Scale Integration ──────────────────────────────────────────────────
+/* -- Text Scale Integration --------------------------------------------------
    Hooks into the existing data-text-scale system in globals.css.
    Semantic classes scale proportionally. */
 

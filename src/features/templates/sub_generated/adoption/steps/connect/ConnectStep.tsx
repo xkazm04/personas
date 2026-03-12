@@ -10,7 +10,7 @@ import type { ConnectorPipelineStep } from '@/lib/types/designTypes';
 import { InlineCredentialPanel } from './InlineCredentialPanel';
 import { UnresolvedComponentCard, DatabaseSetupCard } from './ConnectStepCards';
 
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
 export interface RequiredConnector {
   name: string;           // template's ORIGINAL connector
@@ -30,7 +30,7 @@ export interface RequiredConnector {
   }>;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────
+// -- Helpers --------------------------------------------------------------
 
 const BUILTIN_CONNECTORS = new Set(['personas_messages', 'personas_database']);
 
@@ -38,7 +38,7 @@ function isVirtual(name: string): boolean {
   return BUILTIN_CONNECTORS.has(name);
 }
 
-// ── Main Component ─────────────────────────────────────────────────────
+// -- Main Component -----------------------------------------------------
 
 export function ConnectStep() {
   const ctx = useAdoptionWizard();

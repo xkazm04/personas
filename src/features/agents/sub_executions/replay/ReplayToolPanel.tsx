@@ -3,7 +3,7 @@ import { Wrench, GitFork } from 'lucide-react';
 import type { ToolCallStep } from '@/hooks/execution/useReplayTimeline';
 import { formatDuration } from '@/lib/utils/formatters';
 
-/** Tool inspector panel — tool cards with active/completed/pending states. */
+/** Tool inspector panel -- tool cards with active/completed/pending states. */
 export function ReplayToolPanel({
   toolSteps,
   completedSteps,

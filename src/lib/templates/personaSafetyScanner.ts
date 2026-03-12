@@ -10,7 +10,7 @@
  */
 import type { N8nPersonaDraft, N8nToolDraft } from '@/api/templates/n8nTransform';
 
-// â”€â”€ Severity & Finding Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Severity & Finding Types -----------------------------------------
 
 export type ScanSeverity = 'critical' | 'warning' | 'info';
 
@@ -51,7 +51,7 @@ export interface ScanResult {
   scannedAt: string;
 }
 
-// â”€â”€ Pattern Definitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Pattern Definitions ----------------------------------------------
 
 interface ThreatPattern {
   category: ScanCategory;
@@ -63,7 +63,7 @@ interface ThreatPattern {
 }
 
 const THREAT_PATTERNS: ThreatPattern[] = [
-  // â”€â”€ Data Exfiltration â”€â”€
+  // -- Data Exfiltration --
   {
     category: 'data_exfiltration',
     severity: 'critical',
@@ -89,7 +89,7 @@ const THREAT_PATTERNS: ThreatPattern[] = [
     ],
   },
 
-  // â”€â”€ Shadow Prompting / Injection â”€â”€
+  // -- Shadow Prompting / Injection --
   {
     category: 'shadow_prompting',
     severity: 'critical',
@@ -119,7 +119,7 @@ const THREAT_PATTERNS: ThreatPattern[] = [
     ],
   },
 
-  // â”€â”€ Unauthorized Event Emission â”€â”€
+  // -- Unauthorized Event Emission --
   {
     category: 'unauthorized_event',
     severity: 'warning',
@@ -133,7 +133,7 @@ const THREAT_PATTERNS: ThreatPattern[] = [
     ],
   },
 
-  // â”€â”€ Credential Abuse â”€â”€
+  // -- Credential Abuse --
   {
     category: 'credential_abuse',
     severity: 'critical',
@@ -158,7 +158,7 @@ const THREAT_PATTERNS: ThreatPattern[] = [
     ],
   },
 
-  // â”€â”€ Privilege Escalation â”€â”€
+  // -- Privilege Escalation --
   {
     category: 'privilege_escalation',
     severity: 'critical',
@@ -186,7 +186,7 @@ const THREAT_PATTERNS: ThreatPattern[] = [
     ],
   },
 
-  // â”€â”€ Hidden Instructions â”€â”€
+  // -- Hidden Instructions --
   {
     category: 'hidden_instruction',
     severity: 'warning',
@@ -200,7 +200,7 @@ const THREAT_PATTERNS: ThreatPattern[] = [
     ],
   },
 
-  // â”€â”€ Dangerous Tool Patterns â”€â”€
+  // -- Dangerous Tool Patterns --
   {
     category: 'dangerous_tool',
     severity: 'warning',
@@ -214,7 +214,7 @@ const THREAT_PATTERNS: ThreatPattern[] = [
     ],
   },
 
-  // â”€â”€ Network Abuse â”€â”€
+  // -- Network Abuse --
   {
     category: 'network_abuse',
     severity: 'warning',
@@ -229,7 +229,7 @@ const THREAT_PATTERNS: ThreatPattern[] = [
     ],
   },
 
-  // â”€â”€ Info-level patterns (noteworthy but not blocking) â”€â”€
+  // -- Info-level patterns (noteworthy but not blocking) --
   {
     category: 'data_exfiltration',
     severity: 'info',
@@ -252,12 +252,12 @@ const THREAT_PATTERNS: ThreatPattern[] = [
   },
 ];
 
-// â”€â”€ Unicode Normalization â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Unicode Normalization --------------------------------------------
 
 /**
  * Normalize text to defeat Unicode homoglyph bypasses.
  *
- * 1. NFKC normalization â€” collapses compatibility equivalences (e.g. Cyrillic
+ * 1. NFKC normalization -- collapses compatibility equivalences (e.g. Cyrillic
  *    look-alikes, fullwidth Latin, styled math letters) into their canonical
  *    ASCII counterparts where a mapping exists.
  * 2. Strip non-ASCII whitespace (em-space, thin space, ideographic space, etc.)
@@ -274,7 +274,7 @@ function normalizeText(text: string): string {
   return normalized;
 }
 
-// â”€â”€ Text Extraction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Text Extraction --------------------------------------------------
 
 interface ExtractedText {
   source: string;
@@ -340,7 +340,7 @@ function extractDraftTexts(draft: N8nPersonaDraft): ExtractedText[] {
   return texts;
 }
 
-// â”€â”€ Context Extraction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Context Extraction -----------------------------------------------
 
 /**
  * Extract a context snippet around a regex match.
@@ -370,7 +370,7 @@ function extractMatchContext(text: string, pattern: RegExp): string {
   return snippet.length > 140 ? snippet.slice(0, 137) + '...' : snippet;
 }
 
-// â”€â”€ Scanner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Scanner ----------------------------------------------------------
 
 /**
  * Scan a persona draft for safety threats.
@@ -432,7 +432,7 @@ export function scanPersonaDraft(draft: N8nPersonaDraft): ScanResult {
   };
 }
 
-// â”€â”€ Tool-Specific Scanner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Tool-Specific Scanner --------------------------------------------
 
 /**
  * Additional patterns specifically for tool implementation guides.
@@ -496,7 +496,7 @@ export function scanToolDrafts(tools: N8nToolDraft[]): ScanFinding[] {
   return findings;
 }
 
-// â”€â”€ Display Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Display Helpers --------------------------------------------------
 
 export const SEVERITY_CONFIG: Record<ScanSeverity, {
   label: string;

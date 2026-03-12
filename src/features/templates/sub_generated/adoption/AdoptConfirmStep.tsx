@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
-  CheckCircle2,
   Wrench,
   Zap,
   Link,
@@ -16,7 +15,11 @@ import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
 import { extractProtocolCapabilities } from '@/features/templates/sub_n8n/edit/protocolParser';
-import { MOTION } from '@/features/templates/animationPresets';
+import { MOTION, REDUCED_FRAMER, TRANSITION_NORMAL } from '@/features/templates/animationPresets';
+import { CelebrationIllustration, ConfettiBurst } from '@/features/templates/sub_generated/shared/AdoptCelebration';
+
+/** Default persona accent color (violet-500) used when draft.color is unset */
+const DEFAULT_ACCENT = '#8b5cf6';
 
 interface AdoptConfirmStepProps {
   draft: N8nPersonaDraft;
@@ -34,6 +37,12 @@ export function AdoptConfirmStep({
   onReset,
 }: AdoptConfirmStepProps) {
   const [showPrompt, setShowPrompt] = useState(false);
+  const prefersReduced = useReducedMotion();
+  const springTransition = prefersReduced
+    ? REDUCED_FRAMER
+    : { type: 'spring' as const, damping: 15, stiffness: 300 };
+  const delayedTransition = (delay: number) =>
+    prefersReduced ? REDUCED_FRAMER : { ...TRANSITION_NORMAL, delay };
 
   const toolCount = designResult?.suggested_tools?.length ?? 0;
   const triggerCount = designResult?.suggested_triggers?.length ?? 0;
@@ -57,21 +66,18 @@ export function AdoptConfirmStep({
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', damping: 15, stiffness: 300 }}
-          className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center"
+          transition={springTransition}
+          className="relative p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center"
         >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.1, type: 'spring', damping: 10, stiffness: 200 }}
-            className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto mb-3"
-          >
-            <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-          </motion.div>
+          <ConfettiBurst />
+          <CelebrationIllustration
+            icon={draft.icon ?? '\u2728'}
+            color={draft.color ?? DEFAULT_ACCENT}
+          />
           <motion.p
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={delayedTransition(0.2)}
             className="text-sm font-semibold text-emerald-400 mb-1"
           >
             Persona Created Successfully
@@ -79,7 +85,7 @@ export function AdoptConfirmStep({
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            transition={delayedTransition(0.3)}
             className="text-sm text-emerald-400/60 mb-3"
           >
             {draft.name ?? 'Your persona'} is ready to use. Find it in the sidebar.
@@ -88,7 +94,7 @@ export function AdoptConfirmStep({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.35 }}
+              transition={delayedTransition(0.35)}
               className="flex items-center gap-2 justify-center text-sm text-amber-400/60 mb-3"
             >
               <AlertTriangle className="w-3 h-3" />
@@ -98,7 +104,7 @@ export function AdoptConfirmStep({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
+            transition={delayedTransition(0.4)}
             className="flex items-center justify-center gap-3"
           >
             <button
@@ -125,9 +131,9 @@ export function AdoptConfirmStep({
               animate={{ scale: 1 }}
               className="w-14 h-14 rounded-xl flex items-center justify-center text-xl border shadow-lg"
               style={{
-                backgroundColor: `${draft.color ?? '#8b5cf6'}18`,
-                borderColor: `${draft.color ?? '#8b5cf6'}30`,
-                boxShadow: `0 4px 24px ${draft.color ?? '#8b5cf6'}15`,
+                backgroundColor: `${draft.color ?? DEFAULT_ACCENT}18`,
+                borderColor: `${draft.color ?? DEFAULT_ACCENT}30`,
+                boxShadow: `0 4px 24px ${draft.color ?? DEFAULT_ACCENT}15`,
               }}
             >
               {draft.icon ?? '\u2728'}

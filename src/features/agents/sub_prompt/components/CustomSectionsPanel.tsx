@@ -31,7 +31,7 @@ export function CustomSectionsPanel({
         <span className="text-sm font-medium text-foreground/80">Custom Sections</span>
         <button
           onClick={onAdd}
-          className="px-2 py-1 text-sm rounded-lg border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 flex items-center gap-1 ml-auto"
+          className="px-2 py-1 text-sm rounded-lg border border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 flex items-center gap-1 ml-auto"
         >
           <Plus className="w-3 h-3" />
           Add
@@ -77,7 +77,7 @@ export function CustomSectionsPanel({
                 type="text"
                 value={currentCustom.title}
                 onChange={(e) => onUpdate(selectedIndex, 'title', e.target.value)}
-                className="px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 flex-shrink-0"
+                className="px-3 py-1.5 bg-background/50 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 flex-shrink-0"
                 placeholder="Section title..."
               />
               <div className="flex-1 min-h-0">

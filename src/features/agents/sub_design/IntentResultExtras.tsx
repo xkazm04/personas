@@ -10,7 +10,7 @@ import type {
   IntentCompilationResult,
 } from '@/lib/types/designTypes';
 
-// ── Category metadata ────────────────────────────────────────────
+// -- Category metadata --------------------------------------------
 
 const CATEGORY_META: Record<string, { Icon: typeof CheckCircle2; text: string; bg: string }> = {
   happy_path:     { Icon: CheckCircle2,  text: 'text-emerald-400', bg: 'bg-emerald-500/12' },
@@ -25,7 +25,7 @@ const COMPLEXITY_COLOR: Record<string, string> = {
   complex:  'text-red-400',
 };
 
-// ── Sub-components ───────────────────────────────────────────────
+// -- Sub-components -----------------------------------------------
 
 function UseCaseCard({ uc }: { uc: IntentUseCase }) {
   const [open, setOpen] = useState(false);
@@ -100,7 +100,7 @@ function TestScenarioRow({ ts }: { ts: IntentTestScenario }) {
   );
 }
 
-// ── Main component ───────────────────────────────────────────────
+// -- Main component -----------------------------------------------
 
 interface IntentResultExtrasProps {
   result: IntentCompilationResult;

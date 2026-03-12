@@ -9,3 +9,6 @@ export type { ConnectorReadiness } from './libs/connectorTypes';
 export { deriveReadiness, isExecutionReady } from './libs/connectorTypes';
 export type { SubscriptionStage, UnifiedSubscription } from './libs/subscriptionLifecycle';
 export { useSubscriptionManager } from './libs/subscriptionLifecycle';
+export { DependencyGraphPanel } from './components/connectors/DependencyGraphPanel';
+export { buildPersonaDependencyGraph } from './libs/dependencyGraph';
+export type { DepGraph, DepNode, DepEdge, DepBlastRadius } from './libs/dependencyGraph';

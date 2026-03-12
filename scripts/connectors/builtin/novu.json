@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Novu dashboard → Settings → API Keys"
+      "helpText": "From Novu dashboard -> Settings -> API Keys"
     }
   ],
   "healthcheck_config": {
@@ -31,7 +31,7 @@
     "auth_type": "api_key",
     "auth_type_label": "API Key",
     "docs_url": "https://docs.novu.co/api-reference/overview",
-    "setup_guide": "1. Sign up at web.novu.co.\n2. Go to Settings → API Keys.\n3. Copy the API key for your environment.\n4. Paste it here.",
+    "setup_guide": "1. Sign up at web.novu.co.\n2. Go to Settings -> API Keys.\n3. Copy the API key for your environment.\n4. Paste it here.",
     "pricing_tier": "freemium",
     "auth_methods": [
       {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true},

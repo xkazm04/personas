@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "123456:ABC-DEF...",
-      "helpText": "From @BotFather on Telegram → /newbot or /token"
+      "helpText": "From @BotFather on Telegram -> /newbot or /token"
     }
   ],
   "healthcheck_config": {

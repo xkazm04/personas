@@ -1,6 +1,12 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 // ============================================================================
+// Enums
+// ============================================================================
+
+export type TrustLevel = "manual" | "verified" | "revoked";
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -15,7 +21,7 @@ export interface TrustedPeer {
   peer_id: string;
   public_key_b64: string;
   display_name: string;
-  trust_level: string;
+  trust_level: TrustLevel;
   added_at: string;
   last_seen: string | null;
   notes: string | null;
@@ -23,7 +29,7 @@ export interface TrustedPeer {
 
 export interface UpdateTrustedPeerInput {
   display_name?: string | null;
-  trust_level?: string | null;
+  trust_level?: TrustLevel | null;
   notes?: string | null;
 }
 

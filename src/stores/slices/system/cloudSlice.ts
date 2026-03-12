@@ -107,11 +107,11 @@ export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = 
           if (isAuthError(err)) {
             set({ cloudError: "Credentials expired or revoked. Please reconnect to the cloud orchestrator." });
           }
-          // Network / unreachable errors — stay disconnected silently
+          // Network / unreachable errors -- stay disconnected silently
         }
       }
     } catch {
-      // intentional: non-critical — no config stored yet is expected on first launch
+      // intentional: non-critical -- no config stored yet is expected on first launch
     }
   },
 
@@ -177,7 +177,7 @@ export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = 
       set({ cloudPendingOAuthState: result.state });
       pendingOAuthTimeoutRef = setTimeout(() => {
         set({ cloudPendingOAuthState: null, cloudError: "OAuth authorization timed out. Please try again." });
-        useToastStore.getState().addToast("OAuth authorization timed out — please retry.", "error");
+        useToastStore.getState().addToast("OAuth authorization timed out -- please retry.", "error");
       }, PENDING_OAUTH_TIMEOUT_MS);
       return result;
     } catch (err) {

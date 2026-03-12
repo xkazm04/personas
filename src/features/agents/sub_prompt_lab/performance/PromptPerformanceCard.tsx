@@ -147,7 +147,7 @@ export function PromptPerformanceCard({ personaId, onOpenLab }: PromptPerformanc
           return (
             <div
               key={window}
-              className="p-2 rounded-lg bg-secondary/40 border border-primary/8"
+              className="p-2 rounded-lg bg-secondary/40 border border-primary/10"
             >
               <div className="text-[11px] text-muted-foreground/50 mb-0.5 uppercase tracking-wider">
                 {window}
@@ -170,7 +170,7 @@ export function PromptPerformanceCard({ personaId, onOpenLab }: PromptPerformanc
           className={`rounded-lg border p-3 space-y-2 ${
             versionComparison.isWorse
               ? 'border-red-500/20 bg-red-500/5'
-              : 'border-primary/8 bg-secondary/30'
+              : 'border-primary/10 bg-secondary/30'
           }`}
         >
           <div className="flex items-center justify-between">
@@ -217,7 +217,7 @@ export function PromptPerformanceCard({ personaId, onOpenLab }: PromptPerformanc
       )}
 
       {/* Auto-Rollback (Pro Feature) */}
-      <div className="rounded-lg border border-primary/8 bg-secondary/30 p-3">
+      <div className="rounded-lg border border-primary/10 bg-secondary/30 p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="w-3.5 h-3.5 text-violet-400/70" />

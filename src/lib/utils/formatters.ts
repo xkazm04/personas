@@ -23,7 +23,7 @@ export function formatRelativeTime(dateStr: string | null, fallback = '-'): stri
   return `${diffDays}d ago`;
 }
 
-// ── Badge color maps ────────────────────────────────────────────────────
+// -- Badge color maps ----------------------------------------------------
 export interface BadgeColors {
   bg: string;
   text: string;
@@ -34,7 +34,7 @@ export function badgeClass(colors: BadgeColors): string {
   return `${colors.bg} ${colors.text} border ${colors.border}`;
 }
 
-// ── Unified execution status map ────────────────────────────────────────
+// -- Unified execution status map ----------------------------------------
 export interface ExecutionStatusEntry extends BadgeColors {
   label: string;
   icon: LucideIcon;
@@ -60,7 +60,7 @@ export function getStatusEntry(status: string): ExecutionStatusEntry {
 
 /**
  * @deprecated Use EXECUTION_STATUS_MAP or getStatusEntry() instead.
- * Kept for backward compatibility — derives BadgeColors from the canonical map.
+ * Kept for backward compatibility -- derives BadgeColors from the canonical map.
  */
 export const EXECUTION_STATUS_COLORS: Record<string, BadgeColors> = (() => {
   const map: Record<string, BadgeColors> = {};
@@ -177,7 +177,7 @@ export function formatElapsed(ms: number, format: 'compact' | 'clock' = 'compact
   return remMins > 0 ? `${hours}h ${remMins}m` : `${hours}h`;
 }
 
-// ── Simple mode helpers ────────────────────────────────────────────────
+// -- Simple mode helpers ------------------------------------------------
 
 import type { SimpleStatus } from './designTokens';
 import { SIMPLE_MODE } from './designTokens';

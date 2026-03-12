@@ -71,7 +71,7 @@ export function CloudHistoryPanel() {
       setExecutions(execs);
       setStats(st);
     } catch {
-      // Errors handled silently â€” panel shows empty state
+      // Errors handled silently -- panel shows empty state
     } finally {
       setIsLoading(false);
     }

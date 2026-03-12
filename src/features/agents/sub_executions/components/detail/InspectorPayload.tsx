@@ -12,7 +12,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
   const [showOutput, setShowOutput] = useState(false);
 
   return (
-    <div className="rounded-xl border border-primary/15 bg-secondary/40 overflow-hidden">
+    <div className="rounded-xl border border-primary/20 bg-secondary/40 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
@@ -101,7 +101,7 @@ export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: 
         <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">Cost Breakdown</div>
         {estimated && (
           <span className="text-sm px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400/80 font-medium">
-            Unknown model — no pricing data
+            Unknown model -- no pricing data
           </span>
         )}
       </div>

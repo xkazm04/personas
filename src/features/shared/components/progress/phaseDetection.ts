@@ -8,7 +8,7 @@ import {
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { PhaseIconComponent, TransformPhaseInfo, AnalysisPhaseInfo } from './transformProgressTypes';
 
-// ── Transform mode phases (5 phases for n8n/adopt workflow) ──
+// -- Transform mode phases (5 phases for n8n/adopt workflow) --
 
 interface TransformPhase {
   keywords: string[];
@@ -21,7 +21,7 @@ const TRANSFORM_PHASES: TransformPhase[] = [
   { keywords: ['preparing', 'transformation prompt', 'building prompt', 'claude'], label: 'Preparing transformation', icon: Settings },
   { keywords: ['generating', 'persona', 'ai is', 'processing', 'claude cli', 'thinking'], label: 'AI generating persona draft', icon: Sparkles },
   { keywords: ['extracting', 'output received', 'json', 'draft', 'parsing result'], label: 'Extracting persona structure', icon: Code },
-  { keywords: ['complete', 'success', 'finished', 'done', 'ready', '✓'], label: 'Draft ready for review', icon: CheckCircle2 },
+  { keywords: ['complete', 'success', 'finished', 'done', 'ready', '[v]'], label: 'Draft ready for review', icon: CheckCircle2 },
 ];
 
 export function detectTransformPhase(lines: string[], streamPhase: CliRunPhase): TransformPhaseInfo | null {
@@ -48,7 +48,7 @@ export function detectTransformPhase(lines: string[], streamPhase: CliRunPhase):
   return { step: lastMatchedIndex + 1, total: TRANSFORM_PHASES.length, label: matched.label, Icon: matched.icon };
 }
 
-// ── Analysis mode phases (7 phases for design analysis) ──
+// -- Analysis mode phases (7 phases for design analysis) --
 
 const ANALYSIS_PHASES = [
   { keywords: ['[system]', 'starting', 'initializing', 'design analysis started'], label: 'Initializing analysis' },
@@ -57,7 +57,7 @@ const ANALYSIS_PHASES = [
   { keywords: ['tool', 'function', 'generating tool', 'suggest'], label: 'Recommending tools and triggers' },
   { keywords: ['trigger', 'event', 'schedule', 'channel', 'notification', 'connector'], label: 'Configuring integrations' },
   { keywords: ['feasibility', 'testing', 'validat', 'check'], label: 'Testing feasibility' },
-  { keywords: ['summary', 'highlight', 'finaliz', 'complete', 'finished', 'done', '✓'], label: 'Finalizing design' },
+  { keywords: ['summary', 'highlight', 'finaliz', 'complete', 'finished', 'done', '[v]'], label: 'Finalizing design' },
 ] as const;
 
 export function detectAnalysisPhase(lines: string[]): AnalysisPhaseInfo | null {

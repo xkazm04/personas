@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useTauriStream, type TauriStreamOptions } from '../core/useTauriStream';
 
-// ── Types ───────────────────────────────────────────────────────
+// -- Types -------------------------------------------------------
 
 /**
  * Configuration for an AI-generates-structured-artifact flow.
@@ -20,7 +20,7 @@ export interface AiArtifactFlowConfig<TPromptInput, TResult> {
   stream: TauriStreamOptions<TResult>;
   /**
    * Given the user-facing prompt input, return a promise that invokes the
-   * Tauri backend and starts streaming (e.g. calls `invoke("start_…")`).
+   * Tauri backend and starts streaming (e.g. calls `invoke("start_...")`).
    */
   startFn: (input: TPromptInput) => Promise<unknown>;
 }
@@ -28,7 +28,7 @@ export interface AiArtifactFlowConfig<TPromptInput, TResult> {
 /**
  * Hook that represents a complete AI-generates-artifact lifecycle:
  *
- *   idle → (start) → runningPhase → (status event) → completedPhase | error
+ *   idle -> (start) -> runningPhase -> (status event) -> completedPhase | error
  *
  * Use this to build domain-specific hooks without reimplementing the streaming
  * plumbing.  Extend the returned value with domain-specific state (see
@@ -54,15 +54,15 @@ export function useAiArtifactFlow<TPromptInput, TResult>(
 
   return {
     ...stream,
-    /** Typed start — replaces the raw `stream.start(invokeBackend)` call. */
+    /** Typed start -- replaces the raw `stream.start(invokeBackend)` call. */
     start,
   };
 }
 
-// ── Standard getLine / resolveStatus helpers ─────────────────────────────────
+// -- Standard getLine / resolveStatus helpers ---------------------------------
 
 /**
- * Default getLine extractor — pulls `payload.line` as a string.
+ * Default getLine extractor -- pulls `payload.line` as a string.
  * Works for both credential-design and negotiator events.
  */
 export const defaultGetLine = (payload: Record<string, unknown>): string =>
@@ -72,9 +72,9 @@ export const defaultGetLine = (payload: Record<string, unknown>): string =>
  * Build a standard resolveStatus function for the common n8n-transform /
  * credential-design / negotiator pattern:
  *
- *   payload.status === 'completed' && payload.result → { result }
- *   payload.status === 'failed'                      → { error }
- *   otherwise                                         → null (ignore)
+ *   payload.status === 'completed' && payload.result -> { result }
+ *   payload.status === 'failed'                      -> { error }
+ *   otherwise                                         -> null (ignore)
  */
 export function buildResolveStatus<TResult>(
   fallbackError: string,
@@ -86,6 +86,9 @@ export function buildResolveStatus<TResult>(
     }
     if (status === 'failed') {
       return { error: (payload.error as string) || fallbackError };
+    }
+    if (status === 'cancelled') {
+      return { error: 'Operation cancelled' };
     }
     return null;
   };

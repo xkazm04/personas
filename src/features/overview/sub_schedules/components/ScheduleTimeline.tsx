@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import {
-  CalendarClock, Loader2, RefreshCw, Pause,
+  CalendarClock, Loader2, RefreshCw, Pause, Plus,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { usePersonaStore } from '@/stores/personaStore';
@@ -14,6 +14,7 @@ import {
 } from '../libs/scheduleHelpers';
 import { useScheduleActions } from '../libs/useScheduleActions';
 import { getSchedulerStatus, startScheduler, stopScheduler } from '@/api/pipeline/scheduler';
+import { seedMockCronAgent } from '@/api/pipeline/triggers';
 import type { SchedulerStats } from '@/api/pipeline/scheduler';
 import ScheduleRow from './ScheduleRow';
 import SkippedRecoveryPanel from './SkippedRecoveryPanel';
@@ -39,17 +40,24 @@ export default function ScheduleTimeline() {
 
   // Load agents + scheduler status on mount
   useEffect(() => {
+    let cancelled = false;
     fetchCronAgents();
-    getSchedulerStatus().then(setSchedulerStats).catch(() => {});
+    getSchedulerStatus()
+      .then((d) => { if (!cancelled) setSchedulerStats(d); })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, [fetchCronAgents]);
 
   // Auto-refresh every 30s
   useEffect(() => {
+    let cancelled = false;
     const interval = setInterval(() => {
       fetchCronAgents();
-      getSchedulerStatus().then(setSchedulerStats).catch(() => {});
+      getSchedulerStatus()
+        .then((d) => { if (!cancelled) setSchedulerStats(d); })
+        .catch(() => {});
     }, 30_000);
-    return () => clearInterval(interval);
+    return () => { cancelled = true; clearInterval(interval); };
   }, [fetchCronAgents]);
 
   // Parse all agents into schedule entries
@@ -64,6 +72,11 @@ export default function ScheduleTimeline() {
 
   const activeCount = entries.filter((e) => e.health !== 'paused').length;
   const pausedCount = entries.filter((e) => e.health === 'paused').length;
+
+  const handleSeedSchedule = useCallback(async () => {
+    try { await seedMockCronAgent(); await fetchCronAgents(); }
+    catch (err) { console.error('Failed to seed mock schedule:', err); }
+  }, [fetchCronAgents]);
 
   const handleToggleScheduler = async () => {
     try {
@@ -106,7 +119,7 @@ export default function ScheduleTimeline() {
                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
                     : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
                 }`}
-                title={schedulerStats.running ? 'Scheduler running — click to pause' : 'Scheduler stopped — click to start'}
+                title={schedulerStats.running ? 'Scheduler running -- click to pause' : 'Scheduler stopped -- click to start'}
               >
                 {schedulerStats.running ? (
                   <>
@@ -119,6 +132,13 @@ export default function ScheduleTimeline() {
                     Engine Off
                   </>
                 )}
+              </button>
+            )}
+
+            {/* Mock seed (dev only) */}
+            {import.meta.env.DEV && (
+              <button onClick={handleSeedSchedule} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock schedule (dev only)">
+                <Plus className="w-3.5 h-3.5" /> Mock Schedule
               </button>
             )}
 
@@ -222,7 +242,7 @@ export default function ScheduleTimeline() {
   );
 }
 
-// ── Grouped View ──────────────────────────────────────────────────────────────
+// -- Grouped View --------------------------------------------------------------
 
 function GroupedView({
   groups,

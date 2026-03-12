@@ -19,7 +19,7 @@ use super::n8n_transform::{
     parse_persona_output, run_claude_prompt_text_inner, N8nPersonaOutput,
 };
 
-// ── Adopt job extra state ───────────────────────────────────────
+// -- Adopt job extra state ---------------------------------------
 
 #[derive(Clone, Default)]
 struct AdoptExtra {
@@ -28,13 +28,10 @@ struct AdoptExtra {
     questions: Option<serde_json::Value>,
 }
 
-/// Snapshot serialized for the frontend.
+/// Adopt-specific extras flattened into BackgroundTaskSnapshot.
 #[derive(Clone, Serialize)]
-struct TemplateAdoptSnapshot {
+struct AdoptSnapshotExtras {
     adopt_id: String,
-    status: String,
-    error: Option<String>,
-    lines: Vec<String>,
     draft: Option<serde_json::Value>,
     questions: Option<serde_json::Value>,
 }
@@ -69,18 +66,11 @@ fn get_adopt_claude_session(adopt_id: &str) -> Option<String> {
     ADOPT_JOBS.read_extra(adopt_id, |extra| extra.claude_session_id.clone())?
 }
 
-fn get_adopt_snapshot_internal(adopt_id: &str) -> Option<TemplateAdoptSnapshot> {
-    ADOPT_JOBS.get_snapshot_with(adopt_id, |id, job| TemplateAdoptSnapshot {
-        adopt_id: id.to_string(),
-        status: if job.status.is_empty() {
-            "idle".to_string()
-        } else {
-            job.status.clone()
-        },
-        error: job.error.clone(),
-        lines: job.lines.clone(),
-        draft: job.extra.draft.clone(),
-        questions: job.extra.questions.clone(),
+fn get_adopt_snapshot_internal(adopt_id: &str) -> Option<crate::background_job::BackgroundTaskSnapshot<AdoptSnapshotExtras>> {
+    ADOPT_JOBS.get_task_snapshot(adopt_id, |extra| AdoptSnapshotExtras {
+        adopt_id: adopt_id.to_string(),
+        draft: extra.draft.clone(),
+        questions: extra.questions.clone(),
     })
 }
 
@@ -104,7 +94,7 @@ pub fn cancel_generate_job(app: &tauri::AppHandle, gen_id: &str) -> Result<(), c
     GEN_JOBS.cancel(app, gen_id)
 }
 
-// ── Commands ────────────────────────────────────────────────────
+// -- Commands ----------------------------------------------------
 
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
@@ -141,7 +131,7 @@ pub async fn start_template_adopt_background(
 
     tokio::spawn(async move {
         if is_adjustment {
-            // ── Adjustment re-run: single-prompt path (no interactive questions) ──
+            // -- Adjustment re-run: single-prompt path (no interactive questions) --
             let result = tokio::select! {
                 _ = token_for_task.cancelled() => {
                     Err(AppError::Internal("Adoption cancelled by user".into()))
@@ -165,7 +155,7 @@ pub async fn start_template_adopt_background(
                 &template_name_clone,
             );
         } else {
-            // ── Initial transform: unified prompt (may produce questions or persona) ──
+            // -- Initial transform: unified prompt (may produce questions or persona) --
             let result = tokio::select! {
                 _ = token_for_task.cancelled() => {
                     Err(AppError::Internal("Adoption cancelled by user".into()))
@@ -190,11 +180,11 @@ pub async fn start_template_adopt_background(
                     );
                 }
                 Ok((None, true)) => {
-                    // Questions were produced and stored — status is awaiting_answers
+                    // Questions were produced and stored -- status is awaiting_answers
                     // Frontend will poll and pick up the questions
                 }
                 Ok((None, false)) => {
-                    // No questions and no persona — unusual, treat as failure
+                    // No questions and no persona -- unusual, treat as failure
                     handle_adopt_result(
                         Err(AppError::Internal("No output from unified transform".into())),
                         &app_handle,
@@ -300,6 +290,8 @@ pub fn confirm_template_adopt_draft(
     template_name: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
+    let tpl_name = template_name.as_deref().unwrap_or("unknown");
+    tracing::info!(template_id = %tpl_name, "confirm_template_adopt_draft: start");
     let draft: N8nPersonaOutput = serde_json::from_str(&draft_json)
         .map_err(|e| AppError::Validation(format!("Invalid draft JSON: {e}")))?;
 
@@ -318,15 +310,19 @@ pub fn confirm_template_adopt_draft(
         None, // no n8n session for template adopt
     )?;
 
-    // Track adoption count for the source template
+    // Track adoption count for the source template (with audit log)
+    let created_persona_id = response.get("persona").and_then(|p| p.get("id")).and_then(|v| v.as_str());
     if let Some(name) = template_name.as_deref().or(draft.name.as_deref()) {
-        let _ = reviews_repo::increment_adoption_count(&state.db, name);
+        if let Err(e) = reviews_repo::increment_adoption_count(&state.db, name, created_persona_id) {
+            tracing::warn!(template = %name, error = %e, "Failed to increment adoption count");
+        }
     }
 
+    tracing::info!(template_id = %tpl_name, outcome = "success", "confirm_template_adopt_draft: completed");
     Ok(response)
 }
 
-// ── Instant Adopt (no AI transform — creates persona directly from design) ──
+// -- Instant Adopt (no AI transform -- creates persona directly from design) --
 
 #[tauri::command]
 pub fn instant_adopt_template(
@@ -335,6 +331,7 @@ pub fn instant_adopt_template(
     design_result_json: String,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
+    tracing::info!(template_id = %template_name, "instant_adopt_template: start");
     if design_result_json.trim().is_empty() {
         return Err(AppError::Validation(
             "Design result JSON cannot be empty".into(),
@@ -419,13 +416,16 @@ pub fn instant_adopt_template(
         },
     )?;
 
-    // Track adoption count for the source template
-    let _ = reviews_repo::increment_adoption_count(&state.db, &template_name);
+    // Track adoption count for the source template (with audit log)
+    if let Err(e) = reviews_repo::increment_adoption_count(&state.db, &template_name, Some(&persona.id)) {
+        tracing::warn!(template = %template_name, error = %e, "Failed to increment adoption count");
+    }
 
+    tracing::info!(template_id = %template_name, persona_id = %persona.id, outcome = "success", "instant_adopt_template: completed");
     Ok(json!({ "persona": persona }))
 }
 
-// ── Question Generation (fallback for direct calls) ─────────────
+// -- Question Generation (fallback for direct calls) -------------
 
 #[tauri::command]
 pub async fn generate_template_adopt_questions(
@@ -434,6 +434,7 @@ pub async fn generate_template_adopt_questions(
     design_result_json: String,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
+    tracing::info!(template_id = %template_name, "generate_template_adopt_questions: start");
     if design_result_json.trim().is_empty() {
         return Err(AppError::Validation(
             "Design result JSON cannot be empty".into(),
@@ -537,9 +538,12 @@ Rules:
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-haiku-4-5-20251001".to_string());
 
+    let llm_start = std::time::Instant::now();
     let (output, _session_id, _) = run_claude_prompt_text_inner(prompt_text, &cli_args, None, None, None, 90)
         .await
         .map_err(AppError::Internal)?;
+    let elapsed_ms = llm_start.elapsed().as_millis();
+    tracing::info!(elapsed_ms = %elapsed_ms, phase = "unified_questions", "LLM call completed");
 
     let json_str = extract_first_json_object(&output)
         .or_else(|| {
@@ -559,10 +563,12 @@ Rules:
         })?;
 
     let questions: serde_json::Value = serde_json::from_str(&json_str)?;
+    let question_count = questions.as_array().map_or(0, |a| a.len());
+    tracing::info!(template_id = %template_name, question_count = %question_count, outcome = "success", "generate_template_adopt_questions: completed");
     Ok(questions)
 }
 
-// ── Helpers ─────────────────────────────────────────────────────
+// -- Helpers -----------------------------------------------------
 
 /// Handle the result from either adjustment or unified transform.
 fn handle_adopt_result(
@@ -586,7 +592,7 @@ fn handle_adopt_result(
     }
 }
 
-// ── Unified prompt (Turn 1: may ask questions or generate persona) ──
+// -- Unified prompt (Turn 1: may ask questions or generate persona) --
 
 fn build_template_adopt_unified_prompt(
     template_name: &str,
@@ -630,15 +636,15 @@ Question rules:
 - For text type, options is optional
 - ALWAYS include at least one question about human-in-the-loop approval
 - ALWAYS include at least one question about memory/learning strategy
-- Order questions grouped by category: credentials → configuration → human_in_the_loop → memory → notifications
+- Order questions grouped by category: credentials -> configuration -> human_in_the_loop -> memory -> notifications
 - Each question must have a unique id
 
 Question categories (MUST include "category" field on every question):
-1. "credentials" — which credentials for each service (only if the template references external services)
-2. "configuration" — template-specific settings to customize
-3. "human_in_the_loop" — for actions with external consequences, ask about manual approval
-4. "memory" — what should the persona remember across runs
-5. "notifications" — how to notify the user
+1. "credentials" -- which credentials for each service (only if the template references external services)
+2. "configuration" -- template-specific settings to customize
+3. "human_in_the_loop" -- for actions with external consequences, ask about manual approval
+4. "memory" -- what should the persona remember across runs
+5. "notifications" -- how to notify the user
 
 After outputting the TRANSFORM_QUESTIONS block, STOP. Do not output anything else.
 
@@ -660,16 +666,16 @@ Persona Protocol System (use in system_prompt):
 4. Events: {{"emit_event": {{"type": "event_name", "data": {{}}}}}}
 
 Pattern Mapping:
-- External actions → manual_review before executing
-- Data processing → agent_memory to extract and store knowledge
-- Recurring tasks → check memories before acting, store new patterns
-- Notifications → user_message with appropriate priority
-- Error handling → user_message with priority "critical"
+- External actions -> manual_review before executing
+- Data processing -> agent_memory to extract and store knowledge
+- Recurring tasks -> check memories before acting, store new patterns
+- Notifications -> user_message with appropriate priority
+- Error handling -> user_message with priority "critical"
 
 Your job:
 1. Analyze the template's character, purpose, and operational requirements.
 2. Preserve the structured prompt architecture (identity, instructions, toolGuidance,
-   examples, errorHandling, customSections) — these are the core of the persona's behavior.
+   examples, errorHandling, customSections) -- these are the core of the persona's behavior.
 3. Incorporate all suggested tools, triggers, and connector references into the design context.
 4. Use the full_prompt_markdown as the system_prompt foundation.
 5. Ensure the persona is self-contained and actionable.
@@ -683,14 +689,14 @@ Return ONLY valid JSON (no markdown fences, no commentary):
   "persona": {{
     "name": "string",
     "description": "string (2-3 sentence summary)",
-    "system_prompt": "string — must include protocol message instructions",
+    "system_prompt": "string -- must include protocol message instructions",
     "structured_prompt": {{
       "identity": "string",
-      "instructions": "string — core logic with protocol messages woven in",
+      "instructions": "string -- core logic with protocol messages woven in",
       "toolGuidance": "string",
       "examples": "string",
       "errorHandling": "string",
-      "webSearch": "string — research guidance for web-enabled runs (empty string if not applicable)",
+      "webSearch": "string -- research guidance for web-enabled runs (empty string if not applicable)",
       "customSections": [{{"title": "string", "content": "string"}}]
     }},
     "icon": "string (lucide icon name)",
@@ -699,7 +705,7 @@ Return ONLY valid JSON (no markdown fences, no commentary):
     "max_budget_usd": null,
     "max_turns": null,
     "design_context": "JSON string: {{\"summary\":\"Brief overview\",\"use_cases\":[{{\"id\":\"uc1\",\"title\":\"...\",\"description\":\"...\",\"category\":\"notification|data-sync|monitoring|automation|communication|reporting\",\"execution_mode\":\"e2e|mock|non_executable\",\"sample_input\":{{}},\"time_filter\":{{\"field\":\"date\",\"default_window\":\"24h\",\"description\":\"Only process recent items\"}},\"input_schema\":[{{\"key\":\"mode\",\"type\":\"select\",\"label\":\"Mode\",\"options\":[\"a\",\"b\"],\"default\":\"a\"}}],\"suggested_trigger\":{{\"type\":\"schedule\",\"cron\":\"0 */6 * * *\",\"description\":\"Every 6 hours\"}}}}]}}. Generate 3-6 use_cases. execution_mode: e2e (default), mock (example output), non_executable (informational). sample_input: realistic test JSON matching input_schema keys. time_filter: REQUIRED for time-series data use cases (emails, messages, logs). input_schema: structured input fields replacing free-text JSON. suggested_trigger: proposed schedule/trigger for recurring use cases.",
-    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string", "use_case_id": "string — id of the use case this trigger serves, or null"}}],
+    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string", "use_case_id": "string -- id of the use case this trigger serves, or null"}}],
     "tools": [{{"name": "tool_name_snake_case", "category": "email|http|database|file|messaging|other", "description": "string", "requires_credential_type": "connector_name_or_null", "input_schema": null, "implementation_guide": "Step-by-step API docs (REQUIRED for each tool)"}}],
     "required_connectors": [{{"name": "connector_name", "n8n_credential_type": "service_type", "has_credential": false}}]
   }}
@@ -758,10 +764,13 @@ async fn run_unified_adopt_turn1(
     let on_line = move |line: &str| {
         ADOPT_JOBS.emit_line(&app_for_emit, &adopt_id_for_emit, line.to_string());
     };
+    let llm_start = std::time::Instant::now();
     let (output_text, captured_session_id, _) =
         run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line), None, None, 420)
             .await
             .map_err(AppError::Internal)?;
+    let elapsed_ms = llm_start.elapsed().as_millis();
+    tracing::info!(elapsed_ms = %elapsed_ms, adopt_id = %adopt_id, phase = "adopt_turn1", "LLM call completed");
 
     // Store session ID for possible Turn 2
     if let Some(ref sid) = captured_session_id {
@@ -781,7 +790,7 @@ async fn run_unified_adopt_turn1(
         return Ok((None, true));
     }
 
-    // No questions — try to parse persona output directly
+    // No questions -- try to parse persona output directly
     ADOPT_JOBS.emit_line(
         app,
         adopt_id,
@@ -832,9 +841,12 @@ Remember: return ONLY valid JSON with the persona object, no markdown fences."#
     let on_line2 = move |line: &str| {
         ADOPT_JOBS.emit_line(&app_for_emit2, &adopt_id_for_emit2, line.to_string());
     };
+    let llm_start = std::time::Instant::now();
     let (output_text, _, _) = run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line2), None, None, 420)
         .await
         .map_err(AppError::Internal)?;
+    let elapsed_ms = llm_start.elapsed().as_millis();
+    tracing::info!(elapsed_ms = %elapsed_ms, adopt_id = %adopt_id, phase = "continue_adopt", "LLM call completed");
 
     ADOPT_JOBS.emit_line(
         app,
@@ -853,7 +865,7 @@ Remember: return ONLY valid JSON with the persona object, no markdown fences."#
     Ok(draft)
 }
 
-// ── Direct transform job (used for adjustment re-runs) ──────────
+// -- Direct transform job (used for adjustment re-runs) ----------
 
 fn build_template_adopt_prompt(
     template_name: &str,
@@ -922,7 +934,7 @@ Output this JSON to trigger other personas or emit custom events:
 Your job:
 1. Analyze the template's character, purpose, and operational requirements.
 2. Preserve the structured prompt architecture (identity, instructions, toolGuidance,
-   examples, errorHandling, customSections) — these are the core of the persona's behavior.
+   examples, errorHandling, customSections) -- these are the core of the persona's behavior.
 3. Incorporate all suggested tools, triggers, and connector references into the design context.
 4. Use the full_prompt_markdown as the system_prompt foundation.
 5. Ensure the persona is self-contained and actionable.
@@ -941,11 +953,11 @@ Return ONLY valid JSON (no markdown fences, no commentary), with this exact shap
     "system_prompt": "string (the full_prompt_markdown content, preserving all formatting, with protocol instructions woven in)",
     "structured_prompt": {{
       "identity": "string",
-      "instructions": "string — core logic with protocol messages woven in",
-      "toolGuidance": "string — how to use each tool, including when to request manual_review",
-      "examples": "string — include examples of protocol message usage",
-      "errorHandling": "string — include user_message notifications for critical errors",
-      "webSearch": "string — research guidance for web-enabled runs (empty string if not applicable)",
+      "instructions": "string -- core logic with protocol messages woven in",
+      "toolGuidance": "string -- how to use each tool, including when to request manual_review",
+      "examples": "string -- include examples of protocol message usage",
+      "errorHandling": "string -- include user_message notifications for critical errors",
+      "webSearch": "string -- research guidance for web-enabled runs (empty string if not applicable)",
       "customSections": [{{ "title": "string", "content": "string" }}]
     }},
     "icon": "string (lucide icon name)",
@@ -954,7 +966,7 @@ Return ONLY valid JSON (no markdown fences, no commentary), with this exact shap
     "max_budget_usd": null,
     "max_turns": null,
     "design_context": "JSON string: {{\"summary\":\"Brief overview\",\"use_cases\":[{{\"id\":\"uc1\",\"title\":\"...\",\"description\":\"...\",\"category\":\"notification|data-sync|monitoring|automation|communication|reporting\",\"execution_mode\":\"e2e|mock|non_executable\",\"sample_input\":{{}},\"time_filter\":{{\"field\":\"date\",\"default_window\":\"24h\",\"description\":\"Only process recent items\"}},\"input_schema\":[{{\"key\":\"mode\",\"type\":\"select\",\"label\":\"Mode\",\"options\":[\"a\",\"b\"],\"default\":\"a\"}}],\"suggested_trigger\":{{\"type\":\"schedule\",\"cron\":\"0 */6 * * *\",\"description\":\"Every 6 hours\"}}}}]}}. Generate 3-6 use_cases. execution_mode: e2e (default), mock (example output), non_executable (informational). sample_input: realistic test JSON matching input_schema keys. time_filter: REQUIRED for time-series data use cases (emails, messages, logs). input_schema: structured input fields replacing free-text JSON. suggested_trigger: proposed schedule/trigger for recurring use cases.",
-    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string", "use_case_id": "string — id of the use case this trigger serves, or null"}}],
+    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string", "use_case_id": "string -- id of the use case this trigger serves, or null"}}],
     "tools": [{{"name": "tool_name_snake_case", "category": "email|http|database|file|messaging|other", "description": "string", "requires_credential_type": "connector_name_or_null", "input_schema": null, "implementation_guide": "Step-by-step API docs (REQUIRED for each tool)"}}],
     "required_connectors": [{{"name": "connector_name", "n8n_credential_type": "service_type", "has_credential": false}}]
   }}
@@ -974,23 +986,21 @@ Design Analysis Result JSON:
     )
 }
 
-// ══════════════════════════════════════════════════════════════════
+// ==================================================================
 // Template Generation (create new templates from user description)
-// ══════════════════════════════════════════════════════════════════
+// ==================================================================
 
-// ── Gen job extra state ─────────────────────────────────────────
+// -- Gen job extra state -----------------------------------------
 
 #[derive(Clone, Default)]
 struct GenExtra {
     result_json: Option<String>,
 }
 
+/// Generate-specific extras flattened into BackgroundTaskSnapshot.
 #[derive(Clone, Serialize)]
-struct TemplateGenSnapshot {
+struct GenSnapshotExtras {
     gen_id: String,
-    status: String,
-    error: Option<String>,
-    lines: Vec<String>,
     result_json: Option<String>,
 }
 
@@ -1061,16 +1071,9 @@ pub fn get_template_generate_snapshot(
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
     let snapshot = GEN_JOBS
-        .get_snapshot_with(&gen_id, |id, job| TemplateGenSnapshot {
-            gen_id: id.to_string(),
-            status: if job.status.is_empty() {
-                "idle".to_string()
-            } else {
-                job.status.clone()
-            },
-            error: job.error.clone(),
-            lines: job.lines.clone(),
-            result_json: job.extra.result_json.clone(),
+        .get_task_snapshot(&gen_id, |extra| GenSnapshotExtras {
+            gen_id: gen_id.clone(),
+            result_json: extra.result_json.clone(),
         })
         .ok_or_else(|| AppError::NotFound("Template generation not found".into()))?;
     Ok(serde_json::to_value(snapshot).unwrap_or_else(|_| json!({})))
@@ -1160,7 +1163,7 @@ pub fn save_custom_template(
     Ok(json!({ "review": review }))
 }
 
-/// Run the template generation job — prompts Claude to generate a DesignAnalysisResult.
+/// Run the template generation job -- prompts Claude to generate a DesignAnalysisResult.
 async fn run_template_generate_job(
     app: &tauri::AppHandle,
     gen_id: &str,
@@ -1182,7 +1185,7 @@ Create a JSON object with this exact structure (DesignAnalysisResult):
 {{
   "structured_prompt": {{
     "identity": "Who this persona is and what role it plays",
-    "instructions": "Step-by-step instructions for how to operate — include protocol message patterns",
+    "instructions": "Step-by-step instructions for how to operate -- include protocol message patterns",
     "toolGuidance": "How to use each tool and when to request manual_review",
     "examples": "Example interactions showing protocol message usage",
     "errorHandling": "How to handle errors with user_message notifications",
@@ -1190,7 +1193,7 @@ Create a JSON object with this exact structure (DesignAnalysisResult):
       {{"key": "unique_key", "label": "Section Label", "content": "Section content"}}
     ]
   }},
-  "full_prompt_markdown": "Complete system prompt in markdown format — comprehensive and self-contained",
+  "full_prompt_markdown": "Complete system prompt in markdown format -- comprehensive and self-contained",
   "summary": "2-3 sentence description of the persona's purpose",
   "suggested_tools": [
     {{"name": "tool_name", "description": "What it does", "category": "http_request|system|utility"}}
@@ -1278,10 +1281,13 @@ Return ONLY valid JSON (no markdown fences, no commentary).
         GEN_JOBS.emit_line(&app_for_emit, &gen_id_for_emit, line.to_string());
     };
 
+    let llm_start = std::time::Instant::now();
     let (output_text, _session_id, _) =
         run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line), None, None, 420)
             .await
             .map_err(AppError::Internal)?;
+    let elapsed_ms = llm_start.elapsed().as_millis();
+    tracing::info!(elapsed_ms = %elapsed_ms, gen_id = %gen_id, phase = "generate_template", "LLM call completed");
 
     GEN_JOBS.emit_line(app, gen_id, "[Milestone] Claude output received. Extracting design JSON...");
 
@@ -1299,7 +1305,7 @@ Return ONLY valid JSON (no markdown fences, no commentary).
     Ok(json_str)
 }
 
-// ── Direct transform job (used for adjustment re-runs) ──────────
+// -- Direct transform job (used for adjustment re-runs) ----------
 
 #[allow(clippy::too_many_arguments)]
 async fn run_template_adopt_job(
@@ -1312,6 +1318,7 @@ async fn run_template_adopt_job(
     user_answers_json: Option<&str>,
     connector_swaps_json: Option<&str>,
 ) -> Result<N8nPersonaOutput, AppError> {
+    tracing::info!(adopt_id = %adopt_id, template_id = %template_name, "run_template_adopt_job (adjustment re-run): start");
     let prompt_text = build_template_adopt_prompt(
         template_name,
         design_result_json,
@@ -1342,10 +1349,13 @@ async fn run_template_adopt_job(
     let on_line = move |line: &str| {
         ADOPT_JOBS.emit_line(&app_for_emit, &adopt_id_for_emit, line.to_string());
     };
+    let llm_start = std::time::Instant::now();
     let (output_text, _session_id, _) =
         run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line), None, None, 420)
             .await
             .map_err(AppError::Internal)?;
+    let elapsed_ms = llm_start.elapsed().as_millis();
+    tracing::info!(elapsed_ms = %elapsed_ms, adopt_id = %adopt_id, phase = "adopt_job", "LLM call completed");
 
     ADOPT_JOBS.emit_line(
         app,
@@ -1361,6 +1371,7 @@ async fn run_template_adopt_job(
         "[Milestone] Draft ready for review. Confirm save is required to persist.",
     );
 
+    tracing::info!(adopt_id = %adopt_id, template_id = %template_name, outcome = "success", "run_template_adopt_job (adjustment re-run): completed");
     Ok(draft)
 }
 

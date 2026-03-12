@@ -1,6 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
 export interface WorkflowJob {
   job_id: string;
@@ -20,7 +20,7 @@ export interface WorkflowsOverview {
   total_count: number;
 }
 
-// ── API ────────────────────────────────────────────────────────────────
+// -- API ----------------------------------------------------------------
 
 export const getWorkflowsOverview = () =>
   invoke<WorkflowsOverview>("get_workflows_overview");

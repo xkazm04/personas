@@ -106,7 +106,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
           <MonitorX className="w-3.5 h-3.5 text-orange-400 mt-0.5 shrink-0" />
           <p className="text-sm text-muted-foreground/70">
             <span className="font-medium text-orange-400/90">Do not interact with the browser.</span>{' '}
-            The automation controls the browser window directly — clicking, scrolling or typing in it may break the process.
+            The automation controls the browser window directly -- clicking, scrolling or typing in it may break the process.
           </p>
         </div>
       )}

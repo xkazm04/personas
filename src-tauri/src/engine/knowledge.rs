@@ -5,6 +5,7 @@
 //! Over time, this creates a knowledge graph that makes future executions smarter.
 
 use serde::Deserialize;
+use tracing::warn;
 
 use crate::db::repos::execution::knowledge as knowledge_repo;
 use crate::db::DbPool;
@@ -103,7 +104,14 @@ fn extract_tool_sequence(
 ) {
     let steps: Vec<ToolCallStep> = match serde_json::from_str(steps_json) {
         Ok(s) => s,
-        Err(_) => return,
+        Err(e) => {
+            warn!(
+                execution_id = execution_id,
+                error = %e,
+                "Failed to parse tool sequence steps JSON during knowledge extraction"
+            );
+            return;
+        }
     };
 
     if steps.is_empty() {

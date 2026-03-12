@@ -21,6 +21,9 @@ export const createPersona = (input: CreatePersonaInput) =>
 export const updatePersona = (id: string, input: UpdatePersonaInput) =>
   invoke<Persona>("update_persona", { id, input });
 
+export const duplicatePersona = (sourceId: string) =>
+  invoke<Persona>("duplicate_persona", { sourceId });
+
 export const deletePersona = (id: string) =>
   invoke<boolean>("delete_persona", { id });
 
@@ -51,7 +54,7 @@ export const importPersona = () =>
 // Typed partial update helper
 // ============================================================================
 
-/** Caller-friendly partial type — only include the fields you want to change. */
+/** Caller-friendly partial type -- only include the fields you want to change. */
 export interface PartialPersonaUpdate {
   name?: string;
   description?: string | null;

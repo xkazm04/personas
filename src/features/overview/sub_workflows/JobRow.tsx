@@ -18,11 +18,13 @@ export function JobRow({ job, expanded, onToggle, onCancel }: JobRowProps) {
 
   useEffect(() => {
     if (expanded && !fullOutput) {
+      let cancelled = false;
       setLoadingOutput(true);
       getWorkflowJobOutput(job.job_type, job.job_id)
-        .then(setFullOutput)
-        .catch(() => setFullOutput(job.output_tail))
-        .finally(() => setLoadingOutput(false));
+        .then((data) => { if (!cancelled) setFullOutput(data); })
+        .catch(() => { if (!cancelled) setFullOutput(job.output_tail); })
+        .finally(() => { if (!cancelled) setLoadingOutput(false); });
+      return () => { cancelled = true; };
     }
   }, [expanded, fullOutput, job.job_type, job.job_id, job.output_tail]);
 

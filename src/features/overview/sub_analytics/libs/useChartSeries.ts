@@ -7,7 +7,7 @@ import { formatToolName } from './analyticsHelpers';
 import type { PieDataPoint } from '@/features/overview/sub_observability/components/MetricsCharts';
 
 /**
- * Pure derivation hook — reads store slices and computes all chart series
+ * Pure derivation hook -- reads store slices and computes all chart series
  * for the analytics dashboard. No side-effects or fetches.
  */
 export function useChartSeries() {

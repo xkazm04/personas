@@ -12,7 +12,7 @@ export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: 
         <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">Cost Breakdown</div>
         {estimated && (
           <span className="text-sm px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400/80 font-medium">
-            Unknown model — no pricing data
+            Unknown model -- no pricing data
           </span>
         )}
       </div>

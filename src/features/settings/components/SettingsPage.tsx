@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
 import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 
-// Lazy-load each settings tab — only the active one resolves.
+// Lazy-load each settings tab -- only the active one resolves.
 const AccountSettings = lazy(() => import('@/features/settings/sub_account/components/AccountSettings'));
 const AppearanceSettings = lazy(() => import('@/features/settings/sub_appearance/components/AppearanceSettings'));
 const NotificationSettings = lazy(() => import('@/features/settings/sub_notifications/components/NotificationSettings'));

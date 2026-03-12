@@ -1,7 +1,7 @@
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { N8nImportAction } from '../hooks/useN8nImportReducer';
 
-// ── Test State Slice ──
+// -- Test State Slice --
 
 export interface TestState {
   testStatus: 'idle' | 'running' | 'passed' | 'failed';
@@ -19,7 +19,7 @@ export const INITIAL_TEST: TestState = {
   testPhase: 'idle',
 };
 
-// ── Reducer ──
+// -- Reducer --
 
 export function testReducer(
   slice: TestState,

@@ -62,7 +62,7 @@ export function StageBar({
         <div className="relative h-6 w-full">
           <div className="absolute inset-0 bg-primary/5 rounded" />
           <div
-            className={`absolute top-1 bottom-1 rounded ${entry.error ? 'bg-red-500/40' : config.bar} transition-all`}
+            className={`absolute top-1 bottom-1 rounded-full ${entry.error ? 'bg-gradient-to-r from-red-500/50 to-orange-500/40 shadow-[inset_0_1px_2px_rgba(239,68,68,0.3)]' : `${config.barGradient} ${config.barShadow}`} transition-all`}
             style={{
               left: `${leftPct}%`,
               width: `${widthPct}%`,

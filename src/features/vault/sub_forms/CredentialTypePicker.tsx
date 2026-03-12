@@ -19,7 +19,7 @@ const TYPES = [
     id: 'api-tool',
     icon: Sparkles,
     title: 'AI-Built Connector',
-    description: 'Describe what you want to connect to and AI creates the setup for you â€” no configuration needed.',
+    description: 'Describe what you want to connect to and AI creates the setup for you -- no configuration needed.',
     color: '#8B5CF6',
     badge: 'Most popular',
     badgeColor: '#8B5CF6',
@@ -29,7 +29,7 @@ const TYPES = [
     id: 'mcp',
     icon: Server,
     title: 'AI Tool Server',
-    description: 'Connect to an AI tool server â€” paste the address and you\'re done.',
+    description: 'Connect to an AI tool server -- paste the address and you\'re done.',
     color: '#06B6D4',
     badge: null,
     badgeColor: null,
@@ -39,7 +39,7 @@ const TYPES = [
     id: 'custom',
     icon: Link,
     title: 'Web Service',
-    description: 'Connect to any web service â€” we\'ll guide you through the login details step by step.',
+    description: 'Connect to any web service -- we\'ll guide you through the login details step by step.',
     color: '#F59E0B',
     badge: null,
     badgeColor: null,
@@ -49,7 +49,7 @@ const TYPES = [
     id: 'database',
     icon: Database,
     title: 'Database',
-    description: 'Connect to your database â€” just paste the connection details and pick your tables.',
+    description: 'Connect to your database -- just paste the connection details and pick your tables.',
     color: '#10B981',
     badge: null,
     badgeColor: null,
@@ -69,7 +69,7 @@ const TYPES = [
     id: 'wizard',
     icon: Bot,
     title: 'AI Setup Wizard',
-    description: 'Let AI find your services and set everything up automatically â€” just follow along.',
+    description: 'Let AI find your services and set everything up automatically -- just follow along.',
     color: '#7C3AED',
     badge: 'Recommended for beginners',
     badgeColor: '#7C3AED',
@@ -166,7 +166,7 @@ export function CredentialTypePicker({
         })}
       </div>
 
-      {/* Workspace Connect â€” full width */}
+      {/* Workspace Connect -- full width */}
       <button
         onClick={onWorkspaceConnect}
         className="w-full text-left p-4 bg-gradient-to-r from-blue-500/5 to-emerald-500/5 border border-blue-500/15 rounded-xl hover:from-blue-500/10 hover:to-emerald-500/10 hover:border-blue-500/25 transition-all"
@@ -184,7 +184,7 @@ export function CredentialTypePicker({
         </div>
       </button>
 
-      {/* Foraging â€” full width at bottom (desktop only â€” requires filesystem scan) */}
+      {/* Foraging -- full width at bottom (desktop only -- requires filesystem scan) */}
       {!IS_MOBILE && (
         <button
           onClick={onForage}

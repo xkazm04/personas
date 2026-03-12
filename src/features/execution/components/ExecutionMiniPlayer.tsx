@@ -197,7 +197,7 @@ export default function ExecutionMiniPlayer() {
                   : error ? 'Failed' : 'Complete'}
               </span>
             </div>
-            <div className="w-full h-2 rounded-full bg-primary/10 overflow-hidden">
+            <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
               <motion.div
                 className={`h-full rounded-full ${
                   error && !isExecuting ? 'bg-red-400' : isExecuting ? 'bg-blue-400' : 'bg-emerald-400'

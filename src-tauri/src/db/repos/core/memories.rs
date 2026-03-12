@@ -290,6 +290,95 @@ pub fn get_stats(
     })
 }
 
+/// Combined result of list + count + stats in a single DB connection.
+#[derive(Debug, serde::Serialize)]
+pub struct MemoriesWithStats {
+    pub memories: Vec<PersonaMemory>,
+    pub total: i64,
+    pub stats: MemoryStats,
+}
+
+/// Fetch memories, total count, and aggregate stats in a single DB connection.
+/// Replaces three separate IPC calls with one.
+pub fn get_all_with_stats(
+    pool: &DbPool,
+    persona_id: Option<&str>,
+    category: Option<&str>,
+    search: Option<&str>,
+    limit: Option<i64>,
+    offset: Option<i64>,
+) -> Result<MemoriesWithStats, AppError> {
+    let limit_val = limit.unwrap_or(50);
+    let offset_val = offset.unwrap_or(0);
+
+    let conn = pool.get()?;
+    let (where_clause, filter_params) = build_memory_filters(persona_id, category, search);
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = filter_params
+        .iter()
+        .map(|value| value as &dyn rusqlite::types::ToSql)
+        .collect();
+
+    // 1. Total count + avg importance
+    let agg_sql = format!(
+        "SELECT COUNT(*), COALESCE(AVG(importance), 0) FROM persona_memories {where_clause}"
+    );
+    let (total, avg_importance): (i64, f64) =
+        conn.query_row(&agg_sql, params_ref.as_slice(), |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?;
+
+    // 2. Category breakdown
+    let cat_sql = format!(
+        "SELECT category, COUNT(*) as cnt FROM persona_memories {where_clause} GROUP BY category ORDER BY cnt DESC"
+    );
+    let mut cat_stmt = conn.prepare(&cat_sql)?;
+    let category_rows = cat_stmt
+        .query_map(params_ref.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?;
+    let category_counts: Vec<(String, i64)> =
+        collect_rows(category_rows, "memories::get_all_with_stats/category_counts");
+
+    // 3. Agent breakdown
+    let agent_sql = format!(
+        "SELECT persona_id, COUNT(*) as cnt FROM persona_memories {where_clause} GROUP BY persona_id ORDER BY cnt DESC"
+    );
+    let mut agent_stmt = conn.prepare(&agent_sql)?;
+    let agent_rows = agent_stmt
+        .query_map(params_ref.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?;
+    let agent_counts: Vec<(String, i64)> =
+        collect_rows(agent_rows, "memories::get_all_with_stats/agent_counts");
+
+    // 4. Paginated memories
+    let mut mem_params: Vec<Box<dyn rusqlite::types::ToSql>> = filter_params
+        .into_iter()
+        .map(|v| Box::new(v) as Box<dyn rusqlite::types::ToSql>)
+        .collect();
+    let limit_idx = mem_params.len() + 1;
+    let mem_sql = format!(
+        "SELECT * FROM persona_memories {} ORDER BY created_at DESC LIMIT ?{} OFFSET ?{}",
+        where_clause,
+        limit_idx,
+        limit_idx + 1
+    );
+    mem_params.push(Box::new(limit_val));
+    mem_params.push(Box::new(offset_val));
+    let mem_params_ref: Vec<&dyn rusqlite::types::ToSql> =
+        mem_params.iter().map(|p| p.as_ref()).collect();
+    let mut mem_stmt = conn.prepare(&mem_sql)?;
+    let mem_rows = mem_stmt.query_map(mem_params_ref.as_slice(), row_to_memory)?;
+    let memories: Vec<PersonaMemory> = collect_rows(mem_rows, "memories::get_all_with_stats");
+
+    Ok(MemoriesWithStats {
+        memories,
+        total,
+        stats: MemoryStats {
+            total,
+            avg_importance,
+            category_counts,
+            agent_counts,
+        },
+    })
+}
+
 pub fn update_importance(pool: &DbPool, id: &str, importance: i32) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let now = chrono::Utc::now().to_rfc3339();

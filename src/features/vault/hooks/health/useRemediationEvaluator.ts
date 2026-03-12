@@ -6,9 +6,9 @@
  * passive anomaly detection and active remediation.
  *
  * Signal flow:
- *   credential metadata → anomaly_score → remediation level
- *     → actionsForRemediation() → remediationBus.dispatch()
- *     → executeRemediationAction() → rotate / disable / notify
+ *   credential metadata -> anomaly_score -> remediation level
+ *     -> actionsForRemediation() -> remediationBus.dispatch()
+ *     -> executeRemediationAction() -> rotate / disable / notify
  *
  * Mount this once at the app level (e.g., in SystemHealthPanel or App.tsx).
  */
@@ -81,7 +81,7 @@ export function useRemediationEvaluator() {
         continue;
       }
 
-      // Credential has non-healthy remediation — fetch full rotation status
+      // Credential has non-healthy remediation -- fetch full rotation status
       let rotationStatus: RotationStatus | null;
       try {
         rotationStatus = await getRotationStatus(cred.id);
@@ -174,7 +174,7 @@ export function useRemediationEvaluator() {
   };
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────
+// -- Helpers ---------------------------------------------------------
 
 function buildReason(
   remediation: string,

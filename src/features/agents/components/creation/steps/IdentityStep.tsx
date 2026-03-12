@@ -118,13 +118,13 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
           <div>
             <label className="block text-sm font-medium text-foreground/80 mb-1.5">Name</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Agent name" autoFocus
-              className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all" />
+              className="w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all" />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-foreground/80 mb-1.5">Description <span className="text-muted-foreground/50 font-normal">(optional)</span></label>
             <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description"
-              className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all" />
+              className="w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all" />
           </div>
 
           {/* Appearance */}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Shield, AlertTriangle, Clock, Wrench } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { getSlaDashboard } from '@/api/overview/sla';
@@ -12,12 +12,15 @@ export default function SLADashboard() {
   const [days, setDays] = useState<number>(30);
   const [expandedPersona, setExpandedPersona] = useState<string | null>(null);
 
-  const load = useCallback(() => {
+  useEffect(() => {
+    let cancelled = false;
     setLoading(true);
-    getSlaDashboard(days).then(setData).catch(() => {}).finally(() => setLoading(false));
+    getSlaDashboard(days)
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [days]);
-
-  useEffect(() => { load(); }, [load]);
 
   const togglePersona = (id: string) => setExpandedPersona((prev) => (prev === id ? null : id));
 

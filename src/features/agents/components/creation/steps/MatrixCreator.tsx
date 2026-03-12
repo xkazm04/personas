@@ -1,5 +1,5 @@
 /**
- * MatrixCreator — "Matrix" mode for persona creation.
+ * MatrixCreator -- "Matrix" mode for persona creation.
  *
  * Renders PersonaMatrix in edit mode with AI generation via useMatrixOrchestration.
  * The center command-cell acts as intent input / generate / completeness hub.
@@ -38,10 +38,10 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel, draftPers
   const credentials = usePersonaStore((s) => s.credentials);
   const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
 
-  // ── AI orchestration ──────────────────────────────────────────────
+  // -- AI orchestration ----------------------------------------------
   const orchestration = useMatrixOrchestration({ state, dispatch, draftPersonaId, setDraftPersonaId });
 
-  // ── Derive AgentIR from BuilderState ─────────────────────────────
+  // -- Derive AgentIR from BuilderState -----------------------------
 
   const designResult = useMemo<AgentIR>(() => {
     const connectors = state.components
@@ -57,9 +57,9 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel, draftPers
 
     const capabilities = [
       ...(reviewPolicy !== 'never'
-        ? [{ type: 'manual_review' as const, context: reviewPolicy, source_node: '' }]
+        ? [{ type: 'manual_review' as const, label: '', context: reviewPolicy, source_node: '' }]
         : []),
-      { type: 'agent_memory' as const, context: 'Persistent cross-run memory', source_node: '' },
+      { type: 'agent_memory' as const, label: '', context: 'Persistent cross-run memory', source_node: '' },
     ];
 
     const channels = state.channels.map((ch) => ({
@@ -89,7 +89,7 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel, draftPers
     };
   }, [state.components, state.globalTrigger, state.errorStrategy, state.reviewPolicy, state.channels, state.intent]);
 
-  // ── Derive RequiredConnectors from components ────────────────────
+  // -- Derive RequiredConnectors from components --------------------
 
   const requiredConnectors = useMemo<RequiredConnector[]>(() => {
     // Always include personas_database as builtin
@@ -111,7 +111,7 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel, draftPers
     return result;
   }, [state.components]);
 
-  // ── Flows from use cases ─────────────────────────────────────────
+  // -- Flows from use cases -----------------------------------------
 
   const flows = useMemo(() =>
     state.useCases
@@ -122,11 +122,13 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel, draftPers
         description: uc.description,
         category: uc.category || 'automation',
         steps: [],
+        nodes: [],
+        edges: [],
       })),
     [state.useCases],
   );
 
-  // ── Matrix edit state ────────────────────────────────────────────
+  // -- Matrix edit state --------------------------------------------
 
   const [connectorCredentialMap, setConnectorCredentialMap] = useState<Record<string, string>>(() => {
     const map: Record<string, string> = {};
@@ -239,7 +241,7 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel, draftPers
         />
       </div>
 
-      {/* Cancel link — continue is inside the command center */}
+      {/* Cancel link -- continue is inside the command center */}
       {onCancel && (
         <div className="flex items-center justify-start pt-3 border-t border-primary/10 flex-shrink-0">
           <button type="button" onClick={onCancel} className="text-sm text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors">

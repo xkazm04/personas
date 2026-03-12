@@ -200,7 +200,7 @@ export default function PersonaOverviewPage() {
                         ? 'border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/30'
                         : key === 'active'
                         ? 'border-emerald-500/10 bg-secondary/30 hover:bg-secondary/50 hover:border-emerald-500/20'
-                        : 'border-primary/5 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/15'
+                        : 'border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20'
                     } transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background`}
                     style={groupColor ? {
                       borderLeftWidth: 3,

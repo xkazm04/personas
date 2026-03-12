@@ -117,7 +117,7 @@ export function OverviewStatCard({
                 <trendDisplay.TIcon className="w-3 h-3" />
                 <span>{trendDisplay.value}</span>
               </div>
-            ) : <span className="text-sm text-muted-foreground/50">—</span>}
+            ) : <span className="text-sm text-muted-foreground/50">--</span>}
 
             {subtitle && (
               <p className={`text-sm truncate ${subtitleColor || 'text-muted-foreground/70'}`}>

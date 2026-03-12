@@ -66,7 +66,7 @@ export function useOnboardingChecklist(personaId: string | undefined): Onboardin
 }
 
 /**
- * Lightweight version for sidebar cards — only needs personaId, no selectedPersona.
+ * Lightweight version for sidebar cards -- only needs personaId, no selectedPersona.
  */
 export function useOnboardingScore(personaId: string): number {
   const personas = usePersonaStore((s) => s.personas);
@@ -82,7 +82,7 @@ export function useOnboardingScore(personaId: string): number {
 
     if (persona.structured_prompt || persona.system_prompt) done++;
     if (persona.model_profile) done++;
-    // Can't check tools/connectors without detail fetch — estimate from design_context
+    // Can't check tools/connectors without detail fetch -- estimate from design_context
     try {
       if (persona.design_context) {
         const ctx = JSON.parse(persona.design_context) as Record<string, unknown>;

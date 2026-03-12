@@ -1,5 +1,5 @@
 /**
- * stepTransitions — step transition map for the adoption wizard.
+ * stepTransitions -- step transition map for the adoption wizard.
  *
  * Extracted to avoid circular dependencies between AdoptionWizardContext
  * and useAdoptionActions.

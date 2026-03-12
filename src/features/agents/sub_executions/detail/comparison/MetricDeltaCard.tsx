@@ -15,12 +15,12 @@ export function MetricDeltaCard({
 }) {
   const pct = pctChange(leftVal, rightVal);
   return (
-    <div className="bg-secondary/30 border border-primary/10 rounded-xl px-3 py-2.5 space-y-1">
-      <div className="text-sm uppercase tracking-wider text-muted-foreground/60 font-mono">{label}</div>
+    <div className="bg-secondary/30 border border-primary/10 border-b-primary/8 rounded-xl px-3 py-2.5 space-y-1.5">
+      <div className="text-xs uppercase tracking-wider text-muted-foreground/50">{label}</div>
       <div className="flex items-center gap-3">
-        <span className="text-sm font-mono text-foreground/80">{format(leftVal)}</span>
-        <span className="text-muted-foreground/40">→</span>
-        <span className="text-sm font-mono text-foreground/80">{format(rightVal)}</span>
+        <span className="text-base font-mono tabular-nums text-foreground/90">{format(leftVal)}</span>
+        <span className="text-muted-foreground/40">{'→'}</span>
+        <span className="text-base font-mono tabular-nums text-foreground/90">{format(rightVal)}</span>
       </div>
       <div className={`flex items-center gap-1 text-sm font-mono ${deltaColor(pct, lowerIsBetter)}`}>
         {deltaIcon(pct)}

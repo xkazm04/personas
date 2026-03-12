@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { startCredentialDesign, cancelCredentialDesign } from '@/api/tauriApi';
 import { usePersonaStore } from '@/stores/personaStore';
-import { useAiArtifactFlow, defaultGetLine, buildResolveStatus } from '../template/useAiArtifactFlow';
+import { useAiArtifactTask } from '../core/useAiArtifactTask';
 import { saveRecipeFromDesign } from '@/lib/credentials/credentialRecipeRegistry';
 
 export type CredentialDesignPhase = 'idle' | 'analyzing' | 'preview' | 'saving' | 'done' | 'error';
@@ -36,22 +36,15 @@ export function useCredentialDesign() {
   const deleteConnectorDefinition = usePersonaStore((s) => s.deleteConnectorDefinition);
   const createCredential = usePersonaStore((s) => s.createCredential);
 
-  const flow = useAiArtifactFlow<string, CredentialDesignResult>({
-    stream: {
-      progressEvent: 'credential-design-output',
-      statusEvent: 'credential-design-status',
-      getLine: defaultGetLine,
-      resolveStatus: buildResolveStatus('Credential design failed'),
-      completedPhase: 'preview',
-      runningPhase: 'analyzing',
-      startErrorMessage: 'Failed to start credential design',
-    },
-    startFn: (instruction) => startCredentialDesign(instruction),
+  const flow = useAiArtifactTask<[string], CredentialDesignResult>({
+    progressEvent: 'credential-design-output',
+    statusEvent: 'credential-design-status',
+    runningPhase: 'analyzing',
+    completedPhase: 'preview',
+    startFn: startCredentialDesign,
+    cancelFn: cancelCredentialDesign,
+    errorMessage: 'Credential design failed',
   });
-
-  const cancel = useCallback(() => {
-    flow.cancel(() => cancelCredentialDesign());
-  }, [flow.cancel]);
 
   const save = useCallback(async (
     credentialName: string,
@@ -64,7 +57,7 @@ export function useCredentialDesign() {
     // (e.g. refine click, modal close) cannot silently invalidate it.
     const snapshot = flow.result;
     if (!snapshot || !snapshot.connector?.name) {
-      flow.setError('Design result is missing â€” please run the design again');
+      flow.setError('Design result is missing -- please run the design again');
       return;
     }
 
@@ -81,7 +74,7 @@ export function useCredentialDesign() {
           (c) => c.name.toLowerCase() === conn.name.toLowerCase(),
         );
         if (existing) {
-          // Reuse existing connector â€” no need to create or rollback
+          // Reuse existing connector -- no need to create or rollback
           setRegisteredConnectorName(existing.label);
         } else {
           const connector = await createConnectorDefinition({
@@ -125,7 +118,7 @@ export function useCredentialDesign() {
       if (createdConnectorId) {
         try {
           await deleteConnectorDefinition(createdConnectorId);
-        } catch { /* intentional: non-critical â€” rollback is best-effort */ }
+        } catch { /* intentional: non-critical -- rollback is best-effort */ }
       }
       flow.setError(err instanceof Error ? err.message : 'Failed to save credential');
       flow.setPhase('preview');
@@ -160,7 +153,7 @@ export function useCredentialDesign() {
   const refine = useCallback(
     (instruction: string) => {
       if (savingRef.current) return;
-      // Transition back to analyzing â€” keep savedCredentialId intact
+      // Transition back to analyzing -- keep savedCredentialId intact
       flow.setLines([]);
       flow.setError(null);
       flow.start(instruction);
@@ -177,7 +170,7 @@ export function useCredentialDesign() {
     registeredConnectorName,
     isSaving,
     start: flow.start,
-    cancel,
+    cancel: flow.cancel,
     save,
     reset,
     refine,

@@ -35,7 +35,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
       const r = await recipeApi.getCredentialRecipes(credentialId);
       setRecipes(r);
     } catch {
-      // intentional: non-critical — initial recipe list load; empty list shown on failure
+      // intentional: non-critical -- initial recipe list load; empty list shown on failure
     } finally {
       setLoading(false);
     }

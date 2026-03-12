@@ -19,9 +19,9 @@ const ICON_COLOR_MAP = {
 type IconColor = keyof typeof ICON_COLOR_MAP;
 
 // ---------------------------------------------------------------------------
-// ContentBox â€” outer page wrapper
+// ContentBox -- outer page wrapper
 //
-// w-full fills 100% of the parent (content area = viewport âˆ’ sidebar).
+// w-full fills 100% of the parent (content area = viewport − sidebar).
 // Responsive min-widths account for the 328px sidebar (L1 88px + L2 240px)
 // so they never exceed the content area at their breakpoint.
 // ---------------------------------------------------------------------------
@@ -33,7 +33,7 @@ interface ContentBoxProps {
 }
 
 export function ContentBox({ children, minWidth }: ContentBoxProps) {
-  // Custom override â€” used by TeamCanvas etc. to opt out of min-width
+  // Custom override -- used by TeamCanvas etc. to opt out of min-width
   if (minWidth !== undefined) {
     return (
       <div
@@ -46,7 +46,7 @@ export function ContentBox({ children, minWidth }: ContentBoxProps) {
   }
 
   // Default: responsive min-width adjusted for 328px sidebar
-  // xl 1280â†’952 available, 2xl 1536â†’1208, 3xl 1920â†’1592, 4xl 2560â†’2232
+  // xl 1280->952 available, 2xl 1536->1208, 3xl 1920->1592, 4xl 2560->2232
   return (
     <div className={`flex-1 min-h-0 flex flex-col w-full overflow-hidden ${IS_MOBILE ? '' : 'min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]'}`}>
       {children}
@@ -55,7 +55,7 @@ export function ContentBox({ children, minWidth }: ContentBoxProps) {
 }
 
 // ---------------------------------------------------------------------------
-// ContentHeader â€” standardized page header
+// ContentHeader -- standardized page header
 // ---------------------------------------------------------------------------
 
 interface ContentHeaderProps {
@@ -104,7 +104,7 @@ export function ContentHeader({
 }
 
 // ---------------------------------------------------------------------------
-// ContentBody â€” scrollable content area
+// ContentBody -- scrollable content area
 //
 // `centered` caps the inner width with responsive max-width breakpoints
 // so content stays readable and centered with symmetric margins.

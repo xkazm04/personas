@@ -7,7 +7,7 @@ import type { VaultStatus } from '@/api/tauriApi';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { useBulkHealthcheck } from '@/features/vault/hooks/health/useBulkHealthcheck';
 
-/* ── Title-only header (no actions) ──────────────────────────────── */
+/* -- Title-only header (no actions) -------------------------------- */
 
 interface CredentialManagerHeaderProps {
   credentialCount: number;
@@ -24,7 +24,7 @@ export function CredentialManagerHeader({ credentialCount }: CredentialManagerHe
   );
 }
 
-/* ── Toolbar row (search + actions) ──────────────────────────────── */
+/* -- Toolbar row (search + actions) -------------------------------- */
 
 interface CredentialToolbarProps {
   credentialCount: number;
@@ -182,7 +182,7 @@ export function CredentialToolbar({
   );
 }
 
-/* ── Rotate All button ───────────────────────────────────────────── */
+/* -- Rotate All button --------------------------------------------- */
 
 function RotateAllButton({
   isRotatingAll,
@@ -228,7 +228,7 @@ function RotateAllButton({
   );
 }
 
-/* ── Test All button ─────────────────────────────────────────────── */
+/* -- Test All button ----------------------------------------------- */
 
 function TestAllButton({
   bulk,

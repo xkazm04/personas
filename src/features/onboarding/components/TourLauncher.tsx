@@ -1,21 +1,67 @@
 import { motion } from "framer-motion";
-import { Map, RotateCcw } from "lucide-react";
+import { Map, RotateCcw, Play } from "lucide-react";
 import { usePersonaStore } from "@/stores/personaStore";
+import { TOUR_STEPS } from "@/stores/slices/system/tourSlice";
+
+function TourProgressArc({ completed, total }: { completed: number; total: number }) {
+  const radius = 7;
+  const circumference = 2 * Math.PI * radius;
+  const progress = total > 0 ? completed / total : 0;
+  const dashOffset = circumference * (1 - progress);
+
+  return (
+    <svg width={20} height={20} viewBox="0 0 20 20" className="flex-shrink-0">
+      <circle
+        cx={10}
+        cy={10}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        opacity={0.2}
+      />
+      <circle
+        cx={10}
+        cy={10}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeDasharray={circumference}
+        strokeDashoffset={dashOffset}
+        strokeLinecap="round"
+        transform="rotate(-90 10 10)"
+        className="transition-all duration-300"
+      />
+    </svg>
+  );
+}
 
 export default function TourLauncher() {
   const tourCompleted = usePersonaStore((s) => s.tourCompleted);
   const tourDismissed = usePersonaStore((s) => s.tourDismissed);
   const tourActive = usePersonaStore((s) => s.tourActive);
+  const tourStepCompleted = usePersonaStore((s) => s.tourStepCompleted);
   const resetTour = usePersonaStore((s) => s.resetTour);
 
   if (tourActive) return null;
 
-  const hasFinished = tourCompleted || tourDismissed;
+  const completedCount = Object.values(tourStepCompleted).filter(Boolean).length;
+  const totalSteps = TOUR_STEPS.length;
+  const canResume = tourDismissed && !tourCompleted && completedCount > 0;
 
   const handleStart = () => {
-    if (hasFinished) {
+    if (tourCompleted) {
       resetTour();
     }
+    setTimeout(() => {
+      usePersonaStore.getState().startTour();
+    }, 50);
+  };
+
+  const handleResume = () => {
+    // Start tour without resetting — it will resume from persisted step
+    usePersonaStore.setState({ tourDismissed: false });
     setTimeout(() => {
       usePersonaStore.getState().startTour();
     }, 50);
@@ -26,16 +72,26 @@ export default function TourLauncher() {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.4, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      onClick={handleStart}
+      onClick={canResume ? handleResume : handleStart}
       className="flex-shrink-0 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl
         bg-violet-500/10 text-violet-300 border border-violet-500/25
         hover:bg-violet-500/20 hover:border-violet-400/40 hover:shadow-[0_0_16px_rgba(139,92,246,0.15)]
         transition-all duration-300 cursor-pointer"
     >
-      {hasFinished ? (
+      {canResume ? (
+        <>
+          <TourProgressArc completed={completedCount} total={totalSteps} />
+          Resume Tour ({completedCount}/{totalSteps})
+        </>
+      ) : tourCompleted ? (
         <>
           <RotateCcw className="w-3.5 h-3.5" />
           Restart Tour
+        </>
+      ) : tourDismissed ? (
+        <>
+          <Play className="w-3.5 h-3.5" />
+          Start Tour
         </>
       ) : (
         <>

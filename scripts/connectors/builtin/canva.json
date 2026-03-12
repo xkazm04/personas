@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "CNV...",
-      "helpText": "Generate at canva.com/developers → Your Apps → Generate Token"
+      "helpText": "Generate at canva.com/developers -> Your Apps -> Generate Token"
     }
   ],
   "healthcheck_config": {

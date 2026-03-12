@@ -412,8 +412,8 @@ export default function IdeaTriagePage() {
               <h3 className="text-sm font-semibold text-foreground/90 mb-4">Keyboard Shortcuts</h3>
               <div className="space-y-2.5">
                 {[
-                  { keys: ['←', 'A'], action: 'Reject idea' },
-                  { keys: ['→', 'Z'], action: 'Accept idea' },
+                  { keys: ['<-', 'A'], action: 'Reject idea' },
+                  { keys: ['->', 'Z'], action: 'Accept idea' },
                   { keys: ['?'], action: 'Toggle this overlay' },
                   { keys: ['Esc'], action: 'Close overlay' },
                 ].map((shortcut) => (

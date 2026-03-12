@@ -2,7 +2,7 @@ import { Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { HealthScore } from './types';
 
-// ── Score badge ──────────────────────────────────────────────────
+// -- Score badge --------------------------------------------------
 
 export function ScoreBadge({ score }: { score: HealthScore }) {
   const gradeColors = {
@@ -26,7 +26,7 @@ export function ScoreBadge({ score }: { score: HealthScore }) {
   );
 }
 
-// ── Score ring visualization ─────────────────────────────────────
+// -- Score ring visualization -------------------------------------
 
 export function ScoreRing({ score }: { score: HealthScore }) {
   const radius = 36;

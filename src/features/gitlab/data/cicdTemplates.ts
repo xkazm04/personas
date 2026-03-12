@@ -37,7 +37,7 @@ Output your review as a structured list of findings. For each finding, include:
 3. Description of the issue
 4. Recommended fix
 
-Be constructive and specific. Do not repeat boilerplate praise — focus on actionable feedback.`,
+Be constructive and specific. Do not repeat boilerplate praise -- focus on actionable feedback.`,
   },
   {
     id: 'security-scan',
@@ -104,7 +104,7 @@ Keep descriptions concise. Focus on what changed from the user's perspective, no
     name: 'Deployment Validator',
     icon: '✅',
     color: '#10b981',
-    description: 'Verifies staging environments after deployment — checks health endpoints, configs, and smoke tests.',
+    description: 'Verifies staging environments after deployment -- checks health endpoints, configs, and smoke tests.',
     trigger: 'deployment',
     minTier: 'ultimate',
     systemPrompt: `You are a deployment validation agent integrated into a GitLab CI/CD pipeline. After a deployment to staging, you verify the environment is healthy.

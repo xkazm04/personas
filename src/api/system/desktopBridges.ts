@@ -1,6 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// ── Bridge action types ──────────────────────────────────────────────
+// -- Bridge action types ----------------------------------------------
 
 export interface BridgeActionResult {
   success: boolean;
@@ -60,7 +60,7 @@ export type BridgeAction =
   | TerminalAction
   | ObsidianAction;
 
-// ── Bridge config ────────────────────────────────────────────────────
+// -- Bridge config ----------------------------------------------------
 
 export interface BridgeConfig {
   vscode_binary?: string;
@@ -72,7 +72,7 @@ export interface BridgeConfig {
   env_vars?: Record<string, string>;
 }
 
-// ── Plan types ───────────────────────────────────────────────────────
+// -- Plan types -------------------------------------------------------
 
 export interface DesktopStep {
   id: string;
@@ -110,7 +110,7 @@ export interface RuntimeStatus {
   current_step: string | null;
 }
 
-// ── Bridge metadata ──────────────────────────────────────────────────
+// -- Bridge metadata --------------------------------------------------
 
 export type BridgeName = "vscode" | "docker" | "terminal" | "obsidian";
 
@@ -140,7 +140,7 @@ export const BRIDGE_INFO: Record<
   },
 };
 
-// ── API calls ────────────────────────────────────────────────────────
+// -- API calls --------------------------------------------------------
 
 /** Execute a single bridge action. */
 export const executeDesktopBridge = (

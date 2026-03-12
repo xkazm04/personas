@@ -1,6 +1,6 @@
 import type { AgentIR } from '@/lib/types/designTypes';
 
-// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Types -------------------------------------------------------
 
 export type DriftKind = 'error_pattern' | 'tool_mismatch' | 'timeout' | 'cost_overrun' | 'repeated_failure';
 
@@ -20,7 +20,7 @@ export interface DesignDriftEvent {
   createdAt: string;
 }
 
-// â”€â”€ Detection from execution summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Detection from execution summary ----------------------------
 
 interface ExecutionSummary {
   status: string;
@@ -84,7 +84,7 @@ export function detectDesignDrift(
     createdAt: now,
   };
 
-  // 1. Error pattern detection â€” failed execution with error message
+  // 1. Error pattern detection -- failed execution with error message
   if (exec.status === 'failed' && exec.errorMessage) {
     const errorLower = exec.errorMessage.toLowerCase();
     const isToolError = /tool.*fail|tool.*error|tool_use|function.*error/i.test(errorLower);
@@ -138,7 +138,7 @@ export function detectDesignDrift(
     }
   }
 
-  // 2. Timeout drift â€” execution took longer than 80% of the configured timeout
+  // 2. Timeout drift -- execution took longer than 80% of the configured timeout
   if (exec.durationMs != null && ctx.timeoutMs > 0) {
     const ratio = exec.durationMs / ctx.timeoutMs;
     if (ratio > 0.8 && exec.status === 'completed') {
@@ -155,7 +155,7 @@ export function detectDesignDrift(
     }
   }
 
-  // 3. Cost overrun â€” execution cost exceeds budget threshold
+  // 3. Cost overrun -- execution cost exceeds budget threshold
   if (ctx.maxBudgetUsd != null && ctx.maxBudgetUsd > 0 && exec.costUsd > 0) {
     const costRatio = exec.costUsd / ctx.maxBudgetUsd;
     if (costRatio > 0.5) {
@@ -193,7 +193,7 @@ function truncate(s: string, maxLen: number): string {
   return s.length > maxLen ? s.slice(0, maxLen - 3) + '...' : s;
 }
 
-// â”€â”€ Drift kind metadata â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Drift kind metadata -----------------------------------------
 
 export const DRIFT_KIND_META: Record<DriftKind, { label: string; bgClass: string; borderClass: string; textClass: string }> = {
   error_pattern: { label: 'Error Pattern', bgClass: 'bg-rose-500/10', borderClass: 'border-rose-500/20', textClass: 'text-rose-400' },

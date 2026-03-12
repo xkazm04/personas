@@ -1,6 +1,6 @@
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
 
-// ── Builder Use Case ────────────────────────────────────────────────
+// -- Builder Use Case ------------------------------------------------
 
 export interface BuilderUseCase {
   id: string;
@@ -11,7 +11,7 @@ export interface BuilderUseCase {
   trigger: TriggerPreset | null;
 }
 
-// ── Trigger Presets ─────────────────────────────────────────────────
+// -- Trigger Presets -------------------------------------------------
 
 export interface TriggerPreset {
   label: string;
@@ -30,7 +30,7 @@ export const TRIGGER_PRESETS: TriggerPreset[] = [
   { label: 'On webhook',    type: 'webhook' },
 ];
 
-// ── Use Case Categories ─────────────────────────────────────────────
+// -- Use Case Categories ---------------------------------------------
 
 export const USE_CASE_CATEGORIES = [
   { value: 'notification',   label: 'Notification' },
@@ -41,7 +41,7 @@ export const USE_CASE_CATEGORIES = [
   { value: 'reporting',      label: 'Reporting' },
 ] as const;
 
-// ── Error Strategies ────────────────────────────────────────────────
+// -- Error Strategies ------------------------------------------------
 
 export const ERROR_STRATEGIES = [
   { value: 'halt',                  label: 'Halt',                  description: 'Stop immediately on error' },
@@ -51,7 +51,7 @@ export const ERROR_STRATEGIES = [
   { value: 'skip',                  label: 'Skip',                  description: 'Skip failed step' },
 ] as const;
 
-// ── Review Policies ─────────────────────────────────────────────────
+// -- Review Policies -------------------------------------------------
 
 export const REVIEW_POLICIES = [
   { value: 'never',            label: 'Fully autonomous',    description: 'No manual review needed' },
@@ -61,7 +61,7 @@ export const REVIEW_POLICIES = [
   { value: 'always',           label: 'Always',              description: 'Every execution needs approval' },
 ] as const;
 
-// ── Channel Types ───────────────────────────────────────────────────
+// -- Channel Types ---------------------------------------------------
 
 export const CHANNEL_TYPES: Array<{
   type: NotificationChannelType;
@@ -73,7 +73,7 @@ export const CHANNEL_TYPES: Array<{
   { type: 'email',    label: 'Email',    configFields: [{ key: 'to', label: 'To Address', placeholder: 'user@example.com' }] },
 ];
 
-// ── Component Roles ─────────────────────────────────────────────────
+// -- Component Roles -------------------------------------------------
 
 export type ComponentRole = 'retrieve' | 'store' | 'act' | 'notify';
 
@@ -88,7 +88,7 @@ export const COMPONENT_ROLES: Array<{
   { role: 'notify',   label: 'Notify',    description: 'Send alerts & messages' },
 ];
 
-// ── Builder Component (role + connector + credential) ───────────────
+// -- Builder Component (role + connector + credential) ---------------
 
 export interface BuilderComponent {
   id: string;
@@ -98,7 +98,7 @@ export interface BuilderComponent {
   watchedTables?: string[];
 }
 
-// ── Builder State ───────────────────────────────────────────────────
+// -- Builder State ---------------------------------------------------
 
 export interface BuilderState {
   intent: string;
@@ -122,7 +122,7 @@ export const INITIAL_BUILDER_STATE: BuilderState = {
   reviewPolicy: 'never',
 };
 
-// ── Credential Coverage ─────────────────────────────────────────────
+// -- Credential Coverage ---------------------------------------------
 
 export type CoverageStatus = 'full' | 'partial' | 'none';
 
@@ -132,7 +132,7 @@ export interface CredentialCoverage {
   status: CoverageStatus;
 }
 
-// ── Dry Run ─────────────────────────────────────────────────────────
+// -- Dry Run ---------------------------------------------------------
 
 export interface DryRunIssue {
   id: string;

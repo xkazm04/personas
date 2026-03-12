@@ -50,7 +50,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       await applyPersonaOp(selectedPersona.id, { kind: 'ToggleEnabled', enabled: nextEnabled });
       patch({ enabled: nextEnabled });
       setBaseline((prev) => ({ ...prev, enabled: nextEnabled }));
-    } catch { useToastStore.getState().addToast('Failed to toggle persona — check your connection', 'error'); }
+    } catch { useToastStore.getState().addToast('Failed to toggle persona -- check your connection', 'error'); }
   }, [selectedPersona, readiness, applyPersonaOp, patch, setBaseline]);
 
   if (!effective) return null;

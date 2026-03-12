@@ -17,6 +17,6 @@ current: number,
  */
 limit: number, 
 /**
- * Usage percentage (0–100).
+ * Usage percentage (0--100).
  */
 percent: number, };

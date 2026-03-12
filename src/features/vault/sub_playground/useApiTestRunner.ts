@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { executeApiRequest, type ApiEndpoint, type ApiProxyResponse } from '@/api/system/apiProxy';
 
-// ── Types ─────────────────────────────────────────────────────────────
+// -- Types -------------------------------------------------------------
 
 export type TestVerdict = 'pending' | 'running' | 'passed' | 'failed' | 'skipped';
 
@@ -34,7 +34,7 @@ export interface UseApiTestRunnerReturn {
   clear: () => void;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────
+// -- Helpers -----------------------------------------------------------
 
 function endpointKey(ep: ApiEndpoint): string {
   return `${ep.method.toUpperCase()}:${ep.path}`;
@@ -49,7 +49,7 @@ function hasRequiredPathParams(ep: ApiEndpoint): boolean {
 function verdictFromStatus(status: number): TestVerdict {
   if (status >= 200 && status < 300) return 'passed';
   if (status === 401 || status === 403) return 'failed';
-  // 400, 404, 422 etc — server responded, auth worked, endpoint exists
+  // 400, 404, 422 etc -- server responded, auth worked, endpoint exists
   // Treat 4xx (non-auth) as passed (reachable) and 5xx as failed
   if (status >= 400 && status < 500) return 'passed';
   return 'failed'; // 5xx
@@ -59,7 +59,7 @@ function timestamp(): string {
   return new Date().toLocaleTimeString('en-US', { hour12: false });
 }
 
-// ── Concurrency runner ────────────────────────────────────────────────
+// -- Concurrency runner ------------------------------------------------
 
 async function runWithConcurrency<T>(
   tasks: (() => Promise<T>)[],
@@ -83,10 +83,10 @@ async function runWithConcurrency<T>(
   await Promise.all(workers);
 }
 
-// ── Default concurrency ───────────────────────────────────────────────
+// -- Default concurrency -----------------------------------------------
 const CONCURRENCY = 5;
 
-// ── Hook ──────────────────────────────────────────────────────────────
+// -- Hook --------------------------------------------------------------
 
 export function useApiTestRunner(): UseApiTestRunnerReturn {
   const [results, setResults] = useState<Map<string, EndpointTestResult>>(new Map());
@@ -139,7 +139,7 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
     const startedAt = Date.now();
     setProgress({ current: 0, total, passed: 0, failed: 0, skipped: skippedCount, startedAt });
 
-    addLog(`Starting batch test: ${total} endpoints (${skippedCount} skipped — path params)`);
+    addLog(`Starting batch test: ${total} endpoints (${skippedCount} skipped -- path params)`);
     addLog(`Concurrency: ${CONCURRENCY} parallel requests`);
 
     const tasks = testable.map((ep) => async () => {
@@ -155,7 +155,7 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
         if (existing) next.set(key, { ...existing, verdict: 'running' });
         return next;
       });
-      addLog(`→ ${method} ${ep.path}`);
+      addLog(`-> ${method} ${ep.path}`);
 
       try {
         const res: ApiProxyResponse = await executeApiRequest(
@@ -182,7 +182,7 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
           return next;
         });
 
-        const icon = verdict === 'passed' ? '✓' : '✗';
+        const icon = verdict === 'passed' ? '[v]' : '[x]';
         addLog(`  ${icon} ${res.status} ${res.status_text} (${res.duration_ms}ms)`);
       } catch (err) {
         failed++;
@@ -195,7 +195,7 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
           return next;
         });
 
-        addLog(`  ✗ ERROR: ${errorMsg}`);
+        addLog(`  [x] ERROR: ${errorMsg}`);
       }
 
       setProgress({ current, total, passed, failed, skipped: skippedCount, startedAt });

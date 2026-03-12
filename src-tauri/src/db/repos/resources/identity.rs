@@ -1,10 +1,11 @@
 use rusqlite::{params, Row};
+use tracing::instrument;
 
 use crate::db::models::{LocalIdentity, PeerIdentity, TrustedPeer, UpdateTrustedPeerInput};
 use crate::db::DbPool;
 use crate::error::AppError;
 
-// ── Row mappers ─────────────────────────────────────────────────────────
+// -- Row mappers ---------------------------------------------------------
 
 fn row_to_local_identity(row: &Row) -> rusqlite::Result<LocalIdentity> {
     Ok(LocalIdentity {
@@ -29,6 +30,7 @@ fn row_to_peer_identity(row: &Row) -> rusqlite::Result<PeerIdentity> {
 
 fn row_to_trusted_peer(row: &Row) -> rusqlite::Result<TrustedPeer> {
     let pk_bytes: Vec<u8> = row.get("public_key")?;
+    let tl_str: String = row.get("trust_level")?;
     Ok(TrustedPeer {
         peer_id: row.get("peer_id")?,
         public_key_b64: base64::Engine::encode(
@@ -36,15 +38,18 @@ fn row_to_trusted_peer(row: &Row) -> rusqlite::Result<TrustedPeer> {
             &pk_bytes,
         ),
         display_name: row.get("display_name")?,
-        trust_level: row.get("trust_level")?,
+        trust_level: tl_str.parse().map_err(|e: AppError| {
+            rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e))
+        })?,
         added_at: row.get("added_at")?,
         last_seen: row.get("last_seen")?,
         notes: row.get("notes")?,
     })
 }
 
-// ── Local Identity ──────────────────────────────────────────────────────
+// -- Local Identity ------------------------------------------------------
 
+#[instrument(skip(pool))]
 pub fn get_local_identity(pool: &DbPool) -> Result<Option<PeerIdentity>, AppError> {
     let conn = pool.get()?;
     conn.query_row(
@@ -56,6 +61,7 @@ pub fn get_local_identity(pool: &DbPool) -> Result<Option<PeerIdentity>, AppErro
     .map_err(AppError::Database)
 }
 
+#[instrument(skip(pool, public_key))]
 pub fn upsert_local_identity(
     pool: &DbPool,
     peer_id: &str,
@@ -75,6 +81,7 @@ pub fn upsert_local_identity(
     get_local_identity(pool)?.ok_or_else(|| AppError::Internal("Identity upsert failed".into()))
 }
 
+#[instrument(skip(pool))]
 pub fn update_display_name(pool: &DbPool, display_name: &str) -> Result<PeerIdentity, AppError> {
     let conn = pool.get()?;
     let changed = conn.execute(
@@ -87,8 +94,9 @@ pub fn update_display_name(pool: &DbPool, display_name: &str) -> Result<PeerIden
     get_local_identity(pool)?.ok_or_else(|| AppError::NotFound("Local identity".into()))
 }
 
-// ── Trusted Peers ───────────────────────────────────────────────────────
+// -- Trusted Peers -------------------------------------------------------
 
+#[instrument(skip(pool))]
 pub fn list_trusted_peers(pool: &DbPool) -> Result<Vec<TrustedPeer>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
@@ -99,6 +107,7 @@ pub fn list_trusted_peers(pool: &DbPool) -> Result<Vec<TrustedPeer>, AppError> {
         .map_err(AppError::Database)
 }
 
+#[instrument(skip(pool))]
 pub fn get_trusted_peer(pool: &DbPool, peer_id: &str) -> Result<TrustedPeer, AppError> {
     let conn = pool.get()?;
     conn.query_row(
@@ -114,6 +123,7 @@ pub fn get_trusted_peer(pool: &DbPool, peer_id: &str) -> Result<TrustedPeer, App
     })
 }
 
+#[instrument(skip(pool, public_key))]
 pub fn add_trusted_peer(
     pool: &DbPool,
     peer_id: &str,
@@ -122,6 +132,23 @@ pub fn add_trusted_peer(
     notes: Option<&str>,
 ) -> Result<TrustedPeer, AppError> {
     let conn = pool.get()?;
+
+    // Guard: reject re-import of a previously revoked peer
+    let existing_trust: Option<String> = conn
+        .query_row(
+            "SELECT trust_level FROM trusted_peers WHERE peer_id = ?1",
+            params![peer_id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(AppError::Database)?;
+
+    if existing_trust.as_deref() == Some("revoked") {
+        return Err(AppError::Validation(format!(
+            "Peer {peer_id} was previously revoked. Explicitly update trust level before re-importing."
+        )));
+    }
+
     conn.execute(
         "INSERT INTO trusted_peers (peer_id, public_key, display_name, trust_level, notes)
          VALUES (?1, ?2, ?3, 'manual', ?4)
@@ -135,6 +162,7 @@ pub fn add_trusted_peer(
     get_trusted_peer(pool, peer_id)
 }
 
+#[instrument(skip(pool, input))]
 pub fn update_trusted_peer(
     pool: &DbPool,
     peer_id: &str,
@@ -151,7 +179,7 @@ pub fn update_trusted_peer(
     if let Some(level) = &input.trust_level {
         conn.execute(
             "UPDATE trusted_peers SET trust_level = ?1 WHERE peer_id = ?2",
-            params![level, peer_id],
+            params![level.to_string(), peer_id],
         )?;
     }
     if let Some(notes_opt) = &input.notes {
@@ -163,6 +191,7 @@ pub fn update_trusted_peer(
     get_trusted_peer(pool, peer_id)
 }
 
+#[instrument(skip(pool))]
 pub fn revoke_peer_trust(pool: &DbPool, peer_id: &str) -> Result<(), AppError> {
     let conn = pool.get()?;
     let changed = conn.execute(
@@ -175,6 +204,7 @@ pub fn revoke_peer_trust(pool: &DbPool, peer_id: &str) -> Result<(), AppError> {
     Ok(())
 }
 
+#[instrument(skip(pool))]
 pub fn delete_trusted_peer(pool: &DbPool, peer_id: &str) -> Result<(), AppError> {
     let conn = pool.get()?;
     let changed = conn.execute(
@@ -187,6 +217,7 @@ pub fn delete_trusted_peer(pool: &DbPool, peer_id: &str) -> Result<(), AppError>
     Ok(())
 }
 
+#[instrument(skip(pool))]
 pub fn update_last_seen(pool: &DbPool, peer_id: &str) -> Result<(), AppError> {
     let conn = pool.get()?;
     conn.execute(
@@ -196,6 +227,6 @@ pub fn update_last_seen(pool: &DbPool, peer_id: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────
+// -- Helpers -------------------------------------------------------------
 
 use rusqlite::OptionalExtension;

@@ -101,9 +101,66 @@ pub fn init_user_db(app_data_dir: &PathBuf) -> Result<UserDbPool, AppError> {
 
     restrict_db_file_permissions(&db_path);
 
+    // Run knowledge base schema migrations in the user database
+    {
+        let conn = pool.get()?;
+        conn.execute_batch(KNOWLEDGE_BASE_SCHEMA)?;
+        tracing::debug!("Knowledge base schema ensured in user database");
+    }
+
     tracing::info!("User data database initialized successfully");
     Ok(pool)
 }
+
+/// Schema for vector knowledge base tables (lives in the user database).
+const KNOWLEDGE_BASE_SCHEMA: &str = r#"
+CREATE TABLE IF NOT EXISTS knowledge_bases (
+    id              TEXT PRIMARY KEY,
+    credential_id   TEXT NOT NULL,
+    name            TEXT NOT NULL,
+    description     TEXT,
+    embedding_model TEXT NOT NULL DEFAULT 'AllMiniLML6V2Q',
+    embedding_dims  INTEGER NOT NULL DEFAULT 384,
+    chunk_size      INTEGER NOT NULL DEFAULT 512,
+    chunk_overlap   INTEGER NOT NULL DEFAULT 50,
+    document_count  INTEGER NOT NULL DEFAULT 0,
+    chunk_count     INTEGER NOT NULL DEFAULT 0,
+    status          TEXT NOT NULL DEFAULT 'ready',
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS kb_documents (
+    id              TEXT PRIMARY KEY,
+    kb_id           TEXT NOT NULL REFERENCES knowledge_bases(id) ON DELETE CASCADE,
+    source_type     TEXT NOT NULL,
+    source_path     TEXT,
+    title           TEXT NOT NULL,
+    content_hash    TEXT NOT NULL,
+    byte_size       INTEGER NOT NULL DEFAULT 0,
+    chunk_count     INTEGER NOT NULL DEFAULT 0,
+    metadata_json   TEXT,
+    status          TEXT NOT NULL DEFAULT 'pending',
+    error_message   TEXT,
+    indexed_at      TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_kb_documents_kb ON kb_documents(kb_id);
+CREATE INDEX IF NOT EXISTS idx_kb_documents_hash ON kb_documents(content_hash);
+
+CREATE TABLE IF NOT EXISTS kb_chunks (
+    id              TEXT PRIMARY KEY,
+    kb_id           TEXT NOT NULL REFERENCES knowledge_bases(id) ON DELETE CASCADE,
+    document_id     TEXT NOT NULL REFERENCES kb_documents(id) ON DELETE CASCADE,
+    chunk_index     INTEGER NOT NULL,
+    content         TEXT NOT NULL,
+    token_count     INTEGER NOT NULL DEFAULT 0,
+    metadata_json   TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_kb_chunks_doc ON kb_chunks(document_id);
+CREATE INDEX IF NOT EXISTS idx_kb_chunks_kb ON kb_chunks(kb_id);
+"#;
 
 /// Seed the built-in `personas_database` credential if it doesn't already exist.
 /// This ensures a "Built-in Database" entry appears in the Databases submodule
@@ -120,7 +177,7 @@ pub fn seed_builtin_database_credential(conn: &rusqlite::Connection) -> Result<(
     }
 
     let now = chrono::Utc::now().to_rfc3339();
-    // The credential stores no secrets — it's a local file.
+    // The credential stores no secrets -- it's a local file.
     // We use a dummy encrypted_data/iv since the schema requires non-null values.
     conn.execute(
         "INSERT INTO persona_credentials
@@ -208,7 +265,13 @@ fn restrict_windows_permissions(path: &Path) {
     // Grant owner full control BEFORE removing inheritance to ensure
     // the user retains access. If we remove inheritance first and the
     // grant step fails, the file becomes inaccessible.
-    let grant_arg = format!("{}:(F)", username);
+    // Use (OI)(CI)(F) for directories so subdirectories (logs/, crash_logs/)
+    // inherit the permission; plain (F) for files.
+    let grant_arg = if path.is_dir() {
+        format!("{}:(OI)(CI)(F)", username)
+    } else {
+        format!("{}:(F)", username)
+    };
     let grant_result = std::process::Command::new("icacls")
         .args([path_str.as_ref(), "/grant", &grant_arg])
         .output();
@@ -227,7 +290,7 @@ fn restrict_windows_permissions(path: &Path) {
     };
 
     if !grant_ok {
-        tracing::warn!(path = %path.display(), "Skipping inheritance removal — grant failed, removing inheritance would lock out the file");
+        tracing::warn!(path = %path.display(), "Skipping inheritance removal -- grant failed, removing inheritance would lock out the file");
         return;
     }
 
@@ -349,7 +412,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#F06A6A",
             icon_url: "/icons/connectors/asana.svg",
             category: "productivity",
-            fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"1/12345:abcdef...","helpText":"From Asana → My Settings → Apps → Manage Developer Apps → Personal Access Tokens"}]"#,
+            fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"1/12345:abcdef...","helpText":"From Asana -> My Settings -> Apps -> Manage Developer Apps -> Personal Access Tokens"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://app.asana.com/api/1.0/users/me","method":"GET","headers":{"Authorization":"Bearer {{personal_access_token}}"},"description":"Validates personal access token via Asana users/me endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Asana project management for tasks, projects, and team collaboration.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://developers.asana.com/docs/personal-access-token","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@roychri/mcp-server-asana","transport":"stdio","suggested_env":{"ASANA_ACCESS_TOKEN":""}}]}"#),
         },
@@ -371,7 +434,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#7B68EE",
             icon_url: "/icons/connectors/clickup.svg",
             category: "productivity",
-            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"pk_...","helpText":"From ClickUp Settings → Apps → API Token"}]"#,
+            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"pk_...","helpText":"From ClickUp Settings -> Apps -> API Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.clickup.com/api/v2/user","method":"GET","headers":{"Authorization":"{{api_key}}"},"description":"Validates API key via user endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"ClickUp project management with tasks, docs, goals, and time tracking.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://clickup.com/api/developer-portal/authentication","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@taazkareem/clickup-mcp-server","transport":"stdio","suggested_env":{"CLICKUP_API_KEY":""}}]}"#),
         },
@@ -415,7 +478,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#3ECF8E",
             icon_url: "/icons/connectors/supabase.svg",
             category: "database",
-            fields: r#"[{"key":"project_url","label":"Project URL","type":"url","required":true,"placeholder":"https://xxxx.supabase.co","helpText":"From Supabase Dashboard → Settings → API"},{"key":"anon_key","label":"Anon / Public Key","type":"password","required":true,"placeholder":"eyJ...","helpText":"The anon key for client-side access"},{"key":"service_role_key","label":"Service Role Key","type":"password","required":false,"placeholder":"eyJ...","helpText":"For server-side admin access (bypasses RLS)"},{"key":"pooler_url","label":"Pooler Connection String","type":"password","required":false,"placeholder":"postgresql://postgres.xxxx:...","helpText":"Supavisor pooler URL for direct database access"}]"#,
+            fields: r#"[{"key":"project_url","label":"Project URL","type":"url","required":true,"placeholder":"https://xxxx.supabase.co","helpText":"From Supabase Dashboard -> Settings -> API"},{"key":"anon_key","label":"Anon / Public Key","type":"password","required":true,"placeholder":"eyJ...","helpText":"The anon key for client-side access"},{"key":"service_role_key","label":"Service Role Key","type":"password","required":false,"placeholder":"eyJ...","helpText":"For server-side admin access (bypasses RLS)"},{"key":"pooler_url","label":"Pooler Connection String","type":"password","required":false,"placeholder":"postgresql://postgres.xxxx:...","helpText":"Supavisor pooler URL for direct database access"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{project_url}}/rest/v1/","method":"GET","headers":{"apikey":"{{anon_key}}","Authorization":"Bearer {{anon_key}}"},"description":"Validates Supabase connection via REST endpoint with anon key"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Supabase open-source Firebase alternative with Postgres, auth, and realtime.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://supabase.com/dashboard/project/_/settings/api","auth_variants":[{"id":"anon","label":"Anon Key","fields":["project_url","anon_key"],"auth_type_label":"API Key","healthcheck_config":{"endpoint":"{{project_url}}/rest/v1/","method":"GET","headers":{"apikey":"{{anon_key}}","Authorization":"Bearer {{anon_key}}"}}},{"id":"service_role","label":"Service Role","fields":["project_url","service_role_key"],"auth_type_label":"Service Role","healthcheck_config":{"endpoint":"{{project_url}}/rest/v1/","method":"GET","headers":{"apikey":"{{service_role_key}}","Authorization":"Bearer {{service_role_key}}"}}},{"id":"pooler","label":"Pooler URL","fields":["pooler_url"],"auth_type_label":"Connection String","healthcheck_skip":true}],"auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@supabase/mcp-server-supabase","transport":"stdio","suggested_env":{"SUPABASE_ACCESS_TOKEN":""}}]}"#),
         },
@@ -437,7 +500,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#E5484D",
             icon_url: "/icons/connectors/betterstack.svg",
             category: "monitoring",
-            fields: r#"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From Better Stack Dashboard → Settings → API tokens"}]"#,
+            fields: r#"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From Better Stack Dashboard -> Settings -> API tokens"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://uptime.betterstack.com/api/v2/monitors","method":"GET","headers":{"Authorization":"Bearer {{api_token}}"},"description":"Validates API token via monitors endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Better Stack uptime monitoring, incident management, and status pages.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://betterstack.com/docs/uptime/api/getting-started-with-uptime-api/","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
@@ -448,7 +511,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#7856FF",
             icon_url: "/icons/connectors/mixpanel.svg",
             category: "analytics",
-            fields: r#"[{"key":"service_account_username","label":"Service Account Username","type":"text","required":true,"placeholder":"","helpText":"From Mixpanel → Organization Settings → Service Accounts"},{"key":"service_account_secret","label":"Service Account Secret","type":"password","required":true,"placeholder":"","helpText":"The secret paired with the service account username"},{"key":"project_id","label":"Project ID","type":"text","required":true,"placeholder":"","helpText":"From Mixpanel → Project Settings → Project ID"},{"key":"project_token","label":"Project Token","type":"password","required":false,"placeholder":"","helpText":"From Mixpanel → Project Settings → Access Keys → Project Token"}]"#,
+            fields: r#"[{"key":"service_account_username","label":"Service Account Username","type":"text","required":true,"placeholder":"","helpText":"From Mixpanel -> Organization Settings -> Service Accounts"},{"key":"service_account_secret","label":"Service Account Secret","type":"password","required":true,"placeholder":"","helpText":"The secret paired with the service account username"},{"key":"project_id","label":"Project ID","type":"text","required":true,"placeholder":"","helpText":"From Mixpanel -> Project Settings -> Project ID"},{"key":"project_token","label":"Project Token","type":"password","required":false,"placeholder":"","helpText":"From Mixpanel -> Project Settings -> Access Keys -> Project Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://mixpanel.com/api/app/me","method":"GET","headers":{"Authorization":"Basic {{base64(service_account_username:service_account_secret)}}"},"description":"Validates service account via Mixpanel app/me endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Mixpanel product analytics with GDPR-compliant data access.","auth_type":"project_secret","auth_type_label":"Service Account","docs_url":"https://developer.mixpanel.com/reference/project-secret","auth_variants":[{"id":"service_account","label":"Service Account","fields":["service_account_username","service_account_secret","project_id"],"auth_type_label":"Service Account"},{"id":"project_token","label":"Project Token","fields":["project_id","project_token"],"auth_type_label":"Project Token"}],"auth_methods":[{"id":"project_secret","label":"Service Account","type":"credential","is_default":true}]}"#),
         },
@@ -459,7 +522,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#52BD94",
             icon_url: "/icons/connectors/twilio.svg",
             category: "analytics",
-            fields: r#"[{"key":"write_key","label":"Write Key","type":"password","required":true,"placeholder":"","helpText":"From Segment → Sources → your source → Settings → API Keys"},{"key":"access_token","label":"Access Token","type":"password","required":false,"placeholder":"","helpText":"Optional: for Config API access (workspace-level)"}]"#,
+            fields: r#"[{"key":"write_key","label":"Write Key","type":"password","required":true,"placeholder":"","helpText":"From Segment -> Sources -> your source -> Settings -> API Keys"},{"key":"access_token","label":"Access Token","type":"password","required":false,"placeholder":"","helpText":"Optional: for Config API access (workspace-level)"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.segment.io/v1/batch","method":"POST","headers":{"Authorization":"Basic {{base64(write_key:)}}","Content-Type":"application/json"},"description":"Validates write key via Segment batch endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Twilio Segment customer data platform for event tracking and routing.","auth_type":"write_key","auth_type_label":"Write Key","docs_url":"https://segment.com/docs/connections/sources/catalog/","auth_variants":[{"id":"write","label":"Write Key","fields":["write_key"],"auth_type_label":"Write Key"},{"id":"config","label":"Write + Config API","fields":["write_key","access_token"],"auth_type_label":"Config API"}],"auth_methods":[{"id":"write_key","label":"Write Key","type":"credential","is_default":true}]}"#),
         },
@@ -470,7 +533,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#FF3D57",
             icon_url: "/icons/connectors/monday.svg",
             category: "productivity",
-            fields: r#"[{"key":"api_key_v2","label":"API v2 Token","type":"password","required":true,"placeholder":"eyJ...","helpText":"From monday.com → Avatar → Developers → My Access Tokens"}]"#,
+            fields: r#"[{"key":"api_key_v2","label":"API v2 Token","type":"password","required":true,"placeholder":"eyJ...","helpText":"From monday.com -> Avatar -> Developers -> My Access Tokens"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.monday.com/v2","method":"POST","headers":{"Authorization":"{{api_key_v2}}","Content-Type":"application/json"},"body":"{\"query\":\"{ me { id } }\"}","description":"Validates API token via Monday GraphQL endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Monday.com work management platform for projects, workflows, and CRM.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://developer.monday.com/api-reference/docs/authentication","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
@@ -481,7 +544,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#5E6AD2",
             icon_url: "/icons/connectors/linear.svg",
             category: "development",
-            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"lin_api_...","helpText":"From Linear → Settings → API → Personal API keys"}]"#,
+            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"lin_api_...","helpText":"From Linear -> Settings -> API -> Personal API keys"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.linear.app/graphql","method":"POST","headers":{"Authorization":"{{api_key}}","Content-Type":"application/json"},"body":"{\"query\":\"{ viewer { id } }\"}","description":"Validates API key via Linear GraphQL viewer query"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Linear issue tracking for software teams with cycles, projects, and triage.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://linear.app/settings/api","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"mcp-linear","transport":"stdio","suggested_env":{"LINEAR_API_KEY":""}}]}"#),
         },
@@ -492,7 +555,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#F9BD2B",
             icon_url: "/icons/connectors/posthog.svg",
             category: "analytics",
-            fields: r#"[{"key":"personal_api_key","label":"Personal API Key","type":"password","required":true,"placeholder":"phx_...","helpText":"From PostHog → Settings → Personal API Keys"},{"key":"project_api_key","label":"Project API Key","type":"password","required":false,"placeholder":"phc_...","helpText":"Optional: project token for event ingestion"},{"key":"host","label":"Host","type":"url","required":false,"placeholder":"https://us.posthog.com","helpText":"Defaults to us.posthog.com. Use eu.posthog.com for EU cloud."}]"#,
+            fields: r#"[{"key":"personal_api_key","label":"Personal API Key","type":"password","required":true,"placeholder":"phx_...","helpText":"From PostHog -> Settings -> Personal API Keys"},{"key":"project_api_key","label":"Project API Key","type":"password","required":false,"placeholder":"phc_...","helpText":"Optional: project token for event ingestion"},{"key":"host","label":"Host","type":"url","required":false,"placeholder":"https://us.posthog.com","helpText":"Defaults to us.posthog.com. Use eu.posthog.com for EU cloud."}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{host|https://us.posthog.com}}/api/projects/","method":"GET","headers":{"Authorization":"Bearer {{personal_api_key}}"},"description":"Validates personal API key via projects endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"PostHog product analytics, feature flags, session replay, and A/B testing.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://posthog.com/docs/api","auth_variants":[{"id":"personal","label":"Personal API Key","fields":["personal_api_key","host"],"auth_type_label":"API Key"},{"id":"project","label":"Project Key","fields":["project_api_key","host"],"auth_type_label":"Project Key"}],"auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
@@ -503,7 +566,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#343434",
             icon_url: "/icons/connectors/circleci.svg",
             category: "development",
-            fields: r#"[{"key":"personal_token","label":"Personal API Token","type":"password","required":true,"placeholder":"CCIPAT_...","helpText":"From CircleCI → User Settings → Personal API Tokens"}]"#,
+            fields: r#"[{"key":"personal_token","label":"Personal API Token","type":"password","required":true,"placeholder":"CCIPAT_...","helpText":"From CircleCI -> User Settings -> Personal API Tokens"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://circleci.com/api/v2/me","method":"GET","headers":{"Circle-Token":"{{personal_token}}"},"description":"Validates token via CircleCI me endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"CircleCI continuous integration and delivery platform.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://circleci.com/docs/managing-api-tokens/","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
@@ -514,7 +577,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#F97316",
             icon_url: "/icons/connectors/convex.svg",
             category: "database",
-            fields: r#"[{"key":"deployment_url","label":"Deployment URL","type":"url","required":true,"placeholder":"https://your-app-123.convex.cloud","helpText":"From Convex Dashboard → Settings → URL"},{"key":"deploy_key","label":"Deploy Key","type":"password","required":true,"placeholder":"prod:...","helpText":"From Convex Dashboard → Settings → Deploy Key"}]"#,
+            fields: r#"[{"key":"deployment_url","label":"Deployment URL","type":"url","required":true,"placeholder":"https://your-app-123.convex.cloud","helpText":"From Convex Dashboard -> Settings -> URL"},{"key":"deploy_key","label":"Deploy Key","type":"password","required":true,"placeholder":"prod:...","helpText":"From Convex Dashboard -> Settings -> Deploy Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{deployment_url}}/version","method":"GET","headers":{},"description":"Validates Convex deployment URL is reachable"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Convex real-time backend-as-a-service with document database, serverless functions, and scheduling.","auth_type":"deploy_key","auth_type_label":"Deploy Key","docs_url":"https://docs.convex.dev/http-api/","db_type":"document","db_engine":"convex","db_features":["function_execution","schema_introspection_pro","document_browsing_pro"],"query_language":"convex","query_help":"Call Convex functions via JSON body. Table browsing requires Professional plan.","pricing_tier":"free","auth_methods":[{"id":"deploy_key","label":"Deploy Key","type":"credential","is_default":true}]}"#),
         },
@@ -525,7 +588,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#168EEA",
             icon_url: "/icons/connectors/buffer.svg",
             category: "social",
-            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"From Buffer → Settings → Apps → Access Token"}]"#,
+            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"From Buffer -> Settings -> Apps -> Access Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.bufferapp.com/1/user.json?access_token={{access_token}}","method":"GET","headers":{},"description":"Validates access token via Buffer user endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Buffer social media management for scheduling and publishing.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://buffer.com/developers/api","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
@@ -558,11 +621,11 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#0A66C2",
             icon_url: "/icons/connectors/linkedin.svg",
             category: "social",
-            fields: r#"[{"key":"client_id","label":"Client ID","type":"text","required":true,"placeholder":"86abc123def456","helpText":"From LinkedIn Developer Portal → My Apps → Auth tab"},{"key":"client_secret","label":"Client Secret","type":"password","required":true,"placeholder":"","helpText":"From LinkedIn Developer Portal → My Apps → Auth tab"}]"#,
+            fields: r#"[{"key":"client_id","label":"Client ID","type":"text","required":true,"placeholder":"86abc123def456","helpText":"From LinkedIn Developer Portal -> My Apps -> Auth tab"},{"key":"client_secret","label":"Client Secret","type":"password","required":true,"placeholder":"","helpText":"From LinkedIn Developer Portal -> My Apps -> Auth tab"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.linkedin.com/v2/userinfo","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates OAuth token via LinkedIn userinfo endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"LinkedIn professional network for profile, connections, and social posts.","auth_type":"oauth","auth_type_label":"OAuth","oauth_provider_id":"linkedin","oauth_scopes":["openid","profile","email","w_member_social"],"docs_url":"https://learn.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
         },
-        // ── New connectors ──
+        // -- New connectors --
         BuiltinConnector {
             id: "builtin-slack",
             name: "slack",
@@ -570,7 +633,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#4A154B",
             icon_url: "/icons/connectors/slack.svg",
             category: "messaging",
-            fields: r#"[{"key":"bot_token","label":"Bot User OAuth Token","type":"password","required":true,"placeholder":"xoxb-...","helpText":"From Slack App → OAuth & Permissions → Bot User OAuth Token"}]"#,
+            fields: r#"[{"key":"bot_token","label":"Bot User OAuth Token","type":"password","required":true,"placeholder":"xoxb-...","helpText":"From Slack App -> OAuth & Permissions -> Bot User OAuth Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://slack.com/api/auth.test","method":"GET","headers":{"Authorization":"Bearer {{bot_token}}"},"description":"Validates bot token via Slack auth.test endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Slack workspace messaging for channels, DMs, and workflow notifications.","auth_type":"bot_token","auth_type_label":"Bot Token","docs_url":"https://api.slack.com/authentication/token-types","auth_methods":[{"id":"bot_token","label":"Bot Token","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@modelcontextprotocol/server-slack","transport":"stdio","suggested_env":{"SLACK_BOT_TOKEN":"","SLACK_TEAM_ID":""}}]}"#),
         },
@@ -581,7 +644,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#5865F2",
             icon_url: "/icons/connectors/discord.svg",
             category: "messaging",
-            fields: r#"[{"key":"bot_token","label":"Bot Token","type":"password","required":true,"placeholder":"","helpText":"From Discord Developer Portal → Bot → Token"}]"#,
+            fields: r#"[{"key":"bot_token","label":"Bot Token","type":"password","required":true,"placeholder":"","helpText":"From Discord Developer Portal -> Bot -> Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://discord.com/api/v10/users/@me","method":"GET","headers":{"Authorization":"Bot {{bot_token}}"},"description":"Validates bot token via Discord users/@me endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Discord bot integration for server messaging, moderation, and notifications.","auth_type":"bot_token","auth_type_label":"Bot Token","docs_url":"https://discord.com/developers/applications","auth_methods":[{"id":"bot_token","label":"Bot Token","type":"credential","is_default":true}]}"#),
         },
@@ -592,7 +655,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#26A5E4",
             icon_url: "/icons/connectors/telegram.svg",
             category: "messaging",
-            fields: r#"[{"key":"bot_token","label":"Bot Token","type":"password","required":true,"placeholder":"123456:ABC-DEF...","helpText":"From @BotFather on Telegram → /newbot or /token"}]"#,
+            fields: r#"[{"key":"bot_token","label":"Bot Token","type":"password","required":true,"placeholder":"123456:ABC-DEF...","helpText":"From @BotFather on Telegram -> /newbot or /token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.telegram.org/bot{{bot_token}}/getMe","method":"GET","headers":{},"description":"Validates bot token via Telegram getMe endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Telegram bot for messaging, notifications, and group automation.","auth_type":"bot_token","auth_type_label":"Bot Token","docs_url":"https://core.telegram.org/bots/api","auth_methods":[{"id":"bot_token","label":"Bot Token","type":"credential","is_default":true}]}"#),
         },
@@ -603,7 +666,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#1A82E2",
             icon_url: "/icons/connectors/sendgrid.svg",
             category: "messaging",
-            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"SG....","helpText":"From SendGrid → Settings → API Keys → Create API Key"}]"#,
+            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"SG....","helpText":"From SendGrid -> Settings -> API Keys -> Create API Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.sendgrid.com/v3/scopes","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via SendGrid scopes endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"SendGrid transactional and marketing email delivery at scale.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.sendgrid.com/ui/account-and-settings/api-keys","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
@@ -614,7 +677,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#000000",
             icon_url: "/icons/connectors/resend.svg",
             category: "messaging",
-            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"re_...","helpText":"From Resend Dashboard → API Keys → Create API Key"}]"#,
+            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"re_...","helpText":"From Resend Dashboard -> API Keys -> Create API Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.resend.com/domains","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Resend domains endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Resend modern email API for developers with React Email support.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://resend.com/docs/api-reference/introduction","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
@@ -625,7 +688,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#000000",
             icon_url: "/icons/connectors/vercel.svg",
             category: "devops",
-            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"From Vercel → Settings → Tokens → Create"}]"#,
+            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"From Vercel -> Settings -> Tokens -> Create"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.vercel.com/v2/user","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Vercel user endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Vercel frontend deployment platform with serverless functions and edge network.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://vercel.com/account/tokens","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
@@ -636,7 +699,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#00C7B7",
             icon_url: "/icons/connectors/netlify.svg",
             category: "devops",
-            fields: r#"[{"key":"access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"","helpText":"From Netlify → User Settings → Applications → Personal Access Tokens"}]"#,
+            fields: r#"[{"key":"access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"","helpText":"From Netlify -> User Settings -> Applications -> Personal Access Tokens"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.netlify.com/api/v1/user","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Netlify user endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Netlify web deployment platform with serverless functions and form handling.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://app.netlify.com/user/applications#personal-access-tokens","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
@@ -647,7 +710,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#F38020",
             icon_url: "/icons/connectors/cloudflare.svg",
             category: "devops",
-            fields: r#"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From Cloudflare Dashboard → My Profile → API Tokens → Create Token"}]"#,
+            fields: r#"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From Cloudflare Dashboard -> My Profile -> API Tokens -> Create Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.cloudflare.com/client/v4/user/tokens/verify","method":"GET","headers":{"Authorization":"Bearer {{api_token}}"},"description":"Validates API token via Cloudflare token verify endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Cloudflare CDN, DNS, Workers, and security services.","auth_type":"api_token","auth_type_label":"API Token","docs_url":"https://dash.cloudflare.com/profile/api-tokens","auth_methods":[{"id":"api_token","label":"API Token","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@cloudflare/mcp-server-cloudflare","transport":"stdio","suggested_env":{"CLOUDFLARE_API_TOKEN":""}}]}"#),
         },
@@ -658,7 +721,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#F24E1E",
             icon_url: "/icons/connectors/figma.svg",
             category: "creativity",
-            fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"figd_...","helpText":"From Figma → Settings → Personal Access Tokens → Generate"}]"#,
+            fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"figd_...","helpText":"From Figma -> Settings -> Personal Access Tokens -> Generate"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.figma.com/v1/me","method":"GET","headers":{"X-Figma-Token":"{{personal_access_token}}"},"description":"Validates personal access token via Figma me endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Figma collaborative design tool for UI/UX, prototyping, and design systems.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://www.figma.com/developers/api","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@anthropic/mcp-figma","transport":"stdio","suggested_env":{"FIGMA_PERSONAL_ACCESS_TOKEN":""}}]}"#),
         },
@@ -669,7 +732,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#FF7A59",
             icon_url: "/icons/connectors/hubspot.svg",
             category: "crm",
-            fields: r#"[{"key":"access_token","label":"Private App Access Token","type":"password","required":true,"placeholder":"pat-...","helpText":"From HubSpot → Settings → Integrations → Private Apps → Create"}]"#,
+            fields: r#"[{"key":"access_token","label":"Private App Access Token","type":"password","required":true,"placeholder":"pat-...","helpText":"From HubSpot -> Settings -> Integrations -> Private Apps -> Create"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.hubapi.com/crm/v3/objects/contacts?limit=1","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via HubSpot contacts endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"HubSpot CRM for contacts, deals, marketing automation, and sales pipelines.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://developers.hubspot.com/docs/api/private-apps","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
@@ -702,7 +765,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#00E699",
             icon_url: "/icons/connectors/neon.svg",
             category: "database",
-            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"From Neon Console → Account Settings → API Keys → Generate"},{"key":"connection_string","label":"Connection String","type":"password","required":false,"placeholder":"postgresql://user:pass@ep-xxx.region.aws.neon.tech/dbname","helpText":"Optional: PostgreSQL connection string for direct database access"}]"#,
+            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"From Neon Console -> Account Settings -> API Keys -> Generate"},{"key":"connection_string","label":"Connection String","type":"password","required":false,"placeholder":"postgresql://user:pass@ep-xxx.region.aws.neon.tech/dbname","helpText":"Optional: PostgreSQL connection string for direct database access"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://console.neon.tech/api/v2/projects","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Neon projects endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Neon serverless Postgres with branching, autoscaling, and bottomless storage.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://neon.tech/docs/manage/api-keys","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@modelcontextprotocol/server-postgres","transport":"stdio","suggested_env":{"DATABASE_URL":""}}]}"#),
         },
@@ -713,7 +776,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#00E9A3",
             icon_url: "/icons/connectors/upstash.svg",
             category: "database",
-            fields: r#"[{"key":"redis_url","label":"REST URL","type":"url","required":true,"placeholder":"https://xxx.upstash.io","helpText":"From Upstash Console → Database → Details → REST API → URL"},{"key":"redis_token","label":"REST Token","type":"password","required":true,"placeholder":"","helpText":"From Upstash Console → Database → Details → REST API → Token"}]"#,
+            fields: r#"[{"key":"redis_url","label":"REST URL","type":"url","required":true,"placeholder":"https://xxx.upstash.io","helpText":"From Upstash Console -> Database -> Details -> REST API -> URL"},{"key":"redis_token","label":"REST Token","type":"password","required":true,"placeholder":"","helpText":"From Upstash Console -> Database -> Details -> REST API -> Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{redis_url}}/ping","method":"GET","headers":{"Authorization":"Bearer {{redis_token}}"},"description":"Validates REST token via Upstash Redis PING command"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Upstash serverless Redis and Kafka for low-latency data at the edge.","auth_type":"api_token","auth_type_label":"REST Token","docs_url":"https://upstash.com/docs/redis/features/restapi","auth_methods":[{"id":"api_token","label":"REST Token","type":"credential","is_default":true}]}"#),
         },
@@ -724,7 +787,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#000000",
             icon_url: "/icons/connectors/planetscale.svg",
             category: "database",
-            fields: r#"[{"key":"service_token_id","label":"Service Token ID","type":"text","required":true,"placeholder":"","helpText":"From PlanetScale → Organization → Settings → Service Tokens"},{"key":"service_token","label":"Service Token","type":"password","required":true,"placeholder":"","helpText":"The service token secret paired with the token ID"}]"#,
+            fields: r#"[{"key":"service_token_id","label":"Service Token ID","type":"text","required":true,"placeholder":"","helpText":"From PlanetScale -> Organization -> Settings -> Service Tokens"},{"key":"service_token","label":"Service Token","type":"password","required":true,"placeholder":"","helpText":"The service token secret paired with the token ID"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.planetscale.com/v1/organizations","method":"GET","headers":{"Authorization":"{{service_token_id}}:{{service_token}}"},"description":"Validates service token via PlanetScale organizations endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"PlanetScale serverless MySQL platform with branching and non-blocking schema changes.","auth_type":"service_token","auth_type_label":"Service Token","docs_url":"https://planetscale.com/docs/concepts/service-tokens","auth_methods":[{"id":"service_token","label":"Service Token","type":"credential","is_default":true}]}"#),
         },
@@ -735,7 +798,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#0061FF",
             icon_url: "/icons/connectors/dropbox.svg",
             category: "storage",
-            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"sl.u...","helpText":"From Dropbox App Console → Generate Access Token (or use OAuth flow)"}]"#,
+            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"sl.u...","helpText":"From Dropbox App Console -> Generate Access Token (or use OAuth flow)"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.dropboxapi.com/2/users/get_current_account","method":"POST","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Dropbox current account endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Dropbox cloud storage for file sync, sharing, and collaboration.","auth_type":"pat","auth_type_label":"Access Token","docs_url":"https://www.dropbox.com/developers/apps","auth_methods":[{"id":"pat","label":"Access Token","type":"credential","is_default":true}]}"#),
         },
@@ -790,7 +853,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#F22F46",
             icon_url: "/icons/connectors/twilio.svg",
             category: "messaging",
-            fields: r#"[{"key":"account_sid","label":"Account SID","type":"text","required":true,"placeholder":"AC...","helpText":"From Twilio Console → Account → Account SID"},{"key":"auth_token","label":"Auth Token","type":"password","required":true,"placeholder":"","helpText":"From Twilio Console → Account → Auth Token"}]"#,
+            fields: r#"[{"key":"account_sid","label":"Account SID","type":"text","required":true,"placeholder":"AC...","helpText":"From Twilio Console -> Account -> Account SID"},{"key":"auth_token","label":"Auth Token","type":"password","required":true,"placeholder":"","helpText":"From Twilio Console -> Account -> Auth Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.twilio.com/2010-04-01/Accounts/{{account_sid}}.json","method":"GET","headers":{"Authorization":"Basic {{base64(account_sid:auth_token)}}"},"description":"Validates credentials via Twilio account endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Twilio SMS, voice, WhatsApp, and communication APIs.","auth_type":"basic","auth_type_label":"Account SID","docs_url":"https://www.twilio.com/docs/usage/api","auth_methods":[{"id":"basic","label":"Account SID","type":"credential","is_default":true}]}"#),
         },
@@ -801,9 +864,9 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#EA4B71",
             icon_url: "/icons/connectors/n8n.svg",
             category: "automation",
-            fields: r#"[{"key":"base_url","label":"Instance URL","type":"url","required":true,"placeholder":"https://your-instance.n8n.cloud","helpText":"Your n8n instance URL (cloud or self-hosted)"},{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"n8n_api_...","helpText":"Generate at Settings → API → Create API Key"}]"#,
+            fields: r#"[{"key":"base_url","label":"Instance URL","type":"url","required":true,"placeholder":"https://your-instance.n8n.cloud","helpText":"Your n8n instance URL (cloud or self-hosted)"},{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"n8n_api_...","helpText":"Generate at Settings -> API -> Create API Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{base_url}}/api/v1/workflows?limit=1","method":"GET","headers":{"X-N8N-API-KEY":"{{api_key}}"},"description":"Validates API key by listing workflows"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"n8n workflow automation platform — connect to push, activate, and trigger workflows directly from your agent.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.n8n.io/api/","is_platform":true,"platform_type":"n8n","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"n8n workflow automation platform -- connect to push, activate, and trigger workflows directly from your agent.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.n8n.io/api/","is_platform":true,"platform_type":"n8n","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-zapier",
@@ -812,9 +875,9 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#FF4A00",
             icon_url: "/icons/connectors/zapier.svg",
             category: "automation",
-            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"From zapier.com/app/developer → API Key"}]"#,
+            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"From zapier.com/app/developer -> API Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.zapier.com/v1/profiles/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Zapier profiles endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"Zapier automation platform — trigger Zaps via webhooks and manage workflows from your agent.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://platform.zapier.com/reference/introduction","is_platform":true,"platform_type":"zapier","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"Zapier automation platform -- trigger Zaps via webhooks and manage workflows from your agent.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://platform.zapier.com/reference/introduction","is_platform":true,"platform_type":"zapier","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-github-actions",
@@ -823,11 +886,11 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#2088FF",
             icon_url: "/icons/connectors/github.svg",
             category: "automation",
-            fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"ghp_...","helpText":"Generate at github.com/settings/tokens — needs 'repo' and 'workflow' scopes"},{"key":"default_repo","label":"Default Repository","type":"text","required":false,"placeholder":"owner/repo","helpText":"Optional: default repository for workflow dispatches"}]"#,
+            fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"ghp_...","helpText":"Generate at github.com/settings/tokens -- needs 'repo' and 'workflow' scopes"},{"key":"default_repo","label":"Default Repository","type":"text","required":false,"placeholder":"owner/repo","helpText":"Optional: default repository for workflow dispatches"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.github.com/user","method":"GET","headers":{"Authorization":"Bearer {{personal_access_token}}","Accept":"application/vnd.github+json","User-Agent":"personas-desktop"},"description":"Validates PAT via GitHub user endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"GitHub Actions CI/CD — dispatch workflows, check run status, and manage automations from your agent.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://github.com/settings/tokens","is_platform":true,"platform_type":"github_actions","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"GitHub Actions CI/CD -- dispatch workflows, check run status, and manage automations from your agent.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://github.com/settings/tokens","is_platform":true,"platform_type":"github_actions","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
-        // ── Desktop App Connectors ────────────────────────────────────
+        // -- Desktop App Connectors ------------------------------------
         BuiltinConnector {
             id: "builtin-desktop-vscode",
             name: "desktop_vscode",
@@ -837,7 +900,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "desktop",
             fields: r#"[{"key":"binary_path","label":"Binary Path","type":"text","required":false,"placeholder":"code","helpText":"Auto-detected. Override if VS Code is installed in a custom location."},{"key":"workspace_path","label":"Workspace Path","type":"text","required":false,"placeholder":"/path/to/project","helpText":"Optional: default workspace for file operations"}]"#,
             healthcheck_config: None,
-            metadata: Some(r#"{"template_enabled":true,"summary":"VS Code desktop integration — open files, run tasks, manage extensions, and navigate code from your agent.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["process_spawn","file_read","network_local"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"VS Code desktop integration -- open files, run tasks, manage extensions, and navigate code from your agent.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["process_spawn","file_read","network_local"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-desktop-docker",
@@ -848,7 +911,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "desktop",
             fields: r#"[{"key":"binary_path","label":"Binary Path","type":"text","required":false,"placeholder":"docker","helpText":"Auto-detected. Override if Docker is installed in a custom location."},{"key":"default_compose_path","label":"Docker Compose Path","type":"text","required":false,"placeholder":"./docker-compose.yml","helpText":"Optional: default compose file for stack operations"}]"#,
             healthcheck_config: None,
-            metadata: Some(r#"{"template_enabled":true,"summary":"Docker desktop integration — manage containers, images, volumes, and compose stacks from your agent.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["process_spawn","network_local"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"Docker desktop integration -- manage containers, images, volumes, and compose stacks from your agent.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["process_spawn","network_local"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-desktop-terminal",
@@ -859,7 +922,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "desktop",
             fields: r#"[{"key":"shell","label":"Shell","type":"text","required":false,"placeholder":"bash","helpText":"Auto-detected. Override to use a specific shell (bash, zsh, powershell, etc.)"},{"key":"working_directory","label":"Working Directory","type":"text","required":false,"placeholder":"/home/user/projects","helpText":"Optional: default directory for command execution"}]"#,
             healthcheck_config: None,
-            metadata: Some(r#"{"template_enabled":true,"summary":"Terminal integration — execute shell commands, run scripts, and interact with CLI tools from your agent.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["process_spawn","file_read","file_write","env_read"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"Terminal integration -- execute shell commands, run scripts, and interact with CLI tools from your agent.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["process_spawn","file_read","file_write","env_read"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-desktop-obsidian",
@@ -870,7 +933,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "desktop",
             fields: r#"[{"key":"vault_path","label":"Vault Path","type":"text","required":true,"placeholder":"/path/to/vault","helpText":"Path to your Obsidian vault directory"},{"key":"api_port","label":"Local REST API Port","type":"text","required":false,"placeholder":"27123","helpText":"Port for Obsidian Local REST API plugin (default: 27123)"},{"key":"api_key","label":"API Key","type":"password","required":false,"placeholder":"","helpText":"API key from Obsidian Local REST API plugin settings"}]"#,
             healthcheck_config: None,
-            metadata: Some(r#"{"template_enabled":true,"summary":"Obsidian desktop integration — read, create, and search notes in your vault from your agent.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["file_read","file_write","network_local"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"Obsidian desktop integration -- read, create, and search notes in your vault from your agent.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["file_read","file_write","network_local"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-desktop-browser",
@@ -881,7 +944,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "desktop",
             fields: r#"[{"key":"binary_path","label":"Browser Path","type":"text","required":false,"placeholder":"chrome","helpText":"Auto-detected. Path to Chrome or Edge binary."},{"key":"cdp_port","label":"DevTools Port","type":"text","required":false,"placeholder":"9222","helpText":"Chrome DevTools Protocol port (default: 9222)"}]"#,
             healthcheck_config: None,
-            metadata: Some(r#"{"template_enabled":true,"summary":"Browser automation via Chrome DevTools Protocol — navigate pages, extract data, and automate web tasks.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["process_spawn","network_local"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"Browser automation via Chrome DevTools Protocol -- navigate pages, extract data, and automate web tasks.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["process_spawn","network_local"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-personas-database",
@@ -892,9 +955,9 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "database",
             fields: "[]",
             healthcheck_config: None,
-            metadata: Some(r#"{"template_enabled":true,"is_builtin":true,"always_active":true,"summary":"Local SQLite database managed by Personas. Available on first launch — agents can create tables, store data, and run SQL queries without any external service.","auth_type":"builtin","auth_type_label":"Built-in","auth_methods":[{"id":"builtin","label":"Built-in","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":true,"is_builtin":true,"always_active":true,"summary":"Local SQLite database managed by Personas. Available on first launch -- agents can create tables, store data, and run SQL queries without any external service.","auth_type":"builtin","auth_type_label":"Built-in","auth_methods":[{"id":"builtin","label":"Built-in","type":"credential","is_default":true}]}"#),
         },
-        // ── Microsoft 365 ──
+        // -- Microsoft 365 --
         BuiltinConnector {
             id: "builtin-microsoft-excel",
             name: "microsoft_excel",
@@ -950,7 +1013,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             healthcheck_config: Some(r#"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"SharePoint document management and team sites for storing, organizing, and collaborating on content via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/sharepoint","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
         },
-        // ── Google Calendar ──
+        // -- Google Calendar --
         BuiltinConnector {
             id: "builtin-google-calendar",
             name: "google_calendar",
@@ -962,7 +1025,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             healthcheck_config: Some(r#"{"endpoint":"https://www.googleapis.com/oauth2/v1/userinfo?alt=json","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Google OAuth identity access"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Google Calendar scheduling for creating, reading, and managing calendar events via the Calendar API v3.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"google","docs_url":"https://developers.google.com/calendar/api/v3/reference","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
         },
-        // ── Design ──
+        // -- Design --
         BuiltinConnector {
             id: "builtin-canva",
             name: "canva",
@@ -970,7 +1033,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#00C4CC",
             icon_url: "/icons/connectors/canva.svg",
             category: "design",
-            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"CNV...","helpText":"Generate at canva.com/developers → Your Apps → Generate Token"}]"#,
+            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"CNV...","helpText":"Generate at canva.com/developers -> Your Apps -> Generate Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.canva.com/rest/v1/users/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Canva /users/me endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Canva design platform for creating, managing, and exporting designs via the Canva Connect API.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://www.canva.dev/docs/connect/","pricing_tier":"freemium","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
@@ -981,11 +1044,11 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#0D1117",
             icon_url: "/icons/connectors/penpot.svg",
             category: "design",
-            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"Generate at your Penpot instance → Profile → Access Tokens"},{"key":"base_url","label":"Instance URL","type":"url","required":false,"placeholder":"https://design.penpot.app","helpText":"Your Penpot instance URL (defaults to penpot.app cloud)"}]"#,
+            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"Generate at your Penpot instance -> Profile -> Access Tokens"},{"key":"base_url","label":"Instance URL","type":"url","required":false,"placeholder":"https://design.penpot.app","helpText":"Your Penpot instance URL (defaults to penpot.app cloud)"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{base_url|https://design.penpot.app}}/api/rpc/command/get-profile","method":"GET","headers":{"Authorization":"Token {{access_token}}"},"description":"Validates access token via Penpot get-profile endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Penpot open-source design platform for prototyping, components, and design tokens.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://penpot.app/developers","pricing_tier":"free","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
-        // ── CRM ──
+        // -- CRM --
         BuiltinConnector {
             id: "builtin-pipedrive",
             name: "pipedrive",
@@ -993,7 +1056,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#017737",
             icon_url: "/icons/connectors/pipedrive.svg",
             category: "crm",
-            fields: r#"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"Go to Pipedrive → Settings → Personal preferences → API → Your personal API token"},{"key":"domain","label":"Company Domain","type":"text","required":true,"placeholder":"yourcompany","helpText":"Your Pipedrive subdomain (e.g., 'yourcompany' from yourcompany.pipedrive.com)"}]"#,
+            fields: r#"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"Go to Pipedrive -> Settings -> Personal preferences -> API -> Your personal API token"},{"key":"domain","label":"Company Domain","type":"text","required":true,"placeholder":"yourcompany","helpText":"Your Pipedrive subdomain (e.g., 'yourcompany' from yourcompany.pipedrive.com)"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://{{domain}}.pipedrive.com/api/v1/users/me?api_token={{api_token}}","method":"GET","headers":{},"description":"Validates API token via Pipedrive /users/me endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Pipedrive CRM for managing deals, contacts, activities, and sales pipelines via the Pipedrive REST API.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://developers.pipedrive.com/docs/api/v1","pricing_tier":"paid","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
@@ -1004,11 +1067,11 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#4F46E5",
             icon_url: "/icons/connectors/attio.svg",
             category: "crm",
-            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"Go to Attio → Settings → Developers → API Access → Generate a new token"}]"#,
+            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"Go to Attio -> Settings -> Developers -> API Access -> Generate a new token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.attio.com/v2/self","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Attio /v2/self endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Attio next-gen CRM for managing people, companies, deals, and custom objects via the Attio API v2.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://developers.attio.com/reference","pricing_tier":"freemium","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
-        // ── Support ──
+        // -- Support --
         BuiltinConnector {
             id: "builtin-crisp",
             name: "crisp",
@@ -1016,11 +1079,11 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#4B60F5",
             icon_url: "/icons/connectors/crisp.svg",
             category: "support",
-            fields: r#"[{"key":"token_id","label":"Token ID","type":"text","required":true,"placeholder":"","helpText":"From Crisp → Settings → API Tokens → Token Identifier"},{"key":"token_key","label":"Token Key","type":"password","required":true,"placeholder":"","helpText":"From Crisp → Settings → API Tokens → Token Key"}]"#,
+            fields: r#"[{"key":"token_id","label":"Token ID","type":"text","required":true,"placeholder":"","helpText":"From Crisp -> Settings -> API Tokens -> Token Identifier"},{"key":"token_key","label":"Token Key","type":"password","required":true,"placeholder":"","helpText":"From Crisp -> Settings -> API Tokens -> Token Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.crisp.chat/v1/website","method":"GET","headers":{"Authorization":"Basic {{base64(token_id:token_key)}}","X-Crisp-Tier":"plugin"},"description":"Validates API token via Crisp website list endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Crisp customer messaging platform for live chat, helpdesk, and knowledge base via the Crisp REST API.","auth_type":"basic","auth_type_label":"Token Pair","docs_url":"https://docs.crisp.chat/references/rest-api/v1/","pricing_tier":"freemium","auth_methods":[{"id":"basic","label":"Token Pair","type":"credential","is_default":true}]}"#),
         },
-        // ── E-Commerce ──
+        // -- E-Commerce --
         BuiltinConnector {
             id: "builtin-woocommerce",
             name: "woocommerce",
@@ -1028,7 +1091,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#96588A",
             icon_url: "/icons/connectors/woocommerce.svg",
             category: "commerce",
-            fields: r#"[{"key":"base_url","label":"Store URL","type":"url","required":true,"placeholder":"https://yourstore.com","helpText":"Your WooCommerce store URL"},{"key":"consumer_key","label":"Consumer Key","type":"text","required":true,"placeholder":"ck_...","helpText":"From WooCommerce → Settings → Advanced → REST API → Add Key"},{"key":"consumer_secret","label":"Consumer Secret","type":"password","required":true,"placeholder":"cs_...","helpText":"From the same REST API key page"}]"#,
+            fields: r#"[{"key":"base_url","label":"Store URL","type":"url","required":true,"placeholder":"https://yourstore.com","helpText":"Your WooCommerce store URL"},{"key":"consumer_key","label":"Consumer Key","type":"text","required":true,"placeholder":"ck_...","helpText":"From WooCommerce -> Settings -> Advanced -> REST API -> Add Key"},{"key":"consumer_secret","label":"Consumer Secret","type":"password","required":true,"placeholder":"cs_...","helpText":"From the same REST API key page"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{base_url}}/wp-json/wc/v3/system_status?consumer_key={{consumer_key}}&consumer_secret={{consumer_secret}}","method":"GET","headers":{},"description":"Validates API keys via WooCommerce system status endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"WooCommerce open-source e-commerce platform for managing orders, products, and customers via the WooCommerce REST API v3.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://woocommerce.github.io/woocommerce-rest-api-docs/","pricing_tier":"free","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
@@ -1039,11 +1102,11 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#FFC233",
             icon_url: "/icons/connectors/lemonsqueezy.svg",
             category: "commerce",
-            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Go to app.lemonsqueezy.com → Settings → API → Create API Key"}]"#,
+            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Go to app.lemonsqueezy.com -> Settings -> API -> Create API Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.lemonsqueezy.com/v1/users/me","method":"GET","headers":{"Accept":"application/vnd.api+json","Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Lemon Squeezy /users/me endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Lemon Squeezy digital commerce platform for selling digital products, subscriptions, and SaaS via the Lemon Squeezy API v1.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.lemonsqueezy.com/api","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
-        // ── Storage ──
+        // -- Storage --
         BuiltinConnector {
             id: "builtin-aws-s3",
             name: "aws_s3",
@@ -1051,7 +1114,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#569A31",
             icon_url: "/icons/connectors/aws-s3.svg",
             category: "storage",
-            fields: r#"[{"key":"access_key_id","label":"Access Key ID","type":"text","required":true,"placeholder":"AKIA...","helpText":"From AWS IAM → Users → Security credentials → Access keys"},{"key":"secret_access_key","label":"Secret Access Key","type":"password","required":true,"placeholder":"","helpText":"From the same IAM access key creation page"},{"key":"region","label":"Region","type":"text","required":true,"placeholder":"us-east-1","helpText":"AWS region for your S3 bucket"}]"#,
+            fields: r#"[{"key":"access_key_id","label":"Access Key ID","type":"text","required":true,"placeholder":"AKIA...","helpText":"From AWS IAM -> Users -> Security credentials -> Access keys"},{"key":"secret_access_key","label":"Secret Access Key","type":"password","required":true,"placeholder":"","helpText":"From the same IAM access key creation page"},{"key":"region","label":"Region","type":"text","required":true,"placeholder":"us-east-1","helpText":"AWS region for your S3 bucket"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://s3.{{region}}.amazonaws.com/","method":"GET","headers":{"Authorization":"AWS4-HMAC-SHA256 {{access_key_id}}"},"description":"Validates S3 credentials via bucket listing"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"AWS S3 object storage for uploading, downloading, and managing files and buckets.","auth_type":"api_key","auth_type_label":"Access Key","docs_url":"https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"Access Key","type":"credential","is_default":true}]}"#),
         },
@@ -1062,7 +1125,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#F38020",
             icon_url: "/icons/connectors/cloudflare-r2.svg",
             category: "storage",
-            fields: r#"[{"key":"account_id","label":"Account ID","type":"text","required":true,"placeholder":"","helpText":"From Cloudflare dashboard → Overview → Account ID"},{"key":"access_key_id","label":"R2 Access Key ID","type":"text","required":true,"placeholder":"","helpText":"From Cloudflare → R2 → Manage R2 API Tokens"},{"key":"secret_access_key","label":"R2 Secret Access Key","type":"password","required":true,"placeholder":"","helpText":"From the same R2 API Token creation page"}]"#,
+            fields: r#"[{"key":"account_id","label":"Account ID","type":"text","required":true,"placeholder":"","helpText":"From Cloudflare dashboard -> Overview -> Account ID"},{"key":"access_key_id","label":"R2 Access Key ID","type":"text","required":true,"placeholder":"","helpText":"From Cloudflare -> R2 -> Manage R2 API Tokens"},{"key":"secret_access_key","label":"R2 Secret Access Key","type":"password","required":true,"placeholder":"","helpText":"From the same R2 API Token creation page"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.cloudflare.com/client/v4/accounts/{{account_id}}/r2/buckets","method":"GET","headers":{"Authorization":"Bearer {{secret_access_key}}"},"description":"Validates R2 credentials via bucket listing"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Cloudflare R2 S3-compatible object storage with zero egress fees for storing and serving files.","auth_type":"api_key","auth_type_label":"API Token","docs_url":"https://developers.cloudflare.com/r2/api/","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Token","type":"credential","is_default":true}]}"#),
         },
@@ -1073,11 +1136,11 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#E21E29",
             icon_url: "/icons/connectors/backblaze-b2.svg",
             category: "storage",
-            fields: r#"[{"key":"application_key_id","label":"Application Key ID","type":"text","required":true,"placeholder":"","helpText":"From Backblaze → App Keys → Add a New Application Key"},{"key":"application_key","label":"Application Key","type":"password","required":true,"placeholder":"","helpText":"Shown once when creating the key — copy immediately"}]"#,
+            fields: r#"[{"key":"application_key_id","label":"Application Key ID","type":"text","required":true,"placeholder":"","helpText":"From Backblaze -> App Keys -> Add a New Application Key"},{"key":"application_key","label":"Application Key","type":"password","required":true,"placeholder":"","helpText":"Shown once when creating the key -- copy immediately"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.backblazeb2.com/b2api/v3/b2_authorize_account","method":"GET","headers":{"Authorization":"Basic {{base64(application_key_id:application_key)}}"},"description":"Validates credentials via B2 authorize_account endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Backblaze B2 affordable S3-compatible cloud object storage for backups, archives, and media.","auth_type":"basic","auth_type_label":"Application Key","docs_url":"https://www.backblaze.com/docs/cloud-storage","pricing_tier":"freemium","auth_methods":[{"id":"basic","label":"Application Key","type":"credential","is_default":true}]}"#),
         },
-        // ── Forms ──
+        // -- Forms --
         BuiltinConnector {
             id: "builtin-tally",
             name: "tally",
@@ -1085,7 +1148,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#3CCF91",
             icon_url: "/icons/connectors/tally.svg",
             category: "forms",
-            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"Go to tally.so → Settings → Integrations → API → Generate access token"}]"#,
+            fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"Go to tally.so -> Settings -> Integrations -> API -> Generate access token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.tally.so/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Tally /me endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Tally free-first form builder for creating forms, surveys, and collecting responses via the Tally API.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://tally.so/help/developer-resources","pricing_tier":"freemium","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
@@ -1096,11 +1159,11 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#00C4B8",
             icon_url: "/icons/connectors/formbricks.svg",
             category: "forms",
-            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Go to Formbricks → Settings → API Keys → Add API Key"},{"key":"base_url","label":"Instance URL","type":"url","required":false,"placeholder":"https://app.formbricks.com","helpText":"Your Formbricks instance URL (defaults to formbricks.com cloud)"}]"#,
+            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Go to Formbricks -> Settings -> API Keys -> Add API Key"},{"key":"base_url","label":"Instance URL","type":"url","required":false,"placeholder":"https://app.formbricks.com","helpText":"Your Formbricks instance URL (defaults to formbricks.com cloud)"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{base_url|https://app.formbricks.com}}/api/v1/me","method":"GET","headers":{"x-api-key":"{{api_key}}"},"description":"Validates API key via Formbricks /me endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Formbricks open-source survey and feedback platform for in-app surveys, links, and website pop-ups.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://formbricks.com/docs/api/overview","pricing_tier":"free","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
-        // ── Notifications ──
+        // -- Notifications --
         BuiltinConnector {
             id: "builtin-novu",
             name: "novu",
@@ -1108,7 +1171,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#FF4981",
             icon_url: "/icons/connectors/novu.svg",
             category: "notifications",
-            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"From Novu dashboard → Settings → API Keys"}]"#,
+            fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"From Novu dashboard -> Settings -> API Keys"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.novu.co/v1/environments/me","method":"GET","headers":{"Authorization":"ApiKey {{api_key}}"},"description":"Validates API key via Novu environment endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Novu open-source notification infrastructure for in-app, email, SMS, push, and chat notifications via the Novu API.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.novu.co/api-reference/overview","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
@@ -1119,7 +1182,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#6C47FF",
             icon_url: "/icons/connectors/knock.svg",
             category: "notifications",
-            fields: r#"[{"key":"api_key","label":"Secret API Key","type":"password","required":true,"placeholder":"sk_...","helpText":"From Knock dashboard → Developers → API Keys → Secret key"}]"#,
+            fields: r#"[{"key":"api_key","label":"Secret API Key","type":"password","required":true,"placeholder":"sk_...","helpText":"From Knock dashboard -> Developers -> API Keys -> Secret key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.knock.app/v1/users?page_size=1","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Knock users list endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"Knock notification infrastructure for orchestrating cross-channel notifications with preferences and workflows.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.knock.app/reference","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
@@ -1130,7 +1193,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             color: "#317F6E",
             icon_url: "/icons/connectors/ntfy.svg",
             category: "notifications",
-            fields: r#"[{"key":"base_url","label":"Server URL","type":"url","required":false,"placeholder":"https://ntfy.sh","helpText":"Your ntfy server URL (defaults to ntfy.sh public server)"},{"key":"access_token","label":"Access Token","type":"password","required":false,"placeholder":"tk_...","helpText":"Optional — only needed for access-controlled topics"}]"#,
+            fields: r#"[{"key":"base_url","label":"Server URL","type":"url","required":false,"placeholder":"https://ntfy.sh","helpText":"Your ntfy server URL (defaults to ntfy.sh public server)"},{"key":"access_token","label":"Access Token","type":"password","required":false,"placeholder":"tk_...","helpText":"Optional -- only needed for access-controlled topics"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{base_url|https://ntfy.sh}}/v1/health","method":"GET","headers":{},"description":"Validates ntfy server availability via health endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"ntfy open-source push notification service for sending notifications to phones and desktops via simple HTTP.","auth_type":"pat","auth_type_label":"Access Token","docs_url":"https://docs.ntfy.sh/","pricing_tier":"free","auth_methods":[{"id":"pat","label":"Access Token","type":"credential","is_default":true}]}"#),
         },

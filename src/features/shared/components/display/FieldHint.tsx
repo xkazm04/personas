@@ -4,7 +4,7 @@ import { Info } from 'lucide-react';
 interface FieldHintProps {
   /** Plain-English explanation of the field */
   text: string;
-  /** Valid value range, e.g. "1–10" */
+  /** Valid value range, e.g. "1--10" */
   range?: string;
   /** Concrete example, e.g. "3 for moderate parallelism" */
   example?: string;

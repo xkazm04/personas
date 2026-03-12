@@ -11,7 +11,7 @@ export function hasNonEmptyJson(raw: string | null | undefined, type: 'array' | 
       return Array.isArray(parsed) && parsed.length > 0;
     }
     return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) && Object.keys(parsed as Record<string, unknown>).length > 0;
-  } catch { // intentional: non-critical — JSON parse fallback
+  } catch { // intentional: non-critical -- JSON parse fallback
     return type === 'object' ? !!raw : false;
   }
 }
@@ -48,7 +48,7 @@ export const ERROR_PATTERNS: Array<{ pattern: RegExp; summary: string; guidance:
   { pattern: /spawn\s+ENOENT|command not found|not recognized/i, severity: 'critical', summary: 'Required command not found.', guidance: 'A system command needed for this execution is not installed. Check that all required CLI tools are available on your system.' },
   { pattern: /exit\s+code\s+1|exited?\s+with\s+1/i, severity: 'info', summary: 'The process exited with an error.', guidance: 'The underlying process reported a failure. Check the execution log for more details.' },
   { pattern: /ENOMEM|out of memory/i, severity: 'warning', summary: 'Out of memory.', guidance: 'The system ran out of memory. Try closing other applications or reducing the task complexity.' },
-  { pattern: /500|internal.?server.?error/i, severity: 'warning', summary: 'The remote server encountered an error.', guidance: 'The API returned a server error. This is usually temporary — try again in a few minutes.' },
+  { pattern: /500|internal.?server.?error/i, severity: 'warning', summary: 'The remote server encountered an error.', guidance: 'The API returned a server error. This is usually temporary -- try again in a few minutes.' },
   { pattern: /JSON|parse|unexpected token/i, severity: 'info', summary: 'Failed to parse response data.', guidance: 'The response was not in the expected format. This may indicate an API change or malformed data.' },
   { pattern: /credential|secret|token/i, severity: 'critical', summary: 'Credential issue.', guidance: 'A required credential may be missing or invalid.', action: { label: 'Go to Vault', icon: Key, navigate: 'vault' } },
 ];

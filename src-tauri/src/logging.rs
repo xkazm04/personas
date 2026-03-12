@@ -1,9 +1,13 @@
 use std::path::PathBuf;
 use std::sync::OnceLock;
+use tracing_appender::rolling;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 /// Global crash log directory, set during init.
 static CRASH_LOG_DIR: OnceLock<PathBuf> = OnceLock::new();
+
+/// Guard that must be held alive for the file logger to flush on shutdown.
+static FILE_LOG_GUARD: OnceLock<tracing_appender::non_blocking::WorkerGuard> = OnceLock::new();
 
 /// Initialize tracing with stdout (colored) and Sentry layers.
 ///
@@ -36,6 +40,60 @@ pub fn init() {
         .init();
 
     tracing::debug!("Tracing initialized");
+}
+
+/// Add a file-based log layer after the app data directory is known.
+/// Writes boot info and WebView logs to `<app_data>/logs/`.
+/// Gracefully degrades if the directory is not writable.
+pub fn add_file_layer(app_data_dir: &std::path::Path) {
+    let log_dir = app_data_dir.join("logs");
+    if std::fs::create_dir_all(&log_dir).is_err() {
+        tracing::warn!("Cannot create logs directory, file logging disabled");
+        return;
+    }
+
+    // Write a startup marker for diagnostics
+    let boot_log = log_dir.join("last_boot.log");
+    let info = format!(
+        "=== Personas Boot ===\nTime: {}\nVersion: {}\nPlatform: {}\n",
+        chrono::Local::now().to_rfc3339(),
+        env!("CARGO_PKG_VERSION"),
+        std::env::consts::OS,
+    );
+    let _ = std::fs::write(&boot_log, &info);
+
+    // Try to open a rolling log file; skip if permissions deny it
+    match rolling::RollingFileAppender::builder()
+        .rotation(rolling::Rotation::DAILY)
+        .filename_prefix("personas")
+        .filename_suffix("log")
+        .max_log_files(7)
+        .build(&log_dir)
+    {
+        Ok(file_appender) => {
+            let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
+            FILE_LOG_GUARD.set(guard).ok();
+            WEBVIEW_LOG_WRITER.set(non_blocking).ok();
+            tracing::info!("File logging enabled at {}", log_dir.display());
+        }
+        Err(e) => {
+            tracing::warn!("File logging disabled: {}", e);
+        }
+    }
+}
+
+/// Non-blocking writer for WebView console messages.
+static WEBVIEW_LOG_WRITER: OnceLock<tracing_appender::non_blocking::NonBlocking> = OnceLock::new();
+
+/// Append a WebView console message to the log file.
+pub fn webview_log(level: &str, message: &str) {
+    use std::io::Write;
+    if let Some(writer) = WEBVIEW_LOG_WRITER.get() {
+        let timestamp = chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%.3f");
+        let line = format!("[{timestamp}] [WebView/{level}] {message}\n");
+        let mut w = writer.clone();
+        let _ = w.write_all(line.as_bytes());
+    }
 }
 
 /// Install a panic hook that writes crash details to a file before aborting.

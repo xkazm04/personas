@@ -9,7 +9,7 @@ interface SaveGroupOptions {
   baselineRef: React.RefObject<PersonaDraft>;
   /** Key group used for dirty detection. */
   keys: readonly (keyof PersonaDraft)[];
-  /** The actual save operation — called with the current draft snapshot. */
+  /** The actual save operation -- called with the current draft snapshot. */
   performSave: (draft: PersonaDraft) => Promise<void>;
 }
 

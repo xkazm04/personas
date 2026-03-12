@@ -73,6 +73,7 @@ export function useConfirmSave({
 
     confirmingRef.current = true;
     try {
+      console.debug(`[adopt:${idempotencyKey}] confirm start`, { templateName: state.templateName });
       wizard.confirmStarted();
 
       let parsed: unknown;
@@ -110,6 +111,7 @@ export function useConfirmSave({
         const failedNames = response.entity_errors.map((e) => `${e.entity_type} "${e.entity_name}"`).join(', ');
         console.warn(`[adopt] Persona created with ${response.entity_errors.length} entity errors: ${failedNames}`);
       }
+      console.debug(`[adopt:${idempotencyKey}] confirm complete`, { personaId: response.persona.id, entityErrors: response.entity_errors?.length ?? 0 });
       wizard.confirmCompleted();
 
       if (state.backgroundAdoptId) {
@@ -121,7 +123,9 @@ export function useConfirmSave({
       usePersonaStore.getState().setTourCreatedPersona(response.persona.id);
       onPersonaCreated();
     } catch (err) {
-      wizard.confirmFailed(err instanceof Error ? err.message : 'Failed to create persona.');
+      const errMsg = err instanceof Error ? err.message : 'Failed to create persona.';
+      console.debug(`[adopt:${idempotencyKey}] confirm fail`, { error: errMsg });
+      wizard.confirmFailed(errMsg);
     } finally {
       confirmingRef.current = false;
       const timer = inflight.get(idempotencyKey);

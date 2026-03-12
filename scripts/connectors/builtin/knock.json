@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "sk_...",
-      "helpText": "From Knock dashboard → Developers → API Keys → Secret key"
+      "helpText": "From Knock dashboard -> Developers -> API Keys -> Secret key"
     }
   ],
   "healthcheck_config": {
@@ -31,7 +31,7 @@
     "auth_type": "api_key",
     "auth_type_label": "API Key",
     "docs_url": "https://docs.knock.app/reference",
-    "setup_guide": "1. Sign up at dashboard.knock.app.\n2. Go to Developers → API Keys.\n3. Copy the secret API key (starts with sk_).\n4. Paste it here.",
+    "setup_guide": "1. Sign up at dashboard.knock.app.\n2. Go to Developers -> API Keys.\n3. Copy the secret API key (starts with sk_).\n4. Paste it here.",
     "pricing_tier": "freemium",
     "auth_methods": [
       {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none">
+  <!-- Desk surface -->
+  <rect x="12" y="78" width="96" height="4" rx="2" fill="currentColor" opacity="0.15"/>
+  <!-- Monitor stand -->
+  <rect x="54" y="68" width="12" height="12" rx="1" fill="currentColor" opacity="0.12"/>
+  <!-- Monitor -->
+  <rect x="28" y="28" width="50" height="38" rx="4" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+  <!-- Screen content lines -->
+  <rect x="34" y="36" width="28" height="2" rx="1" fill="#F59E0B" opacity="0.5"/>
+  <rect x="34" y="42" width="20" height="2" rx="1" fill="#F59E0B" opacity="0.3"/>
+  <rect x="34" y="48" width="24" height="2" rx="1" fill="#F59E0B" opacity="0.2"/>
+  <!-- Coffee cup -->
+  <rect x="86" y="62" width="14" height="16" rx="3" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <path d="M100 66 C104 66, 106 70, 100 74" stroke="currentColor" stroke-width="1.5" opacity="0.3" fill="none"/>
+  <!-- Steam -->
+  <path d="M90 58 Q91 54, 90 50" stroke="#F59E0B" stroke-width="1.2" opacity="0.4" fill="none" stroke-linecap="round"/>
+  <path d="M94 56 Q95 52, 94 48" stroke="#F59E0B" stroke-width="1.2" opacity="0.3" fill="none" stroke-linecap="round"/>
+  <!-- Papers/docs stack -->
+  <rect x="12" y="64" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.5" opacity="0.35" fill="#F59E0B" fill-opacity="0.06"/>
+  <rect x="14" y="61" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.5" opacity="0.45" fill="#F59E0B" fill-opacity="0.08"/>
+  <!-- Rat ears -->
+  <ellipse cx="72" cy="22" rx="8" ry="9" stroke="currentColor" stroke-width="1.5" opacity="0.5" fill="#F59E0B" fill-opacity="0.1"/>
+  <ellipse cx="88" cy="22" rx="8" ry="9" stroke="currentColor" stroke-width="1.5" opacity="0.5" fill="#F59E0B" fill-opacity="0.1"/>
+  <!-- Rat head -->
+  <ellipse cx="80" cy="38" rx="14" ry="12" stroke="currentColor" stroke-width="2" opacity="0.6" fill="currentColor" fill-opacity="0.05"/>
+  <!-- Eyes -->
+  <circle cx="76" cy="35" r="2" fill="#F59E0B" opacity="0.8"/>
+  <circle cx="84" cy="35" r="2" fill="#F59E0B" opacity="0.8"/>
+  <!-- Nose -->
+  <circle cx="80" cy="42" r="1.5" fill="currentColor" opacity="0.5"/>
+  <!-- Whiskers -->
+  <line x1="68" y1="40" x2="76" y2="41" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  <line x1="68" y1="43" x2="76" y2="43" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  <line x1="84" y1="41" x2="92" y2="40" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  <line x1="84" y1="43" x2="92" y2="43" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  <!-- Keyboard -->
+  <rect x="34" y="82" width="36" height="8" rx="2" stroke="currentColor" stroke-width="1.5" opacity="0.3" fill="currentColor" fill-opacity="0.04"/>
+  <!-- Keyboard keys hint -->
+  <rect x="38" y="84" width="4" height="3" rx="0.5" fill="#F59E0B" opacity="0.15"/>
+  <rect x="44" y="84" width="4" height="3" rx="0.5" fill="#F59E0B" opacity="0.1"/>
+  <rect x="50" y="84" width="4" height="3" rx="0.5" fill="#F59E0B" opacity="0.15"/>
+  <rect x="56" y="84" width="4" height="3" rx="0.5" fill="#F59E0B" opacity="0.1"/>
+  <!-- Ambient glow under monitor -->
+  <ellipse cx="53" cy="78" rx="24" ry="4" fill="#F59E0B" opacity="0.06"/>
+</svg>

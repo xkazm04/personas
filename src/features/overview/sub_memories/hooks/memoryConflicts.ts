@@ -34,7 +34,7 @@ function tokenize(text: string): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// Similarity — word-level Jaccard + bigram overlap
+// Similarity -- word-level Jaccard + bigram overlap
 // ---------------------------------------------------------------------------
 
 function jaccard(setA: Set<string>, setB: Set<string>): number {

@@ -1,6 +1,6 @@
 /**
  * Lightweight OS notification helper using the standard Web Notification API.
- * Works in Tauri's WebView — no plugin required.
+ * Works in Tauri's WebView -- no plugin required.
  */
 
 /** Request permission proactively (non-blocking). */
@@ -8,7 +8,7 @@ export function requestNotificationPermission(): void {
   if (!('Notification' in window)) return;
   if (Notification.permission === 'default') {
     Notification.requestPermission().catch(() => {
-      /* intentional: non-critical — permission denied is acceptable */
+      /* intentional: non-critical -- permission denied is acceptable */
     });
   }
 }

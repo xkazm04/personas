@@ -28,7 +28,7 @@ export function InputExecuteCard({
   onStop,
 }: InputExecuteCardProps) {
   return (
-    <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-4 space-y-4">
+    <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-4 space-y-4">
       {/* Input Data Section */}
       <div className="space-y-2">
         <button

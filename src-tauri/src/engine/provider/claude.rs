@@ -5,7 +5,7 @@ use crate::engine::types::{CliArgs, ModelProfile, StreamLineType};
 
 use super::{CliProvider, PromptDelivery};
 
-/// Claude Code CLI provider — wraps the existing prompt/parser modules.
+/// Claude Code CLI provider -- wraps the existing prompt/parser modules.
 pub struct ClaudeProvider;
 
 impl CliProvider for ClaudeProvider {

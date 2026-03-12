@@ -17,7 +17,7 @@ export type { TagCategory, SmartTag, FilterState };
 export { TAG_GROUPS, defaultFilters };
 export { getPersonaRunState, type PersonaRunState } from './filterHelpers';
 
-// ── Hook ─────────────────────────────────────────────────────────────
+// -- Hook -------------------------------------------------------------
 
 export function usePersonaFilters(
   personas: DbPersona[],

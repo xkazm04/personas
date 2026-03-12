@@ -77,7 +77,7 @@ export function ModelABCompare() {
         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all text-left cursor-pointer ${
           expanded
             ? 'bg-indigo-500/8 border-indigo-500/25'
-            : 'bg-secondary/40 border-primary/15 hover:border-primary/25 hover:bg-secondary/50'
+            : 'bg-secondary/40 border-primary/20 hover:border-primary/30 hover:bg-secondary/50'
         }`}
       >
         <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-400/70 flex-shrink-0" />
@@ -146,7 +146,7 @@ export function ModelABCompare() {
 
               {/* Progress */}
               {progress && (
-                <div className="px-3 py-2.5 rounded-xl bg-secondary/40 border border-primary/15 space-y-1.5">
+                <div className="px-3 py-2.5 rounded-xl bg-secondary/40 border border-primary/20 space-y-1.5">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
                     <span>

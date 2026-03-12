@@ -1,12 +1,21 @@
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Instant;
+
 use rusqlite::{params, Row};
+use tracing::instrument;
 
 use crate::db::models::{CreatePersonaInput, Persona, PersonaHealth, PersonaSummary, UpdatePersonaInput};
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::engine::crypto;
+use crate::engine::crypto::CryptoError;
 use crate::error::AppError;
 
-// â”€â”€ Model profile auth_token encryption helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/// Session-scoped counter of decryption failures. Helps detect systemic key
+/// rotation issues before users report broken model configs.
+static DECRYPTION_FAILURE_COUNT: AtomicU64 = AtomicU64::new(0);
+
+// -- Model profile auth_token encryption helpers -----------------------------
 
 /// Encrypt the `auth_token` field inside a model_profile JSON string before DB storage.
 /// Replaces `auth_token` with `auth_token_enc` (ciphertext) and `auth_token_iv` (nonce).
@@ -39,9 +48,25 @@ fn encrypt_model_profile(json: &str) -> Result<String, AppError> {
         .map_err(|e| AppError::Internal(format!("Failed to serialize model_profile: {e}")))
 }
 
+/// Categorize a CryptoError into a human-readable error category for logging.
+fn classify_crypto_error(e: &CryptoError) -> &'static str {
+    match e {
+        CryptoError::KeyManagement(_) => "key-not-found",
+        CryptoError::Decrypt(_) => "corrupt-data-or-algorithm-mismatch",
+        CryptoError::Base64(_) => "corrupt-data",
+        CryptoError::Encrypt(_) => "unexpected-encrypt-error",
+    }
+}
+
+/// Return the current session-scoped decryption failure count.
+pub fn decryption_failure_count() -> u64 {
+    DECRYPTION_FAILURE_COUNT.load(Ordering::Relaxed)
+}
+
 /// Decrypt the `auth_token_enc` field inside a model_profile JSON string back to `auth_token`.
 /// Used when returning a single persona for editing or engine execution.
-fn decrypt_model_profile(json: &str) -> String {
+/// `persona_id` is used for structured logging context on failure.
+fn decrypt_model_profile(json: &str, persona_id: &str) -> String {
     let mut val: serde_json::Value = match serde_json::from_str(json) {
         Ok(v) => v,
         Err(_) => return json.to_string(),
@@ -67,7 +92,15 @@ fn decrypt_model_profile(json: &str) -> String {
             serde_json::to_string(&val).unwrap_or_else(|_| json.to_string())
         }
         Err(e) => {
-            tracing::warn!("Failed to decrypt model_profile auth_token: {}", e);
+            let session_failures = DECRYPTION_FAILURE_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
+            let error_category = classify_crypto_error(&e);
+            tracing::warn!(
+                persona_id = %persona_id,
+                error_category = %error_category,
+                session_failure_count = session_failures,
+                "Failed to decrypt model_profile auth_token: {}",
+                e
+            );
             json.to_string()
         }
     }
@@ -109,7 +142,7 @@ fn encrypt_update_profile(profile: &Option<Option<String>>) -> Result<Option<Opt
     }
 }
 
-// â”€â”€ Shared validation helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Shared validation helpers ------------------------------------------------
 
 fn validate_name(name: &str) -> Result<(), AppError> {
     if name.trim().is_empty() {
@@ -118,7 +151,7 @@ fn validate_name(name: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-/// 50 KB limit â€” generous for prompts, prevents economic abuse via oversized payloads.
+/// 50 KB limit -- generous for prompts, prevents economic abuse via oversized payloads.
 const MAX_PROMPT_BYTES: usize = 50 * 1024;
 
 fn validate_system_prompt(prompt: &str) -> Result<(), AppError> {
@@ -203,33 +236,34 @@ fn validate_max_turns(v: i32) -> Result<(), AppError> {
 }
 
 fn validate_notification_channels(channels_json: &str) -> Result<(), AppError> {
-    if let Ok(channels) = serde_json::from_str::<Vec<serde_json::Value>>(channels_json) {
-        for ch in &channels {
-            let enabled = ch.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
-            if !enabled {
-                continue;
+    let channels: Vec<serde_json::Value> = serde_json::from_str(channels_json)
+        .map_err(|_| AppError::Validation("notification_channels must be a valid JSON array".into()))?;
+
+    for ch in &channels {
+        let enabled = ch.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+        if !enabled {
+            continue;
+        }
+        let ch_type = ch.get("type").and_then(|v| v.as_str()).unwrap_or("");
+        let config = ch.get("config");
+        let get_field = |key: &str| -> bool {
+            config
+                .and_then(|c| c.get(key))
+                .and_then(|v| v.as_str())
+                .map(|s| !s.trim().is_empty())
+                .unwrap_or(false)
+        };
+        match ch_type {
+            "slack" if !get_field("channel") => {
+                return Err(AppError::Validation("Slack channel name is required".into()));
             }
-            let ch_type = ch.get("type").and_then(|v| v.as_str()).unwrap_or("");
-            let config = ch.get("config");
-            let get_field = |key: &str| -> bool {
-                config
-                    .and_then(|c| c.get(key))
-                    .and_then(|v| v.as_str())
-                    .map(|s| !s.trim().is_empty())
-                    .unwrap_or(false)
-            };
-            match ch_type {
-                "slack" if !get_field("channel") => {
-                    return Err(AppError::Validation("Slack channel name is required".into()));
-                }
-                "telegram" if !get_field("chat_id") => {
-                    return Err(AppError::Validation("Telegram chat ID is required".into()));
-                }
-                "email" if !get_field("to") => {
-                    return Err(AppError::Validation("Email 'to' address is required".into()));
-                }
-                _ => {}
+            "telegram" if !get_field("chat_id") => {
+                return Err(AppError::Validation("Telegram chat ID is required".into()));
             }
+            "email" if !get_field("to") => {
+                return Err(AppError::Validation("Email 'to' address is required".into()));
+            }
+            _ => {}
         }
     }
     Ok(())
@@ -244,13 +278,14 @@ enum ProfileMode {
 }
 
 fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Persona> {
+    let id: String = row.get("id")?;
     let raw_profile: Option<String> = row.get("model_profile")?;
     let model_profile = raw_profile.map(|json| match mode {
-        ProfileMode::Decrypt => decrypt_model_profile(&json),
+        ProfileMode::Decrypt => decrypt_model_profile(&json, &id),
         ProfileMode::Redact => redact_model_profile(&json),
     });
     Ok(Persona {
-        id: row.get("id")?,
+        id,
         project_id: row.get("project_id")?,
         name: row.get("name")?,
         description: row.get("description")?,
@@ -287,29 +322,54 @@ fn row_to_persona_redacted(row: &Row) -> rusqlite::Result<Persona> {
     row_to_persona_with_mode(row, ProfileMode::Redact)
 }
 
+#[instrument(skip(pool))]
 pub fn get_all(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
+    let start = Instant::now();
     let conn = pool.get()?;
     let mut stmt = conn.prepare("SELECT * FROM personas ORDER BY created_at DESC")?;
     let rows = stmt.query_map([], row_to_persona_redacted)?;
-    Ok(collect_rows(rows, "personas::get_all"))
+    let result = collect_rows(rows, "personas::get_all");
+    let elapsed_ms = start.elapsed().as_millis() as u64;
+    tracing::debug!(elapsed_ms, count = result.len(), "personas::get_all");
+    if elapsed_ms > 100 {
+        tracing::warn!(elapsed_ms, "personas::get_all exceeded 100ms threshold");
+    }
+    Ok(result)
 }
 
+#[instrument(skip(pool))]
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
+    let start = Instant::now();
     let conn = pool.get()?;
-    conn.query_row("SELECT * FROM personas WHERE id = ?1", params![id], row_to_persona)
+    let result = conn.query_row("SELECT * FROM personas WHERE id = ?1", params![id], row_to_persona)
         .map_err(|e| match e {
             rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Persona {id}")),
             other => AppError::Database(other),
-        })
+        });
+    let elapsed_ms = start.elapsed().as_millis() as u64;
+    tracing::debug!(elapsed_ms, persona_id = %id, "personas::get_by_id");
+    if elapsed_ms > 100 {
+        tracing::warn!(elapsed_ms, persona_id = %id, "personas::get_by_id exceeded 100ms threshold");
+    }
+    result
 }
 
+#[instrument(skip(pool))]
 pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
+    let start = Instant::now();
     let conn = pool.get()?;
     let mut stmt = conn.prepare("SELECT * FROM personas WHERE enabled = 1 ORDER BY name")?;
     let rows = stmt.query_map([], row_to_persona)?;
-    Ok(collect_rows(rows, "personas::get_enabled"))
+    let result = collect_rows(rows, "personas::get_enabled");
+    let elapsed_ms = start.elapsed().as_millis() as u64;
+    tracing::debug!(elapsed_ms, count = result.len(), "personas::get_enabled");
+    if elapsed_ms > 100 {
+        tracing::warn!(elapsed_ms, "personas::get_enabled exceeded 100ms threshold");
+    }
+    Ok(result)
 }
 
+#[instrument(skip(pool, input), fields(persona_name = %input.name))]
 pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppError> {
     validate_name(&input.name)?;
     validate_system_prompt(&input.system_prompt)?;
@@ -353,6 +413,7 @@ pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppEr
     get_by_id(pool, &id)
 }
 
+#[instrument(skip(pool, input))]
 pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Persona, AppError> {
     // Verify exists
     let existing = get_by_id(pool, id)?;
@@ -452,7 +513,9 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
 
 /// Batch-fetch sidebar summary data (enabled trigger count + last execution time + health)
 /// for all personas in a single query, eliminating the N+1 IPC pattern.
+#[instrument(skip(pool))]
 pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
+    let start = Instant::now();
     let conn = pool.get()?;
 
     // Step 1: Basic summary (trigger counts + last run)
@@ -499,16 +562,24 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
         });
     }
 
+    let elapsed_ms = start.elapsed().as_millis() as u64;
+    tracing::debug!(elapsed_ms, count = summaries.len(), "personas::get_summaries");
+    if elapsed_ms > 100 {
+        tracing::warn!(elapsed_ms, persona_count = summaries.len(), "personas::get_summaries exceeded 100ms threshold");
+    }
+
     Ok(summaries)
 }
 
 /// Compute health data for a single persona from its recent executions.
+#[instrument(skip(conn, today_start, week_ago))]
 fn compute_persona_health(
     conn: &rusqlite::Connection,
     persona_id: &str,
     today_start: &str,
     week_ago: &str,
 ) -> Result<PersonaHealth, AppError> {
+    let start = Instant::now();
     // Recent statuses (last 10, newest first)
     let mut status_stmt = conn.prepare_cached(
         "SELECT status FROM persona_executions
@@ -583,6 +654,12 @@ fn compute_persona_health(
         })
         .collect();
 
+    let elapsed_ms = start.elapsed().as_millis() as u64;
+    tracing::debug!(elapsed_ms, persona_id, "personas::compute_persona_health");
+    if elapsed_ms > 100 {
+        tracing::warn!(elapsed_ms, persona_id, "personas::compute_persona_health exceeded 100ms threshold");
+    }
+
     Ok(PersonaHealth {
         status,
         recent_statuses,
@@ -593,6 +670,34 @@ fn compute_persona_health(
     })
 }
 
+/// Duplicate a persona server-side, preserving the encrypted model_profile
+/// so the BYOM auth token is never exposed to (or lost by) the frontend.
+#[instrument(skip(pool))]
+pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<Persona, AppError> {
+    let conn = pool.get()?;
+    let new_id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    // Copy all fields from source, generating a new id/timestamps and appending " (Copy)" to name.
+    // model_profile is copied as-is (already encrypted) so the auth token is preserved.
+    conn.execute(
+        "INSERT INTO personas
+         (id, project_id, name, description, system_prompt, structured_prompt,
+          icon, color, enabled, sensitive, headless, max_concurrent, timeout_ms,
+          model_profile, max_budget_usd, max_turns, design_context, group_id,
+          notification_channels, created_at, updated_at)
+         SELECT ?1, project_id, name || ' (Copy)', description, system_prompt, structured_prompt,
+                icon, color, enabled, sensitive, headless, max_concurrent, timeout_ms,
+                model_profile, max_budget_usd, max_turns, design_context, group_id,
+                notification_channels, ?2, ?2
+         FROM personas WHERE id = ?3",
+        params![new_id, now, source_id],
+    )?;
+
+    get_by_id(pool, &new_id)
+}
+
+#[instrument(skip(pool))]
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let rows = conn.execute("DELETE FROM personas WHERE id = ?1", params![id])?;

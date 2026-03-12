@@ -212,7 +212,7 @@ mod tests {
 
     #[test]
     fn test_simple_dag() {
-        // 0 → 1 → 2
+        // 0 -> 1 -> 2
         let g = TopologyGraph::from_edges(3, &[(0, 1), (1, 2)]);
         let result = g.topological_sort();
         assert!(!result.has_cycle());
@@ -222,7 +222,7 @@ mod tests {
 
     #[test]
     fn test_diamond_dag() {
-        // 0 → 1, 0 → 2, 1 → 3, 2 → 3
+        // 0 -> 1, 0 -> 2, 1 -> 3, 2 -> 3
         let g = TopologyGraph::from_edges(4, &[(0, 1), (0, 2), (1, 3), (2, 3)]);
         let result = g.topological_sort();
         assert!(!result.has_cycle());
@@ -233,7 +233,7 @@ mod tests {
 
     #[test]
     fn test_cycle_detection() {
-        // 0 → 1 → 2 → 0 (full cycle)
+        // 0 -> 1 -> 2 -> 0 (full cycle)
         let g = TopologyGraph::from_edges(3, &[(0, 1), (1, 2), (2, 0)]);
         let result = g.topological_sort();
         assert!(result.has_cycle());
@@ -243,7 +243,7 @@ mod tests {
 
     #[test]
     fn test_partial_cycle() {
-        // 0 → 1, 1 → 2, 2 → 1 (cycle between 1 and 2), 0 is acyclic root
+        // 0 -> 1, 1 -> 2, 2 -> 1 (cycle between 1 and 2), 0 is acyclic root
         let g = TopologyGraph::from_edges(3, &[(0, 1), (1, 2), (2, 1)]);
         let result = g.topological_sort();
         assert!(result.has_cycle());
@@ -261,7 +261,7 @@ mod tests {
 
     #[test]
     fn test_layer_assignment() {
-        // 0 → 1 → 3, 0 → 2 → 3
+        // 0 -> 1 -> 3, 0 -> 2 -> 3
         let g = TopologyGraph::from_edges(4, &[(0, 1), (0, 2), (1, 3), (2, 3)]);
         let layers = g.layer_assignment();
         assert_eq!(layers[0], 0);
@@ -272,11 +272,11 @@ mod tests {
 
     #[test]
     fn test_layer_assignment_cycle() {
-        // 0 → 1, 1 → 2, 2 → 1 (cycle)
+        // 0 -> 1, 1 -> 2, 2 -> 1 (cycle)
         let g = TopologyGraph::from_edges(3, &[(0, 1), (1, 2), (2, 1)]);
         let layers = g.layer_assignment();
         assert_eq!(layers[0], 0);
-        // Node 1 gets partial layer 1 from edge 0→1, making max_layer = 1.
+        // Node 1 gets partial layer 1 from edge 0->1, making max_layer = 1.
         // Cycle nodes then get max_layer + 1 = 2.
         assert_eq!(layers[1], 2);
         assert_eq!(layers[2], 2);

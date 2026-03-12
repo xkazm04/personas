@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, X, Plus, MessageSquare } from 'lucide-react';
+import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, X, Plus, MessageSquare, Play, Brain, Sparkles } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
-import { getKnowledgeSummary, listExecutionKnowledge } from '@/api/overview/intelligence/knowledge';
+import { getKnowledgeSummary, listExecutionKnowledge, seedMockKnowledge } from '@/api/overview/intelligence/knowledge';
 import type { KnowledgeGraphSummary } from '@/lib/bindings/KnowledgeGraphSummary';
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import { Button } from '@/features/shared/components/buttons';
@@ -83,6 +83,11 @@ export default function KnowledgeGraphDashboard() {
     setSelectedType(null);
   };
 
+  const handleSeedKnowledge = useCallback(async () => {
+    try { await seedMockKnowledge(); await fetchData(); }
+    catch (err) { console.error('Failed to seed mock knowledge:', err); }
+  }, [fetchData]);
+
   return (
     <ContentBox>
       <ContentHeader
@@ -92,6 +97,11 @@ export default function KnowledgeGraphDashboard() {
         subtitle={`${summary?.total_entries ?? 0} patterns learned${summary?.annotation_count ? ` · ${summary.annotation_count} annotations` : ''}`}
         actions={
           <div className="flex items-center gap-2">
+            {import.meta.env.DEV && (
+              <button onClick={handleSeedKnowledge} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock pattern (dev only)">
+                <Plus className="w-3.5 h-3.5" /> Mock Pattern
+              </button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -189,13 +199,77 @@ export default function KnowledgeGraphDashboard() {
             null
           ) : allEntries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-4">
-                <Network className="w-6 h-6 text-violet-400/60" />
+              {/* Neural network constellation illustration */}
+              <svg width="160" height="120" viewBox="0 0 160 120" fill="none" className="mb-5 knowledge-constellation">
+                <defs>
+                  <linearGradient id="kge-link-grad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.6" />
+                    <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.6" />
+                  </linearGradient>
+                  <radialGradient id="kge-node-glow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+                {/* Connection lines */}
+                <line x1="40" y1="35" x2="80" y2="55" stroke="url(#kge-link-grad)" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="80" y1="55" x2="120" y2="30" stroke="url(#kge-link-grad)" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="80" y1="55" x2="55" y2="80" stroke="url(#kge-link-grad)" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="80" y1="55" x2="110" y2="85" stroke="url(#kge-link-grad)" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="40" y1="35" x2="25" y2="65" stroke="url(#kge-link-grad)" strokeWidth="1" strokeLinecap="round" />
+                <line x1="120" y1="30" x2="140" y2="60" stroke="url(#kge-link-grad)" strokeWidth="1" strokeLinecap="round" />
+                <line x1="55" y1="80" x2="110" y2="85" stroke="url(#kge-link-grad)" strokeWidth="1" strokeLinecap="round" />
+                <line x1="25" y1="65" x2="55" y2="80" stroke="url(#kge-link-grad)" strokeWidth="1" strokeLinecap="round" />
+                <line x1="140" y1="60" x2="110" y2="85" stroke="url(#kge-link-grad)" strokeWidth="1" strokeLinecap="round" />
+                {/* Glow halos for pulsing nodes */}
+                <circle cx="80" cy="55" r="16" fill="url(#kge-node-glow)" className="knowledge-pulse" />
+                <circle cx="40" cy="35" r="10" fill="url(#kge-node-glow)" className="knowledge-pulse-delayed" />
+                {/* Primary nodes */}
+                <circle cx="80" cy="55" r="5" fill="#8b5cf6" fillOpacity="0.8" stroke="#8b5cf6" strokeWidth="1" strokeOpacity="0.4" />
+                <circle cx="40" cy="35" r="4" fill="#8b5cf6" fillOpacity="0.6" stroke="#a78bfa" strokeWidth="1" strokeOpacity="0.3" />
+                <circle cx="120" cy="30" r="4" fill="#06b6d4" fillOpacity="0.6" stroke="#06b6d4" strokeWidth="1" strokeOpacity="0.3" />
+                {/* Secondary nodes */}
+                <circle cx="55" cy="80" r="3" fill="#a78bfa" fillOpacity="0.5" stroke="#a78bfa" strokeWidth="0.75" strokeOpacity="0.3" />
+                <circle cx="110" cy="85" r="3" fill="#06b6d4" fillOpacity="0.5" stroke="#06b6d4" strokeWidth="0.75" strokeOpacity="0.3" />
+                <circle cx="25" cy="65" r="2.5" fill="#c4b5fd" fillOpacity="0.4" />
+                <circle cx="140" cy="60" r="2.5" fill="#67e8f9" fillOpacity="0.4" />
+                {/* Tiny satellite nodes */}
+                <circle cx="65" cy="25" r="1.5" fill="#a78bfa" fillOpacity="0.3" />
+                <circle cx="100" cy="100" r="1.5" fill="#06b6d4" fillOpacity="0.3" />
+                <circle cx="135" cy="45" r="1.5" fill="#67e8f9" fillOpacity="0.3" />
+              </svg>
+
+              <h3 className="text-sm font-semibold text-foreground/80 mb-3">No knowledge patterns yet</h3>
+
+              <div className="flex items-center gap-6 text-xs text-muted-foreground/70">
+                <div className="flex items-center gap-1.5">
+                  <Play className="w-3 h-3 text-violet-400" />
+                  <span>Run executions</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Brain className="w-3 h-3 text-cyan-400" />
+                  <span>Patterns emerge</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-emerald-400" />
+                  <span>Agents get smarter</span>
+                </div>
               </div>
-              <h3 className="text-sm font-semibold text-foreground/80 mb-1">No knowledge patterns yet</h3>
-              <p className="text-sm text-muted-foreground/80 max-w-sm">
-                Run executions to build the knowledge graph. Every execution teaches the system about tool sequences, failure patterns, and cost-quality tradeoffs. Agents can also annotate shared knowledge.
-              </p>
+
+              <style>{`
+                @keyframes knowledge-node-pulse {
+                  0%, 100% { opacity: 0.3; transform: scale(1); }
+                  50% { opacity: 0.7; transform: scale(1.3); }
+                }
+                .knowledge-pulse {
+                  animation: knowledge-node-pulse 3s ease-in-out infinite;
+                  transform-origin: center;
+                }
+                .knowledge-pulse-delayed {
+                  animation: knowledge-node-pulse 3s ease-in-out 1.5s infinite;
+                  transform-origin: center;
+                }
+              `}</style>
             </div>
           ) : (
             <div className="space-y-2">

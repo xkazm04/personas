@@ -2,9 +2,9 @@
 
 /**
  * `isExpired` semantics:
- * - `true`  — the token is confirmed expired
- * - `false` — the token is confirmed valid (not expired)
- * - `null`  — expiration has not been checked yet (e.g. backend could not determine validity)
+ * - `true`  -- the token is confirmed expired
+ * - `false` -- the token is confirmed valid (not expired)
+ * - `null`  -- expiration has not been checked yet (e.g. backend could not determine validity)
  *
  * UI consumers must NOT treat `null` as "not expired". Show a distinct
  * "status unknown" indicator instead.

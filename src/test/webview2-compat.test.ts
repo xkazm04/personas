@@ -18,7 +18,7 @@ function loadShim() {
   new Function(shimCode)();
 }
 
-// ── Runtime shim tests ──────────────────────────────────────────────
+// -- Runtime shim tests ----------------------------------------------
 
 describe("WebView2 shim: runtime behavior", () => {
   beforeAll(() => {
@@ -67,7 +67,7 @@ describe("WebView2 shim: runtime behavior", () => {
   });
 });
 
-// ── Source transform tests ──────────────────────────────────────────
+// -- Source transform tests ------------------------------------------
 
 describe("WebView2 transform: simple assignments", () => {
   it("transforms prototype.constructor = constructor", () => {
@@ -208,7 +208,7 @@ describe("WebView2 transform: chained assignments", () => {
     const output = transformForWebView2(input);
 
     // P.val and P.toJSON are not protected, so this is a simple replacement
-    // (no inner protected props → no IIFE needed)
+    // (no inner protected props -> no IIFE needed)
     expect(output).toContain("Object.defineProperty(P, 'toString'");
     // The value should contain P.val = P.toJSON = myFn (direct assignment is fine)
     expect(output).toContain("P.val = P.toJSON = myFn");

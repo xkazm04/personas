@@ -160,7 +160,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
                       {cd.category}
                     </span>
                     <span className="flex items-center gap-2">
-                      <span className="text-muted-foreground/60">{cd.countA} → {cd.countB}</span>
+                      <span className="text-muted-foreground/60">{cd.countA} {'→'} {cd.countB}</span>
                       {cd.delta !== 0 && (
                         <span className={cd.delta > 0 ? 'text-emerald-400' : 'text-red-400'}>
                           {cd.delta > 0 ? '+' : ''}{cd.delta}
@@ -187,7 +187,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
                       </span>
                       <span className="flex items-center gap-1.5">
                         <span className="text-muted-foreground/60">
-                          {s.avgA.toFixed(1)} → {s.avgB.toFixed(1)}
+                          {s.avgA.toFixed(1)} {'→'} {s.avgB.toFixed(1)}
                         </span>
                         {s.delta > 0
                           ? <TrendingUp className="w-3 h-3 text-emerald-400" />

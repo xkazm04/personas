@@ -51,7 +51,7 @@ pub fn create_credential(
     let field_map: HashMap<String, String> = serde_json::from_str(&input.encrypted_data)
         .map_err(|e| AppError::Validation(format!("Invalid credential field data: {}", e)))?;
 
-    // Store an empty blob — all secrets live in credential_fields now.
+    // Store an empty blob -- all secrets live in credential_fields now.
     let name = input.name.clone();
     let db_input = CreateCredentialInput {
         encrypted_data: String::new(),
@@ -96,7 +96,7 @@ pub fn update_credential(
         None => None,
     };
 
-    // Strip blob columns — all secrets live in credential_fields now.
+    // Strip blob columns -- all secrets live in credential_fields now.
     let metadata_input = UpdateCredentialInput {
         encrypted_data: None,
         iv: None,
@@ -317,7 +317,7 @@ pub fn migrate_plaintext_credentials(
 }
 
 /// Get field-level metadata for a credential (field keys, types, sensitivity).
-/// Returns field metadata without decrypted values — safe for frontend display.
+/// Returns field metadata without decrypted values -- safe for frontend display.
 #[tauri::command]
 pub fn list_credential_fields(
     state: State<'_, Arc<AppState>>,

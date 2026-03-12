@@ -7,7 +7,7 @@ import { OAUTH_FIELD } from '@/features/vault/sub_design/CredentialDesignHelpers
 export interface OAuthConsentState {
   /** Read current credential values (stored in a ref to avoid DevTools/Sentry exposure). */
   getValues: () => Record<string, string>;
-  /** Monotonic counter incremented when values change — depend on this for re-renders. */
+  /** Monotonic counter incremented when values change -- depend on this for re-renders. */
   valuesVersion: number;
   /** Whether an OAuth authorization is in progress */
   isAuthorizing: boolean;

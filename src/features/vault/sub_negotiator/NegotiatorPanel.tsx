@@ -85,7 +85,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
         {/* Body */}
         <div className="p-4">
           <AnimatePresence mode="wait">
-            {/* Idle â€” show the start button */}
+            {/* Idle -- show the start button */}
             {negotiator.phase === 'idle' && (
               <motion.div
                 key="neg-idle"

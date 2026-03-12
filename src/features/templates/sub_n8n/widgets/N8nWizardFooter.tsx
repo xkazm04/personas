@@ -114,7 +114,7 @@ export function N8nWizardFooter({
 
       {/* Right: action group */}
       <div className="flex items-center gap-3">
-        {/* Connector warning — shown on edit step when connectors are unmapped */}
+        {/* Connector warning -- shown on edit step when connectors are unmapped */}
         {step === 'edit' && connectorsMissing > 0 && (
           <span className="flex items-center gap-1.5 text-sm text-orange-400/80">
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -129,7 +129,7 @@ export function N8nWizardFooter({
           </span>
         )}
 
-        {/* Test Persona button — secondary action on edit step */}
+        {/* Test Persona button -- secondary action on edit step */}
         {step === 'edit' && onTest && (
           <button
             onClick={onTest}
@@ -154,7 +154,7 @@ export function N8nWizardFooter({
           </button>
         )}
 
-        {/* Fix & Regenerate — shown on edit step when test failed */}
+        {/* Fix & Regenerate -- shown on edit step when test failed */}
         {step === 'edit' && testStatus === 'failed' && onApplyAdjustment && (
           <button
             onClick={onApplyAdjustment}
@@ -165,7 +165,7 @@ export function N8nWizardFooter({
           </button>
         )}
 
-        {/* Primary CTA — filled background, bolder weight */}
+        {/* Primary CTA -- filled background, bolder weight */}
         {nextAction && (
           <button
             onClick={onNext}

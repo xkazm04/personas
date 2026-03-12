@@ -6,7 +6,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { DesignContextData } from '@/lib/types/frontendTypes';
 import type { DryRunResult, DryRunIssue, PersonaHealthCheck, HealthScore, HealthGrade } from './types';
 
-// ── Scoring helpers ──────────────────────────────────────────────────
+// -- Scoring helpers --------------------------------------------------
 
 export function computeHealthScore(issues: DryRunIssue[]): HealthScore {
   const unresolved = issues.filter((i) => !i.resolved);
@@ -25,7 +25,7 @@ export function computeHealthScore(issues: DryRunIssue[]): HealthScore {
   return { value, grade };
 }
 
-// ── Design context reconstruction ────────────────────────────────────
+// -- Design context reconstruction ------------------------------------
 
 function personaToDesignContext(persona: Persona): DesignContextData | null {
   if (persona.design_context) {
@@ -39,7 +39,7 @@ function personaToDesignContext(persona: Persona): DesignContextData | null {
   };
 }
 
-// ── Issue generation from feasibility ────────────────────────────────
+// -- Issue generation from feasibility --------------------------------
 
 let issueSeq = 1;
 
@@ -151,7 +151,7 @@ function parseFeasibilityToHealthResult(
   };
 }
 
-// ── Hook return type ─────────────────────────────────────────────────
+// -- Hook return type -------------------------------------------------
 
 export interface UseHealthCheckReturn {
   phase: 'idle' | 'running' | 'done' | 'error';
@@ -163,17 +163,17 @@ export interface UseHealthCheckReturn {
   reset: () => void;
 }
 
-// ── Hook ─────────────────────────────────────────────────────────────
+// -- Hook -------------------------------------------------------------
 
 export function useHealthCheck(): UseHealthCheckReturn {
   const [phase, setPhase] = useState<UseHealthCheckReturn['phase']>('idle');
   const [result, setResult] = useState<PersonaHealthCheck | null>(null);
   const score = useMemo(() => result ? computeHealthScore(result.result.issues) : null, [result]);
   const [error, setError] = useState<string | null>(null);
-  const abortRef = useRef(false);
+  const genRef = useRef(0);
 
   const runHealthCheck = useCallback(async (persona: Persona): Promise<PersonaHealthCheck | null> => {
-    abortRef.current = false;
+    const gen = ++genRef.current;
     setPhase('running');
     setResult(null);
     setError(null);
@@ -188,11 +188,11 @@ export function useHealthCheck(): UseHealthCheckReturn {
 
       const json = JSON.stringify(ctx);
 
-      if (abortRef.current) return null;
+      if (gen !== genRef.current) return null;
 
       const raw = await testDesignFeasibility(json);
 
-      if (abortRef.current) return null;
+      if (gen !== genRef.current) return null;
 
       const creds = usePersonaStore.getState().credentials;
       const credentials = creds.map((c) => ({ id: c.id, service_type: c.service_type }));
@@ -208,10 +208,13 @@ export function useHealthCheck(): UseHealthCheckReturn {
         checkedAt: new Date().toISOString(),
       };
 
+      if (gen !== genRef.current) return null;
+
       setResult(check);
       setPhase('done');
       return check;
     } catch (err) {
+      if (gen !== genRef.current) return null;
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
       setPhase('error');
@@ -234,7 +237,7 @@ export function useHealthCheck(): UseHealthCheckReturn {
   }, []);
 
   const reset = useCallback(() => {
-    abortRef.current = true;
+    genRef.current++;
     setPhase('idle');
     setResult(null);
     setError(null);

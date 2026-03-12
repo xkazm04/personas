@@ -84,7 +84,7 @@ export function DesignPhasePanel({
                 onClick={() => onInputModeChange('design')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
                   inputMode === 'design'
-                    ? 'bg-primary/10 text-primary border-primary/25'
+                    ? 'bg-primary/10 text-primary border-primary/30'
                     : 'bg-transparent text-muted-foreground/70 border-transparent hover:text-foreground/80'
                 }`}
               >
@@ -148,7 +148,7 @@ export function DesignPhasePanel({
             </>
           ) : intentMode ? (
             <>
-              {/* Intent compiler input â€” single textarea, no design files */}
+              {/* Intent compiler input -- single textarea, no design files */}
               <div className="space-y-2">
                 <textarea
                   value={instruction}

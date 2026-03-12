@@ -12,32 +12,34 @@ import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardDa
 import type { MetricsChartPoint } from "@/lib/bindings/MetricsChartPoint";
 import * as api from "@/api/tauriApi";
 import { cloudListPendingReviews, cloudRespondToReview } from "@/api/system/cloud";
+import { log } from "@/lib/log";
+import { classifyError, ApiError, withRetry } from "@/lib/utils/apiError";
 
 export interface OverviewSlice {
-  // State â€” navigation
+  // State -- navigation
   overviewTab: OverviewTab;
 
-  // State â€” executions
+  // State -- executions
   globalExecutions: GlobalExecution[];
   globalExecutionsTotal: number;
   globalExecutionsOffset: number;
   globalExecutionsWarning: string | null;
   globalExecutionsLimit: number;
 
-  // State â€” reviews (local)
+  // State -- reviews (local)
   manualReviews: ManualReviewItem[];
   manualReviewsTotal: number;
   pendingReviewCount: number;
 
-  // State â€” reviews (cloud)
+  // State -- reviews (cloud)
   cloudReviews: ManualReviewItem[];
   isLoadingCloudReviews: boolean;
 
-  // State â€” observability metrics
+  // State -- observability metrics
   observabilityMetrics: ObservabilityMetrics | null;
   observabilityError: string | null;
 
-  // State â€” execution dashboard (canonical metrics source)
+  // State -- execution dashboard (canonical metrics source)
   executionDashboard: ExecutionDashboardData | null;
   executionDashboardLoading: boolean;
   executionDashboardError: string | null;
@@ -54,7 +56,7 @@ export interface OverviewSlice {
   fetchExecutionDashboard: (days?: number) => Promise<void>;
 }
 
-// â”€â”€ Execution dashboard derivation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Execution dashboard derivation --------------------------------------
 /** Derive MetricsChartPoint[] from the richer DashboardDailyPoint[]. */
 export function selectDerivedChartPoints(data: ExecutionDashboardData | null): MetricsChartPoint[] {
   if (!data) return [];
@@ -84,6 +86,9 @@ function safeTimestampToISO(value: number | null | undefined): string | null {
 const GLOBAL_PAGE_SIZE = 50;
 const MAX_GLOBAL_LIMIT = 500;
 
+/** Sequence counter to discard stale fetchGlobalExecutions responses. */
+let fetchGlobalSeq = 0;
+
 export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSlice> = (set, get) => ({
   overviewTab: "home" as OverviewTab,
   globalExecutions: [],
@@ -105,6 +110,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
   setOverviewTab: (tab) => set({ overviewTab: tab }),
 
   fetchGlobalExecutions: async (reset = false, status?: string) => {
+    const seq = ++fetchGlobalSeq;
     try {
       const prevLimit = get().globalExecutionsLimit;
       const limit = reset
@@ -114,6 +120,8 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
 
       const statusFilter = status === 'running' ? 'running' : status;
       const rows = await api.listAllExecutions(limit, statusFilter);
+
+      if (seq !== fetchGlobalSeq) return; // superseded by a newer request
 
       // Map GlobalExecutionRow to GlobalExecution (field names already match)
       // Deduplicate by id to prevent React duplicate-key warnings
@@ -138,6 +146,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
         globalExecutionsWarning: null,
       });
     } catch (err) {
+      if (seq !== fetchGlobalSeq) return; // superseded by a newer request
       set({ error: errMsg(err, "Failed to fetch global executions") });
     }
   },
@@ -180,8 +189,8 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
     try {
       const count = await api.getPendingReviewCount();
       set({ pendingReviewCount: count });
-    } catch {
-      // intentional: non-critical â€” badge count defaults to zero on failure
+    } catch (err) {
+      log.warn('overviewSlice', 'fetchPendingReviewCount failed, defaulting to 0', { operation: 'getPendingReviewCount', error: String(err) });
       set({ pendingReviewCount: 0 });
     }
   },
@@ -196,7 +205,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
     try {
       const raw = await cloudListPendingReviews();
       const { personas } = get();
-      // Transform CloudReviewRequest â†’ ManualReviewItem shape
+      // Transform CloudReviewRequest -> ManualReviewItem shape
       const shaped = raw.map((r) => ({
         id: r.review_id,
         persona_id: r.persona_id,
@@ -212,8 +221,8 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
       }));
       const items: ManualReviewItem[] = enrichWithPersona(shaped, personas);
       set({ cloudReviews: items, isLoadingCloudReviews: false });
-    } catch {
-      // Non-critical â€” cloud reviews fail silently, local reviews still work
+    } catch (err) {
+      log.warn('overviewSlice', 'fetchCloudReviews failed, falling back to empty', { operation: 'cloudListPendingReviews', error: String(err) });
       set({ cloudReviews: [], isLoadingCloudReviews: false });
     }
   },
@@ -230,23 +239,36 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
 
   fetchObservabilityMetrics: async (days = 30, personaId?: string) => {
     try {
-      const [summary, chartData] = await Promise.all([
-        api.getMetricsSummary(days, personaId),
-        api.getMetricsChartData(days, personaId),
-      ]);
+      const [summary, chartData] = await withRetry(
+        () => Promise.all([
+          api.getMetricsSummary(days, personaId),
+          api.getMetricsChartData(days, personaId),
+        ]),
+        "Failed to load observability metrics",
+      );
       set({ observabilityMetrics: { summary, chartData }, observabilityError: null });
     } catch (err) {
-      set({ observabilityError: errMsg(err, "Failed to load observability metrics") });
+      const classified = err instanceof ApiError ? err : classifyError(err, "Failed to load observability metrics");
+      const prefix = classified.isTransient ? '[Temporary] ' : '';
+      set({ observabilityError: prefix + classified.message });
+      if (classified.isTransient) {
+        log.warn('overviewSlice', 'Transient error fetching observability metrics (retries exhausted)', { error: classified.message });
+      }
     }
   },
 
   fetchExecutionDashboard: async (days = 30) => {
     set({ executionDashboardLoading: true });
     try {
-      const data = await api.getExecutionDashboard(days);
+      const data = await withRetry(
+        () => api.getExecutionDashboard(days),
+        "Failed to load execution dashboard",
+      );
       set({ executionDashboard: data, executionDashboardError: null, executionDashboardLoading: false });
     } catch (err) {
-      set({ executionDashboardError: errMsg(err, "Failed to load execution dashboard"), executionDashboardLoading: false });
+      const classified = err instanceof ApiError ? err : classifyError(err, "Failed to load execution dashboard");
+      const prefix = classified.isTransient ? '[Temporary] ' : '';
+      set({ executionDashboardError: prefix + classified.message, executionDashboardLoading: false });
     }
   },
 });

@@ -61,7 +61,10 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
             params![review_id],
             |row| row.get(0),
         )
-        .unwrap_or(0);
+        .unwrap_or_else(|e| {
+            tracing::warn!(review_id = %review_id, error = %e, "Failed to query adoption count, defaulting to 0");
+            0
+        });
 
     // Execution stats from personas linked to this template
     let (total_executions, success_count): (i64, i64) = conn
@@ -73,7 +76,10 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
             params![review_id],
             |row| Ok((row.get::<_, i64>(0)?, row.get::<_, Option<i64>>(1)?.unwrap_or(0))),
         )
-        .unwrap_or((0, 0));
+        .unwrap_or_else(|e| {
+            tracing::warn!(review_id = %review_id, error = %e, "Failed to query execution stats, defaulting to (0, 0)");
+            (0, 0)
+        });
 
     let success_rate = if total_executions > 0 {
         success_count as f64 / total_executions as f64
@@ -90,7 +96,10 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
             params![review_id],
             |row| row.get(0),
         )
-        .unwrap_or(0.0);
+        .unwrap_or_else(|e| {
+            tracing::warn!(review_id = %review_id, error = %e, "Failed to query avg cost, defaulting to 0.0");
+            0.0
+        });
 
     // Feedback counts
     let positive_count: i64 = conn
@@ -99,7 +108,10 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
             params![review_id],
             |row| row.get(0),
         )
-        .unwrap_or(0);
+        .unwrap_or_else(|e| {
+            tracing::warn!(review_id = %review_id, error = %e, "Failed to query positive feedback count, defaulting to 0");
+            0
+        });
 
     let negative_count: i64 = conn
         .query_row(
@@ -107,7 +119,10 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
             params![review_id],
             |row| row.get(0),
         )
-        .unwrap_or(0);
+        .unwrap_or_else(|e| {
+            tracing::warn!(review_id = %review_id, error = %e, "Failed to query negative feedback count, defaulting to 0");
+            0
+        });
 
     // Top labels (parse all feedback labels and count)
     let mut label_counts: std::collections::HashMap<String, (i64, i64)> = std::collections::HashMap::new();
@@ -154,7 +169,10 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
             params![review_id],
             |row| Ok((row.get::<_, f64>(0)?, row.get::<_, f64>(1)?)),
         )
-        .unwrap_or((50.0, 50.0));
+        .unwrap_or_else(|e| {
+            tracing::warn!(review_id = %review_id, error = %e, "Failed to query structural/semantic scores, defaulting to (50, 50)");
+            (50.0, 50.0)
+        });
 
     // Derived quality: 40% semantic + 30% structural + 30% success rate (all normalized to 0-100)
     let derived_quality_score = (semantic_score * 0.4) + (structural_score * 0.3) + (success_rate * 100.0 * 0.3);

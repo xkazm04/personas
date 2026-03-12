@@ -32,7 +32,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     if (design.result) lastResultRef.current = design.result;
   }, [design.result]);
 
-  // ── Derive OAuth status message ──
+  // -- Derive OAuth status message --
   const oauthStatusMessage = useMemo(() => {
     const oMsg = oauth.message;
     const uMsg = universalOAuth.message;
@@ -42,14 +42,14 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     return uMsg;
   }, [oauth.message, universalOAuth.message]);
 
-  // ── Auto-set credential name ──
+  // -- Auto-set credential name --
   useEffect(() => {
     if (design.phase === 'preview' && design.result) {
       setCredentialName((prev) => prev || `${design.result!.connector.label} Credential`);
     }
   }, [design.phase, design.result]);
 
-  // ── Derived values ──
+  // -- Derived values --
   const { fields, flow, effectiveFields, requiredCount, optionalCount } = useDesignFields(design.result);
   const firstSetupUrl = extractFirstUrl(design.result?.setup_instructions);
 
@@ -60,7 +60,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
 
   const { canSaveCredential } = useFieldValidation(effectiveFields, mergedOAuthValues, flow, health.result);
 
-  // ── Handlers ──
+  // -- Handlers --
   const start = useCallback(
     (override?: string) => {
       const text = (override ?? instruction).trim();
@@ -194,7 +194,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     lastResultRef.current = null;
   }, [design.reset, oauth.reset, universalOAuth.reset, health.invalidate]);
 
-  // ── Context value ──
+  // -- Context value --
   const contextValue: CredentialDesignContextValue | null = design.result
     ? buildContextValue({
         result: design.result,

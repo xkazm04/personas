@@ -87,7 +87,7 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
       }
     });
 
-    // Handle abort — kill the subprocess and clean up listeners
+    // Handle abort -- kill the subprocess and clean up listeners
     const abortHandler = () => {
       cancelAutoCredBrowser().catch(console.error);
       unlisten();

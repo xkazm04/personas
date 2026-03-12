@@ -28,7 +28,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   if (!trace || trace.spans.length === 0) {
     return (
       <div className="text-center py-10">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/15 flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
           <Activity className="w-6 h-6 text-muted-foreground/60" />
         </div>
         <p className="text-sm text-muted-foreground/80">No trace data recorded</p>
@@ -42,7 +42,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
       <TraceSummary trace={trace} />
 
       {/* Time axis header */}
-      <div className="rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden">
+      <div className="rounded-xl border border-primary/20 bg-secondary/30 overflow-hidden">
         <div className="grid grid-cols-[minmax(200px,1fr)_minmax(200px,2fr)] gap-2 px-2 py-1.5 border-b border-primary/10 bg-secondary/40">
           <div className="text-sm font-mono text-muted-foreground/60 uppercase tracking-wider">
             Span

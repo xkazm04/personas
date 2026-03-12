@@ -40,8 +40,7 @@ export const createEventSlice: StateCreator<PersonaStore, [], [], EventSlice> = 
         // Track transition: pending->non-pending = -1, non-pending->pending = +1
         if (wasPending && !isPending) pendingDelta = -1;
         else if (!wasPending && isPending) pendingDelta = 1;
-        nextEvents = [...state.recentEvents];
-        nextEvents[existingIndex] = event;
+        nextEvents = state.recentEvents.map((e, i) => i === existingIndex ? event : e);
       } else {
         nextEvents = [event, ...state.recentEvents];
         if (isPending) pendingDelta = 1;

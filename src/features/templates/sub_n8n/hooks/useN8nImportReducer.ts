@@ -22,7 +22,7 @@ import {
   INITIAL_SESSION,
 } from '../reducers/sessionReducer';
 
-// â”€â”€ Wizard Steps â”€â”€
+// -- Wizard Steps --
 
 export type N8nWizardStep = 'upload' | 'analyze' | 'transform' | 'edit' | 'confirm';
 
@@ -42,11 +42,11 @@ export const STEP_META: Record<N8nWizardStep, { label: string; index: number }> 
   confirm:   { label: 'Link',      index: 4 },
 };
 
-// â”€â”€ Transform Sub-Phases â”€â”€
+// -- Transform Sub-Phases --
 
 export type TransformSubPhase = 'idle' | 'asking' | 'answering' | 'generating' | 'completed' | 'failed';
 
-// â”€â”€ Transform Questions â”€â”€
+// -- Transform Questions --
 
 export interface TransformQuestion {
   id: string;
@@ -58,7 +58,7 @@ export interface TransformQuestion {
   context?: string;
 }
 
-// â”€â”€ State â”€â”€
+// -- State --
 
 export interface N8nImportState {
   step: N8nWizardStep;
@@ -80,7 +80,7 @@ export interface N8nImportState {
   selectedTriggerIndices: Set<number>;
   selectedConnectorNames: Set<string>;
 
-  // Configure (pre-transform questions) â€” now inline within transform step
+  // Configure (pre-transform questions) -- now inline within transform step
   questions: TransformQuestion[] | null;
   userAnswers: Record<string, string>;
 
@@ -127,7 +127,7 @@ const INITIAL_STATE: N8nImportState = {
   ...INITIAL_TEST,
 };
 
-// â”€â”€ Actions â”€â”€
+// -- Actions --
 
 export type N8nImportAction =
   | { type: 'FILE_PARSED'; workflowName: string; rawWorkflowJson: string; parsedResult: AgentIR; platform?: WorkflowPlatform; needsConfirmation?: boolean; detectedConfidence?: 'high' | 'medium' | 'low' }
@@ -182,7 +182,7 @@ export interface SessionLoadedPayload {
   recoveryWarning?: string | null;
 }
 
-// â”€â”€ Composed Reducer â”€â”€
+// -- Composed Reducer --
 //
 // Cross-cutting actions (RESET, SESSION_LOADED) are handled at the
 // orchestrator level. Each sub-reducer manages its own state slice
@@ -198,7 +198,7 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
     return handleSessionLoaded(action.payload);
   }
 
-  // Delegate to sub-reducers â€” each handles its own slice
+  // Delegate to sub-reducers -- each handles its own slice
   const nav = navigationReducer({ step: state.step }, action, state);
   const transform = transformReducer({
     questions: state.questions,
@@ -279,7 +279,7 @@ function handleSessionLoaded(p: SessionLoadedPayload): N8nImportState {
   };
 }
 
-// â”€â”€ Hook â”€â”€
+// -- Hook --
 
 export function useN8nImportReducer() {
   const [state, dispatch] = useReducer(n8nImportReducer, INITIAL_STATE);
@@ -289,7 +289,7 @@ export function useN8nImportReducer() {
   const goBack = useCallback(() => {
     if (!canGoBack) return;
 
-    // From edit or transform â†’ go to analyze (skip transform since it's a live process step)
+    // From edit or transform -> go to analyze (skip transform since it's a live process step)
     if (state.step === 'edit' || state.step === 'transform') {
       dispatch({ type: 'GO_TO_STEP', step: 'analyze' });
       return;

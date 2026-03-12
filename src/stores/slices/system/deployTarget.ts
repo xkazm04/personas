@@ -7,7 +7,7 @@
  * - Initialize / connect / disconnect lifecycle
  */
 
-// ── Shared error translation ────────────────────────────────────────
+// -- Shared error translation ----------------------------------------
 
 interface ErrorRule {
   patterns: string[];
@@ -59,7 +59,7 @@ export function translateDeployError(
   return String(err).replace(prefixStrip, '');
 }
 
-// ── Cloud-specific error rules ──────────────────────────────────────
+// -- Cloud-specific error rules --------------------------------------
 
 export const CLOUD_ERROR_RULES: ErrorRule[] = [
   { patterns: ['oauth', 'expired'], message: 'OAuth token has expired. Please re-authorize.' },
@@ -73,7 +73,7 @@ export function translateCloudError(err: unknown): string {
   return translateDeployError(err, CLOUD_ERROR_RULES, CLOUD_ERROR_PREFIX);
 }
 
-// ── GitLab-specific error rules ─────────────────────────────────────
+// -- GitLab-specific error rules -------------------------------------
 
 export const GITLAB_ERROR_RULES: ErrorRule[] = [
   { patterns: ['token must not be empty'], message: 'Please enter your GitLab personal access token.' },
@@ -85,7 +85,7 @@ export function translateGitLabError(err: unknown): string {
   return translateDeployError(err, GITLAB_ERROR_RULES, GITLAB_ERROR_PREFIX);
 }
 
-// ── Connection state helpers ────────────────────────────────────────
+// -- Connection state helpers ----------------------------------------
 
 export type DeployConnectionPhase = 'disconnected' | 'connecting' | 'connected' | 'error';
 

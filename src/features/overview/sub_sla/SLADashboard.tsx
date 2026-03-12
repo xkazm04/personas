@@ -101,7 +101,7 @@ export default function SLADashboard() {
             {data.daily_trend.length > 0 && (
               <div className="rounded-xl border border-primary/10 bg-card-bg p-5 space-y-3">
                 <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-                  Daily Success Rate — {days} Days
+                  Daily Success Rate -- {days} Days
                 </h2>
                 <DailyTrendChart points={data.daily_trend} />
               </div>

@@ -63,7 +63,7 @@ export async function encryptWithSessionKey(data: string): Promise<string> {
     // 1. Generate a random AES-256 key and 12-byte IV
     const aesKey = await window.crypto.subtle.generateKey(
       { name: "AES-GCM", length: 256 },
-      true, // extractable — we need the raw bytes to RSA-encrypt them
+      true, // extractable -- we need the raw bytes to RSA-encrypt them
       ["encrypt"],
     );
     const iv = window.crypto.getRandomValues(new Uint8Array(12));

@@ -6,7 +6,7 @@
  * so consumers don't need to parse-and-hope.
  */
 
-// ── Team Config (stored in PersonaTeam.team_config) ──────────────────
+// -- Team Config (stored in PersonaTeam.team_config) ------------------
 
 /** A node in a pipeline template blueprint. */
 export interface TeamConfigNode {
@@ -31,7 +31,7 @@ export interface TeamConfig {
   edges: TeamConfigEdge[];
 }
 
-// ── Canvas Data (stored in PersonaTeam.canvas_data) ──────────────────
+// -- Canvas Data (stored in PersonaTeam.canvas_data) ------------------
 
 /** Persisted canvas viewport and node positions. */
 export interface CanvasLayout {
@@ -39,7 +39,7 @@ export interface CanvasLayout {
   nodePositions?: Record<string, { x: number; y: number }>;
 }
 
-// ── Parse / Serialize Helpers ────────────────────────────────────────
+// -- Parse / Serialize Helpers ----------------------------------------
 
 /** Parse team_config JSON string into a typed TeamConfig, or null on failure. */
 export function parseTeamConfig(raw: string | null): TeamConfig | null {

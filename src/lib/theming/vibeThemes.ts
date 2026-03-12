@@ -1,5 +1,5 @@
 /**
- * Persona Vibe Themes — maps agent personality to visual atmosphere.
+ * Persona Vibe Themes -- maps agent personality to visual atmosphere.
  *
  * Each vibe defines CSS custom properties that overlay on top of the base
  * theme. They control accent glow, border tint, background warmth, and
@@ -7,13 +7,13 @@
  */
 
 export type VibeId =
-  | 'default'     // Neutral baseline — no overlay
-  | 'clinical'    // Security, auditing, compliance — cold, monochrome, sharp
-  | 'creative'    // Writing, art, brainstorming — warm, colorful, flowing
-  | 'guardian'    // DevOps, infra, monitoring — green-tinted, steady
-  | 'analytical'  // Data, finance, research — blue, precise, grid-like
-  | 'energetic'   // Sales, marketing, social — vibrant, fast
-  | 'stealth';    // Privacy, encryption, secret ops — near-invisible, muted
+  | 'default'     // Neutral baseline -- no overlay
+  | 'clinical'    // Security, auditing, compliance -- cold, monochrome, sharp
+  | 'creative'    // Writing, art, brainstorming -- warm, colorful, flowing
+  | 'guardian'    // DevOps, infra, monitoring -- green-tinted, steady
+  | 'analytical'  // Data, finance, research -- blue, precise, grid-like
+  | 'energetic'   // Sales, marketing, social -- vibrant, fast
+  | 'stealth';    // Privacy, encryption, secret ops -- near-invisible, muted
 
 export interface VibeTheme {
   id: VibeId;
@@ -26,7 +26,7 @@ export interface VibeTheme {
   bgTint: string;
   /** Animation speed multiplier (1 = normal, <1 = calmer, >1 = livelier) */
   animationScale: number;
-  /** Border opacity multiplier (0.5–1.5) */
+  /** Border opacity multiplier (0.5--1.5) */
   borderIntensity: number;
 }
 
@@ -97,10 +97,10 @@ export const VIBE_THEMES: Record<VibeId, VibeTheme> = {
 };
 
 // ---------------------------------------------------------------------------
-// Keyword → Vibe mapping
+// Keyword -> Vibe mapping
 // ---------------------------------------------------------------------------
 
-/** Keywords that signal each vibe. Order matters — first match wins. */
+/** Keywords that signal each vibe. Order matters -- first match wins. */
 const VIBE_KEYWORDS: [VibeId, string[]][] = [
   ['clinical', [
     'security', 'audit', 'compliance', 'pentest', 'vulnerability', 'forensic',

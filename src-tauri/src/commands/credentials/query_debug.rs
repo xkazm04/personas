@@ -11,7 +11,7 @@ use crate::error::AppError;
 use crate::ipc_auth::require_privileged;
 use crate::AppState;
 
-// ── Debug output sanitization ─────────────────────────────────────────
+// -- Debug output sanitization -----------------------------------------
 //
 // The query debug feature emits events to the frontend webview. To prevent
 // schema/data leakage (CVSS 6.8), we:
@@ -112,7 +112,7 @@ fn sanitize_db_error(err: &str) -> String {
     }
 }
 
-// ── Static job manager ──────────────────────────────────────────────────
+// -- Static job manager --------------------------------------------------
 
 static QUERY_DEBUG_JOBS: BackgroundJobManager<()> =
     BackgroundJobManager::new("query debug job lock", "query-debug-status", "query-debug-output");
@@ -130,7 +130,7 @@ pub fn cancel_query_debug_job(app: &tauri::AppHandle, debug_id: &str) -> Result<
     QUERY_DEBUG_JOBS.cancel(app, debug_id)
 }
 
-// ── Tauri commands ──────────────────────────────────────────────────────
+// -- Tauri commands ------------------------------------------------------
 
 #[tauri::command]
 pub async fn start_query_debug(
@@ -149,7 +149,7 @@ pub async fn start_query_debug(
     QUERY_DEBUG_JOBS.insert_running(debug_id.clone(), cancel_token.clone(), ())?;
     QUERY_DEBUG_JOBS.set_status(&app, &debug_id, "running", None);
 
-    // Gather schema context (best-effort — don't fail if introspection errors)
+    // Gather schema context (best-effort -- don't fail if introspection errors)
     let schema_context = build_schema_context(&state.db, &credential_id).await;
 
     let pool = state.db.clone();
@@ -183,7 +183,7 @@ pub async fn cancel_query_debug(
     QUERY_DEBUG_JOBS.cancel_or_preempt(&app, &debug_id, ())
 }
 
-// ── Internal logic ──────────────────────────────────────────────────────
+// -- Internal logic ------------------------------------------------------
 
 struct RunParams {
     app: tauri::AppHandle,
@@ -291,7 +291,7 @@ async fn run_query_debug(params: RunParams) {
             }
         };
 
-        emit_line(&app, &debug_id, &format!("> Attempt {} — executing extracted query...", attempt + 1));
+        emit_line(&app, &debug_id, &format!("> Attempt {} -- executing extracted query...", attempt + 1));
 
         // Execute the extracted query
         match db_query::execute_query(&pool, &credential_id, &query_to_run, None).await {
@@ -304,7 +304,7 @@ async fn run_query_debug(params: RunParams) {
                 );
                 emit_line(&app, &debug_id, &summary);
 
-                // Emit sanitized result — redact sensitive columns, cap rows
+                // Emit sanitized result -- redact sensitive columns, cap rows
                 let sanitized_result = sanitize_query_result(&result);
                 let _ = app.emit(
                     "query-debug-status",
@@ -365,7 +365,7 @@ async fn run_query_debug(params: RunParams) {
                     )
                     .await
                 } else {
-                    // No session ID — make a fresh call with full context
+                    // No session ID -- make a fresh call with full context
                     let fresh_prompt = build_prompt(
                         connector_family,
                         &service_type,
@@ -404,7 +404,7 @@ async fn run_query_debug(params: RunParams) {
     }
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────
+// -- Helpers --------------------------------------------------------------
 
 fn emit_line(app: &tauri::AppHandle, debug_id: &str, line: &str) {
     QUERY_DEBUG_JOBS.emit_line(app, debug_id, line);
@@ -438,7 +438,7 @@ fn build_prompt(
         "## Instructions\n\
          1. Identify and fix all issues (syntax, table/column names, dialect-specific syntax)\n\
          2. Output ONLY the corrected database query in a single ```{language} code block\n\
-         3. Do NOT output JavaScript, TypeScript, or client library code — ONLY the raw {language} query\n\
+         3. Do NOT output JavaScript, TypeScript, or client library code -- ONLY the raw {language} query\n\
          4. Briefly explain what you fixed\n",
     ));
 
@@ -576,7 +576,7 @@ mod tests {
     use super::*;
     use crate::db::models::QueryResult;
 
-    // ── Sanitization tests ──────────────────────────────────────────
+    // -- Sanitization tests ------------------------------------------
 
     #[test]
     fn test_sanitize_redacts_sensitive_columns() {
@@ -663,7 +663,7 @@ mod tests {
         assert!(!msg.contains("database driver"));
     }
 
-    // ── Code block extraction tests ─────────────────────────────────
+    // -- Code block extraction tests ---------------------------------
 
     #[test]
     fn test_extract_code_block_sql() {

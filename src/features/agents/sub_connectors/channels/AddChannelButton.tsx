@@ -24,7 +24,7 @@ export function AddChannelButton({ channelTypes, existingTypes, onAdd }: AddChan
           onClick={toggle}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/15 hover:border-primary/40 text-sm text-muted-foreground/80 hover:text-primary/80 transition-all w-full"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/20 hover:border-primary/40 text-sm text-muted-foreground/80 hover:text-primary/80 transition-all w-full"
         >
           <Plus className="w-4 h-4" />
           Add Channel

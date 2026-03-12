@@ -41,7 +41,7 @@ export function ToolCheckbox({
       animate={justToggled ? { scale: [1, 1.3, 1] } : undefined}
       transition={{ duration: 0.3 }}
       className={`flex-shrink-0 border flex items-center justify-center mt-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${classes} ${
-        checked ? 'bg-primary border-primary' : 'bg-background/50 border-primary/15'
+        checked ? 'bg-primary border-primary' : 'bg-background/50 border-primary/20'
       }`}
     >
       {checked && <Check className={`${checkClass} text-foreground`} />}

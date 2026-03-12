@@ -5,7 +5,7 @@
 //! The runtime manages execution context, result chaining, and cross-app
 //! coordination while enforcing security boundaries.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
@@ -15,7 +15,7 @@ use crate::engine::desktop_bridges::BridgeActionResult;
 use crate::engine::desktop_security::{self, DesktopApprovalStore, DesktopCapability};
 use crate::error::AppError;
 
-// ── Runtime types ────────────────────────────────────────────────────
+// -- Runtime types ----------------------------------------------------
 
 /// A single step in a desktop agent plan.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,13 +69,18 @@ pub struct RuntimeStatus {
     pub current_step: Option<String>,
 }
 
-// ── Runtime state ────────────────────────────────────────────────────
+// -- Runtime state ----------------------------------------------------
+
+/// Maximum number of cached plan results before LRU eviction kicks in.
+const MAX_CACHED_RESULTS: usize = 50;
 
 /// Tracks active plan executions.
 pub struct DesktopRuntime {
     status: RwLock<RuntimeStatus>,
-    /// Results cache: plan_id → result.
+    /// Results cache: plan_id -> result (bounded by MAX_CACHED_RESULTS).
     results: RwLock<HashMap<String, PlanExecutionResult>>,
+    /// Insertion-order queue for LRU eviction of results.
+    results_order: RwLock<VecDeque<String>>,
 }
 
 impl DesktopRuntime {
@@ -88,6 +93,7 @@ impl DesktopRuntime {
                 current_step: None,
             }),
             results: RwLock::new(HashMap::new()),
+            results_order: RwLock::new(VecDeque::new()),
         }
     }
 
@@ -97,6 +103,28 @@ impl DesktopRuntime {
 
     pub async fn get_result(&self, plan_id: &str) -> Option<PlanExecutionResult> {
         self.results.read().await.get(plan_id).cloned()
+    }
+
+    /// Insert a result into the cache, evicting the oldest entry if at capacity.
+    async fn cache_result(&self, plan_id: String, result: PlanExecutionResult) {
+        let mut results = self.results.write().await;
+        let mut order = self.results_order.write().await;
+
+        // If this plan_id already exists, remove it from the order queue so
+        // it gets pushed to the back (most-recent) position.
+        if results.contains_key(&plan_id) {
+            order.retain(|id| id != &plan_id);
+        }
+
+        // Evict oldest entries while at or above capacity
+        while order.len() >= MAX_CACHED_RESULTS {
+            if let Some(oldest) = order.pop_front() {
+                results.remove(&oldest);
+            }
+        }
+
+        order.push_back(plan_id.clone());
+        results.insert(plan_id, result);
     }
 
     /// Execute a desktop plan step-by-step, enforcing security checks.
@@ -170,7 +198,7 @@ impl DesktopRuntime {
                         total_steps: 0,
                         current_step: None,
                     };
-                    self.results.write().await.insert(plan.id.clone(), result.clone());
+                    self.cache_result(plan.id.clone(), result.clone()).await;
                     return Err(e);
                 }
             };
@@ -218,13 +246,13 @@ impl DesktopRuntime {
                 current_step: None,
             };
         }
-        self.results.write().await.insert(plan.id.clone(), result.clone());
+        self.cache_result(plan.id.clone(), result.clone()).await;
 
         Ok(result)
     }
 }
 
-// ── Bridge config ────────────────────────────────────────────────────
+// -- Bridge config ----------------------------------------------------
 
 /// Configuration for bridge execution (binary paths, vault paths, etc.).
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -245,7 +273,7 @@ pub struct BridgeConfig {
     pub env_vars: HashMap<String, String>,
 }
 
-// ── Bridge dispatch ──────────────────────────────────────────────────
+// -- Bridge dispatch --------------------------------------------------
 
 /// Map bridge name to required security capabilities.
 fn required_capabilities_for_bridge(bridge: &str) -> Vec<DesktopCapability> {

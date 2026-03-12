@@ -174,7 +174,7 @@ function PersonaEditorInner() {
       <OnboardingBanner personaId={selectedPersona.id} />
 
       <div className="flex-1 overflow-y-auto p-4">
-        {/* Prompt Performance Summary Card — shown on prompt and use-cases tabs */}
+        {/* Prompt Performance Summary Card -- shown on prompt and use-cases tabs */}
         {(editorTab === 'prompt' || editorTab === 'use-cases') && (
           <Suspense fallback={null}>
             <div className="mb-4">

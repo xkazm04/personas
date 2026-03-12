@@ -23,7 +23,7 @@ export function CompositeHealthDot({
   return (
     <span
       className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dotColor} ${healthResult?.isStale ? 'opacity-60' : ''}`}
-      title={`${style.label} (${composite.score}/100) — ${composite.reason}${staleNote}`}
+      title={`${style.label} (${composite.score}/100) -- ${composite.reason}${staleNote}`}
     />
   );
 }

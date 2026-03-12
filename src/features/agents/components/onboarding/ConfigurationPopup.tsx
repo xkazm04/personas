@@ -15,7 +15,7 @@ export interface ConfigField {
 interface ConfigurationPopupProps {
   title: string;
   subtitle: string;
-  /** Accent color name — used for ring, button, and icon styling */
+  /** Accent color name -- used for ring, button, and icon styling */
   accent: 'emerald' | 'sky';
   fields: ConfigField[];
   saveLabel: string;
@@ -95,7 +95,7 @@ export function ConfigurationPopup({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+        className="bg-background border border-primary/20 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
       >
         <div className="px-4 py-4 border-b border-primary/10">
           <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
@@ -120,7 +120,7 @@ export function ConfigurationPopup({
                 placeholder={loaded ? field.placeholder : 'Loading\u2026'}
                 disabled={!loaded}
                 autoFocus={field.autoFocus}
-                className={`w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 ${styles.ring} transition-all disabled:opacity-50`}
+                className={`w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 ${styles.ring} transition-all disabled:opacity-50`}
               />
             </div>
           ))}

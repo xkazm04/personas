@@ -8,7 +8,7 @@ interface ToolCategoryListProps {
   viewMode: 'grid' | 'grouped';
   filteredTools: ToolDef[];
   connectorGroups: Array<[string, ToolDef[]]>;
-  assignedToolIds: string[];
+  assignedToolIds: Set<string>;
   credentialTypeSet: Set<string>;
   credentialLabel: (credType: string) => string;
   usageByTool: Map<string, number>;
@@ -49,7 +49,7 @@ export function ToolCategoryList({
       <p className="text-sm text-muted-foreground">No tools assigned yet</p>
       <button
         onClick={onBrowseTools}
-        className="mt-3 text-sm px-2.5 py-1 rounded-xl border border-primary/15 text-muted-foreground/80 hover:text-foreground/80 hover:bg-secondary/40 transition-colors"
+        className="mt-3 text-sm px-2.5 py-1 rounded-xl border border-primary/20 text-muted-foreground/80 hover:text-foreground/80 hover:bg-secondary/40 transition-colors"
       >
         Browse available tools
       </button>
@@ -63,7 +63,7 @@ export function ToolCategoryList({
       <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {filteredTools.map((tool) => {
-            const isAssigned = assignedToolIds.includes(tool.id);
+            const isAssigned = assignedToolIds.has(tool.id);
             const missingCredential = tool.requires_credential_type && !credentialTypeSet.has(tool.requires_credential_type);
             return (
               <ToolCard
@@ -119,7 +119,7 @@ function ConnectorGroup({
 }: {
   connectorKey: string;
   tools: ToolDef[];
-  assignedToolIds: string[];
+  assignedToolIds: Set<string>;
   credentialTypeSet: Set<string>;
   credentialLabel: (credType: string) => string;
   justToggledId: string | null;
@@ -135,13 +135,13 @@ function ConnectorGroup({
   const hasCredential = isGeneral || credentialTypeSet.has(connectorKey);
   const missingCredential = !isGeneral && !hasCredential;
   const assignableTools = missingCredential ? [] : tools;
-  const assignedInGroup = tools.filter(t => assignedToolIds.includes(t.id));
+  const assignedInGroup = tools.filter(t => assignedToolIds.has(t.id));
   const allAssigned = assignableTools.length > 0 && assignedInGroup.length === assignableTools.length;
   const someAssigned = assignedInGroup.length > 0 && !allAssigned;
 
   return (
     <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-2.5 bg-secondary/30 border-b border-primary/8">
+      <div className="flex items-center gap-3 px-4 py-2.5 bg-secondary/30 border-b border-primary/10">
         <button
           onClick={() => !missingCredential && onBulkToggle(tools, allAssigned)}
           disabled={missingCredential}
@@ -152,7 +152,7 @@ function ConnectorGroup({
                 ? 'bg-primary border-primary cursor-pointer'
                 : someAssigned
                   ? 'bg-primary/40 border-primary/60 cursor-pointer'
-                  : 'bg-background/50 border-primary/15 cursor-pointer hover:border-primary/30'
+                  : 'bg-background/50 border-primary/20 cursor-pointer hover:border-primary/30'
           }`}
         >
           {(allAssigned || someAssigned) && (
@@ -190,7 +190,7 @@ function ConnectorGroup({
       </div>
       <div className="divide-y divide-primary/5">
         {tools.map((tool) => {
-          const isAssigned = assignedToolIds.includes(tool.id);
+          const isAssigned = assignedToolIds.has(tool.id);
           return (
             <GroupedToolRow
               key={tool.id}

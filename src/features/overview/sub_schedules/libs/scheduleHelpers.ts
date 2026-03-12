@@ -1,10 +1,10 @@
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { formatInterval, formatRelative } from '@/features/overview/sub_cron_agents/libs/cronHelpers';
 
-// ── Re-export shared helpers ────────────────────────────────────────────────
+// -- Re-export shared helpers ------------------------------------------------
 export { formatInterval, formatRelative };
 
-// ── Types ───────────────────────────────────────────────────────────────────
+// -- Types -------------------------------------------------------------------
 
 export type ScheduleHealth = 'healthy' | 'degraded' | 'failing' | 'paused' | 'idle';
 
@@ -25,7 +25,7 @@ export interface SkippedExecution {
 
 export type RecoveryPolicy = 'recover' | 'skip' | 'ask';
 
-// ── Schedule parsing ────────────────────────────────────────────────────────
+// -- Schedule parsing --------------------------------------------------------
 
 export function parseScheduleEntry(agent: CronAgent): ScheduleEntry {
   const failureRate = agent.recent_executions > 0
@@ -55,7 +55,7 @@ export function parseScheduleEntry(agent: CronAgent): ScheduleEntry {
   };
 }
 
-// ── Sorting ─────────────────────────────────────────────────────────────────
+// -- Sorting -----------------------------------------------------------------
 
 /** Sort entries chronologically by next run (nulls last). */
 export function sortByNextRun(entries: ScheduleEntry[]): ScheduleEntry[] {
@@ -67,7 +67,7 @@ export function sortByNextRun(entries: ScheduleEntry[]): ScheduleEntry[] {
   });
 }
 
-// ── Time grouping ───────────────────────────────────────────────────────────
+// -- Time grouping -----------------------------------------------------------
 
 export interface TimeGroup {
   label: string;
@@ -112,7 +112,7 @@ export function groupByTimeWindow(entries: ScheduleEntry[]): TimeGroup[] {
     .map((label) => ({ label, entries: buckets.get(label)! }));
 }
 
-// ── Skipped execution detection ─────────────────────────────────────────────
+// -- Skipped execution detection ---------------------------------------------
 
 /**
  * Detect agents whose last_triggered_at + interval has passed, meaning
@@ -168,19 +168,19 @@ function estimateIntervalFromCron(cron: string | null): number | null {
 
   if (!min || !hour || !dom) return null;
 
-  // */N * * * * → every N minutes
+  // */N * * * * -> every N minutes
   if (min.startsWith('*/') && hour === '*' && dom === '*') {
     const n = parseInt(min.slice(2), 10);
     if (!isNaN(n)) return n * 60_000;
   }
 
-  // 0 */N * * * → every N hours
+  // 0 */N * * * -> every N hours
   if (min === '0' && hour.startsWith('*/') && dom === '*') {
     const n = parseInt(hour.slice(2), 10);
     if (!isNaN(n)) return n * 3_600_000;
   }
 
-  // 0 N * * * → daily (specific hour)
+  // 0 N * * * -> daily (specific hour)
   if (min !== '*' && hour !== '*' && dom === '*') {
     return 24 * 3_600_000;
   }
@@ -188,7 +188,7 @@ function estimateIntervalFromCron(cron: string | null): number | null {
   return null;
 }
 
-// ── Cron presets ─────────────────────────────────────────────────────────────
+// -- Cron presets -------------------------------------------------------------
 
 export const CRON_PRESETS = [
   { label: 'Every 5 min', cron: '*/5 * * * *' },

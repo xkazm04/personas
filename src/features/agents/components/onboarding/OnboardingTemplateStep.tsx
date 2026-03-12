@@ -117,8 +117,8 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
             onClick={() => setActiveFilter('all')}
             className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${
               activeFilter === 'all'
-                ? 'border-primary/25 text-foreground/80'
-                : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/15'
+                ? 'border-primary/30 text-foreground/80'
+                : 'border-primary/10 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/20'
             }`}
           >
             {activeFilter === 'all' && (
@@ -136,8 +136,8 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
               onClick={() => setActiveFilter(cat)}
               className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${
                 activeFilter === cat
-                  ? 'border-primary/25 text-foreground/80'
-                  : 'border-primary/8 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/15'
+                  ? 'border-primary/30 text-foreground/80'
+                  : 'border-primary/10 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/20'
               }`}
             >
               {activeFilter === cat && (

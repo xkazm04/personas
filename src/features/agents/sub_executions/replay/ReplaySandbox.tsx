@@ -11,7 +11,7 @@ import { ReplayToolPanel } from './ReplayToolPanel';
 import { ReplayCostPanel } from './ReplayCostPanel';
 import { ReplayTransportControls } from './ReplayTransportControls';
 
-// ── Main Component ───────────────────────────────────────────────────────
+// -- Main Component -------------------------------------------------------
 
 interface ReplaySandboxProps {
   execution: DbPersonaExecution;

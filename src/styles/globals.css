@@ -3,7 +3,7 @@
 @import "./typography.css";
 
 
-/* ── Custom Title Bar ── */
+/* -- Custom Title Bar -- */
 .titlebar {
   display: flex;
   align-items: center;
@@ -75,7 +75,7 @@
   color: #fff;
 }
 
-/* ── Design Tokens ──
+/* -- Design Tokens --
    Default :root values (dark base). Theme variants override below. */
 :root {
   --background: #0a0e14;
@@ -159,7 +159,7 @@
   --color-status-processing: var(--status-processing);
   --color-status-neutral: var(--status-neutral);
 
-  /* Spacing â€" bridged from shared tokens */
+  /* Spacing -- bridged from shared tokens */
   --spacing-1: var(--spacing-1);
   --spacing-2: var(--spacing-2);
   --spacing-3: var(--spacing-3);
@@ -188,7 +188,7 @@
   --breakpoint-4xl: 2560px;
 }
 
-/* â"€â"€ Base Styles â"€â"€ */
+/* -- Base Styles -- */
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
@@ -200,7 +200,7 @@ body {
   overflow: hidden;
 }
 
-/* â"€â"€ Text Scale â"€â"€ */
+/* -- Text Scale -- */
 [data-text-scale="large"] {
   font-size: 15px;
 }
@@ -217,7 +217,7 @@ body {
 [data-text-scale="larger"] .text-\[11px\] { font-size: 13px; }
 [data-text-scale="larger"] .text-\[10px\] { font-size: 12px; }
 
-/* â"€â"€ Hide number input spinners â"€â"€ */
+/* -- Hide number input spinners -- */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -227,24 +227,24 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* â"€â"€ Glass Morphism â"€â"€ */
+/* -- Glass Morphism -- */
 .glass {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
 }
 
-/* â"€â"€ Button Size Presets â"€â"€
+/* -- Button Size Presets --
    Canonical button sizes.  Prefer these over ad-hoc padding combos.
    Tailwind equivalents noted for grep-ability:
-     btn-sm  â‰ˆ  px-2.5 py-1   rounded-lg  text-xs
-     btn-md  â‰ˆ  px-3.5 py-1.5 rounded-xl  text-sm
-     btn-lg  â‰ˆ  px-5   py-2.5 rounded-xl  text-sm  */
+     btn-sm  ~=  px-2.5 py-1   rounded-lg  text-xs
+     btn-md  ~=  px-3.5 py-1.5 rounded-xl  text-sm
+     btn-lg  ~=  px-5   py-2.5 rounded-xl  text-sm  */
 .btn-sm { padding: 0.25rem 0.625rem; border-radius: var(--radius-sm); font-size: 0.75rem; line-height: 1rem; }
 .btn-md { padding: 0.375rem 0.875rem; border-radius: var(--radius-md); font-size: 0.875rem; line-height: 1.25rem; }
 .btn-lg { padding: 0.625rem 1.25rem; border-radius: var(--radius-md); font-size: 0.875rem; line-height: 1.25rem; }
 
-/* â"€â"€ Animations â"€â"€ */
+/* -- Animations -- */
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
@@ -286,7 +286,7 @@ input[type="number"] {
 .animate-spin-slow { animation: spin-slow 30s linear infinite; }
 .animate-expand-in { animation: expand-in 150ms ease-out both; }
 
-/* â"€â"€ Animation timing utilities â"€â"€ */
+/* -- Animation timing utilities -- */
 .duration-instant { transition-duration: var(--duration-instant); }
 .duration-snap { transition-duration: var(--duration-fast); }
 .duration-flow { transition-duration: var(--duration-normal); }
@@ -304,19 +304,19 @@ input[type="number"] {
   100% { width: 1em; }
 }
 
-/* â"€â"€ Dot Grid â"€â"€ */
+/* -- Dot Grid -- */
 .dot-grid {
   background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
-/* â"€â"€ Selection â"€â"€ */
+/* -- Selection -- */
 ::selection {
   background-color: rgba(6, 182, 212, 0.25);
   color: var(--foreground);
 }
 
-/* â"€â"€ Theme Variants â"€â"€ */
+/* -- Theme Variants -- */
 
 /* Dark: Cyan */
 [data-theme="dark-cyan"] {
@@ -383,7 +383,7 @@ input[type="number"] {
   --btn-primary: #9d174d;
 }
 
-/* Dark: Deadpool â€" black/white canvas with blood-red accents */
+/* Dark: Deadpool -- black/white canvas with blood-red accents */
 [data-theme="dark-red"] {
   --primary: #cc0000;
   --accent: #e60000;
@@ -411,7 +411,7 @@ input[type="number"] {
   --status-neutral: #a3a3a3;
 }
 
-/* Matrix — deep black with green phosphor tones */
+/* Matrix -- deep black with green phosphor tones */
 [data-theme="dark-matrix"] {
   --primary: #00ff41;
   --accent: #20c20e;
@@ -441,7 +441,7 @@ input[type="number"] {
   --status-neutral: #6aaa6a;
 }
 
-/* Light â€" warm paper-like palette */
+/* Light -- warm paper-like palette */
 [data-theme="light"] {
   --primary: #2554b0;
   --primary-rgb: 37, 84, 176;
@@ -472,7 +472,7 @@ input[type="number"] {
   --status-neutral: #44444f;
 }
 
-/* Light: Ice â€" icy blue-white palette with cold linear feel */
+/* Light: Ice -- icy blue-white palette with cold linear feel */
 [data-theme="light-ice"] {
   --primary: #2563eb;
   --primary-rgb: 37, 99, 235;
@@ -542,7 +542,7 @@ input[type="number"] {
   box-shadow: var(--ice-shadow-md);
 }
 
-/* Ice: Page border glow — subtle blue radiance along edges */
+/* Ice: Page border glow -- subtle blue radiance along edges */
 [data-theme="light-ice"] body::before {
   content: '';
   position: fixed;
@@ -559,7 +559,7 @@ input[type="number"] {
 [data-theme="light-ice"] .json-highlight .hljs-literal { color: #dc2626; }
 [data-theme="light-ice"] .json-highlight .hljs-punctuation { color: #6b7280; }
 
-/* Light: News — vintage newspaper monochrome palette */
+/* Light: News -- vintage newspaper monochrome palette */
 [data-theme="light-news"] {
   --primary: #1a1a1a;
   --primary-rgb: 26, 26, 26;
@@ -603,7 +603,7 @@ input[type="number"] {
   color: #000000;
 }
 
-/* News: vintage paper texture — faint ruled lines */
+/* News: vintage paper texture -- faint ruled lines */
 [data-theme="light-news"] body::before {
   content: '';
   position: fixed;
@@ -639,7 +639,7 @@ input[type="number"] {
    The light-theme corrections swap 300/400 to 600/700 colored shades.
    For News we override those to monochrome equivalents. */
 
-/* Text: all accent colors → neutral dark grays */
+/* Text: all accent colors -> neutral dark grays */
 [data-theme="light-news"] .text-violet-300,
 [data-theme="light-news"] .text-violet-400,
 [data-theme="light-news"] .text-purple-300,
@@ -678,7 +678,7 @@ input[type="number"] {
 [data-theme="light-news"] .text-lime-300,
 [data-theme="light-news"] .text-lime-400    { color: #2a2a2a; }
 
-/* Background accents → neutral gray tints */
+/* Background accents -> neutral gray tints */
 [data-theme="light-news"] .bg-violet-500\/5,
 [data-theme="light-news"] .bg-violet-500\/10,
 [data-theme="light-news"] .bg-violet-500\/20,
@@ -732,7 +732,7 @@ input[type="number"] {
 [data-theme="light-news"] .bg-teal-500\/15,
 [data-theme="light-news"] .bg-orange-500\/15   { background-color: rgba(0, 0, 0, 0.06); }
 
-/* Border accents → neutral gray */
+/* Border accents -> neutral gray */
 [data-theme="light-news"] .border-violet-500\/15,
 [data-theme="light-news"] .border-violet-500\/20,
 [data-theme="light-news"] .border-violet-500\/25,
@@ -791,14 +791,14 @@ input[type="number"] {
 [data-theme="light-news"] .border-rose-500\/30,
 [data-theme="light-news"] .border-purple-500\/30  { border-color: rgba(0, 0, 0, 0.12); }
 
-/* Ring colors → grayscale */
+/* Ring colors -> grayscale */
 [data-theme="light-news"] .ring-primary\/40 { --tw-ring-color: rgba(26, 26, 26, 0.25); }
 [data-theme="light-news"] .focus-visible\:ring-primary\/40:focus-visible { --tw-ring-color: rgba(26, 26, 26, 0.25); }
 
-/* Shadow glow neutralization — no colored shadows */
+/* Shadow glow neutralization -- no colored shadows */
 [data-theme="light-news"] .shadow-\[0_0_12px_rgba\(59\,130\,246\,0\.15\)\] { box-shadow: 0 0 12px rgba(0, 0, 0, 0.06); }
 
-/* Colored badges/pills in sidebar → neutral */
+/* Colored badges/pills in sidebar -> neutral */
 [data-theme="light-news"] .bg-amber-500 { background-color: #555555; }
 [data-theme="light-news"] .bg-cyan-500  { background-color: #444444; }
 [data-theme="light-news"] .border-amber-600\/50 { border-color: rgba(0, 0, 0, 0.20); }
@@ -806,7 +806,7 @@ input[type="number"] {
 [data-theme="light-news"] .bg-amber-500\/40 { background-color: rgba(85, 85, 85, 0.4); }
 [data-theme="light-news"] .bg-cyan-500\/40  { background-color: rgba(68, 68, 68, 0.4); }
 
-/*â"€â"€ Deadpool theme specials â"€â"€ */
+/*-- Deadpool theme specials -- */
 [data-theme="dark-red"] * {
   scrollbar-color: rgba(204, 0, 0, 0.25) transparent;
 }
@@ -820,7 +820,7 @@ input[type="number"] {
   background-image: radial-gradient(circle, rgba(204, 0, 0, 0.06) 1px, transparent 1px);
 }
 
-/* ── Matrix theme specials ── */
+/* -- Matrix theme specials -- */
 [data-theme="dark-matrix"] * {
   scrollbar-color: rgba(0, 255, 65, 0.15) transparent;
 }
@@ -836,7 +836,7 @@ input[type="number"] {
 
 /* Digital rain: columns of faint falling glyphs via CSS only.
    Uses a repeating-linear-gradient for vertical "scan lines" and a subtle
-   after-pseudo for a gentle top-down fade — zero JS, minimal paint cost. */
+   after-pseudo for a gentle top-down fade -- zero JS, minimal paint cost. */
 [data-theme="dark-matrix"] body::before {
   content: '';
   position: fixed;
@@ -853,7 +853,7 @@ input[type="number"] {
     );
 }
 
-/* Vertical scan-line shimmer — very faint phosphor glow from top */
+/* Vertical scan-line shimmer -- very faint phosphor glow from top */
 [data-theme="dark-matrix"] body::after {
   content: '';
   position: fixed;
@@ -991,7 +991,7 @@ input[type="number"] {
   box-shadow: 0 0 12px rgba(0, 255, 65, 0.15);
 }
 
-/* Matrix: colored sidebar notification badges → green */
+/* Matrix: colored sidebar notification badges -> green */
 [data-theme="dark-matrix"] .bg-amber-500 { background-color: #00cc33; }
 [data-theme="dark-matrix"] .bg-cyan-500  { background-color: #00ff41; }
 [data-theme="dark-matrix"] .border-amber-600\/50 { border-color: rgba(0, 204, 51, 0.50); }
@@ -999,7 +999,7 @@ input[type="number"] {
 [data-theme="dark-matrix"] .bg-amber-500\/40 { background-color: rgba(0, 204, 51, 0.4); }
 [data-theme="dark-matrix"] .bg-cyan-500\/40  { background-color: rgba(0, 255, 65, 0.4); }
 
-/* â"€â"€ Pipeline Animations â"€â"€ */
+/* -- Pipeline Animations -- */
 @keyframes dash-flow {
   from { stroke-dashoffset: 0; }
   to { stroke-dashoffset: -28; }
@@ -1010,7 +1010,7 @@ input[type="number"] {
   to { transform: rotate(360deg); }
 }
 
-/* â"€â"€ JSON Syntax Highlighting (highlight.js tokens) â"€â"€ */
+/* -- JSON Syntax Highlighting (highlight.js tokens) -- */
 .json-highlight .hljs-attr { color: #c4b5fd; }
 .json-highlight .hljs-string { color: #86efac; }
 .json-highlight .hljs-number { color: #93c5fd; }
@@ -1018,7 +1018,7 @@ input[type="number"] {
 .json-highlight .hljs-punctuation { color: #71717a; }
 .json-highlight .hljs-comment { color: #52525b; font-style: italic; }
 
-/* â"€â"€ Persona Vibe Layer â"€â"€
+/* -- Persona Vibe Layer --
    Ambient overlay driven by the selected agent's personality.
    Uses --vibe-* custom properties set by VibeThemeProvider.
    Falls back to transparent / 1 so no visual change when no vibe is active.
@@ -1067,7 +1067,7 @@ input[type="number"] {
   animation-duration: calc(4s / var(--vibe-anim-scale, 1));
 }
 
-/* Vibe-tinted card borders â€" apply subtle glow color to card outlines */
+/* Vibe-tinted card borders -- apply subtle glow color to card outlines */
 [data-vibe="clinical"] .rounded-xl {
   border-color: rgba(148, 163, 184, calc(0.1 * var(--_border)));
 }
@@ -1087,7 +1087,7 @@ input[type="number"] {
   border-color: rgba(71, 85, 105, calc(0.04 * var(--_border)));
 }
 
-/* ── Light-Theme Color Corrections ──
+/* -- Light-Theme Color Corrections --
    Accent-colored buttons use 300/400 Tailwind shades that are designed for
    dark backgrounds.  On light themes we bump them to their 600/700 equivalents
    so they remain legible and visually distinct.  The selectors target both
@@ -1128,7 +1128,7 @@ input[type="number"] {
 [data-theme^="light"] .text-lime-300,
 [data-theme^="light"] .text-lime-400    { color: #65a30d; }
 
-/* ── Light: Pastel Text Opacity Variants ──
+/* -- Light: Pastel Text Opacity Variants --
    text-*-300/60 and text-*-400/70 etc. are used in badge sub-labels and
    secondary text within colored pills. The base overrides above catch the
    non-opacity versions; these handle the /50 through /80 opacity modifiers
@@ -1263,7 +1263,7 @@ input[type="number"] {
 [data-theme^="light"] .text-slate-300\/80,
 [data-theme^="light"] .text-slate-400\/80  { color: rgba(71, 85, 105, 0.95); }
 
-/* News theme: all pastel-opacity text → neutral gray */
+/* News theme: all pastel-opacity text -> neutral gray */
 [data-theme="light-news"] .text-blue-300\/50,
 [data-theme="light-news"] .text-blue-300\/60,
 [data-theme="light-news"] .text-blue-300\/70,
@@ -1417,9 +1417,9 @@ input[type="number"] {
 [data-theme^="light"] .bg-primary\/5  { background-color: rgba(var(--primary-rgb, 37, 99, 235), 0.07); }
 [data-theme^="light"] .bg-primary\/10 { background-color: rgba(var(--primary-rgb, 37, 99, 235), 0.12); }
 
-/* ── Light: Typography Contrast Fixes ──
+/* -- Light: Typography Contrast Fixes --
    On dark themes muted-foreground is ~#94a3b8 and opacity /50 /60 are fine.
-   On light themes muted-foreground is ~#44444f – at /50 that's only #44444f80
+   On light themes muted-foreground is ~#44444f -- at /50 that's only #44444f80
    which is too faint on a ~#f0ede6 background.  Boost all low-opacity text. */
 
 /* Boost muted-foreground opacity variants to be readable */
@@ -1439,19 +1439,19 @@ input[type="number"] {
 [data-theme^="light"] .text-foreground\/80 { color: var(--foreground); opacity: 0.92; }
 [data-theme^="light"] .text-foreground\/90 { color: var(--foreground); opacity: 0.96; }
 
-/* Gray/slate text designed for dark bg → shift to darker shades */
+/* Gray/slate text designed for dark bg -> shift to darker shades */
 [data-theme^="light"] .text-gray-300  { color: #4b5563; }
 [data-theme^="light"] .text-gray-400  { color: #374151; }
 [data-theme^="light"] .text-gray-500  { color: #374151; }
 
-/* Placeholder text – boost faint placeholders */
+/* Placeholder text -- boost faint placeholders */
 [data-theme^="light"] .placeholder-muted-foreground\/30::placeholder,
 [data-theme^="light"] .placeholder\:text-muted-foreground\/30::placeholder { color: var(--muted-foreground); opacity: 0.55; }
 [data-theme^="light"] .placeholder-muted-foreground\/40::placeholder,
 [data-theme^="light"] .placeholder\:text-muted-foreground\/40::placeholder { color: var(--muted-foreground); opacity: 0.60; }
 [data-theme^="light"] .placeholder\:text-muted-foreground\/60::placeholder { color: var(--muted-foreground); opacity: 0.70; }
 
-/* ── Light: Gradient Background Fixes ──
+/* -- Light: Gradient Background Fixes --
    from-black/* gradients create dark overlays invisible on light pages.
    Override them to use foreground-aware dark tones. */
 [data-theme^="light"] .from-black\/60 { --tw-gradient-from: rgba(0, 0, 0, 0.45); }
@@ -1459,7 +1459,7 @@ input[type="number"] {
 [data-theme^="light"] .from-black\/20 { --tw-gradient-from: rgba(0, 0, 0, 0.12); }
 [data-theme^="light"] .to-black\/\[0\.02\] { --tw-gradient-to: rgba(0, 0, 0, 0.04); }
 
-/* ── Light: White-on-dark Utility Overrides ──
+/* -- Light: White-on-dark Utility Overrides --
    bg-white/* and border-white/* are glass patterns for dark themes.
    On light themes they vanish. Invert to black-based. */
 [data-theme^="light"] .bg-white\/3  { background-color: rgba(0, 0, 0, 0.03); }
@@ -1470,7 +1470,7 @@ input[type="number"] {
 [data-theme^="light"] .border-white\/10 { border-color: rgba(0, 0, 0, 0.08); }
 [data-theme^="light"] .border-white\/20 { border-color: rgba(0, 0, 0, 0.10); }
 
-/* ── Light: Boost Accent /20 Backgrounds ──
+/* -- Light: Boost Accent /20 Backgrounds --
    bg-color-500/20 is used for active states and badges */
 [data-theme^="light"] .bg-violet-500\/20  { background-color: rgba(124, 58, 237, 0.18); }
 [data-theme^="light"] .bg-emerald-500\/20 { background-color: rgba(16, 185, 129, 0.18); }
@@ -1479,7 +1479,7 @@ input[type="number"] {
 [data-theme^="light"] .bg-red-500\/20     { background-color: rgba(239, 68, 68, 0.15); }
 [data-theme^="light"] .bg-blue-500\/20    { background-color: rgba(59, 130, 246, 0.18); }
 
-/* ── Light: Boost Accent /5 and /8 Backgrounds ── */
+/* -- Light: Boost Accent /5 and /8 Backgrounds -- */
 [data-theme^="light"] .bg-violet-500\/5  { background-color: rgba(124, 58, 237, 0.08); }
 [data-theme^="light"] .bg-emerald-500\/5 { background-color: rgba(16, 185, 129, 0.08); }
 [data-theme^="light"] .bg-cyan-500\/5    { background-color: rgba(6, 182, 212, 0.08); }
@@ -1487,7 +1487,7 @@ input[type="number"] {
 [data-theme^="light"] .bg-red-500\/8     { background-color: rgba(239, 68, 68, 0.10); }
 [data-theme^="light"] .bg-purple-500\/8  { background-color: rgba(168, 85, 247, 0.10); }
 
-/* ── Light: Accent Border /15 and /25 Boosts ── */
+/* -- Light: Accent Border /15 and /25 Boosts -- */
 [data-theme^="light"] .border-violet-500\/25  { border-color: rgba(124, 58, 237, 0.30); }
 [data-theme^="light"] .border-emerald-500\/25 { border-color: rgba(16, 185, 129, 0.30); }
 [data-theme^="light"] .border-cyan-500\/25    { border-color: rgba(6, 182, 212, 0.30); }
@@ -1496,12 +1496,12 @@ input[type="number"] {
 [data-theme^="light"] .border-emerald-500\/15 { border-color: rgba(16, 185, 129, 0.22); }
 [data-theme^="light"] .border-violet-500\/15  { border-color: rgba(124, 58, 237, 0.22); }
 
-/* ── Light: Boost primary-opacity patterns ── */
+/* -- Light: Boost primary-opacity patterns -- */
 [data-theme^="light"] .border-primary\/10  { border-color: rgba(var(--primary-rgb, 37, 99, 235), 0.18); }
 [data-theme^="light"] .border-primary\/15  { border-color: rgba(var(--primary-rgb, 37, 99, 235), 0.22); }
 [data-theme^="light"] .border-primary\/20  { border-color: rgba(var(--primary-rgb, 37, 99, 235), 0.28); }
 
-/* ── Light: Scrollbar for dark-overlay areas ── */
+/* -- Light: Scrollbar for dark-overlay areas -- */
 [data-theme^="light"] .scrollbar-dark { scrollbar-color: rgba(0, 0, 0, 0.18) transparent; }
 
 /* Light: JSON syntax highlighting */
@@ -1511,7 +1511,7 @@ input[type="number"] {
 [data-theme="light"] .json-highlight .hljs-literal { color: #dc2626; }
 [data-theme="light"] .json-highlight .hljs-punctuation { color: #6b7280; }
 
-/* â"€â"€ Theme Transition â"€â"€ */
+/* -- Theme Transition -- */
 .theme-transitioning,
 .theme-transitioning *,
 .theme-transitioning *::before,

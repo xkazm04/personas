@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Share2, Plus, Loader2, Package, Eye, GitFork, Trash2 } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import type { ExposedResource, CreateExposedResourceInput } from '@/api/network/exposure';
+import type { ExposedResource, CreateExposedResourceInput, AccessLevel, ResourceType } from '@/api/network/exposure';
 import { IdentitySettings } from './IdentitySettings';
+import { InlineConfirm } from './InlineConfirm';
 import { NetworkDashboard } from './NetworkDashboard';
 import { PeerList } from './PeerList';
 
@@ -30,15 +31,15 @@ function ResourceExposureCard({
   resource: ExposedResource;
   onDelete: (id: string) => void;
 }) {
-  const AccessIcon = ACCESS_ICONS[resource.access_level as keyof typeof ACCESS_ICONS] ?? Eye;
-  const colorClass = ACCESS_COLORS[resource.access_level as keyof typeof ACCESS_COLORS] ?? ACCESS_COLORS.read;
+  const AccessIcon = ACCESS_ICONS[resource.access_level] ?? Eye;
+  const colorClass = ACCESS_COLORS[resource.access_level] ?? ACCESS_COLORS.read;
 
-  const parsedFields: string[] = (() => {
+  const parsedFields: string[] = useMemo(() => {
     try { return JSON.parse(resource.fields_exposed); } catch { return []; }
-  })();
-  const parsedTags: string[] = (() => {
+  }, [resource.fields_exposed]);
+  const parsedTags: string[] = useMemo(() => {
     try { return JSON.parse(resource.tags); } catch { return []; }
-  })();
+  }, [resource.tags]);
 
   return (
     <div className="rounded-xl border border-border bg-secondary/20 p-3 flex items-center justify-between gap-3">
@@ -72,13 +73,20 @@ function ResourceExposureCard({
           </div>
         )}
       </div>
-      <button
-        onClick={() => onDelete(resource.id)}
-        title="Remove exposure"
-        className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0"
+      <InlineConfirm
+        message={`Remove exposure for ${resource.display_name || resource.resource_id}?`}
+        onConfirm={() => onDelete(resource.id)}
       >
-        <Trash2 className="w-3.5 h-3.5" />
-      </button>
+        {({ requestConfirm }) => (
+          <button
+            onClick={requestConfirm}
+            title="Remove exposure"
+            className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </InlineConfirm>
     </div>
   );
 }
@@ -91,9 +99,9 @@ function AddExposureForm({
   onCancel: () => void;
 }) {
   const personas = usePersonaStore((s) => s.personas);
-  const [resourceType, setResourceType] = useState<string>('persona');
+  const [resourceType, setResourceType] = useState<ResourceType>('persona');
   const [resourceId, setResourceId] = useState('');
-  const [accessLevel, setAccessLevel] = useState<string>('read');
+  const [accessLevel, setAccessLevel] = useState<AccessLevel>('read');
   const [tags, setTags] = useState('');
 
   const selectedPersona = personas.find((p) => p.id === resourceId);
@@ -121,7 +129,7 @@ function AddExposureForm({
           <label className="text-xs text-muted-foreground mb-1 block">Resource Type</label>
           <select
             value={resourceType}
-            onChange={(e) => { setResourceType(e.target.value); setResourceId(''); }}
+            onChange={(e) => { setResourceType(e.target.value as ResourceType); setResourceId(''); }}
             className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/40"
           >
             {RESOURCE_TYPES.map((t) => (
@@ -133,7 +141,7 @@ function AddExposureForm({
           <label className="text-xs text-muted-foreground mb-1 block">Access Level</label>
           <select
             value={accessLevel}
-            onChange={(e) => setAccessLevel(e.target.value)}
+            onChange={(e) => setAccessLevel(e.target.value as AccessLevel)}
             className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/40"
           >
             {ACCESS_LEVELS.map((l) => (
@@ -215,8 +223,10 @@ export default function ExposureManager() {
       const res = await createExposedResource(input);
       setShowAddForm(false);
       addToast(`Resource "${res.display_name || res.resource_id}" exposed`, 'success');
-    } catch {
-      addToast('Failed to expose resource', 'error');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn('[ExposureManager] Failed to expose resource', { resource_type: input.resource_type, resource_id: input.resource_id, error: msg });
+      addToast(`Failed to expose resource: ${msg}`, 'error');
     }
   };
 
@@ -224,8 +234,10 @@ export default function ExposureManager() {
     try {
       await deleteExposedResource(id);
       addToast('Resource exposure removed', 'success');
-    } catch {
-      addToast('Failed to remove exposure', 'error');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn('[ExposureManager] Failed to remove exposure', { id, error: msg });
+      addToast(`Failed to remove exposure: ${msg}`, 'error');
     }
   };
 
@@ -262,11 +274,15 @@ export default function ExposureManager() {
               </button>
             </div>
 
-            {showAddForm && (
-              <div className="mb-3">
+            <div
+              className={`grid transition-all duration-200 ease-in-out ${
+                showAddForm ? 'grid-rows-[1fr] opacity-100 mb-3' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="overflow-hidden">
                 <AddExposureForm onAdd={handleAdd} onCancel={() => setShowAddForm(false)} />
               </div>
-            )}
+            </div>
 
             {loading ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground py-4 justify-center">

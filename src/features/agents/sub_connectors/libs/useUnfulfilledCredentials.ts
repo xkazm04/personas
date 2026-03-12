@@ -101,7 +101,7 @@ export function useUnfulfilledCredentials(persona?: PersonaWithDetails | null) {
       const ctx = target.design_context ? JSON.parse(target.design_context) : {};
       if (ctx.credentialLinks) credentialLinks.set(target.id, ctx.credentialLinks);
     } catch {
-      // intentional: non-critical — design_context may not be valid JSON
+      // intentional: non-critical -- design_context may not be valid JSON
     }
 
     const demands = computeUnfulfilled(personas, credentials, connectors, credentialLinks);
@@ -129,7 +129,7 @@ export function useGlobalUnfulfilledCredentials() {
   const connectors = usePersonaStore((s) => s.connectorDefinitions);
 
   return useMemo((): CredentialDemandSummary => {
-    // DbPersona doesn't have tools directly — we'd need PersonaWithDetails for each.
+    // DbPersona doesn't have tools directly -- we'd need PersonaWithDetails for each.
     // For the global view, we approximate by matching personas' design_context credentialLinks
     // against the credential store. This is a lighter query since we don't fetch full details.
     // The actual demand detection happens per-persona in the agent editor.

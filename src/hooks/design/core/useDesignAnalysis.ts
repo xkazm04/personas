@@ -5,7 +5,7 @@ import { useTauriStream } from './useTauriStream';
 import { applyDesignResult, retryFailedOperations, type ApplyDesignSelections, type FailedOperation } from '../credential/applyDesignResult';
 import type { DesignPhase, AgentIR, DesignQuestion } from '@/lib/types/designTypes';
 
-// â”€â”€ Stream outcome discriminator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Stream outcome discriminator ------------------------------------
 // The design status event produces three outcomes (result, question, error).
 // useTauriStream natively handles result + error; we encode questions as
 // a result variant and route them in a useEffect.
@@ -16,9 +16,9 @@ type DesignStreamOutcome =
 
 const MAX_OUTPUT_LINES = 500;
 
-// â”€â”€ Stable stream option callbacks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Stable stream option callbacks ----------------------------------
 // Defined outside the hook so they don't recreate on every render.
-// They reference `designIdRef` which is a ref â€” always current.
+// They reference `designIdRef` which is a ref -- always current.
 
 let _designIdRef: React.RefObject<string | null>;
 
@@ -45,7 +45,7 @@ function resolveStatus(payload: Record<string, unknown>):
   return null;
 }
 
-// â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Hook ------------------------------------------------------------
 
 export function useDesignAnalysis() {
   // Design-specific state (layered on top of the generic stream)
@@ -66,7 +66,7 @@ export function useDesignAnalysis() {
   const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
   const refreshPersonas = usePersonaStore((s) => s.fetchPersonas);
 
-  // â”€â”€ Core streaming via useTauriStream â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Core streaming via useTauriStream -----------------------------
   // Handles: listener lifecycle, line accumulation, cleanup on unmount,
   // timeout, and basic phase + error management.
   const stream = useTauriStream<DesignStreamOutcome>({
@@ -78,7 +78,7 @@ export function useDesignAnalysis() {
     runningPhase: '__design_running__',
   });
 
-  // â”€â”€ Route stream outcomes to design-specific state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Route stream outcomes to design-specific state ----------------
 
   useEffect(() => {
     const outcome = stream.result;
@@ -94,7 +94,7 @@ export function useDesignAnalysis() {
     }
   }, [stream.result]);
 
-  // Route stream errors â€” refine failures fall back to 'preview' (preserving
+  // Route stream errors -- refine failures fall back to 'preview' (preserving
   // the previous result), while analysis failures go to 'error'.
   useEffect(() => {
     if (stream.phase === 'error' && stream.error) {
@@ -102,13 +102,13 @@ export function useDesignAnalysis() {
     }
   }, [stream.phase, stream.error]);
 
-  // â”€â”€ Derived output (filtered empty strings from design-id guard + capped) â”€â”€
+  // -- Derived output (filtered empty strings from design-id guard + capped) --
   const outputLines = useMemo(() => {
     const filtered = stream.lines.filter(Boolean);
     return filtered.length > MAX_OUTPUT_LINES ? filtered.slice(-MAX_OUTPUT_LINES) : filtered;
   }, [stream.lines]);
 
-  // â”€â”€ Start methods â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Start methods -------------------------------------------------
 
   const startAnalysis = useCallback(async (
     personaId: string,
@@ -154,7 +154,7 @@ export function useDesignAnalysis() {
 
     setDesignPhase('refining');
     setQuestion(null);
-    // Note: designResult is NOT cleared â€” preserved for fallback on failure.
+    // Note: designResult is NOT cleared -- preserved for fallback on failure.
 
     await stream.start(() =>
       refineDesign(
@@ -181,7 +181,7 @@ export function useDesignAnalysis() {
     setQuestion(null);
   }, [stream.cancel]);
 
-  // â”€â”€ Apply result â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Apply result --------------------------------------------------
 
   const applyResultCb = useCallback(async (selections?: ApplyDesignSelections) => {
     if (!personaIdRef.current || !designResult || applyingRef.current) return;

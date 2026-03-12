@@ -44,7 +44,7 @@ export const LICENSE_TIER_META: Record<LicenseTier, LicenseTierMeta> = {
  * Connectors not listed here fall back to metadata.pricing_tier mapping.
  */
 const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
-  // â”€â”€ Personal (free) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Personal (free) ---------------------------------
   azure_devops:                    'personal',
   kubernetes:                      'personal',
   github:                          'personal',
@@ -103,7 +103,7 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   knock:                           'personal',
   ntfy:                            'personal',
 
-  // â”€â”€ Paid (no meaningful free tier) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Paid (no meaningful free tier) ------------------
   leonardo_ai:                     'paid',
   cal_com:                         'personal',
   calendly:                        'paid',
@@ -118,7 +118,7 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   planetscale:                     'paid',
   zapier:                          'paid',
 
-  // â”€â”€ Enterprise â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Enterprise --------------------------------------
   hubspot:                         'enterprise',
 };
 

@@ -3,7 +3,7 @@
 //! Both credential design and the credential negotiator follow an identical
 //! lifecycle:
 //!
-//!   idle â†’ running â†’ completed | error
+//!   idle -> running -> completed | error
 //!
 //! They both:
 //! - spawn Claude CLI via `spawn_claude_and_collect`
@@ -27,7 +27,7 @@ use tokio::process::Command;
 use crate::engine::parser::parse_stream_line;
 use crate::engine::types::StreamLineType;
 
-// â”€â”€ Message configuration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Message configuration ----------------------------------------
 
 /// Progress and status message labels that differ between artifact flows.
 ///
@@ -43,9 +43,9 @@ pub struct AiArtifactMessages {
     pub id_field: &'static str,
     /// Initial status value emitted at start (e.g. `"analyzing"`).
     pub initial_status: &'static str,
-    /// Progress line after SystemInit (e.g. `"Analyzing service requirementsâ€¦"`).
+    /// Progress line after SystemInit (e.g. `"Analyzing service requirements..."`).
     pub init_progress: &'static str,
-    /// Progress line on first AssistantText (e.g. `"Designing connector structureâ€¦"`).
+    /// Progress line on first AssistantText (e.g. `"Designing connector structure..."`).
     pub streaming_progress: &'static str,
     /// Prefix for the Result progress line (e.g. `"Analysis complete"`).
     pub complete_prefix: &'static str,
@@ -59,7 +59,7 @@ pub struct AiArtifactMessages {
     pub timeout_secs: u64,
 }
 
-// â”€â”€ Task parameters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Task parameters ----------------------------------------------
 
 /// Everything needed to run a single AI artifact generation task.
 pub struct AiArtifactParams {
@@ -80,7 +80,7 @@ pub struct AiArtifactParams {
     pub extractor: fn(&str) -> Option<serde_json::Value>,
 }
 
-// â”€â”€ Emit helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Emit helpers -------------------------------------------------
 
 /// Emit a progress line on the configured progress event channel.
 fn emit_task_progress(app: &tauri::AppHandle, event: &str, id_field: &str, task_id: &str, line: &str) {
@@ -105,14 +105,14 @@ fn emit_task_status(
     }));
 }
 
-// â”€â”€ Generic task runner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Generic task runner ------------------------------------------
 
 /// Run a complete AI artifact generation task.
 ///
 /// This is the shared lifecycle that both credential design and negotiation
 /// (and any future AI-artifact flows) use:
 ///
-/// 1. Emit initial status + "Connecting to Claudeâ€¦"
+/// 1. Emit initial status + "Connecting to Claude..."
 /// 2. Spawn Claude CLI, stream lines, emit progress
 /// 3. Check cancellation
 /// 4. Extract result via `params.extractor`
@@ -136,6 +136,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
     let idf = messages.id_field;
     let tid = task_id.clone();
     let mut emitted_streaming = false;
+    let started_at = std::time::Instant::now();
     let result = spawn_claude_and_collect(
         &cli_args,
         prompt_text,
@@ -183,9 +184,18 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
     };
 
     if is_cancelled {
-        tracing::info!(task_id = %task_id, label = messages.log_label, "AI artifact task cancelled");
+        let duration_ms = started_at.elapsed().as_millis() as u64;
+        tracing::info!(
+            task_id = %task_id,
+            operation = messages.log_label,
+            duration_ms,
+            outcome = "cancelled",
+            "AI artifact task cancelled"
+        );
         return;
     }
+
+    let duration_ms = started_at.elapsed().as_millis() as u64;
 
     match result {
         Err(error_msg) => {
@@ -196,7 +206,16 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
                     *guard = None;
                 }
             }
-            tracing::error!(task_id = %task_id, label = messages.log_label, error = %error_msg, "Claude CLI failed");
+            let is_timeout = error_msg.contains("timed out");
+            tracing::error!(
+                task_id = %task_id,
+                operation = messages.log_label,
+                duration_ms,
+                outcome = if is_timeout { "timeout" } else { "error" },
+                timeout_secs = messages.timeout_secs,
+                error = %error_msg,
+                "AI artifact task failed"
+            );
             emit_task_status(&app, messages.status_event, messages.id_field, &task_id, "failed", None, Some(error_msg));
         }
         Ok(spawn_result) => {
@@ -217,6 +236,13 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
                             *guard = None;
                         }
                     }
+                    tracing::info!(
+                        task_id = %task_id,
+                        operation = messages.log_label,
+                        duration_ms,
+                        outcome = "success",
+                        "AI artifact task completed"
+                    );
                     emit_task_progress(&app, messages.progress_event, messages.id_field, &task_id, messages.success_progress);
                     emit_task_status(&app, messages.status_event, messages.id_field, &task_id, "completed", Some(extracted), None);
                 }
@@ -227,10 +253,14 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
                             *guard = None;
                         }
                     }
+                    let raw_preview: String = spawn_result.text_output.chars().take(500).collect();
                     tracing::warn!(
                         task_id = %task_id,
-                        label = messages.log_label,
+                        operation = messages.log_label,
+                        duration_ms,
+                        outcome = "extraction_failed",
                         text_output_len = spawn_result.text_output.len(),
+                        raw_output_preview = %raw_preview,
                         "Failed to extract result from Claude text output"
                     );
                     emit_task_status(
@@ -248,7 +278,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
     }
 }
 
-// â”€â”€ Claude CLI spawn helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Claude CLI spawn helper --------------------------------------
 
 /// Result from spawning Claude CLI and collecting output.
 pub struct ClaudeSpawnResult {
@@ -376,10 +406,10 @@ pub async fn spawn_claude_and_collect(
     })
     .await;
 
-    // On timeout, kill the process BEFORE waiting â€” otherwise wait() hangs
+    // On timeout, kill the process BEFORE waiting -- otherwise wait() hangs
     // because the process is still running.
     if stream_result.is_err() {
-        tracing::warn!("Claude CLI timed out after {timeout_secs}s â€” killing process");
+        tracing::warn!("Claude CLI timed out after {timeout_secs}s -- killing process");
         let _ = child.kill().await;
         // Also kill via PID tree on Windows to clean up child processes
         if let Some(pid_ref) = child_pid_out {
@@ -438,7 +468,7 @@ pub async fn spawn_claude_and_collect(
 
 /// Convenience: spawn Claude, collect text, return the text or an error.
 ///
-/// This is a simpler variant that doesn't stream progress events â€” useful for
+/// This is a simpler variant that doesn't stream progress events -- useful for
 /// one-shot prompts like healthcheck generation or step-help.
 pub async fn run_claude_prompt(
     prompt_text: String,

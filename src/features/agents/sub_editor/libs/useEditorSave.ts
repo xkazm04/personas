@@ -6,17 +6,21 @@ import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '../../sub_model_config/O
 import { getCopilotPreset } from '../../sub_model_config/CopilotPresets';
 import { useTabSection } from './useTabSection';
 import { useDebouncedSaveGroup } from './useDebouncedSaveGroup';
+import { useEditorHistory, type UndoEntry } from './EditorDocument';
+import type { PersonaOperation } from '@/api/agents/personas';
 
 interface UseEditorSaveOptions {
   draft: PersonaDraft;
   baseline: PersonaDraft;
+  setDraft: React.Dispatch<React.SetStateAction<PersonaDraft>>;
   setBaseline: React.Dispatch<React.SetStateAction<PersonaDraft>>;
   pendingPersonaId: string | null;
 }
 
-export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }: UseEditorSaveOptions) {
+export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingPersonaId }: UseEditorSaveOptions) {
   const selectedPersona = usePersonaStore((s) => s.selectedPersona);
   const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
+  const { pushUndo } = useEditorHistory();
 
   // Keep latest draft/baseline in refs so save callbacks never capture stale state
   const draftRef = useRef(draft);
@@ -27,9 +31,24 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
   const settingsDirty = draftChanged(draft, baseline, SETTINGS_KEYS);
   const modelDirty = draftChanged(draft, baseline, MODEL_KEYS);
 
+  /** Build an undo entry that restores draft+baseline to `prev` for the given keys. */
+  const makeUndoEntry = useCallback(
+    (op: PersonaOperation, prev: PersonaDraft, keys: readonly (keyof PersonaDraft)[]): UndoEntry => ({
+      operation: op,
+      restore: async () => {
+        const patch: Partial<PersonaDraft> = {};
+        for (const k of keys) (patch as Record<string, unknown>)[k] = prev[k];
+        setDraft((d) => ({ ...d, ...patch }));
+        setBaseline((b) => ({ ...b, ...patch }));
+      },
+    }),
+    [setDraft, setBaseline],
+  );
+
   const performSettingsSave = useCallback(async (d: PersonaDraft) => {
     if (!selectedPersona) return;
-    await applyPersonaOp(selectedPersona.id, {
+    const prevBaseline = { ...baselineRef.current };
+    const op: PersonaOperation = {
       kind: 'UpdateSettings',
       name: d.name,
       description: d.description || null,
@@ -39,12 +58,15 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
       timeout_ms: d.timeout,
       enabled: d.enabled,
       sensitive: d.sensitive,
-    });
+    };
+    await applyPersonaOp(selectedPersona.id, op);
     setBaseline((prev) => ({ ...prev, name: d.name, description: d.description, icon: d.icon, color: d.color, maxConcurrent: d.maxConcurrent, timeout: d.timeout, enabled: d.enabled, sensitive: d.sensitive }));
-  }, [selectedPersona, applyPersonaOp, setBaseline]);
+    pushUndo(makeUndoEntry(op, prevBaseline, SETTINGS_KEYS));
+  }, [selectedPersona, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
 
   const performModelSave = useCallback(async (d: PersonaDraft) => {
     if (!selectedPersona) return;
+    const prevBaseline = { ...baselineRef.current };
 
     let profile: string | null;
     const ollamaPreset = getOllamaPreset(d.selectedModel);
@@ -75,14 +97,16 @@ export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }
       } satisfies ModelProfile);
     }
 
-    await applyPersonaOp(selectedPersona.id, {
+    const op: PersonaOperation = {
       kind: 'SwitchModel',
       model_profile: profile,
       max_budget_usd: d.maxBudget === '' ? null : d.maxBudget,
       max_turns: d.maxTurns === '' ? null : d.maxTurns,
-    });
+    };
+    await applyPersonaOp(selectedPersona.id, op);
     setBaseline((prev) => ({ ...prev, selectedModel: d.selectedModel, selectedProvider: d.selectedProvider, baseUrl: d.baseUrl, authToken: d.authToken, customModelName: d.customModelName, maxBudget: d.maxBudget, maxTurns: d.maxTurns }));
-  }, [selectedPersona, applyPersonaOp, setBaseline]);
+    pushUndo(makeUndoEntry(op, prevBaseline, MODEL_KEYS));
+  }, [selectedPersona, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
 
   const handleSaveSettings = useDebouncedSaveGroup({
     draftRef,

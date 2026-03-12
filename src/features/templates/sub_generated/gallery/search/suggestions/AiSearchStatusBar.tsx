@@ -32,7 +32,7 @@ export function AiSearchStatusBar({
         {aiSearchLoading ? (
           <>
             <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin flex-shrink-0" />
-            <span className="text-sm text-indigo-300/80">Searching with AI — results will appear when ready...</span>
+            <span className="text-sm text-indigo-300/80">Searching with AI -- results will appear when ready...</span>
           </>
         ) : aiSearchActive ? (
           <>

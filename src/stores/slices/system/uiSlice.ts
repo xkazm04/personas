@@ -12,7 +12,7 @@ export interface AdoptionDraft {
   connectorCredentialMap: Record<string, string>;
   variableValues: Record<string, string>;
   savedAt: number;
-  // Extended fields â€” persisted for full session restore
+  // Extended fields -- persisted for full session restore
   triggerConfigs?: Record<number, Record<string, string>>;
   requireApproval?: boolean;
   autoApproveSeverity?: string;
@@ -22,7 +22,7 @@ export interface AdoptionDraft {
   userAnswers?: Record<string, string>;
   /** Non-null when the user closed while a background transform was running. */
   backgroundAdoptId?: string | null;
-  /** Persisted entity selections (Phase C â€” Area #13) */
+  /** Persisted entity selections (Phase C -- Area #13) */
   selectedUseCaseIds?: string[];
 }
 
@@ -49,6 +49,8 @@ export interface UiSlice {
   templateGalleryTotal: number;
   devToolsTab: DevToolsTab;
   adoptionDraft: AdoptionDraft | null;
+  contextScanActive: boolean;
+  contextScanComplete: boolean;
 
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
@@ -71,6 +73,8 @@ export interface UiSlice {
   setTemplateGalleryTotal: (total: number) => void;
   setAdoptionDraft: (draft: AdoptionDraft | null) => void;
   setDevToolsTab: (tab: DevToolsTab) => void;
+  setContextScanActive: (active: boolean) => void;
+  setContextScanComplete: (complete: boolean) => void;
 }
 
 export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) => ({
@@ -95,6 +99,8 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   templateGalleryTotal: 0,
   devToolsTab: "projects" as DevToolsTab,
   adoptionDraft: null,
+  contextScanActive: false,
+  contextScanComplete: false,
 
   setSidebarSection: (section) => set({ sidebarSection: section }),
   setHomeTab: (tab) => set({ homeTab: tab }),
@@ -116,4 +122,6 @@ export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) 
   setTemplateGalleryTotal: (total) => set({ templateGalleryTotal: total }),
   setAdoptionDraft: (draft) => set({ adoptionDraft: draft }),
   setDevToolsTab: (tab) => set({ devToolsTab: tab }),
+  setContextScanActive: (active) => set({ contextScanActive: active }),
+  setContextScanComplete: (complete) => set({ contextScanComplete: complete }),
 });

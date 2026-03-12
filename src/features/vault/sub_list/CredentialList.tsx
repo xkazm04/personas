@@ -5,6 +5,7 @@ import { ThemedConnectorIcon } from '@/features/shared/components/display/Connec
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { CredentialPlaygroundModal } from '@/features/vault/sub_playground/CredentialPlaygroundModal';
 import { SchemaManagerModal } from '@/features/vault/sub_databases/SchemaManagerModal';
+import { VectorKbModal } from '@/features/vault/sub_vector/VectorKbModal';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
@@ -280,7 +281,14 @@ export function CredentialList({
       />
 
       {/* Credential detail modal */}
-      {selectedCredential && selectedIsDatabase && (
+      {selectedCredential && selectedIsDatabase && selectedCredential.service_type === 'personas_vector_db' && (
+        <VectorKbModal
+          credential={selectedCredential}
+          connector={selectedConnector}
+          onClose={() => setSelectedId(null)}
+        />
+      )}
+      {selectedCredential && selectedIsDatabase && selectedCredential.service_type !== 'personas_vector_db' && (
         <SchemaManagerModal
           credential={selectedCredential}
           connector={selectedConnector}

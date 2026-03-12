@@ -53,15 +53,24 @@ export function useToolImpactData(): Map<string, ToolImpactData> {
           const ucMap = toolUseCaseMap.get(toolName)!;
           ucMap.set(exec.use_case_id, (ucMap.get(exec.use_case_id) ?? 0) + 1);
         }
-        if (!toolCoMap.has(toolName)) toolCoMap.set(toolName, new Map());
-        const coMap = toolCoMap.get(toolName)!;
-        for (const other of toolNames) {
-          if (other !== toolName) coMap.set(other, (coMap.get(other) ?? 0) + 1);
-        }
         if (!toolCostMap.has(toolName)) toolCostMap.set(toolName, { totalCost: 0, invocations: 0 });
         const cost = toolCostMap.get(toolName)!;
         cost.totalCost += costPerTool;
         cost.invocations += 1;
+      }
+
+      // Co-occurrence: use combination pairs (i<j) to halve iterations
+      for (let i = 0; i < toolNames.length; i++) {
+        for (let j = i + 1; j < toolNames.length; j++) {
+          const a = toolNames[i]!;
+          const b = toolNames[j]!;
+          if (!toolCoMap.has(a)) toolCoMap.set(a, new Map());
+          if (!toolCoMap.has(b)) toolCoMap.set(b, new Map());
+          const mapA = toolCoMap.get(a)!;
+          const mapB = toolCoMap.get(b)!;
+          mapA.set(b, (mapA.get(b) ?? 0) + 1);
+          mapB.set(a, (mapB.get(a) ?? 0) + 1);
+        }
       }
     }
 

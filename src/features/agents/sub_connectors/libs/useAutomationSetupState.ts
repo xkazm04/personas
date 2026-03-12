@@ -86,7 +86,7 @@ export function useAutomationSetupState(personaId: string, editAutomationId?: st
 
   const handleDesign = useCallback(() => {
     if (!description.trim()) return;
-    design.start({ personaId, description: description.trim() });
+    design.start(personaId, description.trim());
   }, [description, design, personaId]);
 
   const handleDeploy = async () => {

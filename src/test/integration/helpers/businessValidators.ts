@@ -16,9 +16,9 @@ import type {
   QueryDebugResult,
 } from './businessParsers';
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Shared helper
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 function dim(name: string, weight: number, score: number, detail: string): QualityDimension {
   return { name, weight, score, detail };
@@ -31,9 +31,9 @@ function hasNonEmpty(obj: Record<string, unknown>, key: string): boolean {
   return val !== undefined && val !== null;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 1. Persona Design Validator
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 export function validateDesignResult(output: DesignOutput | null): QualityDimension[] {
   if (!output) {
@@ -125,9 +125,9 @@ export function validateDesignResult(output: DesignOutput | null): QualityDimens
   return dims;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 2. Credential Design Validator
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 export function validateCredentialDesignResult(result: CredentialDesignResult | null): QualityDimension[] {
   if (!result) {
@@ -140,7 +140,7 @@ export function validateCredentialDesignResult(result: CredentialDesignResult | 
 
   const c = result.connector;
 
-  // connector.name — must be snake_case
+  // connector.name -- must be snake_case
   const isSnakeCase = /^[a-z][a-z0-9_]*$/.test(c.name);
   dims.push(dim('Connector Name', 2, isSnakeCase ? 1 : 0.3,
     `"${c.name}" ${isSnakeCase ? '(valid snake_case)' : '(not snake_case)'}`));
@@ -150,7 +150,7 @@ export function validateCredentialDesignResult(result: CredentialDesignResult | 
     typeof c.label === 'string' && c.label.length > 2 ? 1 : 0,
     c.label || 'Missing'));
 
-  // fields — at least one, with proper types
+  // fields -- at least one, with proper types
   const validFieldTypes = new Set(['password', 'text']);
   const validFields = c.fields.filter(f =>
     typeof f.key === 'string' &&
@@ -188,9 +188,9 @@ export function validateCredentialDesignResult(result: CredentialDesignResult | 
   return dims;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 3. Credential Healthcheck Validator
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 export function validateHealthcheckResult(result: HealthcheckResult | null): QualityDimension[] {
   if (!result) {
@@ -247,9 +247,9 @@ export function validateHealthcheckResult(result: HealthcheckResult | null): Qua
   return dims;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 4. N8N Transform Validator
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 export function validateTransformOutput(output: N8nTransformOutput | null): QualityDimension[] {
   if (!output) {
@@ -313,9 +313,9 @@ function validateTransformQuestions(questions: TransformQuestion[]): QualityDime
   return dims;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 5. Section-Delimited Output Validator
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 export function validateSections(sections: ParsedSection[]): QualityDimension[] {
   if (sections.length === 0) {
@@ -374,9 +374,9 @@ interface SectionCheck {
   label: string;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 6. Test Scenario Validator
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 export function validateTestScenarios(
   scenarios: TestScenario[] | null,
@@ -431,9 +431,9 @@ export function validateTestScenarios(
   return dims;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 7. Persona Execution Validator — protocol compliance
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 7. Persona Execution Validator -- protocol compliance
+// ===========================================================================
 
 export function validatePersonaExecutionResult(result: PersonaExecutionResult): QualityDimension[] {
   const dims: QualityDimension[] = [];
@@ -491,16 +491,16 @@ export function validatePersonaExecutionResult(result: PersonaExecutionResult): 
   return dims;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 8. Template Adoption Validator — reuses transform validation
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 8. Template Adoption Validator -- reuses transform validation
+// ===========================================================================
 
 // Template adoption uses the same output format as N8N transform.
 export const validateTemplateAdoptResult = validateTransformOutput;
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 9. Query Debug Validator
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 export function validateQueryDebugResult(
   result: QueryDebugResult | null,
@@ -552,9 +552,9 @@ export function validateQueryDebugResult(
   return dims;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Aggregate scoring
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 export function scoreDimensions(dims: QualityDimension[]): {
   overallScore: number;

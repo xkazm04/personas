@@ -1,7 +1,7 @@
 import type { MemoryReviewDetail } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 
-// ── Types ───────────────────────────────────────────────────────
+// -- Types -------------------------------------------------------
 
 export type MemoryActionKind = 'throttle' | 'schedule' | 'alert' | 'config' | 'routing';
 
@@ -20,7 +20,7 @@ export interface MemoryAction {
 
 const STORAGE_KEY = 'dolla:memory-actions';
 
-// ── Persistence (localStorage) ──────────────────────────────────
+// -- Persistence (localStorage) ----------------------------------
 
 export function loadActions(): MemoryAction[] {
   try {
@@ -36,11 +36,11 @@ export function saveActions(actions: MemoryAction[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(actions));
   } catch {
-    // storage full — actions still live in-memory
+    // storage full -- actions still live in-memory
   }
 }
 
-// ── Rule extraction from review results ─────────────────────────
+// -- Rule extraction from review results -------------------------
 
 const KIND_PATTERNS: Array<{ kind: MemoryActionKind; patterns: RegExp[] }> = [
   {
@@ -74,7 +74,7 @@ function detectKind(text: string): MemoryActionKind {
 
 function extractRule(memory: PersonaMemory): string {
   const content = memory.content || memory.title;
-  // Use the content directly as the rule — the memory itself is the actionable intelligence
+  // Use the content directly as the rule -- the memory itself is the actionable intelligence
   return content.length > 200 ? content.slice(0, 200) + '...' : content;
 }
 
@@ -128,7 +128,7 @@ export function extractActionsFromReview(
   return newActions;
 }
 
-// ── Kind labels & colors ────────────────────────────────────────
+// -- Kind labels & colors ----------------------------------------
 
 export const ACTION_KIND_META: Record<MemoryActionKind, { label: string; color: string; bgClass: string; borderClass: string; textClass: string }> = {
   throttle: { label: 'Throttle Rule', color: '#f59e0b', bgClass: 'bg-amber-500/10', borderClass: 'border-amber-500/20', textClass: 'text-amber-400' },

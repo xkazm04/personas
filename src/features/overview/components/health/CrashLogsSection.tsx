@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle,
@@ -19,16 +19,16 @@ export function CrashLogsSection() {
   const [selectedLog, setSelectedLog] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
 
-  const loadLogs = useCallback(() => {
-    getCrashLogs()
-      .then(setBackendLogs)
-      .catch(() => setBackendLogs([]));
-    setFrontendLogs(readCrashLogs());
-  }, []);
-
   useEffect(() => {
-    if (expanded) loadLogs();
-  }, [expanded, loadLogs]);
+    if (expanded) {
+      let cancelled = false;
+      getCrashLogs()
+        .then((data) => { if (!cancelled) setBackendLogs(data); })
+        .catch(() => { if (!cancelled) setBackendLogs([]); });
+      if (!cancelled) setFrontendLogs(readCrashLogs());
+      return () => { cancelled = true; };
+    }
+  }, [expanded]);
 
   const totalCount = backendLogs.length + frontendLogs.length;
 

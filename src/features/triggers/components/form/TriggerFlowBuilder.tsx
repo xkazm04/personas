@@ -8,7 +8,7 @@ import { FlowCanvas } from "./FlowCanvas";
 import { ChainList } from "./ChainList";
 import { AddChainModal } from "./AddChainModal";
 
-// ─── Component ──────────────────────────────────────────────────────────
+// --- Component ----------------------------------------------------------
 export function TriggerFlowBuilder() {
   const fetchTriggerChains = usePersonaStore((s) => s.fetchTriggerChains);
   const fetchWebhookStatus = usePersonaStore((s) => s.fetchWebhookStatus);

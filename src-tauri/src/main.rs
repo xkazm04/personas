@@ -16,7 +16,7 @@ fn sentry_options() -> sentry::ClientOptions {
         traces_sample_rate: 0.0,
         send_default_pii: false,
         // Track app sessions for Release Health (active user counts per version).
-        // Sessions use anonymous device IDs — no PII.
+        // Sessions use anonymous device IDs -- no PII.
         auto_session_tracking: true,
         session_mode: sentry::SessionMode::Application,
         before_send: Some(std::sync::Arc::new(|mut event| {
@@ -65,9 +65,9 @@ fn sentry_options() -> sentry::ClientOptions {
 /// PII scrubbing utilities for Sentry events and breadcrumbs.
 ///
 /// Strips or redacts:
-/// - UUIDs (execution_id, persona_id, trigger_id, etc.) → short hash prefix
-/// - Quoted names (credential names, persona names) → `[redacted]`
-/// - Full URLs → domain-only
+/// - UUIDs (execution_id, persona_id, trigger_id, etc.) -> short hash prefix
+/// - Quoted names (credential names, persona names) -> `[redacted]`
+/// - Full URLs -> domain-only
 mod pii {
     use std::sync::OnceLock;
     use regex::Regex;
@@ -125,7 +125,7 @@ mod pii {
             } else {
                 host_part
             };
-            format!("{}://{}/…", &url[..scheme_end], clean_host)
+            format!("{}://{}/...", &url[..scheme_end], clean_host)
         } else {
             "[redacted-url]".to_string()
         }

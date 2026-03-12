@@ -21,7 +21,7 @@ export function useCreateTemplateActions(isOpen: boolean, onTemplateCreated: () 
   const { state } = reducer;
   const genIdRef = useRef<string | null>(null);
 
-  // ── Persisted context (restore on open) ──
+  // -- Persisted context (restore on open) --
   usePersistedContext<PersistedCreateTemplateContext>({
     key: CREATE_TEMPLATE_CONTEXT_KEY,
     maxAge: CREATE_TEMPLATE_CONTEXT_MAX_AGE_MS,
@@ -34,10 +34,10 @@ export function useCreateTemplateActions(isOpen: boolean, onTemplateCreated: () 
     }, [reducer]),
   });
 
-  // ── Background snapshot polling + event listeners ──
+  // -- Background snapshot polling + event listeners --
   useCreateTemplateSnapshot(reducer, state.backgroundGenId, genIdRef);
 
-  // ── Actions ──
+  // -- Actions --
 
   const handleStartGenerate = useCallback(async () => {
     if (!state.templateName.trim() || !state.description.trim()) return;
@@ -65,7 +65,7 @@ export function useCreateTemplateActions(isOpen: boolean, onTemplateCreated: () 
     if (state.backgroundGenId) {
       try {
         await cancelTemplateGenerate(state.backgroundGenId);
-      } catch { /* intentional: non-critical — best-effort cancellation */ }
+      } catch { /* intentional: non-critical -- best-effort cancellation */ }
     }
     reducer.generateCancelled();
     clearPersistedContext();
@@ -108,7 +108,7 @@ export function useCreateTemplateActions(isOpen: boolean, onTemplateCreated: () 
       if (genIdRef.current) {
         try {
           await clearTemplateGenerateSnapshot(genIdRef.current);
-        } catch { /* intentional: non-critical — snapshot cleanup */ }
+        } catch { /* intentional: non-critical -- snapshot cleanup */ }
       }
 
       onTemplateCreated();
@@ -117,7 +117,7 @@ export function useCreateTemplateActions(isOpen: boolean, onTemplateCreated: () 
     }
   }, [state.draft, state.designResultJson, state.templateName, state.description, reducer, onTemplateCreated]);
 
-  // ── Draft update helpers ──
+  // -- Draft update helpers --
 
   const updateDraft = useCallback((updater: (current: N8nPersonaDraft) => N8nPersonaDraft) => {
     if (!state.draft) return;
@@ -149,7 +149,7 @@ export function useCreateTemplateActions(isOpen: boolean, onTemplateCreated: () 
     }
   }, [state.adjustmentRequest, state.draft, state.description, state.templateName, reducer]);
 
-  // ── Close handler ──
+  // -- Close handler --
   const handleClose = useCallback(() => {
     if (state.generating) {
       return true; // signal: just close, don't reset

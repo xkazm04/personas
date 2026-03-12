@@ -46,6 +46,27 @@ export const getMemoryStats = (personaId?: string, category?: string, search?: s
     search: search ?? null,
   });
 
+export interface MemoriesWithStats {
+  memories: PersonaMemory[];
+  total: number;
+  stats: MemoryStats;
+}
+
+export const listMemoriesWithStats = (
+  personaId?: string,
+  category?: string,
+  search?: string,
+  limit?: number,
+  offset?: number,
+) =>
+  invoke<MemoriesWithStats>("list_memories_with_stats", {
+    personaId: personaId ?? null,
+    category: category ?? null,
+    search: search ?? null,
+    limit: limit ?? null,
+    offset: offset ?? null,
+  });
+
 export const listMemoriesByExecution = (executionId: string) =>
   invoke<PersonaMemory[]>("list_memories_by_execution", { executionId });
 
@@ -78,3 +99,6 @@ export const reviewMemoriesWithCli = (personaId?: string, threshold?: number) =>
     personaId: personaId ?? null,
     threshold: threshold ?? null,
   });
+
+export const seedMockMemory = () =>
+  invoke<PersonaMemory>("seed_mock_memory", {});

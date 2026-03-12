@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ToggleLeft, ToggleRight, Pencil, X, Check } from 'lucide-react';
+import { Plus, Trash2, ToggleLeft, ToggleRight, Pencil, X, Check, Activity } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import {
   ALERT_METRIC_OPTIONS,
@@ -9,9 +9,10 @@ import {
   type AlertOperator,
   type AlertSeverity,
   type AlertRule,
+  type AlertEvalHealth,
 } from '@/stores/slices/overview/alertSlice';
 
-// ── Rule Form ─────────────────────────────────────────────────────────
+// -- Rule Form ---------------------------------------------------------
 
 interface RuleFormData {
   name: string;
@@ -141,7 +142,7 @@ function RuleForm({
   );
 }
 
-// ── Rule Row ──────────────────────────────────────────────────────────
+// -- Rule Row ----------------------------------------------------------
 
 function RuleRow({
   rule,
@@ -192,7 +193,36 @@ function RuleRow({
   );
 }
 
-// ── Panel ─────────────────────────────────────────────────────────────
+// -- Eval Health Indicator ---------------------------------------------
+
+function EvalHealthIndicator({ health }: { health: AlertEvalHealth }) {
+  if (!health.lastEvalAt) return null;
+
+  const age = Date.now() - new Date(health.lastEvalAt).getTime();
+  const agoText = age < 60_000
+    ? `${Math.round(age / 1000)}s ago`
+    : age < 3_600_000
+      ? `${Math.round(age / 60_000)}m ago`
+      : `${Math.round(age / 3_600_000)}h ago`;
+
+  const isHealthy = !health.lastError;
+  const dotColor = isHealthy ? 'bg-emerald-400' : 'bg-red-400';
+
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60" title={
+      health.lastError
+        ? `Last error: ${health.lastError} (${health.totalFailures} total failures)`
+        : `Evaluated ${health.rulesEvaluated} rules in ${health.lastEvalDurationMs}ms, ${health.rulesTriggered} triggered`
+    }>
+      <Activity className="w-3 h-3" />
+      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+      <span>{agoText}</span>
+      {health.lastError && <span className="text-red-400/80">failed</span>}
+    </div>
+  );
+}
+
+// -- Panel -------------------------------------------------------------
 
 export function AlertRulesPanel() {
   const alertRules = usePersonaStore((s) => s.alertRules);
@@ -201,6 +231,7 @@ export function AlertRulesPanel() {
   const deleteAlertRule = usePersonaStore((s) => s.deleteAlertRule);
   const toggleAlertRule = usePersonaStore((s) => s.toggleAlertRule);
   const personas = usePersonaStore((s) => s.personas);
+  const alertEvalHealth = usePersonaStore((s) => s.alertEvalHealth);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -235,7 +266,10 @@ export function AlertRulesPanel() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">Alert Rules</h3>
+        <div className="flex items-center gap-3">
+          <h3 className="text-sm font-semibold text-foreground">Alert Rules</h3>
+          <EvalHealthIndicator health={alertEvalHealth} />
+        </div>
         <button
           onClick={() => { setShowForm(true); setEditingId(null); }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border border-primary/15 text-muted-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"

@@ -285,6 +285,20 @@ pub fn get_event_listeners_for_event_type(
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
+/// Get enabled triggers of a specific type using SQL-level filtering.
+/// Avoids loading all triggers and filtering in Rust — mirrors the pattern
+/// used by `get_chain_triggers_for_source` and `get_event_listeners_for_event_type`.
+pub fn get_enabled_by_type(pool: &DbPool, trigger_type: &str) -> Result<Vec<PersonaTrigger>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM persona_triggers
+         WHERE trigger_type = ?1 AND enabled = 1
+         ORDER BY created_at DESC",
+    )?;
+    let rows = stmt.query_map(params![trigger_type], row_to_trigger)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
 pub fn get_due(pool: &DbPool, now: &str) -> Result<Vec<PersonaTrigger>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(

@@ -16,7 +16,7 @@ const STAGE_DEFS = [
   { label: 'Generating healthcheck', description: 'Building test endpoint configuration' },
 ] as const;
 
-/** Map raw backend output lines to a stage index (0–4). */
+/** Map raw backend output lines to a stage index (0--4). */
 function deriveStageIndex(lines: string[]): number {
   for (let i = lines.length - 1; i >= 0; i--) {
     const l = lines[i]!.toLowerCase();
@@ -59,7 +59,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
     tailRef.current?.scrollTo({ top: tailRef.current.scrollHeight, behavior: 'smooth' });
   }, [outputLines.length]);
 
-  // Progress: use derived index directly against total (4) for smooth 0→100
+  // Progress: use derived index directly against total (4) for smooth 0->100
   const progress = Math.min((derivedIdx / STAGE_DEFS.length) * 100, 100);
 
   return (
@@ -80,7 +80,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
         ) : (
           <div />
         )}
-        <span className="text-sm text-muted-foreground/80">Typically 15–30 seconds</span>
+        <span className="text-sm text-muted-foreground/80">Typically 15--30 seconds</span>
       </div>
 
       {/* Progress bar */}

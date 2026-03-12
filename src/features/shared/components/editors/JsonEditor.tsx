@@ -27,7 +27,7 @@ function tokenizeJson(text: string): { type: 'key' | 'string' | 'number' | 'bool
       continue;
     }
 
-    // Strings — need to detect if this is a key or value
+    // Strings -- need to detect if this is a key or value
     if (ch === '"') {
       let str = '"';
       i++;
@@ -146,7 +146,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
       const parsed = JSON.parse(value);
       onChange(JSON.stringify(parsed, null, 2));
     } catch {
-      // intentional: non-critical — JSON parse fallback (can't format invalid JSON)
+      // intentional: non-critical -- JSON parse fallback (can't format invalid JSON)
     }
   }, [value, onChange]);
 

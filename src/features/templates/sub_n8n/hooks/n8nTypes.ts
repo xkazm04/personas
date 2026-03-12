@@ -19,7 +19,7 @@ export const asNullableString = (value: unknown): string | null => {
 export const asNullableNumber = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 
-// â”€â”€ Array element validators â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Array element validators ----------------------------------------
 
 function isValidTool(item: unknown): item is N8nToolDraft {
   if (!item || typeof item !== 'object') return false;
@@ -84,7 +84,7 @@ export function normalizeDraftFromUnknown(value: unknown): N8nPersonaDraft | nul
         ? record.max_turns
         : null,
     design_context: asNullableString(record.design_context),
-    // Pass through entity fields â€” validate element shapes to reject corrupt data
+    // Pass through entity fields -- validate element shapes to reject corrupt data
     tools: filterValidTools(record.tools),
     triggers: filterValidTriggers(record.triggers),
     required_connectors: filterValidConnectors(record.required_connectors),

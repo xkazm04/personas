@@ -109,7 +109,7 @@ impl GitLabClient {
     // User / Auth
     // --------------------------------------------------------------------
 
-    /// `GET /api/v4/user` — validate token and get current user info.
+    /// `GET /api/v4/user` -- validate token and get current user info.
     pub async fn validate_token(&self) -> Result<GitLabUser, AppError> {
         self.send_json(self.authed(reqwest::Method::GET, "/user"))
             .await
@@ -208,7 +208,7 @@ impl GitLabClient {
     // CI/CD Variables API (for credential provisioning)
     // --------------------------------------------------------------------
 
-    /// `POST /api/v4/projects/:id/variables` — create a project CI/CD variable.
+    /// `POST /api/v4/projects/:id/variables` -- create a project CI/CD variable.
     /// Variables are created as masked + protected so they never leak into logs.
     pub async fn create_variable(
         &self,
@@ -220,7 +220,7 @@ impl GitLabClient {
         self.send_ok(req).await
     }
 
-    /// `PUT /api/v4/projects/:id/variables/:key` — update an existing CI/CD variable.
+    /// `PUT /api/v4/projects/:id/variables/:key` -- update an existing CI/CD variable.
     pub async fn update_variable(
         &self,
         project_id: i64,
@@ -247,7 +247,7 @@ impl GitLabClient {
         }
     }
 
-    /// `DELETE /api/v4/projects/:id/variables/:key` — remove a CI/CD variable.
+    /// `DELETE /api/v4/projects/:id/variables/:key` -- remove a CI/CD variable.
     pub async fn delete_variable(
         &self,
         project_id: i64,
@@ -290,7 +290,7 @@ impl GitLabClient {
             return Ok(());
         }
 
-        // File doesn't exist yet — create it
+        // File doesn't exist yet -- create it
         let create_req = self
             .authed(reqwest::Method::POST, &path)
             .json(&CreateFileBody {

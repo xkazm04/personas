@@ -4,10 +4,10 @@ import * as Sentry from "@sentry/react";
 // PII patterns to scrub from messages
 // ---------------------------------------------------------------------------
 
-/** UUIDs: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx → [id:a1b2c3] */
+/** UUIDs: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx -> [id:a1b2c3] */
 const UUID_RE = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g;
 
-/** Full URLs → domain-only */
+/** Full URLs -> domain-only */
 const URL_RE = /https?:\/\/[^\s,)}\]]+/g;
 
 /** Quoted strings that may contain user-generated content */
@@ -19,7 +19,7 @@ function scrubPii(input: string): string {
     .replace(URL_RE, (match) => {
       try {
         const u = new URL(match);
-        return `${u.protocol}//${u.host}/…`;
+        return `${u.protocol}//${u.host}/...`;
       } catch {
         return '[redacted-url]';
       }
@@ -44,7 +44,7 @@ function scrubPii(input: string): string {
 /** Deduplication window: ignore repeated identical events within this period. */
 const DEDUP_MS = 5_000;
 
-/** Sample rate for feature events (0–1). Adjust based on Sentry plan quota. */
+/** Sample rate for feature events (0--1). Adjust based on Sentry plan quota. */
 const FEATURE_SAMPLE_RATE = 1.0;
 
 let _lastFeatureKey = "";
@@ -85,7 +85,7 @@ export function trackFeature(
 /**
  * Track a discrete user interaction (button click, wizard step, etc.).
  *
- * Lighter weight than trackFeature — intended for key actions, not every click.
+ * Lighter weight than trackFeature -- intended for key actions, not every click.
  */
 export function trackInteraction(
   category: string,
@@ -114,7 +114,7 @@ export function initSentry(appVersion: string): void {
     release: appVersion,
     environment: import.meta.env.MODE,
 
-    // Errors only — no performance, no replay
+    // Errors only -- no performance, no replay
     tracesSampleRate: 0,
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,

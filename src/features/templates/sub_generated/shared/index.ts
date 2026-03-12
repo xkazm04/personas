@@ -6,3 +6,5 @@ export { SandboxWarningBanner } from './SandboxWarningBanner';
 export { ScanResultsBanner } from './ScanResultsBanner';
 export { TeamSynthesisPanel } from './TeamSynthesisPanel';
 export { TabTransition } from './TabTransition';
+export { ThinkingLoader } from './ThinkingLoader';
+export { CelebrationIllustration, ConfettiBurst } from './AdoptCelebration';

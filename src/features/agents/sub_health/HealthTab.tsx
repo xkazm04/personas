@@ -17,7 +17,7 @@ export function HealthTab() {
         Issues are surfaced as actionable cards with one-click fixes.
       </p>
 
-      <div className="rounded-xl border border-primary/15 bg-secondary/40 p-4">
+      <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4">
         <HealthCheckPanel healthCheck={healthCheck} />
       </div>
     </div>

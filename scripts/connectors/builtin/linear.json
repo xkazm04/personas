@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "lin_api_...",
-      "helpText": "From Linear → Settings → API → Personal API keys"
+      "helpText": "From Linear -> Settings -> API -> Personal API keys"
     }
   ],
   "healthcheck_config": {

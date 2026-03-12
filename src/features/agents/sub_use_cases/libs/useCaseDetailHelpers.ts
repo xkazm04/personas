@@ -6,7 +6,7 @@ import {
   OLLAMA_CLOUD_BASE_URL,
 } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 
-// ── Model helpers ───────────────────────────────────────────────────
+// -- Model helpers ---------------------------------------------------
 
 export interface ModelOption {
   id: string;
@@ -65,7 +65,7 @@ export function profileToModelConfig(mp: ModelProfile): ModelTestConfig | null {
   return { id: mp.model || 'custom', provider: mp.provider, model: mp.model, base_url: mp.base_url, auth_token: mp.auth_token };
 }
 
-// ── Model resolution ────────────────────────────────────────────────
+// -- Model resolution ------------------------------------------------
 
 export type ModelSource = 'override' | 'persona' | 'default';
 
@@ -106,7 +106,7 @@ export function resolveEffectiveModel(
         source: 'persona',
       };
     } catch {
-      // intentional: non-critical — JSON parse fallback
+      // intentional: non-critical -- JSON parse fallback
     }
   }
   return {
@@ -117,7 +117,7 @@ export function resolveEffectiveModel(
   };
 }
 
-// ── Channel helpers ─────────────────────────────────────────────────
+// -- Channel helpers -------------------------------------------------
 
 export const CHANNEL_TYPES: { type: NotificationChannelType; label: string; Icon: typeof Hash }[] = [
   { type: 'slack', label: 'Slack', Icon: Hash },

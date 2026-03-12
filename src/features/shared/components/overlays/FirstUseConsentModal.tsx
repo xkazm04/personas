@@ -193,7 +193,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
           <ConsentSection
             icon={<Clipboard className="w-4 h-4 text-rose-400" />}
             title="Error Reporting & Telemetry"
-            tldr="Anonymous crash reports may be sent to help fix bugs â€” no personal data included."
+            tldr="Anonymous crash reports may be sent to help fix bugs -- no personal data included."
             color="rose"
             items={[
               'Crash reports may be sent to Sentry for error tracking. IP addresses, email addresses, and request bodies are stripped before transmission.',
@@ -206,7 +206,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
           <ConsentSection
             icon={<FolderSearch className="w-4 h-4 text-teal-400" />}
             title="Deployment (Optional)"
-            tldr="You can optionally run agents in the cloud â€” nothing is uploaded unless you choose to."
+            tldr="You can optionally run agents in the cloud -- nothing is uploaded unless you choose to."
             color="teal"
             items={[
               'You may optionally deploy personas to a cloud orchestrator, GitHub Actions, or GitLab CI/CD. This sends persona configuration (not credentials) to the selected platform.',

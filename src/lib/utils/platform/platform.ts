@@ -6,7 +6,7 @@
  * Ctrl+Shift+M to test mobile layout without an Android device.
  */
 
-// Build-time flag — true only when building for Android/iOS.
+// Build-time flag -- true only when building for Android/iOS.
 const BUILD_MOBILE: boolean =
   import.meta.env.VITE_PLATFORM === 'android' ||
   import.meta.env.VITE_PLATFORM === 'ios';
@@ -21,7 +21,7 @@ function readDevMobileOverride(): boolean {
   try { return localStorage.getItem('dev-mobile-preview') === '1'; } catch { return false; }
 }
 
-/** Mutable runtime state — toggled by Ctrl+Shift+M in dev mode. */
+/** Mutable runtime state -- toggled by Ctrl+Shift+M in dev mode. */
 let _devMobileOverride = readDevMobileOverride();
 
 /** Listeners notified when the override changes. */
@@ -44,7 +44,7 @@ export function isMobilePreviewActive(): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Public flags — used throughout the app via `import { IS_MOBILE } from '...'`
+// Public flags -- used throughout the app via `import { IS_MOBILE } from '...'`
 //
 // In production builds these are compile-time constants (esbuild inlines them).
 // In dev mode, the getter checks the runtime override so Ctrl+Shift+M works.

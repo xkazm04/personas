@@ -91,7 +91,7 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
       }
       return parsed.model ?? 'Custom';
     } catch {
-      // intentional: non-critical — hover preview JSON parse fallback
+      // intentional: non-critical -- hover preview JSON parse fallback
       return raw;
     }
   }, [persona?.model_profile]);
@@ -150,7 +150,7 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 4 }}
           transition={{ duration: 0.15 }}
-          className="fixed z-[9999] w-[260px] p-3.5 rounded-xl bg-background/95 backdrop-blur-xl border border-primary/15 shadow-xl shadow-black/20 pointer-events-none"
+          className="fixed z-[9999] w-[260px] p-3.5 rounded-xl bg-background/95 backdrop-blur-xl border border-primary/20 shadow-xl shadow-black/20 pointer-events-none"
           style={{ top: pos.top, left: pos.left }}
           data-testid={`persona-hover-preview-${personaId}`}
         >
@@ -174,13 +174,13 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
 
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span
-                  className="text-sm font-mono px-1.5 py-0.5 rounded-lg border bg-primary/5 border-primary/15 text-muted-foreground/80 max-w-[170px] truncate"
+                  className="text-sm font-mono px-1.5 py-0.5 rounded-lg border bg-primary/5 border-primary/20 text-muted-foreground/80 max-w-[170px] truncate"
                   title={modelLabel}
                 >
                   {modelLabel}
                 </span>
                 <span
-                  className={`text-sm font-medium px-1.5 py-0.5 rounded-full border ${persona?.enabled ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400/80' : 'bg-secondary/40 border-primary/15 text-muted-foreground/70'}`}
+                  className={`text-sm font-medium px-1.5 py-0.5 rounded-full border ${persona?.enabled ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400/80' : 'bg-secondary/40 border-primary/20 text-muted-foreground/70'}`}
                 >
                   {persona?.enabled ? 'Enabled' : 'Disabled'}
                 </span>
@@ -218,17 +218,17 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
 
               {/* Stats Row */}
               <div className="grid grid-cols-3 gap-2">
-                <div className="p-2 rounded-lg bg-secondary/40 border border-primary/8">
+                <div className="p-2 rounded-lg bg-secondary/40 border border-primary/10">
                   <div className="text-sm text-muted-foreground/35 mb-0.5">Today</div>
                   <div className="text-sm font-semibold text-foreground/80 font-mono" data-testid="hover-runs-today">{health.runsToday}</div>
                 </div>
-                <div className="p-2 rounded-lg bg-secondary/40 border border-primary/8">
+                <div className="p-2 rounded-lg bg-secondary/40 border border-primary/10">
                   <div className="text-sm text-muted-foreground/35 mb-0.5 flex items-center gap-0.5">
                     <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400/50" /> OK
                   </div>
                   <div className="text-sm font-semibold text-emerald-400/80 font-mono" data-testid="hover-success-count">{successCount}</div>
                 </div>
-                <div className="p-2 rounded-lg bg-secondary/40 border border-primary/8">
+                <div className="p-2 rounded-lg bg-secondary/40 border border-primary/10">
                   <div className="text-sm text-muted-foreground/35 mb-0.5 flex items-center gap-0.5">
                     <XCircle className="w-2.5 h-2.5 text-red-400/50" /> Fail
                   </div>

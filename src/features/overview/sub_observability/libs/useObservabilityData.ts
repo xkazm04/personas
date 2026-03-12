@@ -38,6 +38,10 @@ export function useObservabilityData() {
     auto_fixed: number;
   } | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [healingViewMode, setHealingViewMode] = useState<'list' | 'timeline'>('list');
+  const healingTimeline = usePersonaStore((s) => s.healingTimeline);
+  const healingTimelineLoading = usePersonaStore((s) => s.healingTimelineLoading);
+  const fetchHealingTimeline = usePersonaStore((s) => s.fetchHealingTimeline);
 
   const refreshAll = useCallback(() => {
     return Promise.all([
@@ -70,6 +74,14 @@ export function useObservabilityData() {
   useEffect(() => {
     if (observabilityMetrics) evaluateAlertRules();
   }, [observabilityMetrics, evaluateAlertRules]);
+
+  // Fetch timeline when switching to timeline view or when persona changes
+  useEffect(() => {
+    if (healingViewMode === 'timeline') {
+      const pid = selectedPersonaId || personas[0]?.id;
+      if (pid) fetchHealingTimeline(pid);
+    }
+  }, [healingViewMode, selectedPersonaId, personas, fetchHealingTimeline]);
 
   useEffect(() => { refreshAll(); }, [refreshAll]);
 
@@ -157,5 +169,7 @@ export function useObservabilityData() {
     resolveHealingIssue, selectedIssue, setSelectedIssue,
     issueFilter, setIssueFilter, issueCounts, sortedFilteredIssues,
     analysisResult, setAnalysisResult, analysisError, setAnalysisError,
+    // Timeline
+    healingViewMode, setHealingViewMode, healingTimeline, healingTimelineLoading,
   };
 }

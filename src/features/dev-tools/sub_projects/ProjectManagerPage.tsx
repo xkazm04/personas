@@ -3,11 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   FolderKanban, Plus, Target, ChevronRight, GripVertical,
   Trash2, CheckCircle2, Circle, Clock, AlertCircle, X, Folder,
+  FolderOpen, Search, Pencil,
 } from 'lucide-react';
+import { open } from '@tauri-apps/plugin-dialog';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { usePersonaStore } from '@/stores/personaStore';
+import { useContextScanBackground } from '../hooks/useContextScanBackground';
 
 // ---------------------------------------------------------------------------
 // Types (local until the devToolsSlice is wired)
@@ -41,6 +44,22 @@ interface GoalSignal {
 }
 
 // ---------------------------------------------------------------------------
+// Project Type Selector
+// ---------------------------------------------------------------------------
+
+type ProjectType = 'react' | 'nodejs' | 'fastapi' | 'rust' | 'python' | 'combined' | 'other';
+
+const PROJECT_TYPES: { id: ProjectType; label: string; icon: string; color: string }[] = [
+  { id: 'react', label: 'React', icon: '⚛️', color: 'bg-cyan-500/15 border-cyan-500/25 text-cyan-400' },
+  { id: 'nodejs', label: 'NodeJS', icon: '🟢', color: 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400' },
+  { id: 'fastapi', label: 'FastAPI', icon: '⚡', color: 'bg-teal-500/15 border-teal-500/25 text-teal-400' },
+  { id: 'rust', label: 'Rust', icon: '🦀', color: 'bg-orange-500/15 border-orange-500/25 text-orange-400' },
+  { id: 'python', label: 'Python', icon: '🐍', color: 'bg-yellow-500/15 border-yellow-500/25 text-yellow-400' },
+  { id: 'combined', label: 'Combined', icon: '🔗', color: 'bg-violet-500/15 border-violet-500/25 text-violet-400' },
+  { id: 'other', label: 'Other', icon: '📁', color: 'bg-primary/10 border-primary/20 text-muted-foreground' },
+];
+
+// ---------------------------------------------------------------------------
 // Status helpers
 // ---------------------------------------------------------------------------
 
@@ -70,33 +89,90 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Project Creation Modal
+// Project Creation Modal (with folder picker, type selector, post-creation scan)
 // ---------------------------------------------------------------------------
 
+type ModalStep = 'create' | 'created';
+
 function ProjectModal({
-  open,
+  open: isOpen,
   onClose,
   onCreate,
+  onScanNow,
 }: {
   open: boolean;
   onClose: () => void;
-  onCreate: (data: { name: string; path: string; description: string }) => void;
+  onCreate: (data: { name: string; path: string; description: string; projectType: ProjectType }) => Promise<{ id: string } | undefined>;
+  onScanNow: (projectId: string, rootPath: string, projectName: string) => void;
 }) {
+  const [step, setStep] = useState<ModalStep>('create');
   const [name, setName] = useState('');
   const [path, setPath] = useState('');
   const [description, setDescription] = useState('');
+  const [projectType, setProjectType] = useState<ProjectType>('other');
+  const [nameEdited, setNameEdited] = useState(false);
+  const [createdProject, setCreatedProject] = useState<{ id: string; name: string; path: string } | null>(null);
   const { shouldAnimate } = useMotion();
 
-  const handleSubmit = () => {
+  const handleSelectFolder = async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: 'Select project folder',
+      });
+      if (!selected) return;
+      const folderPath = typeof selected === 'string' ? selected : selected;
+      setPath(folderPath);
+      // Auto-fill name from folder basename if user hasn't manually edited
+      if (!nameEdited) {
+        const segments = folderPath.replace(/[\\/]+$/, '').split(/[\\/]/);
+        const folderName = segments[segments.length - 1] || '';
+        setName(folderName);
+      }
+    } catch {
+      // User cancelled or error -- silently ignore
+    }
+  };
+
+  const handleNameChange = (val: string) => {
+    setName(val);
+    setNameEdited(true);
+  };
+
+  const handleSubmit = async () => {
     if (!name.trim() || !path.trim()) return;
-    onCreate({ name: name.trim(), path: path.trim(), description: description.trim() });
+    const result = await onCreate({
+      name: name.trim(),
+      path: path.trim(),
+      description: description.trim(),
+      projectType,
+    });
+    if (result) {
+      setCreatedProject({ id: result.id, name: name.trim(), path: path.trim() });
+      setStep('created');
+    }
+  };
+
+  const handleClose = () => {
+    setStep('create');
     setName('');
     setPath('');
     setDescription('');
+    setProjectType('other');
+    setNameEdited(false);
+    setCreatedProject(null);
     onClose();
   };
 
-  if (!open) return null;
+  const handleScanNow = () => {
+    if (createdProject) {
+      onScanNow(createdProject.id, createdProject.path, createdProject.name);
+    }
+    handleClose();
+  };
+
+  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
@@ -105,7 +181,7 @@ function ProjectModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        onClick={onClose}
+        onClick={handleClose}
       >
         <motion.div
           initial={{ opacity: 0, scale: shouldAnimate ? 0.95 : 1 }}
@@ -115,57 +191,152 @@ function ProjectModal({
           className="bg-background border border-primary/10 rounded-2xl p-6 w-full max-w-md shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-semibold text-foreground/90">New Project</h2>
-            <Button variant="ghost" size="icon-sm" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+          {step === 'create' ? (
+            <>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-base font-semibold text-foreground/90">New Project</h2>
+                <Button variant="ghost" size="icon-sm" onClick={handleClose}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Project Name</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="My Awesome App"
-                className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/30"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Directory Path</label>
-              <input
-                value={path}
-                onChange={(e) => setPath(e.target.value)}
-                placeholder="/home/user/projects/my-app"
-                className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/30"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Description (optional)</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief description of the project..."
-                rows={3}
-                className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/30 resize-none"
-              />
-            </div>
-          </div>
+              <div className="space-y-4">
+                {/* Folder picker */}
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Project Folder</label>
+                  <div className="flex gap-2">
+                    <div
+                      onClick={handleSelectFolder}
+                      className="flex-1 flex items-center gap-2 px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl cursor-pointer hover:bg-secondary/60 transition-colors min-w-0"
+                    >
+                      <FolderOpen className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                      {path ? (
+                        <span className="text-foreground truncate">{path}</span>
+                      ) : (
+                        <span className="text-muted-foreground/50">Select a folder...</span>
+                      )}
+                    </div>
+                    <Button variant="secondary" size="sm" onClick={handleSelectFolder}>
+                      Browse
+                    </Button>
+                  </div>
+                </div>
 
-          <div className="flex justify-end gap-2 mt-6">
-            <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
-            <Button
-              variant="accent"
-              accentColor="amber"
-              size="sm"
-              icon={<Plus className="w-3.5 h-3.5" />}
-              disabled={!name.trim() || !path.trim()}
-              onClick={handleSubmit}
-            >
-              Create Project
-            </Button>
-          </div>
+                {/* Project Name (auto-filled, editable) */}
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                    Project Name
+                    {path && !nameEdited && (
+                      <span className="text-[10px] text-muted-foreground/40 font-normal">(auto-filled from folder)</span>
+                    )}
+                  </label>
+                  <div className="relative">
+                    <input
+                      value={name}
+                      onChange={(e) => handleNameChange(e.target.value)}
+                      placeholder="My Awesome App"
+                      className="w-full px-3 py-2 pr-8 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/30"
+                    />
+                    <Pencil className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/30" />
+                  </div>
+                </div>
+
+                {/* Project Type (visual only) */}
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                    Project Type
+                    <span className="text-[10px] text-muted-foreground/40 font-normal">(optional, visual only)</span>
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {PROJECT_TYPES.map((pt) => (
+                      <button
+                        key={pt.id}
+                        onClick={() => setProjectType(pt.id)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                          projectType === pt.id
+                            ? `${pt.color} ring-1 ring-current/20 scale-105`
+                            : 'bg-secondary/30 border-primary/10 text-muted-foreground/60 hover:bg-secondary/50'
+                        }`}
+                      >
+                        <span>{pt.icon}</span>
+                        {pt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Description (optional)</label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Brief description of the project..."
+                    rows={2}
+                    className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/30 resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6">
+                <Button variant="ghost" size="sm" onClick={handleClose}>Cancel</Button>
+                <Button
+                  variant="accent"
+                  accentColor="amber"
+                  size="sm"
+                  icon={<Plus className="w-3.5 h-3.5" />}
+                  disabled={!name.trim() || !path.trim()}
+                  onClick={handleSubmit}
+                >
+                  Create Project
+                </Button>
+              </div>
+            </>
+          ) : (
+            /* Post-creation step: offer context scan */
+            <>
+              <div className="text-center py-2">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+                </div>
+                <h2 className="text-base font-semibold text-foreground/90 mb-1">
+                  Project Created
+                </h2>
+                <p className="text-xs text-muted-foreground/60 mb-6">
+                  <span className="font-medium text-foreground/70">{createdProject?.name}</span> is ready.
+                  Would you like to generate a context map now?
+                </p>
+
+                <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 mb-6 text-left">
+                  <div className="flex items-start gap-3">
+                    <Search className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-medium text-foreground/80 mb-1">Generate Context Map</h4>
+                      <p className="text-xs text-muted-foreground/60">
+                        Scans your codebase to identify business features and organize them into context groups.
+                        This runs in the background -- you&apos;ll get a notification when it&apos;s done.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={handleClose}>
+                    Skip for now
+                  </Button>
+                  <Button
+                    variant="accent"
+                    accentColor="amber"
+                    size="sm"
+                    icon={<Search className="w-3.5 h-3.5" />}
+                    onClick={handleScanNow}
+                  >
+                    Scan Codebase
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
@@ -319,15 +490,15 @@ function GoalBoard({
 // ---------------------------------------------------------------------------
 
 export default function ProjectManagerPage() {
-  // Store bindings (will be wired when devToolsSlice is ready)
-  const store = usePersonaStore.getState();
-  const fetchProjects = (store as any).fetchProjects as (() => Promise<void>) | undefined;
-  const createProject = (store as any).createProject as ((data: any) => Promise<void>) | undefined;
-  const setActiveProject = (store as any).setActiveProject as ((id: string) => void) | undefined;
-  const fetchGoals = (store as any).fetchGoals as ((projectId: string) => Promise<void>) | undefined;
-  const createGoal = (store as any).createGoal as ((data: any) => Promise<void>) | undefined;
-  const updateGoal = (store as any).updateGoal as ((id: string, data: any) => Promise<void>) | undefined;
-  const deleteGoal = (store as any).deleteGoal as ((id: string) => Promise<void>) | undefined;
+  // Store bindings
+  const fetchProjects = usePersonaStore((s) => s.fetchProjects);
+  const storeCreateProject = usePersonaStore((s) => s.createProject);
+  const setActiveProject = usePersonaStore((s) => s.setActiveProject);
+  const fetchGoals = usePersonaStore((s) => s.fetchGoals);
+  const createGoal = usePersonaStore((s) => s.createGoal);
+  const updateGoal = usePersonaStore((s) => s.updateGoal);
+  const deleteGoal = usePersonaStore((s) => s.deleteGoal);
+  const { startBackgroundScan } = useContextScanBackground();
 
   // Local state (until slice provides it)
   const [projects] = useState<Project[]>([]);
@@ -346,9 +517,14 @@ export default function ProjectManagerPage() {
     if (activeProjectId) fetchGoals?.(activeProjectId);
   }, [activeProjectId]);
 
-  const handleCreateProject = useCallback((data: { name: string; path: string; description: string }) => {
-    createProject?.(data);
-  }, [createProject]);
+  const handleCreateProject = useCallback(async (data: { name: string; path: string; description: string; projectType: ProjectType }) => {
+    try {
+      const project = await storeCreateProject(data.name, data.path, data.description, data.projectType);
+      return { id: project.id };
+    } catch {
+      return undefined;
+    }
+  }, [storeCreateProject]);
 
   const handleSetActive = useCallback((id: string) => {
     setLocalActiveProject(id);
@@ -413,7 +589,7 @@ export default function ProjectManagerPage() {
                   goals={goals}
                   onUpdateGoal={(id, data) => updateGoal?.(id, data)}
                   onDeleteGoal={(id) => deleteGoal?.(id)}
-                  onCreateGoal={(title) => createGoal?.({ title, projectId: activeProjectId })}
+                  onCreateGoal={(title) => activeProjectId ? createGoal?.(activeProjectId, title) : undefined}
                   selectedGoalId={selectedGoalId}
                   onSelectGoal={setSelectedGoalId}
                 />
@@ -491,6 +667,7 @@ export default function ProjectManagerPage() {
         open={showModal}
         onClose={() => setShowModal(false)}
         onCreate={handleCreateProject}
+        onScanNow={startBackgroundScan}
       />
     </ContentBox>
   );

@@ -1,6 +1,6 @@
-// ── Custom Icons — Neural/Circuit AI Visual Language ────────────────────
+// -- Custom Icons -- Neural/Circuit AI Visual Language --------------------
 
-/** Home: Command hub — central node with radiating data conduits to 4 quadrant rooms */
+/** Home: Command hub -- central node with radiating data conduits to 4 quadrant rooms */
 export function CustomHome() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
@@ -10,7 +10,7 @@ export function CustomHome() {
       {/* Central core with breathing glow */}
       <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.08" />
       <circle cx="12" cy="12" className="pi-breathe" fill="currentColor" />
-      {/* Data conduits — animated flow lines to corners */}
+      {/* Data conduits -- animated flow lines to corners */}
       <line x1="12" y1="9" x2="12" y2="4" className="pi-flow" stroke="currentColor" strokeWidth="0.8" />
       <line x1="15" y1="12" x2="19" y2="12" className="pi-flow" stroke="currentColor" strokeWidth="0.8" />
       <line x1="12" y1="15" x2="12" y2="20" className="pi-flow" stroke="currentColor" strokeWidth="0.8" />
@@ -24,7 +24,7 @@ export function CustomHome() {
   );
 }
 
-/** Overview: Holographic data panels — three floating HUD screens with live readouts */
+/** Overview: Holographic data panels -- three floating HUD screens with live readouts */
 export function CustomOverview() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
@@ -32,7 +32,7 @@ export function CustomOverview() {
       <rect x="2" y="3" width="8" height="6" rx="1" stroke="currentColor" strokeWidth="1" opacity="0.3" />
       <line x1="3.5" y1="5" x2="8.5" y2="5" stroke="currentColor" strokeWidth="0.6" className="pi-flow" opacity="0.4" />
       <line x1="3.5" y1="7" x2="6" y2="7" stroke="currentColor" strokeWidth="0.6" opacity="0.3" />
-      {/* Mid panel — main focus */}
+      {/* Mid panel -- main focus */}
       <rect x="6" y="7" width="12" height="8" rx="1" stroke="currentColor" strokeWidth="1.3" opacity="0.7" />
       <rect x="6" y="7" width="12" height="8" rx="1" fill="currentColor" opacity="0.04" />
       {/* Scan line inside main panel */}
@@ -52,11 +52,11 @@ export function CustomOverview() {
   );
 }
 
-/** Agents: Neural face — abstract head silhouette made of connected nodes (brain-like network) */
+/** Agents: Neural face -- abstract head silhouette made of connected nodes (brain-like network) */
 export function CustomAgents() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
-      {/* Head outline — stylized silhouette */}
+      {/* Head outline -- stylized silhouette */}
       <path d="M8 20v-2a4 4 0 010-8h0a8 8 0 018 0h0a4 4 0 010 8v2" stroke="currentColor" strokeWidth="1" opacity="0.2" />
       {/* Neural network inside the head shape */}
       <circle cx="9" cy="8" r="1.2" fill="currentColor" className="pi-pulse" />
@@ -75,14 +75,14 @@ export function CustomAgents() {
       <line x1="17" y1="13" x2="12" y2="11" className="pi-flow" stroke="currentColor" strokeWidth="0.7" />
       <line x1="12" y1="16" x2="7" y2="13" className="pi-flow" stroke="currentColor" strokeWidth="0.7" />
       <line x1="12" y1="16" x2="17" y2="13" className="pi-flow" stroke="currentColor" strokeWidth="0.7" />
-      {/* "Eyes" — two glowing dots */}
+      {/* "Eyes" -- two glowing dots */}
       <circle cx="10" cy="11" r="0.6" fill="currentColor" opacity="0.9" />
       <circle cx="14" cy="11" r="0.6" fill="currentColor" opacity="0.9" />
     </svg>
   );
 }
 
-/** Events: Signal burst — expanding concentric rings with a lightning core */
+/** Events: Signal burst -- expanding concentric rings with a lightning core */
 export function CustomEvents() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
@@ -102,7 +102,7 @@ export function CustomEvents() {
   );
 }
 
-/** Keys: Quantum lock — orbiting electron ring around a keyhole core */
+/** Keys: Quantum lock -- orbiting electron ring around a keyhole core */
 export function CustomKeys() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
@@ -127,7 +127,7 @@ export function CustomKeys() {
   );
 }
 
-/** Templates: Blueprint hologram — layered transparent panels stacking into 3D */
+/** Templates: Blueprint hologram -- layered transparent panels stacking into 3D */
 export function CustomTemplates() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
@@ -141,7 +141,7 @@ export function CustomTemplates() {
       <line x1="7" y1="7" x2="17" y2="7" stroke="currentColor" strokeWidth="0.4" opacity="0.2" />
       <line x1="7" y1="9" x2="13" y2="9" stroke="currentColor" strokeWidth="0.4" opacity="0.2" />
       <line x1="10" y1="3.5" x2="10" y2="10.5" stroke="currentColor" strokeWidth="0.4" opacity="0.15" />
-      {/* Front layer — elevated, active */}
+      {/* Front layer -- elevated, active */}
       <rect x="3" y="12" width="18" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2" opacity="0.6" />
       <rect x="3" y="12" width="18" height="10" rx="1.5" fill="currentColor" opacity="0.04" />
       {/* DNA/template helix inside front panel */}
@@ -157,7 +157,7 @@ export function CustomTemplates() {
   );
 }
 
-/** Teams: Constellation cluster — 3 connected persona nodes with a shared neural bridge */
+/** Teams: Constellation cluster -- 3 connected persona nodes with a shared neural bridge */
 export function CustomTeams() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
@@ -170,7 +170,7 @@ export function CustomTeams() {
       <circle cx="5" cy="18" r="1" fill="currentColor" className="pi-pulse-delay" />
       <circle cx="19" cy="18" r="2.5" stroke="currentColor" strokeWidth="1" opacity="0.5" />
       <circle cx="19" cy="18" r="1" fill="currentColor" className="pi-pulse" />
-      {/* Neural bridges — animated data flow between nodes */}
+      {/* Neural bridges -- animated data flow between nodes */}
       <line x1="12" y1="6.5" x2="7" y2="16" className="pi-flow" stroke="currentColor" strokeWidth="0.8" />
       <line x1="12" y1="6.5" x2="17" y2="16" className="pi-flow" stroke="currentColor" strokeWidth="0.8" />
       <line x1="7.5" y1="18" x2="16.5" y2="18" className="pi-flow" stroke="currentColor" strokeWidth="0.8" />
@@ -184,11 +184,11 @@ export function CustomTeams() {
   );
 }
 
-/** Cloud: Distributed mesh — floating nodes connected in a cloud-shaped network topology */
+/** Cloud: Distributed mesh -- floating nodes connected in a cloud-shaped network topology */
 export function CustomCloud() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
-      {/* Cloud outline — subtle */}
+      {/* Cloud outline -- subtle */}
       <path d="M6.5 18a4 4 0 01-.4-7.98 6 6 0 0111.8 0A4 4 0 0117.5 18H6.5z" stroke="currentColor" strokeWidth="0.8" opacity="0.2" />
       {/* Mesh nodes inside cloud shape */}
       <circle cx="8" cy="12" r="1.3" fill="currentColor" className="pi-pulse" />
@@ -211,7 +211,7 @@ export function CustomCloud() {
   );
 }
 
-/** Settings: Quantum calibrator — concentric rotating rings with parameter nodes */
+/** Settings: Quantum calibrator -- concentric rotating rings with parameter nodes */
 export function CustomSettings() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
@@ -223,7 +223,7 @@ export function CustomSettings() {
         <circle cx="12" cy="22" r="1" fill="currentColor" opacity="0.4" />
         <circle cx="2" cy="12" r="1" fill="currentColor" opacity="0.4" />
       </g>
-      {/* Middle ring — counter-rotating */}
+      {/* Middle ring -- counter-rotating */}
       <circle cx="12" cy="12" r="6.5" stroke="currentColor" strokeWidth="0.8" opacity="0.25" />
       <g className="pi-orbit-r">
         <circle cx="18.5" cy="12" r="0.8" fill="currentColor" opacity="0.6" />

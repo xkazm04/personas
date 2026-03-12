@@ -107,7 +107,7 @@ export function QuickAdoptConfirm() {
             {matchSummary.missingConnectorTypes.map((t, i) => (
               <span key={t} className="text-orange-500 dark:text-amber-400">{i > 0 && ', '}{getConnectorMeta(t).label}</span>
             ))}
-            {' — '}
+            {' -- '}
             <button type="button" onClick={handleNavigateCatalog} className="text-primary/70 hover:text-primary transition-colors inline-flex items-center gap-0.5">
               add in Keys Catalog<ExternalLink className="w-2.5 h-2.5" />
             </button>

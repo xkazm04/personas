@@ -23,11 +23,11 @@ export function useScheduleActions() {
     cronPreview: null,
   });
 
-  // ── Manual Execute ──────────────────────────────────────────────────────
+  // -- Manual Execute ------------------------------------------------------
 
   const manualExecute = useCallback(async (agent: CronAgent) => {
     if (isBudgetBlocked(agent.persona_id)) {
-      addToast(`Budget exceeded for "${agent.persona_name}" — execution blocked`, 'error');
+      addToast(`Budget enforcement for "${agent.persona_name}" -- execution blocked (budget exceeded or data unavailable)`, 'error');
       return;
     }
     setState((s) => ({ ...s, executing: agent.trigger_id }));
@@ -45,7 +45,7 @@ export function useScheduleActions() {
     }
   }, [fetchCronAgents, addToast]);
 
-  // ── Change Cron Frequency ───────────────────────────────────────────────
+  // -- Change Cron Frequency -----------------------------------------------
 
   const updateFrequency = useCallback(async (
     agent: CronAgent,
@@ -76,7 +76,7 @@ export function useScheduleActions() {
     }
   }, [fetchCronAgents, addToast]);
 
-  // ── Toggle Trigger Enabled ──────────────────────────────────────────────
+  // -- Toggle Trigger Enabled ----------------------------------------------
 
   const toggleEnabled = useCallback(async (agent: CronAgent) => {
     try {
@@ -99,7 +99,7 @@ export function useScheduleActions() {
     }
   }, [fetchCronAgents, addToast]);
 
-  // ── Preview Cron ────────────────────────────────────────────────────────
+  // -- Preview Cron --------------------------------------------------------
 
   const previewCron = useCallback(async (expression: string) => {
     try {
@@ -112,7 +112,7 @@ export function useScheduleActions() {
     }
   }, []);
 
-  // ── Batch Recovery ──────────────────────────────────────────────────────
+  // -- Batch Recovery ------------------------------------------------------
 
   const batchRecover = useCallback(async (agents: CronAgent[]) => {
     let succeeded = 0;

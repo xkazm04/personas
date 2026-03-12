@@ -7,6 +7,7 @@ import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { RecipePicker } from './RecipePicker';
 import { RecipePlaygroundModal } from '../../sub_playground/components/RecipePlaygroundModal';
+import { PuzzlePieceIllustration } from '../../shared/PuzzlePieceIllustration';
 
 interface LinkedRecipesSectionProps {
   personaId: string;
@@ -86,9 +87,10 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
       </div>
 
       {linkedRecipes.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border/40 px-4 py-6 text-center">
+        <div className="rounded-xl border border-dashed border-border/40 px-4 py-6 flex flex-col items-center text-center gap-1">
+          <PuzzlePieceIllustration />
           <p className="text-sm text-muted-foreground/60">
-            No recipes linked yet. Click "Add" to link recipes from the library.
+            No recipes linked yet. Click &quot;Add&quot; to link recipes from the library.
           </p>
         </div>
       ) : (

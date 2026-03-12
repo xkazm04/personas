@@ -4,7 +4,7 @@ use crate::db::models::{CreateArenaResultInput, LabArenaResult, LabArenaRun};
 use crate::db::DbPool;
 use crate::error::AppError;
 
-// ── Row mappers ────────────────────────────────────────────────
+// -- Row mappers ------------------------------------------------
 
 fn row_to_run(row: &Row) -> rusqlite::Result<LabArenaRun> {
     Ok(LabArenaRun {
@@ -44,7 +44,7 @@ fn row_to_result(row: &Row) -> rusqlite::Result<LabArenaResult> {
     })
 }
 
-// ── Arena Runs ─────────────────────────────────────────────────
+// -- Arena Runs -------------------------------------------------
 
 pub fn create_run(
     pool: &DbPool,
@@ -122,7 +122,7 @@ pub fn delete_run(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     Ok(rows > 0)
 }
 
-// ── Arena Results ──────────────────────────────────────────────
+// -- Arena Results ----------------------------------------------
 
 pub fn create_result(
     pool: &DbPool,
@@ -132,14 +132,15 @@ pub fn create_result(
     let now = chrono::Utc::now().to_rfc3339();
 
     let conn = pool.get()?;
-    conn.execute(
+    conn.query_row(
         "INSERT INTO lab_arena_results
             (id, run_id, scenario_name, model_id, provider, status,
              output_preview, tool_calls_expected, tool_calls_actual,
              tool_accuracy_score, output_quality_score, protocol_compliance,
              input_tokens, output_tokens, cost_usd, duration_ms,
              error_message, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)
+         RETURNING *",
         params![
             id,
             input.run_id,
@@ -160,8 +161,9 @@ pub fn create_result(
             input.error_message,
             now,
         ],
-    )?;
-    get_result_by_id(pool, &id)
+        row_to_result,
+    )
+    .map_err(AppError::Database)
 }
 
 pub fn get_result_by_id(pool: &DbPool, id: &str) -> Result<LabArenaResult, AppError> {

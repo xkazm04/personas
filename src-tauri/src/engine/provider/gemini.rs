@@ -53,7 +53,7 @@ impl CliProvider for GeminiProvider {
         // Gemini uses: gemini -p "<prompt>" --output-format stream-json --yolo
         args.extend([
             "-p".to_string(),
-            String::new(), // placeholder — prompt injected by build_execution_args_with_prompt
+            String::new(), // placeholder -- prompt injected by build_execution_args_with_prompt
             "--output-format".to_string(),
             "stream-json".to_string(),
             "--yolo".to_string(),

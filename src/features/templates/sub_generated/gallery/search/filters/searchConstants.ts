@@ -28,7 +28,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-// ── Category icon/color mapping ──────────────────────────────────
+// -- Category icon/color mapping ----------------------------------
 
 export const CATEGORY_META: Record<string, { icon: LucideIcon; color: string; label: string }> = {
   communication:        { icon: MessageSquare, color: '#6366f1', label: 'Communication' },
@@ -60,7 +60,7 @@ export function getCategoryMeta(name: string) {
   return CATEGORY_META[name] ?? { icon: LayoutGrid, color: '#71717a', label: name };
 }
 
-// ── Sort Options ─────────────────────────────────────────────────
+// -- Sort Options -------------------------------------------------
 
 export const SORT_OPTIONS = [
   { value: 'readiness', label: 'Ready to Deploy', dir: 'desc' },
@@ -72,7 +72,7 @@ export const SORT_OPTIONS = [
   { value: 'trending', label: 'Most Adopted', dir: 'desc' },
 ];
 
-// ── Category Role Groups ─────────────────────────────────────────
+// -- Category Role Groups -----------------------------------------
 
 export interface RoleGroup {
   role: string;

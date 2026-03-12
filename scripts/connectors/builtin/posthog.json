@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "phx_...",
-      "helpText": "From PostHog → Settings → Personal API Keys"
+      "helpText": "From PostHog -> Settings -> Personal API Keys"
     },
     {
       "key": "project_api_key",
@@ -47,7 +47,7 @@
     "auth_type": "api_key",
     "auth_type_label": "API Key",
     "docs_url": "https://posthog.com/docs/api",
-    "setup_guide": "1. Log in to PostHog and go to Settings → Personal API Keys\n2. Click 'Create personal API key' and name it\n3. Copy the phx_... key\n4. Optionally note your Project ID from Project Settings\n5. Paste the API key (and project ID if needed) here",
+    "setup_guide": "1. Log in to PostHog and go to Settings -> Personal API Keys\n2. Click 'Create personal API key' and name it\n3. Copy the phx_... key\n4. Optionally note your Project ID from Project Settings\n5. Paste the API key (and project ID if needed) here",
     "pricing_tier": "free",
     "auth_variants": [
       {

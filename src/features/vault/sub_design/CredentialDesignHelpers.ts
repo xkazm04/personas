@@ -23,7 +23,7 @@ export function extractFirstUrl(text?: string): string | null {
   return match ? match[0] : null;
 }
 
-// ── OAuth field-name constants ──────────────────────────────────
+// -- OAuth field-name constants ----------------------------------
 // Canonical keys injected by OAuth flows. Import these instead of
 // hard-coding the strings so changes only need to happen in one place.
 
@@ -34,7 +34,7 @@ export const OAUTH_FIELD = {
   PROVIDER: 'oauth_provider',
 } as const;
 
-// ── Credential flow discriminated union ─────────────────────────
+// -- Credential flow discriminated union -------------------------
 
 import type { CredentialTemplateField, ConnectorDefinition } from '@/lib/types/types';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
@@ -234,7 +234,7 @@ export function showsNegotiator(flow: CredentialFlow): boolean {
   return flow.kind !== 'google_oauth';
 }
 
-// ── Healthcheck message translation ─────────────────────────────
+// -- Healthcheck message translation -----------------------------
 
 export interface TranslatedHealthcheck {
   friendly: string;
@@ -257,14 +257,14 @@ export function translateHealthcheckMessage(raw: string): TranslatedHealthcheck 
   if (raw.includes('request failed:')) {
     if (raw.includes('timed out') || raw.includes('timeout')) {
       return {
-        friendly: 'Could not reach the service — the request timed out.',
+        friendly: 'Could not reach the service -- the request timed out.',
         suggestion: 'Check that the URL is correct and the service is online. Your firewall or proxy may be blocking the connection.',
         raw,
       };
     }
     if (raw.includes('dns') || raw.includes('resolve')) {
       return {
-        friendly: 'Could not reach the service — the hostname could not be resolved.',
+        friendly: 'Could not reach the service -- the hostname could not be resolved.',
         suggestion: 'Double-check the service URL for typos. Make sure you have an active internet connection.',
         raw,
       };
@@ -277,7 +277,7 @@ export function translateHealthcheckMessage(raw: string): TranslatedHealthcheck 
       };
     }
     return {
-      friendly: 'Could not reach the service — check the URL.',
+      friendly: 'Could not reach the service -- check the URL.',
       suggestion: 'Verify your internet connection and that the service endpoint is correct.',
       raw,
     };
@@ -289,7 +289,7 @@ export function translateHealthcheckMessage(raw: string): TranslatedHealthcheck 
       case 401:
         return {
           friendly: 'Your credentials appear to be invalid or expired.',
-          suggestion: 'Double-check the API key or token — make sure you copied the full value without extra spaces.',
+          suggestion: 'Double-check the API key or token -- make sure you copied the full value without extra spaces.',
           raw,
         };
       case 403:
@@ -301,12 +301,12 @@ export function translateHealthcheckMessage(raw: string): TranslatedHealthcheck 
       case 404:
         return {
           friendly: 'The healthcheck endpoint was not found.',
-          suggestion: 'This usually means the generated test URL is wrong — not a problem with your credentials. Try saving anyway if you trust the key.',
+          suggestion: 'This usually means the generated test URL is wrong -- not a problem with your credentials. Try saving anyway if you trust the key.',
           raw,
         };
       case 429:
         return {
-          friendly: 'Too many requests — the service is rate-limiting you.',
+          friendly: 'Too many requests -- the service is rate-limiting you.',
           suggestion: 'Wait a moment and try again. This doesn\'t necessarily mean your credentials are wrong.',
           raw,
         };

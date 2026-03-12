@@ -74,7 +74,7 @@ export function UseCaseFixtureDropdown({
         className={`px-2.5 py-1.5 rounded-xl border ${
           selectedFixture
             ? 'bg-amber-500/10 border-amber-500/25 text-amber-300 hover:bg-amber-500/20'
-            : 'bg-secondary/40 border-primary/10 text-muted-foreground/70 hover:border-primary/25'
+            : 'bg-secondary/40 border-primary/10 text-muted-foreground/70 hover:border-primary/30'
         }`}
         title={selectedFixture ? `Fixture: ${selectedFixture.name}` : 'Select test fixture'}
       >
@@ -90,7 +90,7 @@ export function UseCaseFixtureDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 mt-1 z-50 w-64 rounded-xl bg-popover border border-primary/15 shadow-xl shadow-black/30 overflow-hidden"
+            className="absolute top-full left-0 mt-1 z-50 w-64 rounded-xl bg-popover border border-primary/20 shadow-xl shadow-black/30 overflow-hidden"
           >
             {/* No fixture option */}
             <Button
@@ -189,7 +189,7 @@ export function UseCaseFixtureDropdown({
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="e.g. Happy Path"
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-background/60 border border-primary/15 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-background/60 border border-primary/20 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
                     autoFocus
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleSave();
@@ -201,7 +201,7 @@ export function UseCaseFixtureDropdown({
                     value={newDescription}
                     onChange={(e) => setNewDescription(e.target.value)}
                     placeholder="Description (optional)"
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-background/60 border border-primary/15 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-background/60 border border-primary/20 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
                   />
                   <div className="flex items-center gap-2">
                     <Button

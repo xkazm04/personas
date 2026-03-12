@@ -8,7 +8,7 @@ import { IconSelector } from '@/features/shared/components/forms/IconSelector';
 import { ColorPicker } from '@/features/shared/components/forms/ColorPicker';
 import { NotificationChannelSettings } from '@/features/agents/sub_connectors/components/channels/NotificationChannelSettings';
 
-// â”€â”€ model_profile â†” dropdown value helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- model_profile <-> dropdown value helpers ----------------------------
 
 function modelProfileToDropdownValue(profileJson: string | null): string {
   if (!profileJson) return 'sonnet'; // default for n8n drafts
@@ -16,7 +16,7 @@ function modelProfileToDropdownValue(profileJson: string | null): string {
     const mp: ModelProfile = JSON.parse(profileJson);
     return profileToDropdownValue(mp);
   } catch {
-    // intentional: non-critical â€” JSON parse fallback
+    // intentional: non-critical -- JSON parse fallback
     return 'sonnet';
   }
 }
@@ -46,12 +46,12 @@ function parseChannels(json: string | null | undefined): NotificationChannel[] {
     const parsed = JSON.parse(json);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
-    // intentional: non-critical â€” JSON parse fallback
+    // intentional: non-critical -- JSON parse fallback
     return [];
   }
 }
 
-// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Component ---------------------------------------------------------
 
 interface DraftSettingsTabProps {
   draft: N8nPersonaDraft;

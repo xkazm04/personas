@@ -31,7 +31,7 @@
       "offline_access"
     ],
     "docs_url": "https://learn.microsoft.com/en-us/graph/api/resources/mail-api-overview",
-    "setup_guide": "1. Go to the Azure Portal → Microsoft Entra ID → App registrations.\n2. Click 'New registration', name your app, and set redirect URI to http://localhost.\n3. Under 'Certificates & secrets', create a new client secret and copy it.\n4. Under 'API permissions', add Microsoft Graph delegated permissions: User.Read, Mail.Read, Mail.Send, Calendars.Read, Contacts.Read.\n5. Copy the Application (client) ID from the Overview page.\n6. In Personas, click Authorize with Microsoft.\n7. Complete consent in your browser and return to Personas.",
+    "setup_guide": "1. Go to the Azure Portal -> Microsoft Entra ID -> App registrations.\n2. Click 'New registration', name your app, and set redirect URI to http://localhost.\n3. Under 'Certificates & secrets', create a new client secret and copy it.\n4. Under 'API permissions', add Microsoft Graph delegated permissions: User.Read, Mail.Read, Mail.Send, Calendars.Read, Contacts.Read.\n5. Copy the Application (client) ID from the Overview page.\n6. In Personas, click Authorize with Microsoft.\n7. Complete consent in your browser and return to Personas.",
     "pricing_tier": "freemium",
     "auth_methods": [
       {"id": "oauth", "label": "OAuth", "type": "oauth", "is_default": true},

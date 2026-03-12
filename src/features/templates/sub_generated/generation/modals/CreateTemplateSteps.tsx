@@ -10,7 +10,7 @@ const stepInitial = { opacity: 0, x: -20 };
 const stepAnimate = { opacity: 1, x: 0 };
 const stepExit = { opacity: 0, x: 20 };
 
-// ── Step 1: Describe ──
+// -- Step 1: Describe --
 
 interface DescribeStepProps {
   templateName: string;
@@ -67,7 +67,7 @@ export function DescribeStep({ templateName, description, error, reducer }: Desc
   );
 }
 
-// ── Step 2: Generate ──
+// -- Step 2: Generate --
 
 interface GenerateStepProps {
   generateLines: string[];
@@ -99,7 +99,7 @@ export function GenerateStep({ generateLines, generatePhase, backgroundGenId, on
   );
 }
 
-// ── Step 3: Review ──
+// -- Step 3: Review --
 
 interface ReviewStepProps {
   draft: N8nPersonaDraft;

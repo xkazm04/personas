@@ -76,7 +76,7 @@ export default function AssistantMessages({
               className="w-full flex items-center justify-between px-3 py-2 hover:bg-secondary/30 transition-colors"
             >
               <span className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
-                Blueprint — {blueprint.members.length} agents
+                Blueprint -- {blueprint.members.length} agents
                 {suggestedPattern && (
                   <span className="px-1.5 py-0.5 rounded text-sm font-medium bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">
                     {suggestedPattern}

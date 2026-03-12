@@ -15,7 +15,7 @@ use crate::error::AppError;
 
 
 
-// ── Trait ──────────────────────────────────────────────────────────
+// -- Trait ----------------------------------------------------------
 
 /// Strategy interface for connector-specific healthcheck + rotation behaviour.
 #[async_trait]
@@ -66,7 +66,7 @@ pub trait ConnectorStrategy: Send + Sync {
                 }
             }
             Ok(hc) => {
-                // 3. Failed — restore original credentials
+                // 3. Failed -- restore original credentials
                 let _ = crate::db::repos::resources::credentials::save_fields(pool, &credential.id, &original_fields);
                 Err(AppError::Internal(format!(
                     "Rotation failed (credentials restored): {}", hc.message
@@ -81,7 +81,7 @@ pub trait ConnectorStrategy: Send + Sync {
     }
 }
 
-// ── Registry ───────────────────────────────────────────────────────
+// -- Registry -------------------------------------------------------
 
 /// Global strategy registry, initialised once at startup.
 static REGISTRY: OnceLock<StrategyRegistry> = OnceLock::new();
@@ -156,7 +156,7 @@ impl StrategyRegistry {
 }
 
 /// Initialise the global strategy registry with all built-in strategies.
-/// Safe to call multiple times — only the first call takes effect.
+/// Safe to call multiple times -- only the first call takes effect.
 pub fn init_registry() {
     REGISTRY.get_or_init(|| {
         let mut reg = StrategyRegistry::new();
@@ -173,11 +173,11 @@ pub fn init_registry() {
 /// Returns an error if called before `init_registry()`.
 pub fn registry() -> Result<&'static StrategyRegistry, crate::error::AppError> {
     REGISTRY.get().ok_or_else(|| crate::error::AppError::Internal(
-        "Connector strategy registry not initialised — call init_registry() first".into()
+        "Connector strategy registry not initialised -- call init_registry() first".into()
     ))
 }
 
-// ── Shared helpers ─────────────────────────────────────────────────
+// -- Shared helpers -------------------------------------------------
 
 /// Find the first non-empty value for any of the given keys.
 fn find_nonempty(fields: &HashMap<String, String>, keys: &[&str]) -> Option<String> {
@@ -218,11 +218,11 @@ fn find_auth_token(fields: &HashMap<String, String>) -> Option<String> {
     None
 }
 
-// ════════════════════════════════════════════════════════════════════
+// ====================================================================
 // Built-in strategies
-// ════════════════════════════════════════════════════════════════════
+// ====================================================================
 
-// ── Default (generic Bearer auth / API-key rotation) ───────────────
+// -- Default (generic Bearer auth / API-key rotation) ---------------
 
 pub struct DefaultStrategy;
 
@@ -251,9 +251,9 @@ impl ConnectorStrategy for DefaultStrategy {
             // OAuth path: refresh + verify
             let refresh_msg = super::oauth_refresh::refresh_single_credential(pool, credential).await?;
             match super::healthcheck::run_healthcheck(pool, &credential.id).await {
-                Ok(hc) if hc.success => Ok(format!("{refresh_msg} — verified: {}", hc.message)),
-                Ok(hc) => Ok(format!("{refresh_msg} — healthcheck warning: {}", hc.message)),
-                Err(_) => Ok(format!("{refresh_msg} — healthcheck skipped")),
+                Ok(hc) if hc.success => Ok(format!("{refresh_msg} -- verified: {}", hc.message)),
+                Ok(hc) => Ok(format!("{refresh_msg} -- healthcheck warning: {}", hc.message)),
+                Err(_) => Ok(format!("{refresh_msg} -- healthcheck skipped")),
             }
         } else {
             // API key path: default healthcheck-based rotation
@@ -274,7 +274,7 @@ impl ConnectorStrategy for DefaultStrategy {
     }
 }
 
-// ── Google OAuth ───────────────────────────────────────────────────
+// -- Google OAuth ---------------------------------------------------
 
 pub struct GoogleOAuthStrategy;
 
@@ -316,9 +316,9 @@ impl ConnectorStrategy for GoogleOAuthStrategy {
 
         // Verify the refreshed token with a healthcheck
         match super::healthcheck::run_healthcheck(pool, &credential.id).await {
-            Ok(hc) if hc.success => Ok(format!("{refresh_msg} — verified: {}", hc.message)),
-            Ok(hc) => Ok(format!("{refresh_msg} — healthcheck warning: {}", hc.message)),
-            Err(_) => Ok(format!("{refresh_msg} — healthcheck skipped")),
+            Ok(hc) if hc.success => Ok(format!("{refresh_msg} -- verified: {}", hc.message)),
+            Ok(hc) => Ok(format!("{refresh_msg} -- healthcheck warning: {}", hc.message)),
+            Err(_) => Ok(format!("{refresh_msg} -- healthcheck skipped")),
         }
     }
 }
@@ -362,7 +362,7 @@ async fn exchange_google_refresh_token(
         .ok_or_else(|| AppError::Internal("Google token refresh did not return access_token".into()))
 }
 
-// ── Buffer ─────────────────────────────────────────────────────────
+// -- Buffer ---------------------------------------------------------
 
 pub struct BufferStrategy;
 
@@ -390,7 +390,7 @@ impl ConnectorStrategy for BufferStrategy {
     }
 }
 
-// ── CircleCI ───────────────────────────────────────────────────────
+// -- CircleCI -------------------------------------------------------
 
 pub struct CircleCIStrategy;
 
@@ -418,7 +418,7 @@ impl ConnectorStrategy for CircleCIStrategy {
     }
 }
 
-// ── ClickUp ────────────────────────────────────────────────────────
+// -- ClickUp --------------------------------------------------------
 
 pub struct ClickUpStrategy;
 
@@ -446,7 +446,7 @@ impl ConnectorStrategy for ClickUpStrategy {
     }
 }
 
-// ── GitHub ──────────────────────────────────────────────────────────
+// -- GitHub ----------------------------------------------------------
 
 pub struct GitHubStrategy;
 

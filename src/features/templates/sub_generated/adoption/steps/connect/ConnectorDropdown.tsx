@@ -1,5 +1,5 @@
 /**
- * ConnectorDropdown — dropdown for selecting alternative connectors within a role.
+ * ConnectorDropdown -- dropdown for selecting alternative connectors within a role.
  *
  * Uses ThemedSelect (filterable) for consistent theming across the app.
  */

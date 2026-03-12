@@ -11,8 +11,8 @@ interface EstimatedProgressBarProps {
 /**
  * Hardcoded visual progress bar that fills linearly over the estimated duration.
  *
- * - While running: linear 0→85% over `estimatedSeconds`, then asymptotic crawl toward 98%
- * - When process completes (isRunning → false): jumps to 100%
+ * - While running: linear 0->85% over `estimatedSeconds`, then asymptotic crawl toward 98%
+ * - When process completes (isRunning -> false): jumps to 100%
  * - Shows elapsed time and estimated remaining below the bar
  */
 export function EstimatedProgressBar({
@@ -33,10 +33,10 @@ export function EstimatedProgressBar({
 
     let p: number;
     if (elapsedSec < estimatedSeconds) {
-      // Linear phase: 0 → 85%
+      // Linear phase: 0 -> 85%
       p = (elapsedSec / estimatedSeconds) * 85;
     } else {
-      // Asymptotic crawl: 85% → ~98%
+      // Asymptotic crawl: 85% -> ~98%
       const over = elapsedSec - estimatedSeconds;
       p = 85 + 13 * (1 - 1 / (1 + over * 0.05));
     }
@@ -52,7 +52,7 @@ export function EstimatedProgressBar({
       setElapsed(0);
       rafRef.current = requestAnimationFrame(tick);
     } else if (!isRunning && wasRunningRef.current) {
-      // Completed — jump to 100%
+      // Completed -- jump to 100%
       cancelAnimationFrame(rafRef.current);
       setProgress(100);
     }

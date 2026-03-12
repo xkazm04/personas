@@ -5,7 +5,7 @@ export function HighlightedJson({ raw }: { raw: string }) {
     try {
       return JSON.stringify(JSON.parse(raw), null, 2);
     } catch {
-      // intentional: non-critical — JSON parse fallback
+      // intentional: non-critical -- JSON parse fallback
       return null;
     }
   }, [raw]);

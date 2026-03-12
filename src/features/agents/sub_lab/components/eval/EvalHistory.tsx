@@ -29,8 +29,8 @@ export function EvalHistory({ runs, resultsMap, expandedRunId, onToggleExpand, o
       </h4>
 
       {runs.length === 0 ? (
-        <div className="text-center py-12 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl" data-testid="eval-history-empty">
-          <div className="w-14 h-14 rounded-xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-4">
+        <div className="text-center py-12 bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl" data-testid="eval-history-empty">
+          <div className="w-14 h-14 rounded-xl bg-primary/8 border border-primary/20 flex items-center justify-center mx-auto mb-4">
             <Grid3X3 className="w-7 h-7 text-primary/40" />
           </div>
           <p className="text-sm text-muted-foreground/80">No evaluation runs yet</p>

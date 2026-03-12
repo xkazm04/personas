@@ -10,7 +10,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
   const [showOutput, setShowOutput] = useState(false);
 
   return (
-    <div className="rounded-xl border border-primary/15 bg-secondary/40 overflow-hidden">
+    <div className="rounded-xl border border-primary/20 bg-secondary/40 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">

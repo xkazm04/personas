@@ -129,7 +129,7 @@ export function useBuilderOrchestration({
             await movePersonaToGroup(personaId, draftGroup.id);
           }
         } catch {
-          // intentional: non-critical — draft still works without a group
+          // intentional: non-critical -- draft still works without a group
         }
       }
 
@@ -146,7 +146,7 @@ export function useBuilderOrchestration({
 
       await design.startIntentCompilation(personaId, enhancedIntent);
     } catch {
-      useToastStore.getState().addToast('Failed to generate agent — check your connection', 'error');
+      useToastStore.getState().addToast('Failed to generate agent -- check your connection', 'error');
       isCreatingRef.current = false;
       setIsGenerating(false);
     }

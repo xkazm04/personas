@@ -73,7 +73,7 @@ export function PreviewPanel({
                 <p className="text-sm text-foreground/70 truncate">
                   {result.structured_prompt?.identity
                     ? result.structured_prompt.identity.slice(0, 80) + (result.structured_prompt.identity.length > 80 ? '...' : '')
-                    : '—'}
+                    : '--'}
                 </p>
               </PreviewSection>
 
@@ -82,7 +82,7 @@ export function PreviewPanel({
                 <p className="text-sm text-foreground/70">
                   {result.full_prompt_markdown
                     ? `${result.full_prompt_markdown.split('\n').length} lines`
-                    : '—'}
+                    : '--'}
                 </p>
               </PreviewSection>
 
@@ -91,7 +91,7 @@ export function PreviewPanel({
                 {(result.suggested_tools ?? []).length > 0 ? (
                   <div className="flex flex-wrap gap-1">
                     {(result.suggested_tools ?? []).slice(0, 5).map((t) => (
-                      <span key={t} className="px-1.5 py-0.5 text-sm bg-primary/8 border border-primary/12 rounded text-foreground/60 truncate max-w-[100px]">
+                      <span key={t} className="px-1.5 py-0.5 text-sm bg-primary/8 border border-primary/20 rounded text-foreground/60 truncate max-w-[100px]">
                         {t}
                       </span>
                     ))}

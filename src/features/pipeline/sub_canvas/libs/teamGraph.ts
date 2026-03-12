@@ -14,7 +14,7 @@ export interface TeamGraph {
   layers: Map<string, number>;
   /** Node IDs that are part of a cycle (unsorted by Kahn's algorithm). */
   cycleNodes: Set<string>;
-  /** Forward adjacency list: source → target[]. */
+  /** Forward adjacency list: source -> target[]. */
   adj: Map<string, string[]>;
 }
 

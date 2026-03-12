@@ -1,6 +1,6 @@
 import { Network, AlertTriangle, Cpu, ArrowRight, TrendingUp } from 'lucide-react';
 
-// ── Knowledge type config ─────────────────────────────────────────
+// -- Knowledge type config -----------------------------------------
 export const KNOWLEDGE_TYPES: Record<string, { label: string; color: string; icon: typeof Network }> = {
   tool_sequence: { label: 'Tool Sequences', color: 'emerald', icon: ArrowRight },
   failure_pattern: { label: 'Failure Patterns', color: 'red', icon: AlertTriangle },

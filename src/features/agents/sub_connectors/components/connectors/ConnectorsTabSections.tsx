@@ -17,7 +17,7 @@ export function ReadinessWarnings({ unlinked, unhealthy }: ReadinessWarningsProp
         <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/15">
           <AlertTriangle className="w-4 h-4 text-amber-400/70 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
-            <p className="font-medium text-amber-400/80">{unlinked} connector{unlinked !== 1 ? 's' : ''} missing credentials — execution blocked</p>
+            <p className="font-medium text-amber-400/80">{unlinked} connector{unlinked !== 1 ? 's' : ''} missing credentials -- execution blocked</p>
             <p className="text-amber-400/50 mt-0.5">Link or create credentials for all connectors to enable execution.</p>
           </div>
         </div>
@@ -26,7 +26,7 @@ export function ReadinessWarnings({ unlinked, unhealthy }: ReadinessWarningsProp
         <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-500/5 border border-red-500/15">
           <AlertCircle className="w-4 h-4 text-red-400/70 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
-            <p className="font-medium text-red-400/80">{unhealthy} connector{unhealthy !== 1 ? 's' : ''} failed healthcheck — execution may fail at runtime</p>
+            <p className="font-medium text-red-400/80">{unhealthy} connector{unhealthy !== 1 ? 's' : ''} failed healthcheck -- execution may fail at runtime</p>
             <p className="text-red-400/50 mt-0.5">Re-test or re-link credentials for failing connectors.</p>
           </div>
         </div>
@@ -88,7 +88,7 @@ export function ConnectorsSection({
         )}
         trailing={testableCount > 0 ? (
           <button onClick={onTestAll} disabled={testingAll}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors duration-snap disabled:opacity-40">
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors duration-snap disabled:opacity-40">
             {testingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Test All
           </button>
         ) : undefined}

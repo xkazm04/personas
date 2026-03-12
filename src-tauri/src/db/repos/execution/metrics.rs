@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use rusqlite::{params, Row};
+use tracing::{info, instrument};
 
 use crate::db::models::{
     MetricsChartData, MetricsChartPoint, MetricsPersonaBreakdown,
@@ -230,7 +231,9 @@ fn persona_filter_params(
 // Live summary from persona_executions
 // ============================================================================
 
+#[instrument(skip(pool), fields(days, persona_id))]
 pub fn get_summary(pool: &DbPool, days: Option<i64>, persona_id: Option<&str>) -> Result<serde_json::Value, AppError> {
+    let start = std::time::Instant::now();
     let days = days.unwrap_or(30);
     let conn = pool.get()?;
     let (pid_clause, param_values) = persona_filter_params(format!("-{days} days"), persona_id);
@@ -259,14 +262,23 @@ pub fn get_summary(pool: &DbPool, days: Option<i64>, persona_id: Option<&str>) -
         ))
     })?;
 
-    Ok(serde_json::json!({
+    let result = serde_json::json!({
         "total_executions": row.0,
         "successful_executions": row.1,
         "failed_executions": row.2,
         "total_cost_usd": row.3,
         "active_personas": row.4,
         "period_days": days,
-    }))
+    });
+
+    info!(
+        duration_ms = start.elapsed().as_millis() as u64,
+        total_executions = row.0,
+        active_personas = row.4,
+        "get_summary completed"
+    );
+
+    Ok(result)
 }
 
 // ============================================================================
@@ -276,11 +288,13 @@ pub fn get_summary(pool: &DbPool, days: Option<i64>, persona_id: Option<&str>) -
 /// Returns chart-ready time-series and per-persona breakdown in a single call.
 /// The SQL GROUP BY produces the same result as the ~30 lines of client-side
 /// Map-based aggregation that previously ran in ObservabilityDashboard.
+#[instrument(skip(pool), fields(days, persona_id))]
 pub fn get_chart_data(
     pool: &DbPool,
     days: Option<i64>,
     persona_id: Option<&str>,
 ) -> Result<MetricsChartData, AppError> {
+    let start = std::time::Instant::now();
     let days = days.unwrap_or(30);
     let conn = pool.get()?;
     let (pid_clause, param_values) = persona_filter_params(format!("-{days} days"), persona_id);
@@ -344,14 +358,23 @@ pub fn get_chart_data(
         rows.filter_map(|r| r.ok()).collect()
     };
 
-    Ok(MetricsChartData {
+    let result = MetricsChartData {
         chart_points,
         persona_breakdown,
-    })
+    };
+
+    info!(
+        duration_ms = start.elapsed().as_millis() as u64,
+        chart_points = result.chart_points.len(),
+        persona_breakdown = result.persona_breakdown.len(),
+        "get_chart_data completed"
+    );
+
+    Ok(result)
 }
 
 // ============================================================================
-// Prompt Performance Dashboard — aggregated metrics for a single persona
+// Prompt Performance Dashboard -- aggregated metrics for a single persona
 // ============================================================================
 
 /// Raw execution row for in-Rust percentile computation.
@@ -445,11 +468,13 @@ fn detect_anomalies(
 /// Returns aggregated prompt performance data for a single persona
 /// over the last N days, including daily metrics, version markers,
 /// and detected anomalies.
+#[instrument(skip(pool), fields(persona_id, days))]
 pub fn get_prompt_performance(
     pool: &DbPool,
     persona_id: &str,
     days: i64,
 ) -> Result<PromptPerformanceData, AppError> {
+    let start = std::time::Instant::now();
     let conn = pool.get()?;
     let date_filter = format!("-{days} days");
 
@@ -564,6 +589,15 @@ pub fn get_prompt_performance(
     // 5) Detect anomalies
     let anomalies = detect_anomalies(&daily_points, &worst_exec_by_date);
 
+    info!(
+        duration_ms = start.elapsed().as_millis() as u64,
+        raw_rows = rows.len(),
+        daily_points = daily_points.len(),
+        version_markers = version_markers.len(),
+        anomalies = anomalies.len(),
+        "get_prompt_performance completed"
+    );
+
     Ok(PromptPerformanceData {
         daily_points,
         version_markers,
@@ -572,7 +606,7 @@ pub fn get_prompt_performance(
 }
 
 // ============================================================================
-// Execution Metrics Dashboard — aggregated cross-persona dashboard data
+// Execution Metrics Dashboard -- aggregated cross-persona dashboard data
 // ============================================================================
 
 /// Raw row for dashboard aggregation (fetched per-execution for percentile computation).
@@ -589,10 +623,12 @@ struct DashboardRawRow {
 /// Returns aggregated dashboard data across all personas for the last N days.
 /// Includes daily time-series with per-persona cost breakdown, latency percentiles,
 /// top-5 costliest personas, and cost anomaly detection.
+#[instrument(skip(pool), fields(days))]
 pub fn get_execution_dashboard(
     pool: &DbPool,
     days: i64,
 ) -> Result<ExecutionDashboardData, AppError> {
+    let start = std::time::Instant::now();
     let conn = pool.get()?;
     let date_filter = format!("-{days} days");
 
@@ -827,6 +863,17 @@ pub fn get_execution_dashboard(
             (None, None)
         }
     };
+
+    info!(
+        duration_ms = start.elapsed().as_millis() as u64,
+        raw_rows = rows.len(),
+        daily_points = daily_points.len(),
+        top_personas = top_personas.len(),
+        cost_anomalies = cost_anomalies.len(),
+        total_executions,
+        total_cost,
+        "get_execution_dashboard completed"
+    );
 
     Ok(ExecutionDashboardData {
         daily_points,

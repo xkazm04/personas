@@ -87,7 +87,7 @@ export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> 
       const config = await gitlabGetConfig();
       set({ gitlabConfig: config });
     } catch {
-      // intentional: non-critical â€” no config stored yet is expected on first launch
+      // intentional: non-critical -- no config stored yet is expected on first launch
     }
   },
 
@@ -184,7 +184,7 @@ export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> 
     set({ gitlabError: null });
   },
 
-  // â”€â”€ Pipeline actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Pipeline actions --------------------------------------------------
 
   gitlabFetchPipelines: async (projectId: number) => {
     set({ gitlabPipelineLoading: true });

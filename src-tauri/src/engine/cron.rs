@@ -1,13 +1,73 @@
 use chrono::{DateTime, Datelike, Timelike, Utc, Duration};
 
-/// Parsed cron schedule (5-field standard cron)
+/// Parsed cron schedule (5-field standard cron) using bitfield matching.
+///
+/// Each field stores a bitmask where bit N indicates value N is active.
+/// Matching is O(1) per field — a single bitwise AND instead of Vec::contains.
 #[derive(Debug, Clone)]
 pub struct CronSchedule {
-    pub minutes: Vec<u32>,
-    pub hours: Vec<u32>,
-    pub days_of_month: Vec<u32>,
-    pub months: Vec<u32>,
-    pub days_of_week: Vec<u32>,
+    /// Bitmask for minutes 0–59 (bits 0..60 of u64)
+    pub minutes: u64,
+    /// Bitmask for hours 0–23 (bits 0..24 of u32)
+    pub hours: u32,
+    /// Bitmask for days of month 1–31 (bits 1..32 of u32)
+    pub days_of_month: u32,
+    /// Bitmask for months 1–12 (bits 1..13 of u16)
+    pub months: u16,
+    /// Bitmask for days of week 0–6 (bits 0..7 of u8)
+    pub days_of_week: u8,
+}
+
+impl CronSchedule {
+    /// Check if a value is set in the minutes bitfield.
+    pub fn has_minute(&self, v: u32) -> bool {
+        v < 64 && (self.minutes & (1u64 << v)) != 0
+    }
+
+    /// Check if a value is set in the hours bitfield.
+    pub fn has_hour(&self, v: u32) -> bool {
+        v < 32 && (self.hours & (1u32 << v)) != 0
+    }
+
+    /// Check if a value is set in the days_of_month bitfield.
+    pub fn has_day_of_month(&self, v: u32) -> bool {
+        v < 32 && (self.days_of_month & (1u32 << v)) != 0
+    }
+
+    /// Check if a value is set in the months bitfield.
+    pub fn has_month(&self, v: u32) -> bool {
+        v < 16 && (self.months & (1u16 << v)) != 0
+    }
+
+    /// Check if a value is set in the days_of_week bitfield.
+    pub fn has_day_of_week(&self, v: u32) -> bool {
+        v < 8 && (self.days_of_week & (1u8 << v)) != 0
+    }
+
+    /// Count how many values are set in the minutes bitfield.
+    pub fn minutes_count(&self) -> u32 {
+        self.minutes.count_ones()
+    }
+
+    /// Count how many values are set in the hours bitfield.
+    pub fn hours_count(&self) -> u32 {
+        self.hours.count_ones()
+    }
+
+    /// Count how many values are set in the days_of_month bitfield.
+    pub fn days_of_month_count(&self) -> u32 {
+        self.days_of_month.count_ones()
+    }
+
+    /// Count how many values are set in the months bitfield.
+    pub fn months_count(&self) -> u32 {
+        self.months.count_ones()
+    }
+
+    /// Count how many values are set in the days_of_week bitfield.
+    pub fn days_of_week_count(&self) -> u32 {
+        self.days_of_week.count_ones()
+    }
 }
 
 /// Parse a 5-field cron expression. Returns Err on invalid input.
@@ -18,16 +78,16 @@ pub fn parse_cron(expr: &str) -> Result<CronSchedule, String> {
     }
     Ok(CronSchedule {
         minutes: parse_field(fields[0], 0, 59)?,
-        hours: parse_field(fields[1], 0, 23)?,
-        days_of_month: parse_field(fields[2], 1, 31)?,
-        months: parse_field(fields[3], 1, 12)?,
-        days_of_week: parse_field(fields[4], 0, 6)?,
+        hours: parse_field(fields[1], 0, 23)? as u32,
+        days_of_month: parse_field(fields[2], 1, 31)? as u32,
+        months: parse_field(fields[3], 1, 12)? as u16,
+        days_of_week: parse_field(fields[4], 0, 6)? as u8,
     })
 }
 
-/// Parse a single cron field. Supports *, */N, N, N-M, N,M,P and combinations.
-fn parse_field(field: &str, min: u32, max: u32) -> Result<Vec<u32>, String> {
-    let mut values = Vec::new();
+/// Parse a single cron field into a bitmask. Supports *, */N, N, N-M, N,M,P and combinations.
+fn parse_field(field: &str, min: u32, max: u32) -> Result<u64, String> {
+    let mut bits: u64 = 0;
     for part in field.split(',') {
         let part = part.trim();
         if part.contains('/') {
@@ -50,17 +110,17 @@ fn parse_field(field: &str, min: u32, max: u32) -> Result<Vec<u32>, String> {
             };
             let mut v = range_min;
             while v <= range_max {
-                values.push(v);
+                bits |= 1u64 << v;
                 v += step;
             }
         } else if part.contains('-') {
             let (lo, hi) = parse_range_bounds(part, min, max)?;
             for v in lo..=hi {
-                values.push(v);
+                bits |= 1u64 << v;
             }
         } else if part == "*" {
             for v in min..=max {
-                values.push(v);
+                bits |= 1u64 << v;
             }
         } else {
             let v: u32 = part
@@ -69,15 +129,13 @@ fn parse_field(field: &str, min: u32, max: u32) -> Result<Vec<u32>, String> {
             if v < min || v > max {
                 return Err(format!("Value {v} out of range {min}-{max}"));
             }
-            values.push(v);
+            bits |= 1u64 << v;
         }
     }
-    values.sort();
-    values.dedup();
-    if values.is_empty() {
+    if bits == 0 {
         return Err("Empty field".into());
     }
-    Ok(values)
+    Ok(bits)
 }
 
 fn parse_range_bounds(s: &str, min: u32, max: u32) -> Result<(u32, u32), String> {
@@ -96,7 +154,7 @@ fn parse_range_bounds(s: &str, min: u32, max: u32) -> Result<(u32, u32), String>
     Ok((lo, hi))
 }
 
-/// Check if a datetime matches the schedule.
+/// Check if a datetime matches the schedule. O(1) — 5 bitwise ANDs.
 fn matches(schedule: &CronSchedule, dt: &DateTime<Utc>) -> bool {
     let minute = dt.minute();
     let hour = dt.hour();
@@ -104,11 +162,11 @@ fn matches(schedule: &CronSchedule, dt: &DateTime<Utc>) -> bool {
     let month = dt.month();
     let weekday = dt.weekday().num_days_from_sunday(); // 0=Sun
 
-    schedule.minutes.contains(&minute)
-        && schedule.hours.contains(&hour)
-        && schedule.days_of_month.contains(&day)
-        && schedule.months.contains(&month)
-        && schedule.days_of_week.contains(&weekday)
+    schedule.has_minute(minute)
+        && schedule.has_hour(hour)
+        && schedule.has_day_of_month(day)
+        && schedule.has_month(month)
+        && schedule.has_day_of_week(weekday)
 }
 
 /// Compute the next fire time strictly after `from`.
@@ -130,7 +188,7 @@ pub fn next_fire_time(schedule: &CronSchedule, from: DateTime<Utc>) -> Option<Da
         }
 
         // Optimization: skip ahead when possible
-        if !schedule.months.contains(&current.month()) {
+        if !schedule.has_month(current.month()) {
             let next_month = if current.month() == 12 {
                 current
                     .with_year(current.year() + 1)
@@ -150,10 +208,8 @@ pub fn next_fire_time(schedule: &CronSchedule, from: DateTime<Utc>) -> Option<Da
             continue;
         }
 
-        if !schedule.days_of_month.contains(&current.day())
-            || !schedule
-                .days_of_week
-                .contains(&current.weekday().num_days_from_sunday())
+        if !schedule.has_day_of_month(current.day())
+            || !schedule.has_day_of_week(current.weekday().num_days_from_sunday())
         {
             current = (current + Duration::days(1))
                 .with_hour(0)
@@ -163,7 +219,7 @@ pub fn next_fire_time(schedule: &CronSchedule, from: DateTime<Utc>) -> Option<Da
             continue;
         }
 
-        if !schedule.hours.contains(&current.hour()) {
+        if !schedule.has_hour(current.hour()) {
             current = (current + Duration::hours(1)).with_minute(0).unwrap();
             continue;
         }
@@ -182,39 +238,50 @@ mod tests {
     #[test]
     fn test_parse_star() {
         let s = parse_cron("* * * * *").unwrap();
-        assert_eq!(s.minutes.len(), 60);
-        assert_eq!(s.hours.len(), 24);
-        assert_eq!(s.days_of_month.len(), 31);
-        assert_eq!(s.months.len(), 12);
-        assert_eq!(s.days_of_week.len(), 7);
+        assert_eq!(s.minutes_count(), 60);
+        assert_eq!(s.hours_count(), 24);
+        assert_eq!(s.days_of_month_count(), 31);
+        assert_eq!(s.months_count(), 12);
+        assert_eq!(s.days_of_week_count(), 7);
     }
 
     #[test]
     fn test_parse_step() {
         let s = parse_cron("*/15 * * * *").unwrap();
-        assert_eq!(s.minutes, vec![0, 15, 30, 45]);
+        assert!(s.has_minute(0));
+        assert!(s.has_minute(15));
+        assert!(s.has_minute(30));
+        assert!(s.has_minute(45));
+        assert_eq!(s.minutes_count(), 4);
     }
 
     #[test]
     fn test_parse_range() {
         let s = parse_cron("* * * * 1-5").unwrap();
-        assert_eq!(s.days_of_week, vec![1, 2, 3, 4, 5]);
+        for d in 1..=5 {
+            assert!(s.has_day_of_week(d));
+        }
+        assert!(!s.has_day_of_week(0));
+        assert!(!s.has_day_of_week(6));
     }
 
     #[test]
     fn test_parse_list() {
         let s = parse_cron("1,15,30 * * * *").unwrap();
-        assert_eq!(s.minutes, vec![1, 15, 30]);
+        assert!(s.has_minute(1));
+        assert!(s.has_minute(15));
+        assert!(s.has_minute(30));
+        assert_eq!(s.minutes_count(), 3);
     }
 
     #[test]
     fn test_parse_combined() {
         let s = parse_cron("1-5,10,*/20 * * * *").unwrap();
-        assert!(s.minutes.contains(&1));
-        assert!(s.minutes.contains(&5));
-        assert!(s.minutes.contains(&10));
-        assert!(s.minutes.contains(&20));
-        assert!(s.minutes.contains(&40));
+        assert!(s.has_minute(1));
+        assert!(s.has_minute(5));
+        assert!(s.has_minute(10));
+        assert!(s.has_minute(20));
+        assert!(s.has_minute(40));
     }
 
     #[test]
@@ -268,5 +335,16 @@ mod tests {
         let from = Utc.with_ymd_and_hms(2026, 1, 15, 0, 0, 0).unwrap();
         let next = next_fire_time(&s, from).unwrap();
         assert_eq!(next, Utc.with_ymd_and_hms(2026, 2, 1, 0, 0, 0).unwrap());
+    }
+
+    #[test]
+    fn test_bitfield_matching_is_correct() {
+        let s = parse_cron("30 12 15 6 *").unwrap();
+        // June 15 at 12:30
+        let dt = Utc.with_ymd_and_hms(2026, 6, 15, 12, 30, 0).unwrap();
+        assert!(matches(&s, &dt));
+        // Wrong minute
+        let dt2 = Utc.with_ymd_and_hms(2026, 6, 15, 12, 31, 0).unwrap();
+        assert!(!matches(&s, &dt2));
     }
 }

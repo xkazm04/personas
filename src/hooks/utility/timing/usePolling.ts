@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-// ── Polling configuration registry ──────────────────────────────────────
+// -- Polling configuration registry --------------------------------------
 export const POLLING_CONFIG = {
-  /** Running executions — fast cadence while jobs are in-flight. */
+  /** Running executions -- fast cadence while jobs are in-flight. */
   runningExecutions: { interval: 5_000, maxBackoff: 30_000 },
-  /** Cloud review inbox — moderate cadence for external sync. */
+  /** Cloud review inbox -- moderate cadence for external sync. */
   cloudReviews: { interval: 15_000, maxBackoff: 60_000 },
-  /** Analytics / observability auto-refresh — slow cadence for dashboards. */
+  /** Analytics / observability auto-refresh -- slow cadence for dashboards. */
   dashboardRefresh: { interval: 30_000, maxBackoff: 120_000 },
 } as const;
 

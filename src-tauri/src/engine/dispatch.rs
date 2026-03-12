@@ -38,12 +38,12 @@ pub struct DispatchContext<'a> {
 /// Route a single protocol message to the appropriate DB repo and emit events.
 ///
 /// This is the core dispatch function. It handles all 6 protocol message types:
-/// - `UserMessage` â†’ messages repo + frontend event + OS notification
-/// - `PersonaAction` â†’ events repo (persona_action event type)
-/// - `EmitEvent` â†’ events repo (custom event type)
-/// - `AgentMemory` â†’ memories repo
-/// - `ManualReview` â†’ manual_reviews repo + OS notification
-/// - `ExecutionFlow` â†’ logged only (stored at execution completion)
+/// - `UserMessage` -> messages repo + frontend event + OS notification
+/// - `PersonaAction` -> events repo (persona_action event type)
+/// - `EmitEvent` -> events repo (custom event type)
+/// - `AgentMemory` -> memories repo
+/// - `ManualReview` -> manual_reviews repo + OS notification
+/// - `ExecutionFlow` -> logged only (stored at execution completion)
 pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
     match msg {
         ProtocolMessage::UserMessage {

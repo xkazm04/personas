@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Network, List } from 'lucide-react';
 import { usePersonaStore } from '@/stores/personaStore';
 import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -11,6 +12,8 @@ import { useConnectorStatuses } from '../../libs/useConnectorStatuses';
 import { getRoleForConnector } from '@/lib/credentials/connectorRoles';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
 import { ReadinessWarnings, ConnectorsSection } from './ConnectorsTabSections';
+import { DependencyGraphPanel } from './DependencyGraphPanel';
+import { buildPersonaDependencyGraph } from '../../libs/dependencyGraph';
 
 interface PersonaConnectorsTabProps {
   onMissingCountChange?: (count: number) => void;
@@ -29,6 +32,12 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
   const [designInstruction, setDesignInstruction] = useState('');
   const [automationModalOpen, setAutomationModalOpen] = useState(false);
   const [editingAutomationId, setEditingAutomationId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'graph'>('list');
+
+  const dependencyGraph = useMemo(
+    () => buildPersonaDependencyGraph(tools, selectedPersona?.automations ?? [], statuses, credentials),
+    [tools, selectedPersona?.automations, statuses, credentials],
+  );
 
   const handleAddCredential = (connectorName: string) => {
     setLinkingConnector(null);
@@ -73,9 +82,35 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
 
   useEffect(() => { onMissingCountChange?.(unlinked); }, [unlinked, onMissingCountChange]);
 
+  const hasGraphContent = dependencyGraph.nodes.length > 0;
+
   return (
     <div className="space-y-6">
       <AgentCredentialDemands />
+      {hasGraphContent && (
+        <div className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            onClick={() => setViewMode('list')}
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${viewMode === 'list' ? 'bg-primary/10 text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}
+            title="List view"
+          >
+            <List className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('graph')}
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${viewMode === 'graph' ? 'bg-primary/10 text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}
+            title="Dependency graph"
+          >
+            <Network className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+      {viewMode === 'graph' && hasGraphContent ? (
+        <DependencyGraphPanel graph={dependencyGraph} />
+      ) : (
+        <>
       <ReadinessWarnings unlinked={unlinked} unhealthy={unhealthy} />
       <ToolsSection tools={tools} personaId={selectedPersona?.id} />
       <AutomationsSection automations={selectedPersona?.automations ?? []} onAdd={() => setAutomationModalOpen(true)} onEdit={(id) => { setEditingAutomationId(id); setAutomationModalOpen(true); }} />
@@ -91,6 +126,8 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
       />
       {requiredCredTypes.length === 0 && tools.length === 0 && (selectedPersona?.automations ?? []).length === 0 && (
         <EmptyState variant="connectors-empty" />
+      )}
+        </>
       )}
       <UseCaseSubscriptionsSection />
       <AutomationSetupModal open={automationModalOpen} personaId={selectedPersona.id} onClose={() => { setAutomationModalOpen(false); setEditingAutomationId(null); }} onComplete={() => { setAutomationModalOpen(false); setEditingAutomationId(null); }} editAutomationId={editingAutomationId} />

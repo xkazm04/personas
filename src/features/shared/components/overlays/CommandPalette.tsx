@@ -12,7 +12,7 @@ import {
 } from './commandPaletteUtils';
 import { CommandPaletteResults } from './CommandPaletteResults';
 
-// ── Section icons ─────────────────────────────────────────────────────
+// -- Section icons -----------------------------------------------------
 
 const NAV_ITEMS: { id: SidebarSection; label: string; icon: React.ReactNode }[] = [
   { id: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },

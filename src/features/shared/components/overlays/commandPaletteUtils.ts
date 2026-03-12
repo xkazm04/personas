@@ -1,7 +1,7 @@
 import type { SidebarSection } from '@/lib/types/types';
 import type { Persona } from '@/lib/bindings/Persona';
 
-// ── Types ─────────────────────────────────────────────────────────────
+// -- Types -------------------------------------------------------------
 
 export type ResultKind = 'agent' | 'navigation' | 'action';
 
@@ -14,7 +14,7 @@ export interface PaletteItem {
   onSelect: () => void;
 }
 
-// ── Fuzzy match ───────────────────────────────────────────────────────
+// -- Fuzzy match -------------------------------------------------------
 
 export function fuzzyMatch(query: string, text: string): boolean {
   const q = query.toLowerCase();
@@ -42,7 +42,7 @@ export function fuzzyScore(query: string, text: string): number {
   return qi === q.length ? Math.max(10, 70 - gaps) : 0;
 }
 
-// ── Recent agents (session-scoped) ────────────────────────────────────
+// -- Recent agents (session-scoped) ------------------------------------
 
 const MAX_RECENT = 5;
 let recentAgentIds: string[] = [];
@@ -55,7 +55,7 @@ export function getRecentAgentIds(): string[] {
   return recentAgentIds;
 }
 
-// ── Agent item builder ────────────────────────────────────────────────
+// -- Agent item builder ------------------------------------------------
 
 export function agentItem(
   p: Persona,

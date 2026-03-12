@@ -27,7 +27,7 @@ export interface AutoCredBrowserResult {
   partial: boolean;
 }
 
-/** IPC timeout for browser sessions — 10 minutes to allow manual sign-in steps. */
+/** IPC timeout for browser sessions -- 10 minutes to allow manual sign-in steps. */
 const BROWSER_SESSION_TIMEOUT_MS = 10 * 60 * 1000;
 
 export async function startAutoCredBrowser(request: AutoCredBrowserRequest): Promise<AutoCredBrowserResult> {

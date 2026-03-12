@@ -35,11 +35,11 @@ import {
   PROVIDER_FIXTURES,
 } from '../helpers/cliFixtures';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 1. Provider execution lines — classification matrix
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 1. Provider execution lines -- classification matrix
+// ===========================================================================
 
-describe('E2E: line classification — Claude execution', () => {
+describe('E2E: line classification -- Claude execution', () => {
   it('classifies Session started as status', () => {
     expect(classifyLine('Session started (claude-sonnet-4-6)')).toBe('status');
   });
@@ -76,7 +76,7 @@ describe('E2E: line classification — Claude execution', () => {
   });
 });
 
-describe('E2E: line classification — Gemini execution', () => {
+describe('E2E: line classification -- Gemini execution', () => {
   it('classifies Gemini session start as status', () => {
     expect(classifyLine('Session started (gemini-3.1-flash-lite-preview)')).toBe('status');
   });
@@ -94,7 +94,7 @@ describe('E2E: line classification — Gemini execution', () => {
   });
 });
 
-describe('E2E: line classification — Copilot execution', () => {
+describe('E2E: line classification -- Copilot execution', () => {
   it('classifies Copilot session start as status', () => {
     expect(classifyLine('Session started (gpt-5.1-codex-mini)')).toBe('status');
   });
@@ -112,9 +112,9 @@ describe('E2E: line classification — Copilot execution', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 2. Error and warning classification
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 describe('E2E: error line classification across providers', () => {
   it('classifies [ERROR] lines', () => {
@@ -145,13 +145,13 @@ describe('E2E: error line classification across providers', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 3. Query debug line classification
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 describe('E2E: query debug line classification', () => {
   it('classifies analysis lines as info', () => {
-    expect(classifyLine('> Analyzing query error context…')).toBe('info');
+    expect(classifyLine('> Analyzing query error context...')).toBe('info');
     expect(classifyLine('> Attempt 1: Examining table schema')).toBe('info');
     expect(classifyLine('> Query succeeded after correction')).toBe('info');
     expect(classifyLine('> Max retries exceeded')).toBe('info');
@@ -184,13 +184,13 @@ describe('E2E: query debug line classification', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 4. N8N transform line classification
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 describe('E2E: N8N transform line classification', () => {
   it('classifies [System] lines as meta', () => {
-    expect(classifyLine('[System] Starting workflow transformation…')).toBe('meta');
+    expect(classifyLine('[System] Starting workflow transformation...')).toBe('meta');
   });
 
   it('classifies [Milestone] lines (code-style prefix)', () => {
@@ -226,9 +226,9 @@ describe('E2E: N8N transform line classification', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 5. Template adoption line classification
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 describe('E2E: template adoption line classification', () => {
   it('classifies all adoption lines to valid styles', () => {
@@ -239,9 +239,9 @@ describe('E2E: template adoption line classification', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 6. AI healing line classification
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 describe('E2E: AI healing line classification', () => {
   it('classifies all healing lines to valid styles', () => {
@@ -252,9 +252,9 @@ describe('E2E: AI healing line classification', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 7. API test runner line classification
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 describe('E2E: API test runner line classification', () => {
   it('classifies all API test lines to valid styles', () => {
@@ -265,9 +265,9 @@ describe('E2E: API test runner line classification', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 8. [SUMMARY] parsing — all providers
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 8. [SUMMARY] parsing -- all providers
+// ===========================================================================
 
 describe('E2E: [SUMMARY] parsing across providers', () => {
   it('parses Claude execution summary', () => {
@@ -346,9 +346,9 @@ describe('E2E: [SUMMARY] parsing across providers', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 9. Style map completeness — every style has a CSS class
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 9. Style map completeness -- every style has a CSS class
+// ===========================================================================
 
 describe('E2E: TERMINAL_STYLE_MAP completeness', () => {
   const allStyles: TerminalLineStyle[] = [
@@ -363,9 +363,9 @@ describe('E2E: TERMINAL_STYLE_MAP completeness', () => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 10. Full provider stream — classification distribution
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 10. Full provider stream -- classification distribution
+// ===========================================================================
 
 describe('E2E: classification distribution per provider', () => {
   function getStyleDistribution(lines: string[]): Record<string, number> {

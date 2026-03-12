@@ -58,7 +58,7 @@ export function HealingCard({
               <span className={`text-sm font-semibold ${styles.accent}`}>
                 {notification.title}
               </span>
-              <span className="text-sm font-mono px-1.5 py-0.5 rounded bg-secondary/40 text-muted-foreground/60 border border-primary/8">
+              <span className="text-sm font-mono px-1.5 py-0.5 rounded bg-secondary/40 text-muted-foreground/60 border border-primary/10">
                 {notification.severity}
               </span>
             </div>
@@ -100,7 +100,7 @@ export function HealingCard({
               </div>
             )}
             {/* Attempt badge */}
-            <span className="ml-auto text-sm font-mono text-muted-foreground/60 px-2 py-0.5 rounded bg-secondary/30 border border-primary/8">
+            <span className="ml-auto text-sm font-mono text-muted-foreground/60 px-2 py-0.5 rounded bg-secondary/30 border border-primary/10">
               Attempt {notification.retry_number} of {notification.max_retries}
             </span>
           </div>
@@ -108,7 +108,7 @@ export function HealingCard({
 
         {/* Backoff progress bar */}
         {isRetry && (notification.backoff_seconds ?? 0) > 0 && (
-          <div className="w-full h-1 rounded-full bg-secondary/40 overflow-hidden">
+          <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
             <motion.div
               className="h-full rounded-full bg-amber-500/40"
               initial={{ width: '100%' }}

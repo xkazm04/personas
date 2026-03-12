@@ -7,6 +7,7 @@ pub fn collect_rows<T>(
     context: &str,
 ) -> Vec<T> {
     let mut results = Vec::new();
+    let mut skipped_count = 0usize;
     for (idx, row_result) in rows.enumerate() {
         match row_result {
             Ok(item) => results.push(item),
@@ -17,8 +18,12 @@ pub fn collect_rows<T>(
                     error = %e,
                     "Failed to map database row"
                 );
+                skipped_count += 1;
             }
         }
+    }
+    if skipped_count > 0 {
+        tracing::warn!(context, skipped_count, "Skipped {skipped_count} rows due to mapping errors");
     }
     results
 }

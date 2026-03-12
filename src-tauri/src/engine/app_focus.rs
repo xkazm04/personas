@@ -52,7 +52,7 @@ fn get_foreground_window() -> Option<ForegroundWindow> {
 #[cfg(target_os = "windows")]
 fn get_foreground_window_windows() -> Option<ForegroundWindow> {
     use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowTextW};
-    use windows::Win32::Foundation::HWND;
+    use windows::Win32::Foundation::{HWND, CloseHandle};
     use windows::Win32::System::Threading::OpenProcess;
     use windows::Win32::System::Threading::PROCESS_QUERY_INFORMATION;
     use windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId;
@@ -81,6 +81,7 @@ fn get_foreground_window_windows() -> Option<ForegroundWindow> {
             if let Ok(process) = OpenProcess(PROCESS_QUERY_INFORMATION, false, pid) {
                 let mut name_buf = [0u16; 512];
                 let name_len = GetProcessImageFileNameW(process, &mut name_buf);
+                let _ = CloseHandle(process);
                 if name_len > 0 {
                     let full_path = String::from_utf16_lossy(&name_buf[..name_len as usize]);
                     // Extract just the executable name
@@ -139,16 +140,11 @@ pub async fn app_focus_tick(
         return;
     }
 
-    // Load all enabled app_focus triggers
-    let triggers = match trigger_repo::get_all(pool) {
+    // Load enabled app_focus triggers (SQL-filtered)
+    let focus_triggers = match trigger_repo::get_enabled_by_type(pool, "app_focus") {
         Ok(t) => t,
         Err(_) => return,
     };
-
-    let focus_triggers: Vec<_> = triggers
-        .into_iter()
-        .filter(|t| t.trigger_type == "app_focus" && t.enabled)
-        .collect();
 
     if focus_triggers.is_empty() {
         return;

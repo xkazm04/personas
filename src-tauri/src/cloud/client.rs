@@ -51,11 +51,11 @@ pub struct CloudExecutionPoll {
     pub execution_id: String,
     pub status: String,
     pub output: Vec<String>,
-    /// Cloud renamed this to `totalOutputLines` — accept both.
+    /// Cloud renamed this to `totalOutputLines` -- accept both.
     #[serde(alias = "totalOutputLines", default)]
     pub output_lines: u32,
     pub duration_ms: Option<u64>,
-    /// Cloud renamed this to `totalCostUsd` — accept both.
+    /// Cloud renamed this to `totalCostUsd` -- accept both.
     #[serde(alias = "totalCostUsd")]
     pub cost_usd: Option<f64>,
     /// Whether older output was evicted from the in-memory tail buffer.
@@ -116,7 +116,7 @@ pub struct CloudDeployment {
     pub webhook_secret: Option<String>,
     pub invocation_count: u64,
     pub last_invoked_at: Option<String>,
-    /// Monthly budget cap in USD — None means unlimited.
+    /// Monthly budget cap in USD -- None means unlimited.
     #[serde(default)]
     pub max_monthly_budget_usd: Option<f64>,
     /// Accumulated cost for the current budget month.

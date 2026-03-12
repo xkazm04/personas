@@ -31,7 +31,7 @@
     "auth_type": "pat",
     "auth_type_label": "PAT",
     "docs_url": "https://developer.calendly.com/api-docs/",
-    "setup_guide": "1. Go to calendly.com and sign in to your account\n2. Navigate to Integrations → API & Webhooks\n3. Click 'Generate New Token' under Personal Access Tokens\n4. Copy the generated token value",
+    "setup_guide": "1. Go to calendly.com and sign in to your account\n2. Navigate to Integrations -> API & Webhooks\n3. Click 'Generate New Token' under Personal Access Tokens\n4. Copy the generated token value",
     "pricing_tier": "free"
   }
 }

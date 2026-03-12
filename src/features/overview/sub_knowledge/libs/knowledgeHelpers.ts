@@ -1,16 +1,28 @@
-import { Network, AlertTriangle, TrendingUp, Cpu, ArrowRight, MessageSquare, Globe, Wrench, Plug } from 'lucide-react';
+import { Network, Globe, Wrench, Plug } from 'lucide-react';
+import type { ComponentType, SVGProps } from 'react';
+import {
+  ToolSequenceIcon,
+  FailurePatternIcon,
+  CostQualityIcon,
+  ModelPerformanceIcon,
+  DataFlowIcon,
+  AgentAnnotationIcon,
+  UserAnnotationIcon,
+} from './KnowledgeTypeIcons';
 
-export const KNOWLEDGE_TYPES: Record<string, { label: string; color: string; icon: typeof Network }> = {
-  tool_sequence: { label: 'Tool Sequences', color: 'emerald', icon: ArrowRight },
-  failure_pattern: { label: 'Failure Patterns', color: 'red', icon: AlertTriangle },
-  cost_quality: { label: 'Cost / Quality', color: 'blue', icon: TrendingUp },
-  model_performance: { label: 'Model Performance', color: 'violet', icon: Cpu },
-  data_flow: { label: 'Data Flows', color: 'amber', icon: Network },
-  agent_annotation: { label: 'Agent Annotation', color: 'cyan', icon: MessageSquare },
-  user_annotation: { label: 'User Annotation', color: 'sky', icon: MessageSquare },
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
+
+export const KNOWLEDGE_TYPES: Record<string, { label: string; color: string; icon: IconComponent }> = {
+  tool_sequence: { label: 'Tool Sequences', color: 'emerald', icon: ToolSequenceIcon },
+  failure_pattern: { label: 'Failure Patterns', color: 'red', icon: FailurePatternIcon },
+  cost_quality: { label: 'Cost / Quality', color: 'blue', icon: CostQualityIcon },
+  model_performance: { label: 'Model Performance', color: 'violet', icon: ModelPerformanceIcon },
+  data_flow: { label: 'Data Flows', color: 'amber', icon: DataFlowIcon },
+  agent_annotation: { label: 'Agent Annotation', color: 'cyan', icon: AgentAnnotationIcon },
+  user_annotation: { label: 'User Annotation', color: 'sky', icon: UserAnnotationIcon },
 };
 
-export const SCOPE_TYPES: Record<string, { label: string; icon: typeof Network; color: string }> = {
+export const SCOPE_TYPES: Record<string, { label: string; icon: IconComponent; color: string }> = {
   persona: { label: 'Persona', icon: Network, color: 'violet' },
   tool: { label: 'Tool', icon: Wrench, color: 'emerald' },
   connector: { label: 'Connector', icon: Plug, color: 'blue' },

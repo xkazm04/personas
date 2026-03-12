@@ -3,10 +3,10 @@
  * Supports multi-model configuration per provider, scoped via env vars.
  *
  * Environment variables for scoping:
- *   CLI_TEST_PROVIDERS  — comma-separated provider names (e.g. "claude,copilot")
- *   CLI_TEST_MODELS     — comma-separated model IDs (e.g. "claude-sonnet-4-6,gpt-5.4")
- *   CLI_TEST_TIERS      — comma-separated tiers (e.g. "budget,standard")
- *   CLI_TEST_FEATURES   — comma-separated feature areas (e.g. "persona-design,healing-diagnosis")
+ *   CLI_TEST_PROVIDERS  -- comma-separated provider names (e.g. "claude,copilot")
+ *   CLI_TEST_MODELS     -- comma-separated model IDs (e.g. "claude-sonnet-4-6,gpt-5.4")
+ *   CLI_TEST_TIERS      -- comma-separated tiers (e.g. "budget,standard")
+ *   CLI_TEST_FEATURES   -- comma-separated feature areas (e.g. "persona-design,healing-diagnosis")
  */
 import { execSync } from 'child_process';
 import type { ProviderName, ProviderInfo, TestMatrixEntry, FeatureArea } from './types';
@@ -108,9 +108,9 @@ export function resetProviderCache(): void {
   cachedProviders = null;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Test matrix builder — env-driven provider/model scoping
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// Test matrix builder -- env-driven provider/model scoping
+// ===========================================================================
 
 function parseEnvList(envVar: string): string[] | null {
   const val = process.env[envVar];

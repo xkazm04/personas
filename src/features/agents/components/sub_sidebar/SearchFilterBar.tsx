@@ -4,7 +4,7 @@ import { Search, X, SlidersHorizontal, AlertTriangle } from 'lucide-react';
 import { TAG_GROUPS } from './usePersonaFilters';
 import type { FilterState, SmartTag } from './usePersonaFilters';
 
-// ── Chip Component ───────────────────────────────────────────────────
+// -- Chip Component ---------------------------------------------------
 
 function FilterChip({
   label,
@@ -36,7 +36,7 @@ function FilterChip({
   );
 }
 
-// ── Tag Group Row ───────────────────────────────────────────────────
+// -- Tag Group Row ---------------------------------------------------
 
 function TagGroupRow({
   label,
@@ -65,7 +65,7 @@ function TagGroupRow({
   );
 }
 
-// ── Main Component ───────────────────────────────────────────────────
+// -- Main Component ---------------------------------------------------
 
 interface SearchFilterBarProps {
   filters: FilterState;
@@ -111,7 +111,7 @@ export function SearchFilterBar({
     <div className="mb-2 space-y-1.5">
       {/* Search row */}
       <div className="flex items-center gap-1.5">
-        <div className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-primary/10 bg-secondary/30 focus-within:border-primary/25 focus-within:bg-secondary/50 transition-all">
+        <div className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-primary/10 bg-secondary/30 focus-within:border-primary/30 focus-within:bg-secondary/50 transition-all">
           <Search className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
           <input
             ref={inputRef}

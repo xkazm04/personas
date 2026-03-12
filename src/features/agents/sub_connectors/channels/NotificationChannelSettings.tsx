@@ -63,7 +63,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
     try {
       const parsed = JSON.parse(selectedPersona.notification_channels);
       setChannelsInternal(Array.isArray(parsed) ? parsed : []);
-    } catch { /* intentional: non-critical — JSON parse fallback */ setChannelsInternal([]); }
+    } catch { /* intentional: non-critical -- JSON parse fallback */ setChannelsInternal([]); }
     setIsDirty(false);
   }, [selectedPersona?.notification_channels, isDraftMode]);
 
@@ -98,7 +98,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
   // Fields whose label contains "(optional)" are skipped during validation.
   const validateChannels = (): string[] => {
     const errors: string[] = [];
-    for (const channel of channels) {
+    for (const channel of effectiveChannels) {
       if (!channel.enabled) continue;
       const typeDef = channelTypes.find(t => t.type === channel.type);
       if (!typeDef) continue;
@@ -144,7 +144,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
   const existingTypes = new Set(effectiveChannels.map(c => c.type));
 
   return (
-    <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-4">
+    <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-4">
       <SectionHeader
         className="mb-6"
         icon={<Bell className="w-3.5 h-3.5" />}
@@ -153,7 +153,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
 
       <div className="space-y-3">
         {/* In-App (always present, read-only) */}
-        <div className="flex items-center gap-3 p-2.5 bg-secondary/30 border border-primary/15 rounded-xl">
+        <div className="flex items-center gap-3 p-2.5 bg-secondary/30 border border-primary/20 rounded-xl">
           <Bell className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span className="text-sm font-medium text-foreground/80 flex-1">In-App Messages</span>
           <span className="flex items-center gap-1 text-sm text-emerald-400/80">

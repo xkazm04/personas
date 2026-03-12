@@ -1,4 +1,4 @@
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
 export interface SuggestedTrigger {
   type: string;
@@ -15,7 +15,7 @@ export interface ScheduleBuilderProps {
 
 export type BuilderMode = 'presets' | 'visual' | 'cron';
 
-// ── Constants ──────────────────────────────────────────────────────────
+// -- Constants ----------------------------------------------------------
 
 export const DAYS = [
   { key: '1', short: 'Mon', label: 'Monday' },
@@ -56,7 +56,7 @@ export const TIMEZONES = [
   { label: 'Sydney (AEST)', value: 'Australia/Sydney' },
 ] as const;
 
-// ── Helpers ────────────────────────────────────────────────────────────
+// -- Helpers ------------------------------------------------------------
 
 export function formatRunTime(date: Date): string {
   const now = new Date();

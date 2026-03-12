@@ -13,7 +13,7 @@ import { N8nSessionList } from './N8nSessionList';
 import { CredentialGapPanel } from '../widgets/CredentialGapPanel';
 import { usePersonaStore } from '@/stores/personaStore';
 
-// â”€â”€ Slide animation variants â”€â”€
+// -- Slide animation variants --
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -57,14 +57,14 @@ export default function N8nImportTab() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Step indicator â€” hidden on upload */}
+      {/* Step indicator -- hidden on upload */}
       {state.step !== 'upload' && (
         <div className="px-6 pt-4 pb-1 border-b border-primary/5">
           <N8nStepIndicator currentStep={state.step} processing={analyzing || state.transforming} />
         </div>
       )}
 
-      {/* Error banner â€” suppress on transform step (errors shown inline in chat) */}
+      {/* Error banner -- suppress on transform step (errors shown inline in chat) */}
       {state.error && state.step !== 'transform' && (
         <motion.div
           initial={{ opacity: 0, y: 4 }}

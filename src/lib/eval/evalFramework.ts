@@ -2,7 +2,7 @@
  * Unified evaluation framework for persona testing.
  *
  * Provides a single source of truth for scoring weights, composite calculation,
- * score visualization, and status badge styling — replacing the duplicated
+ * score visualization, and status badge styling -- replacing the duplicated
  * logic that was spread across testUtils.ts, labUtils.ts, and test_runner.rs.
  *
  * The Rust backend (`engine/eval.rs`) owns the authoritative evaluation logic;
@@ -14,13 +14,13 @@ import type { EvalStrategyKind } from '@/lib/bindings/EvalStrategyKind';
 // Re-export for convenience
 export type { EvalStrategyKind };
 
-// ── Standardized EvalResult (mirrors Rust EvalResult) ─────────
+// -- Standardized EvalResult (mirrors Rust EvalResult) ---------
 
 export interface EvalResult {
   strategy: EvalStrategyKind;
-  /** Score from 0–100. Higher is better. */
+  /** Score from 0--100. Higher is better. */
   score: number;
-  /** Confidence in the score (0.0–1.0). */
+  /** Confidence in the score (0.0--1.0). */
   confidence: number;
   /** Human-readable explanation of how the score was derived. */
   explanation: string;
@@ -33,7 +33,7 @@ export interface CompositeEvalResult {
   individual: EvalResult[];
 }
 
-// ── Scoring weights (single source of truth) ──────────────────
+// -- Scoring weights (single source of truth) ------------------
 // Keep in sync with WEIGHT_* in src-tauri/src/engine/eval.rs
 
 export const WEIGHT_TOOL_ACCURACY = 0.4;
@@ -53,7 +53,7 @@ export function compositeScore(
   );
 }
 
-// ── Score visualization ────────────────────────────────────────
+// -- Score visualization ----------------------------------------
 
 /** Return Tailwind color class for a score value. */
 export function scoreColor(score: number | null): string {
@@ -63,7 +63,7 @@ export function scoreColor(score: number | null): string {
   return 'text-status-error';
 }
 
-// ── Status badge styling ───────────────────────────────────────
+// -- Status badge styling ---------------------------------------
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; border: string }> = {
   drafting:   { bg: 'bg-violet-500/15', text: 'text-violet-400', border: 'border-violet-500/30' },
@@ -84,7 +84,7 @@ export function statusBadge(status: string): string {
   return `px-2 py-0.5 rounded-lg text-sm font-medium border ${c.bg} ${c.text} ${c.border}`;
 }
 
-// ── Strategy metadata ──────────────────────────────────────────
+// -- Strategy metadata ------------------------------------------
 
 interface StrategyMeta {
   label: string;

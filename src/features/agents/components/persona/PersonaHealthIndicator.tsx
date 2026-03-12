@@ -70,7 +70,7 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
         </div>
       )}
       {statuses && statuses.length > 0 && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/health:flex group-focus-within/health:flex items-center gap-1 px-2 py-1.5 rounded-lg bg-popover border border-primary/15 shadow-lg z-20 whitespace-nowrap">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/health:flex group-focus-within/health:flex items-center gap-1 px-2 py-1.5 rounded-lg bg-popover border border-primary/20 shadow-lg z-20 whitespace-nowrap">
           {statuses.map((s, si) => (
             <div
               key={si}

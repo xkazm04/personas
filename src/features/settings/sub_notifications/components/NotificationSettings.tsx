@@ -105,7 +105,7 @@ function WeeklyDigestToggle() {
 
 export default function NotificationSettings() {
   const setting = useAppSetting(SETTINGS_KEY, JSON.stringify(DEFAULT_PREFS), (v) => {
-    try { const p = JSON.parse(v); return typeof p === 'object' && p !== null; } catch { /* intentional: non-critical — JSON parse fallback */ return false; }
+    try { const p = JSON.parse(v); return typeof p === 'object' && p !== null; } catch { /* intentional: non-critical -- JSON parse fallback */ return false; }
   });
   const hasLoadedOnce = useRef(false);
 
@@ -123,7 +123,7 @@ export default function NotificationSettings() {
     try {
       return { ...DEFAULT_PREFS, ...JSON.parse(setting.value) };
     } catch {
-      // intentional: non-critical — JSON parse fallback
+      // intentional: non-critical -- JSON parse fallback
       return DEFAULT_PREFS;
     }
   }, [setting.value]);

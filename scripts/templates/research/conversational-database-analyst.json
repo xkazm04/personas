@@ -130,7 +130,7 @@
             "label": "Supabase Project URL",
             "type": "text",
             "placeholder": "https://xyzcompany.supabase.co",
-            "helpText": "Go to your Supabase project dashboard → Settings → API. Copy the Project URL.",
+            "helpText": "Go to your Supabase project dashboard -> Settings -> API. Copy the Project URL.",
             "required": true
           },
           {
@@ -138,7 +138,7 @@
             "label": "Supabase Anon/Service Key",
             "type": "password",
             "placeholder": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-            "helpText": "From Supabase Dashboard → Settings → API → Project API keys. Use the anon key for read-only access, or a service role key if needed (ensure row-level security is configured).",
+            "helpText": "From Supabase Dashboard -> Settings -> API -> Project API keys. Use the anon key for read-only access, or a service role key if needed (ensure row-level security is configured).",
             "required": true
           },
           {
@@ -150,7 +150,7 @@
             "required": false
           }
         ],
-        "setup_instructions": "1. Log into your Supabase project dashboard at app.supabase.com.\n2. Go to Settings → API to find your Project URL and API keys.\n3. Copy the Project URL (e.g., https://xyzcompany.supabase.co).\n4. Copy the anon (public) key for read-only access.\n5. (Recommended) Create a read-only Postgres role and configure Row Level Security policies to restrict access.\n6. (Optional) Create a Postgres function `execute_readonly_query(query_text TEXT)` that runs queries as a read-only role for additional safety.\n7. List the tables the agent should have access to in the Allowed Tables field.",
+        "setup_instructions": "1. Log into your Supabase project dashboard at app.supabase.com.\n2. Go to Settings -> API to find your Project URL and API keys.\n3. Copy the Project URL (e.g., https://xyzcompany.supabase.co).\n4. Copy the anon (public) key for read-only access.\n5. (Recommended) Create a read-only Postgres role and configure Row Level Security policies to restrict access.\n6. (Optional) Create a Postgres function `execute_readonly_query(query_text TEXT)` that runs queries as a read-only role for additional safety.\n7. List the tables the agent should have access to in the Allowed Tables field.",
         "related_tools": [
           "http_request"
         ],
@@ -172,7 +172,7 @@
             "label": "Bot User OAuth Token",
             "type": "password",
             "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
-            "helpText": "From your Slack App → OAuth & Permissions → Bot User OAuth Token. Requires scopes: app_mentions:read, chat:write, channels:history, users:read",
+            "helpText": "From your Slack App -> OAuth & Permissions -> Bot User OAuth Token. Requires scopes: app_mentions:read, chat:write, channels:history, users:read",
             "required": true
           },
           {
@@ -180,7 +180,7 @@
             "label": "Slack Channel ID",
             "type": "text",
             "placeholder": "C0123456789",
-            "helpText": "The channel where the bot will receive questions and post results. Right-click the channel → View channel details → scroll to the bottom to find the Channel ID.",
+            "helpText": "The channel where the bot will receive questions and post results. Right-click the channel -> View channel details -> scroll to the bottom to find the Channel ID.",
             "required": true
           }
         ],
@@ -630,14 +630,14 @@
       {
         "id": "database_url",
         "question": "What is your Supabase project URL?",
-        "helpText": "Found in Supabase Dashboard → Settings → API → Project URL (e.g., https://xyzcompany.supabase.co)",
+        "helpText": "Found in Supabase Dashboard -> Settings -> API -> Project URL (e.g., https://xyzcompany.supabase.co)",
         "type": "text",
         "required": true
       },
       {
         "id": "database_api_key",
         "question": "What is your Supabase API key (anon or service role)?",
-        "helpText": "Found in Supabase Dashboard → Settings → API → Project API keys. Use anon key for read-only access.",
+        "helpText": "Found in Supabase Dashboard -> Settings -> API -> Project API keys. Use anon key for read-only access.",
         "type": "password",
         "required": true
       },

@@ -181,7 +181,7 @@ export function PersonaRunner() {
               <div className="flex items-center gap-2 px-3 py-2 border-b border-border/20 bg-amber-500/5">
                 <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
                 <span className="text-sm text-amber-300/90 font-medium">
-                  Queued — position {queuePosition + 1}{queueDepth != null ? ` of ${queueDepth}` : ''}
+                  Queued -- position {queuePosition + 1}{queueDepth != null ? ` of ${queueDepth}` : ''}
                 </span>
               </div>
             )}

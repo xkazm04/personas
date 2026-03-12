@@ -19,7 +19,7 @@ export function useCreateTemplateSnapshot(
       try {
         const parsed = JSON.parse(snap.result_json);
         draft = normalizeDraftFromUnknown(parsed?.persona ?? parsed);
-      } catch { /* intentional: non-critical — JSON parse fallback */ }
+      } catch { /* intentional: non-critical -- JSON parse fallback */ }
     }
     return {
       status: snap.status as 'idle' | 'running' | 'completed' | 'failed',
@@ -55,7 +55,7 @@ export function useCreateTemplateSnapshot(
             return;
           }
         }
-      } catch { /* intentional: non-critical — JSON parse fallback */ }
+      } catch { /* intentional: non-critical -- JSON parse fallback */ }
     }
     reducer.generateFailed('Generation completed but no valid persona draft was found.');
     clearPersistedContext();
@@ -83,7 +83,7 @@ export function useCreateTemplateSnapshot(
     interval: 1500,
   });
 
-  // ── Event listeners for streaming lines ──
+  // -- Event listeners for streaming lines --
   useEffect(() => {
     if (!backgroundGenId) return;
     const currentGenId = backgroundGenId;

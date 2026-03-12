@@ -33,12 +33,12 @@ export interface CostEstimate {
   inputCost: number;
   outputCost: number;
   totalCost: number;
-  /** True when the model was not recognized — cost is zero rather than a guess. */
+  /** True when the model was not recognized -- cost is zero rather than a guess. */
   estimated: boolean;
 }
 
 /** Estimate cost from token counts. Price per 1M tokens.
- *  Resolution order: exact match → longest prefix match → local-model check → zero fallback.
+ *  Resolution order: exact match -> longest prefix match -> local-model check -> zero fallback.
  *  Prefix matching handles versioned IDs like claude-sonnet-4-6 or claude-haiku-4-5-20251001
  *  without requiring an explicit entry for every release.
  */
@@ -66,22 +66,22 @@ export function estimateCost(
     return { inputCost, outputCost, totalCost: inputCost + outputCost, estimated: false };
   }
 
-  // Local / free models — zero cost, not estimated (we know it's free)
+  // Local / free models -- zero cost, not estimated (we know it's free)
   const lower = model.toLowerCase();
   if (FREE_MODEL_PREFIXES.some((p) => lower.startsWith(p))) {
     return { inputCost: 0, outputCost: 0, totalCost: 0, estimated: false };
   }
 
-  // Unknown model — zero cost to avoid false budget alerts
+  // Unknown model -- zero cost to avoid false budget alerts
   console.warn(
-    `[pricing] Unknown model "${model}" — cost defaulting to $0. Budget totals may undercount actual spend.`,
+    `[pricing] Unknown model "${model}" -- cost defaulting to $0. Budget totals may undercount actual spend.`,
   );
   return { inputCost: 0, outputCost: 0, totalCost: 0, estimated: true };
 }
 
 /** Returns true when the model string matches a known pricing entry or a free-model prefix. */
 export function isModelRecognized(model: string | null | undefined): boolean {
-  if (!model) return true; // no model configured — nothing to warn about
+  if (!model) return true; // no model configured -- nothing to warn about
   if (MODEL_PRICING[model]) return true;
   if (Object.keys(MODEL_PRICING).some((key) => model.startsWith(key))) return true;
   const lower = model.toLowerCase();

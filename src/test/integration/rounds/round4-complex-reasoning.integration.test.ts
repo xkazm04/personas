@@ -1,5 +1,5 @@
 /**
- * Round 4: Complex Reasoning — SQL debugging and multi-file data flow analysis.
+ * Round 4: Complex Reasoning -- SQL debugging and multi-file data flow analysis.
  *
  * These tests evaluate each provider's ability to reason across multiple files,
  * identify bugs in SQL queries, and trace data transformations through a
@@ -31,10 +31,10 @@ afterEach(() => {
 
 for (const provider of providers) {
   describe(`${provider.displayName}`, () => {
-    // ─────────────────────────────────────────────────────────────────────
-    // Test 1: SQL debugging — fix 3 bugs in a broken query
-    // ─────────────────────────────────────────────────────────────────────
-    it('SQL debugging — identifies and fixes 3 query bugs', async () => {
+    // ---------------------------------------------------------------------
+    // Test 1: SQL debugging -- fix 3 bugs in a broken query
+    // ---------------------------------------------------------------------
+    it('SQL debugging -- identifies and fixes 3 query bugs', async () => {
       workspace = createWorkspace('sql-debugging');
 
       const result = await runCli({
@@ -82,10 +82,10 @@ for (const provider of providers) {
       expect(validation.passed, formatDiagnostic(result, validation)).toBe(true);
     }, 180_000);
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Test 2: Multi-file analysis — trace data flow across modules
-    // ─────────────────────────────────────────────────────────────────────
-    it('multi-file analysis — traces data flow and predicts output', async () => {
+    // ---------------------------------------------------------------------
+    // Test 2: Multi-file analysis -- trace data flow across modules
+    // ---------------------------------------------------------------------
+    it('multi-file analysis -- traces data flow and predicts output', async () => {
       workspace = createWorkspace('multi-file-project');
 
       const result = await runCli({

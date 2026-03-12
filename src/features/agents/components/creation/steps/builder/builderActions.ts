@@ -2,7 +2,7 @@ import type { NotificationChannel } from '@/lib/types/frontendTypes';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { BuilderUseCase, TriggerPreset, ComponentRole } from './types';
 
-// ── Actions ─────────────────────────────────────────────────────────
+// -- Actions ---------------------------------------------------------
 
 export type BuilderAction =
   | { type: 'SET_INTENT'; payload: string }
@@ -24,7 +24,7 @@ export type BuilderAction =
   | { type: 'APPLY_DESIGN_RESULT'; payload: AgentIR }
   | { type: 'RESET' };
 
-// ── ID Generator ────────────────────────────────────────────────────
+// -- ID Generator ----------------------------------------------------
 
 let nextId = 1;
 

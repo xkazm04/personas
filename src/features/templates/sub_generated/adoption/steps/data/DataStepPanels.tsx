@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import type { IntrospectedTable } from '@/hooks/database/useTableIntrospection';
 
-// ── Table Selection Card ─────────────────────────────────────────────
+// -- Table Selection Card ---------------------------------------------
 
 export function ExistingTableCard({
   table,
@@ -45,7 +45,7 @@ export function ExistingTableCard({
   );
 }
 
-// ── SQL Preview Panel ────────────────────────────────────────────────
+// -- SQL Preview Panel ------------------------------------------------
 
 export function SQLPreview({
   sql,

@@ -48,7 +48,7 @@ export function MatrixPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="border border-primary/15 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
+      <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
         <div className="p-4 space-y-4">
           {!hasPrompt && (
             <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
@@ -62,7 +62,7 @@ export function MatrixPanel() {
             <textarea value={instruction} onChange={(e) => setInstruction(e.target.value)}
               placeholder="e.g. Make the greeting more formal and add multi-language support for German and French"
               disabled={isLabRunning}
-              className="w-full h-28 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none disabled:opacity-50" />
+              className="w-full h-28 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none disabled:opacity-50" />
             <p className="text-sm text-muted-foreground/50">
               Claude will generate a draft persona based on your instructions, then test both current and draft versions side by side.
             </p>
@@ -92,7 +92,7 @@ export function MatrixPanel() {
                   </button>
                 )}>
                 {({ close, focusIndex }) => (
-                  <div className="py-1 bg-background border border-primary/15 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+                  <div className="py-1 bg-background border border-primary/20 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
                     {useCaseOptions.map((opt, i) => (
                       <button key={opt.value} onClick={() => { setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); close(); }}
                         className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${focusIndex === i ? 'bg-primary/15 text-foreground' : ''} ${(selectedUseCaseId ?? '__all__') === opt.value ? 'text-primary font-medium' : 'text-muted-foreground/90 hover:bg-secondary/30'}`}>

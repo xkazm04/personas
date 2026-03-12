@@ -39,7 +39,7 @@ export default function App() {
       if (e.ctrlKey && e.shiftKey && e.key === 'M') {
         e.preventDefault();
         toggleMobilePreview();
-        // Force full re-render by reloading â€” module-level exports updated
+        // Force full re-render by reloading -- module-level exports updated
         window.location.reload();
       }
     };
@@ -47,13 +47,13 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  // Global lab event listeners â€” hoisted here so they survive tab navigation
+  // Global lab event listeners -- hoisted here so they survive tab navigation
   useLabEvents();
 
-  // Weekly health digest scheduler â€” checks on mount if a digest is overdue
+  // Weekly health digest scheduler -- checks on mount if a digest is overdue
   useHealthDigestScheduler();
 
-  // Credential remediation loop â€” monitors anomaly scores, auto-rotates/disables/notifies
+  // Credential remediation loop -- monitors anomaly scores, auto-rotates/disables/notifies
   useCredentialRemediation();
 
   return (

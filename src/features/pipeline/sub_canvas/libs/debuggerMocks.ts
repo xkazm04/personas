@@ -1,4 +1,4 @@
-// ── Mock Data Generators for Dry Run ─────────────────────────────────
+// -- Mock Data Generators for Dry Run ---------------------------------
 
 export function generateMockInput(
   role: string,

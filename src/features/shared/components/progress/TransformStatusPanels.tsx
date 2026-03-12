@@ -84,7 +84,7 @@ export function TransformStatusPanels({
             </div>
 
             <p className="text-sm text-muted-foreground/90 mt-2">
-              You can continue working — we'll notify you when the draft is ready.
+              You can continue working -- we'll notify you when the draft is ready.
             </p>
           </div>
 

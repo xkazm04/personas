@@ -77,8 +77,8 @@ export function TestSuiteManager({
 
       {/* Suite list */}
       {testSuites.length === 0 ? (
-        <div className="text-center py-8 bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl">
-          <div className="w-12 h-12 rounded-xl bg-primary/8 border border-primary/12 flex items-center justify-center mx-auto mb-3">
+        <div className="text-center py-8 bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl">
+          <div className="w-12 h-12 rounded-xl bg-primary/8 border border-primary/20 flex items-center justify-center mx-auto mb-3">
             <BookOpen className="w-6 h-6 text-primary/40" />
           </div>
           <p className="text-sm text-muted-foreground/80">No saved test suites</p>

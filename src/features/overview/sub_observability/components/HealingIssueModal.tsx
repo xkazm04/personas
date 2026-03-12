@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck, Zap, RefreshCw } from 'lucide-react';
+import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck, Zap, RefreshCw, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
@@ -18,7 +18,8 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
   const defaultCat = { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20' };
   const sev = SEVERITY_COLORS[issue.severity] ?? defaultSev;
   const cat = HEALING_CATEGORY_COLORS[issue.category] ?? defaultCat;
-  const isAutoFixed = issue.auto_fixed;
+  const isAutoFixed = issue.auto_fixed && issue.status === 'resolved';
+  const isAutoFixPending = issue.status === 'auto_fix_pending';
   const isCircuitBreaker = issue.is_circuit_breaker;
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
             sev={sev}
             cat={cat}
             isAutoFixed={isAutoFixed}
+            isAutoFixPending={isAutoFixPending}
             isCircuitBreaker={isCircuitBreaker}
             copied={copied}
             onClose={onClose}
@@ -114,11 +116,12 @@ function ResolvedAnimation() {
   );
 }
 
-function ModalContent({ issue, sev, cat, isAutoFixed, isCircuitBreaker, copied, onClose, onResolve, onCopyFix }: {
+function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircuitBreaker, copied, onClose, onResolve, onCopyFix }: {
   issue: PersonaHealingIssue;
   sev: { bg: string; text: string; border: string };
   cat: { bg: string; text: string; border: string };
   isAutoFixed: boolean;
+  isAutoFixPending: boolean;
   isCircuitBreaker: boolean;
   copied: boolean;
   onClose: () => void;
@@ -136,6 +139,10 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isCircuitBreaker, copied, 
               <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-lg ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text} ${SEVERITY_STYLES.error.border}`}>
                 <Zap className="w-3 h-3" /> circuit breaker
               </span>
+            ) : isAutoFixPending ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-lg border bg-amber-500/10 text-amber-400 border-amber-500/20">
+                <Loader2 className="w-3 h-3 animate-spin" /> retrying
+              </span>
             ) : isAutoFixed ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-lg border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
                 <CheckCircle className="w-3 h-3" /> auto-fixed
@@ -145,9 +152,9 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isCircuitBreaker, copied, 
                 <AlertTriangle className="w-3 h-3" /> {issue.severity}
               </span>
             )}
-            {isAutoFixed && issue.execution_id && (
+            {(isAutoFixed || isAutoFixPending) && issue.execution_id && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                <RefreshCw className="w-2.5 h-2.5" /> healed via retry
+                <RefreshCw className={`w-2.5 h-2.5 ${isAutoFixPending ? 'animate-spin' : ''}`} /> {isAutoFixPending ? 'retry in progress' : 'healed via retry'}
               </span>
             )}
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-lg border ${cat.bg} ${cat.text} ${cat.border}`}>
@@ -199,8 +206,8 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isCircuitBreaker, copied, 
       </div>
 
       {/* Footer */}
-      {!isAutoFixed && (
-        <div className="px-4 pt-3 border-t border-primary/10 space-y-2">
+      {!isAutoFixed && !isAutoFixPending && (
+        <div className="px-5 py-4 border-t border-primary/10 space-y-2">
           {(issue.severity === 'high' || issue.severity === 'critical') && (
             <div className="flex items-center gap-1.5 text-sm text-amber-400/60">
               <AlertTriangle className="w-3 h-3 flex-shrink-0" />
@@ -212,7 +219,13 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isCircuitBreaker, copied, 
           </p>
         </div>
       )}
-      <div className="flex items-center justify-end gap-2 p-4 bg-secondary/20">
+      <div className="flex items-center justify-end gap-3 px-5 py-4 bg-secondary/20">
+        {isAutoFixPending && (
+          <div className="flex items-center gap-1.5 mr-auto">
+            <Loader2 className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+            <span className="text-sm text-amber-400/60">Retry in progress — status will update when complete</span>
+          </div>
+        )}
         {isAutoFixed && (
           <div className="flex items-center gap-1.5 mr-auto">
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12, stiffness: 300 }}>
@@ -224,13 +237,14 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isCircuitBreaker, copied, 
         <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-muted-foreground/80 hover:text-foreground/95 rounded-xl hover:bg-secondary/60 transition-colors">
           Close
         </button>
-        {!isAutoFixed && (
-          <button onClick={onResolve} className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-xl hover:bg-emerald-500/20 transition-colors">
+        {!isAutoFixed && !isAutoFixPending && (
+          <button
+            onClick={onResolve}
+            title="Manual fix applied outside the healing system"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-xl hover:bg-emerald-500/20 transition-colors"
+          >
             <CheckCircle className="w-3.5 h-3.5" />
-            <span className="flex flex-col items-start leading-tight">
-              <span>Mark as Resolved</span>
-              <span className="text-sm text-emerald-400/50">(manual fix applied)</span>
-            </span>
+            Mark as Resolved
           </button>
         )}
       </div>

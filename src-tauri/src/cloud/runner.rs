@@ -132,14 +132,14 @@ pub async fn run_cloud_execution(
             }
         }
 
-        // Emit new output lines — use safe slice to avoid panic if the
+        // Emit new output lines -- use safe slice to avoid panic if the
         // orchestrator restarted and returned fewer lines than our offset.
         let new_lines = if poll.output_lines < offset {
             tracing::warn!(
                 execution_id = %local_execution_id,
                 expected_offset = offset,
                 actual_lines = poll.output_lines,
-                "Cloud orchestrator returned fewer output lines than offset — possible state reset"
+                "Cloud orchestrator returned fewer output lines than offset -- possible state reset"
             );
             poll.output.as_slice()
         } else {
@@ -189,7 +189,7 @@ pub async fn run_cloud_execution(
                 };
             }
             _ => {
-                // Still running — continue polling
+                // Still running -- continue polling
             }
         }
     }

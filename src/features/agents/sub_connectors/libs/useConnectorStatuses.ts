@@ -90,7 +90,7 @@ export function useConnectorStatuses() {
     for (const status of statuses) {
       const prevCredId = prevCredentialIdsRef.current.get(status.name);
       if (prevCredId !== undefined && prevCredId !== status.credentialId) {
-        // Credential changed — allow auto-test for this connector again
+        // Credential changed -- allow auto-test for this connector again
         lastAutoTestedCredentialRef.current.delete(status.name);
       }
       prevCredentialIdsRef.current.set(status.name, status.credentialId);
@@ -152,7 +152,7 @@ export function useConnectorStatuses() {
         await mutateCredentialLink(selectedPersona.id, connectorName, credentialId);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'unknown error';
-        // Revert optimistic update — the link was never persisted
+        // Revert optimistic update -- the link was never persisted
         setStatuses((prev) =>
           prev.map((s) =>
             s.name === connectorName

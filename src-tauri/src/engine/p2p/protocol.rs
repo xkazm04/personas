@@ -8,7 +8,7 @@ use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 use crate::error::AppError;
 
-/// Protocol version — increment when making breaking changes.
+/// Protocol version -- increment when making breaking changes.
 pub const PROTOCOL_VERSION: u32 = 1;
 
 /// Maximum message size (16 MB) to prevent memory exhaustion from malicious peers.

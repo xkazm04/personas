@@ -4,7 +4,7 @@ import { toDesignContext } from './builderReducer';
 import { testDesignFeasibility, type FeasibilityResult } from '@/api/templates/design';
 import { usePersonaStore } from '@/stores/personaStore';
 
-// ── Public interface ────────────────────────────────────────────────
+// -- Public interface ------------------------------------------------
 
 export interface UseDryRunReturn {
   phase: 'idle' | 'running' | 'done' | 'error';
@@ -16,7 +16,7 @@ export interface UseDryRunReturn {
   reset: () => void;
 }
 
-// ── Proposal generation ─────────────────────────────────────────────
+// -- Proposal generation ---------------------------------------------
 
 let issueSeq = 1;
 
@@ -135,7 +135,7 @@ function parseFeasibilityResult(
   };
 }
 
-// ── Hook ────────────────────────────────────────────────────────────
+// -- Hook ------------------------------------------------------------
 
 export function useDryRun(): UseDryRunReturn {
   const [phase, setPhase] = useState<UseDryRunReturn['phase']>('idle');
@@ -167,7 +167,7 @@ export function useDryRun(): UseDryRunReturn {
       const raw = await testDesignFeasibility(json);
 
       if (abortRef.current) return;
-      pushLine(`> Analysis complete — overall: ${raw.overall}`);
+      pushLine(`> Analysis complete -- overall: ${raw.overall}`);
       pushLine(`> ${raw.confirmed_capabilities.length} capabilities confirmed`);
       if (raw.issues.length > 0) {
         pushLine(`> ${raw.issues.length} issue${raw.issues.length !== 1 ? 's' : ''} found`);

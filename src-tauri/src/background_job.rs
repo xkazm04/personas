@@ -1,6 +1,6 @@
 //! Generic background job infrastructure.
 //!
-//! Provides `BackgroundJobManager<S>` — a thread-safe, evicting job store
+//! Provides `BackgroundJobManager<S>` -- a thread-safe, evicting job store
 //! that manages lifecycle (insert, status update, line emission, snapshot,
 //! cancel) for any job state type `S: BackgroundJobState`.
 
@@ -20,7 +20,13 @@ const JOB_TTL_SECS: u64 = 30 * 60;
 /// Maximum number of output lines stored per job.
 const MAX_LINES: usize = 500;
 
-// ── Core job fields shared by every background job ─────────────
+/// Default max age for a running job before it is considered stale (10 minutes).
+const DEFAULT_STALE_RUNNING_SECS: u64 = 10 * 60;
+
+/// Grace period added on top of the stale timeout (30 seconds).
+const STALE_GRACE_SECS: u64 = 30;
+
+// -- Core job fields shared by every background job -------------
 
 /// The common fields every background job must have.
 /// Job-specific data lives in the `extra` field.
@@ -48,7 +54,7 @@ impl<E: Clone + Default> Default for JobEntry<E> {
     }
 }
 
-// ── Event payloads (generic) ───────────────────────────────────
+// -- Event payloads (generic) -----------------------------------
 
 #[derive(Clone, Serialize)]
 struct OutputEvent {
@@ -63,7 +69,7 @@ struct StatusEvent {
     error: Option<String>,
 }
 
-// ── BackgroundJobManager ───────────────────────────────────────
+// -- BackgroundJobManager ---------------------------------------
 
 /// A generic, static background-job store. Each instance is backed by a
 /// `OnceLock<Mutex<HashMap>>` so it can be used as a `static` variable.
@@ -109,6 +115,38 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     pub fn evict_stale(&self, jobs: &mut HashMap<String, JobEntry<E>>) {
         let cutoff = Duration::from_secs(JOB_TTL_SECS);
         jobs.retain(|_, job| job.status == "running" || job.created_at.elapsed() < cutoff);
+    }
+
+    /// Mark any running jobs that have exceeded the stale timeout + grace period
+    /// as failed with a timeout diagnostic. Returns the IDs of jobs that were
+    /// marked stale (for logging).
+    pub fn sweep_stale_running(&self, jobs: &mut HashMap<String, JobEntry<E>>) -> Vec<String> {
+        let max_age = Duration::from_secs(DEFAULT_STALE_RUNNING_SECS + STALE_GRACE_SECS);
+        let mut stale_ids = Vec::new();
+        for (id, job) in jobs.iter_mut() {
+            if job.status == "running" && job.created_at.elapsed() > max_age {
+                let elapsed = job.created_at.elapsed().as_secs();
+                tracing::warn!(
+                    job_id = %id,
+                    elapsed_secs = elapsed,
+                    manager = self.lock_error_msg,
+                    "stale background job detected: running for {}s (limit {}s), marking as failed",
+                    elapsed,
+                    max_age.as_secs()
+                );
+                job.status = "failed".to_string();
+                job.error = Some(format!(
+                    "Job timed out after {}s without completing (stale job detection)",
+                    elapsed
+                ));
+                // Cancel the token so the spawned task can clean up if still alive
+                if let Some(token) = &job.cancel_token {
+                    token.cancel();
+                }
+                stale_ids.push(id.clone());
+            }
+        }
+        stale_ids
     }
 
     /// Check whether a job is currently running. Returns `Err` if already running.
@@ -283,8 +321,10 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
 
     /// Build a snapshot of the common fields. Returns `None` if the job doesn't exist.
     /// The caller can extend this with job-specific extra fields.
+    /// Also sweeps stale running jobs at poll time.
     pub fn get_snapshot(&self, job_id: &str) -> Option<JobSnapshot> {
-        let jobs = self.lock().ok()?;
+        let mut jobs = self.lock().ok()?;
+        self.sweep_stale_running(&mut jobs);
         jobs.get(job_id).map(|job| JobSnapshot {
             job_id: job_id.to_string(),
             status: if job.status.is_empty() {
@@ -299,8 +339,10 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     }
 
     /// List all jobs as snapshots (for the workflows overview).
+    /// Also sweeps stale running jobs at poll time.
     pub fn list_snapshots(&self) -> Vec<JobSnapshot> {
-        let Ok(jobs) = self.lock() else { return Vec::new() };
+        let Ok(mut jobs) = self.lock() else { return Vec::new() };
+        self.sweep_stale_running(&mut jobs);
         jobs.iter()
             .map(|(id, job)| JobSnapshot {
                 job_id: id.clone(),
@@ -317,13 +359,39 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     }
 
     /// Get a full snapshot including extra state via a mapping function.
+    /// Also sweeps stale running jobs at poll time.
     pub fn get_snapshot_with<R>(
         &self,
         job_id: &str,
         f: impl FnOnce(&str, &JobEntry<E>) -> R,
     ) -> Option<R> {
-        let jobs = self.lock().ok()?;
+        let mut jobs = self.lock().ok()?;
+        self.sweep_stale_running(&mut jobs);
         jobs.get(job_id).map(|job| f(job_id, job))
+    }
+
+    /// Build a `BackgroundTaskSnapshot<T>` by mapping the job-specific extras
+    /// into a serializable type `T`. This eliminates the need to hand-roll
+    /// snapshot structs for each job type.
+    pub fn get_task_snapshot<T: Clone + Serialize>(
+        &self,
+        job_id: &str,
+        map_extras: impl FnOnce(&E) -> T,
+    ) -> Option<BackgroundTaskSnapshot<T>> {
+        let mut jobs = self.lock().ok()?;
+        self.sweep_stale_running(&mut jobs);
+        jobs.get(job_id).map(|job| BackgroundTaskSnapshot {
+            job_id: job_id.to_string(),
+            status: if job.status.is_empty() {
+                "idle".to_string()
+            } else {
+                job.status.clone()
+            },
+            error: job.error.clone(),
+            lines: job.lines.clone(),
+            elapsed_secs: job.created_at.elapsed().as_secs(),
+            extras: map_extras(&job.extra),
+        })
     }
 
     /// Update the status field directly on a locked job (no event emission).
@@ -346,4 +414,18 @@ pub struct JobSnapshot {
     pub lines: Vec<String>,
     /// Seconds since this job was created.
     pub elapsed_secs: u64,
+}
+
+/// A generic snapshot that combines the common job fields with
+/// type-specific extras. Use this instead of hand-rolling a snapshot
+/// struct for each background job type.
+#[derive(Clone, Serialize)]
+pub struct BackgroundTaskSnapshot<T: Clone + Serialize> {
+    pub job_id: String,
+    pub status: String,
+    pub error: Option<String>,
+    pub lines: Vec<String>,
+    pub elapsed_secs: u64,
+    #[serde(flatten)]
+    pub extras: T,
 }

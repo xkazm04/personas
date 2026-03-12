@@ -15,7 +15,7 @@ import { useEventBusFilter } from '@/features/overview/sub_realtime/useEventBusF
 export default function RealtimeVisualizerPage() {
   const personas = usePersonaStore((s) => s.personas);
 
-  // ── Live event stream ────────────────────────────────────────────
+  // -- Live event stream --------------------------------------------
   const {
     events: liveEvents,
     stats,
@@ -29,13 +29,13 @@ export default function RealtimeVisualizerPage() {
     testFlowLoading,
   } = useRealtimeEvents();
 
-  // ── Timeline replay ──────────────────────────────────────────────
+  // -- Timeline replay ----------------------------------------------
   const timeline = useTimelineReplay();
 
   // When replay is active, feed replay events to the visualization
   const rawDisplayEvents = timeline.active ? timeline.replayEvents : liveEvents;
 
-  // ── Event bus filter ──────────────────────────────────────────────
+  // -- Event bus filter ----------------------------------------------
   const {
     filter,
     setFilter,
@@ -86,7 +86,7 @@ export default function RealtimeVisualizerPage() {
         }
       />
 
-      {/* Stats bar — hidden during replay to avoid confusion with live stats */}
+      {/* Stats bar -- hidden during replay to avoid confusion with live stats */}
       {!timeline.active && (
         <RealtimeStatsBar
           stats={stats}
@@ -133,7 +133,7 @@ export default function RealtimeVisualizerPage() {
         </AnimatePresence>
       </div>
 
-      {/* ── Bottom Timeline Player ── */}
+      {/* -- Bottom Timeline Player -- */}
       <TimelinePlayer
         {...timeline}
         onEnterReplay={timeline.enterReplay}

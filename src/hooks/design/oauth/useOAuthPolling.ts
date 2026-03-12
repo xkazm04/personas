@@ -32,7 +32,7 @@ export interface OAuthPollingConfig<
 export interface OAuthPollingState<TStartArgs extends unknown[]> {
   /** Read current credential values (stored in a ref to avoid DevTools/Sentry exposure). */
   getValues: () => Record<string, string>;
-  /** Monotonic counter incremented when values change â€” depend on this for re-renders. */
+  /** Monotonic counter incremented when values change -- depend on this for re-renders. */
   valuesVersion: number;
   isAuthorizing: boolean;
   completedAt: string | null;
@@ -75,7 +75,7 @@ export function useOAuthPolling<
   // Ref-based guard so the stable startConsent callback sees current authorizing state
   const isAuthorizingRef = useRef(false);
 
-  // AbortController for the current polling loop â€” aborted when a new session
+  // AbortController for the current polling loop -- aborted when a new session
   // starts or on unmount so only one loop ever runs at a time.
   const abortRef = useRef<AbortController | null>(null);
   const startTimeoutRef = useRef<number | null>(null);
@@ -105,7 +105,7 @@ export function useOAuthPolling<
     const gen = ++generationRef.current;
 
     let timer: number | null = null;
-    // 120 attempts Ã— 1500ms = 3 minutes before giving up on a stuck session
+    // 120 attempts × 1500ms = 3 minutes before giving up on a stuck session
     const MAX_POLL_ATTEMPTS = 120;
     let attempts = 0;
 
@@ -206,7 +206,7 @@ export function useOAuthPolling<
           await openExternalUrl(oauthStart.auth_url);
           opened = true;
         } catch {
-          // intentional: non-critical â€” fallback to window.open below
+          // intentional: non-critical -- fallback to window.open below
         }
 
         if (!opened) {
@@ -214,7 +214,7 @@ export function useOAuthPolling<
             const popup = window.open(oauthStart.auth_url, '_blank', 'noopener,noreferrer');
             opened = popup !== null;
           } catch {
-            // intentional: non-critical â€” both open methods failed, handled below
+            // intentional: non-critical -- both open methods failed, handled below
           }
         }
 

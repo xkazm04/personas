@@ -35,7 +35,7 @@ interface TerminalBodyProps {
   emptyState?: TerminalEmptyState;
 }
 
-// Estimated row height â€” the virtualizer dynamically measures actual heights
+// Estimated row height -- the virtualizer dynamically measures actual heights
 const ESTIMATED_ROW_HEIGHT = 22;
 const OVERSCAN = 30;
 
@@ -57,7 +57,7 @@ export function TerminalBody({
   const lastSeenLineCount = useRef(0);
   const [unseenCount, setUnseenCount] = useState(0);
 
-  // Incrementally classify lines â€” only process newly appended entries
+  // Incrementally classify lines -- only process newly appended entries
   const classifiedCache = useRef<{ line: string; style: TerminalLineStyle }[]>([]);
   const classified = useMemo(() => {
     const cache = classifiedCache.current;
@@ -76,7 +76,7 @@ export function TerminalBody({
       classifiedCache.current = next;
       return next;
     }
-    // Lines were truncated or replaced â€” reclassify all
+    // Lines were truncated or replaced -- reclassify all
     const fresh = lines.map((line) => ({ line, style: classifyLine(line) }));
     classifiedCache.current = fresh;
     return fresh;
@@ -165,7 +165,7 @@ export function TerminalBody({
             {emptyState === 'failed' && (
               <div className="flex flex-col items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-red-400/60" />
-                <span className="text-sm text-red-400/60">Connection failed â€” check provider settings and retry</span>
+                <span className="text-sm text-red-400/60">Connection failed -- check provider settings and retry</span>
               </div>
             )}
           </div>

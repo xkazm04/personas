@@ -12,7 +12,7 @@
       "type": "password",
       "required": true,
       "placeholder": "CCIPAT_...",
-      "helpText": "From CircleCI → User Settings → Personal API Tokens"
+      "helpText": "From CircleCI -> User Settings -> Personal API Tokens"
     }
   ],
   "healthcheck_config": {
@@ -31,7 +31,7 @@
     "auth_type": "pat",
     "auth_type_label": "PAT",
     "docs_url": "https://circleci.com/docs/managing-api-tokens/",
-    "setup_guide": "1. Go to CircleCI → User Settings → Personal API Tokens\n2. Click 'Create New Token'\n3. Name your token and click 'Add API Token'\n4. Copy the CCIPAT_... value and paste it here",
+    "setup_guide": "1. Go to CircleCI -> User Settings -> Personal API Tokens\n2. Click 'Create New Token'\n3. Name your token and click 'Add API Token'\n4. Copy the CCIPAT_... value and paste it here",
     "pricing_tier": "free"
   }
 }

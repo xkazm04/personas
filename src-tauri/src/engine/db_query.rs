@@ -83,7 +83,7 @@ fn sanitize_error(msg: &str, fields: &HashMap<String, String>) -> String {
 ///
 /// `user_db` is required for `personas_database` (built-in SQLite) queries.
 /// Pass `None` when the caller does not have access to the user database pool
-/// (legacy call sites) — `personas_database` queries will return an error.
+/// (legacy call sites) -- `personas_database` queries will return an error.
 pub async fn execute_query(
     pool: &DbPool,
     credential_id: &str,
@@ -95,7 +95,7 @@ pub async fn execute_query(
     let start = Instant::now();
     let service = credential.service_type.as_str();
 
-    // Built-in local database — no external credentials needed
+    // Built-in local database -- no external credentials needed
     if service == "personas_database" {
         let udb = user_db.ok_or_else(|| {
             AppError::Internal("User database pool not available".to_string())
@@ -132,7 +132,7 @@ pub async fn execute_query(
 }
 
 // ============================================================================
-// Introspection — connector-aware table/column discovery
+// Introspection -- connector-aware table/column discovery
 // ============================================================================
 
 /// Introspect tables for a credential. Supabase uses the PostgREST OpenAPI spec;
@@ -246,7 +246,7 @@ pub async fn introspect_columns(
     }
 }
 
-// ── Supabase OpenAPI introspection ──────────────────────────────────────
+// -- Supabase OpenAPI introspection --------------------------------------
 
 /// Fetch the PostgREST OpenAPI spec and extract table names.
 async fn introspect_supabase_tables(
@@ -399,7 +399,7 @@ async fn fetch_supabase_openapi_spec(
 }
 
 // ============================================================================
-// Supabase — PostgREST REST API (SELECT queries converted to REST calls)
+// Supabase -- PostgREST REST API (SELECT queries converted to REST calls)
 // ============================================================================
 
 pub(crate) async fn execute_supabase(
@@ -515,7 +515,7 @@ fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
         return None;
     }
 
-    // Strip schema prefix (e.g., "public.table_name" → "table_name")
+    // Strip schema prefix (e.g., "public.table_name" -> "table_name")
     let table = if let Some(dot_pos) = table.find('.') {
         table[dot_pos + 1..].to_string()
     } else {
@@ -688,7 +688,7 @@ fn parse_postgrest_filter(cond: &str) -> Option<String> {
 }
 
 // ============================================================================
-// Neon — Serverless SQL-over-HTTP
+// Neon -- Serverless SQL-over-HTTP
 // ============================================================================
 
 pub(crate) async fn execute_neon(
@@ -777,7 +777,7 @@ async fn execute_neon_parameterized(
 }
 
 // ============================================================================
-// Upstash — Redis REST API
+// Upstash -- Redis REST API
 // ============================================================================
 
 pub(crate) async fn execute_upstash(
@@ -798,7 +798,7 @@ pub(crate) async fn execute_upstash(
             AppError::Validation("Missing redis_rest_token field for Upstash".into())
         })?;
 
-    // Split the query into command parts (e.g., "GET mykey" → ["GET", "mykey"])
+    // Split the query into command parts (e.g., "GET mykey" -> ["GET", "mykey"])
     let parts: Vec<&str> = query_text.split_whitespace().collect();
     if parts.is_empty() {
         return Err(AppError::Validation("Empty Redis command".into()));
@@ -832,7 +832,7 @@ pub(crate) async fn execute_upstash(
 }
 
 // ============================================================================
-// PlanetScale — Vitess HTTP API
+// PlanetScale -- Vitess HTTP API
 // ============================================================================
 
 pub(crate) async fn execute_planetscale(
@@ -965,7 +965,7 @@ pub(crate) fn parse_postgres_json_response(body: &str) -> Result<QueryResult, Ap
     } else if let Some(rows) = parsed.get("rows").or(parsed.get("result")) {
         rows
     } else {
-        // Single result — wrap in array
+        // Single result -- wrap in array
         return Ok(QueryResult {
             columns: vec!["result".into()],
             rows: vec![vec![parsed]],
@@ -1178,7 +1178,7 @@ pub(crate) fn extract_pg_host(conn_str: &str) -> Option<String> {
 }
 
 // ============================================================================
-// Convex — function execution & schema introspection via HTTP API
+// Convex -- function execution & schema introspection via HTTP API
 // ============================================================================
 
 /// Extract deploy key and deployment URL from credential fields.
@@ -1215,7 +1215,7 @@ async fn execute_convex(
             AppError::Validation(format!("Invalid JSON body: {e}"))
         })?;
 
-        // Determine endpoint: presence of "mutation" key or path containing "mutation" → /api/mutation
+        // Determine endpoint: presence of "mutation" key or path containing "mutation" -> /api/mutation
         let path_str = body.get("path").and_then(|p| p.as_str()).unwrap_or("");
         let endpoint = if path_str.contains("mutation") || body.get("mutation").is_some() {
             "mutation"
@@ -1253,7 +1253,7 @@ async fn execute_convex(
         return convex_value_to_query_result(&resp_body.get("value").cloned().unwrap_or(Value::Null));
     }
 
-    // Shorthand: treat as table name — list documents via /api/list_snapshot
+    // Shorthand: treat as table name -- list documents via /api/list_snapshot
     let table_name = trimmed
         .trim_matches('"')
         .trim_matches('\'');
@@ -1281,7 +1281,7 @@ async fn convex_list_snapshot(
 
     let status = resp.status();
 
-    // list_snapshot is also part of Streaming Export — requires Professional plan
+    // list_snapshot is also part of Streaming Export -- requires Professional plan
     if status == reqwest::StatusCode::FORBIDDEN {
         let tn_hint = table_name.map(|n| format!(" '{n}'")).unwrap_or_default();
         return Err(AppError::Internal(format!(
@@ -1377,13 +1377,13 @@ async fn introspect_convex_tables(
 
     let status = resp.status();
 
-    // 403 = Streaming Export requires Professional plan — return helpful guidance
+    // 403 = Streaming Export requires Professional plan -- return helpful guidance
     if status == reqwest::StatusCode::FORBIDDEN {
         return Err(AppError::Internal(
             "Schema introspection requires the Convex Professional plan (Streaming Export API). \
              On the free Starter plan, use the Console tab to query tables directly:\n\n\
-             • Enter a table name to browse its documents\n\
-             • Use JSON to call your functions: {\"path\": \"myModule:myQuery\", \"args\": {}}"
+             * Enter a table name to browse its documents\n\
+             * Use JSON to call your functions: {\"path\": \"myModule:myQuery\", \"args\": {}}"
                 .into(),
         ));
     }
@@ -1454,7 +1454,7 @@ fn extract_convex_table_names(schema: &Value) -> Vec<String> {
         if let Some(variants) = schema.get(key).and_then(|v| v.as_array()) {
             for variant in variants {
                 if let Some(ref_path) = variant.get("$ref").and_then(|r| r.as_str()) {
-                    // "$ref": "#/$defs/tableName" → extract tableName
+                    // "$ref": "#/$defs/tableName" -> extract tableName
                     if let Some(name) = ref_path.strip_prefix("#/$defs/") {
                         if !name.starts_with('_') && !tables.contains(&name.to_string()) {
                             tables.push(name.to_string());
@@ -1635,7 +1635,7 @@ fn convex_value_to_query_result(value: &Value) -> Result<QueryResult, AppError> 
             })
         }
         Value::Object(_) => {
-            // Single document result — present as single-row table
+            // Single document result -- present as single-row table
             let columns: Vec<String> = value
                 .as_object()
                 .map(|o| o.keys().cloned().collect())
@@ -1740,6 +1740,15 @@ pub fn execute_local_sqlite(
             truncated: false,
         })
     } else {
+        // Deny-list: block statements that could escape the database sandbox
+        let upper = trimmed.to_uppercase();
+        let forbidden = ["ATTACH ", "DETACH ", "VACUUM INTO"];
+        for kw in &forbidden {
+            if upper.starts_with(kw) {
+                return Err(AppError::Validation(format!("Statement type '{}' is not allowed", kw.trim())));
+            }
+        }
+
         // Write statement (CREATE TABLE, INSERT, UPDATE, DELETE, etc.)
         let affected = conn.execute(trimmed, []).map_err(|e| {
             AppError::Internal(format!("SQL execute error: {e}"))
@@ -1786,7 +1795,7 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    // ── extract_pg_host ─────────────────────────────────────────────
+    // -- extract_pg_host ---------------------------------------------
 
     #[test]
     fn test_extract_host_standard() {
@@ -1829,7 +1838,7 @@ mod tests {
         assert_eq!(result, Some("host".to_string()));
     }
 
-    // ── parse_postgres_json_response ────────────────────────────────
+    // -- parse_postgres_json_response --------------------------------
 
     #[test]
     fn test_parse_pg_array_of_objects() {
@@ -1917,11 +1926,11 @@ mod tests {
         let body = serde_json::to_string(&rows).unwrap();
 
         let result = parse_postgres_json_response(&body).unwrap();
-        assert!(!result.truncated); // Exactly 500 — not truncated
+        assert!(!result.truncated); // Exactly 500 -- not truncated
         assert_eq!(result.row_count, 500);
     }
 
-    // ── parse_neon_response ─────────────────────────────────────────
+    // -- parse_neon_response -----------------------------------------
 
     #[test]
     fn test_parse_neon_standard() {
@@ -1969,7 +1978,7 @@ mod tests {
         assert_eq!(result.rows[1], vec![json!(null), json!(0), json!(false)]);
     }
 
-    // ── parse_upstash_response ──────────────────────────────────────
+    // -- parse_upstash_response --------------------------------------
 
     #[test]
     fn test_parse_upstash_string_result() {
@@ -2036,7 +2045,7 @@ mod tests {
         assert!(!result.truncated);
     }
 
-    // ── parse_planetscale_response ──────────────────────────────────
+    // -- parse_planetscale_response ----------------------------------
 
     #[test]
     fn test_parse_ps_standard_object_rows() {
@@ -2082,7 +2091,7 @@ mod tests {
         assert_eq!(result.rows[0], vec![json!(99)]);
     }
 
-    // ── Integration tests (env-gated) ───────────────────────────────
+    // -- Integration tests (env-gated) -------------------------------
 
     /// Helper to check if Upstash SRH Docker emulator is available.
     fn upstash_test_fields() -> Option<HashMap<String, String>> {
@@ -2157,7 +2166,7 @@ mod tests {
         assert!(err_msg.contains("Empty Redis command"));
     }
 
-    // ── PostgREST parser tests ──
+    // -- PostgREST parser tests --
 
     #[test]
     fn test_postgrest_simple_select() {
@@ -2226,7 +2235,7 @@ mod tests {
         assert!(result.is_none());
     }
 
-    // ── sanitize_error tests ──────────────────────────────────────────
+    // -- sanitize_error tests ------------------------------------------
 
     #[test]
     fn test_sanitize_strips_connection_string() {
@@ -2260,7 +2269,7 @@ mod tests {
     fn test_sanitize_strips_field_values() {
         let mut fields = HashMap::new();
         fields.insert("api_key".to_string(), "sk-super-secret-key-12345".to_string());
-        fields.insert("port".to_string(), "5432".to_string()); // short — should NOT be redacted
+        fields.insert("port".to_string(), "5432".to_string()); // short -- should NOT be redacted
         let msg = "Failed with key sk-super-secret-key-12345 on port 5432";
         let result = sanitize_error(msg, &fields);
         assert!(!result.contains("sk-super-secret-key-12345"));

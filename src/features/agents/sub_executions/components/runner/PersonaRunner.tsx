@@ -23,6 +23,7 @@ export function PersonaRunner() {
   const budgetStatus = usePersonaStore((s) => s.getBudgetStatus(selectedPersona?.id ?? ''));
   const isBudgetBlocked = usePersonaStore((s) => s.isBudgetBlocked(selectedPersona?.id ?? ''));
   const overrideBudgetPause = usePersonaStore((s) => s.overrideBudgetPause);
+  const overrideStaleBudget = usePersonaStore((s) => s.overrideStaleBudget);
   const budgetEntry = usePersonaStore((s) => s.budgetSpendMap.get(selectedPersona?.id ?? ''));
   const personaId = selectedPersona?.id || '';
 
@@ -57,7 +58,7 @@ export function PersonaRunner() {
       </h4>
 
       {/* Input & Execute Card */}
-      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-4 space-y-4">
+      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-4 space-y-4">
         <div className="space-y-2">
           <button onClick={() => state.setShowInputEditor(!state.showInputEditor)} className="flex items-center gap-2 text-sm text-foreground/90 hover:text-foreground transition-colors">
             {state.showInputEditor ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
@@ -97,16 +98,25 @@ export function PersonaRunner() {
             <ShieldAlert className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
             <p className="text-sm text-amber-400/80">
               Approaching budget limit
-              {budgetEntry && <span className="text-amber-400/60"> — ${budgetEntry.spend.toFixed(2)} / ${budgetEntry.maxBudget?.toFixed(2)} ({Math.round(budgetEntry.ratio * 100)}%)</span>}
+              {budgetEntry && <span className="text-amber-400/60"> -- ${budgetEntry.spend.toFixed(2)} / ${budgetEntry.maxBudget?.toFixed(2)} ({Math.round(budgetEntry.ratio * 100)}%)</span>}
             </p>
           </div>
         )}
         {budgetStatus === 'stale' && (
-          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-muted-foreground/20 bg-muted/10">
-            <ShieldAlert className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0" />
-            <p className="text-sm text-muted-foreground/80">
-              Budget data unavailable
-            </p>
+          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5">
+            <ShieldAlert className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-amber-400/90 font-medium">Budget data unavailable</p>
+              <p className="text-sm text-amber-400/60">Execution blocked as a safety precaution</p>
+            </div>
+            {isBudgetBlocked && (
+              <button
+                onClick={() => overrideStaleBudget(personaId)}
+                className="flex-shrink-0 px-2.5 py-1 text-sm rounded-lg border border-amber-500/20 text-amber-400/80 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+              >
+                Run Anyway
+              </button>
+            )}
           </div>
         )}
         {IS_MOBILE ? (
@@ -196,7 +206,7 @@ export function PersonaRunner() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <ExecutionTerminal lines={state.outputLines} isRunning={isExecuting} onStop={exec.handleStop} label={activeExecutionId ? `exec:${activeExecutionId.slice(0, 8)}` : undefined} isFullscreen={state.isTerminalFullscreen} onToggleFullscreen={exec.toggleTerminalFullscreen} terminalHeight={state.terminalHeight} onResizeStart={exec.handleTerminalResizeStart} emptyState={state.terminalEmptyState}>
             {queuePosition != null && state.isThisPersonasExecution && (
-              <div className="flex items-center gap-2 px-3 py-2 border-b border-border/20 bg-amber-500/5"><Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" /><span className="text-sm text-amber-300/90 font-medium">Queued — position {queuePosition + 1}{queueDepth != null ? ` of ${queueDepth}` : ''}</span></div>
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-border/20 bg-amber-500/5"><Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" /><span className="text-sm text-amber-300/90 font-medium">Queued -- position {queuePosition + 1}{queueDepth != null ? ` of ${queueDepth}` : ''}</span></div>
             )}
             <RunnerPhaseTimeline phases={state.phases} showPhases={state.showPhases} setShowPhases={state.setShowPhases} isExecuting={isExecuting} elapsedMs={state.elapsedMs} />
           </ExecutionTerminal>

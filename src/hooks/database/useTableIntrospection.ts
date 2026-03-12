@@ -4,7 +4,7 @@ import { getConnectorFamily } from '@/features/vault/sub_databases/introspection
 import { errMsg } from '@/stores/storeTypes';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
 
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
 export interface IntrospectedTable {
   table_name: string;
@@ -23,7 +23,7 @@ export interface RedisKeyInfo {
   type?: string;
 }
 
-// ── Module-level cache ─────────────────────────────────────────────────
+// -- Module-level cache -------------------------------------------------
 // Persists across tab switches and component remounts within the session.
 // Cleared explicitly via refresh/clearCache.
 // Bounded to prevent unbounded memory growth in long sessions.
@@ -56,7 +56,7 @@ export function getCachedColumns(credentialId: string, tableName: string): Intro
   return _columnCache.get(`${credentialId}:${tableName}`);
 }
 
-// ── Parsers ────────────────────────────────────────────────────────────
+// -- Parsers ------------------------------------------------------------
 
 export function parseTablesResult(result: QueryResult): IntrospectedTable[] {
   const nameIdx = result.columns.indexOf('table_name');
@@ -109,7 +109,7 @@ export function parseRedisKeysResult(result: QueryResult): string[] {
   return keys;
 }
 
-// ── Hook ───────────────────────────────────────────────────────────────
+// -- Hook ---------------------------------------------------------------
 
 interface UseTableIntrospectionOptions {
   credentialId: string;

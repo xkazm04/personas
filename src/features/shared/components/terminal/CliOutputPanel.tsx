@@ -19,7 +19,7 @@ interface CliOutputPanelProps {
   maxHeightClassName?: string;
   /** Optional TerminalStrip rendered below the header for healing/background processes */
   healingStrip?: ReactNode;
-  /** CLI operation type â€” shows capability warning banner when engine is not verified */
+  /** CLI operation type -- shows capability warning banner when engine is not verified */
   operation?: CliOperation;
 }
 
@@ -28,7 +28,7 @@ export default function CliOutputPanel({
   runId,
   lines,
   idleText = 'No CLI output yet.',
-  waitingText = 'Waiting for Claude CLI outputâ€¦',
+  waitingText = 'Waiting for Claude CLI output...',
   maxHeightClassName = 'max-h-64',
   healingStrip,
   operation,

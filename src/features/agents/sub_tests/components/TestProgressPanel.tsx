@@ -40,7 +40,7 @@ export function TestProgressPanel({ isRunning, progress, perModelProgress }: Tes
                   {progress.phase === 'generating'
                     ? 'Generating test scenarios...'
                     : progress.phase === 'executing'
-                      ? `Testing ${progress.modelId ?? ''} — ${progress.scenarioName ?? ''}`
+                      ? `Testing ${progress.modelId ?? ''} -- ${progress.scenarioName ?? ''}`
                       : progress.phase}
                 </span>
               </div>

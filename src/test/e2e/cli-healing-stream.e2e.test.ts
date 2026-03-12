@@ -1,5 +1,5 @@
 /**
- * E2E: AI Healing Stream — self-healing diagnostics lifecycle.
+ * E2E: AI Healing Stream -- self-healing diagnostics lifecycle.
  *
  * Tests the useAiHealingStream hook that monitors background AI healing
  * events, tracking diagnosis phase transitions, fix application, and
@@ -29,11 +29,11 @@ afterEach(() => {
   teardownTauriEventEmitter();
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 1. Initial state
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
-describe('E2E: useAiHealingStream — initial state', () => {
+describe('E2E: useAiHealingStream -- initial state', () => {
   it('starts idle with empty state', () => {
     const { result } = renderHook(() => useAiHealingStream('persona-1'));
 
@@ -47,9 +47,9 @@ describe('E2E: useAiHealingStream — initial state', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 2. Full healing lifecycle — successful auto-fix
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 2. Full healing lifecycle -- successful auto-fix
+// ===========================================================================
 
 describe('E2E: successful AI healing lifecycle', () => {
   it('progresses through all healing phases with line accumulation', async () => {
@@ -137,9 +137,9 @@ describe('E2E: successful AI healing lifecycle', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 3. Manual fix required — no auto-fix possible
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 3. Manual fix required -- no auto-fix possible
+// ===========================================================================
 
 describe('E2E: manual fix healing lifecycle', () => {
   it('completes without retry when auto-fix is not possible', async () => {
@@ -167,7 +167,7 @@ describe('E2E: manual fix healing lifecycle', () => {
       emitTauriEvent('ai-healing-status', {
         persona_id: 'persona-2',
         phase: 'diagnosing',
-        diagnosis: 'Rate limit exceeded — requires manual plan upgrade',
+        diagnosis: 'Rate limit exceeded -- requires manual plan upgrade',
       });
     });
 
@@ -183,14 +183,14 @@ describe('E2E: manual fix healing lifecycle', () => {
     expect(result.current.phase).toBe('completed');
     expect(result.current.shouldRetry).toBe(false);
     expect(result.current.fixesApplied).toEqual([]);
-    expect(result.current.diagnosis).toBe('Rate limit exceeded — requires manual plan upgrade');
+    expect(result.current.diagnosis).toBe('Rate limit exceeded -- requires manual plan upgrade');
     expect(result.current.lines).toEqual(AI_HEALING_MANUAL_LINES);
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // 4. Failed healing
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 describe('E2E: failed healing', () => {
   it('transitions to failed phase when healing itself fails', async () => {
@@ -211,7 +211,7 @@ describe('E2E: failed healing', () => {
     act(() => {
       emitTauriEvent('ai-healing-output', {
         persona_id: 'persona-3',
-        line: '> Starting AI healing diagnosis…',
+        line: '> Starting AI healing diagnosis...',
       });
     });
 
@@ -227,9 +227,9 @@ describe('E2E: failed healing', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 5. Persona ID scoping — events from other personas are ignored
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 5. Persona ID scoping -- events from other personas are ignored
+// ===========================================================================
 
 describe('E2E: persona ID scoping', () => {
   it('ignores output events from different persona IDs', async () => {
@@ -273,9 +273,9 @@ describe('E2E: persona ID scoping', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 6. Persona change — state resets
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 6. Persona change -- state resets
+// ===========================================================================
 
 describe('E2E: persona change resets state', () => {
   it('resets all healing state when persona ID changes', async () => {
@@ -313,9 +313,9 @@ describe('E2E: persona change resets state', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 7. Buffer limits — MAX_LINES = 500
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 7. Buffer limits -- MAX_LINES = 500
+// ===========================================================================
 
 describe('E2E: healing stream buffer limits', () => {
   it('caps lines at 500 and evicts oldest', async () => {
@@ -341,9 +341,9 @@ describe('E2E: healing stream buffer limits', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 8. Line truncation — MAX_LINE_LENGTH = 4096
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 8. Line truncation -- MAX_LINE_LENGTH = 4096
+// ===========================================================================
 
 describe('E2E: healing line truncation', () => {
   it('truncates lines exceeding 4096 characters', async () => {
@@ -383,9 +383,9 @@ describe('E2E: healing line truncation', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 9. Incremental status payload — partial updates preserve existing state
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// 9. Incremental status payload -- partial updates preserve existing state
+// ===========================================================================
 
 describe('E2E: incremental status payload updates', () => {
   it('preserves diagnosis when subsequent status lacks it', async () => {
@@ -409,7 +409,7 @@ describe('E2E: incremental status payload updates', () => {
       emitTauriEvent('ai-healing-status', {
         persona_id: 'persona-1',
         phase: 'applying',
-        // No diagnosis in this payload — should preserve previous
+        // No diagnosis in this payload -- should preserve previous
       });
     });
 

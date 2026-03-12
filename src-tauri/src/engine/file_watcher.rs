@@ -63,8 +63,17 @@ pub async fn file_watcher_tick(
     tx: &tokio::sync::mpsc::Sender<RawFsEvent>,
     rx: &Arc<Mutex<tokio::sync::mpsc::Receiver<RawFsEvent>>>,
 ) {
-    // Phase 1: Reconcile watches
-    if let Err(e) = reconcile_watches(pool, state, tx).await {
+    // Load enabled file_watcher triggers once (SQL-filtered)
+    let triggers = match trigger_repo::get_enabled_by_type(pool, "file_watcher") {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::warn!("file_watcher load error: {e}");
+            return;
+        }
+    };
+
+    // Phase 1: Reconcile watches using the pre-fetched triggers
+    if let Err(e) = reconcile_watches(&triggers, state, tx).await {
         tracing::warn!("file_watcher reconcile error: {e}");
     }
 
@@ -81,15 +90,9 @@ pub async fn file_watcher_tick(
         return;
     }
 
-    // Phase 3: Load triggers for matching
-    let triggers = match trigger_repo::get_all(pool) {
-        Ok(t) => t,
-        Err(_) => return,
-    };
-
+    // Phase 3: Match triggers to events (reusing already-loaded triggers)
     let fw_triggers: Vec<_> = triggers
-        .into_iter()
-        .filter(|t| t.trigger_type == "file_watcher" && t.enabled)
+        .iter()
         .map(|t| {
             let config = t.parse_config();
             (t.id.clone(), t.persona_id.clone(), t.use_case_id.clone(), config)
@@ -178,16 +181,10 @@ fn matches_trigger(config: &TriggerConfig, kind: &str, paths: &[String]) -> bool
 }
 
 async fn reconcile_watches(
-    pool: &DbPool,
+    triggers: &[crate::db::models::PersonaTrigger],
     state: &Arc<Mutex<FileWatcherState>>,
     tx: &tokio::sync::mpsc::Sender<RawFsEvent>,
 ) -> Result<(), String> {
-    let triggers = trigger_repo::get_all(pool)
-        .map_err(|e| format!("{e}"))?
-        .into_iter()
-        .filter(|t| t.trigger_type == "file_watcher" && t.enabled)
-        .collect::<Vec<_>>();
-
     let mut state = state.lock().await;
 
     // Remove stale registrations
@@ -223,7 +220,7 @@ async fn reconcile_watches(
 
     // Collect registrations to apply
     let mut to_register: Vec<(String, HashSet<String>, RecursiveMode)> = Vec::new();
-    for trigger in &triggers {
+    for trigger in triggers {
         let config = trigger.parse_config();
         if let TriggerConfig::FileWatcher { watch_paths: Some(ref paths), recursive, .. } = config {
             let mode = if recursive.unwrap_or(true) {
@@ -238,7 +235,7 @@ async fn reconcile_watches(
         }
     }
 
-    // Apply registrations — take watcher out temporarily to avoid double-borrow
+    // Apply registrations -- take watcher out temporarily to avoid double-borrow
     if !to_register.is_empty() {
         if let Some(mut watcher) = state.watcher.take() {
             for (trigger_id, path_set, mode) in to_register {

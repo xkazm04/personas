@@ -20,7 +20,7 @@ interface InteractiveSetupInstructionsProps {
   firstSetupUrl: string | null;
 }
 
-// ── Main component ──────────────────────────────────────────────
+// -- Main component ----------------------------------------------
 
 export function InteractiveSetupInstructions({
   markdown,
@@ -77,7 +77,7 @@ export function InteractiveSetupInstructions({
 
   return (
     <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
-      {/* Header — grouped controls with separate buttons */}
+      {/* Header -- grouped controls with separate buttons */}
       <div className="w-full flex items-center gap-2 px-4 py-3 hover:bg-secondary/30 transition-colors" role="group" aria-label="Setup instruction controls">
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -120,7 +120,7 @@ export function InteractiveSetupInstructions({
         )}
       </div>
 
-      {/* Expandable content — animated height */}
+      {/* Expandable content -- animated height */}
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -164,7 +164,7 @@ export function InteractiveSetupInstructions({
                     >
                       <Check className="w-3.5 h-3.5 text-emerald-400" />
                       <span className="text-sm text-emerald-300/80">
-                        All steps complete — fill in the fields below and test your connection.
+                        All steps complete -- fill in the fields below and test your connection.
                       </span>
                     </motion.div>
                   )}

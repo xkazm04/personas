@@ -11,7 +11,7 @@ export function ConnectorGroup({
 }: {
   connectorKey: string;
   tools: ToolDef[];
-  assignedToolIds: string[];
+  assignedToolIds: Set<string>;
   credentialTypeSet: Set<string>;
   credentialLabel: (credType: string) => string;
   justToggledId: string | null;
@@ -27,13 +27,13 @@ export function ConnectorGroup({
   const hasCredential = isGeneral || credentialTypeSet.has(connectorKey);
   const missingCredential = !isGeneral && !hasCredential;
   const assignableTools = missingCredential ? [] : tools;
-  const assignedInGroup = tools.filter(t => assignedToolIds.includes(t.id));
+  const assignedInGroup = tools.filter(t => assignedToolIds.has(t.id));
   const allAssigned = assignableTools.length > 0 && assignedInGroup.length === assignableTools.length;
   const someAssigned = assignedInGroup.length > 0 && !allAssigned;
 
   return (
     <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-2.5 bg-secondary/30 border-b border-primary/8">
+      <div className="flex items-center gap-3 px-4 py-2.5 bg-secondary/30 border-b border-primary/10">
         <button
           onClick={() => !missingCredential && onBulkToggle(tools, allAssigned)}
           disabled={missingCredential}
@@ -44,7 +44,7 @@ export function ConnectorGroup({
                 ? 'bg-primary border-primary cursor-pointer'
                 : someAssigned
                   ? 'bg-primary/40 border-primary/60 cursor-pointer'
-                  : 'bg-background/50 border-primary/15 cursor-pointer hover:border-primary/30'
+                  : 'bg-background/50 border-primary/20 cursor-pointer hover:border-primary/30'
           }`}
         >
           {(allAssigned || someAssigned) && (
@@ -82,7 +82,7 @@ export function ConnectorGroup({
       </div>
       <div className="divide-y divide-primary/5">
         {tools.map((tool) => {
-          const isAssigned = assignedToolIds.includes(tool.id);
+          const isAssigned = assignedToolIds.has(tool.id);
           return (
             <GroupedToolRow
               key={tool.id}

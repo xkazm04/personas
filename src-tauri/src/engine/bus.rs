@@ -236,7 +236,7 @@ mod tests {
         assert_eq!(matches.len(), 2);
     }
 
-    // ── Event listener trigger tests ─────────────────────────────────
+    // -- Event listener trigger tests ---------------------------------
 
     fn make_listener(persona_id: &str, listen_event_type: &str, source_filter: Option<&str>) -> PersonaTrigger {
         let config = serde_json::json!({

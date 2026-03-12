@@ -48,7 +48,7 @@ export function UseCaseModelDropdown({
               Override
             </span>
           ) : (
-            <span className="text-sm font-medium px-1.5 py-0.5 rounded bg-secondary/50 text-muted-foreground/60 border border-primary/8 flex-shrink-0 flex items-center gap-0.5">
+            <span className="text-sm font-medium px-1.5 py-0.5 rounded bg-secondary/50 text-muted-foreground/60 border border-primary/10 flex-shrink-0 flex items-center gap-0.5">
               <Link2 className="w-2.5 h-2.5" />
               Inherited
             </span>
@@ -80,7 +80,7 @@ export function UseCaseModelDropdown({
           </button>
 
           {/* Divider */}
-          <div className="my-1 border-t border-primary/8" />
+          <div className="my-1 border-t border-primary/10" />
 
           {/* Override options group */}
           <div className="px-3 pt-1.5 pb-1 text-sm font-semibold uppercase tracking-wider text-amber-400/50">

@@ -14,7 +14,7 @@ export function VersionComparisonCard({ comparison, rollingBack, onRollback }: V
       className={`rounded-lg border p-3 space-y-2 ${
         comparison.isWorse
           ? 'border-red-500/20 bg-red-500/5'
-          : 'border-primary/8 bg-secondary/30'
+          : 'border-primary/10 bg-secondary/30'
       }`}
     >
       <div className="flex items-center justify-between">

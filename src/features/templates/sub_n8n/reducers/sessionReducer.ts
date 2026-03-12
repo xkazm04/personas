@@ -4,7 +4,7 @@ import type { N8nImportAction, N8nImportState } from '../hooks/useN8nImportReduc
 import { normalizeDraftFromUnknown } from '../hooks/n8nTypes';
 import { checkStepPrecondition } from './navigationReducer';
 
-// â”€â”€ Session / Upload State Slice â”€â”€
+// -- Session / Upload State Slice --
 
 export interface SessionState {
   sessionId: string | null;
@@ -42,7 +42,7 @@ export const INITIAL_SESSION: SessionState = {
   detectedConfidence: 'high',
 };
 
-// â”€â”€ Helpers â”€â”€
+// -- Helpers --
 
 function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
   const next = new Set(set);
@@ -63,7 +63,7 @@ export function initSelectionsFromResult(result: AgentIR): {
   };
 }
 
-// â”€â”€ Reducer â”€â”€
+// -- Reducer --
 
 export function sessionReducer(
   slice: SessionState,

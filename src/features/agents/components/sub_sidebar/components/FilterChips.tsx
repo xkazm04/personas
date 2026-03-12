@@ -1,6 +1,6 @@
 import type { SmartTag } from '../libs/filterHelpers';
 
-// ── Chip Component ───────────────────────────────────────────────────
+// -- Chip Component ---------------------------------------------------
 
 export function FilterChip({
   label,
@@ -32,7 +32,7 @@ export function FilterChip({
   );
 }
 
-// ── Tag Group Row ───────────────────────────────────────────────────
+// -- Tag Group Row ---------------------------------------------------
 
 export function TagGroupRow({
   label,

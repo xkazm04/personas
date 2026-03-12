@@ -13,7 +13,7 @@ import type { Persona } from "@/lib/bindings/Persona";
 import type { ModelTestConfig } from "./tests";
 
 // ============================================================================
-// Arena — Multi-model comparison
+// Arena -- Multi-model comparison
 // ============================================================================
 
 export const labStartArena = (personaId: string, models: ModelTestConfig[], useCaseFilter?: string) =>
@@ -32,7 +32,7 @@ export const labCancelArena = (id: string) =>
   invoke<void>("lab_cancel_arena", { id });
 
 // ============================================================================
-// A/B — Prompt version comparison
+// A/B -- Prompt version comparison
 // ============================================================================
 
 export const labStartAb = (
@@ -65,7 +65,7 @@ export const labCancelAb = (id: string) =>
   invoke<void>("lab_cancel_ab", { id });
 
 // ============================================================================
-// Matrix — Draft generation + comparison
+// Matrix -- Draft generation + comparison
 // ============================================================================
 
 export const labStartMatrix = (
@@ -97,7 +97,7 @@ export const labAcceptDraft = (runId: string) =>
   invoke<Persona>("lab_accept_matrix_draft", { runId });
 
 // ============================================================================
-// Eval — N prompt versions × M models evaluation matrix
+// Eval -- N prompt versions × M models evaluation matrix
 // ============================================================================
 
 export const labStartEval = (

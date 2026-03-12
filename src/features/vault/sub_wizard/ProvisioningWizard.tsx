@@ -13,7 +13,7 @@ interface ProvisioningWizardProps {
 }
 
 /**
- * Inline provisioning wizard panel — rendered inside CredentialManager
+ * Inline provisioning wizard panel -- rendered inside CredentialManager
  * instead of as a modal overlay, so progress is never lost on accidental close.
  */
 export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {

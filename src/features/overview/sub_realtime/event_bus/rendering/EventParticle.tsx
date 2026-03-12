@@ -51,7 +51,7 @@ function EventParticleComponent({ event, sourcePos, busY, targetPos, color, onCl
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="button"
-      aria-label={`Event: ${event.event_type} – ${event.status}`}
+      aria-label={`Event: ${event.event_type} -- ${event.status}`}
       style={{ cursor: 'pointer' }}
     >
       {/* Invisible hit-area for easier clicking */}

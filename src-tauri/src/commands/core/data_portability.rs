@@ -664,7 +664,7 @@ fn import_bundle(
     // Phase 2: Import tool definitions (map old IDs to new IDs, skip builtins)
     for t in &bundle.tool_definitions {
         if t.is_builtin {
-            // Builtin tools already exist — try to find matching by name
+            // Builtin tools already exist -- try to find matching by name
             if let Ok(all_defs) = tool_repo::get_all_definitions(pool) {
                 if let Some(existing) = all_defs.iter().find(|d| d.name == t.name) {
                     result
@@ -1310,7 +1310,7 @@ pub async fn import_credentials(
     let plaintext = cipher
         .decrypt(nonce, ciphertext.as_ref())
         .map_err(|_| {
-            AppError::Validation("Decryption failed — wrong passphrase or corrupted file".into())
+            AppError::Validation("Decryption failed -- wrong passphrase or corrupted file".into())
         })?;
 
     let bundle: CredentialExportBundle = serde_json::from_slice(&plaintext)

@@ -32,6 +32,9 @@ export default function SidebarLevel1({
   const templateTestActive = usePersonaStore((s) => s.templateTestActive);
   const isLabRunning = usePersonaStore((s) => s.isLabRunning);
   const connectorTestActive = usePersonaStore((s) => s.connectorTestActive);
+  const contextScanActive = usePersonaStore((s) => s.contextScanActive);
+  const contextScanComplete = usePersonaStore((s) => s.contextScanComplete);
+  const setContextScanComplete = usePersonaStore((s) => s.setContextScanComplete);
   const isDev = import.meta.env.DEV;
   const isSimple = useSimpleMode();
   const isDevMode = useDevMode();
@@ -57,6 +60,10 @@ export default function SidebarLevel1({
               key={section.id}
               onClick={() => {
                 if (isDisabled) return;
+                // Clear context scan complete indicator when navigating to dev-tools
+                if (section.id === 'dev-tools' && contextScanComplete) {
+                  setContextScanComplete(false);
+                }
                 if (IS_MOBILE) {
                   onMobileDrawerToggle(section.id);
                 } else {
@@ -113,6 +120,21 @@ export default function SidebarLevel1({
                 <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
                   <span className="absolute inset-0 rounded-full bg-cyan-500/40 animate-ping" />
                   <span className="relative w-2.5 h-2.5 rounded-full bg-cyan-500 border border-cyan-600/50" />
+                </span>
+              )}
+              {/* Dev tools: pulsing amber while scanning, green when complete (click to dismiss) */}
+              {section.id === 'dev-tools' && contextScanActive && (
+                <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-amber-500/40 animate-ping" />
+                  <span className="relative w-2.5 h-2.5 rounded-full bg-amber-500 border border-amber-600/50" />
+                </span>
+              )}
+              {section.id === 'dev-tools' && !contextScanActive && contextScanComplete && (
+                <span
+                  className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center cursor-pointer"
+                  onClick={(e) => { e.stopPropagation(); setContextScanComplete(false); }}
+                >
+                  <span className="relative w-2.5 h-2.5 rounded-full bg-emerald-500 border border-emerald-600/50" />
                 </span>
               )}
             </button>

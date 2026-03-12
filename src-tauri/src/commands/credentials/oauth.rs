@@ -25,7 +25,7 @@ use crate::AppState;
 const GOOGLE_OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
 const OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
 
-// ── Shared OAuth Callback Server ─────────────────────────────────
+// -- Shared OAuth Callback Server ---------------------------------
 
 /// Outcome returned by `run_oauth_callback_server` after accepting one callback.
 enum OAuthCallbackOutcome {
@@ -100,7 +100,7 @@ where
                     let state_valid = callback_state.as_deref() == Some(&expected_state);
                     if !state_valid {
                         OAuthCallbackOutcome::Error(
-                            "OAuth state mismatch — possible CSRF attack. Please retry the authorization.".into(),
+                            "OAuth state mismatch -- possible CSRF attack. Please retry the authorization.".into(),
                         )
                     } else if let Some(err) = oauth_error {
                         let msg = if let Some(desc) = error_desc {
@@ -148,7 +148,7 @@ const GOOGLE_IDENTITY_SCOPES: &[&str] = &[
 ];
 
 /// Default Google OAuth scopes for the generic/workspace connector.
-/// This is the single source of truth — the frontend delegates scope
+/// This is the single source of truth -- the frontend delegates scope
 /// selection to the backend via `default_google_scopes_for_connector()`.
 const DEFAULT_GOOGLE_OAUTH_SCOPES: &[&str] = &[
     "https://www.googleapis.com/auth/gmail.modify",
@@ -187,10 +187,10 @@ fn cleanup_google_oauth_sessions() {
     sessions.retain(|_, session| now.saturating_sub(session.created_at) <= GOOGLE_OAUTH_SESSION_TTL_SECS);
 }
 
-// ── Token encryption helpers ────────────────────────────────────
+// -- Token encryption helpers ------------------------------------
 
 /// Encrypt a `SecureString` token into an `EncryptedToken` for at-rest storage.
-/// Returns `None` (and logs the error) if encryption fails — fail-secure.
+/// Returns `None` (and logs the error) if encryption fails -- fail-secure.
 fn encrypt_token(token: Option<SecureString>) -> Option<EncryptedToken> {
     token.and_then(|t| match EncryptedToken::seal(t) {
         Ok(enc) => Some(enc),
@@ -213,7 +213,7 @@ fn decrypt_token(token: &Option<EncryptedToken>) -> Option<SecureString> {
     })
 }
 
-// ── Commands ────────────────────────────────────────────────────
+// -- Commands ----------------------------------------------------
 
 #[tauri::command]
 pub async fn start_google_credential_oauth(
@@ -292,7 +292,7 @@ pub async fn start_google_credential_oauth(
 
     let session_id_clone = session_id.clone();
     let client_id_clone = resolved_client_id.clone();
-    let client_secret_clone = resolved_client_secret.clone();
+    let client_secret_clone = resolved_client_secret.duplicate();
     let db_pool = state.db.clone();
     let audit_connector = connector_name.clone();
 
@@ -409,7 +409,7 @@ pub fn get_google_credential_oauth_status(
     }))
 }
 
-// ── Helpers ─────────────────────────────────────────────────────
+// -- Helpers -----------------------------------------------------
 
 fn default_google_scopes_for_connector(connector_name: &str) -> Vec<String> {
     let mut scopes = match connector_name {
@@ -686,11 +686,11 @@ fn validate_issuer_url(raw: &str) -> Result<url::Url, String> {
 /// Check whether `candidate` is the same host as `base`, or a subdomain of it.
 ///
 /// For example, if `base` is `auth.example.co.uk`:
-/// - `auth.example.co.uk` → true (exact match)
-/// - `login.auth.example.co.uk` → true (subdomain)
-/// - `evil.com` → false
-/// - `attacker.com.auth.example.co.uk` → true (still a subdomain — safe)
-/// - `attacker-auth.example.co.uk` → false (not a subdomain)
+/// - `auth.example.co.uk` -> true (exact match)
+/// - `login.auth.example.co.uk` -> true (subdomain)
+/// - `evil.com` -> false
+/// - `attacker.com.auth.example.co.uk` -> true (still a subdomain -- safe)
+/// - `attacker-auth.example.co.uk` -> false (not a subdomain)
 ///
 /// This avoids the need for a public suffix list: we trust the issuer host
 /// as the anchor and only allow endpoints at or below that host.
@@ -779,7 +779,7 @@ async fn discover_oidc(issuer_url: &str) -> Result<OidcDiscovery, String> {
     Ok(discovery)
 }
 
-// ── PKCE & State ─────────────────────────────────────────────────
+// -- PKCE & State -------------------------------------------------
 
 fn generate_pkce_pair() -> (SecureString, String) {
     use aes_gcm::aead::rand_core::{OsRng, RngCore};
@@ -802,9 +802,9 @@ fn generate_oauth_state() -> String {
     URL_SAFE_NO_PAD.encode(state_bytes)
 }
 
-// ── Universal OAuth Sessions ─────────────────────────────────────
+// -- Universal OAuth Sessions -------------------------------------
 
-#[derive(Clone, Zeroize, ZeroizeOnDrop)]
+#[derive(Zeroize, ZeroizeOnDrop)]
 #[allow(dead_code)]
 struct OAuthSession {
     status: String,          // pending | success | error
@@ -837,7 +837,7 @@ fn cleanup_oauth_sessions() {
     sessions.retain(|_, s| now.saturating_sub(s.created_at) <= OAUTH_SESSION_TTL_SECS);
 }
 
-// ── Universal OAuth Commands ─────────────────────────────────────
+// -- Universal OAuth Commands -------------------------------------
 
 /// List available OAuth providers.
 #[tauri::command]
@@ -992,8 +992,8 @@ pub async fn start_oauth(
             created_at: now_unix_secs(),
             token_url: resolved_token_url.clone(),
             client_id: client_id.clone(),
-            client_secret: client_secret.clone(),
-            code_verifier: code_verifier.clone(),
+            client_secret: client_secret.as_ref().map(|s| s.duplicate()),
+            code_verifier: code_verifier.as_ref().map(|s| s.duplicate()),
             redirect_uri: redirect_uri.clone(),
         });
     }
@@ -1008,7 +1008,7 @@ pub async fn start_oauth(
     let sid = session_id.clone();
     let tok_url = resolved_token_url;
     let cid = client_id.clone();
-    let csec = client_secret.clone();
+    let csec = client_secret.as_ref().map(|s| s.duplicate());
     let cv = code_verifier;
     let db_pool = state.db.clone();
     let audit_provider = provider_id.clone();
@@ -1210,7 +1210,7 @@ pub async fn refresh_oauth_token(
     }))
 }
 
-// ── Universal Token Exchange ─────────────────────────────────────
+// -- Universal Token Exchange -------------------------------------
 
 struct OAuthTokenResult {
     access_token: Option<SecureString>,

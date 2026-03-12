@@ -1,6 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
 export interface McpTool {
   name: string;
@@ -19,7 +19,7 @@ export interface McpToolResult {
   duration_ms: number;
 }
 
-// ── MCP Connection Test ─────────────────────────────────────────────────
+// -- MCP Connection Test -------------------------------------------------
 
 export interface McpPingResult {
   success: boolean;
@@ -29,7 +29,7 @@ export interface McpPingResult {
 export const healthcheckMcpPreview = (fields: Record<string, string>) =>
   invoke<McpPingResult>('healthcheck_mcp_preview', { fields }, undefined, 90_000);
 
-// ── MCP Tool Discovery & Execution ─────────────────────────────────────
+// -- MCP Tool Discovery & Execution -------------------------------------
 
 export const listMcpTools = (credentialId: string) =>
   invoke<McpTool[]>('list_mcp_tools', { credentialId });

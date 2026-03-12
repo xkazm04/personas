@@ -47,7 +47,7 @@ export function MemoryCard({
           </label>
         </div>
 
-        {/* Memory scope — structured categories + custom input */}
+        {/* Memory scope -- structured categories + custom input */}
         <div className={fieldClass}>
           <label className={labelClass}>Memory scope</label>
           <p className={descClass}>What should the persona remember?</p>

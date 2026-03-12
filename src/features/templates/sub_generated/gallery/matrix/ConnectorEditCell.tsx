@@ -1,5 +1,5 @@
 /**
- * ConnectorEditCell — connector credential selection cell for PersonaMatrix edit mode.
+ * ConnectorEditCell -- connector credential selection cell for PersonaMatrix edit mode.
  *
  * Shows ALL required connectors: builtins auto-selected, credentialed connectors
  * with link/swap UI, and missing connectors with "not connected" label so users
@@ -18,7 +18,7 @@ import { getRoleForConnector } from '@/lib/credentials/connectorRoles';
 
 const BUILTIN = new Set(['personas_messages', 'personas_database']);
 
-// ── Connector Popup ───────────────────────────────────────────────────
+// -- Connector Popup ---------------------------------------------------
 
 function ConnectorPopup({
   rc,
@@ -114,7 +114,7 @@ function ConnectorPopup({
   );
 }
 
-// ── Database Row ─────────────────────────────────────────────────────
+// -- Database Row -----------------------------------------------------
 
 function DatabaseRow({
   dbMode,
@@ -209,7 +209,7 @@ function DatabaseRow({
   );
 }
 
-// ── Connector cell (edit mode) ────────────────────────────────────────
+// -- Connector cell (edit mode) ----------------------------------------
 
 interface ConnectorEditCellProps {
   requiredConnectors: RequiredConnector[];
@@ -234,7 +234,7 @@ export function ConnectorEditCell({
     [credentials],
   );
 
-  // Show ALL required connectors — matched, builtin, and missing
+  // Show ALL required connectors -- matched, builtin, and missing
   const allConnectors = requiredConnectors;
 
   if (allConnectors.length === 0) {
@@ -278,7 +278,7 @@ export function ConnectorEditCell({
           );
         }
 
-        // Missing connector — no credential and not builtin
+        // Missing connector -- no credential and not builtin
         if (!isBuiltin && !hasCred) {
           const role = getRoleForConnector(activeName);
           const roleLabel = role ? role.label : rc.roleLabel;

@@ -1,4 +1,4 @@
-// ── Shared primitives (single source of truth) ──
+// -- Shared primitives (single source of truth) --
 export {
   TAG_STYLES,
   formatRelative,
@@ -6,7 +6,7 @@ export {
   diffStrings,
 } from '@/features/agents/sub_lab_shared/labPrimitives';
 
-// ── Filter / Sort / Grouping helpers (prompt-lab specific) ──
+// -- Filter / Sort / Grouping helpers (prompt-lab specific) --
 
 export type TagFilter = 'all' | 'production' | 'experimental' | 'archived';
 export type SortOrder = 'newest' | 'oldest';

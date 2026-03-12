@@ -87,7 +87,7 @@ export function SectionEditor({ value, onChange, label, placeholder, disabled }:
       <div className="flex-1 min-h-0 rounded-xl border border-primary/15 overflow-hidden">
         {mode === 'edit' ? (
           <div className="relative w-full h-full">
-            {/* Syntax-highlighted underlay — must mirror textarea padding/font exactly */}
+            {/* Syntax-highlighted underlay -- must mirror textarea padding/font exactly */}
             <div
               ref={highlightRef}
               aria-hidden="true"

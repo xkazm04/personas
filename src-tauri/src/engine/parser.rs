@@ -25,7 +25,7 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
     let value: serde_json::Value = match serde_json::from_str(trimmed) {
         Ok(v) => v,
         Err(_) => {
-            // Non-JSON line â€” suppress display. With --verbose + stream-json,
+            // Non-JSON line -- suppress display. With --verbose + stream-json,
             // Claude CLI emits both JSON events and plain-text duplicates.
             // We only display the parsed JSON events to prevent 5x duplication.
             return (StreamLineType::Unknown, None);

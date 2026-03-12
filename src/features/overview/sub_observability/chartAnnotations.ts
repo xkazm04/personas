@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-// ── Annotation Types ─────────────────────────────────────────────────
+// -- Annotation Types -------------------------------------------------
 
 /** Built-in annotation types. Consumers can pass any string via the union escape hatch. */
 export type AnnotationType = 'prompt' | 'healing' | 'rotation' | 'incident' | 'budget' | 'deployment' | 'config' | (string & {});
@@ -15,7 +15,7 @@ export interface ChartAnnotationRecord {
   personaId?: string | null;
 }
 
-// ── Color Defaults ───────────────────────────────────────────────────
+// -- Color Defaults ---------------------------------------------------
 
 const ANNOTATION_TYPE_COLORS: Record<string, string> = {
   prompt: '#8b5cf6',
@@ -34,7 +34,7 @@ export function getAnnotationColor(type: string, colorOverride?: string): string
   return colorOverride ?? ANNOTATION_TYPE_COLORS[type] ?? DEFAULT_COLOR;
 }
 
-// ── Date helper ──────────────────────────────────────────────────────
+// -- Date helper ------------------------------------------------------
 
 export function toChartDate(timestamp: string): string | null {
   const parsed = new Date(timestamp);
@@ -42,7 +42,7 @@ export function toChartDate(timestamp: string): string | null {
   return parsed.toISOString().slice(0, 10);
 }
 
-// ── Annotation Composer Hook ─────────────────────────────────────────
+// -- Annotation Composer Hook -----------------------------------------
 
 export interface AnnotationComposerOptions {
   /** When set, only annotations with no personaId or matching personaId are kept. */

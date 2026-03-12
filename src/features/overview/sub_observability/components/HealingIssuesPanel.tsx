@@ -1,7 +1,11 @@
-import { Stethoscope, CheckCircle, CheckCircle2, AlertTriangle, X } from 'lucide-react';
+import { Stethoscope, CheckCircle, CheckCircle2, AlertTriangle, X, List, GitBranch } from 'lucide-react';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
+import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
 import { HealingIssueSummary } from './HealingIssueSummary';
 import { IssuesList } from './IssuesList';
+import { HealingTimeline } from './HealingTimeline';
+
+type ViewMode = 'list' | 'timeline';
 
 interface HealingIssuesPanelProps {
   healingIssues: PersonaHealingIssue[];
@@ -17,6 +21,11 @@ interface HealingIssuesPanelProps {
   setAnalysisResult: (r: null) => void;
   analysisError: string | null;
   setAnalysisError: (e: null) => void;
+  // Timeline props
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
+  timelineEvents: HealingTimelineEvent[];
+  timelineLoading: boolean;
 }
 
 export function HealingIssuesPanel({
@@ -24,7 +33,12 @@ export function HealingIssuesPanel({
   resolveHealingIssue, setSelectedIssue,
   issueFilter, setIssueFilter, issueCounts, sortedFilteredIssues,
   analysisResult, setAnalysisResult, analysisError, setAnalysisError,
+  viewMode, setViewMode, timelineEvents, timelineLoading,
 }: HealingIssuesPanelProps) {
+  const handleTimelineSelectIssue = (issueId: string) => {
+    const issue = healingIssues.find(i => i.id === issueId);
+    if (issue) setSelectedIssue(issue);
+  };
   return (
     <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col">
       {/* Header */}
@@ -40,23 +54,43 @@ export function HealingIssuesPanel({
             </span>
           )}
         </div>
-        <button
-          onClick={handleRunAnalysis}
-          disabled={healingRunning}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
-        >
-          {healingRunning ? (
-            <>
-              <div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
-              Analyzing...
-            </>
-          ) : (
-            <>
-              <Stethoscope className="w-4 h-4" />
-              Run Analysis
-            </>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* View mode toggle */}
+          <div className="flex items-center rounded-lg border border-primary/15 overflow-hidden">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 transition-colors ${viewMode === 'list' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
+              title="List view"
+            >
+              <List className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setViewMode('timeline')}
+              className={`p-1.5 transition-colors ${viewMode === 'timeline' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
+              title="Timeline view"
+            >
+              <GitBranch className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <button
+            onClick={handleRunAnalysis}
+            disabled={healingRunning}
+            aria-label={healingRunning ? 'Analysis in progress' : 'Run healing analysis'}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+          >
+            {healingRunning ? (
+              <>
+                <div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Stethoscope className="w-4 h-4" />
+                Run Analysis
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Analysis Result Summary */}
@@ -93,7 +127,7 @@ export function HealingIssuesPanel({
 
       {/* Filter Chips */}
       {healingIssues.length > 0 && (
-        <div className="px-4 py-2.5 border-b border-primary/10 flex items-center gap-1">
+        <div className="px-4 py-2.5 border-b border-primary/10 flex items-center gap-1" role="tablist">
           {([
             { key: 'all' as const, label: 'All', count: issueCounts.all },
             { key: 'open' as const, label: 'Open', count: issueCounts.open },
@@ -101,8 +135,10 @@ export function HealingIssuesPanel({
           ]).map((chip) => (
             <button
               key={chip.key}
+              role="tab"
+              aria-selected={issueFilter === chip.key}
               onClick={() => setIssueFilter(chip.key)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-sm font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
                 issueFilter === chip.key
                   ? 'bg-background text-foreground shadow-sm border border-primary/20'
                   : 'text-muted-foreground/80 hover:text-muted-foreground'
@@ -121,8 +157,14 @@ export function HealingIssuesPanel({
         </div>
       )}
 
-      {/* Issues List */}
-      {healingIssues.length === 0 ? (
+      {/* Content: List or Timeline */}
+      {viewMode === 'timeline' ? (
+        <HealingTimeline
+          events={timelineEvents}
+          loading={timelineLoading}
+          onSelectIssue={handleTimelineSelectIssue}
+        />
+      ) : healingIssues.length === 0 ? (
         <div className="flex items-center justify-center py-10">
           <div className="text-center flex flex-col items-center">
             <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">

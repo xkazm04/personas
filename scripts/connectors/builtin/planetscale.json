@@ -12,7 +12,7 @@
       "type": "text",
       "required": true,
       "placeholder": "",
-      "helpText": "From PlanetScale → Organization → Settings → Service Tokens"
+      "helpText": "From PlanetScale -> Organization -> Settings -> Service Tokens"
     },
     {
       "key": "service_token",
@@ -39,7 +39,7 @@
     "auth_type": "service_token",
     "auth_type_label": "Service Token",
     "docs_url": "https://planetscale.com/docs/concepts/service-tokens",
-    "setup_guide": "1. Go to PlanetScale → Organization → Settings → Service Tokens\n2. Click 'New service token'\n3. Grant database access permissions for the token\n4. Copy both the Service Token ID and the Service Token secret\n5. Paste both values here",
+    "setup_guide": "1. Go to PlanetScale -> Organization -> Settings -> Service Tokens\n2. Click 'New service token'\n3. Grant database access permissions for the token\n4. Copy both the Service Token ID and the Service Token secret\n5. Paste both values here",
     "pricing_tier": "paid"
   }
 }

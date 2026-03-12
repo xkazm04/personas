@@ -1,14 +1,14 @@
 /**
- * InlineCredentialPanel — credential creation panel in ConnectStep.
+ * InlineCredentialPanel -- credential creation panel in ConnectStep.
  *
  * Two top-level methods:
- *   1. Manual Input   — fill in known credential fields yourself
- *   2. Design with AI — CLI analyzes a service and discovers credential fields
+ *   1. Manual Input   -- fill in known credential fields yourself
+ *   2. Design with AI -- CLI analyzes a service and discovers credential fields
  *
  * Auto-Setup (Playwright) is offered *after* Design with AI completes, when
  * the LLM has identified setup procedures for the service.
  *
- * State machine: pick → (design-query → designing →) manual ⇄ auto
+ * State machine: pick -> (design-query -> designing ->) manual <-> auto
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,7 +25,7 @@ import type { PanelMode, InlineCredentialPanelProps } from './inlineCredentialHe
 import { findConnectorDefinition, buildSyntheticDesignResult } from './inlineCredentialHelpers';
 import { MethodPicker, DesignQueryInput, ManualForm } from './InlineCredentialSubPanels';
 
-// ── Main Component ─────────────────────────────────────────────────────
+// -- Main Component -----------------------------------------------------
 
 export function InlineCredentialPanel({
   connectorName,
@@ -69,7 +69,7 @@ export function InlineCredentialPanel({
     }
   }, [mode, design.phase, design.result]);
 
-  // ── Method handlers ──
+  // -- Method handlers --
 
   const handlePickManual = useCallback(() => {
     setMode('manual');
@@ -94,7 +94,7 @@ export function InlineCredentialPanel({
     setMode(initialMode);
   }, [mode, design, initialMode]);
 
-  // ── Switch to auto-setup from manual form ──
+  // -- Switch to auto-setup from manual form --
 
   const handleSwitchToAuto = useCallback(() => {
     if (activeDesignResult) {
@@ -102,10 +102,10 @@ export function InlineCredentialPanel({
     }
   }, [activeDesignResult]);
 
-  // ── Auto-complete handler ──
+  // -- Auto-complete handler --
 
   const handleAutoComplete = useCallback(() => {
-    // Credential already saved by useAutoCredSession — refresh and map
+    // Credential already saved by useAutoCredSession -- refresh and map
     void fetchCredentials().then(() => {
       const creds = usePersonaStore.getState().credentials;
       const match = creds

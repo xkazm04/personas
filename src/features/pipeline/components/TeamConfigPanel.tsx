@@ -30,7 +30,7 @@ function extractToolCount(designResult: string | null): number {
     const dr = JSON.parse(designResult) as AgentIR;
     return dr.suggested_tools?.length ?? 0;
   } catch {
-    // intentional: non-critical â€” JSON parse fallback
+    // intentional: non-critical -- JSON parse fallback
     return 0;
   }
 }

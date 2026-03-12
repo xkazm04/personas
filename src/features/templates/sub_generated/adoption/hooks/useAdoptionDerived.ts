@@ -1,5 +1,5 @@
 /**
- * useAdoptionDerived — computes derived data from wizard state: use case flows,
+ * useAdoptionDerived -- computes derived data from wizard state: use case flows,
  * connector readiness, adoption requirements, required connectors, and completed steps.
  *
  * Extracted from AdoptionWizardContext to isolate derivation concerns.
@@ -41,7 +41,7 @@ export function useAdoptionDerived({
   connectorDefinitions,
   highWaterMarkRef,
 }: UseAdoptionDerivedOptions) {
-  // ── Use case flows ──
+  // -- Use case flows --
 
   const useCaseFlows = useMemo<UseCaseFlow[]>(() => {
     if (!review) return [];
@@ -60,7 +60,7 @@ export function useAdoptionDerived({
     }
   }, [useCaseFlows, state.selectedUseCaseIds.size, state.step, wizard.selectAllUseCases]);
 
-  // ── Derived data ──
+  // -- Derived data --
 
   const designResult = state.designResult;
 

@@ -1,6 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// ── Types ──────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------
 
 export interface DbSchemaTable {
   id: string;
@@ -37,7 +37,7 @@ export interface QueryResult {
   truncated: boolean;
 }
 
-// ── Schema Tables ──────────────────────────────────────────────────────
+// -- Schema Tables ------------------------------------------------------
 
 export const listDbSchemaTables = (credentialId: string) =>
   invoke<DbSchemaTable[]>('list_db_schema_tables', { credentialId });
@@ -63,7 +63,7 @@ export const updateDbSchemaTable = (
 export const deleteDbSchemaTable = (id: string) =>
   invoke<boolean>('delete_db_schema_table', { id });
 
-// ── Saved Queries ──────────────────────────────────────────────────────
+// -- Saved Queries ------------------------------------------------------
 
 export const listDbSavedQueries = (credentialId: string) =>
   invoke<DbSavedQuery[]>('list_db_saved_queries', { credentialId });
@@ -89,12 +89,12 @@ export const updateDbSavedQuery = (
 export const deleteDbSavedQuery = (id: string) =>
   invoke<boolean>('delete_db_saved_query', { id });
 
-// ── Query Execution ────────────────────────────────────────────────────
+// -- Query Execution ----------------------------------------------------
 
 export const executeDbQuery = (credentialId: string, queryText: string, savedQueryId?: string) =>
   invoke<QueryResult>('execute_db_query', { credentialId, queryText, savedQueryId });
 
-// ── Schema Introspection ──────────────────────────────────────────────
+// -- Schema Introspection ----------------------------------------------
 
 export const introspectDbTables = (credentialId: string) =>
   invoke<QueryResult>('introspect_db_tables', { credentialId });
@@ -102,7 +102,7 @@ export const introspectDbTables = (credentialId: string) =>
 export const introspectDbColumns = (credentialId: string, tableName: string) =>
   invoke<QueryResult>('introspect_db_columns', { credentialId, tableName });
 
-// ── Query Debug (AI-assisted) ─────────────────────────────────────────
+// -- Query Debug (AI-assisted) -----------------------------------------
 
 export const startQueryDebug = (
   credentialId: string,

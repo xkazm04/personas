@@ -1,4 +1,4 @@
-// ── Animated SVG Icon Styles (injected once) ────────────────────────────
+// -- Animated SVG Icon Styles (injected once) ----------------------------
 
 export const ICON_STYLES = `
   .pi-pulse { animation: pi-pulse 2.5s ease-in-out infinite; }

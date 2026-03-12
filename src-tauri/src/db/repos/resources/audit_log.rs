@@ -6,7 +6,7 @@ use crate::error::AppError;
 use crate::utils::sanitization::sanitize_secrets;
 
 // ---------------------------------------------------------------------------
-// Insert (append-only — no update or delete functions)
+// Insert (append-only -- no update or delete functions)
 // ---------------------------------------------------------------------------
 
 /// Append a new entry to the credential audit log.
@@ -133,7 +133,7 @@ pub fn get_all(
 }
 
 /// Get personas that depend on a credential, determined two ways:
-/// 1. Tool → Connector → Credential link (structural dependency)
+/// 1. Tool -> Connector -> Credential link (structural dependency)
 /// 2. Audit log history (observed usage)
 pub fn get_dependents(
     pool: &DbPool,

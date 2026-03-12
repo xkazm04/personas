@@ -48,7 +48,7 @@ export function TestProgress({ selectedModels }: TestProgressProps) {
                   {testRunProgress.phase === 'generating'
                     ? 'Generating test scenarios...'
                     : testRunProgress.phase === 'executing'
-                      ? `Testing ${testRunProgress.modelId ?? ''} — ${testRunProgress.scenarioName ?? ''}`
+                      ? `Testing ${testRunProgress.modelId ?? ''} -- ${testRunProgress.scenarioName ?? ''}`
                       : testRunProgress.phase}
                 </span>
               </div>
@@ -89,9 +89,9 @@ export function TestProgress({ selectedModels }: TestProgressProps) {
 
             {testRunProgress.scores && (
               <div className="flex items-center gap-4 text-sm text-muted-foreground/90">
-                <span>Tool: {testRunProgress.scores.tool_accuracy ?? '—'}</span>
-                <span>Output: {testRunProgress.scores.output_quality ?? '—'}</span>
-                <span>Protocol: {testRunProgress.scores.protocol_compliance ?? '—'}</span>
+                <span>Tool: {testRunProgress.scores.tool_accuracy ?? '--'}</span>
+                <span>Output: {testRunProgress.scores.output_quality ?? '--'}</span>
+                <span>Protocol: {testRunProgress.scores.protocol_compliance ?? '--'}</span>
               </div>
             )}
           </div>

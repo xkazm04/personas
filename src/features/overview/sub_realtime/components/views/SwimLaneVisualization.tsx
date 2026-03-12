@@ -12,9 +12,9 @@ import {
 import EventLogSidebar from '../panels/EventLogSidebar';
 
 /*
- * Swim Lane visualization — horizontal left-to-right flow.
+ * Swim Lane visualization -- horizontal left-to-right flow.
  * Sources are stacked vertically on the left, agents on the right.
- * Events travel as particles through horizontal lanes from source → hub → agent.
+ * Events travel as particles through horizontal lanes from source -> hub -> agent.
  * Philosophy: linear time-flow, easy to trace which source talks to which agent.
  */
 
@@ -191,7 +191,7 @@ export default function SwimLaneVisualization({ events, personas, onSelectEvent 
             </g>
           ))}
 
-          {/* Event particles flowing left→hub→right */}
+          {/* Event particles flowing left->hub->right */}
           {activeEvents.map(evt => {
             const srcY = getSrcY(evt);
             const agtY = getAgtY(evt);

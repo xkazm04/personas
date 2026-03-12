@@ -10,7 +10,7 @@ use crate::AppState;
 
 use super::types::N8nPersonaOutput;
 
-// ── N8n transform extra state ──────────────────────────────────
+// -- N8n transform extra state ----------------------------------
 
 #[derive(Clone, Default)]
 pub struct N8nTransformExtra {
@@ -23,17 +23,18 @@ pub struct N8nTransformExtra {
     pub session_id: Option<String>,
 }
 
+/// N8n transform-specific extras flattened into BackgroundTaskSnapshot.
 #[derive(Clone, Serialize)]
-pub struct N8nTransformSnapshot {
+pub struct N8nTransformSnapshotExtras {
     transform_id: String,
-    status: String,
-    error: Option<String>,
-    lines: Vec<String>,
     draft: Option<serde_json::Value>,
     questions: Option<serde_json::Value>,
     /// Streaming sections accumulated during section-by-section transform.
     sections: Vec<serde_json::Value>,
 }
+
+/// Full snapshot type alias for convenience.
+pub type N8nTransformSnapshot = crate::background_job::BackgroundTaskSnapshot<N8nTransformSnapshotExtras>;
 
 static N8N_JOBS: BackgroundJobManager<N8nTransformExtra> = BackgroundJobManager::new(
     "n8n transform job lock poisoned",
@@ -46,7 +47,7 @@ pub fn manager() -> &'static BackgroundJobManager<N8nTransformExtra> {
     &N8N_JOBS
 }
 
-// ── Public helpers (thin wrappers preserving existing API) ──────
+// -- Public helpers (thin wrappers preserving existing API) ------
 
 pub fn set_n8n_transform_status(
     app: &tauri::AppHandle,
@@ -75,18 +76,11 @@ pub fn set_n8n_transform_draft(transform_id: &str, draft: &N8nPersonaOutput) {
 }
 
 pub fn get_n8n_transform_snapshot_internal(transform_id: &str) -> Option<N8nTransformSnapshot> {
-    N8N_JOBS.get_snapshot_with(transform_id, |id, job| N8nTransformSnapshot {
-        transform_id: id.to_string(),
-        status: if job.status.is_empty() {
-            "idle".to_string()
-        } else {
-            job.status.clone()
-        },
-        error: job.error.clone(),
-        lines: job.lines.clone(),
-        draft: job.extra.draft.clone(),
-        questions: job.extra.questions.clone(),
-        sections: job.extra.sections.clone(),
+    N8N_JOBS.get_task_snapshot(transform_id, |extra| N8nTransformSnapshotExtras {
+        transform_id: transform_id.to_string(),
+        draft: extra.draft.clone(),
+        questions: extra.questions.clone(),
+        sections: extra.sections.clone(),
     })
 }
 
@@ -129,7 +123,7 @@ pub fn list_n8n_transform_jobs() -> Vec<crate::background_job::JobSnapshot> {
     N8N_JOBS.list_snapshots()
 }
 
-// ── Tauri commands for job state ────────────────────────────────
+// -- Tauri commands for job state --------------------------------
 
 #[tauri::command]
 pub fn get_n8n_transform_snapshot(

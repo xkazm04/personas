@@ -1,11 +1,10 @@
 import { lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { usePersonaStore } from '@/stores/personaStore';
-import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 import { OverviewFilterProvider } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { useExecutionDashboardPipeline } from '@/hooks/overview/useExecutionDashboardPipeline';
 
-// Lazy-load each subtab — only the active one ships to the render tree.
+// Lazy-load each subtab -- only the active one ships to the render tree.
 // On Desktop these become separate chunks; on Android inlineDynamicImports
 // collapses them into the IIFE so the Suspense resolves in one microtask.
 const DashboardWithSubtabs = lazy(() => import('@/features/overview/components/dashboard/DashboardWithSubtabs'));
@@ -30,7 +29,7 @@ function OverviewContent() {
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
     >
-      <Suspense fallback={<PanelSkeleton variant="subtab" />}>
+      <Suspense fallback={null}>
         {overviewTab === 'home' ? <DashboardWithSubtabs /> :
         overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
         overviewTab === 'manual-review' ? <ManualReviewList /> :

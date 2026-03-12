@@ -11,11 +11,11 @@ pub struct PersonaCredential {
     pub id: String,
     pub name: String,
     pub service_type: String,
-    /// Never sent to the frontend — only used internally for crypto operations.
+    /// Never sent to the frontend -- only used internally for crypto operations.
     #[serde(skip_serializing)]
     #[ts(skip)]
     pub encrypted_data: String,
-    /// Never sent to the frontend — only used internally for crypto operations.
+    /// Never sent to the frontend -- only used internally for crypto operations.
     #[serde(skip_serializing)]
     #[ts(skip)]
     pub iv: String,
@@ -42,7 +42,7 @@ pub struct UpdateCredentialInput {
     pub name: Option<String>,
     pub service_type: Option<String>,
     pub encrypted_data: Option<String>,
-    /// Derived from encryption — never set by callers.
+    /// Derived from encryption -- never set by callers.
     /// skip_deserializing ensures this is always None from IPC input;
     /// the command layer sets it from the encryption result.
     #[serde(skip_deserializing, default)]

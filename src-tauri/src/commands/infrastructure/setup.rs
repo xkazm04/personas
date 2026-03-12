@@ -11,7 +11,7 @@ use crate::AppState;
 // Re-use the PATH probe helpers from system.rs
 use super::system::{command_exists_in_path, command_version};
 
-// ── Event payloads ──────────────────────────────────────────────
+// -- Event payloads ----------------------------------------------
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub enum SetupTarget {
@@ -38,7 +38,7 @@ struct SetupStatusEvent {
     manual_command: Option<String>,
 }
 
-// ── Platform detection ──────────────────────────────────────────
+// -- Platform detection ------------------------------------------
 
 #[derive(Debug, Clone)]
 enum Platform {
@@ -84,7 +84,7 @@ fn detect_platform() -> PlatformInfo {
     }
 }
 
-// ── Emit helpers ────────────────────────────────────────────────
+// -- Emit helpers ------------------------------------------------
 
 fn emit_output(app: &tauri::AppHandle, install_id: &str, target: &SetupTarget, line: &str) {
     let _ = app.emit(
@@ -119,7 +119,7 @@ fn emit_status(
     );
 }
 
-// ── Command runner ──────────────────────────────────────────────
+// -- Command runner ----------------------------------------------
 
 struct CommandResult {
     success: bool,
@@ -192,7 +192,7 @@ async fn run_command_streamed(
     }
 }
 
-// ── HTTP download with progress ─────────────────────────────────
+// -- HTTP download with progress ---------------------------------
 
 async fn download_file(
     app: &tauri::AppHandle,
@@ -252,7 +252,7 @@ async fn download_file(
     Ok(file_path)
 }
 
-// ── Node.js LTS version lookup ──────────────────────────────────
+// -- Node.js LTS version lookup ----------------------------------
 
 const FALLBACK_NODE_VERSION: &str = "22.14.0";
 
@@ -287,7 +287,7 @@ async fn get_node_lts_version() -> String {
     FALLBACK_NODE_VERSION.to_string()
 }
 
-// ── Node.js installation ────────────────────────────────────────
+// -- Node.js installation ----------------------------------------
 
 async fn install_node(app: &tauri::AppHandle, install_id: &str, platform: &PlatformInfo) -> bool {
     if command_version("node").is_ok() {
@@ -400,7 +400,7 @@ async fn install_node_linux(app: &tauri::AppHandle, install_id: &str, platform: 
     false
 }
 
-// ── Claude CLI installation ─────────────────────────────────────
+// -- Claude CLI installation -------------------------------------
 
 async fn install_claude_cli(app: &tauri::AppHandle, install_id: &str, _platform: &PlatformInfo) -> bool {
     let cli_candidates: &[&str] = if cfg!(target_os = "windows") {
@@ -433,7 +433,7 @@ async fn install_claude_cli(app: &tauri::AppHandle, install_id: &str, _platform:
     }
 }
 
-// ── Install orchestrator ────────────────────────────────────────
+// -- Install orchestrator ----------------------------------------
 
 enum InstallScope {
     NodeOnly,
@@ -477,7 +477,7 @@ async fn run_setup_install(params: SetupRunParams) {
     }
 }
 
-// ── Tauri commands ──────────────────────────────────────────────
+// -- Tauri commands ----------------------------------------------
 
 #[tauri::command]
 pub async fn start_setup_install(

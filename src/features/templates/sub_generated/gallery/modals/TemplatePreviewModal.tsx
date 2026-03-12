@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { X, Play, RotateCcw } from 'lucide-react';
 import { TerminalBody } from '@/features/shared/components/terminal/TerminalBody';
 import { DimensionRadial } from '../../shared/DimensionRadial';
+import { ThinkingLoader } from '../../shared/ThinkingLoader';
 import { BaseModal } from '../../shared/BaseModal';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { AgentIR } from '@/lib/types/designTypes';
@@ -10,7 +11,7 @@ import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 
 /**
  * Build a minimal draft JSON from a AgentIR to pass to testN8nDraft.
- * The Rust side only requires `system_prompt` â€” everything else is optional.
+ * The Rust side only requires `system_prompt` -- everything else is optional.
  */
 function buildDraftJson(designResult: AgentIR, name: string): string {
   const sp = designResult.structured_prompt;
@@ -102,7 +103,7 @@ export function TemplatePreviewModal({
               Preview: {review.test_case_name}
             </h2>
             <p className="text-sm text-muted-foreground/60 mt-0.5">
-              Sandboxed single-turn execution â€” no persona created
+              Sandboxed single-turn execution -- no persona created
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -127,7 +128,7 @@ export function TemplatePreviewModal({
                 </h3>
                 <p className="text-sm text-muted-foreground/60 leading-relaxed">
                   Run a sandboxed single-turn execution to see how this persona behaves.
-                  Uses the template's system prompt with mock inputs â€” nothing is saved.
+                  Uses the template's system prompt with mock inputs -- nothing is saved.
                 </p>
               </div>
               <button
@@ -166,7 +167,7 @@ export function TemplatePreviewModal({
             )}
             {isRunning && (
               <span className="text-sm text-blue-400/80 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                <ThinkingLoader size={20} />
                 Running...
               </span>
             )}
@@ -191,7 +192,7 @@ export function TemplatePreviewModal({
             )}
             {isRunning && (
               <span className="text-sm text-muted-foreground/60">
-                You can close â€” test will continue in background
+                You can close -- test will continue in background
               </span>
             )}
             <button

@@ -97,7 +97,7 @@ export function AbTestPanel({ personaId, compareA, compareB }: AbTestPanelProps)
           onChange={(e) => setTestInput(e.target.value)}
           placeholder='{"task": "Summarize the latest sales report"}'
           data-testid="ab-test-input"
-          className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono"
+          className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono"
         />
       </div>
 
@@ -163,7 +163,7 @@ export function AbTestPanel({ personaId, compareA, compareB }: AbTestPanelProps)
                   <div className="flex justify-between">
                     <span>Duration</span>
                     <span className="inline-flex items-center gap-1">
-                      {r.duration_ms != null ? `${r.duration_ms}ms` : '—'}
+                      {r.duration_ms != null ? `${r.duration_ms}ms` : '--'}
                       {metricDelta(label as 'A' | 'B', 'duration') && (
                         <span className="inline-flex items-center gap-0.5 text-emerald-400">
                           <ArrowDown className="w-3 h-3" />

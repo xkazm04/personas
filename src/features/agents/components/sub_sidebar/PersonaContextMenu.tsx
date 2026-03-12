@@ -10,7 +10,7 @@ import type { DbPersona } from '@/lib/types/types';
 import { quickModelToProfile, currentModelValue } from './quickModelUtils';
 import { ModelSubmenu } from './ModelSubmenu';
 
-// ── Context Menu Component ────────────────────────────────────────────
+// -- Context Menu Component --------------------------------------------
 
 export interface ContextMenuState {
   persona: DbPersona;

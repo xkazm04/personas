@@ -3,7 +3,7 @@ import type { BrowserLogEntry } from './types';
 import type { LucideIcon } from 'lucide-react';
 import { Loader2, Cog, Hand, ExternalLink } from 'lucide-react';
 
-// ── Derived session state ───────────────────────────────────────────────
+// -- Derived session state -----------------------------------------------
 
 export type SessionState = 'connecting' | 'working' | 'action_required' | 'opening_url';
 
@@ -42,7 +42,7 @@ export const STATE_CONFIG: Record<SessionState, StateConfig> = {
   },
   working: {
     label: 'Claude is working',
-    sublabel: 'Browser automation in progress — no action needed',
+    sublabel: 'Browser automation in progress -- no action needed',
     guidedSublabel: 'Generating step-by-step instructions...',
     icon: Cog,
     color: 'text-cyan-400',
@@ -72,7 +72,7 @@ export const STATE_CONFIG: Record<SessionState, StateConfig> = {
   },
 };
 
-// ── Elapsed timer ───────────────────────────────────────────────────────
+// -- Elapsed timer -------------------------------------------------------
 
 export function useElapsed(startTs: number | null) {
   const [now, setNow] = useState(Date.now());
@@ -90,7 +90,7 @@ export function useElapsed(startTs: number | null) {
     : `${secs}s`;
 }
 
-// ── Grouped log entries ─────────────────────────────────────────────────
+// -- Grouped log entries -------------------------------------------------
 
 export type GroupedEntry =
   | { kind: 'action_block'; entries: BrowserLogEntry[] }
@@ -120,7 +120,7 @@ export function groupLogEntries(logs: BrowserLogEntry[]): GroupedEntry[] {
   return groups;
 }
 
-// ── Rich message URL splitting ──────────────────────────────────────────
+// -- Rich message URL splitting ------------------------------------------
 
 export const URL_REGEX = /https?:\/\/[^\s)>\]"'`*_]+/g;
 
@@ -150,7 +150,7 @@ export function splitByUrls(text: string): TextPart[] {
   return parts.length > 0 ? parts : [{ text, isUrl: false }];
 }
 
-// ── Log copy formatter ──────────────────────────────────────────────────
+// -- Log copy formatter --------------------------------------------------
 
 export function formatLogsForCopy(logs: BrowserLogEntry[]): string {
   return logs

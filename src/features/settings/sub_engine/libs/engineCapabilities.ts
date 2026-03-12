@@ -1,19 +1,19 @@
 /**
- * Engine capability map — defines which CLI operations each provider supports.
+ * Engine capability map -- defines which CLI operations each provider supports.
  *
  * Defaults are derived from Round 9 business-level integration tests (9 operations × 3 providers).
- * Claude Sonnet 4.6: 9/9 passed (100%) — all operations enabled
- * Gemini Flash Lite: 6/9 passed (67%) — failed n8n_transform, persona_execution, template_adopt
- * Copilot GPT-5.1:   6/9 passed (67%) — failed credential_healthcheck, n8n_transform, template_adopt
+ * Claude Sonnet 4.6: 9/9 passed (100%) -- all operations enabled
+ * Gemini Flash Lite: 6/9 passed (67%) -- failed n8n_transform, persona_execution, template_adopt
+ * Copilot GPT-5.1:   6/9 passed (67%) -- failed credential_healthcheck, n8n_transform, template_adopt
  *
  * Users can override these defaults via the Engine settings UI.
  * The map is stored as a JSON string in app_settings under key "engine_capabilities".
  */
 import type { CliEngine } from '@/lib/types/types';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CLI Operations — every backend dispatch point that invokes a CLI provider
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
+// CLI Operations -- every backend dispatch point that invokes a CLI provider
+// ===========================================================================
 
 export type CliOperation =
   | 'persona_execution'
@@ -42,12 +42,12 @@ export const CLI_OPERATIONS: CliOperationMeta[] = [
   {
     id: 'design_analysis',
     label: 'Persona Design',
-    description: 'Structured prompts from persona briefs — DESIGN_OUTPUT_SCHEMA JSON',
+    description: 'Structured prompts from persona briefs -- DESIGN_OUTPUT_SCHEMA JSON',
   },
   {
     id: 'credential_design',
     label: 'Credential Design',
-    description: 'Connector definitions with fields, healthchecks — CREDENTIAL_DESIGN_OUTPUT_SCHEMA',
+    description: 'Connector definitions with fields, healthchecks -- CREDENTIAL_DESIGN_OUTPUT_SCHEMA',
   },
   {
     id: 'credential_healthcheck',
@@ -82,13 +82,13 @@ export const CLI_OPERATIONS: CliOperationMeta[] = [
   {
     id: 'query_debug',
     label: 'Query Debug',
-    description: 'Fix broken SQL in ```sql code blocks — rejects JS/TS/Python output',
+    description: 'Fix broken SQL in ```sql code blocks -- rejects JS/TS/Python output',
   },
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Provider metadata
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 export interface ProviderMeta {
   id: CliEngine;
@@ -102,9 +102,9 @@ export const PROVIDERS: ProviderMeta[] = [
   { id: 'copilot_cli', label: 'Copilot CLI', shortLabel: 'Copilot' },
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Capability map type
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 /** Per-operation, per-provider enabled flag */
 export type EngineCapabilityMap = Record<CliOperation, Record<CliEngine, boolean>>;
@@ -113,9 +113,9 @@ export type EngineCapabilityMap = Record<CliOperation, Record<CliEngine, boolean
  * Default capability map based on Round 9 integration test results.
  * All 10 operations now have test coverage (9 from Round 9, healing/recipe from Round 8).
  *
- * Claude Sonnet 4.6: 9/9 (100%) — all A grades
- * Gemini Flash Lite: 6/9 (67%) — failed n8n_transform (F), persona_execution (F), template_adopt (F)
- * Copilot GPT-5.1:   6/9 (67%) — failed credential_healthcheck (F), n8n_transform (F), template_adopt (F)
+ * Claude Sonnet 4.6: 9/9 (100%) -- all A grades
+ * Gemini Flash Lite: 6/9 (67%) -- failed n8n_transform (F), persona_execution (F), template_adopt (F)
+ * Copilot GPT-5.1:   6/9 (67%) -- failed credential_healthcheck (F), n8n_transform (F), template_adopt (F)
  *
  * Codex CLI is excluded (deprecated/untested).
  */
@@ -130,7 +130,7 @@ export const DEFAULT_CAPABILITIES: EngineCapabilityMap = {
   template_adopt:         { claude_code: true,  codex_cli: false, gemini_cli: false, copilot_cli: false }, // A / F / F
   query_debug:            { claude_code: true,  codex_cli: false, gemini_cli: true,  copilot_cli: true  }, // A / A / A
 
-  // Round 8 tested (generic tasks — all providers passed)
+  // Round 8 tested (generic tasks -- all providers passed)
   healing_analysis:       { claude_code: true,  codex_cli: false, gemini_cli: true,  copilot_cli: true  },
   recipe_execution:       { claude_code: true,  codex_cli: false, gemini_cli: true,  copilot_cli: true  },
 };

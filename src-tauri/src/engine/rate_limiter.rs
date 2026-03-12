@@ -11,7 +11,7 @@ const AUTO_PRUNE_INTERVAL: u64 = 100;
 /// Each key (e.g. source type or trigger ID) gets its own bucket with
 /// a configurable window and max event count.
 pub struct RateLimiter {
-    /// Per-key buckets: key → list of timestamps within the window.
+    /// Per-key buckets: key -> list of timestamps within the window.
     buckets: Mutex<HashMap<String, Vec<Instant>>>,
     /// Monotonic counter of `check()` calls, used to trigger periodic pruning.
     call_count: AtomicU64,
@@ -98,7 +98,7 @@ impl RateLimiter {
     }
 }
 
-// ── Window durations ─────────────────────────────────────────────────────
+// -- Window durations -----------------------------------------------------
 // Max events per tier are defined in engine::tier::TierConfig.
 
 /// Window duration for event source rate limiting.
@@ -106,6 +106,12 @@ pub const EVENT_SOURCE_WINDOW: Duration = Duration::from_secs(60);
 
 /// Window duration for webhook rate limiting.
 pub const WEBHOOK_TRIGGER_WINDOW: Duration = Duration::from_secs(60);
+
+/// Window duration for per-tool execution rate limiting.
+pub const TOOL_EXECUTION_WINDOW: Duration = Duration::from_secs(60);
+
+/// Default max tool executions per minute per tool.
+pub const TOOL_EXECUTION_MAX_PER_MINUTE: usize = 30;
 
 #[cfg(test)]
 mod tests {

@@ -16,7 +16,7 @@ pub struct PersonaGroup {
     pub collapsed: bool,
     /// Workspace description
     pub description: Option<String>,
-    /// JSON-encoded ModelProfile — group-level default model
+    /// JSON-encoded ModelProfile -- group-level default model
     pub default_model_profile: Option<String>,
     /// Group-level default budget cap (USD)
     pub default_max_budget_usd: Option<f64>,

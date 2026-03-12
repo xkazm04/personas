@@ -29,7 +29,7 @@
   "events": [],
   "metadata": {
     "template_enabled": true,
-    "summary": "Docker container management — list, start, stop, inspect containers and run compose stacks via desktop bridge.",
+    "summary": "Docker container management -- list, start, stop, inspect containers and run compose stacks via desktop bridge.",
     "auth_type": "desktop_bridge",
     "auth_type_label": "Desktop Bridge",
     "connection_mode": "desktop_bridge",

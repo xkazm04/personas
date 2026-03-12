@@ -64,7 +64,7 @@ export function CostAccrualOverlay({
       <div className="flex items-center gap-2 mb-1">
         <DollarSign className="w-3 h-3 text-emerald-400" />
         <span className="text-sm font-mono text-muted-foreground/60 uppercase tracking-wider">
-          Cost Accrual — ${totalCostUsd.toFixed(4)}
+          Cost Accrual -- ${totalCostUsd.toFixed(4)}
         </span>
       </div>
       <div className="h-5 bg-primary/5 rounded overflow-hidden">
@@ -91,13 +91,13 @@ export function PipelineSummary({ trace, execution }: { trace: UnifiedTrace; exe
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 3xl:gap-4 4xl:gap-5">
-      <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
+      <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" /> Total Duration
         </div>
         <div className="text-sm font-mono text-foreground/90">{formatDuration(totalMs)}</div>
       </div>
-      <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
+      <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <DollarSign className="w-2.5 h-2.5" /> Cost
         </div>
@@ -105,13 +105,13 @@ export function PipelineSummary({ trace, execution }: { trace: UnifiedTrace; exe
           {execution.cost_usd > 0 ? `$${execution.cost_usd.toFixed(4)}` : '-'}
         </div>
       </div>
-      <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
+      <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Zap className="w-2.5 h-2.5" /> Stages
         </div>
         <div className="text-sm font-mono text-foreground/90">{stagesHit} / {PIPELINE_STAGES.length}</div>
       </div>
-      <div className="rounded-lg border border-primary/15 bg-secondary/40 p-3 space-y-1">
+      <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
         <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <AlertCircle className="w-2.5 h-2.5" /> Errors
         </div>

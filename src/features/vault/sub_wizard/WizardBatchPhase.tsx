@@ -198,7 +198,7 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
   );
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────
+// -- Helpers -------------------------------------------------------------
 
 function StatusIcon({ status, size = 'w-4 h-4' }: { status: ItemStatus; size?: string }) {
   switch (status) {

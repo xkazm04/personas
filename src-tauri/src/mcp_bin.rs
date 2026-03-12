@@ -1,4 +1,4 @@
-//! Personas MCP Server — exposes persona operations via Model Context Protocol.
+//! Personas MCP Server -- exposes persona operations via Model Context Protocol.
 //!
 //! Runs as a standalone binary that communicates via JSON-RPC 2.0 over stdio.
 //! This enables Claude Code, Cursor, and other MCP-compatible AI tools to

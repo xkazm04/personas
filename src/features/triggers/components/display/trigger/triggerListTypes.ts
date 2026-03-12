@@ -8,9 +8,9 @@ export const HEALTH_STYLES: Record<TriggerHealth, string> = {
 };
 
 export const HEALTH_TITLES: Record<TriggerHealth, string> = {
-  healthy: 'Healthy — last 3 runs succeeded',
-  degraded: 'Degraded — 1 recent failure',
-  failing: 'Failing — 2+ consecutive failures',
+  healthy: 'Healthy -- last 3 runs succeeded',
+  degraded: 'Degraded -- 1 recent failure',
+  failing: 'Failing -- 2+ consecutive failures',
   unknown: 'No execution history',
 };
 

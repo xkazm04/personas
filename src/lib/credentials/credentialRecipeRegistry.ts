@@ -1,5 +1,5 @@
 /**
- * credentialRecipeRegistry — shared credential recipe cache that any discovery
+ * credentialRecipeRegistry -- shared credential recipe cache that any discovery
  * path (Design, Negotiator, AutoCred) can populate or consume.
  *
  * When the Design path discovers a connector's credential schema (fields,
@@ -14,7 +14,7 @@ import {
 } from '@/api/vault/credentialRecipes';
 import type { CredentialDesignResult, CredentialDesignConnector } from '@/hooks/design/credential/useCredentialDesign';
 
-// ── In-memory cache ─────────────────────────────────────────────────────
+// -- In-memory cache -----------------------------------------------------
 // Avoids redundant IPC round-trips for the same connector within a session.
 
 const memoryCache = new Map<string, CredentialRecipe>();
@@ -24,7 +24,7 @@ export function clearRecipeCache(): void {
   memoryCache.clear();
 }
 
-// ── Lookup ──────────────────────────────────────────────────────────────
+// -- Lookup --------------------------------------------------------------
 
 /**
  * Look up a cached recipe for a connector name.
@@ -63,7 +63,7 @@ export async function lookupRecipeAsDesignResult(
   return recipeToDesignResult(recipe);
 }
 
-// ── Save ────────────────────────────────────────────────────────────────
+// -- Save ----------------------------------------------------------------
 
 /**
  * Save a recipe from a successful credential design result.
@@ -101,12 +101,12 @@ export async function saveRecipeFromDesign(
     memoryCache.set(conn.name, recipe);
     return recipe;
   } catch {
-    // Non-critical — recipe caching is an optimization, not a requirement
+    // Non-critical -- recipe caching is an optimization, not a requirement
     return null;
   }
 }
 
-// ── Conversion helpers ──────────────────────────────────────────────────
+// -- Conversion helpers --------------------------------------------------
 
 /** Convert a persisted recipe back to a CredentialDesignResult shape. */
 export function recipeToDesignResult(recipe: CredentialRecipe): CredentialDesignResult {

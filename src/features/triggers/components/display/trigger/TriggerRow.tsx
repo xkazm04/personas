@@ -38,7 +38,7 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
             </span>
           )}
           {budgetStatus === 'exceeded' && trigger.enabled && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-red-500/20 bg-red-500/10 text-red-400/80" title="Monthly budget exceeded — trigger paused">
+            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-red-500/20 bg-red-500/10 text-red-400/80" title="Monthly budget exceeded -- trigger paused">
               <ShieldAlert className="w-3 h-3" />
               Budget
             </span>

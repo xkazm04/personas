@@ -1,5 +1,5 @@
 /**
- * Round 2: Tool Use — File read, file write, bash execution, multi-tool chain.
+ * Round 2: Tool Use -- File read, file write, bash execution, multi-tool chain.
  *
  * These tests verify that each CLI provider can correctly invoke tools
  * (read files, write files, run bash commands) and chain them together.
@@ -30,10 +30,10 @@ afterEach(() => {
 
 for (const provider of providers) {
   describe(`${provider.displayName}`, () => {
-    // ─────────────────────────────────────────────────────────────────────
+    // ---------------------------------------------------------------------
     // Test 1: File read + total calculation
-    // ─────────────────────────────────────────────────────────────────────
-    it('file read + total — reads CSV and calculates correct sum', async () => {
+    // ---------------------------------------------------------------------
+    it('file read + total -- reads CSV and calculates correct sum', async () => {
       workspace = createWorkspace('data-analysis');
 
       const result = await runCli({
@@ -73,10 +73,10 @@ for (const provider of providers) {
       expect(validation.passed, formatDiagnostic(result, validation)).toBe(true);
     }, 180_000);
 
-    // ─────────────────────────────────────────────────────────────────────
+    // ---------------------------------------------------------------------
     // Test 2: File write
-    // ─────────────────────────────────────────────────────────────────────
-    it('file write — creates output.txt with 5 TypeScript bullet points', async () => {
+    // ---------------------------------------------------------------------
+    it('file write -- creates output.txt with 5 TypeScript bullet points', async () => {
       workspace = createWorkspace('empty');
 
       const result = await runCli({
@@ -121,10 +121,10 @@ for (const provider of providers) {
       expect(validation.passed, formatDiagnostic(result, validation)).toBe(true);
     }, 180_000);
 
-    // ─────────────────────────────────────────────────────────────────────
+    // ---------------------------------------------------------------------
     // Test 3: Bash execution
-    // ─────────────────────────────────────────────────────────────────────
-    it('bash execution — runs node command and reports output', async () => {
+    // ---------------------------------------------------------------------
+    it('bash execution -- runs node command and reports output', async () => {
       workspace = createWorkspace('empty');
 
       const result = await runCli({
@@ -164,10 +164,10 @@ for (const provider of providers) {
       expect(validation.passed, formatDiagnostic(result, validation)).toBe(true);
     }, 180_000);
 
-    // ─────────────────────────────────────────────────────────────────────
+    // ---------------------------------------------------------------------
     // Test 4: Multi-tool chain
-    // ─────────────────────────────────────────────────────────────────────
-    it('multi-tool chain — reads CSV, calculates per-product totals, writes summary', async () => {
+    // ---------------------------------------------------------------------
+    it('multi-tool chain -- reads CSV, calculates per-product totals, writes summary', async () => {
       workspace = createWorkspace('data-analysis');
 
       const result = await runCli({

@@ -1,5 +1,5 @@
 /**
- * TrustBadge — visual indicator of template origin verification and trust level.
+ * TrustBadge -- visual indicator of template origin verification and trust level.
  *
  * Shows a compact badge with icon + label for verified/sandboxed/untrusted states.
  * Used on TemplateCard headers and in the AdoptionWizardModal header.

@@ -41,7 +41,7 @@ export function TriggerPopover({
         title={current.label}
         className={`p-1.5 rounded-lg border transition-all ${
           value
-            ? 'bg-primary/10 border-primary/25 text-primary'
+            ? 'bg-primary/10 border-primary/30 text-primary'
             : 'bg-secondary/30 border-primary/10 text-muted-foreground/65 hover:text-muted-foreground/80'
         }`}
       >
@@ -55,7 +55,7 @@ export function TriggerPopover({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.1 }}
-            className="absolute z-50 left-0 top-full mt-1 bg-background border border-primary/15 rounded-xl shadow-xl p-2 min-w-[180px]"
+            className="absolute z-50 left-0 top-full mt-1 bg-background border border-primary/20 rounded-xl shadow-xl p-2 min-w-[180px]"
           >
             <p className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider px-1.5 mb-1">
               Trigger
@@ -89,7 +89,7 @@ export function TriggerPopover({
                   onChange(null);
                   setOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-lg text-muted-foreground/65 hover:bg-secondary/40 mt-0.5 border-t border-primary/12 pt-1.5"
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-lg text-muted-foreground/65 hover:bg-secondary/40 mt-0.5 border-t border-primary/20 pt-1.5"
               >
                 <X className="w-3 h-3 shrink-0" />
                 Clear override

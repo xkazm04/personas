@@ -83,7 +83,7 @@ pub struct SchedulerStats {
 
 /// Start all background loops via the unified subscription model.
 ///
-/// Returns a webhook shutdown sender â€” hold onto it to keep the server running,
+/// Returns a webhook shutdown sender -- hold onto it to keep the server running,
 /// send `true` or drop it to trigger graceful shutdown.
 pub fn start_loops(
     scheduler: Arc<SchedulerState>,
@@ -164,7 +164,7 @@ pub fn start_loops(
     // Spawn all subscriptions through the unified scheduler
     subscription::spawn_subscriptions(subscriptions, scheduler.clone());
 
-    // Webhook HTTP server (not a reactive subscription â€” it's a long-lived server)
+    // Webhook HTTP server (not a reactive subscription -- it's a long-lived server)
     let (webhook_shutdown_tx, webhook_shutdown_rx) = tokio::sync::watch::channel(false);
     tokio::spawn({
         let pool = pool.clone();
@@ -188,7 +188,7 @@ pub fn stop_loops(scheduler: &SchedulerState) {
 }
 
 // ---------------------------------------------------------------------------
-// Tick functions â€” single-cycle logic extracted from the old loops.
+// Tick functions -- single-cycle logic extracted from the old loops.
 // Called by the ReactiveSubscription implementations in subscription.rs.
 // ---------------------------------------------------------------------------
 
@@ -232,12 +232,26 @@ pub(crate) async fn event_bus_tick(
 
         // 4. Match event to legacy subscriptions
         let mut matches = bus::match_event(&event, &subs);
+        tracing::debug!(
+            event_id = %event.id,
+            event_type = %event.event_type,
+            subscriptions_checked = subs.len(),
+            subscription_matches = matches.len(),
+            "Event bus: subscription matching complete"
+        );
 
         // 4b. Also match event_listener triggers (unified model).
         // Deduplicate by persona_id to avoid double-fire when a subscription
         // has been migrated to a trigger but the legacy row still exists.
         if let Ok(listeners) = trigger_repo::get_event_listeners_for_event_type(pool, &event.event_type) {
             let listener_matches = bus::match_event_listeners(&event, &listeners);
+            tracing::debug!(
+                event_id = %event.id,
+                event_type = %event.event_type,
+                listeners_checked = listeners.len(),
+                listener_matches = listener_matches.len(),
+                "Event bus: listener matching complete"
+            );
             for lm in listener_matches {
                 if !matches.iter().any(|m| m.persona_id == lm.persona_id) {
                     matches.push(lm);
@@ -246,6 +260,11 @@ pub(crate) async fn event_bus_tick(
         }
 
         if matches.is_empty() {
+            tracing::info!(
+                event_id = %event.id,
+                event_type = %event.event_type,
+                "Event bus: no matches found -- check subscription/listener configuration"
+            );
             let _ = event_repo::update_status(pool, &event.id, "skipped", None);
             scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
             emit_event_to_frontend(app, &event, "skipped");
@@ -289,7 +308,7 @@ pub(crate) async fn event_bus_tick(
             let input_val: Option<serde_json::Value> =
                 m.payload.as_deref().and_then(|s| serde_json::from_str(s).ok());
 
-            // 9. Start execution (admit() handles concurrency atomically â€”
+            // 9. Start execution (admit() handles concurrency atomically --
             //    no separate has_capacity check to avoid TOCTOU gap)
             if let Err(e) = engine
                 .start_execution(
@@ -346,9 +365,9 @@ pub(crate) fn trigger_scheduler_tick(scheduler: &SchedulerState, pool: &DbPool) 
     };
 
     for trigger in triggers {
-        // Skip polling triggers â€” they are handled by the PollingSubscription
+        // Skip polling triggers -- they are handled by the PollingSubscription
         // which does HTTP content-hash diffing before deciding whether to fire.
-        // Skip event_listener triggers â€” they are event-driven, not time-based.
+        // Skip event_listener triggers -- they are event-driven, not time-based.
         if trigger.trigger_type == "polling" || trigger.trigger_type == "event_listener" {
             continue;
         }
@@ -398,7 +417,7 @@ pub(crate) fn trigger_scheduler_tick(scheduler: &SchedulerState, pool: &DbPool) 
             }
         }
 
-        // 5. Schedule advanced â€” now safe to publish the event
+        // 5. Schedule advanced -- now safe to publish the event
         let event_type = cfg.event_type().to_string();
         let payload = cfg.payload();
 

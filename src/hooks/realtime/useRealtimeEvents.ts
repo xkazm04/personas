@@ -4,14 +4,14 @@ import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import { useEventPhaseProgressor } from '@/hooks/realtime/useEventPhaseProgressor';
 
-// ── Color Map (derived from canonical EVENT_TYPE_COLORS) ──────────
+// -- Color Map (derived from canonical EVENT_TYPE_COLORS) ----------
 import { EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
 
 export const EVENT_TYPE_HEX_COLORS: Record<string, string> = Object.fromEntries(
   Object.entries(EVENT_TYPE_COLORS).map(([k, v]) => [k, v.hex]),
 );
 
-// ── Types ──────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------
 export type AnimationPhase = 'entering' | 'on-bus' | 'delivering' | 'done';
 
 export interface RealtimeEvent {
@@ -53,7 +53,7 @@ export interface UseRealtimeEventsReturn {
   testFlowLoading: boolean;
 }
 
-// ── Stats computation ────────────────────────────────────────────
+// -- Stats computation --------------------------------------------
 function computeStats(events: RealtimeEvent[]): RealtimeStats {
   const now = Date.now();
   const oneMinuteAgo = now - 60_000;
@@ -97,7 +97,7 @@ function computeStats(events: RealtimeEvent[]): RealtimeStats {
   };
 }
 
-// ── Hook ─────────────────────────────────────────────────────────
+// -- Hook ---------------------------------------------------------
 export function useRealtimeEvents(): UseRealtimeEventsReturn {
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
   const [droppedCount, setDroppedCount] = useState(0);

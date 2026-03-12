@@ -7,7 +7,7 @@ import * as api from "@/api/tauriApi";
 import { useToastStore } from "@/stores/toastStore";
 import type { TriggerRateLimitConfig } from "@/lib/utils/platform/triggerConstants";
 
-/** Discriminated trigger error — `kind` tells UI whether to render inline or toast. */
+/** Discriminated trigger error -- `kind` tells UI whether to render inline or toast. */
 export type TriggerErrorKind = 'crud' | 'fetch';
 
 export interface TriggerError {
@@ -52,7 +52,7 @@ export interface TriggerSlice {
   fetchTriggerChains: () => Promise<void>;
   fetchWebhookStatus: () => Promise<void>;
   clearTriggerError: () => void;
-  /** Record a trigger firing — enforces rate limits and returns whether the firing is allowed. */
+  /** Record a trigger firing -- enforces rate limits and returns whether the firing is allowed. */
   recordTriggerFiring: (triggerId: string, rateLimitConfig: TriggerRateLimitConfig) => boolean;
   /** Record that a trigger execution completed (decrements concurrent count, drains queue). */
   recordTriggerComplete: (triggerId: string) => void;
@@ -170,7 +170,7 @@ export const createTriggerSlice: StateCreator<PersonaStore, [], [], TriggerSlice
       return false;
     }
 
-    // Allowed — record the firing
+    // Allowed -- record the firing
     set({
       triggerRateLimits: {
         ...get().triggerRateLimits,

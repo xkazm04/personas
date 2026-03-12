@@ -11,7 +11,9 @@ use std::collections::HashMap;
 use std::time::Instant;
 
 use crate::db::repos::resources::credentials as cred_repo;
+use crate::db::repos::resources::tool_audit_log;
 use crate::db::DbPool;
+use crate::engine::rate_limiter::{RateLimiter, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW};
 use crate::error::AppError;
 
 /// Maximum allowed MCP JSON-RPC response payload (10 MB).
@@ -22,6 +24,9 @@ const MAX_ARGUMENT_DEPTH: usize = 20;
 
 /// Maximum serialized size for MCP tool arguments (1 MB).
 const MAX_ARGUMENT_BYTES: usize = 1024 * 1024;
+
+/// Overall timeout for a complete MCP stdio session (connect + handshake + call).
+const MCP_SESSION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
 
 /// An MCP tool definition as returned by `tools/list`.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -49,8 +54,8 @@ pub struct McpToolResult {
 
 /// Ping an MCP server using raw field values (no stored credential required).
 ///
-/// Performs the full MCP handshake (`initialize` → `notifications/initialized`
-/// → `tools/list`) and returns a healthcheck-style result.
+/// Performs the full MCP handshake (`initialize` -> `notifications/initialized`
+/// -> `tools/list`) and returns a healthcheck-style result.
 pub async fn ping(fields: &HashMap<String, String>) -> Result<PingResult, AppError> {
     let connection_type = fields
         .get("connection_type")
@@ -68,7 +73,7 @@ pub async fn ping(fields: &HashMap<String, String>) -> Result<PingResult, AppErr
     match result {
         Ok(tools) => Ok(PingResult {
             success: true,
-            message: format!("Connected — {} tool{} available", tools.len(), if tools.len() == 1 { "" } else { "s" }),
+            message: format!("Connected -- {} tool{} available", tools.len(), if tools.len() == 1 { "" } else { "s" }),
         }),
         Err(e) => Ok(PingResult {
             success: false,
@@ -110,12 +115,31 @@ pub async fn list_tools(
 ///
 /// Validates arguments against structural limits (depth, size) and the tool's
 /// declared `input_schema` before forwarding to the MCP server.
+/// Applies per-tool rate limiting and logs execution to the audit trail.
 pub async fn execute_tool(
     pool: &DbPool,
     credential_id: &str,
     tool_name: &str,
     arguments: serde_json::Value,
+    rate_limiter: Option<&RateLimiter>,
+    persona_id: Option<&str>,
+    persona_name: Option<&str>,
 ) -> Result<McpToolResult, AppError> {
+    // Per-tool rate limiting
+    if let Some(rl) = rate_limiter {
+        let rate_key = format!("mcp_tool:{tool_name}");
+        if let Err(retry_after) = rl.check(&rate_key, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW) {
+            tracing::warn!(
+                tool_name = %tool_name,
+                retry_after_secs = retry_after,
+                "MCP tool execution rate limited"
+            );
+            return Err(AppError::RateLimited(format!(
+                "Tool '{tool_name}' rate limited. Retry after {retry_after}s."
+            )));
+        }
+    }
+
     // Structural validation: reject oversized or deeply nested arguments early.
     validate_argument_structure(&arguments)?;
 
@@ -139,6 +163,27 @@ pub async fn execute_tool(
 
     let duration_ms = start.elapsed().as_millis() as u64;
 
+    // Audit logging (best-effort, never fails the call)
+    let (status, error_msg) = match &result {
+        Ok(r) if r.is_error => ("tool_error", None),
+        Ok(_) => ("success", None),
+        Err(e) => ("error", Some(e.to_string())),
+    };
+    if let Err(log_err) = tool_audit_log::insert(
+        pool,
+        &format!("mcp:{credential_id}:{tool_name}"),
+        tool_name,
+        "mcp",
+        persona_id,
+        persona_name,
+        Some(credential_id),
+        status,
+        Some(duration_ms),
+        error_msg.as_deref(),
+    ) {
+        tracing::warn!("Failed to write tool audit log: {log_err}");
+    }
+
     match result {
         Ok(mut r) => {
             r.duration_ms = duration_ms;
@@ -153,6 +198,16 @@ pub async fn execute_tool(
 // ============================================================================
 
 async fn list_tools_stdio(
+    fields: &HashMap<String, String>,
+) -> Result<Vec<McpTool>, AppError> {
+    tokio::time::timeout(MCP_SESSION_TIMEOUT, list_tools_stdio_inner(fields))
+        .await
+        .map_err(|_| AppError::Internal(
+            "MCP stdio session timed out during tools/list".into(),
+        ))?
+}
+
+async fn list_tools_stdio_inner(
     fields: &HashMap<String, String>,
 ) -> Result<Vec<McpTool>, AppError> {
     let command = fields
@@ -204,6 +259,21 @@ async fn list_tools_stdio(
 }
 
 async fn execute_tool_stdio(
+    fields: &HashMap<String, String>,
+    tool_name: &str,
+    arguments: &serde_json::Value,
+) -> Result<McpToolResult, AppError> {
+    tokio::time::timeout(
+        MCP_SESSION_TIMEOUT,
+        execute_tool_stdio_inner(fields, tool_name, arguments),
+    )
+    .await
+    .map_err(|_| AppError::Internal(
+        format!("MCP stdio session timed out executing tool '{tool_name}'"),
+    ))?
+}
+
+async fn execute_tool_stdio_inner(
     fields: &HashMap<String, String>,
     tool_name: &str,
     arguments: &serde_json::Value,
@@ -569,6 +639,9 @@ fn spawn_mcp_process(
         .map_err(|e| AppError::Internal(format!("Failed to spawn MCP process: {e}")))
 }
 
+/// Timeout for MCP stdin write + flush operations (prevents hung process accumulation).
+const MCP_WRITE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+
 async fn write_jsonrpc(
     child: &mut tokio::process::Child,
     payload: &serde_json::Value,
@@ -586,17 +659,21 @@ async fn write_jsonrpc(
     // MCP uses Content-Length header framing
     let message = format!("Content-Length: {}\r\n\r\n{}", json.len(), json);
 
-    stdin
-        .write_all(message.as_bytes())
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to write to MCP stdin: {e}")))?;
+    tokio::time::timeout(MCP_WRITE_TIMEOUT, async {
+        stdin
+            .write_all(message.as_bytes())
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to write to MCP stdin: {e}")))?;
 
-    stdin
-        .flush()
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to flush MCP stdin: {e}")))?;
+        stdin
+            .flush()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to flush MCP stdin: {e}")))?;
 
-    Ok(())
+        Ok(())
+    })
+    .await
+    .map_err(|_| AppError::Internal("Timeout writing to MCP process stdin".into()))?
 }
 
 async fn read_jsonrpc(

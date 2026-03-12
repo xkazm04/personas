@@ -1,5 +1,5 @@
 /**
- * DataStepCreateMode — create-new-tables section for DataStep.
+ * DataStepCreateMode -- create-new-tables section for DataStep.
  */
 import {
   Database,

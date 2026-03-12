@@ -89,7 +89,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
 
         <div className="w-px h-6 md:h-8 bg-primary/10 hidden sm:block" />
 
-        {/* Total in window — hidden below sm */}
+        {/* Total in window -- hidden below sm */}
         <div className="hidden sm:flex items-center gap-1.5 md:gap-3" title="Total in window">
           <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 shadow-sm flex items-center justify-center">
             <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />

@@ -3,7 +3,7 @@ use rusqlite::Connection;
 use crate::error::AppError;
 
 /// Run the consolidated schema migration.
-/// All 11 Vibeman migrations (090â€“112) are merged into a single idempotent schema.
+/// All 11 Vibeman migrations (090--112) are merged into a single idempotent schema.
 pub fn run(conn: &Connection) -> Result<(), AppError> {
     tracing::debug!("Running database migrations");
 
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS persona_tool_definitions (
 CREATE INDEX IF NOT EXISTS idx_ptd_category ON persona_tool_definitions(category);
 
 -- ============================================================================
--- Persona â†” Tool Assignments
+-- Persona <-> Tool Assignments
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS persona_tools (
@@ -531,6 +531,9 @@ CREATE TABLE IF NOT EXISTS persona_healing_issues (
 );
 CREATE INDEX IF NOT EXISTS idx_phi_persona ON persona_healing_issues(persona_id);
 CREATE INDEX IF NOT EXISTS idx_phi_status  ON persona_healing_issues(status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_phi_persona_execution
+    ON persona_healing_issues(persona_id, execution_id)
+    WHERE execution_id IS NOT NULL;
 
 -- ============================================================================
 -- Budget Alert Rules (Phase: Production Polish)
@@ -655,6 +658,28 @@ CREATE INDEX IF NOT EXISTS idx_cal_credential ON credential_audit_log(credential
 CREATE INDEX IF NOT EXISTS idx_cal_persona    ON credential_audit_log(persona_id);
 CREATE INDEX IF NOT EXISTS idx_cal_operation  ON credential_audit_log(operation);
 CREATE INDEX IF NOT EXISTS idx_cal_created    ON credential_audit_log(created_at DESC);
+
+-- ============================================================================
+-- Tool Execution Audit Log (append-only)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS tool_execution_audit_log (
+    id              TEXT PRIMARY KEY,
+    tool_id         TEXT NOT NULL,
+    tool_name       TEXT NOT NULL,
+    tool_type       TEXT NOT NULL,
+    persona_id      TEXT,
+    persona_name    TEXT,
+    credential_id   TEXT,
+    result_status   TEXT NOT NULL,
+    duration_ms     INTEGER,
+    error_message   TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_teal_tool      ON tool_execution_audit_log(tool_id);
+CREATE INDEX IF NOT EXISTS idx_teal_persona   ON tool_execution_audit_log(persona_id);
+CREATE INDEX IF NOT EXISTS idx_teal_status    ON tool_execution_audit_log(result_status);
+CREATE INDEX IF NOT EXISTS idx_teal_created   ON tool_execution_audit_log(created_at DESC);
 
 -- ============================================================================
 -- Credential Rotation Policies
@@ -976,7 +1001,7 @@ CREATE INDEX IF NOT EXISTS idx_recipe_def_project    ON recipe_definitions(proje
 CREATE INDEX IF NOT EXISTS idx_recipe_def_category   ON recipe_definitions(category);
 
 -- ============================================================================
--- Persona â†” Recipe Links (junction table)
+-- Persona <-> Recipe Links (junction table)
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS persona_recipe_links (
@@ -1400,7 +1425,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
 
     // Recreate persona_triggers with 'chain' trigger type support if needed.
     // SQLite doesn't support ALTER CHECK, so we recreate the table.
-    // Detect by reading the stored CREATE TABLE SQL from sqlite_master â€”
+    // Detect by reading the stored CREATE TABLE SQL from sqlite_master --
     // the old INSERT-based probe always failed due to FK enforcement with
     // foreign_keys=ON, causing the table to be rebuilt on every startup.
     let trigger_table_sql: String = conn
@@ -1504,7 +1529,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added use_case_id column to persona_events");
     }
 
-    // Migrate existing persona_test_runs â†’ lab_arena_runs (one-time copy)
+    // Migrate existing persona_test_runs -> lab_arena_runs (one-time copy)
     let arena_count: i64 = conn
         .prepare("SELECT COUNT(*) FROM lab_arena_runs")?
         .query_row([], |row| row.get(0))
@@ -1553,7 +1578,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Created design_conversations table");
     }
 
-    // Add lab_eval_runs / lab_eval_results tables (N prompt versions Ã— M models evaluation matrix)
+    // Add lab_eval_runs / lab_eval_results tables (N prompt versions × M models evaluation matrix)
     let has_eval_runs: bool = conn
         .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='lab_eval_runs'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -1845,7 +1870,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // This is idempotent: only credentials that have no field rows yet are split.
     migrate_blob_credentials_to_fields(conn)?;
 
-    // â”€â”€ Unified Reactions: add event_listener trigger type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Unified Reactions: add event_listener trigger type ---------------
     // Recreate persona_triggers with event_listener in the CHECK constraint,
     // then copy all persona_event_subscriptions as event_listener triggers.
     let trigger_sql: String = conn
@@ -1882,7 +1907,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Migrated persona_triggers to support 'event_listener' trigger type");
     }
 
-    // Copy existing persona_event_subscriptions â†’ event_listener triggers (idempotent).
+    // Copy existing persona_event_subscriptions -> event_listener triggers (idempotent).
     // Only copies subscriptions that don't already have a matching event_listener trigger.
     let sub_count: i64 = conn
         .prepare(
@@ -1922,7 +1947,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Copied {} event subscriptions to event_listener triggers", sub_count);
     }
 
-    // â”€â”€ Credential Audit Log (append-only compliance trail) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Credential Audit Log (append-only compliance trail) -------------
     let has_credential_audit_log: bool = conn
         .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='credential_audit_log'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -1948,7 +1973,37 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Created credential_audit_log table");
     }
 
-    // â”€â”€ Encrypted event payloads: add payload_iv column â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Tool Execution Audit Log (append-only) --------------------------
+    let has_tool_audit_log: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='tool_execution_audit_log'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_tool_audit_log {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS tool_execution_audit_log (
+                id              TEXT PRIMARY KEY,
+                tool_id         TEXT NOT NULL,
+                tool_name       TEXT NOT NULL,
+                tool_type       TEXT NOT NULL,
+                persona_id      TEXT,
+                persona_name    TEXT,
+                credential_id   TEXT,
+                result_status   TEXT NOT NULL,
+                duration_ms     INTEGER,
+                error_message   TEXT,
+                created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_teal_tool    ON tool_execution_audit_log(tool_id);
+            CREATE INDEX IF NOT EXISTS idx_teal_persona ON tool_execution_audit_log(persona_id);
+            CREATE INDEX IF NOT EXISTS idx_teal_status  ON tool_execution_audit_log(result_status);
+            CREATE INDEX IF NOT EXISTS idx_teal_created ON tool_execution_audit_log(created_at DESC);"
+        )?;
+        tracing::info!("Created tool_execution_audit_log table");
+    }
+
+    // -- Encrypted event payloads: add payload_iv column -----------------
     let has_payload_iv: bool = conn
         .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_events') WHERE name = 'payload_iv'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -1960,7 +2015,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added payload_iv column to persona_events for encrypted event payloads");
     }
 
-    // â”€â”€ Persona sensitivity flag for hover-preview masking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Persona sensitivity flag for hover-preview masking -------------
     let has_sensitive_flag: bool = conn
         .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'sensitive'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -1972,7 +2027,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added sensitive column to personas");
     }
 
-    // â”€â”€ Playwright Procedures (saved browser automation for credential setup) â”€â”€
+    // -- Playwright Procedures (saved browser automation for credential setup) --
     let has_playwright_procedures: bool = conn
         .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='playwright_procedures'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -1996,7 +2051,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Created playwright_procedures table");
     }
 
-    // â”€â”€ Execution Knowledge Graph (cross-run learning) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Execution Knowledge Graph (cross-run learning) ---------------
     let has_execution_knowledge: bool = conn
         .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='execution_knowledge'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -2031,7 +2086,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Created execution_knowledge table");
     }
 
-    // â”€â”€ Recipe Definitions: add credential_id column â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Recipe Definitions: add credential_id column ----------------------
     let has_recipe_credential_id: bool = conn
         .prepare("SELECT COUNT(*) FROM pragma_table_info('recipe_definitions') WHERE name='credential_id'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -2044,12 +2099,12 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         )?;
         tracing::info!("Added credential_id column to recipe_definitions");
     }
-    // Index created separately â€” safe for both new and existing DBs
+    // Index created separately -- safe for both new and existing DBs
     conn.execute_batch(
         "CREATE INDEX IF NOT EXISTS idx_recipe_def_credential ON recipe_definitions(credential_id);"
     )?;
 
-    // â”€â”€ Recipe Definitions: add use_case_id column â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Recipe Definitions: add use_case_id column -----------------------
     let has_recipe_use_case_id: bool = conn
         .prepare("SELECT COUNT(*) FROM pragma_table_info('recipe_definitions') WHERE name='use_case_id'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -2066,7 +2121,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         "CREATE INDEX IF NOT EXISTS idx_recipe_def_use_case ON recipe_definitions(use_case_id);"
     )?;
 
-    // â”€â”€ Recipe Versions table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Recipe Versions table ------------------------------------------
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS recipe_versions (
             id              TEXT PRIMARY KEY,
@@ -2084,7 +2139,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_rv_version ON recipe_versions(recipe_id, version_number DESC);"
     )?;
 
-    // â”€â”€ Provider Audit Log (BYOM compliance trail) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Provider Audit Log (BYOM compliance trail) -----------------
     let has_provider_audit_log: bool = conn
         .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='provider_audit_log'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -2116,7 +2171,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Created provider_audit_log table (BYOM)");
     }
 
-    // â”€â”€ Missing indexes for common query patterns â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Missing indexes for common query patterns --------------------
     // These cover the most frequent WHERE + ORDER BY combinations found
     // across repository modules. All use IF NOT EXISTS so they are safe
     // to run on existing databases that already have them.
@@ -2162,7 +2217,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
          CREATE INDEX IF NOT EXISTS idx_pms_persona_date    ON persona_metrics_snapshots(persona_id, snapshot_date);"
     )?;
 
-    // â”€â”€ Headless flag for background cron agents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Headless flag for background cron agents -------------------------
     let has_headless: bool = conn
         .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'headless'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -2174,7 +2229,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added headless column to personas for background cron agents");
     }
 
-    // â”€â”€ Knowledge Annotations: scope, annotation, and verification columns â”€â”€
+    // -- Knowledge Annotations: scope, annotation, and verification columns --
     let has_ek_scope: bool = conn
         .prepare("SELECT COUNT(*) FROM pragma_table_info('execution_knowledge') WHERE name = 'scope_type'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -2201,7 +2256,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // The original CHECK is on the table creation. For new rows we validate in application code.
     // New types: 'agent_annotation', 'user_annotation'
 
-    // â”€â”€ Template Feedback table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Template Feedback table -----------------------------------------
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS template_feedback (
             id              TEXT PRIMARY KEY,
@@ -2220,7 +2275,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_tf_rating   ON template_feedback(rating);"
     )?;
 
-    // â”€â”€ Credential recipes: shared discovery cache across Design / Negotiator / AutoCred â”€â”€
+    // -- Credential recipes: shared discovery cache across Design / Negotiator / AutoCred --
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS credential_recipes (
             id                  TEXT PRIMARY KEY,
@@ -2242,7 +2297,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_cred_recipes_name ON credential_recipes(connector_name);"
     )?;
 
-    // â”€â”€ Personas: source_review_id for template lineage tracking â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Personas: source_review_id for template lineage tracking --------
     let has_source_review: bool = conn
         .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'source_review_id'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -2256,7 +2311,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added source_review_id to personas for template lineage tracking");
     }
 
-    // â”€â”€ Personas: trust_level and trust_origin columns â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Personas: trust_level and trust_origin columns ------------------
     let has_trust_level: bool = conn
         .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'trust_level'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -2272,7 +2327,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added trust_level, trust_origin, trust_verified_at to personas");
     }
 
-    // â”€â”€ Saved Views for Analytics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // -- Saved Views for Analytics ------------------
     let has_saved_views: bool = conn
         .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='saved_views'")?
         .query_row([], |row| row.get::<_, i64>(0))
@@ -2298,7 +2353,21 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Created saved_views table");
     }
 
-    // ── P2P Phase 2: Discovered Peers table (mDNS LAN discovery) ──────
+    // -- execution_traces: evicted_span_count column ----------------------
+    let has_et_evicted: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('execution_traces') WHERE name = 'evicted_span_count'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_et_evicted {
+        conn.execute_batch(
+            "ALTER TABLE execution_traces ADD COLUMN evicted_span_count INTEGER NOT NULL DEFAULT 0;"
+        )?;
+        tracing::info!("Added evicted_span_count column to execution_traces");
+    }
+
+    // -- P2P Phase 2: Discovered Peers table (mDNS LAN discovery) ------
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS discovered_peers (
             peer_id         TEXT PRIMARY KEY,
@@ -2313,7 +2382,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_dp_last_seen ON discovered_peers(last_seen_at DESC);"
     )?;
 
-    // ── P2P Phase 2: Peer Manifests table (synced exposure manifests) ─
+    // -- P2P Phase 2: Peer Manifests table (synced exposure manifests) -
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS peer_manifests (
             id              TEXT PRIMARY KEY,
@@ -2330,12 +2399,38 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_pm2_synced ON peer_manifests(synced_at DESC);"
     )?;
 
+    // -- P2P Phase 3: trust_status column on discovered_peers -------------
+    let has_trust_status: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('discovered_peers') WHERE name = 'trust_status'")?
+        .query_row([], |r| r.get::<_, i32>(0))
+        .unwrap_or(0)
+        > 0;
+    if !has_trust_status {
+        conn.execute_batch(
+            "ALTER TABLE discovered_peers ADD COLUMN trust_status TEXT NOT NULL DEFAULT 'unknown';"
+        )?;
+        tracing::info!("Added trust_status column to discovered_peers");
+    }
+
+    // -- Adoption audit log table -------------------------------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS adoption_log (
+            id                TEXT PRIMARY KEY,
+            template_name     TEXT NOT NULL,
+            source_review_id  TEXT,
+            persona_id        TEXT,
+            adopted_at        TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_adoption_log_template ON adoption_log(template_name);
+        CREATE INDEX IF NOT EXISTS idx_adoption_log_adopted  ON adoption_log(adopted_at DESC);"
+    )?;
+
     Ok(())
 }
 
 /// Split existing monolithic encrypted_data blobs into per-field rows.
 /// Only processes credentials that don't already have field rows (idempotent).
-/// Runs inside the caller's connection â€” the incremental migration context
+/// Runs inside the caller's connection -- the incremental migration context
 /// means this is already within a serialized startup sequence.
 fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<(), AppError> {
     use crate::engine::crypto;

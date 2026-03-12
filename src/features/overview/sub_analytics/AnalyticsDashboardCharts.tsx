@@ -58,7 +58,7 @@ export function AnalyticsDashboardCharts({
 }: AnalyticsDashboardChartsProps) {
   return (
     <>
-      {/* Charts — 2 column grid */}
+      {/* Charts -- 2 column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Cost Over Time */}
         <MetricChart title="Cost Over Time" height={180}>
@@ -161,7 +161,7 @@ export function AnalyticsDashboardCharts({
         )}
       </div>
 
-      {/* Tool Invocations — full width horizontal bar */}
+      {/* Tool Invocations -- full width horizontal bar */}
       {barData.length > 0 && (
         <MetricChart title="Tool Invocations" height={Math.max(200, barData.length * 40)}>
           <BarChart data={barData} layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>

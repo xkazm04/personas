@@ -10,6 +10,19 @@ import { buildUpdateInput, operationToPartial } from "@/api/agents/personas";
 import type { PersonaHealth } from "@/lib/bindings/PersonaHealth";
 import * as api from "@/api/tauriApi";
 
+// -- Error categorization for structured degradation events ------------------
+type DegradationCategory = 'network' | 'timeout' | 'validation' | 'unknown';
+
+function categorizeError(err: unknown): DegradationCategory {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (/network|fetch|connection|ECONNREFUSED|ERR_NETWORK/i.test(msg)) return 'network';
+  if (/timeout|timed out|deadline|ETIMEDOUT/i.test(msg)) return 'timeout';
+  if (/validation|invalid|malformed|parse/i.test(msg)) return 'validation';
+  return 'unknown';
+}
+
+const DEGRADATION_THRESHOLD = 3;
+
 export interface PersonaSlice {
   // State
   personas: DbPersona[];
@@ -18,6 +31,9 @@ export interface PersonaSlice {
   personaTriggerCounts: Record<string, number>;
   personaLastRun: Record<string, string | null>;
   personaHealthMap: Record<string, PersonaHealth>;
+  summaryConsecutiveFailures: number;
+  detailConsecutiveFailures: number;
+  degradationError: string | null;
 
   // Actions
   fetchPersonas: () => Promise<void>;
@@ -40,13 +56,16 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
   personaTriggerCounts: {},
   personaLastRun: {},
   personaHealthMap: {},
+  summaryConsecutiveFailures: 0,
+  detailConsecutiveFailures: 0,
+  degradationError: null,
 
   fetchPersonas: async () => {
     set({ isLoading: true, error: null });
     try {
       const personas = await api.listPersonas();
       set((state) => {
-        // Validate persisted selection — clear if the persona was deleted
+        // Validate persisted selection -- clear if the persona was deleted
         const stillExists =
           state.selectedPersonaId == null ||
           personas.some((p) => p.id === state.selectedPersonaId);
@@ -76,9 +95,24 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
         lastRun[s.personaId] = s.lastRunAt;
         healthMap[s.personaId] = s.health;
       }
-      set({ personaTriggerCounts: triggerCounts, personaLastRun: lastRun, personaHealthMap: healthMap });
-    } catch {
-      // intentional: non-critical — sidebar badge counts are cosmetic
+      set({
+        personaTriggerCounts: triggerCounts,
+        personaLastRun: lastRun,
+        personaHealthMap: healthMap,
+        summaryConsecutiveFailures: 0,
+        degradationError: get().detailConsecutiveFailures >= DEGRADATION_THRESHOLD
+          ? get().degradationError : null,
+      });
+    } catch (err) {
+      const failures = get().summaryConsecutiveFailures + 1;
+      const category = categorizeError(err);
+      console.warn(`[personaSlice] fetchPersonaSummaries failed (${category}, attempt ${failures})`, err);
+      set({
+        summaryConsecutiveFailures: failures,
+        degradationError: failures >= DEGRADATION_THRESHOLD
+          ? `Sidebar data unavailable (${category} error, ${failures} consecutive failures)`
+          : get().degradationError,
+      });
     }
   },
 
@@ -107,7 +141,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
       const automations = automationsResult.status === 'fulfilled' ? automationsResult.value : [];
 
       // Find tools assigned to this persona (cross-reference with persona_tools)
-      // For now, use all tool definitions — actual assignment filtering can be refined
+      // For now, use all tool definitions -- actual assignment filtering can be refined
       const detail: PersonaWithDetails = {
         ...persona,
         tools: allToolsResult.value,
@@ -115,11 +149,30 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
         subscriptions,
         automations,
       };
-      set({ selectedPersona: detail, selectedPersonaId: id, isLoading: false });
+      set({
+        selectedPersona: detail,
+        selectedPersonaId: id,
+        isLoading: false,
+        detailConsecutiveFailures: 0,
+        degradationError: get().summaryConsecutiveFailures >= DEGRADATION_THRESHOLD
+          ? get().degradationError : null,
+      });
     } catch (err) {
       if (seq !== fetchDetailSeq) return; // superseded by a newer request
+      const failures = get().detailConsecutiveFailures + 1;
+      const category = categorizeError(err);
+      console.warn(`[personaSlice] fetchDetail(${id}) failed (${category}, attempt ${failures})`, err);
       // Clear stale selection so the editor doesn't render with missing data
-      set({ error: errMsg(err, "Failed to fetch persona"), isLoading: false, selectedPersonaId: null, selectedPersona: null });
+      set({
+        error: errMsg(err, "Failed to fetch persona"),
+        isLoading: false,
+        selectedPersonaId: null,
+        selectedPersona: null,
+        detailConsecutiveFailures: failures,
+        degradationError: failures >= DEGRADATION_THRESHOLD
+          ? `Persona loading degraded (${category} error, ${failures} consecutive failures)`
+          : get().degradationError,
+      });
     }
   },
 
@@ -153,18 +206,15 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
   },
 
   duplicatePersona: async (id) => {
-    const source = get().personas.find((p) => p.id === id);
-    if (!source) throw new Error("Persona not found");
-    const newPersona = await get().createPersona({
-      name: `${source.name} (Copy)`,
-      description: source.description ?? undefined,
-      system_prompt: source.system_prompt,
-      icon: source.icon ?? undefined,
-      color: source.color ?? undefined,
-      structured_prompt: source.structured_prompt ?? undefined,
-      design_context: source.design_context ?? undefined,
-    });
-    return newPersona;
+    set({ error: null });
+    try {
+      const newPersona = await api.duplicatePersona(id);
+      set((state) => ({ personas: [newPersona, ...state.personas] }));
+      return newPersona;
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to duplicate persona") });
+      throw err;
+    }
   },
 
   updatePersona: async (id, input) => {
@@ -192,6 +242,9 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
     set({ error: null });
     try {
       await api.deletePersona(id);
+      // Invalidate any in-flight fetchDetail for this persona so it can't
+      // resurrect the deleted persona in state after the delete completes.
+      if (get().selectedPersonaId === id) ++fetchDetailSeq;
       set((state) => ({
         personas: state.personas.filter((p) => p.id !== id),
         selectedPersonaId: state.selectedPersonaId === id ? null : state.selectedPersonaId,

@@ -6,7 +6,7 @@ import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 
-// ── Interactive Importance Dots (clickable) ─────────────────────
+// -- Interactive Importance Dots (clickable) ---------------------
 function InteractiveImportanceDots({
   value,
   onChange,
@@ -41,7 +41,7 @@ function InteractiveImportanceDots({
   );
 }
 
-// ── Inline Add Memory Form ──────────────────────────────────────
+// -- Inline Add Memory Form --------------------------------------
 export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
   const personas = usePersonaStore((s) => s.personas);
   const createMemory = usePersonaStore((s) => s.createMemory);

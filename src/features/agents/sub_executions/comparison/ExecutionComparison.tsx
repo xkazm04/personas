@@ -9,7 +9,7 @@ import { ToolTimelineComparison } from './ToolTimelineComparison';
 import { OutputDiffSection } from './OutputDiffSection';
 import { JsonDiffSection } from './JsonDiffSection';
 
-// ─── Main Component ──────────────────────────────────────────────────────────
+// --- Main Component ----------------------------------------------------------
 
 interface ExecutionComparisonProps {
   left: PersonaExecution;
@@ -42,7 +42,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
       </div>
 
       {/* What Changed summary */}
-      <div className="bg-primary/5 border border-primary/15 rounded-xl p-3">
+      <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
         <div className="flex items-center gap-2 mb-2">
           <Zap className="w-3.5 h-3.5 text-primary/60" />
           <span className="text-sm font-medium text-foreground/70 uppercase tracking-wider">What Changed</span>

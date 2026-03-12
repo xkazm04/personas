@@ -1,6 +1,6 @@
 //! IPC Authorization Middleware
 //!
-//! Google OAuth is **optional** — it only unlocks cloud features.
+//! Google OAuth is **optional** -- it only unlocks cloud features.
 //! All local operations (personas, credentials, executions, etc.) work
 //! without signing in.
 //!
@@ -19,18 +19,24 @@
 //!    is not authenticated.
 //!
 //! Legacy `require_auth` / `require_privileged` guards are kept as no-ops
-//! for backward compatibility — they always return `Ok(())`.
+//! for backward compatibility -- they always return `Ok(())`.
 
-use std::sync::Arc;
+use std::collections::HashSet;
+use std::sync::{Arc, LazyLock};
 
 use crate::error::AppError;
 use crate::AppState;
+
+/// Static HashSet for O(1) cloud command lookup.
+static CLOUD_COMMANDS_SET: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+    CLOUD_COMMANDS.iter().copied().collect()
+});
 
 // ---------------------------------------------------------------------------
 // Sync guards (for sync #[tauri::command] functions)
 // ---------------------------------------------------------------------------
 
-/// Synchronous auth check — now a no-op.
+/// Synchronous auth check -- now a no-op.
 ///
 /// Google OAuth is optional; it only unlocks cloud features.
 /// Local operations work without authentication.
@@ -38,7 +44,7 @@ pub fn require_auth_sync(_state: &Arc<AppState>) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Synchronous privileged auth check — now a no-op for local operations.
+/// Synchronous privileged auth check -- now a no-op for local operations.
 ///
 /// Google OAuth is optional; it only unlocks cloud features.
 /// Use `require_cloud_auth_sync` for cloud/remote commands.
@@ -83,7 +89,7 @@ pub fn require_cloud_auth_sync(state: &Arc<AppState>, command: &str) -> Result<(
 // Async guards (for async commands)
 // ---------------------------------------------------------------------------
 
-/// Async auth check — now a no-op.
+/// Async auth check -- now a no-op.
 ///
 /// Google OAuth is optional; it only unlocks cloud features.
 /// Local operations work without authentication.
@@ -91,7 +97,7 @@ pub async fn require_auth(_state: &Arc<AppState>) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Async privileged auth check — now a no-op for local operations.
+/// Async privileged auth check -- now a no-op for local operations.
 ///
 /// Google OAuth is optional; it only unlocks cloud features.
 /// Use `require_cloud_auth` for cloud/remote commands.
@@ -137,13 +143,13 @@ pub async fn require_cloud_auth(state: &Arc<AppState>, command: &str) -> Result<
 
 /// JavaScript initialization script injected into the webview.
 ///
-/// Google OAuth is optional — it only gates cloud features.
+/// Google OAuth is optional -- it only gates cloud features.
 /// This script only blocks cloud/remote commands when unauthenticated.
 /// All local operations work without signing in.
 /// The IPC auth script is now a no-op since Google OAuth is optional.
 /// Cloud commands are guarded by `require_cloud_auth` on the backend.
 /// The frontend sidebar disables the Cloud tab when not authenticated.
-pub const IPC_AUTH_SCRIPT: &str = "/* ipc-auth: no-op — auth is optional, cloud guards are backend-only */";
+pub const IPC_AUTH_SCRIPT: &str = "/* ipc-auth: no-op -- auth is optional, cloud guards are backend-only */";
 
 // ---------------------------------------------------------------------------
 // Command tier classification
@@ -171,7 +177,7 @@ pub const CLOUD_COMMANDS: &[&str] = &[
     "cloud_resume_deployment",
     "cloud_undeploy",
     "cloud_get_base_url",
-    // GitLab — deploys code / manages remote agents
+    // GitLab -- deploys code / manages remote agents
     "gitlab_connect",
     "gitlab_disconnect",
     "gitlab_get_config",
@@ -184,7 +190,7 @@ pub const CLOUD_COMMANDS: &[&str] = &[
 
 /// Returns the authorization tier for a given command name.
 ///
-/// Google OAuth is optional — only cloud commands require it.
+/// Google OAuth is optional -- only cloud commands require it.
 /// All local commands are public (no auth needed).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AuthTier {
@@ -195,7 +201,7 @@ pub enum AuthTier {
 }
 
 pub fn command_tier(command: &str) -> AuthTier {
-    if CLOUD_COMMANDS.contains(&command) {
+    if CLOUD_COMMANDS_SET.contains(command) {
         AuthTier::Cloud
     } else {
         AuthTier::Local

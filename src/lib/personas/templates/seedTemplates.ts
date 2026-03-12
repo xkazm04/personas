@@ -1,5 +1,5 @@
 /**
- * Seed Templates — converts catalog entries into PersonaDesignReview
+ * Seed Templates -- converts catalog entries into PersonaDesignReview
  * records for the Generated tab. Each template is inserted once (idempotent).
  *
  * Source of truth: templateCatalog.ts (single template catalog).

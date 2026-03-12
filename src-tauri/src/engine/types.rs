@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::db::models::{Persona, PersonaToolDefinition};
 
 // =============================================================================
-// ExecutionState â€” canonical state machine for execution status
+// ExecutionState -- canonical state machine for execution status
 // =============================================================================
 
 /// Canonical execution state machine.
@@ -182,7 +182,7 @@ pub enum ProtocolMessage {
 }
 
 // =============================================================================
-// Continuation â€” unified resume mechanism
+// Continuation -- unified resume mechanism
 // =============================================================================
 
 /// How to continue a previous execution.
@@ -276,7 +276,7 @@ pub mod providers {
 }
 
 // =============================================================================
-// EphemeralPersona â€” virtual persona that never touches the database
+// EphemeralPersona -- virtual persona that never touches the database
 // =============================================================================
 
 /// A virtual persona + tools bundle that exists only in memory.

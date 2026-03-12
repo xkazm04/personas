@@ -9,7 +9,7 @@ export interface DatabaseSlice {
   dbSchemaTables: DbSchemaTable[];
   dbSavedQueries: DbSavedQuery[];
 
-  // Actions — Schema Tables
+  // Actions -- Schema Tables
   fetchDbSchemaTables: (credentialId: string) => Promise<void>;
   createDbSchemaTable: (
     credentialId: string,
@@ -23,7 +23,7 @@ export interface DatabaseSlice {
   ) => Promise<void>;
   deleteDbSchemaTable: (id: string) => Promise<void>;
 
-  // Actions — Saved Queries
+  // Actions -- Saved Queries
   fetchDbSavedQueries: (credentialId: string) => Promise<void>;
   createDbSavedQuery: (
     credentialId: string,
@@ -37,7 +37,7 @@ export interface DatabaseSlice {
   ) => Promise<void>;
   deleteDbSavedQuery: (id: string) => Promise<void>;
 
-  // Actions — Query Execution
+  // Actions -- Query Execution
   executeDbQuery: (
     credentialId: string,
     queryText: string,
@@ -45,11 +45,11 @@ export interface DatabaseSlice {
   ) => Promise<QueryResult>;
 }
 
-export const createDatabaseSlice: StateCreator<PersonaStore, [], [], DatabaseSlice> = (set, get) => ({
+export const createDatabaseSlice: StateCreator<PersonaStore, [], [], DatabaseSlice> = (set) => ({
   dbSchemaTables: [],
   dbSavedQueries: [],
 
-  // ── Schema Tables ──────────────────────────────────────────────────
+  // -- Schema Tables --------------------------------------------------
 
   fetchDbSchemaTables: async (credentialId) => {
     try {
@@ -63,7 +63,7 @@ export const createDatabaseSlice: StateCreator<PersonaStore, [], [], DatabaseSli
   createDbSchemaTable: async (credentialId, tableName, displayLabel, columnHints) => {
     try {
       const table = await dbApi.createDbSchemaTable(credentialId, tableName, displayLabel, columnHints);
-      set({ dbSchemaTables: [...get().dbSchemaTables, table] });
+      set((state) => ({ dbSchemaTables: [...state.dbSchemaTables, table] }));
       return table;
     } catch (err) {
       console.error(errMsg(err, "Failed to create schema table"));
@@ -74,9 +74,9 @@ export const createDatabaseSlice: StateCreator<PersonaStore, [], [], DatabaseSli
   updateDbSchemaTable: async (id, updates) => {
     try {
       const updated = await dbApi.updateDbSchemaTable(id, updates);
-      set({
-        dbSchemaTables: get().dbSchemaTables.map((t) => (t.id === id ? updated : t)),
-      });
+      set((state) => ({
+        dbSchemaTables: state.dbSchemaTables.map((t) => (t.id === id ? updated : t)),
+      }));
     } catch (err) {
       console.error(errMsg(err, "Failed to update schema table"));
     }
@@ -85,15 +85,15 @@ export const createDatabaseSlice: StateCreator<PersonaStore, [], [], DatabaseSli
   deleteDbSchemaTable: async (id) => {
     try {
       await dbApi.deleteDbSchemaTable(id);
-      set({
-        dbSchemaTables: get().dbSchemaTables.filter((t) => t.id !== id),
-      });
+      set((state) => ({
+        dbSchemaTables: state.dbSchemaTables.filter((t) => t.id !== id),
+      }));
     } catch (err) {
       console.error(errMsg(err, "Failed to delete schema table"));
     }
   },
 
-  // ── Saved Queries ──────────────────────────────────────────────────
+  // -- Saved Queries --------------------------------------------------
 
   fetchDbSavedQueries: async (credentialId) => {
     try {
@@ -107,7 +107,7 @@ export const createDatabaseSlice: StateCreator<PersonaStore, [], [], DatabaseSli
   createDbSavedQuery: async (credentialId, title, queryText, language) => {
     try {
       const query = await dbApi.createDbSavedQuery(credentialId, title, queryText, language);
-      set({ dbSavedQueries: [...get().dbSavedQueries, query] });
+      set((state) => ({ dbSavedQueries: [...state.dbSavedQueries, query] }));
       return query;
     } catch (err) {
       console.error(errMsg(err, "Failed to create saved query"));
@@ -118,9 +118,9 @@ export const createDatabaseSlice: StateCreator<PersonaStore, [], [], DatabaseSli
   updateDbSavedQuery: async (id, updates) => {
     try {
       const updated = await dbApi.updateDbSavedQuery(id, updates);
-      set({
-        dbSavedQueries: get().dbSavedQueries.map((q) => (q.id === id ? updated : q)),
-      });
+      set((state) => ({
+        dbSavedQueries: state.dbSavedQueries.map((q) => (q.id === id ? updated : q)),
+      }));
     } catch (err) {
       console.error(errMsg(err, "Failed to update saved query"));
     }
@@ -129,15 +129,15 @@ export const createDatabaseSlice: StateCreator<PersonaStore, [], [], DatabaseSli
   deleteDbSavedQuery: async (id) => {
     try {
       await dbApi.deleteDbSavedQuery(id);
-      set({
-        dbSavedQueries: get().dbSavedQueries.filter((q) => q.id !== id),
-      });
+      set((state) => ({
+        dbSavedQueries: state.dbSavedQueries.filter((q) => q.id !== id),
+      }));
     } catch (err) {
       console.error(errMsg(err, "Failed to delete saved query"));
     }
   },
 
-  // ── Query Execution ────────────────────────────────────────────────
+  // -- Query Execution ------------------------------------------------
 
   executeDbQuery: async (credentialId, queryText, savedQueryId) => {
     return dbApi.executeDbQuery(credentialId, queryText, savedQueryId);

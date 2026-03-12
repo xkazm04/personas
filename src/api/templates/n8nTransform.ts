@@ -3,7 +3,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { Persona } from "@/lib/bindings/Persona";
 
 // ============================================================================
-// N8n Transform — types
+// N8n Transform -- types
 // ============================================================================
 
 export interface N8nTriggerDraft {
@@ -40,7 +40,7 @@ export interface N8nPersonaDraft {
   max_turns: number | null;
   design_context: string | null;
   notification_channels?: string | null;
-  // Entity fields — populated by connector-aware transform
+  // Entity fields -- populated by connector-aware transform
   triggers?: N8nTriggerDraft[] | null;
   tools?: N8nToolDraft[] | null;
   required_connectors?: N8nConnectorRef[] | null;
@@ -102,7 +102,7 @@ export interface StreamingSection {
 }
 
 // ============================================================================
-// N8n Transform — commands
+// N8n Transform -- commands
 // ============================================================================
 
 export const startN8nTransformBackground = (

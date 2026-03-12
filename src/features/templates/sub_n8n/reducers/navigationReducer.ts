@@ -1,6 +1,6 @@
 import type { N8nImportState, N8nImportAction, N8nWizardStep } from '../hooks/useN8nImportReducer';
 
-// ── Navigation State Slice ──
+// -- Navigation State Slice --
 
 export interface NavigationState {
   step: N8nWizardStep;
@@ -10,7 +10,7 @@ export const INITIAL_NAVIGATION: NavigationState = {
   step: 'upload',
 };
 
-// ── Step Preconditions ──
+// -- Step Preconditions --
 
 export function checkStepPrecondition(
   step: N8nWizardStep,
@@ -34,7 +34,7 @@ export function checkStepPrecondition(
   return null;
 }
 
-// ── Reducer ──
+// -- Reducer --
 
 export function navigationReducer(
   slice: NavigationState,

@@ -18,7 +18,7 @@ import type { RequiredConnector } from './ConnectStep';
 // Re-export DatabaseSetupCard for convenience
 export { DatabaseSetupCard } from './DatabaseSetupCard';
 
-// ── Helpers ────────────────────────────────────────────────────────────
+// -- Helpers ------------------------------------------------------------
 
 const BUILTIN_CONNECTORS = new Set(['personas_messages', 'personas_database']);
 
@@ -33,7 +33,7 @@ function findMatchingCredentials(
   return allCredentials.filter((c) => c.service_type === connectorName);
 }
 
-// ── Unresolved Component Card ──────────────────────────────────────────
+// -- Unresolved Component Card ------------------------------------------
 
 export function UnresolvedComponentCard({
   connector,

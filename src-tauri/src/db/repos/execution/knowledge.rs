@@ -1,4 +1,5 @@
 use rusqlite::{params, Row};
+use tracing::warn;
 
 use crate::db::models::{ExecutionKnowledge, KnowledgeGraphSummary};
 use crate::db::DbPool;
@@ -28,7 +29,8 @@ fn row_to_knowledge(row: &Row) -> rusqlite::Result<ExecutionKnowledge> {
     })
 }
 
-/// Upsert a knowledge entry â€” update counts and averages if the unique key exists.
+/// Upsert a knowledge entry -- update counts and averages if the unique key exists.
+/// Also maintains a `recentResults` array (last 10 booleans) in pattern_data for sparkline display.
 #[allow(clippy::too_many_arguments)]
 pub fn upsert(
     pool: &DbPool,
@@ -45,6 +47,35 @@ pub fn upsert(
     let conn = pool.get()?;
     let now = chrono::Utc::now().to_rfc3339();
     let id = uuid::Uuid::new_v4().to_string();
+
+    // Merge recentResults into pattern_data (keep last 10 execution outcomes)
+    let merged_pattern_data = {
+        let mut new_data: serde_json::Value = serde_json::from_str(pattern_data)
+            .unwrap_or_else(|_| serde_json::Value::Object(Default::default()));
+
+        let existing: Option<String> = conn
+            .query_row(
+                "SELECT pattern_data FROM execution_knowledge WHERE persona_id = ?1 AND knowledge_type = ?2 AND pattern_key = ?3",
+                params![persona_id, knowledge_type, pattern_key],
+                |row| row.get(0),
+            )
+            .ok();
+
+        let mut recent: Vec<bool> = existing
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+            .and_then(|v| v.get("recentResults").cloned())
+            .and_then(|v| serde_json::from_value(v).ok())
+            .unwrap_or_default();
+
+        recent.push(success);
+        if recent.len() > 10 {
+            let start = recent.len() - 10;
+            recent = recent[start..].to_vec();
+        }
+
+        new_data["recentResults"] = serde_json::json!(recent);
+        new_data.to_string()
+    };
 
     // Use INSERT OR REPLACE with computed running averages
     conn.execute(
@@ -80,7 +111,7 @@ pub fn upsert(
             use_case_id,
             knowledge_type,
             pattern_key,
-            pattern_data,
+            merged_pattern_data,
             if success { 1i64 } else { 0i64 },
             if success { 0i64 } else { 1i64 },
             cost_usd,
@@ -94,7 +125,7 @@ pub fn upsert(
     Ok(())
 }
 
-/// Upsert a knowledge annotation â€” cross-persona knowledge scoped to a tool, connector, or global.
+/// Upsert a knowledge annotation -- cross-persona knowledge scoped to a tool, connector, or global.
 #[allow(clippy::too_many_arguments)]
 pub fn upsert_annotation(
     pool: &DbPool,
@@ -241,7 +272,13 @@ pub fn get_shared_injection(
              LIMIT 5",
         )?;
         let rows = stmt.query_map(params![tool_name], row_to_knowledge)?;
-        results.extend(rows.filter_map(|r| r.ok()));
+        results.extend(rows.filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                warn!(scope = "tool", scope_id = tool_name, error = %e, "Failed to read knowledge row");
+                None
+            }
+        }));
     }
 
     // Connector-scoped knowledge
@@ -255,7 +292,13 @@ pub fn get_shared_injection(
              LIMIT 5",
         )?;
         let rows = stmt.query_map(params![svc], row_to_knowledge)?;
-        results.extend(rows.filter_map(|r| r.ok()));
+        results.extend(rows.filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                warn!(scope = "connector", scope_id = svc, error = %e, "Failed to read knowledge row");
+                None
+            }
+        }));
     }
 
     // Global knowledge
@@ -267,7 +310,13 @@ pub fn get_shared_injection(
          LIMIT 10",
     )?;
     let rows = stmt.query_map([], row_to_knowledge)?;
-    results.extend(rows.filter_map(|r| r.ok()));
+    results.extend(rows.filter_map(|r| match r {
+        Ok(v) => Some(v),
+        Err(e) => {
+            warn!(scope = "global", error = %e, "Failed to read knowledge row");
+            None
+        }
+    }));
 
     // Dedup by pattern_key
     let mut seen = std::collections::HashSet::new();

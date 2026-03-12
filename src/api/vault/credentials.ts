@@ -41,7 +41,7 @@ export const updateCredentialEvent = (id: string, input: UpdateCredentialEventIn
 export const deleteCredentialEvent = (id: string) =>
   invoke<boolean>("delete_credential_event", { id });
 
-// ── Credential Security ─────────────────────────────────────────────────
+// -- Credential Security -------------------------------------------------
 
 export interface HealthcheckResult {
   success: boolean;
@@ -83,7 +83,7 @@ export interface MigrationResult {
 export const migratePlaintextCredentials = () =>
   invoke<MigrationResult>("migrate_plaintext_credentials");
 
-// ── Field-level Credential Storage ────────────────────────────────────
+// -- Field-level Credential Storage ------------------------------------
 
 export interface CredentialFieldMeta {
   id: string;
@@ -113,7 +113,7 @@ export const updateCredentialField = (
     sessionEncryptedValue,
   });
 
-// ── Credential Intelligence ───────────────────────────────────────────
+// -- Credential Intelligence -------------------------------------------
 
 import type { CredentialAuditEntry } from "@/lib/bindings/CredentialAuditEntry";
 import type { CredentialUsageStats } from "@/lib/bindings/CredentialUsageStats";

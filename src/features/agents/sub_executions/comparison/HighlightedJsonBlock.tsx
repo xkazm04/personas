@@ -11,7 +11,7 @@ export function HighlightedJsonBlock({ raw }: { raw: string | null }) {
     try {
       const pretty = JSON.stringify(JSON.parse(raw), null, 2);
       return sanitizeHljsHtml(hljs.highlight(pretty, { language: 'json' }).value);
-    } catch { // intentional: non-critical — JSON parse fallback
+    } catch { // intentional: non-critical -- JSON parse fallback
       return null;
     }
   }, [raw]);

@@ -4,7 +4,7 @@ import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
 
 /**
- * HealingToast — no longer renders its own UI.
+ * HealingToast -- no longer renders its own UI.
  *
  * Listens for Tauri `healing-event` events and dispatches healing toasts
  * into the unified toast store, which renders them in the consolidated
@@ -64,6 +64,6 @@ export function HealingToast() {
     };
   }, [fetchHealingIssues]);
 
-  // No UI — the unified ToastContainer handles rendering
+  // No UI -- the unified ToastContainer handles rendering
   return null;
 }

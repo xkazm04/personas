@@ -1,12 +1,11 @@
 /**
- * ScanResultsBanner — displays persona safety scan results in the adoption
+ * ScanResultsBanner -- displays persona safety scan results in the adoption
  * wizard's CreateStep. Shows findings grouped by severity with expandable
  * detail views for each finding.
  */
 import { useState } from 'react';
 import {
   ShieldAlert,
-  ShieldCheck,
   ShieldX,
   ChevronRight,
   ChevronDown,
@@ -17,7 +16,94 @@ import {
 import type { ScanResult, ScanFinding } from '@/lib/templates/personaSafetyScanner';
 import { SEVERITY_CONFIG, CATEGORY_LABELS } from '@/lib/templates/personaSafetyScanner';
 
-// ── Props ────────────────────────────────────────────────────────────
+// -- Empathetic illustrations ----------------------------------------
+
+/** Shield character with magnifying glass discovering issues */
+function ShieldSearchIllustration({ className = '' }: { className?: string }) {
+  return (
+    <img
+      src="/illustrations/empathetic-error.png"
+      alt=""
+      aria-hidden="true"
+      className={className}
+      width={80}
+      height={60}
+      style={{ objectFit: 'contain' }}
+    />
+  );
+}
+
+/** Shield character giving thumbs-up for all-clear (48×48) */
+function ShieldThumbsUpIllustration({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 48 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      {/* Soft glow */}
+      <ellipse cx="22" cy="42" rx="14" ry="3" fill="currentColor" opacity="0.06" />
+
+      {/* Shield body */}
+      <path
+        d="M22 4C22 4 8 9 8 9V24C8 34 22 44 22 44C22 44 36 34 36 24V9L22 4Z"
+        fill="currentColor"
+        opacity="0.1"
+        stroke="currentColor"
+        strokeOpacity="0.25"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+
+      {/* Happy eyes -- slight upward curves */}
+      <path
+        d="M17 19C17.5 17.5 19.5 17.5 20 19"
+        stroke="currentColor"
+        strokeOpacity="0.4"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M24 19C24.5 17.5 26.5 17.5 27 19"
+        stroke="currentColor"
+        strokeOpacity="0.4"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      {/* Happy smile */}
+      <path
+        d="M18 25C20 27.5 24 27.5 26 25"
+        stroke="currentColor"
+        strokeOpacity="0.3"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+
+      {/* Thumbs-up hand -- emerald accent */}
+      <path
+        d="M37 18V12C37 10.5 39 10 39.5 11.5L40 14V20C40 22 38.5 23 37 23H35C34 23 33.5 22 33.5 21V19C33.5 18.5 34 18 34.5 18H37Z"
+        fill="rgb(var(--color-emerald-400))"
+        fillOpacity="0.2"
+        stroke="rgb(var(--color-emerald-400))"
+        strokeOpacity="0.45"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+
+      {/* Sparkle accents */}
+      <circle cx="42" cy="10" r="1" fill="rgb(var(--color-emerald-400))" opacity="0.4" />
+      <circle cx="44" cy="15" r="0.7" fill="rgb(var(--color-emerald-400))" opacity="0.3" />
+      <circle cx="40" cy="8" r="0.7" fill="rgb(var(--color-emerald-400))" opacity="0.3" />
+    </svg>
+  );
+}
+
+// -- Props ------------------------------------------------------------
 
 interface ScanResultsBannerProps {
   result: ScanResult | null;
@@ -25,7 +111,7 @@ interface ScanResultsBannerProps {
   className?: string;
 }
 
-// ── Finding row ──────────────────────────────────────────────────────
+// -- Finding row ------------------------------------------------------
 
 function FindingRow({ finding }: { finding: ScanFinding }) {
   const [expanded, setExpanded] = useState(false);
@@ -73,7 +159,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
   );
 }
 
-// ── Severity section ─────────────────────────────────────────────────
+// -- Severity section -------------------------------------------------
 
 function SeveritySection({
   label,
@@ -112,7 +198,7 @@ function SeveritySection({
   );
 }
 
-// ── Main component ───────────────────────────────────────────────────
+// -- Main component ---------------------------------------------------
 
 export function ScanResultsBanner({ result, scanning, className = '' }: ScanResultsBannerProps) {
   // Scanning in progress
@@ -135,7 +221,7 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
   if (result.passed && result.info.length === 0) {
     return (
       <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border border-emerald-500/15 bg-emerald-500/5 ${className}`}>
-        <ShieldCheck className="w-4.5 h-4.5 text-emerald-400 flex-shrink-0" />
+        <ShieldThumbsUpIllustration className="text-emerald-400 flex-shrink-0" />
         <div>
           <p className="text-sm text-emerald-300/80 font-medium">Safety scan passed</p>
           <p className="text-sm text-emerald-300/50">No security concerns detected in this persona draft</p>
@@ -149,7 +235,7 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
     return (
       <div className={`rounded-xl border border-emerald-500/15 bg-emerald-500/5 ${className}`}>
         <div className="flex items-center gap-3 px-4 py-3">
-          <ShieldCheck className="w-4.5 h-4.5 text-emerald-400 flex-shrink-0" />
+          <ShieldThumbsUpIllustration className="text-emerald-400 flex-shrink-0" />
           <div className="flex-1">
             <p className="text-sm text-emerald-300/80 font-medium">Safety scan passed</p>
             <p className="text-sm text-emerald-300/50">
@@ -171,10 +257,8 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
 
   // Findings detected
   const hasCritical = result.critical.length > 0;
-  const Icon = hasCritical ? ShieldX : ShieldAlert;
   const borderColor = hasCritical ? 'border-red-500/20' : 'border-amber-500/20';
   const bgColor = hasCritical ? 'bg-red-500/5' : 'bg-amber-500/5';
-  const iconColor = hasCritical ? 'text-red-400' : 'text-amber-400';
   const titleColor = hasCritical ? 'text-red-300/80' : 'text-amber-300/80';
   const subtitleColor = hasCritical ? 'text-red-300/50' : 'text-amber-300/50';
 
@@ -182,7 +266,11 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
     <div className={`rounded-xl border ${borderColor} ${bgColor} ${className}`}>
       {/* Header */}
       <div className="flex items-start gap-3 px-4 py-3">
-        <Icon className={`w-4.5 h-4.5 ${iconColor} flex-shrink-0 mt-0.5`} />
+        {hasCritical ? (
+          <ShieldSearchIllustration className="text-red-400 flex-shrink-0" />
+        ) : (
+          <ShieldAlert className="w-4.5 h-4.5 text-amber-400 flex-shrink-0 mt-0.5" />
+        )}
         <div className="flex-1 min-w-0">
           <p className={`text-sm font-medium ${titleColor}`}>
             {hasCritical ? 'Critical security issues detected' : 'Security warnings detected'}
@@ -192,7 +280,7 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
             {result.critical.length > 0 && result.warnings.length > 0 && ', '}
             {result.warnings.length > 0 && `${result.warnings.length} warning${result.warnings.length !== 1 ? 's' : ''}`}
             {result.info.length > 0 && `, ${result.info.length} info`}
-            {' — review findings before creating this persona'}
+            {' -- review findings before creating this persona'}
           </p>
         </div>
 

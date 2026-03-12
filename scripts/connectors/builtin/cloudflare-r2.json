@@ -12,7 +12,7 @@
       "type": "text",
       "required": true,
       "placeholder": "",
-      "helpText": "From Cloudflare dashboard → Overview → Account ID (right sidebar)"
+      "helpText": "From Cloudflare dashboard -> Overview -> Account ID (right sidebar)"
     },
     {
       "key": "access_key_id",
@@ -20,7 +20,7 @@
       "type": "text",
       "required": true,
       "placeholder": "",
-      "helpText": "From Cloudflare → R2 → Manage R2 API Tokens"
+      "helpText": "From Cloudflare -> R2 -> Manage R2 API Tokens"
     },
     {
       "key": "secret_access_key",
@@ -47,7 +47,7 @@
     "auth_type": "api_key",
     "auth_type_label": "API Token",
     "docs_url": "https://developers.cloudflare.com/r2/api/",
-    "setup_guide": "1. Log in to the Cloudflare dashboard.\n2. Go to R2 → Manage R2 API Tokens.\n3. Create a new API token with Object Read & Write permissions.\n4. Copy the Access Key ID, Secret Access Key, and your Account ID.\n5. Paste all values here.",
+    "setup_guide": "1. Log in to the Cloudflare dashboard.\n2. Go to R2 -> Manage R2 API Tokens.\n3. Create a new API token with Object Read & Write permissions.\n4. Copy the Access Key ID, Secret Access Key, and your Account ID.\n5. Paste all values here.",
     "pricing_tier": "freemium",
     "auth_methods": [
       {"id": "api_key", "label": "API Token", "type": "credential", "is_default": true}

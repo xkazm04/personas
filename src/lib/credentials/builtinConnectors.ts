@@ -1,5 +1,5 @@
 /**
- * Builtin connector definitions â€” committed to the repo so all users get the same catalog.
+ * Builtin connector definitions -- committed to the repo so all users get the same catalog.
  * Each JSON file in scripts/connectors/builtin/ defines a single connector.
  *
  * BuiltinConnectorDef extends the shared ConnectorDefinitionBase so that builtin
@@ -77,7 +77,7 @@ import knock from '../../../scripts/connectors/builtin/knock.json';
 import ntfy from '../../../scripts/connectors/builtin/ntfy.json';
 
 /**
- * Builtin connector shape â€” extends the shared ConnectorDefinitionBase.
+ * Builtin connector shape -- extends the shared ConnectorDefinitionBase.
  * JSON files use plain objects; the `as BuiltinConnectorDef[]` cast below
  * coerces the loosely-typed JSON imports into the canonical shape.
  */

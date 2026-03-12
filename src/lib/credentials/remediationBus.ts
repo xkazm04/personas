@@ -5,7 +5,7 @@
  * to executable remediation consumers (auto-rotate, auto-disable, notify).
  *
  * Architecture:
- *   Signal → RemediationEvent → Bus → ActionExecutor → Side effects
+ *   Signal -> RemediationEvent -> Bus -> ActionExecutor -> Side effects
  *
  * The bus provides deduplication (same credential + same action won't fire twice
  * within a cooldown window), an action log for UI, and subscriber notification.
@@ -13,7 +13,7 @@
 
 import type { Remediation, AnomalyScore } from '@/api/vault/rotation';
 
-// ── Event Types ─────────────────────────────────────────────────────
+// -- Event Types -----------------------------------------------------
 
 export type RemediationAction =
   | 'auto_rotate'
@@ -39,7 +39,7 @@ export interface RemediationEvent {
   outcomeDetail?: string;
 }
 
-// ── Remediation → Action Mapping ────────────────────────────────────
+// -- Remediation -> Action Mapping ------------------------------------
 
 /**
  * Map a remediation level to the set of actions that should be taken.
@@ -62,7 +62,7 @@ export function actionsForRemediation(remediation: Remediation): RemediationActi
   }
 }
 
-// ── Deduplication ───────────────────────────────────────────────────
+// -- Deduplication ---------------------------------------------------
 
 /** Default cooldown: don't repeat the same action for the same credential within this window. */
 const DEFAULT_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
@@ -78,7 +78,7 @@ function cooldownKey(credentialId: string, action: RemediationAction): string {
   return `${credentialId}:${action}`;
 }
 
-// ── Bus Implementation ──────────────────────────────────────────────
+// -- Bus Implementation ----------------------------------------------
 
 type BusSubscriber = (event: RemediationEvent) => void;
 
@@ -86,7 +86,7 @@ const MAX_LOG_SIZE = 100;
 
 class RemediationBusImpl {
   private subscribers = new Set<BusSubscriber>();
-  private cooldowns = new Map<string, number>(); // key → expiry timestamp
+  private cooldowns = new Map<string, number>(); // key -> expiry timestamp
   private _log: RemediationEvent[] = [];
 
   /** Subscribe to remediation events. Returns unsubscribe function. */

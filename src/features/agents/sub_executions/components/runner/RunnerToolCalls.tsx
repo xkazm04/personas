@@ -45,7 +45,7 @@ export function HealingCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`text-sm font-semibold ${styles.accent}`}>{notification.title}</span>
-              <span className="text-sm font-mono px-1.5 py-0.5 rounded bg-secondary/40 text-muted-foreground/60 border border-primary/8">{notification.severity}</span>
+              <span className="text-sm font-mono px-1.5 py-0.5 rounded bg-secondary/40 text-muted-foreground/60 border border-primary/10">{notification.severity}</span>
             </div>
           </div>
           <button onClick={onDismiss} className="text-muted-foreground/50 hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5">
@@ -74,7 +74,7 @@ export function HealingCard({
                 <span className="text-sm font-mono text-blue-300/90">Retrying now...</span>
               </div>
             )}
-            <span className="ml-auto text-sm font-mono text-muted-foreground/60 px-2 py-0.5 rounded bg-secondary/30 border border-primary/8">
+            <span className="ml-auto text-sm font-mono text-muted-foreground/60 px-2 py-0.5 rounded bg-secondary/30 border border-primary/10">
               Attempt {notification.retry_number} of {notification.max_retries}
             </span>
           </div>

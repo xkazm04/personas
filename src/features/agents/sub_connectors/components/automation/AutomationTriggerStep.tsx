@@ -114,7 +114,7 @@ export function AutomationTriggerStep({
           <div className="flex-1 min-w-0">
             <p className="text-sm text-foreground/80">
               <span className="font-medium text-brand-emerald">{PLATFORM_CONFIG[platform]?.label} connected</span>
-              {' — '}
+              {' -- '}
               <span className="text-muted-foreground">{platformCredentials[0]?.name}</span>
             </p>
           </div>

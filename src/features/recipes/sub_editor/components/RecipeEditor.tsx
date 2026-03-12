@@ -1,8 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
+import { TagChipInput } from './TagChipInput';
+import { SchemaFieldBuilder, type SchemaField } from './SchemaFieldBuilder';
 
 interface RecipeEditorProps {
   /** null = create mode, RecipeDefinition = edit mode */
@@ -13,6 +15,47 @@ interface RecipeEditorProps {
 
 const CATEGORIES = ['analysis', 'automation', 'generation', 'transform', 'monitoring'];
 
+function parseTagsString(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((t): t is string => typeof t === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseSchemaString(raw: string | null | undefined): SchemaField[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((f: Record<string, unknown>) => ({
+      key: String(f.key ?? ''),
+      type: String(f.type ?? 'text'),
+      label: String(f.label ?? ''),
+      default: f.default != null ? String(f.default) : '',
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function serializeTags(tags: string[]): string | null {
+  return tags.length > 0 ? JSON.stringify(tags) : null;
+}
+
+function serializeSchema(fields: SchemaField[]): string | null {
+  const valid = fields.filter((f) => f.key.trim());
+  if (valid.length === 0) return null;
+  return JSON.stringify(valid.map((f) => ({
+    key: f.key.trim(),
+    type: f.type,
+    label: f.label.trim() || f.key.trim(),
+    ...(f.default ? { default: f.default } : {}),
+  })));
+}
+
 export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
   const createRecipe = usePersonaStore((s) => s.createRecipe);
   const updateRecipe = usePersonaStore((s) => s.updateRecipe);
@@ -21,8 +64,11 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
   const [description, setDescription] = useState(recipe?.description ?? '');
   const [category, setCategory] = useState(recipe?.category ?? '');
   const [promptTemplate, setPromptTemplate] = useState(recipe?.prompt_template ?? '');
-  const [inputSchema, setInputSchema] = useState(recipe?.input_schema ?? '');
-  const [tags, setTags] = useState(recipe?.tags ?? '');
+
+  const initialTags = useMemo(() => parseTagsString(recipe?.tags), [recipe?.tags]);
+  const initialSchema = useMemo(() => parseSchemaString(recipe?.input_schema), [recipe?.input_schema]);
+  const [tags, setTags] = useState<string[]>(initialTags);
+  const [schemaFields, setSchemaFields] = useState<SchemaField[]>(initialSchema);
   const [saving, setSaving] = useState(false);
 
   const isValid = name.trim().length > 0 && promptTemplate.trim().length > 0;
@@ -31,39 +77,29 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
     if (!isValid || saving) return;
     setSaving(true);
     try {
+      const payload = {
+        name: name.trim(),
+        description: description.trim() || null,
+        category: category || null,
+        prompt_template: promptTemplate,
+        input_schema: serializeSchema(schemaFields),
+        output_contract: null,
+        tool_requirements: null,
+        credential_requirements: null,
+        model_preference: null,
+        sample_inputs: null,
+        tags: serializeTags(tags),
+        icon: null,
+        color: null,
+      };
+
       if (recipe) {
-        await updateRecipe(recipe.id, {
-          name: name.trim(),
-          description: description.trim() || null,
-          category: category || null,
-          prompt_template: promptTemplate,
-          input_schema: inputSchema.trim() || null,
-          output_contract: null,
-          tool_requirements: null,
-          credential_requirements: null,
-          model_preference: null,
-          sample_inputs: null,
-          tags: tags.trim() || null,
-          icon: null,
-          color: null,
-        });
+        await updateRecipe(recipe.id, payload);
       } else {
         await createRecipe({
           credential_id: null,
           use_case_id: null,
-          name: name.trim(),
-          prompt_template: promptTemplate,
-          description: description.trim() || null,
-          category: category || null,
-          input_schema: inputSchema.trim() || null,
-          output_contract: null,
-          tool_requirements: null,
-          credential_requirements: null,
-          model_preference: null,
-          sample_inputs: null,
-          tags: tags.trim() || null,
-          icon: null,
-          color: null,
+          ...payload,
         });
       }
       onSaved();
@@ -72,7 +108,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
     } finally {
       setSaving(false);
     }
-  }, [recipe, name, description, category, promptTemplate, inputSchema, tags, isValid, saving, createRecipe, updateRecipe, onSaved]);
+  }, [recipe, name, description, category, promptTemplate, schemaFields, tags, isValid, saving, createRecipe, updateRecipe, onSaved]);
 
   return (
     <div className="flex flex-col h-full">
@@ -154,33 +190,21 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
           />
         </div>
 
-        {/* Input Schema (JSON) */}
+        {/* Input Schema — Visual Builder */}
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-1.5">
-            Input Schema (JSON)
+            Input Schema
           </label>
           <p className="text-sm text-muted-foreground/60 mb-1.5">
-            {'Define input fields as JSON array: [{"key":"input","type":"text","label":"Input text"}]'}
+            Define input fields with key, type, and label. Drag to reorder.
           </p>
-          <textarea
-            value={inputSchema}
-            onChange={(e) => setInputSchema(e.target.value)}
-            placeholder='[{"key": "input", "type": "text", "label": "Input text", "default": ""}]'
-            rows={4}
-            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 resize-y"
-          />
+          <SchemaFieldBuilder fields={schemaFields} onChange={setSchemaFields} />
         </div>
 
-        {/* Tags (JSON array) */}
+        {/* Tags — Chip Input */}
         <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-1.5">Tags (JSON array)</label>
-          <input
-            type="text"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder='["summarization", "code-review"]'
-            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
-          />
+          <label className="block text-sm font-medium text-muted-foreground mb-1.5">Tags</label>
+          <TagChipInput tags={tags} onChange={setTags} />
         </div>
       </div>
     </div>

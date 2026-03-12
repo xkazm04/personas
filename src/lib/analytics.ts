@@ -1,12 +1,12 @@
 /**
- * Feature usage analytics — auto-tracks navigation and key interactions.
+ * Feature usage analytics -- auto-tracks navigation and key interactions.
  *
  * Subscribes to the Zustand persona store and fires Sentry feature_visit
  * events when the user navigates between sections or tabs. Also accumulates
  * per-session visit counts and flushes a single session_summary event on
  * beforeunload to keep Sentry quota usage predictable.
  *
- * Privacy: only section/tab name strings are tracked — no user IDs, no
+ * Privacy: only section/tab name strings are tracked -- no user IDs, no
  * persona content, no credentials. All events go through Sentry's existing
  * PII scrubbing pipeline (beforeSend).
  */
@@ -33,7 +33,7 @@ function flushSessionSummary() {
     Sentry.withScope((scope) => {
       scope.setTag("event_type", "session_summary");
       scope.setLevel("info");
-      // Attach counts as extra data — visible in Sentry event detail
+      // Attach counts as extra data -- visible in Sentry event detail
       scope.setExtras(
         Object.fromEntries(entries.map(([k, v]) => [`visit.${k}`, v])),
       );
@@ -50,7 +50,7 @@ function flushSessionSummary() {
 // Zustand navigation subscriber
 // ---------------------------------------------------------------------------
 
-/** Tab state key → which section it belongs to */
+/** Tab state key -> which section it belongs to */
 const TAB_SECTION_MAP: Record<string, string> = {
   homeTab: "home",
   editorTab: "personas",
@@ -85,7 +85,7 @@ export function initAnalytics(
   let initialTracked = false;
 
   const unsub = subscribe((state, prev) => {
-    // First callback — track initial page load
+    // First callback -- track initial page load
     if (!initialTracked) {
       initialTracked = true;
       trackFeature(state.sidebarSection);

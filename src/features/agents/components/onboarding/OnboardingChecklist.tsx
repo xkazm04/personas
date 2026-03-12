@@ -3,7 +3,7 @@ import { CheckCircle2, Circle, ChevronDown, ChevronRight, X, Sparkles } from 'lu
 import { usePersonaStore } from '@/stores/personaStore';
 import { useOnboardingChecklist } from './useOnboardingChecklist';
 
-// ── Progress Ring (SVG) ──────────────────────────────────────────────
+// -- Progress Ring (SVG) ----------------------------------------------
 
 interface ProgressRingProps {
   score: number;
@@ -45,7 +45,7 @@ export function ProgressRing({ score, size = 24, strokeWidth = 2.5 }: ProgressRi
   );
 }
 
-// ── Sidebar Score Ring ──────────────────────────────────────────────
+// -- Sidebar Score Ring ----------------------------------------------
 
 export function SidebarScoreRing({ score }: { score: number }) {
   if (score >= 100) return null;
@@ -59,7 +59,7 @@ export function SidebarScoreRing({ score }: { score: number }) {
   );
 }
 
-// ── Editor Banner ───────────────────────────────────────────────────
+// -- Editor Banner ---------------------------------------------------
 
 const DISMISSED_KEY = 'onboarding-dismissed';
 

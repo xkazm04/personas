@@ -1,4 +1,4 @@
-// ── Period-over-Period Comparison Utility ────────────────────────────
+// -- Period-over-Period Comparison Utility ----------------------------
 // Splits a 2×N day chart-point array into current (latter half) and
 // previous (first half), then merges them by ordinal index so Recharts
 // can render the previous period as ghost lines alongside the current.

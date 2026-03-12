@@ -41,7 +41,7 @@ export function ModelDropdown({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full px-2.5 py-2 text-sm rounded-xl bg-secondary/40 border border-primary/15
+        className="w-full px-2.5 py-2 text-sm rounded-xl bg-secondary/40 border border-primary/20
                    text-foreground/80 focus:outline-none focus:border-indigo-500/40
                    disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
@@ -98,7 +98,7 @@ export function ComparisonResults({
     <div className="space-y-3">
       {/* Winner banner */}
       {winner && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/15">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/20">
           <Trophy className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium text-foreground/90">
             {winner === 'A' ? modelA.label : modelB.label} wins
@@ -141,7 +141,7 @@ export function ComparisonResults({
                 const scoreB = rB ? compositeScore(rB.toolAccuracyScore ?? 0, rB.outputQualityScore ?? 0, rB.protocolCompliance ?? 0) : null;
                 const rowWinner = scoreA != null && scoreB != null ? (scoreA > scoreB ? 'A' : scoreA < scoreB ? 'B' : null) : null;
                 return (
-                  <tr key={scenario} className="border-b border-primary/5">
+                  <tr key={scenario} className="border-b border-primary/10">
                     <td className="px-3 py-2 text-foreground/80 max-w-[180px] truncate">{scenario}</td>
                     <td className={`px-3 py-2 text-center font-mono ${rowWinner === 'A' ? 'font-bold' : ''}`}>
                       <span className={scoreColor(scoreA)}>{scoreA ?? '-'}</span>

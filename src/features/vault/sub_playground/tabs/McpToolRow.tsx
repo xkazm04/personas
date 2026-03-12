@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight, Play } from 'lucide-react';
 import type { McpTool } from '@/api/agents/mcpTools';
 
-// ── Tool row ─────────────────────────────────────────────────────
+// -- Tool row -----------------------------------------------------
 
 interface ToolRowProps {
   tool: McpTool;

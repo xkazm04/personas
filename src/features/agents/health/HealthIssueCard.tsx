@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import type { DryRunIssue } from './types';
 
-// ── Severity icon map ────────────────────────────────────────────
+// -- Severity icon map --------------------------------------------
 
 const SEVERITY_ICONS: Record<DryRunIssue['severity'], typeof AlertTriangle> = {
   error: XCircle,
@@ -17,7 +17,7 @@ const SEVERITY_ICONS: Record<DryRunIssue['severity'], typeof AlertTriangle> = {
   info: Info,
 };
 
-// ── Issue card ───────────────────────────────────────────────────
+// -- Issue card ---------------------------------------------------
 
 export interface HealthIssueCardProps {
   issue: DryRunIssue;

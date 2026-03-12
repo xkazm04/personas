@@ -1,4 +1,4 @@
-//! Intent Compiler — compiles plain-language intent into a complete persona configuration.
+//! Intent Compiler -- compiles plain-language intent into a complete persona configuration.
 //!
 //! Extends the design analysis pipeline with:
 //! - Use cases with typed input_schema and sample data
@@ -25,7 +25,7 @@ pub fn build_intent_prompt(
     prompt.push_str(
         "You are an expert AI systems architect. The user will describe what they want \
          their persona to accomplish in plain language. Your job is to compile this \
-         intent into a **complete, production-ready persona configuration** — \
+         intent into a **complete, production-ready persona configuration** -- \
          covering every aspect from prompt to triggers to test scenarios.\n\n",
     );
 
@@ -75,7 +75,7 @@ pub fn build_intent_prompt(
     // Standard design schema (generates structured_prompt, tools, triggers, etc.)
     prompt.push_str(DESIGN_OUTPUT_SCHEMA);
 
-    // Extended intent schema — appended AFTER the standard schema
+    // Extended intent schema -- appended AFTER the standard schema
     prompt.push_str(INTENT_EXTENSION_SCHEMA);
 
     prompt

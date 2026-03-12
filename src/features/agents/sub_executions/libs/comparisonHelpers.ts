@@ -132,7 +132,7 @@ export function generateWhatChanged(left: PersonaExecution, right: PersonaExecut
   }
 
   if (left.status !== right.status) {
-    changes.push(`Status changed: ${left.status} → ${right.status}`);
+    changes.push(`Status changed: ${left.status} -> ${right.status}`);
   }
 
   const stepsL = parseToolSteps(left.tool_steps);
@@ -143,11 +143,11 @@ export function generateWhatChanged(left: PersonaExecution, right: PersonaExecut
     changes.push('Different tool call order');
   }
   if (stepsL.length !== stepsR.length && (stepsL.length > 0 || stepsR.length > 0)) {
-    changes.push(`Tool calls: ${stepsL.length} → ${stepsR.length}`);
+    changes.push(`Tool calls: ${stepsL.length} -> ${stepsR.length}`);
   }
 
   if (left.model_used && right.model_used && left.model_used !== right.model_used) {
-    changes.push(`Model changed: ${left.model_used} → ${right.model_used}`);
+    changes.push(`Model changed: ${left.model_used} -> ${right.model_used}`);
   }
 
   if (changes.length === 0) {

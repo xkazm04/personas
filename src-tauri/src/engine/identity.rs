@@ -20,16 +20,16 @@ use crate::error::AppError;
 const KEYRING_SERVICE: &str = "personas-desktop";
 const KEYRING_ENTRY: &str = "ed25519-identity-key";
 
-// ── PeerId derivation ───────────────────────────────────────────────────
+// -- PeerId derivation ---------------------------------------------------
 
 /// Derive a PeerId from an Ed25519 public key.
-/// Format: `base58(sha256(public_key_bytes))` — compact and URL-safe.
+/// Format: `base58(sha256(public_key_bytes))` -- compact and URL-safe.
 pub fn public_key_to_peer_id(public_key: &VerifyingKey) -> String {
     let hash = Sha256::digest(public_key.as_bytes());
     bs58::encode(hash).into_string()
 }
 
-// ── Keypair lifecycle ───────────────────────────────────────────────────
+// -- Keypair lifecycle ---------------------------------------------------
 
 /// Get or create the local identity.
 /// On first call: generates a keypair, stores private key in OS keyring,
@@ -41,7 +41,7 @@ pub fn get_or_create_identity(pool: &DbPool) -> Result<PeerIdentity, AppError> {
         return Ok(existing);
     }
 
-    tracing::info!("No existing identity found — generating new Ed25519 keypair");
+    tracing::info!("No existing identity found -- generating new Ed25519 keypair");
 
     // Generate new keypair
     let mut csprng = rand::rngs::OsRng;
@@ -86,7 +86,7 @@ fn store_private_key(signing_key: &SigningKey) -> Result<(), AppError> {
     {
         // Fallback for non-desktop (mobile): store in app data directory
         // This is less secure but allows the feature to work without OS keyring
-        tracing::warn!("No OS keyring available — identity key stored in memory only (non-desktop build)");
+        tracing::warn!("No OS keyring available -- identity key stored in memory only (non-desktop build)");
     }
 
     Ok(())
@@ -124,7 +124,7 @@ fn load_private_key() -> Result<SigningKey, AppError> {
     }
 }
 
-// ── Signing & Verification ──────────────────────────────────────────────
+// -- Signing & Verification ----------------------------------------------
 
 /// Sign arbitrary bytes with the local identity's private key.
 /// Returns base64-encoded Ed25519 signature.
@@ -155,7 +155,7 @@ pub fn verify_signature(
     Ok(verifying_key.verify(message, &signature).is_ok())
 }
 
-// ── Identity Card ───────────────────────────────────────────────────────
+// -- Identity Card -------------------------------------------------------
 
 /// Export a compact identity card (base64-encoded JSON) for sharing.
 pub fn export_identity_card(pool: &DbPool) -> Result<String, AppError> {

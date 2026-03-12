@@ -13,12 +13,12 @@ pub const DEFAULT_MAX_QUEUE_DEPTH: usize = 10;
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ExecutionPriority {
-    /// Low priority — background or bulk jobs.
+    /// Low priority -- background or bulk jobs.
     Low = 0,
-    /// Normal priority — default for all user-triggered executions.
+    /// Normal priority -- default for all user-triggered executions.
     #[default]
     Normal = 1,
-    /// Urgent priority — healing retries, chain triggers, manual re-runs.
+    /// Urgent priority -- healing retries, chain triggers, manual re-runs.
     Urgent = 2,
 }
 
@@ -48,7 +48,7 @@ pub enum AdmitResult {
     Running,
     /// Execution was queued at the given position (0-indexed).
     Queued { position: usize },
-    /// Queue is full — backpressure rejection.
+    /// Queue is full -- backpressure rejection.
     QueueFull { max_depth: usize },
 }
 
@@ -143,9 +143,9 @@ impl ConcurrencyTracker {
 
     /// Atomically try to run or enqueue an execution.
     ///
-    /// 1. If there's capacity → register as running, return `Running`.
-    /// 2. If queue has room → enqueue with priority, return `Queued { position }`.
-    /// 3. If queue is full → return `QueueFull` (backpressure).
+    /// 1. If there's capacity -> register as running, return `Running`.
+    /// 2. If queue has room -> enqueue with priority, return `Queued { position }`.
+    /// 3. If queue is full -> return `QueueFull` (backpressure).
     pub fn admit(
         &mut self,
         persona_id: &str,
@@ -237,7 +237,7 @@ impl ConcurrencyTracker {
             self.queues.remove(persona_id);
         }
 
-        // Register as running (now safe — no outstanding borrow on self.queues)
+        // Register as running (now safe -- no outstanding borrow on self.queues)
         self.add_running(persona_id, &next.execution_id);
 
         Some(next)
@@ -380,7 +380,7 @@ mod tests {
         assert!(tracker.try_add_running("p1", "exec-1", 1));
         assert_eq!(tracker.running_count("p1"), 1);
 
-        // Second add should fail (1/1 — at capacity)
+        // Second add should fail (1/1 -- at capacity)
         assert!(!tracker.try_add_running("p1", "exec-2", 1));
         assert_eq!(tracker.running_count("p1"), 1);
 

@@ -1,5 +1,5 @@
 /**
- * Core CLI runner — spawns real CLI processes, parses streaming JSON output,
+ * Core CLI runner -- spawns real CLI processes, parses streaming JSON output,
  * enforces timeouts, and returns structured results.
  *
  * Mirrors the Rust engine's runner.rs but in TypeScript for the test harness.
@@ -8,9 +8,9 @@ import { spawn } from 'child_process';
 import * as readline from 'readline';
 import type { ProviderName, CliRunnerConfig, StreamEvent, CliRunResult } from './types';
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Provider CLI specifications (mirrors src-tauri/src/engine/provider/)
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 interface ProviderSpec {
   command: string;
@@ -54,9 +54,9 @@ const PROVIDERS: Record<ProviderName, ProviderSpec> = {
   },
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Stream line parser (handles Claude + Codex/Copilot JSON formats)
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 function parseStreamLine(provider: ProviderName, line: string): StreamEvent {
   const trimmed = line.trim();
@@ -70,7 +70,7 @@ function parseStreamLine(provider: ProviderName, line: string): StreamEvent {
   try {
     json = JSON.parse(trimmed);
   } catch {
-    // Not JSON — treat as plain text output
+    // Not JSON -- treat as plain text output
     if (trimmed.length > 0) {
       return { ...base, type: 'assistant_text', text: trimmed };
     }
@@ -80,7 +80,7 @@ function parseStreamLine(provider: ProviderName, line: string): StreamEvent {
   const eventType: string = json.type ?? '';
 
   switch (eventType) {
-    // ── Claude-style events ──────────────────────────────────────────────
+    // -- Claude-style events ----------------------------------------------
     case 'system': {
       if (json.subtype === 'init') {
         return {
@@ -123,7 +123,7 @@ function parseStreamLine(provider: ProviderName, line: string): StreamEvent {
       return base;
     }
 
-    // ── Gemini CLI events ────────────────────────────────────────────────
+    // -- Gemini CLI events ------------------------------------------------
     case 'init': {
       return {
         ...base,
@@ -157,7 +157,7 @@ function parseStreamLine(provider: ProviderName, line: string): StreamEvent {
       return { ...base, type: 'tool_result', toolOutput: output?.slice(0, 2000) };
     }
 
-    // ── Shared: final result ─────────────────────────────────────────────
+    // -- Shared: final result ---------------------------------------------
     case 'result': {
       // Claude: duration_ms, total_cost_usd, total_input_tokens, total_output_tokens
       // Gemini: stats.duration_ms, stats.total_tokens, stats.input_tokens, stats.output_tokens
@@ -174,7 +174,7 @@ function parseStreamLine(provider: ProviderName, line: string): StreamEvent {
       };
     }
 
-    // ── GitHub Copilot CLI events ──────────────────────────────────────
+    // -- GitHub Copilot CLI events --------------------------------------
     case 'assistant.turn_start': {
       return {
         ...base,
@@ -238,7 +238,7 @@ function parseStreamLine(provider: ProviderName, line: string): StreamEvent {
       };
     }
 
-    // ── Legacy Codex-style events ────────────────────────────────────────
+    // -- Legacy Codex-style events ----------------------------------------
     case 'thread.started': {
       return {
         ...base,
@@ -288,9 +288,9 @@ function parseStreamLine(provider: ProviderName, line: string): StreamEvent {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Core runner
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 export async function runCli(config: CliRunnerConfig): Promise<CliRunResult> {
   const spec = PROVIDERS[config.provider];
@@ -317,11 +317,11 @@ export async function runCli(config: CliRunnerConfig): Promise<CliRunResult> {
     args.push(spec.modelFlag, config.model);
   }
 
-  // Build environment — unset CLAUDECODE to avoid nested session detection
+  // Build environment -- unset CLAUDECODE to avoid nested session detection
   const env = { ...process.env, ...config.env };
   delete env.CLAUDECODE;
 
-  // Spawn process — on Windows, use cmd /C for .cmd shim resolution
+  // Spawn process -- on Windows, use cmd /C for .cmd shim resolution
   // to avoid shell word-splitting of prompt arguments
   const startTime = Date.now();
   let spawnCommand = spec.command;

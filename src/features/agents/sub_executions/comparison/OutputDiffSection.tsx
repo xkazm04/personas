@@ -55,7 +55,7 @@ export function OutputDiffSection({
         className="flex items-center gap-2 text-sm text-foreground/80 hover:text-foreground transition-colors"
       >
         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        Terminal Output Diff
+        <span className="text-xs uppercase tracking-wider">Terminal Output Diff</span>
         {diff.length > 0 && (
           <span className="text-sm text-muted-foreground/50">
             ({diff.filter(d => d.type !== 'same').length} differences)
@@ -79,22 +79,38 @@ export function OutputDiffSection({
             ) : diff.length === 0 ? (
               <p className="text-sm text-muted-foreground/50 py-3">No log data available</p>
             ) : (
-              <div className="max-h-64 overflow-y-auto rounded-lg border border-primary/10 bg-background/50 p-2 font-mono text-sm">
-                {diff.map((d, i) => (
-                  <div
-                    key={i}
-                    className={
-                      d.type === 'added' ? 'text-emerald-400 bg-emerald-500/5'
-                        : d.type === 'removed' ? 'text-red-400 bg-red-500/5'
-                          : 'text-foreground/60'
-                    }
-                  >
-                    <span className="inline-block w-4 text-center opacity-60">
-                      {d.type === 'added' ? '+' : d.type === 'removed' ? '-' : ' '}
-                    </span>
-                    {d.text}
-                  </div>
-                ))}
+              <div className="max-h-64 overflow-y-auto rounded-lg border border-primary/10 bg-background/50 font-mono text-sm">
+                {diff.reduce<{ elements: React.ReactNode[]; leftLine: number; rightLine: number }>(
+                  (acc, d, i) => {
+                    const ln = d.type === 'added' ? undefined : ++acc.leftLine;
+                    const rn = d.type === 'removed' ? undefined : ++acc.rightLine;
+                    acc.elements.push(
+                      <div
+                        key={i}
+                        className={`grid grid-cols-[40px_40px_1fr] ${
+                          d.type === 'added' ? 'text-emerald-400 bg-emerald-500/5'
+                            : d.type === 'removed' ? 'text-red-400 bg-red-500/5'
+                              : 'text-foreground/60'
+                        }`}
+                      >
+                        <span className="select-none text-right pr-2 tabular-nums text-muted-foreground/30">
+                          {ln ?? ''}
+                        </span>
+                        <span className="select-none text-right pr-2 tabular-nums text-muted-foreground/30 border-r border-primary/8">
+                          {rn ?? ''}
+                        </span>
+                        <span className="pl-2">
+                          <span className="inline-block w-4 text-center opacity-60">
+                            {d.type === 'added' ? '+' : d.type === 'removed' ? '-' : ' '}
+                          </span>
+                          {d.text}
+                        </span>
+                      </div>
+                    );
+                    return acc;
+                  },
+                  { elements: [], leftLine: 0, rightLine: 0 }
+                ).elements}
               </div>
             )}
           </motion.div>

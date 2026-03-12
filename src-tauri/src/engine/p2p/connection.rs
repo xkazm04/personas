@@ -13,7 +13,7 @@ use super::manifest_sync::ManifestSync;
 use super::messaging::MessageRouter;
 use super::protocol::{self, Message, PROTOCOL_VERSION};
 use super::transport::QuicTransport;
-use super::types::{ConnectionState, PeerConnectionInfo};
+use super::types::{ConnectionHealth, ConnectionState, PeerConnectionInfo};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -89,14 +89,27 @@ impl ConnectionManager {
         )
         .await?;
 
-        // Wait for HelloAck
-        let response = protocol::decode(&mut recv).await?;
+        // Wait for HelloAck (with timeout to prevent hanging on unresponsive peers)
+        let response = tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            protocol::decode(&mut recv),
+        )
+        .await
+        .map_err(|_| AppError::Internal("HelloAck timeout: peer did not respond within 10s".into()))??;
         let (remote_peer_id, remote_display_name) = match response {
             Message::HelloAck {
                 peer_id: remote_id,
                 display_name,
-                ..
-            } => (remote_id, display_name),
+                version,
+            } => {
+                if version != PROTOCOL_VERSION {
+                    return Err(AppError::Validation(format!(
+                        "Incompatible protocol version: peer {} has v{}, we have v{}",
+                        remote_id, version, PROTOCOL_VERSION
+                    )));
+                }
+                (remote_id, display_name)
+            }
             _ => {
                 return Err(AppError::Internal(
                     "Expected HelloAck, got different message".into(),
@@ -120,6 +133,7 @@ impl ConnectionManager {
                 state: ConnectionState::Connected,
                 connected_at: Some(chrono::Utc::now()),
                 last_ping: None,
+                last_latency_ms: None,
                 retry_count: 0,
             },
             quinn_conn,
@@ -151,14 +165,27 @@ impl ConnectionManager {
         let mut send = tokio::io::BufWriter::new(send);
         let mut recv = tokio::io::BufReader::new(recv);
 
-        // Read Hello
-        let hello = protocol::decode(&mut recv).await?;
+        // Read Hello (with timeout to prevent hanging on unresponsive peers)
+        let hello = tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            protocol::decode(&mut recv),
+        )
+        .await
+        .map_err(|_| AppError::Internal("Hello timeout: peer did not send Hello within 10s".into()))??;
         let (remote_peer_id, remote_display_name) = match hello {
             Message::Hello {
                 peer_id,
                 display_name,
-                ..
-            } => (peer_id, display_name),
+                version,
+            } => {
+                if version != PROTOCOL_VERSION {
+                    return Err(AppError::Validation(format!(
+                        "Incompatible protocol version: peer {} has v{}, we have v{}",
+                        peer_id, version, PROTOCOL_VERSION
+                    )));
+                }
+                (peer_id, display_name)
+            }
             _ => {
                 return Err(AppError::Internal(
                     "Expected Hello, got different message".into(),
@@ -190,6 +217,7 @@ impl ConnectionManager {
                 state: ConnectionState::Connected,
                 connected_at: Some(chrono::Utc::now()),
                 last_ping: None,
+                last_latency_ms: None,
                 retry_count: 0,
             },
             quinn_conn,
@@ -251,26 +279,31 @@ impl ConnectionManager {
             .map(|c| c.quinn_conn.clone())
     }
 
+    /// Run a single health check pass: ping all connected peers and disconnect dead ones.
+    pub async fn run_health_checks(&self) -> Result<(), crate::error::AppError> {
+        let peer_ids: Vec<String> = self
+            .connections
+            .read()
+            .await
+            .keys()
+            .cloned()
+            .collect();
+
+        for peer_id in peer_ids {
+            if let Err(e) = self.ping_peer(&peer_id).await {
+                tracing::warn!(peer_id = %peer_id, "Ping failed: {}", e);
+                let _ = self.disconnect_peer(&peer_id).await;
+            }
+        }
+        Ok(())
+    }
+
     /// Periodic health check loop (Ping/Pong).
+    /// Prefer using `PeriodicTask` + `run_health_checks` for new code.
     pub async fn health_check_loop(&self) {
         loop {
             tokio::time::sleep(std::time::Duration::from_secs(15)).await;
-
-            let peer_ids: Vec<String> = self
-                .connections
-                .read()
-                .await
-                .keys()
-                .cloned()
-                .collect();
-
-            for peer_id in peer_ids {
-                if let Err(e) = self.ping_peer(&peer_id).await {
-                    tracing::warn!(peer_id = %peer_id, "Ping failed: {}", e);
-                    // Remove dead connections
-                    let _ = self.disconnect_peer(&peer_id).await;
-                }
-            }
+            let _ = self.run_health_checks().await;
         }
     }
 
@@ -287,6 +320,7 @@ impl ConnectionManager {
         let mut send = tokio::io::BufWriter::new(send);
         let mut recv = tokio::io::BufReader::new(recv);
 
+        let ping_start = std::time::Instant::now();
         protocol::write_message(&mut send, &Message::Ping).await?;
 
         let response = tokio::time::timeout(
@@ -298,13 +332,59 @@ impl ConnectionManager {
 
         match response {
             Message::Pong => {
-                // Update last_ping timestamp
+                let latency_ms = ping_start.elapsed().as_millis() as u64;
+                // Update last_ping timestamp and latency
                 if let Some(conn) = self.connections.write().await.get_mut(peer_id) {
                     conn.info.last_ping = Some(chrono::Utc::now());
+                    conn.info.last_latency_ms = Some(latency_ms);
                 }
                 Ok(())
             }
             _ => Err(AppError::Internal("Expected Pong response".into())),
+        }
+    }
+
+    /// Get aggregate connection health across all peers.
+    pub async fn get_connection_health(&self) -> ConnectionHealth {
+        let conns = self.connections.read().await;
+        let connected_count = conns.len() as u32;
+
+        if connected_count == 0 {
+            return ConnectionHealth {
+                avg_latency_ms: None,
+                missed_ping_count: 0,
+                connected_count: 0,
+            };
+        }
+
+        let now = chrono::Utc::now();
+        let stale_threshold = chrono::Duration::seconds(30);
+        let mut latencies = Vec::new();
+        let mut missed = 0u32;
+
+        for conn in conns.values() {
+            if let Some(latency) = conn.info.last_latency_ms {
+                latencies.push(latency as f64);
+            }
+            // A peer that has been connected but never pinged, or whose last
+            // ping is older than 2× the health-check interval, counts as missed.
+            match conn.info.last_ping {
+                None => missed += 1,
+                Some(ts) if now - ts > stale_threshold => missed += 1,
+                _ => {}
+            }
+        }
+
+        let avg_latency_ms = if latencies.is_empty() {
+            None
+        } else {
+            Some(latencies.iter().sum::<f64>() / latencies.len() as f64)
+        };
+
+        ConnectionHealth {
+            avg_latency_ms,
+            missed_ping_count: missed,
+            connected_count,
         }
     }
 

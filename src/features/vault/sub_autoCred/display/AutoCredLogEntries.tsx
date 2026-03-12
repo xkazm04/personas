@@ -8,7 +8,7 @@ import { splitByUrls, formatLogsForCopy } from '../helpers/autoCredHelpers';
 // Re-export cards so existing imports from AutoCredBrowser still work
 export { WaitingCard, InputRequestCard } from './AutoCredCards';
 
-// ── Action block ─────────────────────────────────────────────────────────
+// -- Action block ---------------------------------------------------------
 
 export function ActionBlock({
   entries,
@@ -31,7 +31,7 @@ export function ActionBlock({
   );
 }
 
-// ── URL card ─────────────────────────────────────────────────────────────
+// -- URL card -------------------------------------------------------------
 
 export function UrlCard({
   entry,
@@ -63,7 +63,7 @@ export function UrlCard({
   );
 }
 
-// ── Error line ───────────────────────────────────────────────────────────
+// -- Error line -----------------------------------------------------------
 
 export function ErrorLine({ entry }: { entry: BrowserLogEntry }) {
   return (
@@ -74,7 +74,7 @@ export function ErrorLine({ entry }: { entry: BrowserLogEntry }) {
   );
 }
 
-// ── Rich message with clickable URLs ─────────────────────────────────────
+// -- Rich message with clickable URLs -------------------------------------
 
 export function RichMessage({
   message,
@@ -107,7 +107,7 @@ export function RichMessage({
   );
 }
 
-// ── Copy log button ──────────────────────────────────────────────────────
+// -- Copy log button ------------------------------------------------------
 
 export function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
   const [copied, setCopied] = useState(false);

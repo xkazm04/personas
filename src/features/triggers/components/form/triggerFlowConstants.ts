@@ -1,12 +1,12 @@
 import { CheckCircle, XCircle, HelpCircle, Radio } from "lucide-react";
 
-// ─── Layout Constants ───────────────────────────────────────────────────
+// --- Layout Constants ---------------------------------------------------
 export const NODE_W = 160;
 export const NODE_H = 56;
 export const GAP_X = 220;
 export const GAP_Y = 90;
 
-// ─── Types ──────────────────────────────────────────────────────────────
+// --- Types --------------------------------------------------------------
 export interface FlowNode {
   id: string;
   name: string;
@@ -23,7 +23,7 @@ export interface FlowEdge {
   enabled: boolean;
 }
 
-// ─── Condition Maps ─────────────────────────────────────────────────────
+// --- Condition Maps -----------------------------------------------------
 export const CONDITION_ICONS: Record<string, typeof CheckCircle> = {
   success: CheckCircle,
   failure: XCircle,

@@ -8,9 +8,9 @@ import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
 import type { FixtureTemplate, WorkspaceContext } from './types';
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Fixture data per template
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 const FIXTURES: Record<FixtureTemplate, Record<string, string>> = {
   empty: {},
@@ -274,9 +274,9 @@ const FIXTURES: Record<FixtureTemplate, Record<string, string>> = {
   },
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 // Workspace factory
-// ═══════════════════════════════════════════════════════════════════════════
+// ===========================================================================
 
 export function createWorkspace(template: FixtureTemplate = 'empty'): WorkspaceContext {
   const rootDir = join(tmpdir(), 'personas-integration', `ws_${randomUUID().slice(0, 8)}`);

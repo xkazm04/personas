@@ -55,10 +55,13 @@ pub enum AppError {
 /// to the frontend. Keeps the human-readable portion but strips OS-level detail.
 fn sanitize_error_message(msg: &str) -> String {
     // Strip absolute file paths (Unix and Windows)
-    let sanitized = regex::Regex::new(r#"(?:[A-Z]:\\|/(?:tmp|var|home|Users|C:))[^\s'":,]+"#)
-        .map(|re| re.replace_all(msg, "<path>").into_owned())
-        .unwrap_or_else(|_| msg.to_string());
-    sanitized
+    // Regex compiled once via OnceLock to avoid per-call overhead.
+    static RE_PATH: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let re = RE_PATH.get_or_init(|| {
+        regex::Regex::new(r#"(?:[A-Z]:\\|/(?:tmp|var|home|Users|C:))[^\s'":,]+"#)
+            .expect("sanitize_error_message regex is valid")
+    });
+    re.replace_all(msg, "<path>").into_owned()
 }
 
 /// Tauri requires `Serialize` on command return errors.

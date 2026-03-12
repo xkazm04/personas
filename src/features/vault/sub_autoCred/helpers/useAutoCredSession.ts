@@ -16,10 +16,10 @@ import { buildConnectorContext, parseAutoCredError, checkFieldCompleteness } fro
  *
  * The hook talks to the Playwright MCP server via this adapter.
  * In production the browser session would be driven by:
- *   1. `playwright_navigate` → docs_url or setup page
- *   2. `playwright_snapshot` → read page
- *   3. `playwright_click` / `playwright_fill` → interact
- *   4. `playwright_snapshot` → extract created key
+ *   1. `playwright_navigate` -> docs_url or setup page
+ *   2. `playwright_snapshot` -> read page
+ *   3. `playwright_click` / `playwright_fill` -> interact
+ *   4. `playwright_snapshot` -> extract created key
  *
  * The adapter is swappable: stub for development, real MCP for production.
  */
@@ -31,7 +31,7 @@ export interface PlaywrightAdapter {
   ): Promise<{ values: ExtractedValues; partial: boolean }>;
 }
 
-// ── Hook ────────────────────────────────────────────────────────────────
+// -- Hook ----------------------------------------------------------------
 
 interface UseAutoCredSessionOptions {
   adapter?: PlaywrightAdapter;
@@ -70,7 +70,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     setIsSaving(false);
   }, []);
 
-  /** User consented — start browser automation */
+  /** User consented -- start browser automation */
   const startBrowser = useCallback(async () => {
     if (!designResult) return;
 

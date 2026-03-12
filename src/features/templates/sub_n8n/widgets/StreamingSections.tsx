@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import type { StreamingSection, SectionKind } from '@/api/templates/n8nTransform';
 
-// ── Section icon + color mapping ──
+// -- Section icon + color mapping --
 
 const SECTION_META: Record<
   SectionKind,
@@ -28,7 +28,7 @@ const SECTION_META: Record<
   design_context: { Icon: LayoutList, color: 'text-rose-400', bg: 'bg-rose-500/15' },
 };
 
-// ── Status indicator ──
+// -- Status indicator --
 
 function StatusIcon({ section }: { section: StreamingSection }) {
   const { valid, errors, warnings } = section.validation;
@@ -50,7 +50,7 @@ function StatusIcon({ section }: { section: StreamingSection }) {
   return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
 }
 
-// ── Section detail (expandable info) ──
+// -- Section detail (expandable info) --
 
 function SectionDetail({ section }: { section: StreamingSection }) {
   const { errors, warnings } = section.validation;
@@ -78,7 +78,7 @@ function SectionDetail({ section }: { section: StreamingSection }) {
   );
 }
 
-// ── Single section row ──
+// -- Single section row --
 
 const SectionRow = memo(function SectionRow({
   section,
@@ -135,7 +135,7 @@ const SectionRow = memo(function SectionRow({
   return true;
 });
 
-// ── Main component ──
+// -- Main component --
 
 interface StreamingSectionsProps {
   sections: StreamingSection[];
@@ -155,6 +155,8 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
+      aria-live="polite"
+      aria-busy={isStreaming}
       className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden"
     >
       {/* Header */}

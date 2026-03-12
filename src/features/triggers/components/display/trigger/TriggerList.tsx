@@ -82,7 +82,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
             <EmptyState
               icon={Zap}
               title="No triggers configured yet"
-              description="Triggers let your agents react to events automatically — schedules, webhooks, file changes, and more."
+              description="Triggers let your agents react to events automatically -- schedules, webhooks, file changes, and more."
               iconColor="text-amber-400/80"
               iconContainerClassName="bg-amber-500/10 border-amber-500/20"
               action={onNavigateToPersona ? {

@@ -58,7 +58,7 @@ export function AbPanel() {
   ], [useCases]);
 
   const versionOptions = useMemo(() =>
-    promptVersions.map((v) => ({ value: v.id, label: `v${v.version_number} — ${v.tag}` })),
+    promptVersions.map((v) => ({ value: v.id, label: `v${v.version_number} -- ${v.tag}` })),
   [promptVersions]);
 
   const handleStart = async () => {
@@ -114,7 +114,7 @@ export function AbPanel() {
         )}
       >
         {({ close, focusIndex }) => (
-          <div className="py-1 bg-background border border-primary/15 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+          <div className="py-1 bg-background border border-primary/20 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
             {versionOptions.map((opt, i) => (
               <Button
                 key={opt.value}
@@ -136,7 +136,7 @@ export function AbPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="border border-primary/15 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
+      <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
         <div className="p-4 space-y-4">
           {/* Version pickers */}
           <div className="grid grid-cols-2 gap-4">
@@ -211,7 +211,7 @@ export function AbPanel() {
                 )}
               >
                 {({ close, focusIndex }) => (
-                  <div className="py-1 bg-background border border-primary/15 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+                  <div className="py-1 bg-background border border-primary/20 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
                     {useCaseOptions.map((opt, i) => (
                       <Button
                         key={opt.value}
@@ -239,7 +239,7 @@ export function AbPanel() {
               onChange={(e) => setTestInput(e.target.value)}
               placeholder='{"task": "Summarize the latest sales report"}'
               disabled={isLabRunning}
-              className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono disabled:opacity-50"
+              className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono disabled:opacity-50"
             />
           </div>
 

@@ -73,7 +73,16 @@ export function createRunLifecycle<
     markStarted(set: (partial: Record<string, unknown>) => void) {
       set({ [isRunningKey]: true, [progressKey]: null, error: null });
       scheduleSafetyTimeout(() => {
-        set({ [isRunningKey]: false, [progressKey]: null });
+        console.warn(
+          `[RunLifecycle] Safety timeout fired after ${RUN_MAX_DURATION_MS / 60_000}min -- ` +
+          `resetting "${isRunningKey}" to false and "${progressKey}" to null. ` +
+          `The run may have stalled.`,
+        );
+        set({
+          [isRunningKey]: false,
+          [progressKey]: null,
+          error: `Run timed out after ${RUN_MAX_DURATION_MS / 60_000} minutes. The operation may have stalled.`,
+        });
       });
     },
 

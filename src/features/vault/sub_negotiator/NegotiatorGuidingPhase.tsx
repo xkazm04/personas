@@ -99,7 +99,7 @@ export function NegotiatorGuidingPhase({
               <li key={node.originalIndex} className="text-sm text-muted-foreground/60">
                 <span className="line-through">{node.step.title}</span>
                 {node.skipReason && (
-                  <span className="ml-1.5 text-muted-foreground/40">â€” {node.skipReason}</span>
+                  <span className="ml-1.5 text-muted-foreground/40">-- {node.skipReason}</span>
                 )}
               </li>
             ))}
@@ -124,7 +124,7 @@ export function NegotiatorGuidingPhase({
         </div>
       )}
 
-      {/* Steps â€” render only visible steps */}
+      {/* Steps -- render only visible steps */}
       <div className="space-y-2">
         {visibleSteps.map((node, visibleIndex) => (
           <NegotiatorStepCard

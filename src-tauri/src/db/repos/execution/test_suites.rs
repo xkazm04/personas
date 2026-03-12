@@ -4,7 +4,7 @@ use crate::db::models::PersonaTestSuite;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-// ── Row mapper ─────────────────────────────────────────────────
+// -- Row mapper -------------------------------------------------
 
 fn row_to_suite(row: &Row) -> rusqlite::Result<PersonaTestSuite> {
     Ok(PersonaTestSuite {
@@ -20,7 +20,7 @@ fn row_to_suite(row: &Row) -> rusqlite::Result<PersonaTestSuite> {
     })
 }
 
-// ── CRUD operations ────────────────────────────────────────────
+// -- CRUD operations --------------------------------------------
 
 pub fn create(
     pool: &DbPool,

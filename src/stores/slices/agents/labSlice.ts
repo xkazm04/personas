@@ -33,7 +33,7 @@ export interface LabRunProgress {
   error?: string;
 }
 
-// â”€â”€ CRUD Factory â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- CRUD Factory -------------------------------------------------
 // Eliminates duplicated fetchRuns/cancel/fetchResults/deleteRun/startRun
 // patterns across arena, ab, matrix, and eval modes.
 
@@ -120,7 +120,7 @@ function createLabCrud<TRun extends { id: string }, TResult>(
   };
 }
 
-// â”€â”€ Slice Interface â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Slice Interface ----------------------------------------------
 
 export interface LabSlice {
   // Mode
@@ -179,10 +179,10 @@ export interface LabSlice {
   fetchHealthRate: (personaId: string) => Promise<void>;
 }
 
-// â”€â”€ Slice Creator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Slice Creator ------------------------------------------------
 
 export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set, get) => {
-  // Instantiate CRUD factories â€” one line per mode
+  // Instantiate CRUD factories -- one line per mode
   const arena  = createLabCrud<LabArenaRun, LabArenaResult>('arenaRuns', 'arenaResultsMap', 'arena', { list: api.labListArenaRuns, results: api.labGetArenaResults, remove: api.labDeleteArenaRun, cancel: api.labCancelArena }, set);
   const ab     = createLabCrud<LabAbRun, LabAbResult>('abRuns', 'abResultsMap', 'A/B', { list: api.labListAbRuns, results: api.labGetAbResults, remove: api.labDeleteAbRun, cancel: api.labCancelAb }, set);
   const matrix = createLabCrud<LabMatrixRun, LabMatrixResult>('matrixRuns', 'matrixResultsMap', 'matrix', { list: api.labListMatrixRuns, results: api.labGetMatrixResults, remove: api.labDeleteMatrixRun, cancel: api.labCancelMatrix }, set);

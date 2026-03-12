@@ -1,6 +1,6 @@
 /**
  * 4px-grid spacing scale.
- * Maps to CSS custom properties --spacing-1 … --spacing-16.
+ * Maps to CSS custom properties --spacing-1 ... --spacing-16.
  * Use these Tailwind utility classes exclusively for a consistent visual rhythm.
  */
 export const SPACING = {
@@ -98,7 +98,7 @@ export const STATUS_COLORS: Record<string, StatusColorToken> = {
   rejected: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
 };
 
-/** Standardised severity accent styles — left border + subtle background */
+/** Standardised severity accent styles -- left border + subtle background */
 export interface SeverityStyleToken {
   border: string;
   bg: string;
@@ -119,7 +119,24 @@ export const FEASIBILITY_COLORS: Record<string, StatusColorToken> = {
   blocked: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
 };
 
-// ── Simple mode tokens ─────────────────────────────────────────────────
+// -- Tools UI tokens ----------------------------------------------------
+
+/** Standardised border opacity for tool/connector UI surfaces */
+export const TOOLS_BORDER = 'border-primary/15' as const;
+
+/** Standardised section spacing — use mt-2 between sibling sections */
+export const TOOLS_SECTION_GAP = 'mt-2' as const;
+
+/** Standard-size action button padding (e.g. Test, Configure, Add) */
+export const TOOLS_BTN_STANDARD = 'px-3 py-1.5' as const;
+
+/** Compact/icon button padding (e.g. external link, impact toggle) */
+export const TOOLS_BTN_COMPACT = 'px-2 py-1' as const;
+
+/** Inner section spacing for stacked content within a panel */
+export const TOOLS_INNER_SPACE = 'space-y-2' as const;
+
+// -- Simple mode tokens -------------------------------------------------
 
 export type SimpleStatus = 'good' | 'warning' | 'problem';
 
@@ -137,7 +154,7 @@ export const SIMPLE_MODE = {
     warning: { label: 'Attention', color: 'text-amber-400',   bg: 'bg-amber-500/10',   dot: 'bg-amber-400' },
     problem: { label: 'Problem',   color: 'text-red-400',     bg: 'bg-red-500/10',     dot: 'bg-red-400' },
   } satisfies Record<SimpleStatus, SimpleStatusToken>,
-  /** Card style for simple mode — larger, rounder, more breathing room */
+  /** Card style for simple mode -- larger, rounder, more breathing room */
   CARD: 'rounded-xl border border-primary/10 bg-background/60 p-5 shadow-sm',
   /** Minimum touch target for simple mode interactive elements */
   MIN_TARGET: 'min-h-[44px] min-w-[44px]',

@@ -1,17 +1,20 @@
 //! Signed bundle (.persona) export/import for the Invisible Apps P2P layer.
 //!
 //! A `.persona` bundle is a ZIP archive containing:
-//! - `manifest.json`  — what's included, exposure settings, owner identity
-//! - `signature.json`  — Ed25519 signature over manifest + content hash
-//! - `persona.json`   — persona definition (filtered by fields_exposed)
-//! - `metadata.json`  — bundle metadata (app version, timestamps)
+//! - `manifest.json`  -- what's included, exposure settings, owner identity
+//! - `signature.json`  -- Ed25519 signature over manifest + content hash
+//! - `persona.json`   -- persona definition (filtered by fields_exposed)
+//! - `metadata.json`  -- bundle metadata (app version, timestamps)
 //!
 //! The bundle is deterministically ordered so that the content hash is
 //! reproducible.
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 use std::io::{Read, Write};
+use std::sync::Mutex;
+use std::time::Instant;
 
 use crate::db::models::{CreateProvenanceInput, ExposedResource};
 use crate::db::repos::core::personas as persona_repo;
@@ -20,7 +23,45 @@ use crate::db::DbPool;
 use crate::engine::identity;
 use crate::error::AppError;
 
-// ── Bundle types ────────────────────────────────────────────────────────
+// -- Preview cache (TOCTOU mitigation) -----------------------------------
+
+struct CachedPreview {
+    bytes: Vec<u8>,
+    created_at: Instant,
+}
+
+static PREVIEW_CACHE: std::sync::LazyLock<Mutex<HashMap<String, CachedPreview>>> =
+    std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// Max age for cached previews (5 minutes).
+const PREVIEW_TTL_SECS: u64 = 300;
+
+fn cache_preview(preview_id: &str, bytes: Vec<u8>) {
+    let mut cache = PREVIEW_CACHE.lock().unwrap();
+    // Evict expired entries opportunistically
+    cache.retain(|_, v| v.created_at.elapsed().as_secs() < PREVIEW_TTL_SECS);
+    cache.insert(preview_id.to_string(), CachedPreview {
+        bytes,
+        created_at: Instant::now(),
+    });
+}
+
+/// Consume cached preview bytes for use during import (TOCTOU mitigation).
+pub fn take_cached_preview_bytes(preview_id: &str) -> Option<Vec<u8>> {
+    take_cached_preview(preview_id)
+}
+
+fn take_cached_preview(preview_id: &str) -> Option<Vec<u8>> {
+    let mut cache = PREVIEW_CACHE.lock().unwrap();
+    if let Some(entry) = cache.remove(preview_id) {
+        if entry.created_at.elapsed().as_secs() < PREVIEW_TTL_SECS {
+            return Some(entry.bytes);
+        }
+    }
+    None
+}
+
+// -- Bundle types --------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BundleManifest {
@@ -58,7 +99,7 @@ pub struct BundleMetadata {
     pub bundle_format: String,
 }
 
-// ── Public types for commands ───────────────────────────────────────────
+// -- Public types for commands -------------------------------------------
 
 use ts_rs::TS;
 
@@ -100,6 +141,8 @@ pub struct BundleResourcePreview {
 pub struct BundleImportOptions {
     pub skip_conflicts: bool,
     pub rename_prefix: Option<String>,
+    /// When set, apply uses the cached preview bytes instead of re-reading the file.
+    pub preview_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -122,7 +165,7 @@ pub struct BundleVerification {
     pub created_at: String,
 }
 
-// ── Export ───────────────────────────────────────────────────────────────
+// -- Export ---------------------------------------------------------------
 
 /// Export selected exposed resources into a signed .persona bundle.
 pub fn export_bundle(
@@ -141,16 +184,16 @@ pub fn export_bundle(
         let tags: Vec<String> = serde_json::from_str(&resource.tags)?;
 
         entries.push(BundleResourceEntry {
-            resource_type: resource.resource_type.clone(),
+            resource_type: resource.resource_type.to_string(),
             resource_id: resource.resource_id.clone(),
             display_name: resource.display_name.clone(),
-            access_level: resource.access_level.clone(),
+            access_level: resource.access_level.to_string(),
             fields_exposed: fields,
             tags,
         });
 
         // Load the actual resource data and filter fields
-        if resource.resource_type == "persona" {
+        if resource.resource_type == crate::db::models::ResourceType::Persona {
             match persona_repo::get_by_id(pool, &resource.resource_id) {
                 Ok(persona) => {
                     let mut value = serde_json::to_value(&persona)?;
@@ -243,7 +286,7 @@ pub fn export_bundle(
     Ok((buf, result))
 }
 
-// ── Import Preview ──────────────────────────────────────────────────────
+// -- Import Preview ------------------------------------------------------
 
 /// Preview a .persona bundle without importing anything.
 pub fn preview_bundle(
@@ -266,7 +309,7 @@ pub fn preview_bundle(
         pool,
         &sig.signer_peer_id,
     )
-    .map(|p| p.trust_level != "revoked")
+    .map(|p| !p.trust_level.is_revoked())
     .unwrap_or(false);
 
     // Check for conflicts
@@ -292,8 +335,14 @@ pub fn preview_bundle(
         });
     }
 
+    let preview_id = uuid::Uuid::new_v4().to_string();
+
+    // Cache the bundle bytes keyed by preview_id so apply_import can use
+    // the exact same data the user previewed (TOCTOU mitigation).
+    cache_preview(&preview_id, bundle_bytes.to_vec());
+
     Ok(BundleImportPreview {
-        preview_id: uuid::Uuid::new_v4().to_string(),
+        preview_id,
         signer_peer_id: sig.signer_peer_id,
         signer_display_name: manifest.owner_display_name,
         signature_valid: sig_valid,
@@ -304,7 +353,7 @@ pub fn preview_bundle(
     })
 }
 
-// ── Import Apply ────────────────────────────────────────────────────────
+// -- Import Apply --------------------------------------------------------
 
 /// Import personas from a .persona bundle into the local database.
 pub fn apply_import(
@@ -378,7 +427,7 @@ pub fn apply_import(
     })
 }
 
-// ── Verify Only ─────────────────────────────────────────────────────────
+// -- Verify Only ---------------------------------------------------------
 
 /// Verify a bundle's signature and integrity without importing.
 pub fn verify_bundle(
@@ -399,7 +448,7 @@ pub fn verify_bundle(
         pool,
         &sig.signer_peer_id,
     )
-    .map(|p| p.trust_level != "revoked")
+    .map(|p| !p.trust_level.is_revoked())
     .unwrap_or(false);
 
     Ok(BundleVerification {
@@ -413,7 +462,7 @@ pub fn verify_bundle(
     })
 }
 
-// ── Internal helpers ────────────────────────────────────────────────────
+// -- Internal helpers ----------------------------------------------------
 
 fn parse_bundle(
     bundle_bytes: &[u8],

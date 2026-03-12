@@ -3,15 +3,15 @@
  *
  * Each platform parser defines a small adapter that normalizes its
  * platform-specific JSON into a common intermediate form. This pipeline
- * then runs the identical classification â†’ tool naming â†’ connector
- * building â†’ prompt assembly algorithm, producing a AgentIR.
+ * then runs the identical classification -> tool naming -> connector
+ * building -> prompt assembly algorithm, producing a AgentIR.
  */
 
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { PlatformDefinition, ProtocolMapRule } from '../platformDefinitions';
 import { extractProtocolsFromNodes } from '../platformDefinitions';
 
-// â”€â”€ Adapter interface â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Adapter interface -------------------------------------------
 
 /** A normalized workflow node from any platform. */
 export interface NormalizedNode {
@@ -23,7 +23,7 @@ export interface NormalizedNode {
   isTrigger: boolean;
   /** Whether this node should be excluded from connectors/tools (e.g. routers) */
   isExcluded?: boolean;
-  /** Trigger type override â€” if not provided, inferred from service name */
+  /** Trigger type override -- if not provided, inferred from service name */
   triggerType?: 'manual' | 'schedule' | 'polling' | 'webhook';
   /** Config payload for the trigger */
   config?: Record<string, unknown>;
@@ -59,7 +59,7 @@ export interface AdapterResult {
   protocolCapabilities?: { type: ProtocolMapRule['targetProtocol']; label: string; context: string }[];
 }
 
-// â”€â”€ Pipeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Pipeline ----------------------------------------------------
 
 /**
  * Run the shared extraction pipeline on an adapter result.

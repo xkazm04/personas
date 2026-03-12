@@ -4,7 +4,7 @@ import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
 import { EVENT_STATUS_COLORS, EVENT_TYPE_COLORS, formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaEvent, Persona } from '@/lib/types/types';
 
-// ── HighlightedJson ──────────────────────────────────────────────────
+// -- HighlightedJson --------------------------------------------------
 
 export function HighlightedJson({ raw }: { raw: string }) {
   const pretty = useMemo(() => {
@@ -22,7 +22,7 @@ export function HighlightedJson({ raw }: { raw: string }) {
   );
 }
 
-// ── Event Detail Content ─────────────────────────────────────────────
+// -- Event Detail Content ---------------------------------------------
 
 interface EventDetailContentProps {
   event: PersonaEvent;
@@ -101,7 +101,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
   );
 }
 
-// ── Virtualized Event Row ────────────────────────────────────────────
+// -- Virtualized Event Row --------------------------------------------
 
 interface EventRowProps {
   event: PersonaEvent;
@@ -180,7 +180,7 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
   );
 }
 
-// ── Grid-based Event Row (no virtualization) ────────────────────────
+// -- Grid-based Event Row (no virtualization) ------------------------
 
 interface EventGridRowProps {
   event: PersonaEvent;

@@ -4,7 +4,7 @@
 
 use crate::commands::credentials::ai_artifact_flow::AiArtifactMessages;
 
-// ── Messages ────────────────────────────────────────────────────
+// -- Messages ----------------------------------------------------
 
 pub const RECIPE_EXECUTION_MESSAGES: AiArtifactMessages = AiArtifactMessages {
     status_event: "recipe-execution-status",
@@ -21,10 +21,10 @@ pub const RECIPE_EXECUTION_MESSAGES: AiArtifactMessages = AiArtifactMessages {
     timeout_secs: 120,
 };
 
-// ── Extractor ───────────────────────────────────────────────────
+// -- Extractor ---------------------------------------------------
 
 /// Wraps the entire LLM text output as `{ "output": "..." }`.
-/// Unlike other extractors, we don't look for specific JSON keys — the full
+/// Unlike other extractors, we don't look for specific JSON keys -- the full
 /// response is the result.
 pub fn extract_recipe_execution_result(output: &str) -> Option<serde_json::Value> {
     let trimmed = output.trim();

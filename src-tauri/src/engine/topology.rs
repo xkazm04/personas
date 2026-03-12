@@ -132,7 +132,7 @@ fn infer_role(persona: &Persona) -> &'static str {
 }
 
 // ============================================================================
-// Layout algorithm — Sugiyama-style layered DAG
+// Layout algorithm -- Sugiyama-style layered DAG
 // ============================================================================
 
 pub fn compute_dag_layout(
@@ -294,7 +294,7 @@ fn build_blueprint(
 
         if !orchestrators.is_empty() {
             let orch = orchestrators[0];
-            // Orchestrator → each worker
+            // Orchestrator -> each worker
             for &w in &workers {
                 connections.push(BlueprintConnection {
                     source_index: orch,
@@ -302,7 +302,7 @@ fn build_blueprint(
                     connection_type: "sequential".into(),
                 });
             }
-            // Orchestrator → router
+            // Orchestrator -> router
             for &r in &routers {
                 connections.push(BlueprintConnection {
                     source_index: orch,
@@ -310,7 +310,7 @@ fn build_blueprint(
                     connection_type: "sequential".into(),
                 });
             }
-            // Workers → reviewer
+            // Workers -> reviewer
             for &w in &workers {
                 for &rev in &reviewers {
                     connections.push(BlueprintConnection {
@@ -320,7 +320,7 @@ fn build_blueprint(
                     });
                 }
             }
-            // Reviewer → orchestrator feedback
+            // Reviewer -> orchestrator feedback
             for &rev in &reviewers {
                 connections.push(BlueprintConnection {
                     source_index: rev,
@@ -337,7 +337,7 @@ fn build_blueprint(
             chain.extend(&reviewers);
 
             if chain.is_empty() {
-                // All same role — just chain them
+                // All same role -- just chain them
                 for i in 0..member_count {
                     chain.push(i);
                 }

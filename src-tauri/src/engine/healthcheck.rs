@@ -38,7 +38,7 @@ pub async fn run_healthcheck(
     if hc_config.skip {
         return Ok(HealthcheckResult {
             success: true,
-            message: "Connection type does not support HTTP healthcheck — credentials stored".into(),
+            message: "Connection type does not support HTTP healthcheck -- credentials stored".into(),
         });
     }
 
@@ -60,7 +60,7 @@ pub async fn run_healthcheck_with_fields(
     if hc_config.skip {
         return Ok(HealthcheckResult {
             success: true,
-            message: "Connection type does not support HTTP healthcheck — credentials stored".into(),
+            message: "Connection type does not support HTTP healthcheck -- credentials stored".into(),
         });
     }
 
@@ -92,14 +92,14 @@ fn resolve_connector_healthcheck(
         }
     };
 
-    // ── Try per-variant healthcheck first ──────────────────────────────
+    // -- Try per-variant healthcheck first ------------------------------
     if let (Some(flds), Some(meta_json)) = (fields, connector.metadata.as_deref()) {
         if let Some(hc) = resolve_variant_healthcheck(meta_json, flds) {
             return Ok((connector, hc));
         }
     }
 
-    // ── Fall back to connector-level healthcheck config ────────────────
+    // -- Fall back to connector-level healthcheck config ----------------
     let hc_config = match &connector.healthcheck_config {
         Some(json_str) => parse_healthcheck_config(json_str),
         None => None,
@@ -124,7 +124,7 @@ fn resolve_connector_healthcheck(
                     return Ok((connector, hc));
                 }
                 None => {
-                    // No healthcheck configured — return a skip-flagged config
+                    // No healthcheck configured -- return a skip-flagged config
                     // so callers treat it as a non-error success.
                     return Ok((connector, HealthcheckConfig {
                         endpoint: String::new(),
@@ -168,7 +168,7 @@ fn resolve_variant_healthcheck(
         if filled == 0 { continue; }
         // Prefer the variant where ALL declared fields are filled
         if filled == vf.len() {
-            // Exact match — check for variant-level healthcheck
+            // Exact match -- check for variant-level healthcheck
             if v.get("healthcheck_skip").and_then(|s| s.as_bool()).unwrap_or(false) {
                 return Some(HealthcheckConfig {
                     endpoint: String::new(),
@@ -183,7 +183,7 @@ fn resolve_variant_healthcheck(
                     return parse_healthcheck_config(&hc_str);
                 }
             }
-            // Variant matched but has no variant-level healthcheck — fall through
+            // Variant matched but has no variant-level healthcheck -- fall through
             // to connector-level config.
             return None;
         }
@@ -399,7 +399,7 @@ pub(crate) fn resolve_template(template: &str, values: &HashMap<String, String>)
 /// private network addresses into the host position.
 ///
 /// Allowed: `https://api.example.com/v1/{{resource_id}}`
-/// Allowed: `{{project_url}}/rest/v1/` (entire URL from field — validated post-resolution)
+/// Allowed: `{{project_url}}/rest/v1/` (entire URL from field -- validated post-resolution)
 /// Blocked: `https://{{base_url}}/api`, `{{scheme}}://api.example.com`
 pub(crate) fn validate_template_url(template: &str) -> Result<(), AppError> {
     // If the template starts with `{{` and the placeholder spans past the `://`
@@ -408,7 +408,7 @@ pub(crate) fn validate_template_url(template: &str) -> Result<(), AppError> {
     // store full URLs as fields.  Post-resolution validation
     // (`validate_healthcheck_url`) will still catch SSRF on the resolved URL.
     //
-    // But `{{scheme}}://host` is NOT allowed — the placeholder only controls the
+    // But `{{scheme}}://host` is NOT allowed -- the placeholder only controls the
     // scheme, so we check if `://` appears INSIDE or after the closing `}}`.
     if template.starts_with("{{") {
         if let Some(close) = template.find("}}") {
@@ -428,7 +428,7 @@ pub(crate) fn validate_template_url(template: &str) -> Result<(), AppError> {
             let scheme_part = &template[..idx];
             if scheme_part.contains("{{") {
                 return Err(AppError::Validation(
-                    "Healthcheck URL template contains a placeholder in the scheme — \
+                    "Healthcheck URL template contains a placeholder in the scheme -- \
                      user-provided values must not control the URL scheme"
                         .into(),
                 ));
@@ -453,7 +453,7 @@ pub(crate) fn validate_template_url(template: &str) -> Result<(), AppError> {
 
     if authority.contains("{{") {
         return Err(AppError::Validation(
-            "Healthcheck URL template contains a placeholder in the host/authority — \
+            "Healthcheck URL template contains a placeholder in the host/authority -- \
              user-provided values must not control the target host"
                 .into(),
         ));
@@ -524,7 +524,7 @@ pub(crate) fn validate_field_values(
 /// - Non-HTTP(S) schemes
 /// - Localhost / loopback addresses (127.x.x.x, ::1)
 /// - Private network ranges (10.x, 172.16-31.x, 192.168.x, fc00::/7)
-/// - Link-local addresses (169.254.x.x, fe80::/10) — includes cloud metadata endpoints
+/// - Link-local addresses (169.254.x.x, fe80::/10) -- includes cloud metadata endpoints
 /// - URLs with unresolved template placeholders (`{{...}}`)
 pub(crate) fn validate_healthcheck_url(url: &str) -> Result<(), AppError> {
     // Reject unresolved template placeholders
@@ -606,9 +606,9 @@ fn is_private_ip(ip: &IpAddr) -> bool {
 fn is_ipv6_private(v6: &std::net::Ipv6Addr) -> bool {
     let segments = v6.segments();
     let first = segments[0];
-    // fc00::/7 — Unique Local Addresses
+    // fc00::/7 -- Unique Local Addresses
     (first & 0xfe00) == 0xfc00
-    // fe80::/10 — Link-Local
+    // fe80::/10 -- Link-Local
     || (first & 0xffc0) == 0xfe80
 }
 
@@ -709,7 +709,7 @@ mod tests {
 
     #[test]
     fn test_healthcheck_no_config() {
-        // No healthcheck_config → should return None
+        // No healthcheck_config -> should return None
         assert!(parse_healthcheck_config("{}").is_none());
         assert!(parse_healthcheck_config(r#"{"description":"test"}"#).is_none());
         assert!(parse_healthcheck_config(r#"{"endpoint":""}"#).is_none());

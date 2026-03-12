@@ -7,7 +7,7 @@ import {
 } from '@/features/shared/components/use-cases/UseCasesList';
 import type { DesignFilesSection, DesignUseCase } from '@/lib/types/frontendTypes';
 
-// ── Serialized design_context write queue ────────────────────────────
+// -- Serialized design_context write queue ----------------------------
 //
 // design_context is a shared JSON blob. Multiple components (UseCaseDetailPanel,
 // DesignTab, PersonaConnectorsTab) can issue concurrent read-modify-write updates.
@@ -48,12 +48,12 @@ export function applyDesignContextMutation(
       design_context: newContext,
     });
   };
-  // Chain onto pending write — errors don't break the chain for subsequent writes
+  // Chain onto pending write -- errors don't break the chain for subsequent writes
   writeQueue = writeQueue.then(doWrite, doWrite);
   return writeQueue;
 }
 
-// ── Typed section mutators ───────────────────────────────────────────
+// -- Typed section mutators -------------------------------------------
 
 /** Mutate the useCases section of design_context. */
 export function mutateUseCases(
@@ -102,7 +102,7 @@ export function mutateCredentialLink(
   );
 }
 
-// ── React hook for convenience ───────────────────────────────────────
+// -- React hook for convenience ---------------------------------------
 
 /**
  * Hook that returns typed mutation helpers bound to the currently selected persona.

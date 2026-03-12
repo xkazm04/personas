@@ -15,15 +15,15 @@ export const CSS_DURATION_CLASS = {
 
 export const REDUCED_FRAMER = { duration: 0.01, ease: 'linear' as const };
 
-// ── Standardized ease curve ──────────────────────────────────────────
+// -- Standardized ease curve ------------------------------------------
 // Used across all transition presets for a consistent spring-like feel.
 const EASE_CURVE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
-// ── Framer Motion transition presets ─────────────────────────────────
-// instant (100ms) → tooltips, micro-interactions
-// fast    (150ms) → dropdowns, toggles, small state changes
-// normal  (250ms) → panels, modals, drawers, standard transitions
-// slow    (400ms) → page transitions, wizard steps, large reveals
+// -- Framer Motion transition presets ---------------------------------
+// instant (100ms) -> tooltips, micro-interactions
+// fast    (150ms) -> dropdowns, toggles, small state changes
+// normal  (250ms) -> panels, modals, drawers, standard transitions
+// slow    (400ms) -> page transitions, wizard steps, large reveals
 export const TRANSITION_INSTANT = { duration: 0.1, ease: EASE_CURVE };
 export const TRANSITION_FAST = { duration: 0.15, ease: EASE_CURVE };
 export const TRANSITION_NORMAL = { duration: 0.25, ease: EASE_CURVE };
@@ -50,7 +50,7 @@ export const MOTION_TIMING = {
   EASE: { type: 'spring' as const, stiffness: 300, damping: 25 },
 };
 
-/** Stagger container — wrap the list/grid parent with this variant. */
+/** Stagger container -- wrap the list/grid parent with this variant. */
 export const staggerContainer: Variants = {
   hidden: {},
   show: {
@@ -60,7 +60,7 @@ export const staggerContainer: Variants = {
   },
 };
 
-/** Individual item — each card/row uses this variant. */
+/** Individual item -- each card/row uses this variant. */
 export const staggerItem: Variants = {
   hidden: { opacity: 0, y: 12 },
   show: {

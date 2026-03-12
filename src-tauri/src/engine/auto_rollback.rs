@@ -110,7 +110,7 @@ pub fn auto_rollback_tick(pool: &DbPool) {
         };
 
         // 5. Check if current error rate exceeds 2x the previous version's rate
-        // Use a minimum threshold to avoid rolling back on noise (e.g. 0→0.01)
+        // Use a minimum threshold to avoid rolling back on noise (e.g. 0->0.01)
         let threshold = (previous_error_rate * 2.0).max(0.1);
         if current_error_rate <= threshold {
             continue;
@@ -144,7 +144,7 @@ pub fn auto_rollback_tick(pool: &DbPool) {
     }
 }
 
-/// Perform the actual rollback — mirrors the logic in observability.rs rollback_prompt_version.
+/// Perform the actual rollback -- mirrors the logic in observability.rs rollback_prompt_version.
 fn perform_rollback(pool: &DbPool, persona_id: &str, version_id: &str) -> Result<(), crate::error::AppError> {
     let version = metric_repo::get_prompt_version_by_id(pool, version_id)?;
 
