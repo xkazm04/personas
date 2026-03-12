@@ -205,7 +205,33 @@ fn restrict_windows_permissions(path: &Path) {
     let path_str = path.to_string_lossy();
     let username = whoami::username();
 
-    // Disable inheritance and remove inherited ACEs
+    // Grant owner full control BEFORE removing inheritance to ensure
+    // the user retains access. If we remove inheritance first and the
+    // grant step fails, the file becomes inaccessible.
+    let grant_arg = format!("{}:(F)", username);
+    let grant_result = std::process::Command::new("icacls")
+        .args([path_str.as_ref(), "/grant", &grant_arg])
+        .output();
+
+    let grant_ok = match &grant_result {
+        Ok(output) if output.status.success() => true,
+        Ok(output) => {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            tracing::warn!(path = %path.display(), stderr = %stderr, "icacls /grant returned non-zero exit");
+            false
+        }
+        Err(e) => {
+            tracing::warn!(path = %path.display(), error = %e, "Failed to run icacls /grant");
+            false
+        }
+    };
+
+    if !grant_ok {
+        tracing::warn!(path = %path.display(), "Skipping inheritance removal — grant failed, removing inheritance would lock out the file");
+        return;
+    }
+
+    // Now safe to disable inheritance and remove inherited ACEs
     let inheritance_result = std::process::Command::new("icacls")
         .args([path_str.as_ref(), "/inheritance:r"])
         .output();
@@ -215,24 +241,7 @@ fn restrict_windows_permissions(path: &Path) {
         return;
     }
 
-    // Grant owner-only full control
-    let grant_arg = format!("{}:(F)", username);
-    let grant_result = std::process::Command::new("icacls")
-        .args([path_str.as_ref(), "/grant:r", &grant_arg])
-        .output();
-
-    match grant_result {
-        Ok(output) if output.status.success() => {
-            tracing::debug!(path = %path.display(), "Set restrictive Windows permissions (owner-only)");
-        }
-        Ok(output) => {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            tracing::warn!(path = %path.display(), stderr = %stderr, "icacls /grant:r returned non-zero exit");
-        }
-        Err(e) => {
-            tracing::warn!(path = %path.display(), error = %e, "Failed to run icacls /grant:r");
-        }
-    }
+    tracing::debug!(path = %path.display(), "Set restrictive Windows permissions (owner-only)");
 }
 
 /// Seed the 7 builtin tool definitions.

@@ -70,3 +70,11 @@ export * from "./auth/connectors";
 
 // Dev Tools
 export * from "./devTools/devTools";
+
+// Network (Invisible Apps Phase 1)
+export * from "./network/identity";
+export * from "./network/exposure";
+export * from "./network/bundle";
+
+// Network (Invisible Apps Phase 2: P2P Discovery)
+export * from "./network/discovery";

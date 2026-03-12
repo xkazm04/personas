@@ -39,6 +39,7 @@ import { createBudgetEnforcementSlice } from "./slices/agents/budgetEnforcementS
 import { createAlertSlice } from "./slices/overview/alertSlice";
 import { createViewModeSlice } from "./slices/system/viewModeSlice";
 import { createDevToolsSlice } from "./slices/system/devToolsSlice";
+import { createNetworkSlice } from "./slices/network/networkSlice";
 import { AUTH_LOGIN_EVENT } from "./authStore";
 
 // ── Store ──────────────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ export const usePersonaStore = create<PersonaStore>()(
         ...createAlertSlice(...a),
         ...createViewModeSlice(...a),
         ...createDevToolsSlice(...a),
+        ...createNetworkSlice(...a),
       }),
       {
         name: "persona-ui-state",

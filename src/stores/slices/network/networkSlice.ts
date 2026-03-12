@@ -1,0 +1,318 @@
+import type { StateCreator } from "zustand";
+import type { PersonaStore } from "../../storeTypes";
+import { errMsg } from "../../storeTypes";
+import type { PeerIdentity, TrustedPeer } from "@/api/network/identity";
+import type { ExposedResource, ResourceProvenance } from "@/api/network/exposure";
+import type { BundleImportPreview } from "@/api/network/bundle";
+import type {
+  DiscoveredPeer,
+  PeerManifestEntry,
+  ConnectionState,
+  NetworkStatusInfo,
+} from "@/api/network/discovery";
+import * as identityApi from "@/api/network/identity";
+import * as exposureApi from "@/api/network/exposure";
+import * as bundleApi from "@/api/network/bundle";
+import * as discoveryApi from "@/api/network/discovery";
+
+export interface NetworkSlice {
+  // State (Phase 1)
+  localIdentity: PeerIdentity | null;
+  trustedPeers: TrustedPeer[];
+  exposedResources: ExposedResource[];
+  provenance: ResourceProvenance[];
+  networkLoading: boolean;
+
+  // State (Phase 2: P2P Discovery)
+  discoveredPeers: DiscoveredPeer[];
+  peerManifests: Record<string, PeerManifestEntry[]>;
+  connectionStates: Record<string, ConnectionState>;
+  networkStatus: NetworkStatusInfo | null;
+
+  // Identity actions
+  fetchLocalIdentity: () => Promise<void>;
+  setDisplayName: (name: string) => Promise<void>;
+  exportIdentityCard: () => Promise<string>;
+
+  // Trusted peers actions
+  fetchTrustedPeers: () => Promise<void>;
+  importTrustedPeer: (identityCard: string, notes?: string) => Promise<TrustedPeer>;
+  revokePeerTrust: (peerId: string) => Promise<void>;
+  deleteTrustedPeer: (peerId: string) => Promise<void>;
+
+  // Exposure actions
+  fetchExposedResources: () => Promise<void>;
+  createExposedResource: (input: exposureApi.CreateExposedResourceInput) => Promise<ExposedResource>;
+  updateExposedResource: (id: string, input: exposureApi.UpdateExposedResourceInput) => Promise<void>;
+  deleteExposedResource: (id: string) => Promise<void>;
+
+  // Provenance actions
+  fetchProvenance: () => Promise<void>;
+
+  // Bundle actions
+  exportBundle: (resourceIds: string[], savePath: string) => Promise<bundleApi.BundleExportResult>;
+  previewBundleImport: (filePath: string) => Promise<BundleImportPreview>;
+  applyBundleImport: (filePath: string, options: bundleApi.BundleImportOptions) => Promise<bundleApi.BundleImportResult>;
+
+  // Discovery actions (Phase 2)
+  fetchDiscoveredPeers: () => Promise<void>;
+  connectToPeer: (peerId: string) => Promise<void>;
+  disconnectPeer: (peerId: string) => Promise<void>;
+  fetchPeerManifest: (peerId: string) => Promise<void>;
+  syncPeerManifest: (peerId: string) => Promise<void>;
+  fetchNetworkStatus: () => Promise<void>;
+}
+
+export const createNetworkSlice: StateCreator<PersonaStore, [], [], NetworkSlice> = (set, get) => ({
+  // State (Phase 1)
+  localIdentity: null,
+  trustedPeers: [],
+  exposedResources: [],
+  provenance: [],
+  networkLoading: false,
+
+  // State (Phase 2)
+  discoveredPeers: [],
+  peerManifests: {},
+  connectionStates: {},
+  networkStatus: null,
+
+  // ── Identity ────────────────────────────────────────────────────────
+
+  fetchLocalIdentity: async () => {
+    try {
+      const identity = await identityApi.getLocalIdentity();
+      set({ localIdentity: identity });
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to fetch identity") });
+    }
+  },
+
+  setDisplayName: async (name: string) => {
+    try {
+      const identity = await identityApi.setDisplayName(name);
+      set({ localIdentity: identity });
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to update display name") });
+      throw err;
+    }
+  },
+
+  exportIdentityCard: async () => {
+    try {
+      return await identityApi.exportIdentityCard();
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to export identity card") });
+      throw err;
+    }
+  },
+
+  // ── Trusted Peers ──────────────────────────────────────────────────
+
+  fetchTrustedPeers: async () => {
+    try {
+      const peers = await identityApi.listTrustedPeers();
+      set({ trustedPeers: peers });
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to fetch trusted peers") });
+    }
+  },
+
+  importTrustedPeer: async (identityCard: string, notes?: string) => {
+    try {
+      const peer = await identityApi.importTrustedPeer(identityCard, notes);
+      await get().fetchTrustedPeers();
+      return peer;
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to import trusted peer") });
+      throw err;
+    }
+  },
+
+  revokePeerTrust: async (peerId: string) => {
+    try {
+      await identityApi.revokePeerTrust(peerId);
+      await get().fetchTrustedPeers();
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to revoke peer trust") });
+      throw err;
+    }
+  },
+
+  deleteTrustedPeer: async (peerId: string) => {
+    try {
+      await identityApi.deleteTrustedPeer(peerId);
+      await get().fetchTrustedPeers();
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to delete trusted peer") });
+      throw err;
+    }
+  },
+
+  // ── Exposure ───────────────────────────────────────────────────────
+
+  fetchExposedResources: async () => {
+    try {
+      const resources = await exposureApi.listExposedResources();
+      set({ exposedResources: resources });
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to fetch exposed resources") });
+    }
+  },
+
+  createExposedResource: async (input) => {
+    try {
+      const resource = await exposureApi.createExposedResource(input);
+      await get().fetchExposedResources();
+      return resource;
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to expose resource") });
+      throw err;
+    }
+  },
+
+  updateExposedResource: async (id, input) => {
+    try {
+      await exposureApi.updateExposedResource(id, input);
+      await get().fetchExposedResources();
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to update exposed resource") });
+      throw err;
+    }
+  },
+
+  deleteExposedResource: async (id) => {
+    try {
+      await exposureApi.deleteExposedResource(id);
+      await get().fetchExposedResources();
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to remove resource exposure") });
+      throw err;
+    }
+  },
+
+  // ── Provenance ─────────────────────────────────────────────────────
+
+  fetchProvenance: async () => {
+    try {
+      const prov = await exposureApi.listProvenance();
+      set({ provenance: prov });
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to fetch provenance") });
+    }
+  },
+
+  // ── Bundle ─────────────────────────────────────────────────────────
+
+  exportBundle: async (resourceIds, savePath) => {
+    set({ networkLoading: true });
+    try {
+      const result = await bundleApi.exportPersonaBundle(resourceIds, savePath);
+      set({ networkLoading: false });
+      return result;
+    } catch (err) {
+      set({ networkLoading: false, error: errMsg(err, "Failed to export bundle") });
+      throw err;
+    }
+  },
+
+  previewBundleImport: async (filePath) => {
+    set({ networkLoading: true });
+    try {
+      const preview = await bundleApi.previewBundleImport(filePath);
+      set({ networkLoading: false });
+      return preview;
+    } catch (err) {
+      set({ networkLoading: false, error: errMsg(err, "Failed to preview bundle") });
+      throw err;
+    }
+  },
+
+  applyBundleImport: async (filePath, options) => {
+    set({ networkLoading: true });
+    try {
+      const result = await bundleApi.applyBundleImport(filePath, options);
+      set({ networkLoading: false });
+      // Refresh personas list after import
+      await get().fetchPersonas();
+      await get().fetchProvenance();
+      return result;
+    } catch (err) {
+      set({ networkLoading: false, error: errMsg(err, "Failed to import bundle") });
+      throw err;
+    }
+  },
+
+  // ── Discovery (Phase 2) ────────────────────────────────────────────
+
+  fetchDiscoveredPeers: async () => {
+    try {
+      const peers = await discoveryApi.getDiscoveredPeers();
+      set({ discoveredPeers: peers });
+    } catch (err) {
+      // Silently fail — network may not be running yet
+    }
+  },
+
+  connectToPeer: async (peerId: string) => {
+    try {
+      set((s) => ({
+        connectionStates: { ...s.connectionStates, [peerId]: "Connecting" as const },
+      }));
+      await discoveryApi.connectToPeer(peerId);
+      set((s) => ({
+        connectionStates: { ...s.connectionStates, [peerId]: "Connected" as const },
+      }));
+      await get().fetchDiscoveredPeers();
+    } catch (err) {
+      set((s) => ({
+        connectionStates: { ...s.connectionStates, [peerId]: "Failed" as const },
+        error: errMsg(err, "Failed to connect to peer"),
+      }));
+      throw err;
+    }
+  },
+
+  disconnectPeer: async (peerId: string) => {
+    try {
+      await discoveryApi.disconnectPeer(peerId);
+      set((s) => ({
+        connectionStates: { ...s.connectionStates, [peerId]: "Disconnected" as const },
+      }));
+      await get().fetchDiscoveredPeers();
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to disconnect peer") });
+      throw err;
+    }
+  },
+
+  fetchPeerManifest: async (peerId: string) => {
+    try {
+      const manifest = await discoveryApi.getPeerManifest(peerId);
+      set((s) => ({
+        peerManifests: { ...s.peerManifests, [peerId]: manifest },
+      }));
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to fetch peer manifest") });
+    }
+  },
+
+  syncPeerManifest: async (peerId: string) => {
+    try {
+      await discoveryApi.syncPeerManifest(peerId);
+      await get().fetchPeerManifest(peerId);
+    } catch (err) {
+      set({ error: errMsg(err, "Failed to sync peer manifest") });
+      throw err;
+    }
+  },
+
+  fetchNetworkStatus: async () => {
+    try {
+      const status = await discoveryApi.getNetworkStatus();
+      set({ networkStatus: status });
+    } catch (err) {
+      // Silently fail
+    }
+  },
+});

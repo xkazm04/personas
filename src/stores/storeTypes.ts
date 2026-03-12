@@ -33,6 +33,7 @@ import type { BudgetEnforcementSlice } from "./slices/agents/budgetEnforcementSl
 import type { AlertSlice } from "./slices/overview/alertSlice";
 import type { ViewModeSlice } from "./slices/system/viewModeSlice";
 import type { DevToolsSlice } from "./slices/system/devToolsSlice";
+import type { NetworkSlice } from "./slices/network/networkSlice";
 
 // ── Shared helper ──────────────────────────────────────────────────────
 export function errMsg(err: unknown, fallback: string): string {
@@ -71,4 +72,5 @@ export type PersonaStore = PersonaSlice &
   BudgetEnforcementSlice &
   AlertSlice &
   ViewModeSlice &
-  DevToolsSlice;
+  DevToolsSlice &
+  NetworkSlice;

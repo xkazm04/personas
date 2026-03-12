@@ -7,3 +7,4 @@ pub mod teams;
 pub mod tools;
 pub mod infrastructure;
 pub mod recipes;
+pub mod network;

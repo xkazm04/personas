@@ -83,6 +83,8 @@ pub struct AppState {
     /// Local agent runtime for cross-app desktop plan execution.
     #[cfg(feature = "desktop")]
     pub desktop_runtime: Arc<engine::desktop_runtime::DesktopRuntime>,
+    /// P2P network service (LAN discovery, QUIC transport, manifest sync).
+    pub network: Option<Arc<engine::p2p::NetworkService>>,
 }
 
 /// Hello world IPC command â€” verifies the Rust â†” React bridge works.
@@ -143,6 +145,16 @@ pub fn run() {
                 let conn = pool.get().map_err(|e| format!("Failed to get DB connection for credential seed: {e}"))?;
                 if let Err(e) = db::seed_builtin_database_credential(&conn) {
                     tracing::warn!("Failed to seed built-in database credential: {}", e);
+                }
+            }
+
+            // Initialize P2P identity (Invisible Apps Phase 1)
+            match engine::identity::get_or_create_identity(&pool) {
+                Ok(identity) => {
+                    tracing::info!(peer_id = %identity.peer_id, "P2P identity ready");
+                }
+                Err(e) => {
+                    tracing::warn!("P2P identity initialization deferred: {}", e);
                 }
             }
 
@@ -224,6 +236,30 @@ pub fn run() {
                 tracing::info!("GitLab config restored from keyring");
             }
 
+            // Initialize P2P NetworkService (Phase 2: Invisible Apps)
+            let network_service = match engine::identity::get_or_create_identity(&pool) {
+                Ok(identity) => {
+                    match engine::p2p::NetworkService::new(
+                        pool.clone(),
+                        identity.peer_id.clone(),
+                        identity.display_name.clone(),
+                    ) {
+                        Ok(ns) => {
+                            tracing::info!("P2P NetworkService initialized");
+                            Some(Arc::new(ns))
+                        }
+                        Err(e) => {
+                            tracing::warn!("P2P NetworkService initialization failed: {}", e);
+                            None
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("P2P identity not available, NetworkService deferred: {}", e);
+                    None
+                }
+            };
+
             let state_arc = Arc::new(AppState {
                 db: pool.clone(),
                 user_db: user_db_pool,
@@ -254,6 +290,7 @@ pub fn run() {
                 desktop_approvals: Arc::new(engine::desktop_security::DesktopApprovalStore::new()),
                 #[cfg(feature = "desktop")]
                 desktop_runtime: Arc::new(engine::desktop_runtime::DesktopRuntime::new()),
+                network: network_service.clone(),
             });
             app.manage(state_arc.clone());
 
@@ -326,6 +363,19 @@ pub fn run() {
                 // triggering graceful webhook server shutdown.
                 futures_util::future::pending::<()>().await;
             });
+
+            // Auto-start P2P network service after a brief delay
+            if let Some(ns) = network_service {
+                let ns_pool = state_arc.db.clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+                    if let Ok(identity) = engine::identity::get_or_create_identity(&ns_pool) {
+                        if let Err(e) = ns.start(ns_pool, identity.peer_id, identity.display_name).await {
+                            tracing::warn!("P2P network service start failed: {}", e);
+                        }
+                    }
+                });
+            }
 
             // Attempt auth session restore from keyring
             tauri::async_runtime::spawn(async move {
@@ -920,6 +970,40 @@ pub fn run() {
             // Notifications
             notifications::send_app_notification,
             notifications::test_notification_channel,
+            // Network — Identity (Invisible Apps Phase 1)
+            commands::network::identity::get_local_identity,
+            commands::network::identity::set_display_name,
+            commands::network::identity::export_identity_card,
+            commands::network::identity::list_trusted_peers,
+            commands::network::identity::import_trusted_peer,
+            commands::network::identity::update_trusted_peer,
+            commands::network::identity::revoke_peer_trust,
+            commands::network::identity::delete_trusted_peer,
+            // Network — Exposure Manifest (Invisible Apps Phase 1)
+            commands::network::exposure::list_exposed_resources,
+            commands::network::exposure::get_exposed_resource,
+            commands::network::exposure::create_exposed_resource,
+            commands::network::exposure::update_exposed_resource,
+            commands::network::exposure::delete_exposed_resource,
+            commands::network::exposure::get_exposure_manifest,
+            commands::network::exposure::list_provenance,
+            commands::network::exposure::get_resource_provenance,
+            // Network — Bundle (Invisible Apps Phase 1)
+            commands::network::bundle::export_persona_bundle,
+            commands::network::bundle::preview_bundle_import,
+            commands::network::bundle::apply_bundle_import,
+            commands::network::bundle::verify_bundle,
+            // Network — P2P Discovery (Invisible Apps Phase 2)
+            commands::network::discovery::get_discovered_peers,
+            commands::network::discovery::connect_to_peer,
+            commands::network::discovery::disconnect_peer,
+            commands::network::discovery::get_peer_manifest,
+            commands::network::discovery::sync_peer_manifest,
+            commands::network::discovery::get_connection_status,
+            commands::network::discovery::get_network_status,
+            commands::network::discovery::send_agent_message,
+            commands::network::discovery::get_received_messages,
+            commands::network::discovery::set_network_config,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {

@@ -30,6 +30,8 @@ mod template_feedback;
 mod credential_recipe;
 mod saved_views;
 mod dev_tools;
+mod identity;
+mod exposure;
 
 pub use persona::*;
 pub use tool::*;
@@ -63,3 +65,5 @@ pub use template_feedback::*;
 pub use credential_recipe::*;
 pub use saved_views::*;
 pub use dev_tools::*;
+pub use identity::*;
+pub use exposure::*;

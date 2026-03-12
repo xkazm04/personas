@@ -3,7 +3,7 @@ import {
   FlaskConical, Users, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload,
   List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu,
   Network, Database, Home, Compass, Shield, CalendarClock, HardDriveDownload,
-  Wrench, FolderKanban, Map, Lightbulb, ArrowLeftRight, Play,
+  Wrench, FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -82,6 +82,7 @@ export function getSettingsItems(isDev: boolean, isSimple = false): SubNavItem[]
     { id: 'engine', label: 'Engine', icon: Cpu, devOnly: true },
     { id: 'byom', label: 'BYOM', icon: Network, devOnly: true },
     { id: 'portability', label: 'Data', icon: HardDriveDownload, simpleHidden: true },
+    { id: 'network', label: 'Network', icon: Share2 },
     { id: 'admin', label: 'Admin', icon: Shield, devOnly: true },
   ].filter((item) => (!item.devOnly || isDev) && (!isSimple || !item.simpleHidden));
 }
