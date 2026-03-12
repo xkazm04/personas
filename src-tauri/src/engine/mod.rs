@@ -1,4 +1,7 @@
 pub mod auto_rollback;
+pub mod identity;
+pub mod bundle;
+pub mod p2p;
 pub mod background;
 pub mod bus;
 pub mod byom;

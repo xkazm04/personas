@@ -253,7 +253,7 @@ export type EditorTab = "use-cases" | "prompt" | "lab" | "connectors" | "setting
 export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "cron-agents" | "schedules";
 export type TemplateTab = "n8n" | "generated";
 export type CloudTab = "cloud" | "gitlab" | "unified";
-export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "admin";
+export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin";
 export type DevToolsTab = "projects" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner";
 
 export type CliEngine = "claude_code" | "codex_cli" | "gemini_cli" | "copilot_cli";

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { save } from '@tauri-apps/plugin-dialog';
 import { usePersonaStore } from '@/stores/personaStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { DbPersona } from '@/lib/types/types';
@@ -104,5 +105,47 @@ export function useContextMenuActions(personaId: string, enabled: boolean, onClo
     onClose();
   }, [confirmDelete, personaId, deletePersona, onClose]);
 
-  return { confirmDelete, setConfirmDelete, handleModelSwitch, handleToggleEnabled, handleDuplicate, handleDelete };
+  const createExposedResource = usePersonaStore((s) => s.createExposedResource);
+  const fetchExposedResources = usePersonaStore((s) => s.fetchExposedResources);
+  const exportBundle = usePersonaStore((s) => s.exportBundle);
+
+  const handleExportPersona = useCallback(async () => {
+    try {
+      const savePath = await save({
+        defaultPath: `${personaId}.persona`,
+        filters: [{ name: 'Persona Bundle', extensions: ['persona'] }],
+      });
+      if (!savePath) { onClose(); return; }
+
+      // Ensure persona is exposed, then find its exposure ID
+      let exposureId: string;
+      try {
+        const resource = await createExposedResource({
+          resource_type: 'persona',
+          resource_id: personaId,
+          display_name: personaId,
+          fields_exposed: [],
+          access_level: 'read',
+          requires_auth: false,
+          tags: [],
+        });
+        exposureId = resource.id;
+      } catch {
+        // Already exposed — find existing
+        await fetchExposedResources();
+        const existing = usePersonaStore.getState().exposedResources
+          .find((r) => r.resource_type === 'persona' && r.resource_id === personaId);
+        if (!existing) throw new Error('Could not find or create exposure');
+        exposureId = existing.id;
+      }
+
+      await exportBundle([exposureId], savePath);
+      addToast('Persona exported as .persona bundle', 'success');
+    } catch {
+      addToast('Failed to export persona', 'error');
+    }
+    onClose();
+  }, [personaId, createExposedResource, fetchExposedResources, exportBundle, addToast, onClose]);
+
+  return { confirmDelete, setConfirmDelete, handleModelSwitch, handleToggleEnabled, handleDuplicate, handleDelete, handleExportPersona };
 }

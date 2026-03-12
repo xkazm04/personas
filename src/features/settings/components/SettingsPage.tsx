@@ -10,6 +10,7 @@ const NotificationSettings = lazy(() => import('@/features/settings/sub_notifica
 const EngineSettings = lazy(() => import('@/features/settings/sub_engine/components/EngineSettings'));
 const ByomSettings = lazy(() => import('@/features/settings/sub_byom/components/ByomSettings'));
 const DataPortabilitySettings = lazy(() => import('@/features/settings/sub_portability/components/DataPortabilitySettings'));
+const NetworkSettings = lazy(() => import('@/features/sharing/components/ExposureManager'));
 const AdminSettings = lazy(() => import('@/features/settings/sub_admin/components/AdminSettings'));
 
 export default function SettingsPage() {
@@ -23,6 +24,7 @@ export default function SettingsPage() {
       case 'engine': return <EngineSettings />;
       case 'byom': return <ByomSettings />;
       case 'portability': return <DataPortabilitySettings />;
+      case 'network': return <NetworkSettings />;
       case 'admin': return <AdminSettings />;
       default: return <AccountSettings />;
     }

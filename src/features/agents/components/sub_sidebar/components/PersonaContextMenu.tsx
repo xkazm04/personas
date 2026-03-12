@@ -29,7 +29,7 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
 
   const {
     confirmDelete, setConfirmDelete,
-    handleModelSwitch, handleToggleEnabled, handleDuplicate, handleDelete,
+    handleModelSwitch, handleToggleEnabled, handleDuplicate, handleDelete, handleExportPersona,
   } = useContextMenuActions(persona.id, persona.enabled, onClose);
 
   const getMainItems = useCallback(() => {
@@ -126,6 +126,7 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
         confirmDelete={confirmDelete}
         onToggleEnabled={handleToggleEnabled}
         onDuplicate={handleDuplicate}
+        onExportPersona={handleExportPersona}
         onDelete={handleDelete}
         onCancelDelete={() => setConfirmDelete(false)}
       />

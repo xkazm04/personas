@@ -1230,6 +1230,62 @@ CREATE TABLE IF NOT EXISTS dev_triage_rules (
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- ============================================================================
+-- Invisible Apps Phase 1: Identity & P2P Foundation
+-- ============================================================================
+
+-- Local cryptographic identity (exactly one row, enforced by CHECK)
+CREATE TABLE IF NOT EXISTS local_identity (
+    id              INTEGER PRIMARY KEY CHECK (id = 1),
+    peer_id         TEXT NOT NULL UNIQUE,
+    public_key      BLOB NOT NULL,
+    display_name    TEXT NOT NULL DEFAULT 'Anonymous',
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Trusted peers (manual key exchange)
+CREATE TABLE IF NOT EXISTS trusted_peers (
+    peer_id         TEXT PRIMARY KEY,
+    public_key      BLOB NOT NULL,
+    display_name    TEXT NOT NULL,
+    trust_level     TEXT NOT NULL DEFAULT 'manual'
+                    CHECK(trust_level IN ('manual', 'verified', 'revoked')),
+    added_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    last_seen       TEXT,
+    notes           TEXT
+);
+
+-- Exposure manifest: resources the user shares on the network
+CREATE TABLE IF NOT EXISTS exposed_resources (
+    id              TEXT PRIMARY KEY,
+    resource_type   TEXT NOT NULL
+                    CHECK(resource_type IN ('persona','template','execution_result','knowledge','connector')),
+    resource_id     TEXT NOT NULL,
+    display_name    TEXT NOT NULL,
+    description     TEXT,
+    fields_exposed  TEXT NOT NULL DEFAULT '[]',
+    access_level    TEXT NOT NULL DEFAULT 'read'
+                    CHECK(access_level IN ('read','execute','fork')),
+    requires_auth   INTEGER NOT NULL DEFAULT 1,
+    tags            TEXT NOT NULL DEFAULT '[]',
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    expires_at      TEXT,
+    UNIQUE(resource_type, resource_id)
+);
+CREATE INDEX IF NOT EXISTS idx_exposed_type ON exposed_resources(resource_type);
+
+-- Provenance: tracks where imported resources came from
+CREATE TABLE IF NOT EXISTS resource_provenance (
+    resource_type       TEXT NOT NULL,
+    resource_id         TEXT NOT NULL,
+    source_peer_id      TEXT NOT NULL,
+    source_display_name TEXT,
+    imported_at         TEXT NOT NULL DEFAULT (datetime('now')),
+    bundle_hash         TEXT,
+    signature_verified  INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (resource_type, resource_id)
+);
+
 "#;
 
 /// Incremental migrations for columns added after the initial schema.
@@ -2241,6 +2297,38 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         )?;
         tracing::info!("Created saved_views table");
     }
+
+    // ── P2P Phase 2: Discovered Peers table (mDNS LAN discovery) ──────
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS discovered_peers (
+            peer_id         TEXT PRIMARY KEY,
+            display_name    TEXT NOT NULL,
+            addresses       TEXT NOT NULL,
+            last_seen_at    TEXT NOT NULL,
+            first_seen_at   TEXT NOT NULL,
+            is_connected    INTEGER NOT NULL DEFAULT 0,
+            metadata        TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_dp_connected ON discovered_peers(is_connected);
+        CREATE INDEX IF NOT EXISTS idx_dp_last_seen ON discovered_peers(last_seen_at DESC);"
+    )?;
+
+    // ── P2P Phase 2: Peer Manifests table (synced exposure manifests) ─
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS peer_manifests (
+            id              TEXT PRIMARY KEY,
+            peer_id         TEXT NOT NULL,
+            resource_type   TEXT NOT NULL,
+            resource_id     TEXT NOT NULL,
+            display_name    TEXT NOT NULL,
+            access_level    TEXT NOT NULL,
+            tags            TEXT NOT NULL DEFAULT '[]',
+            synced_at       TEXT NOT NULL,
+            UNIQUE(peer_id, resource_type, resource_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_pm2_peer ON peer_manifests(peer_id);
+        CREATE INDEX IF NOT EXISTS idx_pm2_synced ON peer_manifests(synced_at DESC);"
+    )?;
 
     Ok(())
 }

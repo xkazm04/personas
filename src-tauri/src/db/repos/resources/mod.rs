@@ -12,3 +12,5 @@ pub mod db_schema;
 pub mod recipes;
 pub mod automations;
 pub mod credential_recipes;
+pub mod identity;
+pub mod exposure;

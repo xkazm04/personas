@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cpu, Copy, Power, PowerOff, Trash2, ChevronRight, Check, AlertTriangle } from 'lucide-react';
+import { Cpu, Copy, Power, PowerOff, Trash2, ChevronRight, Check, AlertTriangle, Share2 } from 'lucide-react';
 import type { DbPersona } from '@/lib/types/types';
 import { QUICK_MODELS, currentModelValue } from './ContextMenuActions';
 
@@ -79,13 +79,14 @@ interface MenuItemsProps {
   confirmDelete: boolean;
   onToggleEnabled: () => void;
   onDuplicate: () => void;
+  onExportPersona: () => void;
   onDelete: () => void;
   onCancelDelete: () => void;
 }
 
 export function MenuItems({
   persona, modelItemRef, showModelSub, setShowModelSub,
-  confirmDelete, onToggleEnabled, onDuplicate, onDelete, onCancelDelete,
+  confirmDelete, onToggleEnabled, onDuplicate, onExportPersona, onDelete, onCancelDelete,
 }: MenuItemsProps) {
   return (
     <>
@@ -140,6 +141,17 @@ export function MenuItems({
       >
         <Copy className="w-3.5 h-3.5 text-muted-foreground/80" />
         <span>Duplicate</span>
+      </button>
+
+      {/* Export as .persona */}
+      <button
+        onClick={onExportPersona}
+        className="w-full px-3 py-1.5 text-sm text-left hover:bg-secondary/60 flex items-center gap-2 text-foreground/90"
+        role="menuitem"
+        data-menuitem="true"
+      >
+        <Share2 className="w-3.5 h-3.5 text-muted-foreground/80" />
+        <span>Export .persona</span>
       </button>
 
       {/* Separator */}
