@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { useAutoTeam } from './useAutoTeam';
 import { BlueprintPreview, EXAMPLE_PROMPTS } from './BlueprintPreview';
 
@@ -40,12 +41,10 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
     if (e.key === 'Enter' && at.phase === 'previewing') {
       at.apply();
     }
-    if (e.key === 'Escape') {
-      if (at.phase === 'previewing') {
-        at.reset();
-      } else {
-        onClose();
-      }
+    if (e.key === 'Escape' && at.phase === 'previewing') {
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
+      at.reset();
     }
   };
 
@@ -54,29 +53,17 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
     onClose();
   };
 
-  if (!open) return null;
-
   const isWorking = at.phase === 'suggesting' || at.phase === 'applying' || at.phase === 'seeding';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={() => { if (!isWorking) onClose(); }}
-      />
-
-      {/* Modal */}
-      <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 20, scale: 0.97 }}
-        className="relative w-full max-w-lg mx-4 bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden"
-        onKeyDown={handleKeyDown}
-      >
+    <BaseModal
+      isOpen={open}
+      onClose={onClose}
+      titleId="auto-team-title"
+      size="md"
+      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden"
+    >
+      <div onKeyDown={handleKeyDown}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <div className="flex items-center gap-2.5">
@@ -84,7 +71,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
               <Zap className="w-4 h-4 text-indigo-400" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-foreground">Auto-Team</h2>
+              <h2 id="auto-team-title" className="text-sm font-semibold text-foreground">Auto-Team</h2>
               <p className="text-xs text-muted-foreground/60">Describe an outcome, get a team</p>
             </div>
           </div>
@@ -292,7 +279,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
             )}
           </AnimatePresence>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </BaseModal>
   );
 }

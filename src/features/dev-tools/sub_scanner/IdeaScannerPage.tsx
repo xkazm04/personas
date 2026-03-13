@@ -7,7 +7,7 @@ import {
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from '@/stores/systemStore';
 import {
   SCAN_AGENTS, AGENT_CATEGORIES,
   type ScanAgentDef,
@@ -216,7 +216,7 @@ function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
 // ---------------------------------------------------------------------------
 
 export default function IdeaScannerPage() {
-  const store = usePersonaStore.getState();
+  const store = useSystemStore.getState();
   const runScan = (store as any).runIdeaScan as ((agentKeys: string[]) => Promise<void>) | undefined;
 
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());

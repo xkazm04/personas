@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { deriveVibe, VIBE_THEMES, type VibeId, type VibeTheme } from '@/lib/theming/vibeThemes';
 
 /**
@@ -7,7 +7,7 @@ import { deriveVibe, VIBE_THEMES, type VibeId, type VibeTheme } from '@/lib/them
  * When no persona is selected, returns the 'default' vibe (no overlay).
  */
 export function usePersonaVibe(): { vibeId: VibeId; vibe: VibeTheme } {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
 
   const vibeId = useMemo(() => {
     if (!selectedPersona) return 'default';

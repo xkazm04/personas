@@ -2,8 +2,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Users, Zap } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { usePersonaStore } from '@/stores/personaStore';
-import { getTeamCounts, updateTeam } from '@/api/tauriApi';
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { getTeamCounts, updateTeam } from "@/api/pipeline/teams";
+
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { serializeTeamConfig } from '@/lib/types/teamConfigTypes';
 import type { TeamConfig } from '@/lib/types/teamConfigTypes';
@@ -14,12 +15,12 @@ import { CreateTeamForm } from './CreateTeamForm';
 import { TeamCard } from './TeamCard';
 
 export default function TeamList() {
-  const teams = usePersonaStore((s) => s.teams);
-  const fetchTeams = usePersonaStore((s) => s.fetchTeams);
-  const createTeam = usePersonaStore((s) => s.createTeam);
-  const deleteTeam = usePersonaStore((s) => s.deleteTeam);
-  const cloneTeam = usePersonaStore((s) => s.cloneTeam);
-  const selectTeam = usePersonaStore((s) => s.selectTeam);
+  const teams = usePipelineStore((s) => s.teams);
+  const fetchTeams = usePipelineStore((s) => s.fetchTeams);
+  const createTeam = usePipelineStore((s) => s.createTeam);
+  const deleteTeam = usePipelineStore((s) => s.deleteTeam);
+  const cloneTeam = usePipelineStore((s) => s.cloneTeam);
+  const selectTeam = usePipelineStore((s) => s.selectTeam);
 
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');

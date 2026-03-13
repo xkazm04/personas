@@ -1,12 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cpu, Copy, Power, PowerOff, Trash2, ChevronRight, Check, AlertTriangle, Share2 } from 'lucide-react';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import { QUICK_MODELS, currentModelValue } from './ContextMenuActions';
 
 // -- Model Submenu -----------------------------------------------------
 
 interface ModelSubmenuProps {
-  persona: DbPersona;
+  persona: Persona;
   subMenuRef: React.RefObject<HTMLDivElement | null>;
   subPos: { left: number; top: number } | null;
   showModelSub: boolean;
@@ -72,7 +72,7 @@ export function ModelSubmenu({ persona, subMenuRef, subPos, showModelSub, setSho
 // -- Menu Item Sections ------------------------------------------------
 
 interface MenuItemsProps {
-  persona: DbPersona;
+  persona: Persona;
   modelItemRef: React.RefObject<HTMLButtonElement | null>;
   showModelSub: boolean;
   setShowModelSub: (v: boolean | ((v: boolean) => boolean)) => void;

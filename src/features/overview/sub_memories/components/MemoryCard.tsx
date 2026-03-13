@@ -1,14 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { Trash2, Bot, Tag, ChevronDown, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { DbPersonaMemory } from '@/lib/types/types';
+import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from '@/stores/agentStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 
 function parseTags(tagsJson: string | null): string[] {
-  return parseJsonOrDefault<string[]>(tagsJson, []);
+  if (!tagsJson) return [];
+  const parsed = parseJsonOrDefault<string[]>(tagsJson, null as unknown as string[]);
+  if (Array.isArray(parsed)) return parsed;
+  // Fallback for legacy comma-separated format
+  return tagsJson.split(',').map((s) => s.trim()).filter(Boolean);
 }
 
 // -- Importance dots ----------------------------------------------------------
@@ -30,7 +35,7 @@ export function ImportanceDots({ value }: { value: number }) {
 export function MemoryRow({
   memory, personaName, personaColor, onDelete,
 }: {
-  memory: DbPersonaMemory; personaName: string; personaColor: string; onDelete: () => void;
+  memory: PersonaMemory; personaName: string; personaColor: string; onDelete: () => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -120,7 +125,7 @@ export function MemoryRow({
               {memory.source_execution_id && (
                 <div className="mt-2">
                   <button
-                    onClick={(e) => { e.stopPropagation(); const store = usePersonaStore.getState(); store.selectPersona(memory.persona_id); store.setEditorTab('use-cases'); }}
+                    onClick={(e) => { e.stopPropagation(); useAgentStore.getState().selectPersona(memory.persona_id); useSystemStore.getState().setEditorTab('use-cases'); }}
                     className="inline-flex items-center gap-1 text-sm text-blue-400/70 hover:text-blue-400 transition-colors"
                     title={`Execution: ${memory.source_execution_id}`}
                   >

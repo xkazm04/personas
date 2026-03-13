@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import { useDesignAnalysis } from '@/hooks/design/core/useDesignAnalysis';
 import { deriveName, calcCompleteness } from './designUtils';
@@ -17,10 +18,10 @@ interface UseChatCreatorStateOptions {
 }
 
 export function useChatCreatorState({ onCreated, onActivated }: UseChatCreatorStateOptions) {
-  const createPersona = usePersonaStore((s) => s.createPersona);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
+  const createPersona = useAgentStore((s) => s.createPersona);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
 
   const design = useDesignAnalysis();
 

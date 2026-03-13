@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import {
   isPermissionGranted,
   requestPermission,
@@ -11,10 +11,10 @@ import {
  * Drives the sidebar pulsing indicator and fires an OS notification on completion.
  */
 export function useContextScanBackground() {
-  const setContextScanActive = usePersonaStore((s) => s.setContextScanActive);
-  const setContextScanComplete = usePersonaStore((s) => s.setContextScanComplete);
-  const scanCodebase = usePersonaStore((s) => s.scanCodebase);
-  const setDevToolsTab = usePersonaStore((s) => s.setDevToolsTab);
+  const setContextScanActive = useSystemStore((s) => s.setContextScanActive);
+  const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
+  const scanCodebase = useSystemStore((s) => s.scanCodebase);
+  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
 
   const notifyCompletion = useCallback(async (projectName: string, success: boolean) => {
     try {

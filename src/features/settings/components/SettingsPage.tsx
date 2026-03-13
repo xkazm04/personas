@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 
 // Lazy-load each settings tab -- only the active one resolves.
@@ -14,7 +14,7 @@ const NetworkSettings = lazy(() => import('@/features/sharing/components/Exposur
 const AdminSettings = lazy(() => import('@/features/settings/sub_admin/components/AdminSettings'));
 
 export default function SettingsPage() {
-  const settingsTab = usePersonaStore((s) => s.settingsTab);
+  const settingsTab = useSystemStore((s) => s.settingsTab);
 
   const content = (() => {
     switch (settingsTab) {

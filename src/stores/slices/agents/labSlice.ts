@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { AgentStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
 import type { LabArenaRun } from "@/lib/bindings/LabArenaRun";
 import type { LabArenaResult } from "@/lib/bindings/LabArenaResult";
@@ -10,11 +10,15 @@ import type { LabMatrixResult } from "@/lib/bindings/LabMatrixResult";
 import type { LabEvalRun } from "@/lib/bindings/LabEvalRun";
 import type { LabEvalResult } from "@/lib/bindings/LabEvalResult";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
+import type { LabRunStatus } from "@/lib/bindings/LabRunStatus";
 import type { ModelTestConfig } from "@/api/agents/tests";
 import * as api from "@/api/agents/lab";
 import { createRunLifecycle } from "./runLifecycle";
 
 const labLifecycle = createRunLifecycle('isLabRunning', 'labProgress');
+
+const RUN_HISTORY_LIMIT = 20;
+const MAX_CACHED_RUN_RESULTS = 10;
 
 export type LabMode = "arena" | "ab" | "matrix" | "eval" | "versions";
 
@@ -27,7 +31,7 @@ export interface LabRunProgress {
   total?: number;
   modelId?: string;
   scenarioName?: string;
-  status?: string;
+  status?: LabRunStatus;
   scores?: { tool_accuracy?: number; output_quality?: number; protocol_compliance?: number };
   summary?: Record<string, unknown>;
   error?: string;
@@ -37,10 +41,10 @@ export interface LabRunProgress {
 // Eliminates duplicated fetchRuns/cancel/fetchResults/deleteRun/startRun
 // patterns across arena, ab, matrix, and eval modes.
 
-type StoreSetter = Parameters<StateCreator<PersonaStore, [], [], LabSlice>>[0];
+type StoreSetter = Parameters<StateCreator<AgentStore, [], [], LabSlice>>[0];
 
 interface LabCrudApi<TRun, TResult> {
-  list: (personaId: string) => Promise<TRun[]>;
+  list: (personaId: string, limit?: number) => Promise<TRun[]>;
   results: (runId: string) => Promise<TResult[]>;
   remove: (id: string) => Promise<unknown>;
   cancel: (id: string) => Promise<unknown>;
@@ -56,8 +60,8 @@ interface LabCrudActions<TRun> {
 }
 
 function createLabCrud<TRun extends { id: string }, TResult>(
-  runsKey: keyof PersonaStore,
-  resultsMapKey: keyof PersonaStore,
+  runsKey: keyof AgentStore,
+  resultsMapKey: keyof AgentStore,
   label: string,
   calls: LabCrudApi<TRun, TResult>,
   set: StoreSetter,
@@ -65,8 +69,8 @@ function createLabCrud<TRun extends { id: string }, TResult>(
   return {
     fetchRuns: async (personaId) => {
       try {
-        const runs = await calls.list(personaId);
-        set({ [runsKey]: runs } as Partial<PersonaStore>);
+        const runs = await calls.list(personaId, RUN_HISTORY_LIMIT);
+        set({ [runsKey]: runs } as Partial<AgentStore>);
       } catch (err) {
         set({ error: errMsg(err, `Failed to fetch ${label} runs`) });
       }
@@ -83,9 +87,19 @@ function createLabCrud<TRun extends { id: string }, TResult>(
     fetchResults: async (runId) => {
       try {
         const results = await calls.results(runId);
-        set((state) => ({
-          [resultsMapKey]: { ...(state[resultsMapKey] as unknown as Record<string, unknown[]>), [runId]: results },
-        } as Partial<PersonaStore>));
+        set((state) => {
+          const existing = state[resultsMapKey] as unknown as Record<string, unknown[]>;
+          const updated = { ...existing, [runId]: results };
+          // Evict oldest cached results when exceeding limit
+          const keys = Object.keys(updated);
+          if (keys.length > MAX_CACHED_RUN_RESULTS) {
+            const toEvict = keys.slice(0, keys.length - MAX_CACHED_RUN_RESULTS);
+            for (const k of toEvict) {
+              if (k !== runId) delete updated[k];
+            }
+          }
+          return { [resultsMapKey]: updated } as Partial<AgentStore>;
+        });
       } catch (err) {
         set({ error: errMsg(err, `Failed to fetch ${label} results`) });
       }
@@ -100,7 +114,7 @@ function createLabCrud<TRun extends { id: string }, TResult>(
           return {
             [runsKey]: runs.filter((r) => r.id !== runId),
             [resultsMapKey]: rest,
-          } as Partial<PersonaStore>;
+          } as Partial<AgentStore>;
         });
       } catch (err) {
         set({ error: errMsg(err, `Failed to delete ${label} run`) });
@@ -181,7 +195,7 @@ export interface LabSlice {
 
 // -- Slice Creator ------------------------------------------------
 
-export const createLabSlice: StateCreator<PersonaStore, [], [], LabSlice> = (set, get) => {
+export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, get) => {
   // Instantiate CRUD factories -- one line per mode
   const arena  = createLabCrud<LabArenaRun, LabArenaResult>('arenaRuns', 'arenaResultsMap', 'arena', { list: api.labListArenaRuns, results: api.labGetArenaResults, remove: api.labDeleteArenaRun, cancel: api.labCancelArena }, set);
   const ab     = createLabCrud<LabAbRun, LabAbResult>('abRuns', 'abResultsMap', 'A/B', { list: api.labListAbRuns, results: api.labGetAbResults, remove: api.labDeleteAbRun, cancel: api.labCancelAb }, set);

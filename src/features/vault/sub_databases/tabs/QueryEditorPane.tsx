@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Play, Wand2, Loader2, Save, Check } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { SqlEditor } from '../SqlEditor';
 import { QueryResultTable } from '../QueryResultTable';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
@@ -37,8 +37,8 @@ export function QueryEditorPane({
   editorValue,
   onEditorChange,
 }: QueryEditorPaneProps) {
-  const updateQuery = usePersonaStore((s) => s.updateDbSavedQuery);
-  const executeDbQuery = usePersonaStore((s) => s.executeDbQuery);
+  const updateQuery = useVaultStore((s) => s.updateDbSavedQuery);
+  const executeDbQuery = useVaultStore((s) => s.executeDbQuery);
 
   const [executing, setExecuting] = useState(false);
   const [result, setResult] = useState<QueryResult | null>(null);

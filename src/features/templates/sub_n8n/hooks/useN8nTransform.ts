@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
 import { useBackgroundSnapshot } from '@/hooks/utility/data/useBackgroundSnapshot';
 import { usePersistedContext } from '@/hooks/utility/data/usePersistedContext';
@@ -240,7 +241,32 @@ export function useN8nTransform(
     [dispatch],
   );
 
-  // -- Background snapshot polling --
+  // -- Push-based section events (instant delivery) --
+
+  useEffect(() => {
+    let unlisten: UnlistenFn | null = null;
+    void listen<{ transformId: string; section: Record<string, unknown> }>(
+      'n8n-transform-section',
+      (event) => {
+        const { transformId: tid, section: s } = event.payload;
+        if (tid !== transformIdRef.current) return;
+        if (!s || typeof s !== 'object') return;
+        const mapped: StreamingSection = {
+          kind: String(s.kind ?? 'identity') as SectionKind,
+          index: typeof s.index === 'number' ? s.index : 0,
+          label: String(s.label ?? ''),
+          data: (s.data && typeof s.data === 'object' ? s.data : {}) as Record<string, unknown>,
+          validation: (s.validation && typeof s.validation === 'object'
+            ? s.validation
+            : { valid: true, errors: [], warnings: [] }) as SectionValidation,
+        };
+        dispatch({ type: 'TRANSFORM_SECTION_PUSH', section: mapped });
+      },
+    ).then((fn) => { unlisten = fn; });
+    return () => { unlisten?.(); };
+  }, [dispatch]);
+
+  // -- Background snapshot polling (fallback for session restoration) --
 
   useBackgroundSnapshot({
     snapshotId: backgroundTransformId,

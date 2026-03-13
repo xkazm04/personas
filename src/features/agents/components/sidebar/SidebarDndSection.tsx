@@ -2,29 +2,30 @@ import { useState, useMemo, useCallback, useRef } from 'react';
 import { DndContext, DragOverlay, closestCenter, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
 import { useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { SidebarPersonaCard } from '@/features/agents/components/sub_sidebar/components/DraggablePersonaCard';
 import { DroppableGroup } from '@/features/agents/components/sub_sidebar/components/DroppableGroup';
 import { UngroupedZone } from '@/features/agents/components/sub_sidebar/components/UngroupedZone';
 import type { DragPayload, SidebarNode } from '@/lib/types/frontendTypes';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import { getDragPayload, getDropPayload, resolveDropGroupId } from './sidebarDragHelpers';
 
 interface SidebarDndSectionProps {
   visibleGroupNodes: SidebarNode[];
-  ungrouped: DbPersona[];
-  handleContextMenu: (e: React.MouseEvent, persona: DbPersona) => void;
+  ungrouped: Persona[];
+  handleContextMenu: (e: React.MouseEvent, persona: Persona) => void;
 }
 
 export function SidebarDndSection({ visibleGroupNodes, ungrouped, handleContextMenu }: SidebarDndSectionProps) {
-  const personas = usePersonaStore((s) => s.personas);
-  const groups = usePersonaStore((s) => s.groups);
-  const selectedPersonaId = usePersonaStore((s) => s.selectedPersonaId);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const updateGroup = usePersonaStore((s) => s.updateGroup);
-  const deleteGroup = usePersonaStore((s) => s.deleteGroup);
-  const reorderGroups = usePersonaStore((s) => s.reorderGroups);
-  const movePersonaToGroup = usePersonaStore((s) => s.movePersonaToGroup);
+  const personas = useAgentStore((s) => s.personas);
+  const groups = usePipelineStore((s) => s.groups);
+  const selectedPersonaId = useAgentStore((s) => s.selectedPersonaId);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const updateGroup = usePipelineStore((s) => s.updateGroup);
+  const deleteGroup = usePipelineStore((s) => s.deleteGroup);
+  const reorderGroups = usePipelineStore((s) => s.reorderGroups);
+  const movePersonaToGroup = usePipelineStore((s) => s.movePersonaToGroup);
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const dragStartGroupIdsRef = useRef<string[]>([]);

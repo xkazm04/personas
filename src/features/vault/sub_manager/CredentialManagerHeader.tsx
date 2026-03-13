@@ -3,7 +3,7 @@ import { Search, Key, X, RotateCw, Loader2, CheckCircle2, Network, HeartPulse, A
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { VaultStatusBadge } from '@/features/vault/sub_card/badges/VaultStatusBadge';
-import type { VaultStatus } from '@/api/tauriApi';
+import type { VaultStatus } from "@/api/vault/credentials";
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { useBulkHealthcheck } from '@/features/vault/hooks/health/useBulkHealthcheck';
 

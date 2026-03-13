@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { X, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import { getPromptPerformance } from '@/api/overview/observability';
 import { sendAppNotification } from '@/api/system/system';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { PromptPerformanceData } from '@/lib/bindings/PromptPerformanceData';
 import { AgentTrendRow, type AgentTrend } from './AgentTrendRow';
@@ -38,7 +38,7 @@ interface WeeklyPerformanceReportProps {
 }
 
 export function WeeklyPerformanceReport({ onNavigateToAgent }: WeeklyPerformanceReportProps) {
-  const personas = usePersonaStore((s) => s.personas);
+  const personas = useAgentStore((s) => s.personas);
   const [visible, setVisible] = useState(shouldShowReport);
   const [trends, setTrends] = useState<AgentTrend[]>([]);
   const [loading, setLoading] = useState(true);

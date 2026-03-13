@@ -11,7 +11,7 @@ import { N8nEditStep } from './N8nEditStep';
 import { N8nConfirmStep } from './confirm/N8nConfirmStep';
 import { N8nSessionList } from './N8nSessionList';
 import { CredentialGapPanel } from '../widgets/CredentialGapPanel';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 
 // -- Slide animation variants --
 
@@ -53,7 +53,7 @@ export default function N8nImportTab() {
     direction,
   } = useN8nWizard();
 
-  const credentials = usePersonaStore((s) => s.credentials);
+  const credentials = useVaultStore((s) => s.credentials);
 
   return (
     <div className="flex flex-col h-full">

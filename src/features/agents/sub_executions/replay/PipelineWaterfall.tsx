@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import type { PipelineStage } from '@/lib/execution/pipeline';
 import { isPipelineStage, STAGE_META } from '@/lib/execution/pipeline';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { AlertCircle, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDuration } from '@/lib/utils/formatters';
@@ -19,11 +19,11 @@ import { PipelineSummary } from './PipelineSummary';
 // ---------------------------------------------------------------------------
 
 interface PipelineWaterfallProps {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
 }
 
 export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
-  const liveTrace = usePersonaStore((s) => s.pipelineTrace);
+  const liveTrace = useAgentStore((s) => s.pipelineTrace);
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
 
   // Use live trace if it matches this execution, otherwise build synthetic

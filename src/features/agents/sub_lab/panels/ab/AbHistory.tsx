@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown, ChevronRight, Trash2, Clock, GitBranch, AlertCircle,
 } from 'lucide-react';
-import { AbResultsView } from '../../results/AbResultsView';
+import { AbResultsView } from '../../components/ab/AbResultsView';
 import { statusBadge } from '../../shared/labUtils';
 
 interface AbRun {

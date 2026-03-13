@@ -1,4 +1,4 @@
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { profileToDropdownValue, OLLAMA_CLOUD_PRESETS, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 
@@ -40,7 +40,7 @@ export function quickModelToProfile(value: string): string | null {
 }
 
 /** Read the current dropdown value from a persona's model_profile JSON. */
-export function currentModelValue(persona: DbPersona): string {
+export function currentModelValue(persona: Persona): string {
   if (!persona.model_profile) return 'opus';
   try {
     const mp: ModelProfile = JSON.parse(persona.model_profile);

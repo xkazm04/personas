@@ -1,7 +1,11 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
+import { useVaultStore } from "@/stores/vaultStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { useOverviewStore } from "@/stores/overviewStore";
 import Sidebar from '@/features/shared/components/layout/sidebar/Sidebar';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import HomePage from '@/features/home/components/HomePage';
@@ -30,22 +34,22 @@ const SectionFallback = <PanelSkeleton variant="section" />;
 
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
-  const sidebarSection = usePersonaStore((s) => s.sidebarSection);
-  const cloudTab = usePersonaStore((s) => s.cloudTab);
-  const selectedPersonaId = usePersonaStore((s) => s.selectedPersonaId);
-  const isCreatingPersona = usePersonaStore((s) => s.isCreatingPersona);
-  const personas = usePersonaStore((s) => s.personas);
-  const isLoading = usePersonaStore((s) => s.isLoading);
-  const error = usePersonaStore((s) => s.error);
-  const setError = usePersonaStore((s) => s.setError);
-  const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
-  const fetchToolDefinitions = usePersonaStore((s) => s.fetchToolDefinitions);
-  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
-  const fetchRecipes = usePersonaStore((s) => s.fetchRecipes);
-  const fetchPendingReviewCount = usePersonaStore((s) => s.fetchPendingReviewCount);
-  const fetchGroups = usePersonaStore((s) => s.fetchGroups);
+  const sidebarSection = useSystemStore((s) => s.sidebarSection);
+  const cloudTab = useSystemStore((s) => s.cloudTab);
+  const selectedPersonaId = useAgentStore((s) => s.selectedPersonaId);
+  const isCreatingPersona = useSystemStore((s) => s.isCreatingPersona);
+  const personas = useAgentStore((s) => s.personas);
+  const isLoading = useSystemStore((s) => s.isLoading);
+  const error = useSystemStore((s) => s.error);
+  const setError = useSystemStore((s) => s.setError);
+  const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
+  const fetchToolDefinitions = useAgentStore((s) => s.fetchToolDefinitions);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
+  const fetchRecipes = usePipelineStore((s) => s.fetchRecipes);
+  const fetchPendingReviewCount = useOverviewStore((s) => s.fetchPendingReviewCount);
+  const fetchGroups = usePipelineStore((s) => s.fetchGroups);
 
-  const fetchDetail = usePersonaStore((s) => s.fetchDetail);
+  const fetchDetail = useAgentStore((s) => s.fetchDetail);
 
 
   // True only after fetchPersonas has settled (success or fail).

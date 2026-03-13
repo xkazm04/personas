@@ -99,8 +99,8 @@ if (root) {
 
   // Feature usage analytics -- subscribes to Zustand store navigation changes
   try {
-    const { usePersonaStore } = await import("./stores/personaStore");
-    initAnalytics(usePersonaStore.subscribe);
+    const { useSystemStore } = await import("./stores/systemStore");
+    initAnalytics(useSystemStore.subscribe);
   } catch (e) {
     console.warn("[main] Analytics init failed:", e);
   }

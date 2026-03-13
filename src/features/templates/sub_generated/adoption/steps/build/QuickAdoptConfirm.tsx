@@ -3,7 +3,7 @@ import { Settings, ExternalLink } from 'lucide-react';
 import { PersonaMatrix } from '../../../gallery/matrix/PersonaMatrix';
 import type { MatrixEditState, MatrixEditCallbacks } from '../../../gallery/matrix/EditableMatrixCells';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
 
@@ -37,7 +37,7 @@ export function QuickAdoptConfirm() {
   } = useAdoptionWizard();
 
   const isSimple = useSimpleMode();
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   const matchSummary = useMemo(() => {
     const external = requiredConnectors.filter((rc) => !BUILTIN.has(rc.activeName));

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { ALL_MODELS } from './TestRunnerConfig';
 
 interface TestProgressProps {
@@ -9,8 +9,8 @@ interface TestProgressProps {
 }
 
 export function TestProgress({ selectedModels }: TestProgressProps) {
-  const isTestRunning = usePersonaStore((s) => s.isTestRunning);
-  const testRunProgress = usePersonaStore((s) => s.testRunProgress);
+  const isTestRunning = useAgentStore((s) => s.isTestRunning);
+  const testRunProgress = useAgentStore((s) => s.testRunProgress);
 
   const orderedSelectedModels = useMemo(
     () => ALL_MODELS.filter((m) => selectedModels.has(m.id)),

@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Zap, CheckCircle2, XCircle, TrendingUp, EyeOff, Eye } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 
 interface PersonaHoverPreviewProps {
@@ -43,8 +43,8 @@ function Sparkline({ data }: { data: number[] }) {
 }
 
 export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef, visible }: PersonaHoverPreviewProps) {
-  const healthMap = usePersonaStore(s => s.personaHealthMap);
-  const personas = usePersonaStore((s) => s.personas);
+  const healthMap = useAgentStore(s => s.personaHealthMap);
+  const personas = useAgentStore((s) => s.personas);
   const health: PersonaHealth | undefined = healthMap[personaId];
   const persona = useMemo(() => personas.find((p) => p.id === personaId), [personas, personaId]);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);

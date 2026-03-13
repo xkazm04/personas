@@ -196,8 +196,8 @@ export const CRON_PRESETS = [
   { label: 'Every 30 min', cron: '*/30 * * * *' },
   { label: 'Every hour', cron: '0 * * * *' },
   { label: 'Every 6 hours', cron: '0 */6 * * *' },
-  { label: 'Daily midnight', cron: '0 0 * * *' },
-  { label: 'Daily 9am', cron: '0 9 * * *' },
-  { label: 'Weekdays 9am', cron: '0 9 * * 1-5' },
+  { label: 'Daily midnight UTC', cron: '0 0 * * *' },
+  { label: 'Daily 9am UTC', cron: '0 9 * * *' },
+  { label: 'Weekdays 9am UTC', cron: '0 9 * * 1-5' },
   { label: 'Weekly Sunday', cron: '0 0 * * 0' },
 ] as const;

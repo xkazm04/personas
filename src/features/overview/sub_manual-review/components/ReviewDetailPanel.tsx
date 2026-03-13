@@ -1,13 +1,14 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Check, X, Send, Bot, User, Zap, Cloud, ExternalLink } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from '@/stores/agentStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { SEVERITY_LABELS, parseSuggestedActions } from '../libs/reviewHelpers';
 import { SeverityIndicator, ContextDataPreview } from './ReviewListItem';
 import type { ManualReviewItem } from '@/lib/types/types';
-import type { ManualReviewStatus } from '@/lib/types/frontendTypes';
+import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { ReviewMessage } from '@/lib/bindings/ReviewMessage';
 
 interface ConversationThreadProps {
@@ -60,11 +61,11 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
   }, [handleSend]);
 
   const suggestedActions = useMemo(
-    () => parseSuggestedActions((review as unknown as { suggested_actions?: string }).suggested_actions),
+    () => parseSuggestedActions(review.suggested_actions),
     [review],
   );
 
-  const contextData = (review as unknown as { context_data?: string }).context_data;
+  const contextData = review.context_data;
   const isPending = review.status === 'pending';
 
   return (
@@ -88,7 +89,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             </div>
           </div>
           <button
-            onClick={() => { const store = usePersonaStore.getState(); store.selectPersona(review.persona_id); store.setEditorTab('use-cases'); }}
+            onClick={() => { useAgentStore.getState().selectPersona(review.persona_id); useSystemStore.getState().setEditorTab('use-cases'); }}
             className="inline-flex items-center gap-1 text-xs text-blue-400/70 hover:text-blue-400 transition-colors"
             title="View execution"
           >

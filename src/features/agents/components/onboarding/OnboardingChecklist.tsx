@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle2, Circle, ChevronDown, ChevronRight, X, Sparkles } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { useOnboardingChecklist } from './useOnboardingChecklist';
 
 // -- Progress Ring (SVG) ----------------------------------------------
@@ -78,7 +78,7 @@ function setDismissed(ids: Set<string>) {
 
 export function OnboardingBanner({ personaId }: { personaId: string }) {
   const checklist = useOnboardingChecklist(personaId);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
   const [dismissed, setDismissedState] = useState(() => getDismissed().has(personaId));
   const [expanded, setExpanded] = useState(false);
 

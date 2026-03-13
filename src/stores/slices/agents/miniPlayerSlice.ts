@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { AgentStore } from "../../storeTypes";
 
 export interface MiniPlayerPosition {
   x: number;
@@ -22,7 +22,7 @@ export interface MiniPlayerSlice {
 const DEFAULT_POSITION: MiniPlayerPosition = { x: -1, y: -1 };
 
 export const createMiniPlayerSlice: StateCreator<
-  PersonaStore,
+  AgentStore,
   [],
   [],
   MiniPlayerSlice

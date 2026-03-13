@@ -1,12 +1,12 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
+import type { NegotiationStartResult } from "@/lib/bindings/NegotiationStartResult";
+import type { StepHelpResult } from "@/lib/bindings/StepHelpResult";
+export type { NegotiationStartResult, StepHelpResult };
+
 // ============================================================================
 // Credential Negotiator
 // ============================================================================
-
-export interface NegotiationStartResult {
-  negotiation_id: string;
-}
 
 export const startCredentialNegotiation = (
   serviceName: string,
@@ -21,11 +21,6 @@ export const startCredentialNegotiation = (
 
 export const cancelCredentialNegotiation = () =>
   invoke<void>("cancel_credential_negotiation");
-
-export interface StepHelpResult {
-  answer: string;
-  updated_url: string | null;
-}
 
 export const getNegotiationStepHelp = (
   serviceName: string,

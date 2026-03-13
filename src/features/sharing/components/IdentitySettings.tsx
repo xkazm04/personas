@@ -1,21 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Copy, Check, UserPlus, Trash2, Fingerprint } from 'lucide-react';
 import { TrustVerifiedIcon, TrustUnknownIcon, TrustRevokedIcon } from './NetworkIcons';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import { InlineConfirm } from './InlineConfirm';
 
 export { IdentitySettings };
 export default function IdentitySettings() {
-  const localIdentity = usePersonaStore((s) => s.localIdentity);
-  const trustedPeers = usePersonaStore((s) => s.trustedPeers);
-  const fetchLocalIdentity = usePersonaStore((s) => s.fetchLocalIdentity);
-  const fetchTrustedPeers = usePersonaStore((s) => s.fetchTrustedPeers);
-  const setDisplayName = usePersonaStore((s) => s.setDisplayName);
-  const exportIdentityCard = usePersonaStore((s) => s.exportIdentityCard);
-  const importTrustedPeer = usePersonaStore((s) => s.importTrustedPeer);
-  const revokePeerTrust = usePersonaStore((s) => s.revokePeerTrust);
-  const deleteTrustedPeer = usePersonaStore((s) => s.deleteTrustedPeer);
+  const localIdentity = useSystemStore((s) => s.localIdentity);
+  const trustedPeers = useSystemStore((s) => s.trustedPeers);
+  const fetchLocalIdentity = useSystemStore((s) => s.fetchLocalIdentity);
+  const fetchTrustedPeers = useSystemStore((s) => s.fetchTrustedPeers);
+  const setDisplayName = useSystemStore((s) => s.setDisplayName);
+  const exportIdentityCard = useSystemStore((s) => s.exportIdentityCard);
+  const importTrustedPeer = useSystemStore((s) => s.importTrustedPeer);
+  const revokePeerTrust = useSystemStore((s) => s.revokePeerTrust);
+  const deleteTrustedPeer = useSystemStore((s) => s.deleteTrustedPeer);
   const addToast = useToastStore((s) => s.addToast);
 
   const [editingName, setEditingName] = useState(false);

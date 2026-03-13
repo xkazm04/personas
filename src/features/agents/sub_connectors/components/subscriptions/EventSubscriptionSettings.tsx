@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Radio, Plus, RotateCw } from 'lucide-react';
-import { listSubscriptions, createSubscription, updateSubscription, deleteSubscription } from '@/api/tauriApi';
+import { createSubscription, deleteSubscription, listSubscriptions, updateSubscription } from "@/api/overview/events";
+
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -71,7 +72,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
       <SectionHeader className="mb-6" icon={<Radio className="w-3.5 h-3.5" />} label="Event Subscriptions"
         trailing={<span className="text-sm text-muted-foreground/80">{activeCount} active</span>} />
       <div className="space-y-3">
-        {error && <div className="px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">{error}</div>}
+        {error && <div role="alert" className="px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">{error}</div>}
         {loadError && (
           <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-red-500/20 bg-red-500/5">
             <p className="flex-1 text-sm text-red-400/80">{loadError}</p>

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import {
   parseDesignContext,
   serializeDesignContext,
@@ -31,13 +31,13 @@ export function applyDesignContextMutation(
 ): Promise<void> {
   // Snapshot design_context at enqueue time so the mutation can still apply
   // even if the user switches personas before this queued write executes.
-  const snapshotStore = usePersonaStore.getState();
+  const snapshotStore = useAgentStore.getState();
   const snapshotPersona = snapshotStore.personas.find((p) => p.id === personaId)
     ?? (snapshotStore.selectedPersona?.id === personaId ? snapshotStore.selectedPersona : null);
   const snapshotContext = snapshotPersona?.design_context;
 
   const doWrite = async () => {
-    const store = usePersonaStore.getState();
+    const store = useAgentStore.getState();
     // Prefer fresh state if persona is still selected (benefits from prior queued writes).
     // Fall back to the enqueue-time snapshot if the user switched away.
     const freshPersona = store.selectedPersona?.id === personaId ? store.selectedPersona : null;
@@ -109,7 +109,7 @@ export function mutateCredentialLink(
  * Components can call these without needing to thread personaId manually.
  */
 export function useDesignContextMutator() {
-  const personaId = usePersonaStore((s) => s.selectedPersona?.id ?? null);
+  const personaId = useAgentStore((s) => s.selectedPersona?.id ?? null);
 
   const mutateCtx = useCallback(
     (mutator: (ctx: string | null | undefined) => string) => {

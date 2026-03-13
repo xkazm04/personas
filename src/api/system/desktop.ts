@@ -1,44 +1,10 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// -- Types --------------------------------------------------------------
-
-export interface DiscoveredApp {
-  connector_name: string;
-  label: string;
-  installed: boolean;
-  binary_path: string | null;
-  version: string | null;
-  running: boolean;
-  category: string;
-}
-
-export interface ImportedMcpServer {
-  name: string;
-  label: string;
-  command: string;
-  args: string[];
-  env: Record<string, string>;
-  source: string;
-}
-
-export type DesktopCapability =
-  | "file_read"
-  | "file_write"
-  | "process_spawn"
-  | "network_local"
-  | "clipboard_read"
-  | "notify"
-  | "env_read"
-  | "system_api";
-
-export interface DesktopConnectorManifest {
-  connector_id: string;
-  capabilities: DesktopCapability[];
-  allowed_binaries: string[];
-  allowed_paths: string[];
-  allowed_ports: number[];
-  justifications: Record<string, string>;
-}
+import type { DiscoveredApp } from "@/lib/bindings/DiscoveredApp";
+import type { ImportedMcpServer } from "@/lib/bindings/ImportedMcpServer";
+import type { DesktopCapability } from "@/lib/bindings/DesktopCapability";
+import type { DesktopConnectorManifest } from "@/lib/bindings/DesktopConnectorManifest";
+export type { DiscoveredApp, ImportedMcpServer, DesktopCapability, DesktopConnectorManifest };
 
 // -- Capability metadata ------------------------------------------------
 

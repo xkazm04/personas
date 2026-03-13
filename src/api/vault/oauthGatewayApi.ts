@@ -1,23 +1,18 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
+import type { GoogleCredentialOAuthStartResult } from "@/lib/bindings/GoogleCredentialOAuthStartResult";
+import type { GoogleCredentialOAuthStatusResult } from "@/lib/bindings/GoogleCredentialOAuthStatusResult";
+import type { OAuthProvider } from "@/lib/bindings/OAuthProvider";
+import type { OAuthProviderListResult } from "@/lib/bindings/OAuthProviderListResult";
+import type { OAuthStartResult } from "@/lib/bindings/OAuthStartResult";
+import type { OAuthStatusResult } from "@/lib/bindings/OAuthStatusResult";
+import type { OAuthRefreshResult } from "@/lib/bindings/OAuthRefreshResult";
+import type { StartOAuthParams } from "@/lib/bindings/StartOAuthParams";
+export type { GoogleCredentialOAuthStartResult, GoogleCredentialOAuthStatusResult, OAuthProvider, OAuthProviderListResult, OAuthStartResult, OAuthStatusResult, OAuthRefreshResult, StartOAuthParams };
+
 // ============================================================================
 // Google OAuth
 // ============================================================================
-
-export interface GoogleCredentialOAuthStartResult {
-  session_id: string;
-  auth_url: string;
-  redirect_uri: string;
-  credential_source?: 'app_managed' | 'user_provided';
-}
-
-export interface GoogleCredentialOAuthStatusResult {
-  status: 'pending' | 'success' | 'error' | 'not_found';
-  refresh_token: string | null;
-  access_token: string | null;
-  scope: string | null;
-  error: string | null;
-}
 
 export const startGoogleCredentialOAuth = (
   clientId: string | undefined,
@@ -42,59 +37,8 @@ export const getGoogleCredentialOAuthStatus = (sessionId: string) =>
 // Universal OAuth Gateway
 // ============================================================================
 
-export interface OAuthProvider {
-  id: string;
-  name: string;
-  supports_pkce: boolean;
-  default_scopes: string[];
-}
-
-export interface OAuthProviderListResult {
-  providers: OAuthProvider[];
-}
-
-export interface OAuthStartResult {
-  session_id: string;
-  auth_url: string;
-  redirect_uri: string;
-  provider_id: string;
-  pkce_used: boolean;
-}
-
-export interface OAuthStatusResult {
-  status: 'pending' | 'success' | 'error' | 'not_found';
-  provider_id?: string;
-  access_token: string | null;
-  refresh_token: string | null;
-  scope: string | null;
-  token_type: string | null;
-  expires_in: number | null;
-  extra: Record<string, unknown> | null;
-  error: string | null;
-}
-
-export interface OAuthRefreshResult {
-  access_token: string | null;
-  refresh_token: string | null;
-  expires_in: number | null;
-  token_type: string | null;
-  scope: string | null;
-}
-
 export const listOAuthProviders = () =>
   invoke<OAuthProviderListResult>("list_oauth_providers");
-
-export interface StartOAuthParams {
-  providerId: string;
-  clientId: string;
-  clientSecret?: string;
-  scopes?: string[];
-  authorizeUrl?: string;
-  tokenUrl?: string;
-  oidcIssuer?: string;
-  usePkce?: boolean;
-  extraParams?: Record<string, string>;
-}
 
 export const startOAuth = (params: StartOAuthParams) =>
   invoke<OAuthStartResult>("start_oauth", {

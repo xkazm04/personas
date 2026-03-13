@@ -7,7 +7,7 @@ import {
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from '@/stores/systemStore';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -259,7 +259,7 @@ function TaskCard({
 // ---------------------------------------------------------------------------
 
 export default function TaskRunnerPage() {
-  const store = usePersonaStore.getState();
+  const store = useSystemStore.getState();
   const createTask = (store as any).createRunnerTask as ((data: any) => Promise<void>) | undefined;
   const batchFromAccepted = (store as any).batchFromAcceptedIdeas as (() => Promise<void>) | undefined;
   const startBatch = (store as any).startBatch as (() => Promise<void>) | undefined;

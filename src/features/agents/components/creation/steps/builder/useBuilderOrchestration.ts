@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback, useRef, type Dispatch } from 'react';
 import type { BuilderState } from './types';
 import type { BuilderAction } from './builderReducer';
 import { useDesignAnalysis } from '@/hooks/design/core/useDesignAnalysis';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import { useToastStore } from '@/stores/toastStore';
 import { useDryRun } from './useDryRun';
 
@@ -23,9 +25,9 @@ export function useBuilderOrchestration({
     new Set(['intent', 'useCases']),
   );
 
-  const createPersona = usePersonaStore((s) => s.createPersona);
-  const createGroup = usePersonaStore((s) => s.createGroup);
-  const movePersonaToGroup = usePersonaStore((s) => s.movePersonaToGroup);
+  const createPersona = useAgentStore((s) => s.createPersona);
+  const createGroup = usePipelineStore((s) => s.createGroup);
+  const movePersonaToGroup = usePipelineStore((s) => s.movePersonaToGroup);
   const design = useDesignAnalysis();
   const [isGenerating, setIsGenerating] = useState(false);
   const isCreatingRef = useRef(false);
@@ -52,7 +54,7 @@ export function useBuilderOrchestration({
     if (design.phase === 'preview' && design.result && isGenerating) {
       dispatch({ type: 'APPLY_DESIGN_RESULT', payload: design.result });
       // Auto-match credentials from vault
-      const creds = usePersonaStore.getState().credentials;
+      const creds = useVaultStore.getState().credentials;
       dispatch({ type: 'AUTO_MATCH_CREDENTIALS', payload: { credentials: creds.map((c) => ({ id: c.id, service_type: c.service_type })) } });
       setIsGenerating(false);
       // Expand all sections so the user sees what was filled
@@ -120,7 +122,7 @@ export function useBuilderOrchestration({
 
         // Move draft to a "Draft" group so it's visible but separated
         try {
-          const groups = usePersonaStore.getState().groups;
+          const groups = usePipelineStore.getState().groups;
           let draftGroup = groups.find((g) => g.name === 'Draft');
           if (!draftGroup) {
             draftGroup = await createGroup({ name: 'Draft', color: '#6B7280', description: 'Agents being designed' }) ?? undefined;

@@ -100,16 +100,8 @@ export const deleteTeamConnection = (id: string) =>
 
 // -- Pipeline -------------------------------------------------------------
 
-export interface PipelineRun {
-  id: string;
-  team_id: string;
-  status: string;
-  node_statuses: string;
-  input_data: string | null;
-  started_at: string;
-  completed_at: string | null;
-  error_message: string | null;
-}
+import type { PipelineRun } from "@/lib/bindings/PipelineRun";
+export type { PipelineRun } from "@/lib/bindings/PipelineRun";
 
 export const executeTeam = (teamId: string, inputData?: string) =>
   invoke<string>("execute_team", { teamId, inputData: inputData ?? null });

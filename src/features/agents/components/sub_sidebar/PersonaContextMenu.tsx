@@ -3,17 +3,17 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useViewportClampFixed } from '@/hooks/utility/interaction/useViewportClamp';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cpu, Copy, Power, PowerOff, Trash2, ChevronRight, AlertTriangle } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import { Button } from '@/features/shared/components/buttons';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import { quickModelToProfile, currentModelValue } from './quickModelUtils';
 import { ModelSubmenu } from './ModelSubmenu';
 
 // -- Context Menu Component --------------------------------------------
 
 export interface ContextMenuState {
-  persona: DbPersona;
+  persona: Persona;
   x: number;
   y: number;
 }
@@ -26,10 +26,10 @@ interface PersonaContextMenuProps {
 export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) {
   const { persona, x, y } = state;
   const menuRef = useRef<HTMLDivElement>(null);
-  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
-  const duplicatePersona = usePersonaStore((s) => s.duplicatePersona);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const deletePersona = usePersonaStore((s) => s.deletePersona);
+  const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
+  const duplicatePersona = useAgentStore((s) => s.duplicatePersona);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const deletePersona = useAgentStore((s) => s.deletePersona);
   const addToast = useToastStore((s) => s.addToast);
 
   const [showModelSub, setShowModelSub] = useState(false);

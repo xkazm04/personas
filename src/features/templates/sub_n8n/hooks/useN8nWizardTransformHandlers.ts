@@ -5,7 +5,7 @@ import {
   getN8nTransformSnapshot,
   startN8nTransformBackground,
 } from '@/api/templates/n8nTransform';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from '@/stores/vaultStore';
 import { stringifyDraft } from './n8nTypes';
 import type { WizardDeps } from './n8nWizardTypes';
 
@@ -42,12 +42,12 @@ export function createTransformHandlers(deps: WizardDeps) {
         parserJson = '{}';
       }
 
-      const storeState = usePersonaStore.getState();
+      const vaultState = useVaultStore.getState();
       const connectorsJson = JSON.stringify(
-        storeState.connectorDefinitions.map((c) => ({ name: c.name, label: c.label })),
+        vaultState.connectorDefinitions.map((c) => ({ name: c.name, label: c.label })),
       );
       const credentialsJson = JSON.stringify(
-        storeState.credentials.map((c) => ({ name: c.name, service_type: c.service_type })),
+        vaultState.credentials.map((c) => ({ name: c.name, service_type: c.service_type })),
       );
 
       const userAnswersJson = Object.keys(state.userAnswers).length > 0

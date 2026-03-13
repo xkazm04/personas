@@ -8,9 +8,12 @@ export interface ExecutionDashboardData {
   top_personas: DashboardTopPersona[];
   cost_anomalies: DashboardCostAnomaly[];
   total_executions: number;
+  successful_executions: number;
+  failed_executions: number;
   total_cost: number;
   overall_success_rate: number;
   avg_latency_ms: number;
+  active_personas: number;
   projected_monthly_cost: number | null;
   burn_rate: number | null;
 }

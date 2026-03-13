@@ -6,7 +6,7 @@ use tauri::State;
 
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::n8n_sessions as session_repo;
-use crate::db::models::UpdateN8nSessionInput;
+use crate::db::models::{SessionStatus, UpdateN8nSessionInput};
 use crate::db::DbPool;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -479,7 +479,7 @@ pub fn confirm_n8n_persona_draft(
                     // Clear the stale persona_id so we can retry
                     let _ = session_repo::update(&state.db, sid, &UpdateN8nSessionInput {
                         persona_id: Some(None),
-                        status: Some("transforming".into()),
+                        status: Some(SessionStatus::Transforming.as_str().into()),
                         ..Default::default()
                     });
                     tracing::info!(
@@ -523,7 +523,7 @@ pub fn confirm_n8n_persona_draft(
             if let Some(pid) = persona_val.get("id").and_then(|v| v.as_str()) {
                 let _ = session_repo::update(&state.db, sid, &UpdateN8nSessionInput {
                     persona_id: Some(Some(pid.to_string())),
-                    status: Some("confirmed".into()),
+                    status: Some(SessionStatus::Confirmed.as_str().into()),
                     ..Default::default()
                 });
             }

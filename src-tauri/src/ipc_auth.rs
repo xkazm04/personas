@@ -81,7 +81,15 @@ pub fn require_cloud_auth_sync(state: &Arc<AppState>, command: &str) -> Result<(
             );
             Ok(())
         }
-        Err(_) => Ok(()),
+        Err(_) => {
+            tracing::error!(
+                command = command,
+                "Auth mutex poisoned or contended -- failing closed"
+            );
+            Err(AppError::Auth(
+                "Auth state unavailable (mutex failure). Restart the app.".into(),
+            ))
+        }
     }
 }
 

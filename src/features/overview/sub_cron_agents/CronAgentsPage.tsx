@@ -10,13 +10,13 @@ import {
   Bot,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 
 export default function CronAgentsPage() {
-  const cronAgents = usePersonaStore((s) => s.cronAgents);
-  const loading = usePersonaStore((s) => s.cronAgentsLoading);
-  const fetchCronAgents = usePersonaStore((s) => s.fetchCronAgents);
+  const cronAgents = useOverviewStore((s) => s.cronAgents);
+  const loading = useOverviewStore((s) => s.cronAgentsLoading);
+  const fetchCronAgents = useOverviewStore((s) => s.fetchCronAgents);
 
   useEffect(() => { fetchCronAgents(); }, [fetchCronAgents]);
 

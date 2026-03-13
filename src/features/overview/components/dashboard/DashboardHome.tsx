@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { LayoutDashboard } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useOverviewStore } from "@/stores/overviewStore";
 import { useAuthStore } from '@/stores/authStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useMemo, useEffect } from 'react';
@@ -20,20 +21,20 @@ import { TrafficErrorsChart } from './widgets/TrafficErrorsChart';
 
 export default function DashboardHome() {
   const user = useAuthStore((s) => s.user);
-  const personas = usePersonaStore((s) => s.personas);
-  const globalExecutions = usePersonaStore((s) => s.globalExecutions);
-  const globalExecutionsTotal = usePersonaStore((s) => s.globalExecutionsTotal);
-  const pendingReviewCount = usePersonaStore((s) => s.pendingReviewCount);
-  const unreadMessageCount = usePersonaStore((s) => s.unreadMessageCount);
-  const fetchGlobalExecutions = usePersonaStore((s) => s.fetchGlobalExecutions);
-  const fetchPendingReviewCount = usePersonaStore((s) => s.fetchPendingReviewCount);
-  const fetchUnreadMessageCount = usePersonaStore((s) => s.fetchUnreadMessageCount);
-  const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
-  const memoryActions = usePersonaStore((s) => s.memoryActions);
-  const dismissMemoryAction = usePersonaStore((s) => s.dismissMemoryAction);
+  const personas = useAgentStore((s) => s.personas);
+  const globalExecutions = useOverviewStore((s) => s.globalExecutions);
+  const globalExecutionsTotal = useOverviewStore((s) => s.globalExecutionsTotal);
+  const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
+  const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
+  const fetchGlobalExecutions = useOverviewStore((s) => s.fetchGlobalExecutions);
+  const fetchPendingReviewCount = useOverviewStore((s) => s.fetchPendingReviewCount);
+  const fetchUnreadMessageCount = useOverviewStore((s) => s.fetchUnreadMessageCount);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
+  const memoryActions = useOverviewStore((s) => s.memoryActions);
+  const dismissMemoryAction = useOverviewStore((s) => s.dismissMemoryAction);
   const { selectedPersonaId, setSelectedPersonaId } = useOverviewFilters();
-  const executionDashboard = usePersonaStore((s) => s.executionDashboard);
-  const fetchHealingIssues = usePersonaStore((s) => s.fetchHealingIssues);
+  const executionDashboard = useOverviewStore((s) => s.executionDashboard);
+  const fetchHealingIssues = useOverviewStore((s) => s.fetchHealingIssues);
 
   const dailyPoints = executionDashboard?.daily_points ?? [];
 

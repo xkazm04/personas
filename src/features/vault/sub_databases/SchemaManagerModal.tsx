@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { X, Table2, Code2, Terminal } from 'lucide-react';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { TablesTab } from './tabs/TablesTab';
 import { QueriesTab } from './tabs/QueriesTab';
@@ -26,23 +27,14 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
   const [activeTab, setActiveTab] = useState<SchemaTab>('tables');
   // Track which tabs have been visited -- mount lazily, keep mounted
   const [visited, setVisited] = useState<Set<SchemaTab>>(() => new Set(['tables']));
-  const fetchDbSchemaTables = usePersonaStore((s) => s.fetchDbSchemaTables);
-  const fetchDbSavedQueries = usePersonaStore((s) => s.fetchDbSavedQueries);
+  const fetchDbSchemaTables = useVaultStore((s) => s.fetchDbSchemaTables);
+  const fetchDbSavedQueries = useVaultStore((s) => s.fetchDbSavedQueries);
 
   // Load data on mount
   useEffect(() => {
     fetchDbSchemaTables(credential.id);
     fetchDbSavedQueries(credential.id);
   }, [credential.id, fetchDbSchemaTables, fetchDbSavedQueries]);
-
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [onClose]);
 
   const iconUrl = connector?.icon_url;
   const color = connector?.color || '#6B7280';
@@ -51,103 +43,83 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
   const queryLanguage = getQueryLanguage(credential.service_type);
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      >
-        {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-
-        {/* Modal */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="relative w-full max-w-6xl h-[90vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+    <BaseModal isOpen onClose={onClose} titleId="schema-manager-title" size="6xl" panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden h-[90vh]">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-6 py-4 border-b border-primary/10 bg-secondary/20 shrink-0">
+        <div
+          className="w-9 h-9 rounded-lg flex items-center justify-center border border-primary/15"
+          style={{ backgroundColor: `${color}15` }}
         >
-          {/* Header */}
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-primary/10 bg-secondary/20 shrink-0">
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center border border-primary/15"
-              style={{ backgroundColor: `${color}15` }}
-            >
-              {iconUrl ? (
-                <ThemedConnectorIcon url={iconUrl} label={credential.name} color={color} size="w-5 h-5" />
-              ) : (
-                <div className="w-5 h-5 rounded" style={{ backgroundColor: color }} />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-semibold text-foreground/90 truncate">
-                {credential.name}
-              </h2>
-              <p className="text-sm text-muted-foreground/60">
-                Schema Manager -- {connector?.label || credential.service_type}
-              </p>
-            </div>
+          {iconUrl ? (
+            <ThemedConnectorIcon url={iconUrl} label={credential.name} color={color} size="w-5 h-5" />
+          ) : (
+            <div className="w-5 h-5 rounded" style={{ backgroundColor: color }} />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 id="schema-manager-title" className="text-sm font-semibold text-foreground/90 truncate">
+            {credential.name}
+          </h2>
+          <p className="text-sm text-muted-foreground/60">
+            Schema Manager -- {connector?.label || credential.service_type}
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex items-center gap-1 px-6 pt-3 border-b border-primary/10 shrink-0">
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = tab.id === activeTab;
+          return (
             <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
+              key={tab.id}
+              onClick={() => { setVisited((prev) => new Set([...prev, tab.id])); setActiveTab(tab.id); }}
+              className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? 'text-foreground/90'
+                  : 'text-muted-foreground/50 hover:text-muted-foreground/70'
+              }`}
             >
-              <X className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
+              {tab.label}
+              {isActive && (
+                <motion.div
+                  layoutId="schemaManagerTab"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary/60 rounded-full"
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              )}
             </button>
-          </div>
+          );
+        })}
+      </div>
 
-          {/* Tab bar */}
-          <div className="flex items-center gap-1 px-6 pt-3 border-b border-primary/10 shrink-0">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = tab.id === activeTab;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => { setVisited((prev) => new Set([...prev, tab.id])); setActiveTab(tab.id); }}
-                  className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'text-foreground/90'
-                      : 'text-muted-foreground/50 hover:text-muted-foreground/70'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {tab.label}
-                  {isActive && (
-                    <motion.div
-                      layoutId="schemaManagerTab"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary/60 rounded-full"
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
-                  )}
-                </button>
-              );
-            })}
+      {/* Content -- lazy mount on first visit, keep mounted to preserve state */}
+      <div className="flex-1 min-h-0 relative">
+        {visited.has('tables') && (
+          <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'tables' ? '' : 'hidden'}`}>
+            <TablesTab credentialId={credential.id} serviceType={credential.service_type} />
           </div>
-
-          {/* Content -- lazy mount on first visit, keep mounted to preserve state */}
-          <div className="flex-1 min-h-0 relative">
-            {visited.has('tables') && (
-              <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'tables' ? '' : 'hidden'}`}>
-                <TablesTab credentialId={credential.id} serviceType={credential.service_type} />
-              </div>
-            )}
-            {visited.has('queries') && (
-              <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'queries' ? '' : 'hidden'}`}>
-                <QueriesTab credentialId={credential.id} language={queryLanguage} serviceType={credential.service_type} />
-              </div>
-            )}
-            {visited.has('console') && (
-              <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'console' ? '' : 'hidden'}`}>
-                <ConsoleTab credentialId={credential.id} language={queryLanguage} />
-              </div>
-            )}
+        )}
+        {visited.has('queries') && (
+          <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'queries' ? '' : 'hidden'}`}>
+            <QueriesTab credentialId={credential.id} language={queryLanguage} serviceType={credential.service_type} />
           </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+        )}
+        {visited.has('console') && (
+          <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'console' ? '' : 'hidden'}`}>
+            <ConsoleTab credentialId={credential.id} language={queryLanguage} />
+          </div>
+        )}
+      </div>
+    </BaseModal>
   );
 }
 

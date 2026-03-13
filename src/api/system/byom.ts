@@ -1,57 +1,12 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// ============================================================================
-// BYOM Types
-// ============================================================================
-
-export type TaskComplexity = "simple" | "standard" | "critical";
-
-export interface RoutingRule {
-  name: string;
-  task_complexity: TaskComplexity;
-  provider: string;
-  model: string | null;
-  enabled: boolean;
-}
-
-export interface ComplianceRule {
-  name: string;
-  workflow_tags: string[];
-  allowed_providers: string[];
-  enabled: boolean;
-}
-
-export interface ByomPolicy {
-  enabled: boolean;
-  allowed_providers: string[];
-  blocked_providers: string[];
-  routing_rules: RoutingRule[];
-  compliance_rules: ComplianceRule[];
-}
-
-export interface ProviderAuditEntry {
-  id: string;
-  execution_id: string;
-  persona_id: string;
-  persona_name: string;
-  engine_kind: string;
-  model_used: string | null;
-  was_failover: boolean;
-  routing_rule_name: string | null;
-  compliance_rule_name: string | null;
-  cost_usd: number | null;
-  duration_ms: number | null;
-  status: string;
-  created_at: string;
-}
-
-export interface ProviderUsageStats {
-  engine_kind: string;
-  execution_count: number;
-  total_cost_usd: number;
-  avg_duration_ms: number;
-  failover_count: number;
-}
+import type { TaskComplexity } from "@/lib/bindings/TaskComplexity";
+import type { RoutingRule } from "@/lib/bindings/RoutingRule";
+import type { ComplianceRule } from "@/lib/bindings/ComplianceRule";
+import type { ByomPolicy } from "@/lib/bindings/ByomPolicy";
+import type { ProviderAuditEntry } from "@/lib/bindings/ProviderAuditEntry";
+import type { ProviderUsageStats } from "@/lib/bindings/ProviderUsageStats";
+export type { TaskComplexity, RoutingRule, ComplianceRule, ByomPolicy, ProviderAuditEntry, ProviderUsageStats };
 
 // ============================================================================
 // BYOM Policy API

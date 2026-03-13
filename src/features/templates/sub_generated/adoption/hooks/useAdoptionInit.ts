@@ -4,10 +4,9 @@
  * Extracted from AdoptionWizardContext to isolate init/restore concerns.
  */
 import { useEffect, useRef, type MutableRefObject } from 'react';
-import type { AgentIR } from '@/lib/types/designTypes';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import { usePersonaStore } from '@/stores/personaStore';
-import { parseJsonSafe } from '@/lib/utils/parseJson';
+import { useSystemStore } from "@/stores/systemStore";
+import { getCachedDesignResult } from '../../gallery/cards/reviewParseCache';
 import type { useAdoptReducer } from './useAdoptReducer';
 
 interface UseAdoptionInitOptions {
@@ -32,8 +31,8 @@ export function useAdoptionInit({
   highWaterMarkRef,
 }: UseAdoptionInitOptions) {
   const { state } = wizard;
-  const storedDraft = usePersonaStore((s) => s.adoptionDraft);
-  const setAdoptionDraft = usePersonaStore((s) => s.setAdoptionDraft);
+  const storedDraft = useSystemStore((s) => s.adoptionDraft);
+  const setAdoptionDraft = useSystemStore((s) => s.setAdoptionDraft);
   const draftRestoredRef = useRef(false);
 
   // -- Initialize on open --
@@ -41,7 +40,7 @@ export function useAdoptionInit({
     if (!isOpen || !review) return;
     if (state.backgroundAdoptId) return;
 
-    const designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
+    const designResult = getCachedDesignResult(review);
     if (!designResult) return;
 
     manualSelectionsRef.current = new Set();

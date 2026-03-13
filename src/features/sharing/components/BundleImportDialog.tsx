@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Download, Loader2, ShieldCheck, ShieldAlert, ShieldOff, AlertTriangle } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { BundleImportPreview, BundleResourcePreview } from '@/api/network/bundle';
 
@@ -14,8 +14,8 @@ interface BundleImportDialogProps {
 }
 
 export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps) {
-  const previewBundleImport = usePersonaStore((s) => s.previewBundleImport);
-  const applyBundleImport = usePersonaStore((s) => s.applyBundleImport);
+  const previewBundleImport = useSystemStore((s) => s.previewBundleImport);
+  const applyBundleImport = useSystemStore((s) => s.applyBundleImport);
   const addToast = useToastStore((s) => s.addToast);
 
   const [phase, setPhase] = useState<Phase>('pick');

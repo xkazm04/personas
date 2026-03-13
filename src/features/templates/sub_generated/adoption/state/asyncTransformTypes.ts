@@ -1,7 +1,7 @@
 /**
  * Types, constants, and helpers shared across the useAsyncTransform split modules.
  */
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import type { SandboxPolicy } from '@/lib/types/templateTypes';
 import type { ScanResult } from '@/lib/templates/personaSafetyScanner';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
@@ -30,7 +30,7 @@ export const INFLIGHT_TIMEOUT_MS = 120_000;
 
 export async function waitForPersonaInStore(personaId: string, attempts = 10, delayMs = 50): Promise<boolean> {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const exists = usePersonaStore.getState().personas.some((persona) => persona.id === personaId);
+    const exists = useAgentStore.getState().personas.some((persona) => persona.id === personaId);
     if (exists) return true;
     await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
   }

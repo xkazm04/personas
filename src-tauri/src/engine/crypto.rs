@@ -797,10 +797,25 @@ pub fn key_source_label() -> &'static str {
 // Core Encryption / Decryption
 // ---------------------------------------------------------------------------
 
+/// Return a cached AES-256-GCM cipher initialised from the master key.
+///
+/// The master key never changes at runtime, so the cipher can be constructed
+/// once and reused for every `encrypt_for_db` / `decrypt_from_db` call.
+fn get_cipher() -> Result<&'static Aes256Gcm, CryptoError> {
+    static CIPHER: OnceLock<Result<Aes256Gcm, String>> = OnceLock::new();
+    let result = CIPHER.get_or_init(|| {
+        let key = get_master_key().map_err(|e| e.to_string())?;
+        Ok(Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key)))
+    });
+    match result {
+        Ok(cipher) => Ok(cipher),
+        Err(e) => Err(CryptoError::KeyManagement(e.clone())),
+    }
+}
+
 /// Encrypt plaintext string, returning `(base64_ciphertext, base64_nonce)` for DB storage.
 pub fn encrypt_for_db(plaintext: &str) -> Result<(String, String), CryptoError> {
-    let key = get_master_key()?;
-    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key));
+    let cipher = get_cipher()?;
 
     let mut nonce_bytes = [0u8; 12];
     OsRng.fill_bytes(&mut nonce_bytes);
@@ -815,8 +830,7 @@ pub fn encrypt_for_db(plaintext: &str) -> Result<(String, String), CryptoError> 
 
 /// Decrypt from DB columns (base64 ciphertext + base64 nonce) back to plaintext.
 pub fn decrypt_from_db(ciphertext_b64: &str, nonce_b64: &str) -> Result<String, CryptoError> {
-    let key = get_master_key()?;
-    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key));
+    let cipher = get_cipher()?;
 
     let ciphertext = B64.decode(ciphertext_b64)?;
     let nonce_bytes = B64.decode(nonce_b64)?;
@@ -923,6 +937,107 @@ pub fn migrate_plaintext_credentials(pool: &DbPool) -> Result<(usize, usize), Cr
         .map_err(|e| CryptoError::KeyManagement(format!("Transaction commit error: {e}")))?;
 
     Ok((migrated, 0))
+}
+
+// ---------------------------------------------------------------------------
+// Migration: encrypt plaintext notification channel secrets
+// ---------------------------------------------------------------------------
+
+/// Config keys inside notification channel JSON that contain secrets.
+const SENSITIVE_CHANNEL_KEYS: &[&str] = &[
+    "webhook_url",
+    "bot_token",
+    "sendgrid_api_key",
+    "resend_api_key",
+];
+
+/// Migrate plaintext notification channel secrets to encrypted form.
+/// Scans all personas with non-null notification_channels, encrypts any
+/// sensitive config values that are still in plaintext (no corresponding
+/// `_enc`/`_iv` pair). Runs inside a transaction for atomicity.
+/// Returns `(migrated_persona_count, skipped_count)`.
+pub fn migrate_plaintext_notification_secrets(pool: &DbPool) -> Result<(usize, usize), CryptoError> {
+    let mut conn = pool
+        .get()
+        .map_err(|e| CryptoError::KeyManagement(format!("DB pool error: {e}")))?;
+
+    let rows: Vec<(String, String)> = {
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, notification_channels FROM personas \
+                 WHERE notification_channels IS NOT NULL AND notification_channels != ''",
+            )
+            .map_err(|e| CryptoError::KeyManagement(format!("Query error: {e}")))?;
+
+        stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+            .map_err(|e| CryptoError::KeyManagement(format!("Query error: {e}")))?
+            .filter_map(|r| r.ok())
+            .collect()
+    };
+
+    if rows.is_empty() {
+        return Ok((0, 0));
+    }
+
+    let tx = conn
+        .transaction()
+        .map_err(|e| CryptoError::KeyManagement(format!("Transaction begin error: {e}")))?;
+
+    let mut migrated = 0;
+    let mut skipped = 0;
+
+    for (id, channels_json) in &rows {
+        let mut channels: Vec<serde_json::Value> = match serde_json::from_str(channels_json) {
+            Ok(v) => v,
+            Err(_) => { skipped += 1; continue; }
+        };
+
+        let mut any_encrypted = false;
+        for ch in channels.iter_mut() {
+            let config = match ch.get_mut("config").and_then(|c| c.as_object_mut()) {
+                Some(c) => c,
+                None => continue,
+            };
+            for &key in SENSITIVE_CHANNEL_KEYS {
+                // Skip if already encrypted (has _enc pair)
+                if config.contains_key(&format!("{key}_enc")) {
+                    continue;
+                }
+                let value = match config.get(key).and_then(|v| v.as_str()) {
+                    Some(v) if !v.is_empty() => v.to_string(),
+                    _ => continue,
+                };
+                let (ciphertext, nonce) = encrypt_for_db(&value)?;
+                config.remove(key);
+                config.insert(format!("{key}_enc"), serde_json::Value::String(ciphertext));
+                config.insert(format!("{key}_iv"), serde_json::Value::String(nonce));
+                any_encrypted = true;
+            }
+        }
+
+        if any_encrypted {
+            let updated_json = serde_json::to_string(&channels)
+                .map_err(|e| CryptoError::Encrypt(format!("JSON serialize error: {e}")))?;
+            tx.execute(
+                "UPDATE personas SET notification_channels = ?1 WHERE id = ?2",
+                rusqlite::params![updated_json, id],
+            )
+            .map_err(|e| CryptoError::KeyManagement(format!("Update error for persona {id}: {e}")))?;
+            migrated += 1;
+        }
+    }
+
+    tx.commit()
+        .map_err(|e| CryptoError::KeyManagement(format!("Transaction commit error: {e}")))?;
+
+    if migrated > 0 {
+        tracing::info!(
+            "Migrated notification channel secrets for {} persona(s) to encrypted storage",
+            migrated
+        );
+    }
+
+    Ok((migrated, skipped))
 }
 
 // ---------------------------------------------------------------------------

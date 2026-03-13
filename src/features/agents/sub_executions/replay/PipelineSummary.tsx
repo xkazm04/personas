@@ -1,4 +1,4 @@
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import type { PipelineTrace } from '@/lib/execution/pipeline';
 import { PIPELINE_STAGES } from '@/lib/execution/pipeline';
 import { Clock, DollarSign, Zap, AlertCircle } from 'lucide-react';
@@ -8,7 +8,7 @@ import { formatDuration } from '@/lib/utils/formatters';
 // Summary row
 // ---------------------------------------------------------------------------
 
-export function PipelineSummary({ trace, execution }: { trace: PipelineTrace; execution: DbPersonaExecution }) {
+export function PipelineSummary({ trace, execution }: { trace: PipelineTrace; execution: PersonaExecution }) {
   const totalMs = trace.completedAt ? trace.completedAt - trace.startedAt : 0;
   const stagesHit = trace.spans.length;
   const errors = trace.spans.filter(e => e.error).length;

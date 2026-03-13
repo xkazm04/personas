@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { AgentStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
 import { testDesignFeasibility } from "@/api/templates/design";
 import { parseJsonOrDefault } from "@/lib/utils/parseJson";
@@ -119,7 +119,7 @@ function aggregateDigest(checks: PersonaHealthCheck[]): AgentHealthDigest {
 
 // -- Slice creator ----------------------------------------------------
 
-export const createHealthCheckSlice: StateCreator<PersonaStore, [], [], HealthCheckSlice> = (set, get) => ({
+export const createHealthCheckSlice: StateCreator<AgentStore, [], [], HealthCheckSlice> = (set, get) => ({
   healthDigest: null,
   healthDigestRunning: false,
   lastDigestAt: null,

@@ -84,6 +84,7 @@ pub struct CleanupSubscription {
 /// Credential rotation subscription: evaluate due policies and detect anomalies.
 pub struct RotationSubscription {
     pub pool: DbPool,
+    pub app: AppHandle,
 }
 
 /// File watcher subscription: monitor file system for changes.
@@ -123,6 +124,12 @@ pub struct AutoRollbackSubscription {
 /// OAuth token refresh subscription: proactively refresh tokens before expiry.
 pub struct OAuthRefreshSubscription {
     pub pool: DbPool,
+}
+
+/// Periodic sweep for zombie executions stuck in 'running' state.
+pub struct ZombieExecutionSubscription {
+    pub pool: DbPool,
+    pub app: AppHandle,
 }
 
 // ---------------------------------------------------------------------------
@@ -214,9 +221,9 @@ impl ReactiveSubscription for RotationSubscription {
     }
 
     async fn tick(&self) {
-        super::rotation::evaluate_due_rotations(&self.pool).await;
+        super::rotation::evaluate_due_rotations(&self.pool, &self.app).await;
         super::rotation::evaluate_credential_events(&self.pool).await;
-        super::rotation::detect_anomalies(&self.pool).await;
+        super::rotation::detect_anomalies(&self.pool, &self.app).await;
     }
 }
 
@@ -336,6 +343,25 @@ impl ReactiveSubscription for OAuthRefreshSubscription {
 
     async fn tick(&self) {
         super::oauth_refresh::oauth_refresh_tick(&self.pool).await;
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for ZombieExecutionSubscription {
+    fn name(&self) -> &'static str {
+        "zombie_execution_sweep"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(300) // 5 minutes
+    }
+
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(60) // Let the app fully start
+    }
+
+    async fn tick(&self) {
+        super::background::zombie_execution_tick(&self.pool, &self.app);
     }
 }
 

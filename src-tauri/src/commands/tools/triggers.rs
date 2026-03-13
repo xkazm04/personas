@@ -4,7 +4,9 @@ use tauri::State;
 use ts_rs::TS;
 
 use crate::db::models::{CreateTriggerInput, PersonaTrigger, UpdateTriggerInput};
+use crate::db::models::webhook_log::WebhookRequestLog;
 use crate::db::repos::resources::triggers as repo;
+use crate::db::repos::resources::webhook_log as webhook_log_repo;
 use crate::db::repos::communication::events as event_repo;
 use crate::engine::chain;
 use crate::error::AppError;
@@ -733,23 +735,23 @@ fn cron_to_human(expr: &str) -> String {
 
     // Daily at specific time
     if dom == "*" && mon == "*" && dow == "*" {
-        return format!("Daily at {time_str}");
+        return format!("Daily at {time_str} UTC");
     }
 
     // Specific days of week
     if dom == "*" && mon == "*" && dow != "*" {
         let days = format_dow(dow);
-        return format!("Every {days} at {time_str}");
+        return format!("Every {days} at {time_str} UTC");
     }
 
     // Specific day of month
     if dom != "*" && mon == "*" && dow == "*" {
         let ordinal = format_dom(dom);
-        return format!("Monthly on the {ordinal} at {time_str}");
+        return format!("Monthly on the {ordinal} at {time_str} UTC");
     }
 
     // Fallback
-    format!("Cron: {expr}")
+    format!("Cron: {expr} (UTC)")
 }
 
 fn format_time_from_cron(min: &str, hour: &str) -> String {
@@ -1203,4 +1205,127 @@ pub fn seed_mock_cron_agent(
         recent_executions: 0,
         recent_failures: 0,
     })
+}
+
+// =============================================================================
+// Webhook Request Inspector
+// =============================================================================
+
+/// List recent webhook request logs for a trigger (last 100, newest first).
+#[tauri::command]
+pub fn list_webhook_request_logs(
+    state: State<'_, Arc<AppState>>,
+    trigger_id: String,
+) -> Result<Vec<WebhookRequestLog>, AppError> {
+    require_auth_sync(&state)?;
+    webhook_log_repo::list_by_trigger(&state.db, &trigger_id)
+}
+
+/// Clear all webhook request logs for a trigger.
+#[tauri::command]
+pub fn clear_webhook_request_logs(
+    state: State<'_, Arc<AppState>>,
+    trigger_id: String,
+) -> Result<i64, AppError> {
+    require_auth_sync(&state)?;
+    webhook_log_repo::delete_by_trigger(&state.db, &trigger_id)
+}
+
+/// Replay a previously captured webhook request by re-posting its payload to the webhook endpoint.
+#[tauri::command]
+pub async fn replay_webhook_request(
+    state: State<'_, Arc<AppState>>,
+    log_id: String,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+    let log_entry = webhook_log_repo::get_by_id(&state.db, &log_id)?;
+
+    // Look up the trigger to get the HMAC secret
+    let trigger = repo::get_by_id(&state.db, &log_entry.trigger_id)?;
+    let cfg = trigger.parse_config();
+    let webhook_secret = match &cfg {
+        crate::db::models::TriggerConfig::Webhook { webhook_secret, .. } => webhook_secret.clone(),
+        _ => None,
+    };
+
+    let body_bytes = log_entry.body.unwrap_or_default();
+    let url = format!("http://localhost:9420/webhook/{}", log_entry.trigger_id);
+
+    let mut req = crate::SHARED_HTTP
+        .post(&url)
+        .header("content-type", "application/json");
+
+    // Compute HMAC signature for the replayed payload
+    if let Some(ref secret) = webhook_secret {
+        if !secret.is_empty() {
+            use hmac::{Hmac, Mac};
+            use sha2::Sha256;
+            type HmacSha256 = Hmac<Sha256>;
+            let mut mac = HmacSha256::new_from_slice(secret.as_bytes())
+                .map_err(|e| AppError::Internal(format!("HMAC init failed: {e}")))?;
+            mac.update(body_bytes.as_bytes());
+            let sig = hex::encode(mac.finalize().into_bytes());
+            req = req.header("x-hub-signature-256", format!("sha256={sig}"));
+        }
+    }
+
+    let resp = req
+        .body(body_bytes)
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Replay request failed: {e}")))?;
+
+    let status = resp.status().as_u16();
+    let resp_body = resp.text().await.unwrap_or_default();
+
+    if status == 200 {
+        // Extract event_id from response
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&resp_body) {
+            if let Some(eid) = parsed.get("event_id").and_then(|v| v.as_str()) {
+                return Ok(eid.to_string());
+            }
+        }
+        Ok(resp_body)
+    } else {
+        Err(AppError::Internal(format!("Replay failed with status {status}: {resp_body}")))
+    }
+}
+
+/// Generate a curl command string for a webhook request log entry.
+#[tauri::command]
+pub fn webhook_request_to_curl(
+    state: State<'_, Arc<AppState>>,
+    log_id: String,
+) -> Result<String, AppError> {
+    require_auth_sync(&state)?;
+    let log_entry = webhook_log_repo::get_by_id(&state.db, &log_id)?;
+
+    let url = format!("http://localhost:9420/webhook/{}", log_entry.trigger_id);
+    let mut parts = vec![format!("curl -X {} '{}'", log_entry.method, url)];
+
+    // Add headers (skip content-length and host as curl handles them)
+    if let Some(ref headers_json) = log_entry.headers {
+        if let Ok(headers) = serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(headers_json) {
+            for (key, value) in &headers {
+                let k = key.to_lowercase();
+                if k == "content-length" || k == "host" {
+                    continue;
+                }
+                if let Some(v) = value.as_str() {
+                    parts.push(format!("  -H '{}: {}'", key, v));
+                }
+            }
+        }
+    }
+
+    // Add body
+    if let Some(ref body) = log_entry.body {
+        if !body.is_empty() {
+            // Escape single quotes in body for shell safety
+            let escaped = body.replace('\'', "'\\''");
+            parts.push(format!("  -d '{}'", escaped));
+        }
+    }
+
+    Ok(parts.join(" \\\n"))
 }

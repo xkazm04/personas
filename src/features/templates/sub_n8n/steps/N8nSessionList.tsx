@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Trash2, ChevronRight, RefreshCw, RotateCcw } from 'lucide-react';
-import { listN8nSessions, deleteN8nSession, getN8nSession } from '@/api/templates/n8nTransform';
-import type { N8nTransformSession } from '@/lib/bindings/N8nTransformSession';
+import { listN8nSessionSummaries, deleteN8nSession, getN8nSession } from '@/api/templates/n8nTransform';
+import type { N8nSessionSummary } from '@/lib/bindings/N8nSessionSummary';
+import type { SessionStatus } from '@/lib/bindings/SessionStatus';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { N8nWizardStep, TransformQuestion, TransformSubPhase, SessionLoadedPayload } from '../hooks/useN8nImportReducer';
@@ -13,12 +14,12 @@ interface N8nSessionListProps {
 }
 
 /** Detect sessions interrupted by app exit (vs genuine failures) */
-function isInterruptedSession(session: N8nTransformSession): boolean {
+function isInterruptedSession(session: N8nSessionSummary): boolean {
   return session.status === 'failed'
     && !!session.error?.includes('App closed during transform');
 }
 
-const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+const STATUS_STYLES: Record<SessionStatus | 'interrupted', { bg: string; text: string; label: string }> = {
   draft:              { bg: 'bg-zinc-500/15', text: 'text-zinc-400', label: 'Draft' },
   analyzing:          { bg: 'bg-blue-500/15', text: 'text-blue-400', label: 'Analyzing' },
   transforming:       { bg: 'bg-amber-500/15', text: 'text-amber-400', label: 'Transforming' },
@@ -43,7 +44,7 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
-  const [sessions, setSessions] = useState<N8nTransformSession[]>([]);
+  const [sessions, setSessions] = useState<N8nSessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +53,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
     try {
       setLoading(true);
       setError(null);
-      const result = await listN8nSessions();
+      const result = await listN8nSessionSummaries();
       setSessions(result);
     } catch {
       // User-facing: error is displayed inline via error state
@@ -81,7 +82,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
     }
   };
 
-  const handleLoad = async (session: N8nTransformSession) => {
+  const handleLoad = async (session: N8nSessionSummary) => {
     try {
       setError(null);
       const full = await getN8nSession(session.id);

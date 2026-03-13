@@ -3,15 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown, ChevronRight, Trash2, Clock, Wand2, AlertCircle, Check,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
-import { MatrixResultsView } from '../../results/MatrixResultsView';
+import { useAgentStore } from "@/stores/agentStore";
+import { MatrixResultsView } from '../../components/matrix/MatrixResultsView';
 import { statusBadge } from '../../shared/labUtils';
 
 export function MatrixHistory() {
-  const matrixRuns = usePersonaStore((s) => s.matrixRuns);
-  const matrixResultsMap = usePersonaStore((s) => s.matrixResultsMap);
-  const fetchMatrixResults = usePersonaStore((s) => s.fetchMatrixResults);
-  const deleteMatrixRun = usePersonaStore((s) => s.deleteMatrixRun);
+  const matrixRuns = useAgentStore((s) => s.matrixRuns);
+  const matrixResultsMap = useAgentStore((s) => s.matrixResultsMap);
+  const fetchMatrixResults = useAgentStore((s) => s.fetchMatrixResults);
+  const deleteMatrixRun = useAgentStore((s) => s.deleteMatrixRun);
 
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
 

@@ -3,7 +3,7 @@ import {
   Square, ChevronDown,
   Filter, Wand2, AlertCircle,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { Button } from '@/features/shared/components/buttons';
 import { LabProgress } from '../../shared/LabProgress';
 import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
@@ -13,11 +13,11 @@ import { ANTHROPIC_MODELS, ALL_MODELS } from './matrixModels';
 import { MatrixHistory } from './MatrixHistory';
 
 export function MatrixPanel() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const isLabRunning = usePersonaStore((s) => s.isLabRunning);
-  const fetchMatrixRuns = usePersonaStore((s) => s.fetchMatrixRuns);
-  const startMatrix = usePersonaStore((s) => s.startMatrix);
-  const cancelMatrix = usePersonaStore((s) => s.cancelMatrix);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const isLabRunning = useAgentStore((s) => s.isLabRunning);
+  const fetchMatrixRuns = useAgentStore((s) => s.fetchMatrixRuns);
+  const startMatrix = useAgentStore((s) => s.startMatrix);
+  const cancelMatrix = useAgentStore((s) => s.cancelMatrix);
 
   const [instruction, setInstruction] = useState('');
   const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['haiku', 'sonnet']));

@@ -8,7 +8,7 @@ import { getConnectorMeta } from '@/features/shared/components/display/Connector
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from '@/stores/vaultStore';
 import type { ConnectorDefinition, CredentialTemplateField } from '@/lib/types/types';
 import type { RequiredConnector } from './ConnectStep';
 
@@ -99,11 +99,11 @@ export function ManualForm({
 
   const handleSave = useCallback(
     async (values: Record<string, string>) => {
-      const store = usePersonaStore.getState();
+      const vaultStore = useVaultStore.getState();
 
       if (designResult && !designResult.match_existing) {
         const conn = designResult.connector;
-        await store.createConnectorDefinition({
+        await vaultStore.createConnectorDefinition({
           name: conn.name,
           label: conn.label,
           category: conn.category,
@@ -122,7 +122,7 @@ export function ManualForm({
       }
 
       const serviceType = designResult?.match_existing || designResult?.connector.name || connectorName;
-      const credId = await store.createCredential({
+      const credId = await vaultStore.createCredential({
         name: credentialName,
         service_type: serviceType,
         data: values,

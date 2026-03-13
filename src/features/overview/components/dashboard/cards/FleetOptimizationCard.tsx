@@ -18,7 +18,7 @@ import {
   DollarSign,
   Search,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
 import {
   generateFleetRecommendation,
   type FleetRecommendation,
@@ -169,8 +169,8 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
 }
 
 export default function FleetOptimizationCard() {
-  const executionDashboard = usePersonaStore((s) => s.executionDashboard);
-  const healingIssues = usePersonaStore((s) => s.healingIssues);
+  const executionDashboard = useOverviewStore((s) => s.executionDashboard);
+  const healingIssues = useOverviewStore((s) => s.healingIssues);
 
   const recommendation = useMemo(
     () => generateFleetRecommendation(executionDashboard, healingIssues),

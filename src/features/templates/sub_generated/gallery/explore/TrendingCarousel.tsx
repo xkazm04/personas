@@ -1,8 +1,7 @@
 import { TrendingUp, Download } from 'lucide-react';
 import { DimensionRadial } from '../../shared/DimensionRadial';
-import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
+import { getCachedDesignResult } from '../cards/reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { AgentIR } from '@/lib/types/designTypes';
 
 interface TrendingCarouselProps {
   trendingTemplates: PersonaDesignReview[];
@@ -38,7 +37,7 @@ export function TrendingCarousel({
                 <Download className="w-2.5 h-2.5" />
                 {t.adoption_count}
               </span>
-              <DimensionRadial designResult={parseJsonSafe<AgentIR | null>(t.design_result, null)} size={20} />
+              <DimensionRadial designResult={getCachedDesignResult(t)} size={20} />
             </div>
           </button>
         ))}

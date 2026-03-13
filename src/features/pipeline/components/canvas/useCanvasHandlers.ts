@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Connection, Edge, Node, NodeChange } from '@xyflow/react';
-import { usePersonaStore } from '@/stores/personaStore';
-import * as api from '@/api/tauriApi';
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { useAgentStore } from "@/stores/agentStore";
+import { updateTeamMember } from "@/api/pipeline/teams";
 import { computeAlignments } from '@/features/pipeline/sub_canvas';
 import { computeAutoLayout } from './canvasAutoLayout';
 import type { StickyNoteCategory } from '@/features/pipeline/sub_canvas';
@@ -38,17 +39,17 @@ export function useCanvasHandlers({
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
-  const selectedTeamId = usePersonaStore((s) => s.selectedTeamId);
-  const teams = usePersonaStore((s) => s.teams);
-  const teamMembers = usePersonaStore((s) => s.teamMembers) as PersonaTeamMember[];
-  const teamConnections = usePersonaStore((s) => s.teamConnections) as PersonaTeamConnection[];
-  const addTeamMember = usePersonaStore((s) => s.addTeamMember);
-  const removeTeamMember = usePersonaStore((s) => s.removeTeamMember);
-  const createTeamConnection = usePersonaStore((s) => s.createTeamConnection);
-  const deleteTeamConnection = usePersonaStore((s) => s.deleteTeamConnection);
-  const updateTeamConnection = usePersonaStore((s) => s.updateTeamConnection);
-  const personas = usePersonaStore((s) => s.personas);
-  const selectTeam = usePersonaStore((s) => s.selectTeam);
+  const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
+  const teams = usePipelineStore((s) => s.teams);
+  const teamMembers = usePipelineStore((s) => s.teamMembers) as PersonaTeamMember[];
+  const teamConnections = usePipelineStore((s) => s.teamConnections) as PersonaTeamConnection[];
+  const addTeamMember = usePipelineStore((s) => s.addTeamMember);
+  const removeTeamMember = usePipelineStore((s) => s.removeTeamMember);
+  const createTeamConnection = usePipelineStore((s) => s.createTeamConnection);
+  const deleteTeamConnection = usePipelineStore((s) => s.deleteTeamConnection);
+  const updateTeamConnection = usePipelineStore((s) => s.updateTeamConnection);
+  const personas = useAgentStore((s) => s.personas);
+  const selectTeam = usePipelineStore((s) => s.selectTeam);
 
   const selectedTeam = useMemo(() => teams.find((t: PersonaTeam) => t.id === selectedTeamId), [teams, selectedTeamId]);
   const agentNames = useMemo(() => {
@@ -104,7 +105,7 @@ export function useCanvasHandlers({
     if (!selectedTeamId) return;
     setSaveStatus('saving');
     try {
-      await Promise.all(nodes.filter((n) => n.type !== 'stickyNote').map((n) => api.updateTeamMember(n.id, undefined, n.position.x, n.position.y)));
+      await Promise.all(nodes.filter((n) => n.type !== 'stickyNote').map((n) => updateTeamMember(n.id, undefined, n.position.x, n.position.y)));
       setSaveStatus('saved');
     } catch (err) { console.error('Failed to save canvas:', err); setSaveStatus('unsaved'); }
   }, [selectedTeamId, nodes, setSaveStatus]);
@@ -141,7 +142,7 @@ export function useCanvasHandlers({
 
   const handleRoleChange = useCallback(async (memberId: string, newRole: string) => {
     dispatch({ type: 'UPDATE_SELECTED_MEMBER_ROLE', memberId, role: newRole });
-    try { await api.updateTeamMember(memberId, newRole); }
+    try { await updateTeamMember(memberId, newRole); }
     catch (err) { console.error('Failed to update member role:', err); }
   }, [dispatch]);
 

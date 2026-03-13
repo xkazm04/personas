@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { useCredentialNav } from '@/features/vault/hooks/CredentialNavContext';
-import type { DbPersonaToolDefinition } from '@/lib/types/types';
+import type { PersonaToolDefinition } from '@/lib/types/types';
 
 /**
  * Tool toggle, undo, bulk, and add-credential actions.
@@ -10,14 +11,14 @@ import type { DbPersonaToolDefinition } from '@/lib/types/types';
 export function useToolSelectorActions(
   personaId: string,
   assignedToolIds: Set<string>,
-  assignedTools: DbPersonaToolDefinition[],
+  assignedTools: PersonaToolDefinition[],
 ) {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const assignTool = usePersonaStore((s) => s.assignTool);
-  const removeTool = usePersonaStore((s) => s.removeTool);
-  const bulkAssignTools = usePersonaStore((s) => s.bulkAssignTools);
-  const bulkRemoveTools = usePersonaStore((s) => s.bulkRemoveTools);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const assignTool = useAgentStore((s) => s.assignTool);
+  const removeTool = useAgentStore((s) => s.removeTool);
+  const bulkAssignTools = useAgentStore((s) => s.bulkAssignTools);
+  const bulkRemoveTools = useAgentStore((s) => s.bulkRemoveTools);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const { navigate } = useCredentialNav();
 
   const [justToggledId, setJustToggledId] = useState<string | null>(null);

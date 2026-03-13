@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { DatabaseListView } from "../DatabaseListView";
-import { usePersonaStore } from "@/stores/personaStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import { resetInvokeMocks, mockInvokeMap } from "@/test/tauriMock";
 import type { CredentialMetadata, ConnectorDefinition } from "@/lib/types/types";
 
@@ -70,7 +70,7 @@ describe("DatabaseListView", () => {
       list_db_schema_tables: [],
       list_db_saved_queries: [],
     });
-    usePersonaStore.setState({
+    useVaultStore.setState({
       credentials: [],
       connectorDefinitions: [],
       dbSchemaTables: [],
@@ -79,7 +79,7 @@ describe("DatabaseListView", () => {
   });
 
   it("shows empty state when no database credentials exist", () => {
-    usePersonaStore.setState({
+    useVaultStore.setState({
       credentials: [],
       connectorDefinitions: [makeConnector()],
     });
@@ -89,7 +89,7 @@ describe("DatabaseListView", () => {
   });
 
   it("renders database credentials as cards", () => {
-    usePersonaStore.setState({
+    useVaultStore.setState({
       credentials: [
         makeCredential({ id: "cred-1", name: "DB Alpha" }),
         makeCredential({ id: "cred-2", name: "DB Beta" }),
@@ -103,7 +103,7 @@ describe("DatabaseListView", () => {
   });
 
   it("filters out non-database credentials", () => {
-    usePersonaStore.setState({
+    useVaultStore.setState({
       credentials: [
         makeCredential({ id: "cred-1", name: "My Supabase DB" }),
         makeCredential({ id: "cred-2", name: "My Slack", service_type: "slack" }),
@@ -125,7 +125,7 @@ describe("DatabaseListView", () => {
   });
 
   it("shows tab bar when multiple connector types exist", () => {
-    usePersonaStore.setState({
+    useVaultStore.setState({
       credentials: [
         makeCredential({ id: "cred-1", name: "Supa DB", service_type: "supabase" }),
         makeCredential({ id: "cred-2", name: "Neon DB", service_type: "neon" }),
@@ -149,7 +149,7 @@ describe("DatabaseListView", () => {
   });
 
   it("does not show tab bar with only one connector type", () => {
-    usePersonaStore.setState({
+    useVaultStore.setState({
       credentials: [
         makeCredential({ id: "cred-1", name: "DB One" }),
         makeCredential({ id: "cred-2", name: "DB Two" }),
@@ -166,7 +166,7 @@ describe("DatabaseListView", () => {
   });
 
   it("filters credentials by search text", () => {
-    usePersonaStore.setState({
+    useVaultStore.setState({
       credentials: [
         makeCredential({ id: "cred-1", name: "Production DB" }),
         makeCredential({ id: "cred-2", name: "Staging DB" }),
@@ -184,7 +184,7 @@ describe("DatabaseListView", () => {
   });
 
   it("shows 'No matching databases' when search has no results", () => {
-    usePersonaStore.setState({
+    useVaultStore.setState({
       credentials: [makeCredential()],
       connectorDefinitions: [makeConnector()],
     });
@@ -198,7 +198,7 @@ describe("DatabaseListView", () => {
   });
 
   it("shows search input when credentials exist", () => {
-    usePersonaStore.setState({
+    useVaultStore.setState({
       credentials: [makeCredential()],
       connectorDefinitions: [makeConnector()],
     });

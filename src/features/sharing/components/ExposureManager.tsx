@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Share2, Plus, Loader2, Package, Eye, GitFork, Trash2 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import type { ExposedResource, CreateExposedResourceInput, AccessLevel, ResourceType } from '@/api/network/exposure';
@@ -98,7 +99,7 @@ function AddExposureForm({
   onAdd: (input: CreateExposedResourceInput) => void;
   onCancel: () => void;
 }) {
-  const personas = usePersonaStore((s) => s.personas);
+  const personas = useAgentStore((s) => s.personas);
   const [resourceType, setResourceType] = useState<ResourceType>('persona');
   const [resourceId, setResourceId] = useState('');
   const [accessLevel, setAccessLevel] = useState<AccessLevel>('read');
@@ -204,11 +205,11 @@ function AddExposureForm({
 }
 
 export default function ExposureManager() {
-  const exposedResources = usePersonaStore((s) => s.exposedResources);
-  const fetchExposedResources = usePersonaStore((s) => s.fetchExposedResources);
-  const createExposedResource = usePersonaStore((s) => s.createExposedResource);
-  const deleteExposedResource = usePersonaStore((s) => s.deleteExposedResource);
-  const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
+  const exposedResources = useSystemStore((s) => s.exposedResources);
+  const fetchExposedResources = useSystemStore((s) => s.fetchExposedResources);
+  const createExposedResource = useSystemStore((s) => s.createExposedResource);
+  const deleteExposedResource = useSystemStore((s) => s.deleteExposedResource);
+  const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
   const addToast = useToastStore((s) => s.addToast);
 
   const [showAddForm, setShowAddForm] = useState(false);

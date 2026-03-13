@@ -5,7 +5,8 @@ import {
   type Node,
   type Edge,
 } from '@xyflow/react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import {
   useDerivedCanvasState,
@@ -23,10 +24,10 @@ import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';
 
 export default function TeamCanvas() {
-  const selectedTeamId = usePersonaStore((s) => s.selectedTeamId);
-  const teamMembers = usePersonaStore((s) => s.teamMembers) as PersonaTeamMember[];
-  const teamConnections = usePersonaStore((s) => s.teamConnections) as PersonaTeamConnection[];
-  const personas = usePersonaStore((s) => s.personas);
+  const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
+  const teamMembers = usePipelineStore((s) => s.teamMembers) as PersonaTeamMember[];
+  const teamConnections = usePipelineStore((s) => s.teamConnections) as PersonaTeamConnection[];
+  const personas = useAgentStore((s) => s.personas);
 
   const { state: cs, dispatch, setSaveStatus, setSelectedMember, setContextMenu, setEdgeTooltip, setGhostNode, setReactFlowInstance } = useCanvasReducer();
   const [nodes, setNodes, onNodesChangeBase] = useNodesState<Node>([]);

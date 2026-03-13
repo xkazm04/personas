@@ -3,6 +3,8 @@ use tauri::State;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
+use ts_rs::TS;
+
 use crate::db::models::{CreatePersonaMemoryInput, PersonaMemory};
 use crate::db::repos::core::memories as repo;
 use crate::error::AppError;
@@ -17,9 +19,11 @@ pub fn list_memories(
     search: Option<String>,
     limit: Option<i64>,
     offset: Option<i64>,
+    sort_column: Option<String>,
+    sort_direction: Option<String>,
 ) -> Result<Vec<PersonaMemory>, AppError> {
     require_auth_sync(&state)?;
-    repo::get_all(&state.db, persona_id.as_deref(), category.as_deref(), search.as_deref(), limit, offset)
+    repo::get_all(&state.db, persona_id.as_deref(), category.as_deref(), search.as_deref(), limit, offset, sort_column.as_deref(), sort_direction.as_deref())
 }
 
 #[tauri::command]
@@ -61,6 +65,8 @@ pub fn list_memories_with_stats(
     search: Option<String>,
     limit: Option<i64>,
     offset: Option<i64>,
+    sort_column: Option<String>,
+    sort_direction: Option<String>,
 ) -> Result<repo::MemoriesWithStats, AppError> {
     require_auth_sync(&state)?;
     repo::get_all_with_stats(
@@ -70,6 +76,8 @@ pub fn list_memories_with_stats(
         search.as_deref(),
         limit,
         offset,
+        sort_column.as_deref(),
+        sort_direction.as_deref(),
     )
 }
 
@@ -112,7 +120,8 @@ pub fn batch_delete_memories(
 
 // -- LLM CLI Memory Review --------------------------------------------------
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, TS)]
+#[ts(export)]
 pub struct MemoryReviewDetail {
     pub id: String,
     pub title: String,
@@ -121,7 +130,8 @@ pub struct MemoryReviewDetail {
     pub action: String,
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, TS)]
+#[ts(export)]
 pub struct MemoryReviewResult {
     pub reviewed: usize,
     pub deleted: usize,
@@ -147,6 +157,8 @@ pub async fn review_memories_with_cli(
         None,
         Some(200),
         Some(0),
+        None,
+        None,
     )?;
 
     if memories.is_empty() {
@@ -377,9 +389,9 @@ const MOCK_MEMORY_CATEGORIES: &[&str] = &[
 ];
 
 const MOCK_MEMORY_TAGS: &[&str] = &[
-    "formatting,output", "reliability,api", "timezone,standard",
-    "communication,customer", "api,rate-limit", "logging,observability",
-    "summarization,nlp", "scheduling,notifications",
+    r#"["formatting","output"]"#, r#"["reliability","api"]"#, r#"["timezone","standard"]"#,
+    r#"["communication","customer"]"#, r#"["api","rate-limit"]"#, r#"["logging","observability"]"#,
+    r#"["summarization","nlp"]"#, r#"["scheduling","notifications"]"#,
 ];
 
 #[tauri::command]

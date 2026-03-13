@@ -58,6 +58,8 @@ export const listMemoriesWithStats = (
   search?: string,
   limit?: number,
   offset?: number,
+  sortColumn?: string,
+  sortDirection?: string,
 ) =>
   invoke<MemoriesWithStats>("list_memories_with_stats", {
     personaId: personaId ?? null,
@@ -65,6 +67,8 @@ export const listMemoriesWithStats = (
     search: search ?? null,
     limit: limit ?? null,
     offset: offset ?? null,
+    sortColumn: sortColumn ?? null,
+    sortDirection: sortDirection ?? null,
   });
 
 export const listMemoriesByExecution = (executionId: string) =>

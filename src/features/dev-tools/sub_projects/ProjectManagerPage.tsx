@@ -9,7 +9,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { useContextScanBackground } from '../hooks/useContextScanBackground';
 
 // ---------------------------------------------------------------------------
@@ -491,13 +491,13 @@ function GoalBoard({
 
 export default function ProjectManagerPage() {
   // Store bindings
-  const fetchProjects = usePersonaStore((s) => s.fetchProjects);
-  const storeCreateProject = usePersonaStore((s) => s.createProject);
-  const setActiveProject = usePersonaStore((s) => s.setActiveProject);
-  const fetchGoals = usePersonaStore((s) => s.fetchGoals);
-  const createGoal = usePersonaStore((s) => s.createGoal);
-  const updateGoal = usePersonaStore((s) => s.updateGoal);
-  const deleteGoal = usePersonaStore((s) => s.deleteGoal);
+  const fetchProjects = useSystemStore((s) => s.fetchProjects);
+  const storeCreateProject = useSystemStore((s) => s.createProject);
+  const setActiveProject = useSystemStore((s) => s.setActiveProject);
+  const fetchGoals = useSystemStore((s) => s.fetchGoals);
+  const createGoal = useSystemStore((s) => s.createGoal);
+  const updateGoal = useSystemStore((s) => s.updateGoal);
+  const deleteGoal = useSystemStore((s) => s.deleteGoal);
   const { startBackgroundScan } = useContextScanBackground();
 
   // Local state (until slice provides it)

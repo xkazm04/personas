@@ -9,10 +9,15 @@
 //! classified as transient (429, 503, timeout) vs permanent (401, 403),
 //! and remediation policies vary accordingly.
 
+use ts_rs::TS;
+
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::repos::resources::rotation as rotation_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
+
+use tauri::AppHandle;
+use tauri::Emitter;
 
 use super::connector_strategy;
 use super::cron;
@@ -41,7 +46,8 @@ const DEVELOPMENT_TOLERANCE: f64 = 0.50;
 // ---------------------------------------------------------------------------
 
 /// Classify an HTTP status code extracted from a healthcheck/rotation message.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, TS)]
+#[ts(export)]
 pub enum ErrorClass {
     /// Transient: rate-limit (429), service unavailable (503), gateway timeout (504), or network timeout.
     Transient,
@@ -109,7 +115,8 @@ fn extract_http_status(msg: &str) -> Option<u16> {
 // ---------------------------------------------------------------------------
 
 /// A single healthcheck result stored in the ring buffer.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
+#[ts(export)]
 pub struct HealthcheckEntry {
     pub success: bool,
     pub status_code: Option<u16>,
@@ -123,7 +130,8 @@ pub struct HealthcheckEntry {
 // ---------------------------------------------------------------------------
 
 /// Computed anomaly scores for a credential based on its healthcheck ring buffer.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
+#[ts(export)]
 pub struct AnomalyScore {
     /// Overall failure rate across the entire buffer.
     pub failure_rate_total: f64,
@@ -146,7 +154,8 @@ pub struct AnomalyScore {
 }
 
 /// Remediation action recommended by the anomaly scorer.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, TS)]
+#[ts(export)]
 pub enum Remediation {
     /// Credential is healthy -- no action needed.
     Healthy,
@@ -356,7 +365,7 @@ pub fn parse_healthcheck_entries(metadata: &serde_json::Value) -> Vec<Healthchec
 
 /// Evaluate all due rotation policies and execute rotations.
 /// Called periodically from the background scheduler loop.
-pub async fn evaluate_due_rotations(pool: &DbPool) {
+pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
     let now = chrono::Utc::now().to_rfc3339();
 
     let due_policies = match rotation_repo::get_due_policies(pool, &now) {
@@ -445,6 +454,11 @@ pub async fn evaluate_due_rotations(pool: &DbPool) {
                     "Rotation: successful -- {}",
                     detail
                 );
+                let _ = app.emit("rotation-completed", serde_json::json!({
+                    "credential_id": policy.credential_id,
+                    "status": "success",
+                    "detail": detail,
+                }));
             }
             Err(e) => {
                 let msg = e.to_string();
@@ -574,6 +588,12 @@ pub async fn evaluate_due_rotations(pool: &DbPool) {
                         );
                     }
                 }
+                let _ = app.emit("rotation-completed", serde_json::json!({
+                    "credential_id": policy.credential_id,
+                    "status": "failed",
+                    "detail": msg,
+                    "remediation": score.remediation.as_str(),
+                }));
             }
         }
     }
@@ -585,7 +605,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool) {
 /// and record anomalies based on temporal patterns rather than simple binary
 /// state flips. Distinguishes transient issues (429, 503) from permanent
 /// revocation (401, 403) and applies per-credential tolerance thresholds.
-pub async fn detect_anomalies(pool: &DbPool) {
+pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
     let credentials = match cred_repo::get_all(pool) {
         Ok(c) => c,
         Err(_) => return,
@@ -695,6 +715,11 @@ pub async fn detect_anomalies(pool: &DbPool) {
                     remediation = %score.remediation.as_str(),
                     "Rotation anomaly detected via windowed scoring"
                 );
+                let _ = app.emit("rotation-anomaly", serde_json::json!({
+                    "credential_id": cred.id,
+                    "remediation": score.remediation.as_str(),
+                    "failure_rate_1h": score.failure_rate_1h,
+                }));
             }
         }
     }
@@ -804,7 +829,8 @@ pub fn get_rotation_status(
     })
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, TS)]
+#[ts(export)]
 pub struct RotationStatus {
     pub has_policy: bool,
     pub policy_enabled: bool,

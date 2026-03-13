@@ -1,22 +1,24 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { VaultStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
 import type {
   CredentialMetadata,
   ConnectorDefinition,
-  DbCredentialEvent,
+  CredentialEvent,
 } from "@/lib/types/types";
 import {
   toCredentialMetadata as toCredMeta,
   parseConnectorDefinition as parseConn,
 } from "@/lib/types/types";
-import * as api from "@/api/tauriApi";
+import { createConnector, deleteConnector, listConnectors } from "@/api/auth/connectors";
+import { createCredential, createCredentialEvent, deleteCredential, deleteCredentialEvent, healthcheckCredential, healthcheckCredentialPreview, listAllCredentialEvents, listCredentials, updateCredential, updateCredentialEvent, updateCredentialField } from "@/api/vault/credentials";
+
 import { encryptWithSessionKey } from "@/lib/utils/platform/crypto";
 
 export interface CredentialSlice {
   // State
   credentials: CredentialMetadata[];
-  credentialEvents: DbCredentialEvent[];
+  credentialEvents: CredentialEvent[];
   connectorDefinitions: ConnectorDefinition[];
 
   // Actions
@@ -47,14 +49,14 @@ export interface CredentialSlice {
   deleteCredentialEvent: (id: string) => Promise<void>;
 }
 
-export const createCredentialSlice: StateCreator<PersonaStore, [], [], CredentialSlice> = (set, get) => ({
+export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialSlice> = (set, get) => ({
   credentials: [],
   credentialEvents: [],
   connectorDefinitions: [],
 
   fetchCredentials: async () => {
     try {
-      const raw = await api.listCredentials();
+      const raw = await listCredentials();
       const credentials = raw.map(toCredMeta);
       set({ credentials, error: null });
     } catch (err) {
@@ -68,7 +70,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
       // Encrypt the sensitive data payload before sending over IPC
       const session_encrypted_data = await encryptWithSessionKey(JSON.stringify(input.data));
       
-      const created = await api.createCredential({
+      const created = await createCredential({
         name: input.name,
         service_type: input.service_type,
         encrypted_data: "", // Sent as session_encrypted_data instead
@@ -92,7 +94,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
         session_encrypted_data = await encryptWithSessionKey(JSON.stringify(input.data));
       }
 
-      await api.updateCredential(id, {
+      await updateCredential(id, {
         name: input.name ?? null,
         service_type: input.service_type ?? null,
         encrypted_data: null,
@@ -109,7 +111,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   deleteCredential: async (id) => {
     try {
-      await api.deleteCredential(id);
+      await deleteCredential(id);
       set((state) => ({
         credentials: state.credentials.filter((c) => c.id !== id),
         credentialEvents: state.credentialEvents.filter((e) => e.credential_id !== id),
@@ -127,7 +129,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
         session_encrypted_value = await encryptWithSessionKey(value);
       }
 
-      await api.updateCredentialField(id, key, value, isSensitive, session_encrypted_value);
+      await updateCredentialField(id, key, value, isSensitive, session_encrypted_value);
       await get().fetchCredentials();
       set({ error: null });
     } catch (err) {
@@ -137,7 +139,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   healthcheckCredential: async (credentialId) => {
     try {
-      const result = await api.healthcheckCredential(credentialId);
+      const result = await healthcheckCredential(credentialId);
       return result;
     } catch (err) {
       return { success: false, message: errMsg(err, "Healthcheck failed") };
@@ -149,7 +151,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
       // Encrypt field values before sending over IPC
       const session_encrypted_data = await encryptWithSessionKey(JSON.stringify(fieldValues));
       
-      const result = await api.healthcheckCredentialPreview(serviceType, {}, session_encrypted_data);
+      const result = await healthcheckCredentialPreview(serviceType, {}, session_encrypted_data);
       return result;
     } catch (err) {
       return { success: false, message: errMsg(err, "Healthcheck failed") };
@@ -158,7 +160,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   fetchConnectorDefinitions: async () => {
     try {
-      const raw = await api.listConnectors();
+      const raw = await listConnectors();
       const connectorDefinitions = raw.map(parseConn);
       set({ connectorDefinitions, error: null });
     } catch (err) {
@@ -168,7 +170,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   createConnectorDefinition: async (input) => {
     try {
-      const raw = await api.createConnector({
+      const raw = await createConnector({
         name: input.name,
         label: input.label,
         icon_url: null,
@@ -192,7 +194,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   deleteConnectorDefinition: async (id) => {
     try {
-      const deleted = await api.deleteConnector(id);
+      const deleted = await deleteConnector(id);
       if (!deleted) {
         set({ error: 'Failed to delete connector' });
         return;
@@ -208,7 +210,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   fetchCredentialEvents: async () => {
     try {
-      const allEvents = await api.listAllCredentialEvents();
+      const allEvents = await listAllCredentialEvents();
       set({ credentialEvents: allEvents, error: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch credential events") });
@@ -217,7 +219,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   createCredentialEvent: async (input) => {
     try {
-      await api.createCredentialEvent({
+      await createCredentialEvent({
         credential_id: input.credential_id,
         event_template_id: input.event_template_id,
         name: input.name,
@@ -239,7 +241,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
         enabled: updates.enabled ?? null,
         last_polled_at: null,
       };
-      const updated = await api.updateCredentialEvent(id, input);
+      const updated = await updateCredentialEvent(id, input);
       set((state) => ({
         credentialEvents: state.credentialEvents.map((e) =>
           e.id === id ? updated : e,
@@ -253,7 +255,7 @@ export const createCredentialSlice: StateCreator<PersonaStore, [], [], Credentia
 
   deleteCredentialEvent: async (id) => {
     try {
-      await api.deleteCredentialEvent(id);
+      await deleteCredentialEvent(id);
       set((state) => ({
         credentialEvents: state.credentialEvents.filter((e) => e.id !== id),
         error: null,

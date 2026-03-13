@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertCircle, Download } from 'lucide-react';
 import { DimensionRadial } from '../shared/DimensionRadial';
@@ -101,7 +101,15 @@ export function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
                 {(state.step !== 'choose' || designResult) && (
                   <motion.div key={state.step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }} transition={MOTION.snappy.framer} className={undefined}>
-                    <StepComponent />
+                    <Suspense fallback={
+                      <div className="space-y-4 animate-pulse">
+                        <div className="h-6 w-48 rounded-lg bg-secondary/30" />
+                        <div className="h-4 w-72 rounded bg-secondary/20" />
+                        <div className="h-32 rounded-xl bg-secondary/15" />
+                      </div>
+                    }>
+                      <StepComponent />
+                    </Suspense>
                   </motion.div>
                 )}
               </AnimatePresence>

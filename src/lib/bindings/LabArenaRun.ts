@@ -1,7 +1,9 @@
+import type { LabRunStatus } from "./LabRunStatus";
+
 export interface LabArenaRun {
   id: string;
   personaId: string;
-  status: string;
+  status: LabRunStatus;
   modelsTested: string;
   scenariosCount: number;
   useCaseFilter: string | null;

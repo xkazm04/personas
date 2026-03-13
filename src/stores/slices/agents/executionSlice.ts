@@ -1,7 +1,8 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { AgentStore } from "../../storeTypes";
+import { useSystemStore } from "../../systemStore";
 import { errMsg } from "../../storeTypes";
-import type { DbPersonaExecution } from "@/lib/types/types";
+import type { PersonaExecution } from "@/lib/types/types";
 import type { PipelineTrace } from "@/lib/execution/pipeline";
 import {
   createPipelineTrace,
@@ -19,7 +20,8 @@ import type { Continuation } from "@/lib/bindings/Continuation";
 import type { DesignDriftEvent } from "@/lib/design/designDrift";
 import { detectDesignDrift, loadDriftEvents, saveDriftEvents } from "@/lib/design/designDrift";
 import type { AgentIR } from "@/lib/types/designTypes";
-import * as api from "@/api/tauriApi";
+import { cancelExecution, executePersona, listExecutions } from "@/api/agents/executions";
+
 import { executionSink } from "@/lib/execution/executionSink";
 
 /** Queue status event emitted from the engine when an execution is queued/promoted. */
@@ -33,7 +35,7 @@ export interface QueueStatusPayload {
 
 export interface ExecutionSlice {
   // State
-  executions: DbPersonaExecution[];
+  executions: PersonaExecution[];
   activeExecutionId: string | null;
   executionPersonaId: string | null;
   activeUseCaseId: string | null;
@@ -63,7 +65,7 @@ export interface ExecutionSlice {
   dismissDriftEvent: (eventId: string) => void;
 }
 
-export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionSlice> = (set, get) => {
+export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSlice> = (set, get) => {
   // Bind the sink to push flushed output into the store.
   // On HMR / store recreation, re-binding automatically invalidates stale flushes.
   executionSink.reset();
@@ -127,7 +129,7 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
         modelUsed: null,
       }, trace);
 
-      const execution = await api.executePersona(
+      const execution = await executePersona(
         personaId,
         undefined,
         validateResult.inputData ?? (inputData ? JSON.stringify(inputData) : undefined),
@@ -160,7 +162,7 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
   cancelExecution: async (executionId) => {
     try {
       const callerPersonaId = get().executionPersonaId ?? '';
-      await api.cancelExecution(executionId, callerPersonaId);
+      await cancelExecution(executionId, callerPersonaId);
       const trace = get().pipelineTrace;
       if (trace) {
         set({ pipelineTrace: completeTrace(traceStage(trace, 'finalize_status', { cancelled: true })) });
@@ -203,7 +205,7 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
     const personaId = get().selectedPersona?.id;
     const fetchPromise = personaId ? get().fetchExecutions(personaId) : Promise.resolve();
     // Notify guided tour that an execution completed
-    get().emitTourEvent('tour:execution-complete');
+    useSystemStore.getState().emitTourEvent('tour:execution-complete');
 
     // Invalidate budget cache so spend data refreshes after execution
     get().invalidateBudgetCache(execPersonaId ?? undefined);
@@ -269,7 +271,7 @@ export const createExecutionSlice: StateCreator<PersonaStore, [], [], ExecutionS
 
   fetchExecutions: async (personaId) => {
     try {
-      const executions = await api.listExecutions(personaId);
+      const executions = await listExecutions(personaId);
       set({ executions });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch executions") });

@@ -1,12 +1,14 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { PipelineStore } from "../../storeTypes";
 import type { PersonaTeam } from "@/lib/bindings/PersonaTeam";
 import type { PersonaTeamMember } from "@/lib/bindings/PersonaTeamMember";
 import type { PersonaTeamConnection } from "@/lib/bindings/PersonaTeamConnection";
 import type { TeamMemory } from "@/lib/bindings/TeamMemory";
 import type { TeamMemoryStats } from "@/lib/bindings/TeamMemoryStats";
 import type { CreateTeamMemoryInput } from "@/lib/bindings/CreateTeamMemoryInput";
-import * as api from "@/api/tauriApi";
+import { batchDeleteTeamMemories, createTeamMemory, deleteTeamMemory, getTeamMemoryCount, getTeamMemoryStats, listTeamMemories, updateTeamMemory, updateTeamMemoryImportance } from "@/api/pipeline/teamMemories";
+import { addTeamMember, cloneTeam, createTeam, createTeamConnection, deleteTeam, deleteTeamConnection, listTeamConnections, listTeamMembers, listTeams, removeTeamMember, updateTeamConnection } from "@/api/pipeline/teams";
+
 import { useToastStore } from "@/stores/toastStore";
 
 export interface TeamSlice {
@@ -43,7 +45,7 @@ export interface TeamSlice {
   updateTeamMemory: (id: string, title?: string, content?: string, category?: string, importance?: number) => Promise<void>;
 }
 
-export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (set, get) => ({
+export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (set, get) => ({
   teams: [],
   selectedTeamId: null,
   teamMembers: [],
@@ -56,7 +58,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
 
   fetchTeams: async () => {
     try {
-      const teams = await api.listTeams();
+      const teams = await listTeams();
       set({ teams });
     } catch {
       useToastStore.getState().addToast('Failed to load teams', 'error');
@@ -71,8 +73,8 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
   fetchTeamDetails: async (teamId) => {
     try {
       const [members, connections] = await Promise.all([
-        api.listTeamMembers(teamId),
-        api.listTeamConnections(teamId),
+        listTeamMembers(teamId),
+        listTeamConnections(teamId),
       ]);
       set({ teamMembers: members, teamConnections: connections });
       // Also fetch team memories
@@ -84,7 +86,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
 
   createTeam: async (data) => {
     try {
-      const team = await api.createTeam({
+      const team = await createTeam({
         name: data.name,
         project_id: null,
         parent_team_id: null,
@@ -105,7 +107,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
 
   cloneTeam: async (sourceTeamId) => {
     try {
-      const team = await api.cloneTeam(sourceTeamId);
+      const team = await cloneTeam(sourceTeamId);
       await get().fetchTeams();
       useToastStore.getState().addToast('Team forked successfully', 'success');
       return team;
@@ -117,7 +119,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
 
   deleteTeam: async (teamId) => {
     try {
-      await api.deleteTeam(teamId);
+      await deleteTeam(teamId);
       if (get().selectedTeamId === teamId) set({ selectedTeamId: null, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null, memoryFilterCategory: undefined, memoryFilterSearch: undefined });
       await get().fetchTeams();
     } catch {
@@ -145,7 +147,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     set({ teamMembers: [...prevMembers, optimistic] });
 
     try {
-      const realMember = await api.addTeamMember(teamId, personaId, role, posX, posY);
+      const realMember = await addTeamMember(teamId, personaId, role, posX, posY);
       // Replace temp with real member (use fresh state to avoid overwriting concurrent changes)
       set({ teamMembers: get().teamMembers.map((m) => (m.id === tempId ? realMember : m)) });
       return realMember;
@@ -172,7 +174,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     });
 
     try {
-      await api.removeTeamMember(memberId);
+      await removeTeamMember(memberId);
     } catch {
       // Rollback
       set({ teamMembers: prevMembers, teamConnections: prevConnections });
@@ -200,7 +202,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     set({ teamConnections: [...prevConnections, optimistic] });
 
     try {
-      const realConn = await api.createTeamConnection(teamId, sourceMemberId, targetMemberId, connectionType, condition, label);
+      const realConn = await createTeamConnection(teamId, sourceMemberId, targetMemberId, connectionType, condition, label);
       set({ teamConnections: get().teamConnections.map((c) => (c.id === tempId ? realConn : c)) });
       return realConn;
     } catch {
@@ -217,7 +219,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     set({ teamConnections: prevConnections.filter((c) => c.id !== connectionId) });
 
     try {
-      await api.deleteTeamConnection(connectionId);
+      await deleteTeamConnection(connectionId);
     } catch {
       // Rollback
       set({ teamConnections: prevConnections });
@@ -235,7 +237,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     });
 
     try {
-      await api.updateTeamConnection(connectionId, connectionType);
+      await updateTeamConnection(connectionId, connectionType);
     } catch {
       // Rollback
       set({ teamConnections: prevConnections });
@@ -251,9 +253,9 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
     set({ memoryFilterCategory: category, memoryFilterSearch: search });
     try {
       const [memories, total, stats] = await Promise.all([
-        api.listTeamMemories(teamId, undefined, category, search, 100),
-        api.getTeamMemoryCount(teamId, undefined, category),
-        api.getTeamMemoryStats(teamId, category, search),
+        listTeamMemories(teamId, undefined, category, search, 100),
+        getTeamMemoryCount(teamId, undefined, category),
+        getTeamMemoryStats(teamId, category, search),
       ]);
       set({ teamMemories: memories, teamMemoriesTotal: total, teamMemoryStats: stats });
     } catch {
@@ -264,7 +266,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
   loadMoreTeamMemories: async (teamId, category, search) => {
     try {
       const offset = get().teamMemories.length;
-      const more = await api.listTeamMemories(teamId, undefined, category, search, 100, offset);
+      const more = await listTeamMemories(teamId, undefined, category, search, 100, offset);
       set((state) => ({ teamMemories: [...state.teamMemories, ...more] }));
     } catch {
       useToastStore.getState().addToast('Failed to load more memories', 'error');
@@ -273,7 +275,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
 
   createTeamMemory: async (input) => {
     try {
-      const memory = await api.createTeamMemory(input);
+      const memory = await createTeamMemory(input);
       // Refresh the list preserving active filters
       const { selectedTeamId: teamId, memoryFilterCategory, memoryFilterSearch } = get();
       if (teamId) get().fetchTeamMemories(teamId, memoryFilterCategory, memoryFilterSearch);
@@ -292,7 +294,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
       teamMemoriesTotal: Math.max(0, state.teamMemoriesTotal - 1),
     }));
     try {
-      await api.deleteTeamMemory(id);
+      await deleteTeamMemory(id);
     } catch {
       set({ teamMemories: prev, teamMemoriesTotal: prevTotal });
       useToastStore.getState().addToast('Failed to delete team memory', 'error');
@@ -307,7 +309,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
       teamMemoriesTotal: Math.max(0, state.teamMemoriesTotal - ids.length),
     }));
     try {
-      await api.batchDeleteTeamMemories(ids);
+      await batchDeleteTeamMemories(ids);
     } catch {
       set({ teamMemories: prev, teamMemoriesTotal: prevTotal });
       useToastStore.getState().addToast('Failed to delete team memories', 'error');
@@ -320,7 +322,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
       teamMemories: prev.map((m) => (m.id === id ? { ...m, importance } : m)),
     });
     try {
-      await api.updateTeamMemoryImportance(id, importance);
+      await updateTeamMemoryImportance(id, importance);
     } catch {
       set({ teamMemories: prev });
       useToastStore.getState().addToast('Failed to update memory importance', 'error');
@@ -330,7 +332,7 @@ export const createTeamSlice: StateCreator<PersonaStore, [], [], TeamSlice> = (s
   updateTeamMemory: async (id, title, content, category, importance) => {
     const prev = get().teamMemories;
     try {
-      const updated = await api.updateTeamMemory(id, title, content, category, importance);
+      const updated = await updateTeamMemory(id, title, content, category, importance);
       set({
         teamMemories: prev.map((m) => (m.id === id ? updated : m)),
       });

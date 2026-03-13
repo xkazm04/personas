@@ -98,10 +98,12 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
             if (validationError) setValidationError(null);
           }}
           placeholder="e.g. persona-id or glob pattern"
+          aria-invalid={!!validationError}
+          aria-describedby={validationError ? 'source-filter-error' : undefined}
           className={INPUT_FIELD}
         />
         {validationError && (
-          <p className="mt-1 text-sm text-red-400/80">{validationError}</p>
+          <p id="source-filter-error" className="mt-1 text-sm text-red-400/80">{validationError}</p>
         )}
       </div>
       <div className="flex items-center gap-2 pt-1">

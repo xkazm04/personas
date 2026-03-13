@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Check, ArrowRight } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
 import type { TourStepId } from '@/stores/slices/system/tourSlice';
 import { STEP_ICONS, STEP_COLORS } from './tourConstants';
@@ -87,7 +87,7 @@ export function TourPanelBody({
         <div className="flex items-center gap-2">
           {allCompleted ? (
             <button
-              onClick={() => usePersonaStore.getState().finishTour()}
+              onClick={() => useSystemStore.getState().finishTour()}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors"
             >
               <Check className="w-3.5 h-3.5" />

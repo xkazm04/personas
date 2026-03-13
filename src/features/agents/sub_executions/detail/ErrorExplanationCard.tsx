@@ -2,7 +2,8 @@ import { useCallback } from 'react';
 import { AlertCircle, ArrowRight } from 'lucide-react';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import { sanitizeErrorMessage } from '@/lib/utils/sanitizers/maskSensitive';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { Button } from '@/features/shared/components/buttons';
 import {
   type ErrorAction,
@@ -18,9 +19,9 @@ interface ErrorExplanationCardProps {
 }
 
 export function ErrorExplanationCard({ errorMessage, showRaw, personaId }: ErrorExplanationCardProps) {
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
 
   const handleErrorAction = useCallback((action: ErrorAction) => {
     switch (action.navigate) {

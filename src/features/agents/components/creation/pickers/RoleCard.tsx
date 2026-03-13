@@ -1,6 +1,6 @@
 import { Plus, X, Key, Table2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { getConnectorFamily } from '@/features/vault/sub_databases/introspectionQueries';
 import type { BuilderComponent, ComponentRole } from '../steps/builder/types';
@@ -42,7 +42,7 @@ export function RoleCard({
   onRemove: (id: string) => void;
   onOpenTableSelector?: (componentId: string) => void;
 }) {
-  const credentials = usePersonaStore((s) => s.credentials);
+  const credentials = useVaultStore((s) => s.credentials);
   const Icon = roleIcons[role];
 
   return (

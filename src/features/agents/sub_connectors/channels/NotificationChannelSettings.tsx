@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Bell, Check } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { useEditorDirty } from '@/features/agents/sub_editor/EditorDocument';
@@ -37,8 +37,8 @@ const channelTypes: Array<{ type: NotificationChannelType; label: string; config
 
 export function NotificationChannelSettings({ personaId, credentials, connectorDefinitions, draftChannels, onDraftChannelsChange }: NotificationChannelSettingsProps) {
   const isDraftMode = draftChannels !== undefined && onDraftChannelsChange !== undefined;
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
 
   const [channels, setChannelsInternal] = useState<NotificationChannel[]>([]);
   const [isDirty, setIsDirty] = useState(false);
@@ -192,7 +192,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
 
         {/* Errors */}
         {(validationErrors.length > 0 || saveError) && (
-          <div className="space-y-1">
+          <div role="alert" className="space-y-1">
             {validationErrors.map((err, i) => (
               <p key={i} className="text-sm text-red-400">{err}</p>
             ))}

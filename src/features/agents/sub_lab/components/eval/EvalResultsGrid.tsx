@@ -3,6 +3,7 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { Trophy } from 'lucide-react';
 import { scoreColor } from '@/lib/eval/evalFramework';
 import { buildEvalGridData } from '../../libs/evalAggregation';
+import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { EvalVersionCards } from './EvalVersionCards';
 import { EvalRadarChart } from './EvalRadarChart';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
@@ -60,12 +61,14 @@ export function EvalResultsGrid({ results }: Props) {
                 <th className="text-center px-3 py-2.5 font-medium text-muted-foreground/80">Avg</th>
               </tr>
             </thead>
-            <tbody>
-              {versions.map((vId) => {
+            <VirtualizedTableBody
+              items={versions}
+              rowKey={(vId) => vId}
+              renderRow={(vId) => {
                 const agg = versionAggs.find((a) => a.versionId === vId);
                 const isWinner = vId === winnerId;
                 return (
-                  <tr key={vId} className={`border-b border-primary/10 transition-colors ${isWinner ? 'bg-primary/5' : 'hover:bg-secondary/10'}`}>
+                  <>
                     <td className="px-3 py-2.5 font-medium">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-foreground/80">v{agg?.versionNumber}</span>
@@ -87,10 +90,10 @@ export function EvalResultsGrid({ results }: Props) {
                     <td className="px-3 py-2.5 text-center">
                       <span className={`text-sm font-bold ${scoreColor(agg?.compositeScore ?? 0)}`}>{agg?.compositeScore ?? 0}</span>
                     </td>
-                  </tr>
+                  </>
                 );
-              })}
-            </tbody>
+              }}
+            />
           </table>
         </div>
       </div>

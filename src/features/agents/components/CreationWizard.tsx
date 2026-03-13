@@ -1,7 +1,8 @@
 import { useState, useReducer, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { SVGProps } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { ChatCreator } from '@/features/agents/components/ChatCreator';
 import { BuilderStep, IdentityStep, MatrixCreator, builderReducer, INITIAL_BUILDER_STATE } from './creation';
@@ -58,8 +59,8 @@ interface CreationWizardProps {
 const pageTransition = TRANSITION_SLOW;
 
 export default function CreationWizard({ canCancel }: CreationWizardProps) {
-  const setIsCreatingPersona = usePersonaStore((s) => s.setIsCreatingPersona);
-  const deletePersona = usePersonaStore((s) => s.deletePersona);
+  const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
+  const deletePersona = useAgentStore((s) => s.deletePersona);
 
   const [step, setStep] = useState<WizardStep>('entry');
   const [entryMode, setEntryMode] = useState<EntryMode>('matrix');

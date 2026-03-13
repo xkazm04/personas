@@ -14,12 +14,14 @@ export function DebouncedVariableInput({
   onUpdate,
   inputClass: cls,
   showError,
+  errorId,
 }: {
   variable: AdoptionRequirement;
   value: string;
   onUpdate: (key: string, value: string) => void;
   inputClass: string;
   showError: boolean;
+  errorId?: string;
 }) {
   const [localValue, setLocalValue] = useState(externalValue);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -59,6 +61,8 @@ export function DebouncedVariableInput({
       value={localValue}
       onChange={handleChange}
       placeholder={placeholder}
+      aria-invalid={showError}
+      aria-describedby={errorId}
       className={`${cls} ${showError ? '!border-red-500/30' : ''}`}
     />
   );

@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { extractConnectorNames } from '@/lib/personas/utils';
 import {
@@ -20,7 +20,7 @@ export { getPersonaRunState, type PersonaRunState } from './filterHelpers';
 // -- Hook -------------------------------------------------------------
 
 export function usePersonaFilters(
-  personas: DbPersona[],
+  personas: Persona[],
   healthMap: Record<string, PersonaHealth>,
   lastRunMap: Record<string, string | null>,
 ) {

@@ -23,16 +23,9 @@ use crate::error::AppError;
 /// Maximum rows returned per query to prevent memory exhaustion.
 const MAX_ROWS: usize = 500;
 
-/// HTTP request timeout for all database REST API calls (30 seconds).
-const HTTP_TIMEOUT_SECS: u64 = 30;
-
-/// Build a `reqwest::Client` with a sensible timeout so that unresponsive
-/// databases don't block the async executor indefinitely.
-fn http_client() -> Result<reqwest::Client, AppError> {
-    reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(HTTP_TIMEOUT_SECS))
-        .build()
-        .map_err(|e| AppError::Internal(format!("Failed to build HTTP client: {e}")))
+/// Return the shared HTTP client (30-second timeout, connection pooling).
+fn http_client() -> reqwest::Client {
+    crate::SHARED_HTTP.clone()
 }
 
 /// Strip credential material from error messages before they reach the UI,
@@ -372,7 +365,7 @@ async fn fetch_supabase_openapi_spec(
 
     let spec_url = format!("{}/rest/v1/", project_url.trim_end_matches('/'));
 
-    let client = http_client()?;
+    let client = http_client();
     let resp = client
         .get(&spec_url)
         .header("apikey", api_key)
@@ -444,7 +437,7 @@ pub(crate) async fn execute_supabase(
         url.push_str(&format!("&{filter}"));
     }
 
-    let client = http_client()?;
+    let client = http_client();
     let resp = client
         .get(&url)
         .header("apikey", api_key)
@@ -709,7 +702,7 @@ pub(crate) async fn execute_neon(
 
     let sql_url = format!("https://{host}/sql");
 
-    let client = http_client()?;
+    let client = http_client();
     let resp = client
         .post(&sql_url)
         .header("Neon-Connection-String", connection_string)
@@ -751,7 +744,7 @@ async fn execute_neon_parameterized(
 
     let sql_url = format!("https://{}/sql", host);
 
-    let client = http_client()?;
+    let client = http_client();
     let resp = client
         .post(&sql_url)
         .header("Neon-Connection-String", connection_string)
@@ -806,7 +799,7 @@ pub(crate) async fn execute_upstash(
 
     let url = redis_url.trim_end_matches('/').to_string();
 
-    let client = http_client()?;
+    let client = http_client();
     let resp = client
         .post(&url)
         .header("Authorization", format!("Bearer {token}"))
@@ -854,7 +847,7 @@ pub(crate) async fn execute_planetscale(
 
     let url = format!("https://{host}/psdb.v1alpha1.Database/Execute");
 
-    let client = http_client()?;
+    let client = http_client();
     let resp = client
         .post(&url)
         .basic_auth(username, Some(password))
@@ -922,7 +915,7 @@ async fn execute_planetscale_parameterized(
         }
     }
 
-    let client = http_client()?;
+    let client = http_client();
     let resp = client
         .post(&url)
         .basic_auth(username, Some(password))
@@ -1226,7 +1219,7 @@ async fn execute_convex(
         };
 
         let url = format!("{deployment_url}/api/{endpoint}");
-        let client = reqwest::Client::new();
+        let client = http_client();
         let resp = client
             .post(&url)
             .header("Authorization", format!("Convex {deploy_key}"))
@@ -1271,7 +1264,7 @@ async fn convex_list_snapshot(
         url.push_str(&format!("&tableName={tn}"));
     }
 
-    let client = reqwest::Client::new();
+    let client = http_client();
     let resp = client
         .get(&url)
         .header("Authorization", format!("Convex {deploy_key}"))
@@ -1367,7 +1360,7 @@ async fn introspect_convex_tables(
     let (deployment_url, deploy_key) = convex_creds(fields)?;
     let url = format!("{deployment_url}/api/json_schemas?format=json");
 
-    let client = reqwest::Client::new();
+    let client = http_client();
     let resp = client
         .get(&url)
         .header("Authorization", format!("Convex {deploy_key}"))
@@ -1490,7 +1483,7 @@ async fn introspect_convex_columns(
     let (deployment_url, deploy_key) = convex_creds(fields)?;
     let url = format!("{deployment_url}/api/json_schemas?format=json");
 
-    let client = reqwest::Client::new();
+    let client = http_client();
     let resp = client
         .get(&url)
         .header("Authorization", format!("Convex {deploy_key}"))

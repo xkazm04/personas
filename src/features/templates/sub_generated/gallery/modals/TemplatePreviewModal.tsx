@@ -6,7 +6,7 @@ import { ThinkingLoader } from '../../shared/ThinkingLoader';
 import { BaseModal } from '../../shared/BaseModal';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { AgentIR } from '@/lib/types/designTypes';
-import { parseJsonSafe } from '@/lib/utils/parseJson';
+import { getCachedDesignResult } from '../cards/reviewParseCache';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 
 /**
@@ -67,7 +67,7 @@ export function TemplatePreviewModal({
   onRetryPreview,
 }: TemplatePreviewModalProps) {
   const designResult = useMemo(
-    () => review ? parseJsonSafe<AgentIR | null>(review.design_result, null) : null,
+    () => review ? getCachedDesignResult(review) : null,
     [review],
   );
 

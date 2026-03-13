@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { deleteDesignReview, cleanupDuplicateReviews, backfillServiceFlow, backfillRelatedTools } from '@/api/overview/reviews';
 import { computeAdoptionReadiness } from '../../shared/adoptionReadiness';
 import { getCachedDesignResult } from './reviewParseCache';
@@ -67,7 +67,7 @@ export function useGalleryActions(
     async (values: Record<string, string>) => {
       if (!credentialModalTarget) return;
       const meta = getConnectorMeta(credentialModalTarget.connectorName);
-      await usePersonaStore.getState().createCredential({
+      await useVaultStore.getState().createCredential({
         name: `${meta.label} credential`,
         service_type: credentialModalTarget.connectorName,
         data: values,

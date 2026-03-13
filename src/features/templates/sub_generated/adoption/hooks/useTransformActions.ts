@@ -8,7 +8,7 @@ import {
   cancelTemplateAdopt,
   continueTemplateAdopt,
 } from '@/api/templates/templateAdopt';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { stringifyDraft } from '@/features/templates/sub_n8n/hooks/n8nTypes';
 import {
   filterDesignResult,
@@ -44,7 +44,7 @@ export function useTransformActions({
   resetAdoptStream,
   setIsRestoring,
 }: UseTransformActionsOptions) {
-  const setTemplateAdoptActive = usePersonaStore((s) => s.setTemplateAdoptActive);
+  const setTemplateAdoptActive = useSystemStore((s) => s.setTemplateAdoptActive);
 
   const startTransform = useCallback(async () => {
     if (transformStartingRef.current || state.transforming || state.confirming) return;

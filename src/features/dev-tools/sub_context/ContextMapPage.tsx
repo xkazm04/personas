@@ -7,7 +7,7 @@ import {
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from '@/stores/systemStore';
 
 // ---------------------------------------------------------------------------
 // Types (local until devToolsSlice is wired)
@@ -224,10 +224,9 @@ function GroupColorPicker({
 // ---------------------------------------------------------------------------
 
 export default function ContextMapPage() {
-  const store = usePersonaStore.getState();
+  const store = useSystemStore.getState();
   const fetchContextMap = (store as any).fetchContextMap as (() => Promise<void>) | undefined;
   const createContextGroup = (store as any).createContextGroup as ((data: any) => Promise<void>) | undefined;
-  // const createContext = (store as any).createContext -- wired later
   const runCodebaseScan = (store as any).runCodebaseScan as (() => Promise<void>) | undefined;
 
   const [groups, _setGroups] = useState<ContextGroup[]>([]);

@@ -1,14 +1,15 @@
 import { useState, useCallback } from 'react';
 import { Key, Plug, ArrowRight, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import { useUnfulfilledCredentials, type UnfulfilledCredential } from '../../libs/useUnfulfilledCredentials';
 
 export function AgentCredentialDemands() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   const { totalDemands, fulfilledCount, unfulfilledCount, reusableCount, demands } = useUnfulfilledCredentials();
 
   const [designOpen, setDesignOpen] = useState(false);

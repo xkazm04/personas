@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
-import { usePersonaStore } from '@/stores/personaStore';
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { useToastStore } from '@/stores/toastStore';
 import { TagChipInput } from './components/TagChipInput';
 import { SchemaFieldBuilder, type SchemaField } from './components/SchemaFieldBuilder';
@@ -57,8 +57,8 @@ function serializeSchema(fields: SchemaField[]): string | null {
 }
 
 export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
-  const createRecipe = usePersonaStore((s) => s.createRecipe);
-  const updateRecipe = usePersonaStore((s) => s.updateRecipe);
+  const createRecipe = usePipelineStore((s) => s.createRecipe);
+  const updateRecipe = usePipelineStore((s) => s.updateRecipe);
 
   const [name, setName] = useState(recipe?.name ?? '');
   const [description, setDescription] = useState(recipe?.description ?? '');

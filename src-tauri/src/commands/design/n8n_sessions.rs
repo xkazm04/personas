@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tauri::State;
 
-use crate::db::models::{CreateN8nSessionInput, N8nTransformSession, UpdateN8nSessionInput};
+use crate::db::models::{CreateN8nSessionInput, N8nSessionSummary, N8nTransformSession, UpdateN8nSessionInput};
 use crate::db::repos::resources::n8n_sessions as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -53,6 +53,14 @@ pub async fn list_n8n_sessions(
 ) -> Result<Vec<N8nTransformSession>, AppError> {
     require_auth(&state).await?;
     repo::list(&state.db)
+}
+
+#[tauri::command]
+pub async fn list_n8n_session_summaries(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<N8nSessionSummary>, AppError> {
+    require_auth(&state).await?;
+    repo::list_summaries(&state.db)
 }
 
 #[allow(clippy::too_many_arguments)]

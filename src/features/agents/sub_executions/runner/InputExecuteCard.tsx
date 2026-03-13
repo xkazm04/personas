@@ -1,4 +1,5 @@
-import { Play, Square, ChevronDown, ChevronRight, Cloud } from 'lucide-react';
+import { ChevronDown, ChevronRight, Cloud } from 'lucide-react';
+import { IdleIcon, FailedIcon } from '../components/ExecutionLifecycleIcons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { JsonEditor } from '@/features/shared/components/editors/JsonEditor';
 
@@ -78,12 +79,12 @@ export function InputExecuteCard({
       >
         {isExecuting ? (
           <>
-            <Square className="w-5 h-5" />
+            <FailedIcon size={20} />
             Stop Execution
           </>
         ) : (
           <>
-            {isCloudConnected ? <Cloud className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+            {isCloudConnected ? <Cloud className="w-5 h-5" /> : <IdleIcon size={20} />}
             {isCloudConnected ? 'Execute on Cloud' : 'Execute Persona'}
           </>
         )}

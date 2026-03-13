@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { SystemStore } from "../../storeTypes";
 import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
 import { translateCloudError, isAuthError } from "./deployTarget";
@@ -76,7 +76,7 @@ function clearPendingOAuthTimeout() {
   }
 }
 
-export const createCloudSlice: StateCreator<PersonaStore, [], [], CloudSlice> = (set, get) => ({
+export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (set, get) => ({
   cloudConfig: null,
   cloudIsConnecting: false,
   cloudStatus: null,

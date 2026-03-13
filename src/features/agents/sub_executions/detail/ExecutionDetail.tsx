@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import { ExecutionInspector } from '@/features/agents/sub_executions/detail/inspector/ExecutionInspector';
 import { TraceInspector } from '@/features/agents/sub_executions/detail/inspector/TraceInspector';
 import { PipelineWaterfall } from '@/features/agents/sub_executions/replay/PipelineWaterfall';
@@ -9,7 +9,7 @@ import { ExecutionDetailTabs, type DetailTab } from './ExecutionDetailTabs';
 import { ExecutionDetailContent } from './ExecutionDetailContent';
 
 interface ExecutionDetailProps {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
 }
 
 export function ExecutionDetail({ execution }: ExecutionDetailProps) {

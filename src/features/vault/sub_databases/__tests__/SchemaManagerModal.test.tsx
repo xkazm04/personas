@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { SchemaManagerModal } from "../SchemaManagerModal";
-import { usePersonaStore } from "@/stores/personaStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import { resetInvokeMocks, mockInvokeMap } from "@/test/tauriMock";
 import type { CredentialMetadata, ConnectorDefinition } from "@/lib/types/types";
 
@@ -62,7 +62,7 @@ describe("SchemaManagerModal", () => {
       list_db_schema_tables: [],
       list_db_saved_queries: [],
     });
-    usePersonaStore.setState({
+    useVaultStore.setState({
       dbSchemaTables: [],
       dbSavedQueries: [],
     });

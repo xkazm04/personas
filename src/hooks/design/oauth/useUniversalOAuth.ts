@@ -1,10 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
-import {
-  startOAuth,
-  getOAuthStatus,
-  type StartOAuthParams,
-  type OAuthStatusResult,
-} from '@/api/tauriApi';
+import { getOAuthStatus, startOAuth, type OAuthStatusResult, type StartOAuthParams } from "@/api/vault/oauthGatewayApi";
+
 import { useOAuthPolling } from './useOAuthPolling';
 import { OAUTH_FIELD } from '@/features/vault/sub_design/CredentialDesignHelpers';
 

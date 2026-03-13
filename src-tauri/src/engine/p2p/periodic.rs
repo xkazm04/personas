@@ -12,8 +12,8 @@ use tokio_util::sync::CancellationToken;
 pub struct PeriodicTask {
     /// Human-readable name used in tracing spans and logs.
     name: &'static str,
-    /// How often the task runs.
-    interval: Duration,
+    /// Returns the current interval each tick (supports live config reload).
+    get_interval: Box<dyn Fn() -> Duration + Send>,
     /// Maximum consecutive errors before applying backoff.
     max_consecutive_errors: u32,
     /// How much to multiply the interval on consecutive errors.
@@ -23,11 +23,27 @@ pub struct PeriodicTask {
 }
 
 impl PeriodicTask {
-    /// Create a new periodic task with the given name and interval.
+    /// Create a new periodic task with a fixed interval.
     pub fn new(name: &'static str, interval: Duration, cancel: CancellationToken) -> Self {
         Self {
             name,
-            interval,
+            get_interval: Box::new(move || interval),
+            max_consecutive_errors: 3,
+            backoff_multiplier: 2,
+            cancel,
+        }
+    }
+
+    /// Create a periodic task that reads its interval dynamically each tick.
+    /// This supports hot-reloading config without restarting the task.
+    pub fn with_dynamic_interval(
+        name: &'static str,
+        get_interval: impl Fn() -> Duration + Send + 'static,
+        cancel: CancellationToken,
+    ) -> Self {
+        Self {
+            name,
+            get_interval: Box::new(get_interval),
             max_consecutive_errors: 3,
             backoff_multiplier: 2,
             cancel,
@@ -59,15 +75,18 @@ impl PeriodicTask {
         let mut consecutive_errors: u32 = 0;
 
         loop {
+            // Read interval dynamically each tick
+            let base_interval = (self.get_interval)();
+
             // Compute effective sleep: apply backoff if we've hit repeated errors
             let effective_interval = if consecutive_errors >= self.max_consecutive_errors {
                 let multiplier = self
                     .backoff_multiplier
                     .saturating_pow(consecutive_errors - self.max_consecutive_errors + 1)
                     .min(60); // cap at 60x the base interval
-                self.interval * multiplier
+                base_interval * multiplier
             } else {
-                self.interval
+                base_interval
             };
 
             // Wait for the interval or cancellation

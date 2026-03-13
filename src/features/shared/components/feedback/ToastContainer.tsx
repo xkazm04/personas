@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, AlertTriangle, ShieldAlert, X } from 'lucide-react';
 import { useToastStore, MAX_VISIBLE_TOASTS } from '@/stores/toastStore';
 import type { StandardToast, HealingToast } from '@/stores/toastStore';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
 
 // ---------------------------------------------------------------------------
 // Severity styles (healing toasts)
@@ -124,7 +124,7 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
 // ---------------------------------------------------------------------------
 
 function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss: (id: string) => void }) {
-  const resolveHealingIssue = usePersonaStore((s) => s.resolveHealingIssue);
+  const resolveHealingIssue = useOverviewStore((s) => s.resolveHealingIssue);
   const styles = SEVERITY_STYLES[toast.severity] ?? SEVERITY_STYLES.medium!;
 
   const handleResolve = useCallback(async () => {

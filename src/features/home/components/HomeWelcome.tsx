@@ -1,5 +1,5 @@
 import { BarChart3, Bot, Zap, Key, FlaskConical, Users, Cloud, Settings, Wrench } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { useAuthStore } from '@/stores/authStore';
 import { useMemo } from 'react';
 import { useHomeTranslation } from '../i18n/useTranslation';
@@ -20,7 +20,7 @@ const NAV_CARDS: NavCard[] = [
 ];
 
 export default function HomeWelcome() {
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const user = useAuthStore((s) => s.user);
   const { t } = useHomeTranslation();
 

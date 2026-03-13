@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { useTemplateGallery } from '@/hooks/design/template/useTemplateGallery';
 import { TemplateSearchBar } from '../search/TemplateSearchBar';
 import { ADOPT_CONTEXT_KEY } from '../../adoption/hooks/useAdoptReducer';
@@ -40,9 +40,9 @@ export default function GeneratedReviewsTab({
   onViewFlows,
   onTotalChange,
 }: Props) {
-  const templateAdoptActive = usePersonaStore((s) => s.templateAdoptActive);
-  const adoptionDraft = usePersonaStore((s) => s.adoptionDraft);
-  const setAdoptionDraft = usePersonaStore((s) => s.setAdoptionDraft);
+  const templateAdoptActive = useSystemStore((s) => s.templateAdoptActive);
+  const adoptionDraft = useSystemStore((s) => s.adoptionDraft);
+  const setAdoptionDraft = useSystemStore((s) => s.setAdoptionDraft);
   const credentialServiceTypesArray = useMemo(
     () => credentials.map((c) => c.service_type),
     [credentials],

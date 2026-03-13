@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import type { CredentialMetadata, ConnectorDefinition, PersonaWithDetails } from '@/lib/types/types';
 
 // ---------------------------------------------------------------------------
@@ -79,9 +80,9 @@ function computeUnfulfilled(
 // ---------------------------------------------------------------------------
 
 export function useUnfulfilledCredentials(persona?: PersonaWithDetails | null) {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectors = usePersonaStore((s) => s.connectorDefinitions);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectors = useVaultStore((s) => s.connectorDefinitions);
 
   const target = persona ?? selectedPersona;
 
@@ -124,12 +125,12 @@ export function useUnfulfilledCredentials(persona?: PersonaWithDetails | null) {
 // ---------------------------------------------------------------------------
 
 export function useGlobalUnfulfilledCredentials() {
-  const personas = usePersonaStore((s) => s.personas);
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectors = usePersonaStore((s) => s.connectorDefinitions);
+  const personas = useAgentStore((s) => s.personas);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectors = useVaultStore((s) => s.connectorDefinitions);
 
   return useMemo((): CredentialDemandSummary => {
-    // DbPersona doesn't have tools directly -- we'd need PersonaWithDetails for each.
+    // Persona doesn't have tools directly -- we'd need PersonaWithDetails for each.
     // For the global view, we approximate by matching personas' design_context credentialLinks
     // against the credential store. This is a lighter query since we don't fetch full details.
     // The actual demand detection happens per-persona in the agent editor.

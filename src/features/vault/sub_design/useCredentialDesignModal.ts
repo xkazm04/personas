@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCredentialDesignOrchestrator } from '@/features/vault/sub_design/useCredentialDesignOrchestrator';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import { useCredentialNav } from '@/features/vault/hooks/CredentialNavContext';
 import { useCredentialImport } from '@/features/vault/sub_import';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
@@ -9,7 +10,7 @@ import { filterTemplateConnectors, buildTemplateResult } from '@/features/vault/
 
 export function useCredentialDesignModal({ open, initialInstruction, onClose, onComplete }: CredentialDesignModalProps) {
   const orch = useCredentialDesignOrchestrator();
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const { navigate } = useCredentialNav();
 
   // Template UI state
@@ -25,8 +26,8 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
   const [autoSetupPending, setAutoSetupPending] = useState(false);
   const [autoSetupResult, setAutoSetupResult] = useState<CredentialDesignResult | null>(null);
 
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);

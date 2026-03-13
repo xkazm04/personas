@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Info, XCircle, X } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
 import type { FiredAlert } from '@/stores/slices/overview/alertSlice';
 
 const SEVERITY_STYLES: Record<string, { border: string; bg: string; icon: typeof Info; iconColor: string }> = {
@@ -45,8 +45,8 @@ function AlertToast({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => 
 }
 
 export function AlertToastContainer() {
-  const activeToasts = usePersonaStore((s) => s.activeToasts);
-  const dismissToast = usePersonaStore((s) => s.dismissToast);
+  const activeToasts = useOverviewStore((s) => s.activeToasts);
+  const dismissToast = useOverviewStore((s) => s.dismissToast);
 
   if (activeToasts.length === 0) return null;
 

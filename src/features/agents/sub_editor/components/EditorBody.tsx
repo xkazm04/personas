@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import { useToastStore } from '@/stores/toastStore';
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { type PersonaDraft, buildDraft } from '../libs/PersonaDraft';
@@ -18,13 +20,13 @@ import {
 } from './EditorLazyTabs';
 
 export function EditorBody() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const editorTab = usePersonaStore((s) => s.editorTab);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
-  const setLabMode = usePersonaStore((s) => s.setLabMode);
-  const deletePersona = usePersonaStore((s) => s.deletePersona);
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const editorTab = useSystemStore((s) => s.editorTab);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const setLabMode = useAgentStore((s) => s.setLabMode);
+  const deletePersona = useAgentStore((s) => s.deletePersona);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pendingPersonaId, setPendingPersonaId] = useState<string | null>(null);
@@ -71,10 +73,10 @@ export function EditorBody() {
   dirtyRef.current = isDirty;
 
   useEffect(() => {
-    const unsub = usePersonaStore.subscribe((state) => {
+    const unsub = useAgentStore.subscribe((state) => {
       const newId = state.selectedPersonaId;
       if (newId !== prevPersonaIdRef.current && dirtyRef.current) {
-        usePersonaStore.setState({ selectedPersonaId: prevPersonaIdRef.current ?? null });
+        useAgentStore.setState({ selectedPersonaId: prevPersonaIdRef.current ?? null });
         cancelAllDebouncedSaves();
         setPendingPersonaId(newId);
       }
@@ -116,7 +118,7 @@ export function EditorBody() {
     setPendingPersonaId(null);
     dirtyRef.current = false;
     clearAllDirty();
-    if (target !== null) usePersonaStore.getState().selectPersona(target);
+    if (target !== null) useAgentStore.getState().selectPersona(target);
   };
 
   const handleSaveAndSwitch = async () => {
@@ -137,7 +139,7 @@ export function EditorBody() {
       setPendingPersonaId(null);
       dirtyRef.current = false;
       clearAllDirty();
-      if (target !== null) usePersonaStore.getState().selectPersona(target);
+      if (target !== null) useAgentStore.getState().selectPersona(target);
     } finally {
       isSwitchingRef.current = false;
     }

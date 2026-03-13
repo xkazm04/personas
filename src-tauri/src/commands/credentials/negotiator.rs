@@ -51,13 +51,10 @@ pub async fn start_credential_negotiation(
     let cli_args = build_credential_task_cli_args();
     let negotiation_id = uuid::Uuid::new_v4().to_string();
 
-    // Use a dedicated mutex so negotiation and credential design don't
+    // Use a dedicated domain so negotiation and credential design don't
     // corrupt each other's state when a user switches between flows.
-    let active_id = state.active_negotiation_id.clone();
-    {
-        let mut guard = active_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        *guard = Some(negotiation_id.clone());
-    }
+    let registry = state.process_registry.clone();
+    registry.set_id("negotiation", negotiation_id.clone());
 
     let _ = audit_log::insert(
         &state.db, &negotiation_id, &service_name,
@@ -66,7 +63,6 @@ pub async fn start_credential_negotiation(
     );
 
     let neg_id = negotiation_id.clone();
-    let active_child_pid = state.active_negotiation_child_pid.clone();
 
     tokio::spawn(async move {
         run_ai_artifact_task(AiArtifactParams {
@@ -74,8 +70,9 @@ pub async fn start_credential_negotiation(
             task_id: neg_id,
             prompt_text: negotiation_prompt,
             cli_args,
-            active_id,
-            active_child_pid: Some(active_child_pid),
+            registry,
+            domain: "negotiation".into(),
+            track_pid: true,
             messages: NEGOTIATION_MESSAGES,
             extractor: credential_negotiator::extract_negotiation_result,
         })
@@ -91,12 +88,8 @@ pub fn cancel_credential_negotiation(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
     require_privileged_sync(&state, "cancel_credential_negotiation")?;
-    let mut guard = state.active_negotiation_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    *guard = None;
-
-    // Kill the CLI child process to stop API credit consumption immediately.
-    let pid = state.active_negotiation_child_pid.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?.take();
-    if let Some(pid) = pid {
+    // Cancel the active negotiation and kill the CLI child process.
+    if let Some(pid) = state.process_registry.cancel("negotiation") {
         tracing::info!(pid = pid, "Killing credential negotiation CLI child process");
         crate::engine::kill_process(pid);
     }

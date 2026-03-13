@@ -72,6 +72,9 @@ function AgentRow({ agent }: { agent: CronAgent }) {
         <div className="flex items-center gap-2 text-xs text-muted-foreground/70 mt-0.5">
           <Clock className="w-3 h-3 shrink-0" />
           <span className="font-mono">{schedule}</span>
+          {agent.cron_expression && (
+            <span className="text-amber-400/50 text-[10px] font-medium">UTC</span>
+          )}
           {agent.description && (
             <>
               <span className="text-muted-foreground/50">·</span>

@@ -1,11 +1,11 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 import type { DesignUseCase as UseCaseItem } from '@/lib/types/frontendTypes';
 
 export function useUseCasesTab() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const isExecuting = usePersonaStore((s) => s.isExecuting);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const isExecuting = useAgentStore((s) => s.isExecuting);
 
   const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
   const [expandedHistoryIds, setExpandedHistoryIds] = useState<Set<string>>(new Set());

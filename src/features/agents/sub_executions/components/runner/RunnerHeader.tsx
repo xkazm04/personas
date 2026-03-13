@@ -1,12 +1,12 @@
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { Pin, PinOff } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { getStatusEntry } from '@/lib/utils/formatters';
 
 export function MiniPlayerPinButton() {
-  const pinned = usePersonaStore((s) => s.miniPlayerPinned);
-  const pin = usePersonaStore((s) => s.pinMiniPlayer);
-  const unpin = usePersonaStore((s) => s.unpinMiniPlayer);
+  const pinned = useAgentStore((s) => s.miniPlayerPinned);
+  const pin = useAgentStore((s) => s.pinMiniPlayer);
+  const unpin = useAgentStore((s) => s.unpinMiniPlayer);
 
   return (
     <Tooltip content={pinned ? 'Unpin mini-player' : 'Pin to mini-player'}>

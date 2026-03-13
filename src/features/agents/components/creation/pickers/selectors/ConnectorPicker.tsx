@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, Plug } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 
 interface ConnectorPickerProps {
@@ -9,7 +9,7 @@ interface ConnectorPickerProps {
 }
 
 export function ConnectorPicker({ selected, onToggle }: ConnectorPickerProps) {
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const [search, setSearch] = useState('');
 
   const grouped = useMemo(() => {

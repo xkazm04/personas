@@ -3,7 +3,7 @@ import { X, Clock, CheckCircle2, AlertCircle, Loader2, ChevronDown } from 'lucid
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import { formatRelativeTime } from '@/lib/utils/formatters';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
 
 interface Props {
@@ -29,7 +29,7 @@ function formatPayload(payload: string | null): string {
 }
 
 export default function EventDetailDrawer({ event, onClose }: Props) {
-  const personas = usePersonaStore((s) => s.personas);
+  const personas = useAgentStore((s) => s.personas);
   const statusInfo = STATUS_ICONS[event.status] ?? STATUS_ICONS.pending!;
   const StatusIcon = statusInfo.icon;
   const typeColor = EVENT_TYPE_HEX_COLORS[event.event_type] ?? '#818cf8';

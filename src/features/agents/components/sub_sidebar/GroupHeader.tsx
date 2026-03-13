@@ -13,10 +13,10 @@ import {
 } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
-import type { DbPersonaGroup } from '@/lib/types/types';
+import type { PersonaGroup } from '@/lib/types/types';
 
 interface GroupHeaderProps {
-  group: DbPersonaGroup;
+  group: PersonaGroup;
   isCollapsed: boolean;
   hasWorkspaceDefaults: boolean;
   personaCount: number;

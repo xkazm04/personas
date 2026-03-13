@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Brain, Plus, ChevronDown, ChevronUp, Sparkles, Loader2 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useOverviewStore } from "@/stores/overviewStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { MemoryRow } from './MemoryCard';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
@@ -17,12 +18,12 @@ type SortDirection = 'asc' | 'desc';
 interface SortState { column: SortColumn; direction: SortDirection }
 
 export default function MemoriesPage() {
-  const personas = usePersonaStore((s) => s.personas);
-  const memories = usePersonaStore((s) => s.memories);
-  const memoriesTotal = usePersonaStore((s) => s.memoriesTotal);
-  const fetchMemories = usePersonaStore((s) => s.fetchMemories);
-  const deleteMemory = usePersonaStore((s) => s.deleteMemory);
-  const reviewMemories = usePersonaStore((s) => s.reviewMemories);
+  const personas = useAgentStore((s) => s.personas);
+  const memories = useOverviewStore((s) => s.memories);
+  const memoriesTotal = useOverviewStore((s) => s.memoriesTotal);
+  const fetchMemories = useOverviewStore((s) => s.fetchMemories);
+  const deleteMemory = useOverviewStore((s) => s.deleteMemory);
+  const reviewMemories = useOverviewStore((s) => s.reviewMemories);
 
   const [search, setSearch] = useState('');
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
@@ -43,10 +44,12 @@ export default function MemoriesPage() {
         persona_id: selectedPersonaId || undefined,
         category: selectedCategory || undefined,
         search: search || undefined,
+        sort_column: sort.column,
+        sort_direction: sort.direction,
       });
     }, 300);
     return () => clearTimeout(timer);
-  }, [fetchMemories, selectedPersonaId, selectedCategory, search]);
+  }, [fetchMemories, selectedPersonaId, selectedCategory, search, sort]);
 
   const personaMap = useMemo(() => {
     const map = new Map<string, { name: string; color: string }>();
@@ -65,15 +68,7 @@ export default function MemoriesPage() {
     );
   }, []);
 
-  const sortedMemories = useMemo(() => {
-    const sorted = [...memories];
-    const dir = sort.direction === 'asc' ? 1 : -1;
-    if (sort.column === 'importance') sorted.sort((a, b) => (a.importance - b.importance) * dir);
-    else sorted.sort((a, b) => (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) * dir);
-    return sorted;
-  }, [memories, sort]);
-
-  const { parentRef: memoryListRef, virtualizer } = useVirtualList(sortedMemories, 48);
+  const { parentRef: memoryListRef, virtualizer } = useVirtualList(memories, 48);
 
   const handleReview = useCallback(async () => {
     setIsReviewing(true); setReviewResult(null); setReviewError(null);
@@ -136,7 +131,7 @@ export default function MemoriesPage() {
 
       <ContentBody flex>
         <div className="px-4 md:px-6 py-2 text-sm font-mono text-muted-foreground/80 border-b border-primary/10 bg-secondary/10 flex-shrink-0">
-          Showing {sortedMemories.length} of {memoriesTotal} memories
+          Showing {memories.length} of {memoriesTotal} memories
         </div>
 
         {memories.length === 0 ? (
@@ -157,7 +152,7 @@ export default function MemoriesPage() {
             <div ref={memoryListRef} className="flex-1 overflow-y-auto">
               <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
                 {virtualizer.getVirtualItems().map((virtualRow) => {
-                  const memory = sortedMemories[virtualRow.index]!;
+                  const memory = memories[virtualRow.index]!;
                   const persona = personaMap.get(memory.persona_id);
                   return (
                     <div key={memory.id} style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}>

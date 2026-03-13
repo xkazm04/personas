@@ -1,5 +1,5 @@
-import { Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { RunningIcon } from '../components/ExecutionLifecycleIcons';
 import { formatElapsed } from '@/lib/utils/formatters';
 import { MiniPlayerPinButton } from './MiniPlayerPinButton';
 
@@ -16,7 +16,7 @@ export function ProgressIndicator({ elapsedMs, typicalDurationMs }: ProgressIndi
       exit={{ opacity: 0, height: 0 }}
       className="flex items-center gap-3 px-4 py-2.5 bg-primary/5 border border-primary/10 rounded-xl"
     >
-      <Clock className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" />
+      <RunningIcon size={14} className="flex-shrink-0" />
       {/* Mini-player pin toggle */}
       <MiniPlayerPinButton />
       <div className="flex-1 min-w-0">

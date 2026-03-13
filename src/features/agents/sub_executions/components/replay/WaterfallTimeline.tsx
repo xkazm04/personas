@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import type { UnifiedTrace, UnifiedSpan, PipelineStage } from '@/lib/execution/pipeline';
 import { PIPELINE_STAGES, isPipelineStage } from '@/lib/execution/pipeline';
 import { Clock, DollarSign, Zap, AlertCircle } from 'lucide-react';
@@ -83,7 +83,7 @@ export function CostAccrualOverlay({
 
 // Summary row
 
-export function PipelineSummary({ trace, execution }: { trace: UnifiedTrace; execution: DbPersonaExecution }) {
+export function PipelineSummary({ trace, execution }: { trace: UnifiedTrace; execution: PersonaExecution }) {
   const totalMs = trace.completedAt ? trace.completedAt - trace.startedAt : 0;
   const stageSpans = trace.spans.filter((s) => isPipelineStage(s.span_type));
   const stagesHit = stageSpans.length;

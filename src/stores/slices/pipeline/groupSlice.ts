@@ -1,17 +1,19 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { PipelineStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
-import type { DbPersonaGroup } from "@/lib/types/types";
+import { useAgentStore } from "../../agentStore";
+import type { PersonaGroup } from "@/lib/types/types";
 import type { UpdatePersonaGroupInput } from "@/lib/bindings/UpdatePersonaGroupInput";
-import * as api from "@/api/tauriApi";
+import { createGroup, deleteGroup, listGroups, reorderGroups, updateGroup } from "@/api/pipeline/groups";
+
 
 export interface GroupSlice {
   // State
-  groups: DbPersonaGroup[];
+  groups: PersonaGroup[];
 
   // Actions
   fetchGroups: () => Promise<void>;
-  createGroup: (input: { name: string; color?: string; description?: string }) => Promise<DbPersonaGroup | null>;
+  createGroup: (input: { name: string; color?: string; description?: string }) => Promise<PersonaGroup | null>;
   updateGroup: (id: string, updates: Partial<{
     name: string;
     color: string;
@@ -27,12 +29,12 @@ export interface GroupSlice {
   movePersonaToGroup: (personaId: string, groupId: string | null) => Promise<void>;
 }
 
-export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = (set, get) => ({
+export const createGroupSlice: StateCreator<PipelineStore, [], [], GroupSlice> = (set) => ({
   groups: [],
 
   fetchGroups: async () => {
     try {
-      const groups = await api.listGroups();
+      const groups = await listGroups();
       set({ groups });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch groups") });
@@ -41,7 +43,7 @@ export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = 
 
   createGroup: async (input) => {
     try {
-      const group = await api.createGroup({
+      const group = await createGroup({
         name: input.name,
         color: input.color ?? "#6B7280",
         sortOrder: null,
@@ -68,7 +70,7 @@ export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = 
         defaultMaxTurns: updates.defaultMaxTurns !== undefined ? updates.defaultMaxTurns : null,
         sharedInstructions: updates.sharedInstructions !== undefined ? updates.sharedInstructions : null,
       };
-      const group = await api.updateGroup(id, input);
+      const group = await updateGroup(id, input);
       set((state) => ({
         groups: state.groups.map((g) => (g.id === id ? group : g)),
       }));
@@ -79,9 +81,11 @@ export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = 
 
   deleteGroup: async (id) => {
     try {
-      await api.deleteGroup(id);
+      await deleteGroup(id);
       set((state) => ({
         groups: state.groups.filter((g) => g.id !== id),
+      }));
+      useAgentStore.setState((state) => ({
         personas: state.personas.map((p) =>
           p.group_id === id ? { ...p, group_id: null } : p,
         ),
@@ -93,7 +97,7 @@ export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = 
 
   reorderGroups: async (orderedIds) => {
     try {
-      await api.reorderGroups(orderedIds);
+      await reorderGroups(orderedIds);
       set((state) => ({
         groups: state.groups
           .map((g) => ({ ...g, sortOrder: orderedIds.indexOf(g.id) }))
@@ -106,7 +110,7 @@ export const createGroupSlice: StateCreator<PersonaStore, [], [], GroupSlice> = 
 
   movePersonaToGroup: async (personaId, groupId) => {
     try {
-      await get().applyPersonaOp(personaId, { kind: 'MoveToGroup', group_id: groupId });
+      await useAgentStore.getState().applyPersonaOp(personaId, { kind: 'MoveToGroup', group_id: groupId });
     } catch (err) {
       set({ error: errMsg(err, "Failed to move persona") });
     }

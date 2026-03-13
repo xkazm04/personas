@@ -1,6 +1,6 @@
 import { Trash2, X, Check, Play, Loader2, Terminal, FlaskConical } from 'lucide-react';
 import { motion } from 'framer-motion';
-import type { DbPersonaTrigger } from '@/lib/types/types';
+import type { PersonaTrigger } from '@/lib/types/types';
 import type { TriggerRateLimitConfig } from '@/lib/utils/platform/triggerConstants';
 import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
 import type { TriggerRateLimitState } from '@/stores/slices/pipeline/triggerSlice';
@@ -9,9 +9,10 @@ import { TriggerExecutionHistory } from './TriggerExecutionHistory';
 import { TRANSITION_NORMAL } from '@/features/templates/animationPresets';
 import { ConfigSection } from './TriggerConfigSection';
 import { DryRunResultView } from './DryRunResultView';
+import { WebhookRequestInspector } from './WebhookRequestInspector';
 
 interface TriggerDetailDrawerProps {
-  trigger: DbPersonaTrigger;
+  trigger: PersonaTrigger;
   credentialEventsList: { id: string; name: string }[];
   detail: ReturnType<typeof useTriggerDetail>;
   onDelete: (triggerId: string) => void;
@@ -105,6 +106,10 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, detail, onD
             </button>
           )}
         </div>
+
+        {trigger.trigger_type === 'webhook' && (
+          <WebhookRequestInspector triggerId={trigger.id} />
+        )}
 
         <TriggerExecutionHistory triggerId={trigger.id} personaId={trigger.persona_id} />
       </div>

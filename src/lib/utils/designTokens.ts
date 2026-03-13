@@ -32,7 +32,16 @@ export interface ButtonVariantToken {
 }
 
 export const INPUT_FIELD =
-  'w-full px-3 py-1.5 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-1 ring-offset-background transition-all';
+  'w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-1 ring-offset-background transition-all';
+
+/** INPUT_FIELD with a red error border — use when `aria-invalid` is true. */
+export const INPUT_FIELD_ERROR =
+  'w-full px-3 py-2 bg-background/50 border border-red-500/50 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:ring-offset-1 ring-offset-background transition-all';
+
+/** Returns INPUT_FIELD or INPUT_FIELD_ERROR based on the error flag. */
+export function inputFieldClass(hasError?: boolean): string {
+  return hasError ? INPUT_FIELD_ERROR : INPUT_FIELD;
+}
 
 export const BUTTON_VARIANTS: Record<'tryIt' | 'adopt' | 'delete', ButtonVariantToken> = {
   tryIt: {

@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Loader2, RefreshCw, BarChart3 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
@@ -20,12 +21,12 @@ const FILTER_LABELS: Record<FilterStatus, string> = {
 };
 
 export default function GlobalExecutionList() {
-  const globalExecutions = usePersonaStore((s) => s.globalExecutions);
-  const globalExecutionsTotal = usePersonaStore((s) => s.globalExecutionsTotal);
-  const globalExecutionsOffset = usePersonaStore((s) => s.globalExecutionsOffset);
-  const globalExecutionsWarning = usePersonaStore((s) => s.globalExecutionsWarning);
-  const fetchGlobalExecutions = usePersonaStore((s) => s.fetchGlobalExecutions);
-  const personas = usePersonaStore((s) => s.personas);
+  const globalExecutions = useOverviewStore((s) => s.globalExecutions);
+  const globalExecutionsTotal = useOverviewStore((s) => s.globalExecutionsTotal);
+  const globalExecutionsOffset = useOverviewStore((s) => s.globalExecutionsOffset);
+  const globalExecutionsWarning = useOverviewStore((s) => s.globalExecutionsWarning);
+  const fetchGlobalExecutions = useOverviewStore((s) => s.fetchGlobalExecutions);
+  const personas = useAgentStore((s) => s.personas);
 
   const [filter, setFilter] = useState<FilterStatus>('all');
   const { selectedPersonaId, setSelectedPersonaId } = useOverviewFilters();

@@ -4,63 +4,24 @@ import type { LabMatrixResult } from '@/lib/bindings/LabMatrixResult';
 import type { LabMatrixRun } from '@/lib/bindings/LabMatrixRun';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import { DraftDiffViewer } from '../shared/DraftDiffViewer';
+import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { MatrixScoreComparison } from './MatrixScoreComparison';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { aggregateMatrixResults } from '../../libs/labAggregation';
 
 interface Props {
   run: LabMatrixRun;
   results: LabMatrixResult[];
 }
 
-interface VariantAggregate {
-  variant: string;
-  avgToolAccuracy: number;
-  avgOutputQuality: number;
-  avgProtocolCompliance: number;
-  compositeScore: number;
-  totalCost: number;
-  avgDuration: number;
-  count: number;
-}
-
 export function MatrixResultsView({ run, results }: Props) {
-  const acceptDraft = usePersonaStore((s) => s.acceptDraft);
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const acceptDraft = useAgentStore((s) => s.acceptDraft);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
 
-  const { variantAggs, scenarios, matrix } = useMemo(() => {
-    const variantMap = new Map<string, LabMatrixResult[]>();
-    const scenarioSet = new Set<string>();
-
-    for (const r of results) {
-      if (!variantMap.has(r.variant)) variantMap.set(r.variant, []);
-      variantMap.get(r.variant)!.push(r);
-      scenarioSet.add(r.scenarioName);
-    }
-
-    const aggs: VariantAggregate[] = [];
-    for (const [variant, rows] of variantMap) {
-      const n = rows.length || 1;
-      const avgTA = rows.reduce((s, r) => s + (r.toolAccuracyScore ?? 0), 0) / n;
-      const avgOQ = rows.reduce((s, r) => s + (r.outputQualityScore ?? 0), 0) / n;
-      const avgPC = rows.reduce((s, r) => s + (r.protocolCompliance ?? 0), 0) / n;
-      aggs.push({
-        variant, avgToolAccuracy: Math.round(avgTA), avgOutputQuality: Math.round(avgOQ),
-        avgProtocolCompliance: Math.round(avgPC), compositeScore: compositeScore(avgTA, avgOQ, avgPC),
-        totalCost: rows.reduce((s, r) => s + r.costUsd, 0),
-        avgDuration: Math.round(rows.reduce((s, r) => s + r.durationMs, 0) / n), count: rows.length,
-      });
-    }
-    aggs.sort((a, b) => (a.variant === 'current' ? -1 : b.variant === 'current' ? 1 : 0));
-
-    const mtx: Record<string, Record<string, LabMatrixResult[]>> = {};
-    for (const r of results) {
-      if (!mtx[r.scenarioName]) mtx[r.scenarioName] = {};
-      if (!mtx[r.scenarioName]![r.variant]) mtx[r.scenarioName]![r.variant] = [];
-      mtx[r.scenarioName]![r.variant]!.push(r);
-    }
-
-    return { variantAggs: aggs, scenarios: [...scenarioSet], matrix: mtx };
-  }, [results]);
+  const { variantAggs, scenarios, matrix } = useMemo(
+    () => aggregateMatrixResults(results),
+    [results],
+  );
 
   const currentAgg = variantAggs.find((a) => a.variant === 'current');
   const draftAgg = variantAggs.find((a) => a.variant === 'draft');
@@ -95,8 +56,10 @@ export function MatrixResultsView({ run, results }: Props) {
                   <th className="text-center px-3 py-2.5 font-medium text-violet-400">Draft</th>
                 </tr>
               </thead>
-              <tbody>
-                {scenarios.map((scenario) => {
+              <VirtualizedTableBody
+                items={scenarios}
+                rowKey={(s) => s}
+                renderRow={(scenario) => {
                   const currentRows = matrix[scenario]?.['current'] ?? [];
                   const draftRows = matrix[scenario]?.['draft'] ?? [];
                   const calc = (rows: LabMatrixResult[]) => {
@@ -111,14 +74,14 @@ export function MatrixResultsView({ run, results }: Props) {
                   const currentScore = calc(currentRows);
                   const draftScore = calc(draftRows);
                   return (
-                    <tr key={scenario} className="border-b border-primary/10 hover:bg-secondary/10 transition-colors">
+                    <>
                       <td className="px-3 py-2.5 text-foreground/80 font-medium max-w-[200px] truncate">{scenario}</td>
                       <td className={`px-3 py-2.5 text-center font-bold ${scoreColor(currentScore)}`}>{currentScore ?? '--'}</td>
                       <td className={`px-3 py-2.5 text-center font-bold ${scoreColor(draftScore)}`}>{draftScore ?? '--'}</td>
-                    </tr>
+                    </>
                   );
-                })}
-              </tbody>
+                }}
+              />
             </table>
           </div>
         </div>

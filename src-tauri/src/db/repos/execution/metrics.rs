@@ -616,6 +616,8 @@ struct DashboardRawRow {
     persona_name: String,
     duration_ms: f64,
     cost_usd: f64,
+    input_tokens: f64,
+    output_tokens: f64,
     status: String,
     exec_id: String,
 }
@@ -632,137 +634,166 @@ pub fn get_execution_dashboard(
     let conn = pool.get()?;
     let date_filter = format!("-{days} days");
 
-    // 1) Fetch raw execution rows with persona names
-    let mut stmt = conn.prepare(
+    // 1) SQL-aggregated daily metrics (GROUP BY date) -- returns ~30-90 rows
+    //    instead of thousands of raw rows.
+    let mut agg_stmt = conn.prepare(
         "SELECT
             DATE(e.created_at) as date,
-            e.persona_id,
-            COALESCE(p.name, 'Unknown') as persona_name,
-            COALESCE(e.duration_ms, 0) as duration_ms,
-            COALESCE(e.cost_usd, 0.0) as cost_usd,
-            e.status,
-            e.id
+            COUNT(*) as total,
+            COALESCE(SUM(CASE WHEN e.status = 'completed' THEN 1 ELSE 0 END), 0) as completed,
+            COALESCE(SUM(CASE WHEN e.status = 'failed' THEN 1 ELSE 0 END), 0) as failed,
+            COALESCE(SUM(e.cost_usd), 0.0) as total_cost,
+            COALESCE(SUM(COALESCE(e.input_tokens,0) + COALESCE(e.output_tokens,0)), 0) as total_tokens,
+            COALESCE(AVG(e.duration_ms), 0.0) as avg_duration_ms
          FROM persona_executions e
-         LEFT JOIN personas p ON p.id = e.persona_id
          WHERE e.created_at >= datetime('now', ?1)
            AND e.status IN ('completed', 'failed')
-         ORDER BY date ASC, e.cost_usd DESC",
+         GROUP BY DATE(e.created_at)
+         ORDER BY date ASC",
     )?;
-    let rows: Vec<DashboardRawRow> = stmt
+
+    struct DailyAgg { date: String, total: i64, completed: i64, failed: i64, total_cost: f64, total_tokens: i64, avg_duration_ms: f64 }
+    let daily_aggs: Vec<DailyAgg> = agg_stmt
         .query_map(params![date_filter], |row| {
-            Ok(DashboardRawRow {
+            Ok(DailyAgg {
                 date: row.get(0)?,
-                persona_id: row.get(1)?,
-                persona_name: row.get(2)?,
-                duration_ms: row.get(3)?,
-                cost_usd: row.get(4)?,
-                status: row.get(5)?,
-                exec_id: row.get(6)?,
+                total: row.get(1)?,
+                completed: row.get(2)?,
+                failed: row.get(3)?,
+                total_cost: row.get(4)?,
+                total_tokens: row.get(5)?,
+                avg_duration_ms: row.get(6)?,
             })
         })?
         .filter_map(|r| r.ok())
         .collect();
 
-    if rows.is_empty() {
+    if daily_aggs.is_empty() {
         return Ok(ExecutionDashboardData {
             daily_points: vec![],
             top_personas: vec![],
             cost_anomalies: vec![],
             total_executions: 0,
+            successful_executions: 0,
+            failed_executions: 0,
             total_cost: 0.0,
             overall_success_rate: 0.0,
             avg_latency_ms: 0.0,
+            active_personas: 0,
             projected_monthly_cost: None,
             burn_rate: None,
         });
     }
 
-    // 2) Bucket by date
-    let mut date_buckets: HashMap<String, Vec<&DashboardRawRow>> = HashMap::new();
-    for row in &rows {
-        date_buckets.entry(row.date.clone()).or_default().push(row);
+    // 2) Per-persona cost breakdown per date (GROUP BY date, persona_id)
+    let mut persona_cost_stmt = conn.prepare(
+        "SELECT
+            DATE(e.created_at) as date,
+            e.persona_id,
+            COALESCE(p.name, 'Unknown') as persona_name,
+            COALESCE(SUM(e.cost_usd), 0.0) as cost
+         FROM persona_executions e
+         LEFT JOIN personas p ON p.id = e.persona_id
+         WHERE e.created_at >= datetime('now', ?1)
+           AND e.status IN ('completed', 'failed')
+         GROUP BY DATE(e.created_at), e.persona_id
+         ORDER BY date ASC, cost DESC",
+    )?;
+    let mut persona_cost_map: HashMap<String, Vec<PersonaCostEntry>> = HashMap::new();
+    let persona_rows = persona_cost_stmt.query_map(params![date_filter], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, String>(2)?,
+            row.get::<_, f64>(3)?,
+        ))
+    })?;
+    for row in persona_rows.filter_map(|r| r.ok()) {
+        persona_cost_map.entry(row.0).or_default().push(PersonaCostEntry {
+            persona_id: row.1,
+            persona_name: row.2,
+            cost: row.3,
+        });
     }
 
-    let mut dates: Vec<String> = date_buckets.keys().cloned().collect();
-    dates.sort();
+    // 3) Fetch (date, duration_ms) for percentile computation -- lightweight columns
+    let mut dur_stmt = conn.prepare(
+        "SELECT DATE(created_at) as date, COALESCE(duration_ms, 0) as duration_ms
+         FROM persona_executions
+         WHERE created_at >= datetime('now', ?1)
+           AND status IN ('completed', 'failed')
+         ORDER BY date ASC, duration_ms ASC",
+    )?;
+    let mut dur_buckets: HashMap<String, Vec<f64>> = HashMap::new();
+    let dur_rows = dur_stmt.query_map(params![date_filter], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?))
+    })?;
+    for row in dur_rows.filter_map(|r| r.ok()) {
+        dur_buckets.entry(row.0).or_default().push(row.1);
+    }
 
-    // 3) Build daily points
-    let daily_points: Vec<DashboardDailyPoint> = dates
+    // 4) Build daily points from pre-aggregated data
+    let daily_points: Vec<DashboardDailyPoint> = daily_aggs
         .iter()
-        .map(|date| {
-            let bucket = &date_buckets[date];
-            let completed = bucket.iter().filter(|r| r.status == "completed").count() as i64;
-            let failed = bucket.iter().filter(|r| r.status == "failed").count() as i64;
-            let total = completed + failed;
-            let total_cost: f64 = bucket.iter().map(|r| r.cost_usd).sum();
-
-            let mut durations: Vec<f64> = bucket.iter().map(|r| r.duration_ms).collect();
-            durations.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-
-            // Per-persona cost breakdown for this date
-            let mut persona_map: HashMap<String, (String, f64)> = HashMap::new();
-            for r in bucket {
-                let entry = persona_map
-                    .entry(r.persona_id.clone())
-                    .or_insert_with(|| (r.persona_name.clone(), 0.0));
-                entry.1 += r.cost_usd;
-            }
-            let mut persona_costs: Vec<PersonaCostEntry> = persona_map
-                .into_iter()
-                .map(|(pid, (name, cost))| PersonaCostEntry {
-                    persona_id: pid,
-                    persona_name: name,
-                    cost,
-                })
-                .collect();
-            persona_costs.sort_by(|a, b| b.cost.partial_cmp(&a.cost).unwrap_or(std::cmp::Ordering::Equal));
+        .map(|agg| {
+            let durations = dur_buckets.get(&agg.date).map(|v| v.as_slice()).unwrap_or(&[]);
+            let persona_costs = persona_cost_map.remove(&agg.date).unwrap_or_default();
 
             DashboardDailyPoint {
-                date: date.clone(),
-                total_cost,
-                total_executions: total,
-                completed,
-                failed,
-                success_rate: if total > 0 { completed as f64 / total as f64 } else { 0.0 },
-                p50_duration_ms: percentile(&durations, 50.0),
-                p95_duration_ms: percentile(&durations, 95.0),
-                p99_duration_ms: percentile(&durations, 99.0),
+                date: agg.date.clone(),
+                total_cost: agg.total_cost,
+                total_executions: agg.total,
+                completed: agg.completed,
+                failed: agg.failed,
+                success_rate: if agg.total > 0 { agg.completed as f64 / agg.total as f64 } else { 0.0 },
+                p50_duration_ms: percentile(durations, 50.0),
+                p95_duration_ms: percentile(durations, 95.0),
+                p99_duration_ms: percentile(durations, 99.0),
+                total_tokens: agg.total_tokens,
                 persona_costs,
             }
         })
         .collect();
 
-    // 4) Top-5 costliest personas
-    let mut persona_totals: HashMap<String, (String, f64, i64)> = HashMap::new();
-    for row in &rows {
-        let entry = persona_totals
-            .entry(row.persona_id.clone())
-            .or_insert_with(|| (row.persona_name.clone(), 0.0, 0));
-        entry.1 += row.cost_usd;
-        entry.2 += 1;
-    }
-    let mut top_personas: Vec<DashboardTopPersona> = persona_totals
-        .into_iter()
-        .map(|(pid, (name, cost, count))| DashboardTopPersona {
-            persona_id: pid,
-            persona_name: name,
-            total_cost: cost,
-            total_executions: count,
-            avg_cost_per_exec: if count > 0 { cost / count as f64 } else { 0.0 },
-        })
+    // 5) Top-5 costliest personas (SQL aggregated)
+    let mut top_stmt = conn.prepare(
+        "SELECT
+            e.persona_id,
+            COALESCE(p.name, 'Unknown') as persona_name,
+            COALESCE(SUM(e.cost_usd), 0.0) as total_cost,
+            COUNT(*) as total_executions
+         FROM persona_executions e
+         LEFT JOIN personas p ON p.id = e.persona_id
+         WHERE e.created_at >= datetime('now', ?1)
+           AND e.status IN ('completed', 'failed')
+         GROUP BY e.persona_id
+         ORDER BY total_cost DESC
+         LIMIT 5",
+    )?;
+    let top_personas: Vec<DashboardTopPersona> = top_stmt
+        .query_map(params![date_filter], |row| {
+            let cost: f64 = row.get(2)?;
+            let count: i64 = row.get(3)?;
+            Ok(DashboardTopPersona {
+                persona_id: row.get(0)?,
+                persona_name: row.get(1)?,
+                total_cost: cost,
+                total_executions: count,
+                avg_cost_per_exec: if count > 0 { cost / count as f64 } else { 0.0 },
+            })
+        })?
+        .filter_map(|r| r.ok())
         .collect();
-    top_personas.sort_by(|a, b| b.total_cost.partial_cmp(&a.total_cost).unwrap_or(std::cmp::Ordering::Equal));
-    top_personas.truncate(5);
 
-    // 5) Cost anomaly detection: flag days where cost > moving_avg + 2*std_dev
+    // 6) Cost anomaly detection: flag days where cost > moving_avg + 2*std_dev
     let window = 7usize;
     let mut cost_anomalies: Vec<DashboardCostAnomaly> = Vec::new();
 
     for i in 0..daily_points.len() {
-        let start = i.saturating_sub(window);
-        let preceding_costs: Vec<f64> = (start..i).map(|j| daily_points[j].total_cost).collect();
+        let start_idx = i.saturating_sub(window);
+        let preceding_costs: Vec<f64> = (start_idx..i).map(|j| daily_points[j].total_cost).collect();
         if preceding_costs.len() < 3 {
-            continue; // Need at least 3 data points for meaningful stats
+            continue;
         }
 
         let n = preceding_costs.len() as f64;
@@ -776,13 +807,19 @@ pub fn get_execution_dashboard(
 
         let deviation_sigma = (daily_points[i].total_cost - mean) / std_dev;
         if deviation_sigma > 2.0 {
-            // Find the costliest executions on this date
-            let bucket = &date_buckets[&daily_points[i].date];
-            let execution_ids: Vec<String> = bucket
-                .iter()
-                .take(5)
-                .map(|r| r.exec_id.clone())
-                .collect();
+            // Fetch top-5 costliest execution IDs for the anomalous date
+            let exec_ids: Vec<String> = conn
+                .prepare(
+                    "SELECT id FROM persona_executions
+                     WHERE DATE(created_at) = ?1
+                       AND status IN ('completed', 'failed')
+                     ORDER BY cost_usd DESC LIMIT 5",
+                )
+                .and_then(|mut s| {
+                    let rows = s.query_map(params![daily_points[i].date], |r| r.get::<_, String>(0))?;
+                    Ok(rows.filter_map(|r| r.ok()).collect())
+                })
+                .unwrap_or_default();
 
             cost_anomalies.push(DashboardCostAnomaly {
                 date: daily_points[i].date.clone(),
@@ -790,22 +827,24 @@ pub fn get_execution_dashboard(
                 moving_avg: mean,
                 std_dev,
                 deviation_sigma,
-                execution_ids,
+                execution_ids: exec_ids,
             });
         }
     }
 
-    // 6) Overall summary
-    let total_executions = rows.len() as i64;
-    let total_cost: f64 = rows.iter().map(|r| r.cost_usd).sum();
-    let total_completed = rows.iter().filter(|r| r.status == "completed").count() as i64;
+    // 7) Overall summary from aggregated daily data
+    let total_executions: i64 = daily_aggs.iter().map(|a| a.total).sum();
+    let total_cost: f64 = daily_aggs.iter().map(|a| a.total_cost).sum();
+    let total_completed: i64 = daily_aggs.iter().map(|a| a.completed).sum();
+    let total_failed: i64 = daily_aggs.iter().map(|a| a.failed).sum();
+    let active_personas = top_personas.len() as i64;
     let overall_success_rate = if total_executions > 0 {
         total_completed as f64 / total_executions as f64
     } else {
         0.0
     };
     let avg_latency_ms = if total_executions > 0 {
-        rows.iter().map(|r| r.duration_ms).sum::<f64>() / total_executions as f64
+        daily_aggs.iter().map(|a| a.avg_duration_ms * a.total as f64).sum::<f64>() / total_executions as f64
     } else {
         0.0
     };
@@ -866,8 +905,7 @@ pub fn get_execution_dashboard(
 
     info!(
         duration_ms = start.elapsed().as_millis() as u64,
-        raw_rows = rows.len(),
-        daily_points = daily_points.len(),
+        daily_buckets = daily_points.len(),
         top_personas = top_personas.len(),
         cost_anomalies = cost_anomalies.len(),
         total_executions,
@@ -880,9 +918,12 @@ pub fn get_execution_dashboard(
         top_personas,
         cost_anomalies,
         total_executions,
+        successful_executions: total_completed,
+        failed_executions: total_failed,
         total_cost,
         overall_success_rate,
         avg_latency_ms,
+        active_personas,
         projected_monthly_cost,
         burn_rate,
     })

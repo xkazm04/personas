@@ -1,6 +1,7 @@
 export { WizardSidebar } from './build/WizardSidebar';
 export type { WizardSidebarStep } from './build/WizardSidebar';
-export { ChooseStep, deriveRequirementsFromFlows } from './choose/ChooseStep';
+export { ChooseStep } from './choose/ChooseStep';
+export { deriveRequirementsFromFlows } from './choose/chooseStepHelpers';
 export { ConnectStep } from './connect/ConnectStep';
 /** @deprecated DataStep is now inline in ConnectStep. This re-export exists for backward compat. */
 export { ConnectStep as DataStep } from './connect/ConnectStep';

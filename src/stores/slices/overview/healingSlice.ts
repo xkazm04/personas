@@ -1,9 +1,11 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { OverviewStore } from "../../storeTypes";
+import { useAgentStore } from "../../agentStore";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 import type { HealingTimelineEvent } from "@/lib/bindings/HealingTimelineEvent";
-import * as api from "@/api/tauriApi";
+import { getHealingTimeline, getRetryChain, listHealingIssues, runHealingAnalysis, updateHealingStatus } from "@/api/overview/healing";
+
 import { errMsg } from "../../storeTypes";
 
 export interface HealingSlice {
@@ -22,7 +24,7 @@ export interface HealingSlice {
   fetchHealingTimeline: (personaId: string) => Promise<void>;
 }
 
-export const createHealingSlice: StateCreator<PersonaStore, [], [], HealingSlice> = (set, get) => ({
+export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlice> = (set, get) => ({
   healingIssues: [],
   healingRunning: false,
   retryChain: [],
@@ -31,7 +33,7 @@ export const createHealingSlice: StateCreator<PersonaStore, [], [], HealingSlice
 
   fetchHealingIssues: async () => {
     try {
-      const issues = await api.listHealingIssues();
+      const issues = await listHealingIssues();
       set({ healingIssues: issues });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch healing issues") });
@@ -42,8 +44,8 @@ export const createHealingSlice: StateCreator<PersonaStore, [], [], HealingSlice
     if (!personaId) return null;
     set({ healingRunning: true });
     try {
-      const result = await api.runHealingAnalysis(personaId);
-      const issues = await api.listHealingIssues();
+      const result = await runHealingAnalysis(personaId);
+      const issues = await listHealingIssues();
       set({ healingIssues: issues, healingRunning: false });
       return { failures_analyzed: result.failures_analyzed, issues_created: result.issues_created, auto_fixed: result.auto_fixed };
     } catch (err) {
@@ -58,7 +60,7 @@ export const createHealingSlice: StateCreator<PersonaStore, [], [], HealingSlice
       const callerPersonaId = personaId
         ?? get().healingIssues.find((i) => i.id === id)?.persona_id
         ?? '';
-      await api.updateHealingStatus(id, "resolved", callerPersonaId);
+      await updateHealingStatus(id, "resolved", callerPersonaId);
       set((state) => ({ healingIssues: state.healingIssues.filter((i) => i.id !== id) }));
     } catch (err) {
       set({ error: errMsg(err, "Failed to resolve healing issue") });
@@ -67,8 +69,8 @@ export const createHealingSlice: StateCreator<PersonaStore, [], [], HealingSlice
 
   fetchRetryChain: async (executionId: string, personaId?: string) => {
     try {
-      const callerPersonaId = personaId ?? get().selectedPersona?.id ?? '';
-      const chain = await api.getRetryChain(executionId, callerPersonaId);
+      const callerPersonaId = personaId ?? useAgentStore.getState().selectedPersona?.id ?? '';
+      const chain = await getRetryChain(executionId, callerPersonaId);
       set({ retryChain: chain });
     } catch (err) {
       set({ retryChain: [], error: errMsg(err, "Failed to fetch retry chain") });
@@ -78,7 +80,7 @@ export const createHealingSlice: StateCreator<PersonaStore, [], [], HealingSlice
   fetchHealingTimeline: async (personaId: string) => {
     set({ healingTimelineLoading: true });
     try {
-      const timeline = await api.getHealingTimeline(personaId);
+      const timeline = await getHealingTimeline(personaId);
       set({ healingTimeline: timeline, healingTimelineLoading: false });
     } catch (err) {
       set({ healingTimeline: [], healingTimelineLoading: false, error: errMsg(err, "Failed to fetch healing timeline") });

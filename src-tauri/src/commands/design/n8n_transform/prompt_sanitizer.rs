@@ -81,36 +81,26 @@ fn strip_non_bmp(text: &str) -> String {
 /// Strip section delimiter patterns (---SECTION:xxx---).
 fn strip_section_delimiters(text: &str) -> String {
     let mut result = String::with_capacity(text.len());
-    let mut chars = text.chars().peekable();
-    let text_bytes = text.as_bytes();
-    let mut byte_pos = 0;
+    let mut byte_pos: usize = 0;
 
-    while byte_pos < text_bytes.len() {
-        // Check for ---SECTION: pattern
-        if text_bytes[byte_pos] == b'-'
-            && text[byte_pos..].starts_with("---")
-        {
-            let upper = text[byte_pos..].to_uppercase();
+    while byte_pos < text.len() {
+        let remaining = &text[byte_pos..];
+        // Check for ---SECTION: pattern (case-insensitive)
+        if remaining.as_bytes()[0] == b'-' && remaining.starts_with("---") {
+            let upper = remaining.to_uppercase();
             if upper.starts_with("---SECTION:") {
                 // Find the closing ---
-                if let Some(end_pos) = text[byte_pos + 11..].find("---") {
-                    let skip_len = 11 + end_pos + 3;
-                    byte_pos += skip_len;
-                    // Advance the char iterator too
-                    for _ in 0..skip_len {
-                        chars.next();
-                    }
+                if let Some(end_pos) = remaining[11..].find("---") {
+                    byte_pos += 11 + end_pos + 3;
                     continue;
                 }
             }
         }
 
-        if let Some(c) = chars.next() {
-            result.push(c);
-            byte_pos += c.len_utf8();
-        } else {
-            break;
-        }
+        // Advance by one character (handles multi-byte UTF-8 correctly)
+        let c = remaining.chars().next().unwrap();
+        result.push(c);
+        byte_pos += c.len_utf8();
     }
     result
 }

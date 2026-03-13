@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Search, ArrowRight, Monitor } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { staggerContainer, staggerItem } from '@/features/templates/animationPresets';
 import { isDesktopBridge } from '@/lib/utils/platform/connectors';
@@ -11,7 +11,7 @@ interface WizardServiceSelectProps {
 }
 
 export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {

@@ -2,7 +2,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import { useToastStore } from '@/stores/toastStore';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
@@ -17,9 +18,9 @@ interface PersonaEditorHeaderProps {
 }
 
 export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: PersonaEditorHeaderProps) {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
-  const credentials = usePersonaStore((s) => s.credentials);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
+  const credentials = useVaultStore((s) => s.credentials);
   const effective = useEffectivePersona(draft, baseline);
   const [showReadinessTooltip, setShowReadinessTooltip] = useState(false);
 

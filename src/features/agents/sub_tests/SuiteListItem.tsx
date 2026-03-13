@@ -4,7 +4,7 @@ import {
   Play, Trash2, ChevronDown, ChevronRight,
   Pencil, X, Check, FileText,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { PersonaTestSuite } from '@/lib/bindings/PersonaTestSuite';
 import type { TestSuiteScenario } from '@/lib/bindings/TestSuiteScenario';
@@ -26,7 +26,7 @@ export function SuiteListItem({
   onDelete,
   disabled,
 }: SuiteListItemProps) {
-  const updateTestSuite = usePersonaStore((s) => s.updateTestSuite);
+  const updateTestSuite = useAgentStore((s) => s.updateTestSuite);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
@@ -50,7 +50,7 @@ export function SuiteListItem({
   }, []);
 
   const handleRemoveScenario = useCallback(async (scenarioIndex: number) => {
-    const currentSuites = usePersonaStore.getState().testSuites;
+    const currentSuites = useAgentStore.getState().testSuites;
     const currentSuite = currentSuites.find((s) => s.id === suite.id);
     if (!currentSuite) return;
     try {

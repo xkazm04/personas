@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Play, Square, ChevronDown, Filter, Check } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { LabProgress } from '../shared/LabProgress';
 import { EvalHistory } from './EvalHistory';
 import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
@@ -9,16 +9,16 @@ import { ANTHROPIC_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCat
 import { usePanelRunState } from '../../libs/usePanelRunState';
 
 export function EvalPanel() {
-  const promptVersions = usePersonaStore((s) => s.promptVersions);
-  const evalRuns = usePersonaStore((s) => s.evalRuns);
-  const evalResultsMap = usePersonaStore((s) => s.evalResultsMap);
-  const isLabRunning = usePersonaStore((s) => s.isLabRunning);
-  const fetchVersions = usePersonaStore((s) => s.fetchVersions);
-  const startEval = usePersonaStore((s) => s.startEval);
-  const cancelEval = usePersonaStore((s) => s.cancelEval);
-  const fetchEvalRuns = usePersonaStore((s) => s.fetchEvalRuns);
-  const fetchEvalResults = usePersonaStore((s) => s.fetchEvalResults);
-  const deleteEvalRun = usePersonaStore((s) => s.deleteEvalRun);
+  const promptVersions = useAgentStore((s) => s.promptVersions);
+  const evalRuns = useAgentStore((s) => s.evalRuns);
+  const evalResultsMap = useAgentStore((s) => s.evalResultsMap);
+  const isLabRunning = useAgentStore((s) => s.isLabRunning);
+  const fetchVersions = useAgentStore((s) => s.fetchVersions);
+  const startEval = useAgentStore((s) => s.startEval);
+  const cancelEval = useAgentStore((s) => s.cancelEval);
+  const fetchEvalRuns = useAgentStore((s) => s.fetchEvalRuns);
+  const fetchEvalResults = useAgentStore((s) => s.fetchEvalResults);
+  const deleteEvalRun = useAgentStore((s) => s.deleteEvalRun);
 
   const {
     selectedPersona, selectedModels, toggleModel,

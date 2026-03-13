@@ -1,27 +1,11 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// ============================================================================
-// System
-// ============================================================================
-
-export interface HealthCheckItem {
-  id: string;
-  label: string;
-  status: string;
-  detail: string | null;
-  installable: boolean;
-}
-
-export interface HealthCheckSection {
-  id: string;
-  label: string;
-  items: HealthCheckItem[];
-}
-
-export interface SystemHealthReport {
-  sections: HealthCheckSection[];
-  all_ok: boolean;
-}
+import type { HealthCheckItem } from "@/lib/bindings/HealthCheckItem";
+import type { HealthCheckSection } from "@/lib/bindings/HealthCheckSection";
+import type { SystemHealthReport } from "@/lib/bindings/SystemHealthReport";
+import type { CrashLogEntry } from "@/lib/bindings/CrashLogEntry";
+import type { SetupStartResult } from "@/lib/bindings/SetupStartResult";
+export type { HealthCheckItem, HealthCheckSection, SystemHealthReport, CrashLogEntry, SetupStartResult };
 
 export const systemHealthCheck = () =>
   invoke<SystemHealthReport>("system_health_check");
@@ -43,11 +27,6 @@ export const openExternalUrl = (url: string) =>
 // Crash Logs
 // ============================================================================
 
-export interface CrashLogEntry {
-  filename: string;
-  content: string;
-}
-
 export const getCrashLogs = () =>
   invoke<CrashLogEntry[]>("get_crash_logs");
 
@@ -57,10 +36,6 @@ export const clearCrashLogs = () =>
 // ============================================================================
 // Setup / Auto-install
 // ============================================================================
-
-export interface SetupStartResult {
-  install_id: string;
-}
 
 export const startSetupInstall = (target: string) =>
   invoke<SetupStartResult>("start_setup_install", { target });

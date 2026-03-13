@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { extractConnectorNames } from '@/lib/personas/utils';
@@ -77,7 +77,7 @@ const defaultFilters: FilterState = { search: '', tags: new Set() };
 
 // -- Parse model profile ----------------------------------------------
 
-function parseModelProfile(persona: DbPersona): ModelProfile | null {
+function parseModelProfile(persona: Persona): ModelProfile | null {
   if (!persona.model_profile) return null;
   try {
     return JSON.parse(persona.model_profile) as ModelProfile;
@@ -86,7 +86,7 @@ function parseModelProfile(persona: DbPersona): ModelProfile | null {
   }
 }
 
-function getProviderLabel(persona: DbPersona): string {
+function getProviderLabel(persona: Persona): string {
   const mp = parseModelProfile(persona);
   if (!mp?.provider) return 'default';
   return mp.provider;
@@ -95,7 +95,7 @@ function getProviderLabel(persona: DbPersona): string {
 // -- Compute all tags for a persona -----------------------------------
 
 function computePersonaTags(
-  persona: DbPersona,
+  persona: Persona,
   health: PersonaHealth | undefined,
   lastRun: string | null | undefined,
 ): Set<string> {
@@ -183,7 +183,7 @@ function resolveAutoTag(id: string): SmartTag {
 // -- Hook -------------------------------------------------------------
 
 export function usePersonaFilters(
-  personas: DbPersona[],
+  personas: Persona[],
   healthMap: Record<string, PersonaHealth>,
   lastRunMap: Record<string, string | null>,
 ) {

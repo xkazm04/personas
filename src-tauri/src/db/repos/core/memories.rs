@@ -24,6 +24,33 @@ fn strip_html_tags(input: &str) -> String {
     out
 }
 
+/// Normalize tags to a canonical JSON array string.
+///
+/// Accepts either a JSON array (e.g. `["a","b"]`) or comma-separated
+/// values (e.g. `"a,b"`) and always returns a JSON array string.
+fn normalize_tags(raw: Option<String>) -> Option<String> {
+    let raw = raw?;
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    // If it already parses as a JSON array of strings, pass through
+    if let Ok(arr) = serde_json::from_str::<Vec<String>>(trimmed) {
+        return Some(serde_json::to_string(&arr).unwrap_or_default());
+    }
+    // Otherwise treat as comma-separated
+    let tags: Vec<String> = trimmed
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    if tags.is_empty() {
+        None
+    } else {
+        Some(serde_json::to_string(&tags).unwrap_or_default())
+    }
+}
+
 /// Escape LIKE metacharacters (%, _) so they are matched literally.
 fn escape_like(input: &str) -> String {
     input.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_")
@@ -86,6 +113,25 @@ fn row_to_memory(row: &Row) -> rusqlite::Result<PersonaMemory> {
     })
 }
 
+/// Map user-provided sort column to a safe SQL column name.
+fn validated_sort_column(col: Option<&str>) -> &str {
+    match col {
+        Some("importance") => "importance",
+        Some("title") => "title",
+        Some("category") => "category",
+        Some("updated_at") => "updated_at",
+        // Default to created_at
+        _ => "created_at",
+    }
+}
+
+fn validated_sort_direction(dir: Option<&str>) -> &str {
+    match dir {
+        Some(d) if d.eq_ignore_ascii_case("asc") => "ASC",
+        _ => "DESC",
+    }
+}
+
 pub fn get_all(
     pool: &DbPool,
     persona_id: Option<&str>,
@@ -93,9 +139,13 @@ pub fn get_all(
     search: Option<&str>,
     limit: Option<i64>,
     offset: Option<i64>,
+    sort_column: Option<&str>,
+    sort_direction: Option<&str>,
 ) -> Result<Vec<PersonaMemory>, AppError> {
     let limit = limit.unwrap_or(50);
     let offset = offset.unwrap_or(0);
+    let order_col = validated_sort_column(sort_column);
+    let order_dir = validated_sort_direction(sort_direction);
 
     let conn = pool.get()?;
 
@@ -107,8 +157,10 @@ pub fn get_all(
     let limit_idx = param_values.len() + 1;
 
     let sql = format!(
-        "SELECT * FROM persona_memories {} ORDER BY created_at DESC LIMIT ?{} OFFSET ?{}",
+        "SELECT * FROM persona_memories {} ORDER BY {} {} LIMIT ?{} OFFSET ?{}",
         where_clause,
+        order_col,
+        order_dir,
         limit_idx,
         limit_idx + 1
     );
@@ -199,7 +251,7 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
             category,
             input.source_execution_id,
             importance,
-            input.tags,
+            normalize_tags(input.tags),
             now,
         ],
     )?;
@@ -307,9 +359,13 @@ pub fn get_all_with_stats(
     search: Option<&str>,
     limit: Option<i64>,
     offset: Option<i64>,
+    sort_column: Option<&str>,
+    sort_direction: Option<&str>,
 ) -> Result<MemoriesWithStats, AppError> {
     let limit_val = limit.unwrap_or(50);
     let offset_val = offset.unwrap_or(0);
+    let order_col = validated_sort_column(sort_column);
+    let order_dir = validated_sort_direction(sort_direction);
 
     let conn = pool.get()?;
     let (where_clause, filter_params) = build_memory_filters(persona_id, category, search);
@@ -354,8 +410,10 @@ pub fn get_all_with_stats(
         .collect();
     let limit_idx = mem_params.len() + 1;
     let mem_sql = format!(
-        "SELECT * FROM persona_memories {} ORDER BY created_at DESC LIMIT ?{} OFFSET ?{}",
+        "SELECT * FROM persona_memories {} ORDER BY {} {} LIMIT ?{} OFFSET ?{}",
         where_clause,
+        order_col,
+        order_dir,
         limit_idx,
         limit_idx + 1
     );

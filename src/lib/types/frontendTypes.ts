@@ -5,17 +5,17 @@
 
 // -- Sidebar Tree ------------------------------------------------------
 
-import type { DbPersona, DbPersonaGroup } from "./types";
+import type { Persona, PersonaGroup } from "./types";
 
 export interface GroupNode {
   kind: 'group';
-  group: DbPersonaGroup;
-  children: DbPersona[];
+  group: PersonaGroup;
+  children: Persona[];
 }
 
 export interface UngroupedNode {
   kind: 'ungrouped';
-  children: DbPersona[];
+  children: Persona[];
 }
 
 export type SidebarNode = GroupNode | UngroupedNode;
@@ -34,14 +34,14 @@ export type DropPayload =
 
 /** Build a tree of sidebar nodes from flat groups + personas arrays. */
 export function buildSidebarTree(
-  groups: DbPersonaGroup[],
-  personas: DbPersona[],
+  groups: PersonaGroup[],
+  personas: Persona[],
 ): SidebarNode[] {
   const sortedGroups = [...groups].sort((a, b) => a.sortOrder - b.sortOrder);
 
-  const groupMap = new Map<string, DbPersona[]>();
+  const groupMap = new Map<string, Persona[]>();
   for (const g of sortedGroups) groupMap.set(g.id, []);
-  const ungrouped: DbPersona[] = [];
+  const ungrouped: Persona[] = [];
 
   for (const p of personas) {
     const gid = p.group_id;
@@ -130,7 +130,6 @@ export type HealingIssueStatus = "detected" | "analyzing" | "resolved" | "ignore
 // -- Manual Review Types ------------------------------------------------
 
 export type ManualReviewSeverity = "info" | "warning" | "critical";
-export type ManualReviewStatus = "pending" | "approved" | "rejected";
 
 // -- Event Types --------------------------------------------------------
 

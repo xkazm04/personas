@@ -3,7 +3,7 @@ import { X, Plug, Key, Plus } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { getCredentialTags, getTagStyle, buildMetadataWithTags, SUGGESTED_TAGS } from '@/features/vault/utils/credentialTags';
 import { toCredentialMetadata } from '@/lib/types/types';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from '@/stores/vaultStore';
 import * as credApi from '@/api/vault/credentials';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
@@ -34,7 +34,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
         metadata,
       });
       const updated = toCredentialMetadata(updatedRaw);
-      usePersonaStore.setState((s) => ({
+      useVaultStore.setState((s) => ({
         credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
       }));
     } catch { /* intentional: non-critical -- tag metadata update is best-effort */ }
@@ -71,7 +71,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <h2 className="text-sm font-semibold text-foreground/90 truncate mb-1">
+        <h2 id="credential-playground-title" className="text-sm font-semibold text-foreground/90 truncate mb-1">
           {credential.name}
         </h2>
         <div className="flex items-center gap-1.5 flex-wrap">

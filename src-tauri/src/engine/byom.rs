@@ -11,6 +11,7 @@
 //! (backwards-compatible default).
 
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use super::provider::EngineKind;
 
@@ -22,7 +23,8 @@ pub const BYOM_POLICY_KEY: &str = "byom_policy";
 // =============================================================================
 
 /// Top-level BYOM policy configuration.
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
+#[ts(export)]
 pub struct ByomPolicy {
     /// Whether BYOM policy enforcement is enabled.
     pub enabled: bool,
@@ -37,7 +39,8 @@ pub struct ByomPolicy {
 }
 
 /// A cost-based routing rule that maps task characteristics to a provider.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct RoutingRule {
     /// Human-readable name for this rule.
     pub name: String,
@@ -52,7 +55,8 @@ pub struct RoutingRule {
 }
 
 /// Task complexity levels for cost-optimized routing.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "lowercase")]
 pub enum TaskComplexity {
     /// Simple tasks: formatting, linting, small edits.
@@ -64,7 +68,8 @@ pub enum TaskComplexity {
 }
 
 /// A compliance rule that restricts providers for specific workflow tags.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct ComplianceRule {
     /// Human-readable name (e.g., "HIPAA Workflows").
     pub name: String,
@@ -81,7 +86,8 @@ pub struct ComplianceRule {
 // =============================================================================
 
 /// A single provider audit log entry recording which provider handled an execution.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct ProviderAuditEntry {
     pub id: String,
     pub execution_id: String,
@@ -128,13 +134,112 @@ impl ByomPolicy {
     }
 
     /// Save the BYOM policy to the settings DB.
+    ///
+    /// Runs validation before saving. Warnings are logged but do not prevent
+    /// the save — callers can use `validate()` to surface warnings in the UI.
     pub fn save(&self, pool: &crate::db::DbPool) -> Result<(), crate::error::AppError> {
+        let warnings = self.validate();
+        for w in &warnings {
+            tracing::warn!(warning = %w, "BYOM policy validation warning");
+        }
         let json = serde_json::to_string(self)
             .map_err(|e| crate::error::AppError::Internal(format!("Failed to serialize BYOM policy: {}", e)))?;
         crate::db::repos::core::settings::set(pool, BYOM_POLICY_KEY, &json)
     }
 
+    /// Validate policy consistency and return warnings.
+    ///
+    /// **Precedence rule**: `allowed_providers` is the ceiling — compliance rules
+    /// can only *narrow* within it, never expand beyond it. If a compliance rule
+    /// references a provider not in the top-level `allowed_providers`, that
+    /// provider will be silently blocked and the compliance rule has no effect
+    /// for it.
+    ///
+    /// Similarly, routing rules that target a blocked/non-allowed provider will
+    /// never take effect.
+    pub fn validate(&self) -> Vec<String> {
+        let mut warnings = Vec::new();
+        if !self.enabled {
+            return warnings;
+        }
+
+        let allowed_set: Vec<EngineKind> = self
+            .allowed_providers
+            .iter()
+            .filter_map(|s| parse_engine_kind(s))
+            .collect();
+
+        let blocked_set: Vec<EngineKind> = self
+            .blocked_providers
+            .iter()
+            .filter_map(|s| parse_engine_kind(s))
+            .collect();
+
+        // Check compliance rules
+        for rule in &self.compliance_rules {
+            if !rule.enabled {
+                continue;
+            }
+            for provider_str in &rule.allowed_providers {
+                if let Some(kind) = parse_engine_kind(provider_str) {
+                    if blocked_set.contains(&kind) {
+                        warnings.push(format!(
+                            "Compliance rule '{}' allows provider '{}' which is explicitly blocked — \
+                             the block takes precedence and this provider will never be available",
+                            rule.name, provider_str,
+                        ));
+                    } else if !allowed_set.is_empty() && !allowed_set.contains(&kind) {
+                        warnings.push(format!(
+                            "Compliance rule '{}' allows provider '{}' which is not in the top-level \
+                             allowed_providers list — this provider will be blocked regardless",
+                            rule.name, provider_str,
+                        ));
+                    }
+                } else {
+                    warnings.push(format!(
+                        "Compliance rule '{}' references unknown provider '{}'",
+                        rule.name, provider_str,
+                    ));
+                }
+            }
+        }
+
+        // Check routing rules
+        for rule in &self.routing_rules {
+            if !rule.enabled {
+                continue;
+            }
+            if let Some(kind) = parse_engine_kind(&rule.provider) {
+                if blocked_set.contains(&kind) {
+                    warnings.push(format!(
+                        "Routing rule '{}' targets provider '{}' which is explicitly blocked",
+                        rule.name, rule.provider,
+                    ));
+                } else if !allowed_set.is_empty() && !allowed_set.contains(&kind) {
+                    warnings.push(format!(
+                        "Routing rule '{}' targets provider '{}' which is not in the top-level \
+                         allowed_providers list",
+                        rule.name, rule.provider,
+                    ));
+                }
+            } else {
+                warnings.push(format!(
+                    "Routing rule '{}' references unknown provider '{}'",
+                    rule.name, rule.provider,
+                ));
+            }
+        }
+
+        warnings
+    }
+
     /// Evaluate the policy for a given execution context.
+    ///
+    /// **Precedence** (applied in order, each layer can only narrow, never expand):
+    /// 1. `blocked_providers` — always blocked, highest priority.
+    /// 2. `allowed_providers` — the ceiling; everything not listed is blocked.
+    /// 3. `compliance_rules` — further restrict within the allowed set.
+    /// 4. `routing_rules` — select a preferred provider/model (must still be allowed).
     ///
     /// - `persona_tags`: tags/categories associated with the persona (for compliance matching).
     /// - `complexity`: the task complexity level (for cost routing).
@@ -349,5 +454,88 @@ mod tests {
         assert!(!decision.blocked_providers.contains(&EngineKind::ClaudeCode));
         assert!(decision.blocked_providers.contains(&EngineKind::GeminiCli));
         assert_eq!(decision.compliance_rule_name.as_deref(), Some("HIPAA"));
+    }
+
+    #[test]
+    fn test_validate_compliance_rule_outside_allowed() {
+        let policy = ByomPolicy {
+            enabled: true,
+            allowed_providers: vec!["claude_code".into()],
+            compliance_rules: vec![ComplianceRule {
+                name: "HIPAA".into(),
+                workflow_tags: vec!["hipaa".into()],
+                // Gemini is NOT in allowed_providers
+                allowed_providers: vec!["claude_code".into(), "gemini_cli".into()],
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("HIPAA"));
+        assert!(warnings[0].contains("gemini_cli"));
+        assert!(warnings[0].contains("not in the top-level"));
+    }
+
+    #[test]
+    fn test_validate_compliance_rule_blocked_provider() {
+        let policy = ByomPolicy {
+            enabled: true,
+            blocked_providers: vec!["gemini_cli".into()],
+            compliance_rules: vec![ComplianceRule {
+                name: "DataSov".into(),
+                workflow_tags: vec!["eu".into()],
+                allowed_providers: vec!["gemini_cli".into()],
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("explicitly blocked"));
+    }
+
+    #[test]
+    fn test_validate_routing_rule_outside_allowed() {
+        let policy = ByomPolicy {
+            enabled: true,
+            allowed_providers: vec!["claude_code".into()],
+            routing_rules: vec![RoutingRule {
+                name: "Cheap simple".into(),
+                task_complexity: TaskComplexity::Simple,
+                provider: "gemini_cli".into(),
+                model: None,
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("Routing rule"));
+        assert!(warnings[0].contains("gemini_cli"));
+    }
+
+    #[test]
+    fn test_validate_clean_policy_no_warnings() {
+        let policy = ByomPolicy {
+            enabled: true,
+            allowed_providers: vec!["claude_code".into(), "gemini_cli".into()],
+            compliance_rules: vec![ComplianceRule {
+                name: "HIPAA".into(),
+                workflow_tags: vec!["hipaa".into()],
+                allowed_providers: vec!["claude_code".into()],
+                enabled: true,
+            }],
+            routing_rules: vec![RoutingRule {
+                name: "Use Claude for critical".into(),
+                task_complexity: TaskComplexity::Critical,
+                provider: "claude_code".into(),
+                model: None,
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert!(warnings.is_empty());
     }
 }

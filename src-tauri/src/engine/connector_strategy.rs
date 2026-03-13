@@ -13,7 +13,25 @@ use crate::db::models::PersonaCredential;
 use crate::db::DbPool;
 use crate::error::AppError;
 
+/// Token returned by `resolve_auth_token`, carrying the access token and
+/// an optional provider-reported expiry so callers can track real TTLs.
+pub struct ResolvedToken {
+    pub token: String,
+    /// Seconds until the token expires, as reported by the OAuth provider.
+    /// `None` when the provider didn't include `expires_in` or the credential
+    /// is not OAuth (e.g. API key).
+    pub expires_in_secs: Option<u64>,
+}
 
+impl ResolvedToken {
+    pub fn plain(token: String) -> Self {
+        Self { token, expires_in_secs: None }
+    }
+
+    pub fn with_expiry(token: String, expires_in_secs: u64) -> Self {
+        Self { token, expires_in_secs: Some(expires_in_secs) }
+    }
+}
 
 // -- Trait ----------------------------------------------------------
 
@@ -24,13 +42,14 @@ pub trait ConnectorStrategy: Send + Sync {
     fn is_oauth(&self, fields: &HashMap<String, String>) -> bool;
 
     /// Resolve the auth token to use for healthcheck / API requests.
-    /// Returns `Ok(Some(token))` when a token is available, `Ok(None)` when
+    /// Returns `Ok(Some(resolved))` when a token is available, `Ok(None)` when
     /// the credential doesn't carry a token (e.g. basic-auth only).
+    /// The `ResolvedToken` includes `expires_in_secs` when the provider reports it.
     async fn resolve_auth_token(
         &self,
         connector_metadata: Option<&str>,
         fields: &HashMap<String, String>,
-    ) -> Result<Option<String>, AppError>;
+    ) -> Result<Option<ResolvedToken>, AppError>;
 
     /// Apply authentication to an outgoing healthcheck request.
     /// Default: `Authorization: Bearer <token>`.
@@ -118,20 +137,31 @@ impl StrategyRegistry {
         service_type: &str,
         connector_metadata: Option<&str>,
     ) -> &dyn ConnectorStrategy {
+        let registered: Vec<&str> = self.strategies.keys().map(|k| k.as_str()).collect();
+
         // 1. Exact match
         if let Some(s) = self.strategies.get(service_type) {
+            tracing::debug!(
+                service_type = %service_type,
+                resolution = "exact_match",
+                "Connector strategy selected via exact match"
+            );
             return s.as_ref();
         }
 
         // 2. Metadata-based override
         if let Some(meta_json) = connector_metadata {
             if let Ok(val) = serde_json::from_str::<serde_json::Value>(meta_json) {
-                if val
-                    .get("oauth_type")
-                    .and_then(|v| v.as_str())
-                    .is_some_and(|v| v == "google")
-                {
+                let oauth_type = val.get("oauth_type").and_then(|v| v.as_str());
+                if oauth_type.is_some_and(|v| v == "google") {
                     if let Some(s) = self.strategies.get("google-oauth") {
+                        tracing::debug!(
+                            service_type = %service_type,
+                            oauth_type = "google",
+                            resolution = "metadata_override",
+                            ?registered,
+                            "Connector strategy selected via metadata oauth_type override"
+                        );
                         return s.as_ref();
                     }
                 }
@@ -141,16 +171,36 @@ impl StrategyRegistry {
         // 3. Substring fallback for service_type patterns
         if service_type.contains("google") {
             if let Some(s) = self.strategies.get("google-oauth") {
+                tracing::debug!(
+                    service_type = %service_type,
+                    resolution = "substring_match",
+                    matched = "google-oauth",
+                    ?registered,
+                    "Connector strategy selected via substring match"
+                );
                 return s.as_ref();
             }
         }
         if service_type.contains("clickup") {
             if let Some(s) = self.strategies.get("clickup") {
+                tracing::debug!(
+                    service_type = %service_type,
+                    resolution = "substring_match",
+                    matched = "clickup",
+                    ?registered,
+                    "Connector strategy selected via substring match"
+                );
                 return s.as_ref();
             }
         }
 
         // 4. Default
+        tracing::debug!(
+            service_type = %service_type,
+            resolution = "default",
+            ?registered,
+            "No matching connector strategy found, using default"
+        );
         self.default.as_ref()
     }
 }
@@ -236,8 +286,8 @@ impl ConnectorStrategy for DefaultStrategy {
         &self,
         _connector_metadata: Option<&str>,
         fields: &HashMap<String, String>,
-    ) -> Result<Option<String>, AppError> {
-        Ok(find_auth_token(fields))
+    ) -> Result<Option<ResolvedToken>, AppError> {
+        Ok(find_auth_token(fields).map(ResolvedToken::plain))
     }
 
     /// For OAuth credentials, rotate via token refresh; for API keys, use default healthcheck.
@@ -288,10 +338,10 @@ impl ConnectorStrategy for GoogleOAuthStrategy {
         &self,
         _connector_metadata: Option<&str>,
         fields: &HashMap<String, String>,
-    ) -> Result<Option<String>, AppError> {
+    ) -> Result<Option<ResolvedToken>, AppError> {
         // Prefer an existing access_token if present
         if let Some(token) = find_nonempty(fields, &["access_token", "accessToken"]) {
-            return Ok(Some(token));
+            return Ok(Some(ResolvedToken::plain(token)));
         }
 
         // Otherwise refresh using the refresh_token
@@ -300,9 +350,9 @@ impl ConnectorStrategy for GoogleOAuthStrategy {
 
         let (client_id, client_secret) =
             super::google_oauth::resolve_google_oauth_env_credentials()?;
-        let access_token =
+        let resolved =
             exchange_google_refresh_token(&client_id, &client_secret, &refresh_token).await?;
-        Ok(Some(access_token))
+        Ok(Some(resolved))
     }
 
     /// OAuth rotation = token refresh + persist + healthcheck verify.
@@ -328,8 +378,8 @@ async fn exchange_google_refresh_token(
     client_id: &str,
     client_secret: &str,
     refresh_token: &str,
-) -> Result<String, AppError> {
-    let response = reqwest::Client::new()
+) -> Result<ResolvedToken, AppError> {
+    let response = crate::SHARED_HTTP
         .post("https://oauth2.googleapis.com/token")
         .header("Content-Type", "application/x-www-form-urlencoded")
         .form(&[
@@ -355,11 +405,18 @@ async fn exchange_google_refresh_token(
         .await
         .map_err(|e| AppError::Internal(format!("Invalid Google token response JSON: {e}")))?;
 
-    value
+    let token = value
         .get("access_token")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .ok_or_else(|| AppError::Internal("Google token refresh did not return access_token".into()))
+        .ok_or_else(|| AppError::Internal("Google token refresh did not return access_token".into()))?;
+
+    let expires_in = value.get("expires_in").and_then(|v| v.as_u64());
+
+    Ok(match expires_in {
+        Some(secs) => ResolvedToken::with_expiry(token, secs),
+        None => ResolvedToken::plain(token),
+    })
 }
 
 // -- Buffer ---------------------------------------------------------
@@ -376,8 +433,8 @@ impl ConnectorStrategy for BufferStrategy {
         &self,
         _connector_metadata: Option<&str>,
         fields: &HashMap<String, String>,
-    ) -> Result<Option<String>, AppError> {
-        Ok(find_auth_token(fields))
+    ) -> Result<Option<ResolvedToken>, AppError> {
+        Ok(find_auth_token(fields).map(ResolvedToken::plain))
     }
 
     /// Buffer expects the access token as a query parameter, not a header.
@@ -404,8 +461,8 @@ impl ConnectorStrategy for CircleCIStrategy {
         &self,
         _connector_metadata: Option<&str>,
         fields: &HashMap<String, String>,
-    ) -> Result<Option<String>, AppError> {
-        Ok(find_auth_token(fields))
+    ) -> Result<Option<ResolvedToken>, AppError> {
+        Ok(find_auth_token(fields).map(ResolvedToken::plain))
     }
 
     /// CircleCI expects a `Circle-Token` header, not Bearer.
@@ -432,8 +489,8 @@ impl ConnectorStrategy for ClickUpStrategy {
         &self,
         _connector_metadata: Option<&str>,
         fields: &HashMap<String, String>,
-    ) -> Result<Option<String>, AppError> {
-        Ok(find_auth_token(fields))
+    ) -> Result<Option<ResolvedToken>, AppError> {
+        Ok(find_auth_token(fields).map(ResolvedToken::plain))
     }
 
     /// ClickUp expects a raw `Authorization: <token>` header, not Bearer.
@@ -460,7 +517,7 @@ impl ConnectorStrategy for GitHubStrategy {
         &self,
         _connector_metadata: Option<&str>,
         fields: &HashMap<String, String>,
-    ) -> Result<Option<String>, AppError> {
-        Ok(find_auth_token(fields))
+    ) -> Result<Option<ResolvedToken>, AppError> {
+        Ok(find_auth_token(fields).map(ResolvedToken::plain))
     }
 }

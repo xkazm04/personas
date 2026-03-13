@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Wrench, Target, Check, X, ChevronRight, ChevronLeft, Lock } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { CONNECTOR_META, ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 
 /* ------------------------------------------------------------------ */
@@ -258,12 +258,12 @@ function GoalStep({ value, onChange }: { value: string; onChange: (v: string) =>
 /* ------------------------------------------------------------------ */
 
 function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClose: () => void; initialStep: number }) {
-  const setupRole = usePersonaStore((s) => s.setupRole);
-  const setupTool = usePersonaStore((s) => s.setupTool);
-  const setupGoal = usePersonaStore((s) => s.setupGoal);
-  const setSetupRole = usePersonaStore((s) => s.setSetupRole);
-  const setSetupTool = usePersonaStore((s) => s.setSetupTool);
-  const setSetupGoal = usePersonaStore((s) => s.setSetupGoal);
+  const setupRole = useSystemStore((s) => s.setupRole);
+  const setupTool = useSystemStore((s) => s.setupTool);
+  const setupGoal = useSystemStore((s) => s.setupGoal);
+  const setSetupRole = useSystemStore((s) => s.setSetupRole);
+  const setSetupTool = useSystemStore((s) => s.setSetupTool);
+  const setSetupGoal = useSystemStore((s) => s.setSetupGoal);
 
   const [step, setStep] = useState(initialStep);
   const [goalDraft, setGoalDraft] = useState(setupGoal ?? '');
@@ -515,11 +515,11 @@ function SetupCardItem({
 /* ------------------------------------------------------------------ */
 
 export default function SetupCards() {
-  const setupCompleted = usePersonaStore((s) => s.setupCompleted);
-  const setupRole = usePersonaStore((s) => s.setupRole);
-  const setupTool = usePersonaStore((s) => s.setupTool);
-  const setupGoal = usePersonaStore((s) => s.setupGoal);
-  const dismissSetup = usePersonaStore((s) => s.dismissSetup);
+  const setupCompleted = useSystemStore((s) => s.setupCompleted);
+  const setupRole = useSystemStore((s) => s.setupRole);
+  const setupTool = useSystemStore((s) => s.setupTool);
+  const setupGoal = useSystemStore((s) => s.setupGoal);
+  const dismissSetup = useSystemStore((s) => s.dismissSetup);
 
   const [stepperOpen, setStepperOpen] = useState(false);
   const [initialStep, setInitialStep] = useState(0);

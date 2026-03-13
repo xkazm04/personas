@@ -1,4 +1,4 @@
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import { formatDuration } from '@/lib/utils/formatters';
 import { AlertCircle, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,7 +8,7 @@ import { TraceSummary } from './TraceSummary';
 import { useTraceData } from './useTraceData';
 
 interface TraceInspectorProps {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
 }
 
 export function TraceInspector({ execution }: TraceInspectorProps) {

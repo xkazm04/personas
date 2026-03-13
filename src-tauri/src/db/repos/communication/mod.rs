@@ -3,3 +3,4 @@ pub mod manual_reviews;
 pub mod messages;
 pub mod reviews;
 pub mod template_feedback;
+pub mod chat;

@@ -17,9 +17,9 @@ import { BaseModal } from '../../shared/BaseModal';
 import { TabTransition } from '../../shared/TabTransition';
 import { PersonaMatrix } from '../matrix/PersonaMatrix';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { AgentIR } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
+import { getCachedDesignResult } from '../cards/reviewParseCache';
 import { OverviewTab } from './OverviewTab';
 
 type DetailTab = 'overview' | 'prompt' | 'connectors' | 'json';
@@ -60,7 +60,7 @@ export function TemplateDetailModal({
 
   if (!isOpen || !review) return null;
 
-  const designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
+  const designResult = getCachedDesignResult(review);
   const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
   const adjustment = parseJsonSafe<{
     suggestion: string;

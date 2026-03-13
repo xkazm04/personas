@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { useAutomationDesign } from '@/hooks/design/core/useAutomationDesign';
 import type { AutomationPlatform, AutomationFallbackMode } from '@/lib/bindings/PersonaAutomation';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -9,7 +9,7 @@ import { usePlatformData } from './usePlatformData';
 
 export function useAutomationSetupState(personaId: string, editAutomationId?: string | null) {
   const design = useAutomationDesign();
-  const automations = usePersonaStore((s) => s.automations);
+  const automations = useVaultStore((s) => s.automations);
   const editAutomation = editAutomationId
     ? automations.find((a) => a.id === editAutomationId) ?? null
     : null;
@@ -28,10 +28,10 @@ export function useAutomationSetupState(personaId: string, editAutomationId?: st
   const [deployError, setDeployError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
 
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const deployAutomation = usePersonaStore((s) => s.deployAutomation);
-  const fetchAutomations = usePersonaStore((s) => s.fetchAutomations);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const deployAutomation = useVaultStore((s) => s.deployAutomation);
+  const fetchAutomations = useVaultStore((s) => s.fetchAutomations);
 
   const platformServiceType = PLATFORM_TO_SERVICE_TYPE[platform];
   const platformCredentials = useMemo(() => {

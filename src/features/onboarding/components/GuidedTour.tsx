@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, X, MapPin, Sparkles } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { Button } from '@/features/shared/components/buttons';
 import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
@@ -14,18 +16,18 @@ const SIMPLE_HIDDEN_STEPS = new Set(['credentials-catalog']);
 
 export default function GuidedTour() {
   const isSimple = useSimpleMode();
-  const tourActive = usePersonaStore((s) => s.tourActive);
-  const currentIndex = usePersonaStore((s) => s.tourCurrentStepIndex);
-  const completedSteps = usePersonaStore((s) => s.tourStepCompleted);
-  const advanceTour = usePersonaStore((s) => s.advanceTour);
-  const dismissTour = usePersonaStore((s) => s.dismissTour);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
-  const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
-  const setTemplateTab = usePersonaStore((s) => s.setTemplateTab);
-  const emitTourEvent = usePersonaStore((s) => s.emitTourEvent);
-  const tourCreatedPersonaId = usePersonaStore((s) => s.tourCreatedPersonaId);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
+  const tourActive = useSystemStore((s) => s.tourActive);
+  const currentIndex = useSystemStore((s) => s.tourCurrentStepIndex);
+  const completedSteps = useSystemStore((s) => s.tourStepCompleted);
+  const advanceTour = useSystemStore((s) => s.advanceTour);
+  const dismissTour = useSystemStore((s) => s.dismissTour);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
+  const setTemplateTab = useSystemStore((s) => s.setTemplateTab);
+  const emitTourEvent = useSystemStore((s) => s.emitTourEvent);
+  const tourCreatedPersonaId = useSystemStore((s) => s.tourCreatedPersonaId);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
 
   const [isMinimized, setIsMinimized] = useState(false);
 
@@ -71,12 +73,12 @@ export default function GuidedTour() {
     return () => clearTimeout(timer);
   }, [tourActive, currentStep, emitTourEvent]);
 
-  const handleNext = () => { if (allCompleted) { usePersonaStore.getState().finishTour(); return; } advanceTour(); };
-  const handlePrev = () => { if (currentIndex > 0) usePersonaStore.setState({ tourCurrentStepIndex: currentIndex - 1 }); };
+  const handleNext = () => { if (allCompleted) { useSystemStore.getState().finishTour(); return; } advanceTour(); };
+  const handlePrev = () => { if (currentIndex > 0) useSystemStore.setState({ tourCurrentStepIndex: currentIndex - 1 }); };
   const handleJump = (index: number) => {
     const step = TOUR_STEPS[index];
-    if (step?.id === 'template-gallery') usePersonaStore.setState({ tourCurrentStepIndex: index, tourSearchPrefill: 'AI Weekly Research' });
-    else usePersonaStore.setState({ tourCurrentStepIndex: index });
+    if (step?.id === 'template-gallery') useSystemStore.setState({ tourCurrentStepIndex: index, tourSearchPrefill: 'AI Weekly Research' });
+    else useSystemStore.setState({ tourCurrentStepIndex: index });
   };
 
   if (!tourActive || !currentStep) return null;

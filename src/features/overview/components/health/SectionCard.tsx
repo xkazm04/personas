@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Chrome, Key } from 'lucide-react';
-import type { HealthCheckSection } from '@/api/tauriApi';
+import type { HealthCheckSection } from "@/api/system/system";
 import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
 import { Button } from '@/features/shared/components/buttons';
 import { getStatusIcon, SectionStatusDot } from './StatusIndicators';

@@ -1,5 +1,6 @@
 import { useCallback, useRef, useEffect, useState } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { useN8nImportReducer, STEP_META } from './useN8nImportReducer';
 import { useN8nSession } from './useN8nSession';
 import { useN8nTransform } from './useN8nTransform';
@@ -16,9 +17,9 @@ import type { ConfirmResult } from '../steps/confirm/N8nConfirmStep';
  * the useN8nImportReducer, and exposes a clean API for the thin UI renderer.
  */
 export function useN8nWizard() {
-  const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const setN8nTransformActive = usePersonaStore((s) => s.setN8nTransformActive);
+  const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setN8nTransformActive = useSystemStore((s) => s.setN8nTransformActive);
   const { state, dispatch, canGoBack, goBack } = useN8nImportReducer();
 
   const fileInputRef = useRef<HTMLInputElement>(null);

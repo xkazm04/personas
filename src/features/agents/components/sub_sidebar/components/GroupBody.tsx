@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, DollarSign, RotateCcw, FileText } from 'lucide-react';
 import { DraggablePersonaCard } from './DraggablePersonaCard';
-import type { DbPersona, DbPersonaGroup } from '@/lib/types/types';
+import type { Persona, PersonaGroup } from '@/lib/types/types';
 
 // -- Workspace Settings sub-component --------------------------------
 interface WorkspaceSettingsProps {
-  group: DbPersonaGroup;
+  group: PersonaGroup;
   onUpdate: (updates: Partial<{
     description: string;
     defaultModelProfile: string;
@@ -86,11 +86,11 @@ export function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSetting
 // -- Persona List -----------------------------------------------------
 
 interface PersonaListProps {
-  personas: DbPersona[];
+  personas: Persona[];
   selectedPersonaId: string | null;
   isCollapsed: boolean;
   onSelectPersona: (id: string) => void;
-  onPersonaContextMenu?: (e: React.MouseEvent, persona: DbPersona) => void;
+  onPersonaContextMenu?: (e: React.MouseEvent, persona: Persona) => void;
 }
 
 export function PersonaList({ personas, selectedPersonaId, isCollapsed, onSelectPersona, onPersonaContextMenu }: PersonaListProps) {

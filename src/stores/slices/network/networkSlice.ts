@@ -1,6 +1,7 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { SystemStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
+import { useAgentStore } from "../../agentStore";
 import type { PeerIdentity, TrustedPeer } from "@/api/network/identity";
 import type { ExposedResource, ResourceProvenance } from "@/api/network/exposure";
 import type { BundleImportPreview } from "@/api/network/bundle";
@@ -73,7 +74,7 @@ export interface NetworkSlice {
   fetchNetworkSnapshot: () => Promise<void>;
 }
 
-export const createNetworkSlice: StateCreator<PersonaStore, [], [], NetworkSlice> = (set, get) => ({
+export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice> = (set, get) => ({
   // State (Phase 1)
   localIdentity: null,
   trustedPeers: [],
@@ -249,7 +250,7 @@ export const createNetworkSlice: StateCreator<PersonaStore, [], [], NetworkSlice
       const result = await bundleApi.applyBundleImport(filePath, options);
       set({ networkLoading: false });
       // Refresh personas list after import
-      await get().fetchPersonas();
+      await useAgentStore.getState().fetchPersonas();
       await get().fetchProvenance();
       return result;
     } catch (err) {

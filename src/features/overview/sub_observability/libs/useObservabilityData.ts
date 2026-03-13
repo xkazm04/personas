@@ -1,22 +1,25 @@
 import { useEffect, useMemo, useCallback, useState } from 'react';
-import { usePersonaStore, initHealingListener } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useAgentStore } from "@/stores/agentStore";
+import { useVaultStore } from "@/stores/vaultStore";
+import { initHealingListener, initZombieExecutionListener } from "@/stores/personaStore";
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import type { PieDataPoint } from '../components/MetricsCharts';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { useAnnotationData } from './useAnnotationData';
 
 export function useObservabilityData() {
-  const fetchObservabilityMetrics = usePersonaStore((s) => s.fetchObservabilityMetrics);
-  const observabilityMetrics = usePersonaStore((s) => s.observabilityMetrics);
-  const observabilityError = usePersonaStore((s) => s.observabilityError);
-  const personas = usePersonaStore((s) => s.personas);
-  const healingIssues = usePersonaStore((s) => s.healingIssues);
-  const healingRunning = usePersonaStore((s) => s.healingRunning);
-  const fetchHealingIssues = usePersonaStore((s) => s.fetchHealingIssues);
-  const triggerHealing = usePersonaStore((s) => s.triggerHealing);
-  const resolveHealingIssue = usePersonaStore((s) => s.resolveHealingIssue);
-  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
-  const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
+  const fetchObservabilityMetrics = useOverviewStore((s) => s.fetchObservabilityMetrics);
+  const observabilityMetrics = useOverviewStore((s) => s.observabilityMetrics);
+  const observabilityError = useOverviewStore((s) => s.observabilityError);
+  const personas = useAgentStore((s) => s.personas);
+  const healingIssues = useOverviewStore((s) => s.healingIssues);
+  const healingRunning = useOverviewStore((s) => s.healingRunning);
+  const fetchHealingIssues = useOverviewStore((s) => s.fetchHealingIssues);
+  const triggerHealing = useOverviewStore((s) => s.triggerHealing);
+  const resolveHealingIssue = useOverviewStore((s) => s.resolveHealingIssue);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
   const {
     dayRange: days,
@@ -39,9 +42,9 @@ export function useObservabilityData() {
   } | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [healingViewMode, setHealingViewMode] = useState<'list' | 'timeline'>('list');
-  const healingTimeline = usePersonaStore((s) => s.healingTimeline);
-  const healingTimelineLoading = usePersonaStore((s) => s.healingTimelineLoading);
-  const fetchHealingTimeline = usePersonaStore((s) => s.fetchHealingTimeline);
+  const healingTimeline = useOverviewStore((s) => s.healingTimeline);
+  const healingTimelineLoading = useOverviewStore((s) => s.healingTimelineLoading);
+  const fetchHealingTimeline = useOverviewStore((s) => s.fetchHealingTimeline);
 
   const refreshAll = useCallback(() => {
     return Promise.all([
@@ -65,10 +68,10 @@ export function useObservabilityData() {
     }
   }, [triggerHealing, selectedPersonaId, personas]);
 
-  useEffect(() => { initHealingListener(); }, []);
+  useEffect(() => { initHealingListener(); initZombieExecutionListener(); }, []);
   useEffect(() => { void fetchCredentials(); }, [fetchCredentials]);
 
-  const evaluateAlertRules = usePersonaStore((s) => s.evaluateAlertRules);
+  const evaluateAlertRules = useOverviewStore((s) => s.evaluateAlertRules);
 
   // Evaluate alert rules whenever metrics change
   useEffect(() => {

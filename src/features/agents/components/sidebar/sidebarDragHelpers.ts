@@ -1,5 +1,5 @@
 import type { DragPayload, DropPayload } from '@/lib/types/frontendTypes';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 
 export const GROUP_COLORS = [
   '#6B7280', '#3B82F6', '#8B5CF6', '#EC4899', '#EF4444',
@@ -16,7 +16,7 @@ export function getDropPayload(event: { over: { data: { current?: Record<string,
 }
 
 /** Resolve a drop payload to a target group ID (or null for ungrouped). */
-export function resolveDropGroupId(drop: DropPayload, personas: DbPersona[]): string | null {
+export function resolveDropGroupId(drop: DropPayload, personas: Persona[]): string | null {
   switch (drop.type) {
     case 'group': return drop.groupId;
     case 'group-reorder': return drop.groupId;

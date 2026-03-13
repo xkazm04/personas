@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   ExternalLink,
 } from 'lucide-react';
+import { BaseModal } from '@/lib/ui/BaseModal';
 
 const CONSENT_KEY = '__personas_user_consent_accepted';
 const CONSENT_VERSION = '1';
@@ -91,6 +92,7 @@ interface FirstUseConsentModalProps {
 
 export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
   const [acknowledged, setAcknowledged] = useState(false);
+  const noop = useCallback(() => {}, []);
 
   const handleAccept = useCallback(() => {
     persistConsent();
@@ -98,13 +100,14 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
   }, [onAccept]);
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="w-full max-w-2xl max-h-[90vh] mx-4 bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-      >
+    <BaseModal
+      isOpen
+      onClose={noop}
+      titleId="first-use-consent-title"
+      containerClassName="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      maxWidthClass="max-w-2xl"
+      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
+    >
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b border-primary/10">
           <div className="flex items-center gap-3 mb-2">
@@ -112,7 +115,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
               <Shield className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Welcome to Personas Desktop</h2>
+              <h2 id="first-use-consent-title" className="text-lg font-semibold text-foreground">Welcome to Personas Desktop</h2>
               <p className="text-sm text-muted-foreground/70">Please review how this application works before continuing</p>
             </div>
           </div>
@@ -267,7 +270,6 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
             I Understand, Continue
           </button>
         </div>
-      </motion.div>
-    </div>
+    </BaseModal>
   );
 }

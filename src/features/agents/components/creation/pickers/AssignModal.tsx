@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { X, Search, Key } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import type { ComponentRole } from '../steps/builder/types';
 import { COMPONENT_ROLES } from '../steps/builder/types';
@@ -21,8 +21,8 @@ export function AssignModal({
   onAssign: (connectorName: string, credentialId: string | null) => void;
   onClose: () => void;
 }) {
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<'credentials' | 'connectors'>('credentials');
 
@@ -56,22 +56,14 @@ export function AssignModal({
   }, [filteredConnectors]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.12 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      titleId="assign-modal-title"
+      containerClassName="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      size="md"
+      panelClassName="bg-background border border-primary/20 rounded-2xl shadow-2xl max-h-[70vh] flex flex-col overflow-hidden"
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 8 }}
-        transition={{ duration: 0.15 }}
-        className="bg-background border border-primary/20 rounded-2xl shadow-2xl w-full max-w-lg max-h-[70vh] flex flex-col overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-primary/10">
           <div className="flex items-center gap-2.5">
@@ -79,7 +71,7 @@ export function AssignModal({
               <Icon className={`w-4 h-4 ${roleIconColors[role]}`} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-foreground/90">
+              <h3 id="assign-modal-title" className="text-sm font-semibold text-foreground/90">
                 Assign to {roleDef?.label}
               </h3>
               <p className="text-sm text-muted-foreground/65">{roleDef?.description}</p>
@@ -202,7 +194,6 @@ export function AssignModal({
             )
           )}
         </div>
-      </motion.div>
-    </motion.div>
+    </BaseModal>
   );
 }

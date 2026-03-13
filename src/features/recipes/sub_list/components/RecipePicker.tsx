@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { X, BookOpen, Search, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { usePipelineStore } from "@/stores/pipelineStore";
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 
 interface RecipePickerProps {
@@ -12,7 +12,7 @@ interface RecipePickerProps {
 }
 
 export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePickerProps) {
-  const recipes = usePersonaStore((s) => s.recipes);
+  const recipes = usePipelineStore((s) => s.recipes);
   const [search, setSearch] = useState('');
 
   const available = useMemo(() => {

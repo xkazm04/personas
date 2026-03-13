@@ -1,4 +1,5 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use futures_util::StreamExt;
 use serde::Serialize;
@@ -445,7 +446,7 @@ struct SetupRunParams {
     app: tauri::AppHandle,
     install_id: String,
     scope: InstallScope,
-    cancelled: Arc<Mutex<bool>>,
+    cancelled: Arc<AtomicBool>,
 }
 
 async fn run_setup_install(params: SetupRunParams) {
@@ -463,7 +464,7 @@ async fn run_setup_install(params: SetupRunParams) {
         }
         InstallScope::All => {
             let node_ok = install_node(&app, &install_id, &platform).await;
-            if *cancelled.lock().unwrap_or_else(|e| e.into_inner()) {
+            if cancelled.load(Ordering::Acquire) {
                 tracing::info!(install_id = %install_id, "Setup install cancelled");
                 return;
             }
@@ -493,16 +494,14 @@ pub async fn start_setup_install(
     };
 
     let install_id = uuid::Uuid::new_v4().to_string();
-    let cancelled = state.active_setup_cancelled.clone();
-
-    {
-        let mut guard = cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        *guard = false;
-    }
+    // Use a fixed run key since only one setup install runs at a time.
+    let cancelled = state.process_registry.register_run("setup", "current");
 
     let id_clone = install_id.clone();
+    let registry = state.process_registry.clone();
     tokio::spawn(async move {
         run_setup_install(SetupRunParams { app, install_id: id_clone, scope, cancelled }).await;
+        registry.unregister_run("setup", "current");
     });
 
     Ok(serde_json::json!({ "install_id": install_id }))
@@ -510,7 +509,6 @@ pub async fn start_setup_install(
 
 #[tauri::command]
 pub fn cancel_setup_install(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
-    let mut guard = state.active_setup_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    *guard = true;
+    state.process_registry.cancel_run("setup", "current");
     Ok(())
 }

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Check, Activity } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import type { EditorTab } from '@/lib/types/types';
 import { isTabDirty } from './editorTabConstants';
 
@@ -48,9 +48,9 @@ function TabBadge({ variant, count }: { variant: TabBadgeVariant; count?: number
 }
 
 export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps) {
-  const editorTab = usePersonaStore((s) => s.editorTab);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
-  const showDesignNudge = usePersonaStore((s) => s.showDesignNudge);
+  const editorTab = useSystemStore((s) => s.editorTab);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const showDesignNudge = useSystemStore((s) => s.showDesignNudge);
 
   return (
     <div className="border-b border-primary/10 bg-primary/5">

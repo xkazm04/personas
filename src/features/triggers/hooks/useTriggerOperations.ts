@@ -1,6 +1,8 @@
 import { useCallback } from "react";
-import { usePersonaStore } from "@/stores/personaStore";
-import * as api from "@/api/tauriApi";
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { executePersona, listExecutions } from "@/api/agents/executions";
+import { dryRunTrigger, validateTrigger } from "@/api/pipeline/triggers";
+
 import type { DryRunResult } from "@/api/pipeline/triggers";
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 
@@ -27,10 +29,10 @@ export interface TestFireResult {
  * inline message, ignore, ...).
  */
 export function useTriggerOperations(personaId: string) {
-  const storeCreate = usePersonaStore((s) => s.createTrigger);
-  const storeUpdate = usePersonaStore((s) => s.updateTrigger);
-  const storeDelete = usePersonaStore((s) => s.deleteTrigger);
-  const fetchTriggerChains = usePersonaStore((s) => s.fetchTriggerChains);
+  const storeCreate = usePipelineStore((s) => s.createTrigger);
+  const storeUpdate = usePipelineStore((s) => s.updateTrigger);
+  const storeDelete = usePipelineStore((s) => s.deleteTrigger);
+  const fetchTriggerChains = usePipelineStore((s) => s.fetchTriggerChains);
 
   // -- Create -------------------------------------------------------------
 
@@ -131,7 +133,7 @@ export function useTriggerOperations(personaId: string) {
   const validate = useCallback(
     async (triggerId: string): Promise<TriggerOpResult<{ valid: boolean; failures: string }>> => {
       try {
-        const validation = await api.validateTrigger(triggerId);
+        const validation = await validateTrigger(triggerId);
         if (!validation.valid) {
           const failedChecks = validation.checks
             .filter((c) => !c.passed)
@@ -153,7 +155,7 @@ export function useTriggerOperations(personaId: string) {
     async (triggerId: string, triggerPersonaId?: string): Promise<TriggerOpResult<TestFireResult>> => {
       const pid = triggerPersonaId ?? personaId;
       try {
-        const validation = await api.validateTrigger(triggerId);
+        const validation = await validateTrigger(triggerId);
         if (!validation.valid) {
           const failedChecks = validation.checks
             .filter((c) => !c.passed)
@@ -161,7 +163,7 @@ export function useTriggerOperations(personaId: string) {
             .join("; ");
           return { ok: false, data: { validationFailures: failedChecks }, error: `Validation failed -- ${failedChecks}` };
         }
-        const execution = await api.executePersona(pid, triggerId);
+        const execution = await executePersona(pid, triggerId);
         return { ok: true, data: { execution } };
       } catch (err) {
         return { ok: false, error: errStr(err) };
@@ -175,7 +177,7 @@ export function useTriggerOperations(personaId: string) {
   const dryRun = useCallback(
     async (triggerId: string): Promise<TriggerOpResult<DryRunResult>> => {
       try {
-        const result = await api.dryRunTrigger(triggerId);
+        const result = await dryRunTrigger(triggerId);
         return { ok: true, data: result };
       } catch (err) {
         return { ok: false, error: errStr(err) };
@@ -190,7 +192,7 @@ export function useTriggerOperations(personaId: string) {
     async (triggerId: string, triggerPersonaId?: string): Promise<TriggerOpResult<PersonaExecution[]>> => {
       const pid = triggerPersonaId ?? personaId;
       try {
-        const execs = await api.listExecutions(pid, 50);
+        const execs = await listExecutions(pid, 50);
         const filtered = execs.filter((e) => e.trigger_id === triggerId).slice(0, 10);
         return { ok: true, data: filtered };
       } catch (err) {

@@ -3,7 +3,7 @@
  * Bridges Rust ts-rs bindings to the shapes components expect.
  */
 
-// -- Re-export Rust binding types with Db-prefixed aliases --------------
+// -- Re-export Rust binding types --------------
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaToolDefinition } from "@/lib/bindings/PersonaToolDefinition";
 import type { PersonaTool } from "@/lib/bindings/PersonaTool";
@@ -25,27 +25,6 @@ import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { ConnectorDefinition as RawConnectorDefinition } from "@/lib/bindings/ConnectorDefinition";
 import { parseJsonOrDefault } from "@/lib/utils/parseJson";
 
-// Alias re-exports for compatibility with source component code
-export type DbPersona = Persona;
-export type DbPersonaToolDefinition = PersonaToolDefinition;
-export type DbPersonaTool = PersonaTool;
-export type DbPersonaTrigger = PersonaTrigger;
-export type DbPersonaExecution = PersonaExecution;
-export type DbPersonaCredential = PersonaCredential;
-export type DbCredentialEvent = CredentialEvent;
-export type DbPersonaEvent = PersonaEvent;
-export type DbPersonaEventSubscription = PersonaEventSubscription;
-export type DbPersonaMetricsSnapshot = PersonaMetricsSnapshot;
-export type DbPersonaPromptVersion = PersonaPromptVersion;
-export type DbPersonaHealingIssue = PersonaHealingIssue;
-export type DbPersonaGroup = PersonaGroup;
-export type DbPersonaMemory = PersonaMemory;
-export type DbPersonaTeam = PersonaTeam;
-export type DbPersonaTeamMember = PersonaTeamMember;
-export type DbPersonaDesignReview = PersonaDesignReview;
-export type DbConnectorDefinition = RawConnectorDefinition;
-
-// Also re-export the raw binding types by their original names
 export type {
   Persona,
   PersonaToolDefinition,
@@ -249,7 +228,7 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 export type SidebarSection = "home" | "overview" | "personas" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "settings" | "dev-tools";
 export type HomeTab = "welcome" | "system-check";
-export type EditorTab = "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "design" | "health";
+export type EditorTab = "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "design" | "health" | "chat";
 export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "cron-agents" | "schedules";
 export type TemplateTab = "n8n" | "generated";
 export type CloudTab = "cloud" | "gitlab" | "unified";
@@ -326,6 +305,9 @@ export interface ManualReviewItem extends WithPersonaInfo {
   severity: string;
   status: string;
   reviewer_notes: string | null;
+  context_data: string | null;
+  suggested_actions: string | null;
+  title: string;
   created_at: string;
   resolved_at: string | null;
   /** Where this review originated -- 'local' (default) or 'cloud'. */

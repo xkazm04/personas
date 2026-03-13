@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   Play, Square, ChevronDown, Filter,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { DiffViewer } from '../../shared/DiffViewer';
 import { LabProgress } from '../../shared/LabProgress';
 import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
@@ -13,17 +13,17 @@ import { AbHistory } from './AbHistory';
 import { Button } from '@/features/shared/components/buttons';
 
 export function AbPanel() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const promptVersions = usePersonaStore((s) => s.promptVersions);
-  const abRuns = usePersonaStore((s) => s.abRuns);
-  const abResultsMap = usePersonaStore((s) => s.abResultsMap);
-  const isLabRunning = usePersonaStore((s) => s.isLabRunning);
-  const fetchVersions = usePersonaStore((s) => s.fetchVersions);
-  const fetchAbRuns = usePersonaStore((s) => s.fetchAbRuns);
-  const startAb = usePersonaStore((s) => s.startAb);
-  const cancelAb = usePersonaStore((s) => s.cancelAb);
-  const fetchAbResults = usePersonaStore((s) => s.fetchAbResults);
-  const deleteAbRun = usePersonaStore((s) => s.deleteAbRun);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const promptVersions = useAgentStore((s) => s.promptVersions);
+  const abRuns = useAgentStore((s) => s.abRuns);
+  const abResultsMap = useAgentStore((s) => s.abResultsMap);
+  const isLabRunning = useAgentStore((s) => s.isLabRunning);
+  const fetchVersions = useAgentStore((s) => s.fetchVersions);
+  const fetchAbRuns = useAgentStore((s) => s.fetchAbRuns);
+  const startAb = useAgentStore((s) => s.startAb);
+  const cancelAb = useAgentStore((s) => s.cancelAb);
+  const fetchAbResults = useAgentStore((s) => s.fetchAbResults);
+  const deleteAbRun = useAgentStore((s) => s.deleteAbRun);
 
   const [versionAId, setVersionAId] = useState<string | null>(null);
   const [versionBId, setVersionBId] = useState<string | null>(null);

@@ -1,7 +1,8 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { OverviewStore } from "../../storeTypes";
 import type { PersonaEvent } from "@/lib/types/types";
-import * as api from "@/api/tauriApi";
+import { listEvents } from "@/api/overview/events";
+
 
 export interface EventSlice {
   // State
@@ -13,13 +14,13 @@ export interface EventSlice {
   pushRecentEvent: (event: PersonaEvent, maxItems?: number) => void;
 }
 
-export const createEventSlice: StateCreator<PersonaStore, [], [], EventSlice> = (set) => ({
+export const createEventSlice: StateCreator<OverviewStore, [], [], EventSlice> = (set) => ({
   recentEvents: [],
   pendingEventCount: 0,
 
   fetchRecentEvents: async (limit?: number) => {
     try {
-      const events = await api.listEvents(limit ?? 50);
+      const events = await listEvents(limit ?? 50);
       set({ recentEvents: events, pendingEventCount: events.filter((e) => e.status === "pending").length });
     } catch (err) {
       console.warn("[eventSlice] fetchRecentEvents failed:", err);

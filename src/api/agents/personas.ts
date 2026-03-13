@@ -34,12 +34,8 @@ export const getPersonaSummaries = () =>
 // Import / Export
 // ============================================================================
 
-/** Mirrors the Rust ImportResult struct from import_export.rs */
-export interface ImportResult {
-  persona_id: string;
-  /** Non-fatal errors from sub-resource creation (triggers, subscriptions, memories). */
-  warnings: string[];
-}
+import type { ImportResult } from "@/lib/bindings/ImportResult";
+export type { ImportResult } from "@/lib/bindings/ImportResult";
 
 /** Opens a save dialog and writes the persona bundle to disk. Returns false if cancelled. */
 export const exportPersona = (personaId: string) =>

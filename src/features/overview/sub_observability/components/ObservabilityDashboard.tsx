@@ -11,12 +11,16 @@ import { HealingIssuesPanel } from './HealingIssuesPanel';
 import { AlertRulesPanel } from './AlertRulesPanel';
 import { AlertHistoryPanel } from './AlertHistoryPanel';
 import { useObservabilityData } from '../libs/useObservabilityData';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 
 export default function ObservabilityDashboard() {
   const d = useObservabilityData();
   const [showAlerts, setShowAlerts] = useState(false);
-  const activeAlertCount = usePersonaStore((s) => s.alertHistory.filter(a => !a.dismissed).length);
+  const activeAlertCount = useOverviewStore((s) => {
+    let count = 0;
+    for (const a of s.alertHistory) { if (!a.dismissed) count++; }
+    return count;
+  });
 
   return (
     <ContentBox>

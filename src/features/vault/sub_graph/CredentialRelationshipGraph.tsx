@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Network, ArrowRight } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { getCredentialDependents } from '@/api/vault/credentials';
 import type { CredentialDependent } from '@/lib/bindings/CredentialDependent';
 import {
@@ -16,11 +17,11 @@ import { BlastRadiusPanel } from './BlastRadiusPanel';
 import { NodeDetailPanel } from './NodeDetailPanel';
 
 export function CredentialRelationshipGraph() {
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const personas = usePersonaStore((s) => s.personas);
-  const credentialEvents = usePersonaStore((s) => s.credentialEvents);
-  const fetchCredentialEvents = usePersonaStore((s) => s.fetchCredentialEvents);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const personas = useAgentStore((s) => s.personas);
+  const credentialEvents = useVaultStore((s) => s.credentialEvents);
+  const fetchCredentialEvents = useVaultStore((s) => s.fetchCredentialEvents);
 
   const [dependentsMap, setDependentsMap] = useState<Map<string, CredentialDependent[]>>(new Map());
   const [loading, setLoading] = useState(true);

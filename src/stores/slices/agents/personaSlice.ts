@@ -1,14 +1,20 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { AgentStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
+import { useSystemStore } from "../../systemStore";
 import type {
-  DbPersona,
+  Persona,
   PersonaWithDetails,
 } from "@/lib/types/types";
 import type { PartialPersonaUpdate, PersonaOperation } from "@/api/agents/personas";
 import { buildUpdateInput, operationToPartial } from "@/api/agents/personas";
 import type { PersonaHealth } from "@/lib/bindings/PersonaHealth";
-import * as api from "@/api/tauriApi";
+import { listAutomations } from "@/api/agents/automations";
+import { createPersona, deletePersona, duplicatePersona, getPersona, getPersonaSummaries, listPersonas, updatePersona } from "@/api/agents/personas";
+import { listToolDefinitions } from "@/api/agents/tools";
+import { listSubscriptions } from "@/api/overview/events";
+import { listTriggers } from "@/api/pipeline/triggers";
+
 
 // -- Error categorization for structured degradation events ------------------
 type DegradationCategory = 'network' | 'timeout' | 'validation' | 'unknown';
@@ -25,7 +31,7 @@ const DEGRADATION_THRESHOLD = 3;
 
 export interface PersonaSlice {
   // State
-  personas: DbPersona[];
+  personas: Persona[];
   selectedPersonaId: string | null;
   selectedPersona: PersonaWithDetails | null;
   personaTriggerCounts: Record<string, number>;
@@ -39,8 +45,8 @@ export interface PersonaSlice {
   fetchPersonas: () => Promise<void>;
   fetchPersonaSummaries: () => Promise<void>;
   fetchDetail: (id: string) => Promise<void>;
-  createPersona: (input: { name: string; description?: string; system_prompt: string; icon?: string; color?: string; structured_prompt?: string; design_context?: string }) => Promise<DbPersona>;
-  duplicatePersona: (id: string) => Promise<DbPersona>;
+  createPersona: (input: { name: string; description?: string; system_prompt: string; icon?: string; color?: string; structured_prompt?: string; design_context?: string }) => Promise<Persona>;
+  duplicatePersona: (id: string) => Promise<Persona>;
   updatePersona: (id: string, input: PartialPersonaUpdate) => Promise<void>;
   applyPersonaOp: (id: string, op: PersonaOperation) => Promise<void>;
   deletePersona: (id: string) => Promise<void>;
@@ -49,7 +55,7 @@ export interface PersonaSlice {
 
 let fetchDetailSeq = 0;
 
-export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice> = (set, get) => ({
+export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> = (set, get) => ({
   personas: [],
   selectedPersonaId: null,
   selectedPersona: null,
@@ -63,7 +69,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
   fetchPersonas: async () => {
     set({ isLoading: true, error: null });
     try {
-      const personas = await api.listPersonas();
+      const personas = await listPersonas();
       set((state) => {
         // Validate persisted selection -- clear if the persona was deleted
         const stillExists =
@@ -86,7 +92,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
 
   fetchPersonaSummaries: async () => {
     try {
-      const summaries = await api.getPersonaSummaries();
+      const summaries = await getPersonaSummaries();
       const triggerCounts: Record<string, number> = {};
       const lastRun: Record<string, string | null> = {};
       const healthMap: Record<string, PersonaHealth> = {};
@@ -120,15 +126,15 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
     const seq = ++fetchDetailSeq;
     set({ isLoading: true, error: null });
     try {
-      const persona = await api.getPersona(id);
+      const persona = await getPersona(id);
       if (seq !== fetchDetailSeq) return; // superseded by a newer request
       // Assemble PersonaWithDetails from multiple IPC calls.
       // Triggers/subscriptions are non-critical and should not block editor load.
       const [allToolsResult, triggersResult, subscriptionsResult, automationsResult] = await Promise.allSettled([
-        api.listToolDefinitions(),
-        api.listTriggers(id),
-        api.listSubscriptions(id),
-        api.listAutomations(id),
+        listToolDefinitions(),
+        listTriggers(id),
+        listSubscriptions(id),
+        listAutomations(id),
       ]);
       if (seq !== fetchDetailSeq) return; // superseded by a newer request
 
@@ -179,7 +185,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
   createPersona: async (input) => {
     set({ error: null });
     try {
-      const persona = await api.createPersona({
+      const persona = await createPersona({
         name: input.name,
         system_prompt: input.system_prompt,
         project_id: null,
@@ -208,7 +214,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
   duplicatePersona: async (id) => {
     set({ error: null });
     try {
-      const newPersona = await api.duplicatePersona(id);
+      const newPersona = await duplicatePersona(id);
       set((state) => ({ personas: [newPersona, ...state.personas] }));
       return newPersona;
     } catch (err) {
@@ -220,7 +226,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
   updatePersona: async (id, input) => {
     set({ error: null });
     try {
-      const persona = await api.updatePersona(id, buildUpdateInput(input));
+      const persona = await updatePersona(id, buildUpdateInput(input));
       set((state) => ({
         personas: state.personas.map((p) => (p.id === id ? persona : p)),
         selectedPersona:
@@ -241,7 +247,7 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
   deletePersona: async (id) => {
     set({ error: null });
     try {
-      await api.deletePersona(id);
+      await deletePersona(id);
       // Invalidate any in-flight fetchDetail for this persona so it can't
       // resurrect the deleted persona in state after the delete completes.
       if (get().selectedPersonaId === id) ++fetchDetailSeq;
@@ -257,7 +263,10 @@ export const createPersonaSlice: StateCreator<PersonaStore, [], [], PersonaSlice
 
   selectPersona: (id) => {
     if (!id) ++fetchDetailSeq; // invalidate any in-flight fetchDetail
-    set({ selectedPersonaId: id, editorTab: "use-cases", sidebarSection: id ? "personas" : get().sidebarSection, isCreatingPersona: false, queuePosition: null, queueDepth: null });
+    set({ selectedPersonaId: id, queuePosition: null, queueDepth: null });
+    useSystemStore.getState().setEditorTab("use-cases");
+    if (id) useSystemStore.setState({ sidebarSection: "personas" });
+    useSystemStore.setState({ isCreatingPersona: false });
     if (id) get().fetchDetail(id);
     else set({ selectedPersona: null });
   },

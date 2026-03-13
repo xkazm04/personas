@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Plus } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { Button } from '@/features/shared/components/buttons';
 import {
   cloudListTriggers,
@@ -19,7 +19,7 @@ interface Props {
 }
 
 export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
-  const personas = usePersonaStore((s) => s.personas);
+  const personas = useAgentStore((s) => s.personas);
 
   const [triggers, setTriggers] = useState<CloudTrigger[]>([]);
   const [isLoading, setIsLoading] = useState(false);

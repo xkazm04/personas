@@ -33,6 +33,8 @@ mod dev_tools;
 mod identity;
 mod exposure;
 mod knowledge_base;
+pub mod webhook_log;
+mod chat;
 
 pub use persona::*;
 pub use tool::*;
@@ -69,3 +71,4 @@ pub use dev_tools::*;
 pub use identity::*;
 pub use exposure::*;
 pub use knowledge_base::*;
+pub use chat::*;

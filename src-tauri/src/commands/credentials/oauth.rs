@@ -483,7 +483,7 @@ async fn exchange_google_oauth_code_for_tokens(
         "Exchanging Google OAuth code for tokens"
     );
 
-    let response = reqwest::Client::new()
+    let response = crate::SHARED_HTTP
         .post("https://oauth2.googleapis.com/token")
         .header("Content-Type", "application/x-www-form-urlencoded")
         .form(&[
@@ -750,7 +750,7 @@ async fn discover_oidc(issuer_url: &str) -> Result<OidcDiscovery, String> {
         "{}/.well-known/openid-configuration",
         parsed.as_str().trim_end_matches('/')
     );
-    let resp = reqwest::Client::new()
+    let resp = crate::SHARED_HTTP
         .get(&well_known)
         .timeout(std::time::Duration::from_secs(10))
         .send()
@@ -1170,7 +1170,7 @@ pub async fn refresh_oauth_token(
         form_params.push(("client_secret".to_string(), secret.expose_secret().to_string()));
     }
 
-    let response = reqwest::Client::new()
+    let response = crate::SHARED_HTTP
         .post(&resolved_token_url)
         .header("Accept", "application/json")
         .form(&form_params)
@@ -1243,7 +1243,7 @@ async fn exchange_oauth_code(
         form_params.push(("code_verifier", verifier.to_string()));
     }
 
-    let response = reqwest::Client::new()
+    let response = crate::SHARED_HTTP
         .post(token_url)
         .header("Accept", "application/json")
         .form(&form_params)

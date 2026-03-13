@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
-import { startCredentialDesign, cancelCredentialDesign } from '@/api/tauriApi';
-import { usePersonaStore } from '@/stores/personaStore';
+import { cancelCredentialDesign, startCredentialDesign } from "@/api/vault/credentialDesignApi";
+
+import { useVaultStore } from "@/stores/vaultStore";
 import { useAiArtifactTask } from '../core/useAiArtifactTask';
 import { saveRecipeFromDesign } from '@/lib/credentials/credentialRecipeRegistry';
 
@@ -31,10 +32,10 @@ export function useCredentialDesign() {
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
 
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const createConnectorDefinition = usePersonaStore((s) => s.createConnectorDefinition);
-  const deleteConnectorDefinition = usePersonaStore((s) => s.deleteConnectorDefinition);
-  const createCredential = usePersonaStore((s) => s.createCredential);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const createConnectorDefinition = useVaultStore((s) => s.createConnectorDefinition);
+  const deleteConnectorDefinition = useVaultStore((s) => s.deleteConnectorDefinition);
+  const createCredential = useVaultStore((s) => s.createCredential);
 
   const flow = useAiArtifactTask<[string], CredentialDesignResult>({
     progressEvent: 'credential-design-output',

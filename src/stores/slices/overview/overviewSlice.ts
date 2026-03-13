@@ -1,16 +1,22 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { OverviewStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
+import { useAgentStore } from "../../agentStore";
+import { useSystemStore } from "../../systemStore";
 import type {
   OverviewTab,
   GlobalExecution,
   ManualReviewItem,
 } from "@/lib/types/types";
 import { enrichWithPersona } from "@/lib/types/types";
+import type { ManualReviewStatus } from "@/lib/bindings/ManualReviewStatus";
 import type { ObservabilityMetrics } from "@/lib/bindings/ObservabilityMetrics";
 import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardData";
 import type { MetricsChartPoint } from "@/lib/bindings/MetricsChartPoint";
-import * as api from "@/api/tauriApi";
+import { listAllExecutions } from "@/api/agents/executions";
+import { getExecutionDashboard, getMetricsChartData, getMetricsSummary } from "@/api/overview/observability";
+import { getPendingReviewCount, listManualReviews, updateManualReviewStatus } from "@/api/overview/reviews";
+
 import { cloudListPendingReviews, cloudRespondToReview } from "@/api/system/cloud";
 import { log } from "@/lib/log";
 import { classifyError, ApiError, withRetry } from "@/lib/utils/apiError";
@@ -48,7 +54,7 @@ export interface OverviewSlice {
   setOverviewTab: (tab: OverviewTab) => void;
   fetchGlobalExecutions: (reset?: boolean, status?: string) => Promise<void>;
   fetchManualReviews: (status?: string) => Promise<void>;
-  updateManualReview: (id: string, updates: { status?: string; reviewer_notes?: string }) => Promise<void>;
+  updateManualReview: (id: string, updates: { status?: ManualReviewStatus; reviewer_notes?: string }) => Promise<void>;
   fetchPendingReviewCount: () => Promise<void>;
   fetchCloudReviews: () => Promise<void>;
   respondToCloudReview: (reviewId: string, executionId: string, decision: string, message: string) => Promise<void>;
@@ -66,7 +72,7 @@ export function selectDerivedChartPoints(data: ExecutionDashboardData | null): M
     executions: pt.total_executions,
     success: pt.completed,
     failed: pt.failed,
-    tokens: 0,
+    tokens: pt.total_tokens,
     active_personas: pt.persona_costs.length,
   }));
 }
@@ -89,7 +95,7 @@ const MAX_GLOBAL_LIMIT = 500;
 /** Sequence counter to discard stale fetchGlobalExecutions responses. */
 let fetchGlobalSeq = 0;
 
-export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSlice> = (set, get) => ({
+export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSlice> = (set, get) => ({
   overviewTab: "home" as OverviewTab,
   globalExecutions: [],
   globalExecutionsTotal: 0,
@@ -119,7 +125,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
       set({ globalExecutionsLimit: limit });
 
       const statusFilter = status === 'running' ? 'running' : status;
-      const rows = await api.listAllExecutions(limit, statusFilter);
+      const rows = await listAllExecutions(limit, statusFilter);
 
       if (seq !== fetchGlobalSeq) return; // superseded by a newer request
 
@@ -153,8 +159,8 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
 
   fetchManualReviews: async (status?: string) => {
     try {
-      const raw = await api.listManualReviews(undefined, status);
-      const { personas } = get();
+      const raw = await listManualReviews(undefined, status);
+      const { personas } = useAgentStore.getState();
       const shaped = raw.map((r) => ({
         id: r.id,
         persona_id: r.persona_id,
@@ -164,11 +170,14 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
         severity: r.severity,
         status: r.status,
         reviewer_notes: r.reviewer_notes,
+        context_data: r.context_data,
+        suggested_actions: r.suggested_actions,
+        title: r.title,
         created_at: r.created_at,
         resolved_at: r.resolved_at,
       }));
       const items: ManualReviewItem[] = enrichWithPersona(shaped, personas);
-      const pendingCount = await api.getPendingReviewCount();
+      const pendingCount = await getPendingReviewCount();
       set({ manualReviews: items, manualReviewsTotal: items.length, pendingReviewCount: pendingCount });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch manual reviews") });
@@ -177,7 +186,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
 
   updateManualReview: async (id, updates) => {
     try {
-      await api.updateManualReviewStatus(id, updates.status ?? 'pending', updates.reviewer_notes);
+      await updateManualReviewStatus(id, updates.status ?? 'pending', updates.reviewer_notes);
       // Re-fetch to get updated list
       await get().fetchManualReviews();
     } catch (err) {
@@ -187,7 +196,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
 
   fetchPendingReviewCount: async () => {
     try {
-      const count = await api.getPendingReviewCount();
+      const count = await getPendingReviewCount();
       set({ pendingReviewCount: count });
     } catch (err) {
       log.warn('overviewSlice', 'fetchPendingReviewCount failed, defaulting to 0', { operation: 'getPendingReviewCount', error: String(err) });
@@ -196,7 +205,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
   },
 
   fetchCloudReviews: async () => {
-    const { cloudConfig } = get() as PersonaStore;
+    const { cloudConfig } = useSystemStore.getState();
     if (!cloudConfig?.is_connected) {
       set({ cloudReviews: [] });
       return;
@@ -204,7 +213,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
     set({ isLoadingCloudReviews: true });
     try {
       const raw = await cloudListPendingReviews();
-      const { personas } = get();
+      const { personas } = useAgentStore.getState();
       // Transform CloudReviewRequest -> ManualReviewItem shape
       const shaped = raw.map((r) => ({
         id: r.review_id,
@@ -215,6 +224,9 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
         severity: 'info',
         status: r.status === 'pending' ? 'pending' : r.status,
         reviewer_notes: r.response_message,
+        context_data: null,
+        suggested_actions: null,
+        title: typeof r.payload === 'string' ? r.payload.slice(0, 100) : 'Cloud Review',
         created_at: safeTimestampToISO(r.created_at) ?? new Date().toISOString(),
         resolved_at: safeTimestampToISO(r.resolved_at),
         source: 'cloud' as const,
@@ -239,10 +251,24 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
 
   fetchObservabilityMetrics: async (days = 30, personaId?: string) => {
     try {
+      // When no persona filter is active, derive the summary from the
+      // execution dashboard (already loaded) to avoid a redundant SQL scan.
+      const dashboard = get().executionDashboard;
+      const canReuseDashboard = !personaId && dashboard;
+
       const [summary, chartData] = await withRetry(
         () => Promise.all([
-          api.getMetricsSummary(days, personaId),
-          api.getMetricsChartData(days, personaId),
+          canReuseDashboard
+            ? Promise.resolve({
+                total_executions: dashboard.total_executions,
+                successful_executions: dashboard.successful_executions,
+                failed_executions: dashboard.failed_executions,
+                total_cost_usd: dashboard.total_cost,
+                active_personas: dashboard.active_personas,
+                period_days: days,
+              })
+            : getMetricsSummary(days, personaId),
+          getMetricsChartData(days, personaId),
         ]),
         "Failed to load observability metrics",
       );
@@ -261,7 +287,7 @@ export const createOverviewSlice: StateCreator<PersonaStore, [], [], OverviewSli
     set({ executionDashboardLoading: true });
     try {
       const data = await withRetry(
-        () => api.getExecutionDashboard(days),
+        () => getExecutionDashboard(days),
         "Failed to load execution dashboard",
       );
       set({ executionDashboard: data, executionDashboardError: null, executionDashboardLoading: false });

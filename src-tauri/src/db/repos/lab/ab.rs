@@ -1,6 +1,6 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{CreateAbResultInput, LabAbResult, LabAbRun};
+use crate::db::models::{CreateAbResultInput, LabAbResult, LabAbRun, LabRunStatus};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -10,7 +10,7 @@ fn row_to_run(row: &Row) -> rusqlite::Result<LabAbRun> {
     Ok(LabAbRun {
         id: row.get("id")?,
         persona_id: row.get("persona_id")?,
-        status: row.get("status")?,
+        status: LabRunStatus::from_db(&row.get::<_, String>("status")?),
         version_a_id: row.get("version_a_id")?,
         version_b_id: row.get("version_b_id")?,
         version_a_num: row.get("version_a_num")?,
@@ -109,13 +109,27 @@ pub fn get_runs_by_persona(
 pub fn update_run_status(
     pool: &DbPool,
     id: &str,
-    status: &str,
+    status: LabRunStatus,
     scenarios_count: Option<i32>,
     summary: Option<&str>,
     error: Option<&str>,
     completed_at: Option<&str>,
 ) -> Result<(), AppError> {
     let conn = pool.get()?;
+    let current: String = conn
+        .query_row(
+            "SELECT status FROM lab_ab_runs WHERE id = ?1",
+            params![id],
+            |row| row.get(0),
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("LabAbRun {id}")),
+            other => AppError::Database(other),
+        })?;
+    let current_status = LabRunStatus::from_db(&current);
+    current_status
+        .validate_transition(status)
+        .map_err(AppError::Validation)?;
     conn.execute(
         "UPDATE lab_ab_runs SET
             status = ?1,
@@ -124,7 +138,7 @@ pub fn update_run_status(
             error = COALESCE(?4, error),
             completed_at = COALESCE(?5, completed_at)
          WHERE id = ?6",
-        params![status, scenarios_count, summary, error, completed_at, id],
+        params![status.as_str(), scenarios_count, summary, error, completed_at, id],
     )?;
     Ok(())
 }

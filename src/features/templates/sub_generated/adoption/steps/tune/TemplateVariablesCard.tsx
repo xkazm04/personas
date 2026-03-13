@@ -43,6 +43,8 @@ export function TemplateVariablesCard({
                 <ThemedSelect
                   value={value}
                   onChange={(e) => onUpdateVariable(variable.key, e.target.value)}
+                  aria-invalid={showError}
+                  aria-describedby={hasError ? `var-${variable.key}-error` : undefined}
                   className={`py-1.5 px-2.5 ${showError ? '!border-red-500/30' : ''}`}
                 >
                   <option value="">Select...</option>
@@ -57,11 +59,12 @@ export function TemplateVariablesCard({
                   onUpdate={onUpdateVariable}
                   inputClass={inputClass}
                   showError={showError}
+                  errorId={hasError ? `var-${variable.key}-error` : undefined}
                 />
               )}
 
               {hasError && (
-                <p className="flex items-center gap-1 text-sm text-red-400/80 mt-0.5">
+                <p id={`var-${variable.key}-error`} className="flex items-center gap-1 text-sm text-red-400/80 mt-0.5">
                   <AlertCircle className="w-3 h-3 flex-shrink-0" />
                   {validation.error}
                 </p>

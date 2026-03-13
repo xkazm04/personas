@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   AreaChart, Area, PieChart, Pie, Cell, Legend, ReferenceLine,
@@ -23,9 +24,11 @@ export interface MetricsChartsProps {
   onFailureBarClick?: (date: string) => void;
 }
 
-export function MetricsCharts({ chartData, pieData, annotations = [], onFailureBarClick }: MetricsChartsProps) {
-  const chartDates = new Set(chartData.map((point) => point.date));
-  const visibleAnnotations = annotations.filter((annotation) => chartDates.has(annotation.date));
+export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, annotations = [], onFailureBarClick }: MetricsChartsProps) {
+  const visibleAnnotations = useMemo(() => {
+    const chartDates = new Set(chartData.map((point) => point.date));
+    return annotations.filter((annotation) => chartDates.has(annotation.date));
+  }, [chartData, annotations]);
 
   return (
     <div className="space-y-6">
@@ -130,4 +133,4 @@ export function MetricsCharts({ chartData, pieData, annotations = [], onFailureB
       </MetricChart>
     </div>
   );
-}
+});

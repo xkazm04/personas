@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Map, RotateCcw, Play } from "lucide-react";
-import { usePersonaStore } from "@/stores/personaStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { TOUR_STEPS } from "@/stores/slices/system/tourSlice";
 
 function TourProgressArc({ completed, total }: { completed: number; total: number }) {
@@ -38,11 +38,11 @@ function TourProgressArc({ completed, total }: { completed: number; total: numbe
 }
 
 export default function TourLauncher() {
-  const tourCompleted = usePersonaStore((s) => s.tourCompleted);
-  const tourDismissed = usePersonaStore((s) => s.tourDismissed);
-  const tourActive = usePersonaStore((s) => s.tourActive);
-  const tourStepCompleted = usePersonaStore((s) => s.tourStepCompleted);
-  const resetTour = usePersonaStore((s) => s.resetTour);
+  const tourCompleted = useSystemStore((s) => s.tourCompleted);
+  const tourDismissed = useSystemStore((s) => s.tourDismissed);
+  const tourActive = useSystemStore((s) => s.tourActive);
+  const tourStepCompleted = useSystemStore((s) => s.tourStepCompleted);
+  const resetTour = useSystemStore((s) => s.resetTour);
 
   if (tourActive) return null;
 
@@ -55,15 +55,15 @@ export default function TourLauncher() {
       resetTour();
     }
     setTimeout(() => {
-      usePersonaStore.getState().startTour();
+      useSystemStore.getState().startTour();
     }, 50);
   };
 
   const handleResume = () => {
     // Start tour without resetting — it will resume from persisted step
-    usePersonaStore.setState({ tourDismissed: false });
+    useSystemStore.setState({ tourDismissed: false });
     setTimeout(() => {
-      usePersonaStore.getState().startTour();
+      useSystemStore.getState().startTour();
     }, 50);
   };
 

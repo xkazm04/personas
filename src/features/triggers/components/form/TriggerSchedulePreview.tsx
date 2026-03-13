@@ -14,7 +14,7 @@ export function computeNextRuns(intervalSeconds: number, count: number): Date[] 
   return runs;
 }
 
-/** Format a date as a short wall-clock time like "3:45 PM" or "Tomorrow 9:00 AM" */
+/** Format a date as a short wall-clock time like "3:45 PM" or "Tomorrow 9:00 AM" (local time) */
 export function formatRunTime(date: Date): string {
   const now = new Date();
   const isToday = date.toDateString() === now.toDateString();
@@ -26,6 +26,16 @@ export function formatRunTime(date: Date): string {
   if (isToday) return time;
   if (isTomorrow) return `Tomorrow ${time}`;
   return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) + ` ${time}`;
+}
+
+/** Format a date as UTC short time like "3:45 PM UTC" */
+export function formatRunTimeUTC(date: Date): string {
+  const h = date.getUTCHours();
+  const m = date.getUTCMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  const time = m === 0 ? `${h12} ${ampm}` : `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+  return `${time} UTC`;
 }
 
 export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeconds: number; triggerType: string }) {
@@ -122,6 +132,7 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
           <span className="font-medium text-amber-400/90">{cronPreview.description}</span>
           {' -- '}next run:{' '}
           <span className="font-medium text-foreground/90">{formatRunTime(firstRun)}</span>
+          <span className="text-muted-foreground/50 ml-1 text-xs">(local)</span>
         </p>
       </div>
 

@@ -189,6 +189,55 @@ pub fn get_tools_for_persona(
     Ok(defs)
 }
 
+/// Bulk-fetch tools for multiple persona IDs in a single query.
+/// Returns a Vec of (persona_id, tool_definition) pairs for easy grouping.
+pub fn get_tools_for_personas(
+    pool: &DbPool,
+    persona_ids: &[String],
+) -> Result<Vec<(String, PersonaToolDefinition)>, AppError> {
+    if persona_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let conn = pool.get()?;
+    let placeholders: Vec<String> = persona_ids
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
+    let sql = format!(
+        "SELECT pt.persona_id, d.* FROM persona_tool_definitions d
+         INNER JOIN persona_tools pt ON pt.tool_id = d.id
+         WHERE pt.persona_id IN ({})
+         ORDER BY d.category, d.name",
+        placeholders.join(", ")
+    );
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
+        .iter()
+        .map(|s| s as &dyn rusqlite::types::ToSql)
+        .collect();
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(params_ref.as_slice(), |row| {
+        let pid: String = row.get(0)?;
+        let def = PersonaToolDefinition {
+            id: row.get("id")?,
+            name: row.get("name")?,
+            category: row.get("category")?,
+            description: row.get("description")?,
+            script_path: row.get("script_path")?,
+            input_schema: row.get("input_schema")?,
+            output_schema: row.get("output_schema")?,
+            requires_credential_type: row.get("requires_credential_type")?,
+            implementation_guide: row.get("implementation_guide")?,
+            is_builtin: row.get::<_, i32>("is_builtin")? != 0,
+            created_at: row.get("created_at")?,
+            updated_at: row.get("updated_at")?,
+        };
+        Ok((pid, def))
+    })?;
+    let results = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    Ok(results)
+}
+
 pub fn assign_tool(
     pool: &DbPool,
     persona_id: &str,

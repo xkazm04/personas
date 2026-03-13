@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Package, Check, Loader2, AlertTriangle } from 'lucide-react';
 import { save } from '@tauri-apps/plugin-dialog';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { ExposedResource } from '@/api/network/exposure';
 
@@ -12,9 +12,9 @@ interface BundleExportDialogProps {
 }
 
 export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps) {
-  const exposedResources = usePersonaStore((s) => s.exposedResources);
-  const fetchExposedResources = usePersonaStore((s) => s.fetchExposedResources);
-  const exportBundle = usePersonaStore((s) => s.exportBundle);
+  const exposedResources = useSystemStore((s) => s.exposedResources);
+  const fetchExposedResources = useSystemStore((s) => s.fetchExposedResources);
+  const exportBundle = useSystemStore((s) => s.exportBundle);
   const addToast = useToastStore((s) => s.addToast);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());

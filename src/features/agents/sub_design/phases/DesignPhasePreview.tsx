@@ -5,10 +5,10 @@ import { DesignResultPreview } from '@/features/templates/sub_generated';
 import { IntentResultExtras } from '../IntentResultExtras';
 
 import type { AgentIR, IntentCompilationResult } from '@/lib/types/designTypes';
-import type { DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import type { PersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 interface DesignPreviewResources {
-  toolDefinitions: DbPersonaToolDefinition[];
+  toolDefinitions: PersonaToolDefinition[];
   currentToolNames: string[];
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];

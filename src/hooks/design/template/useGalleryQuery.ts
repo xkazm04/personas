@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import {
   listDesignReviewsPaginated,
   listReviewConnectors,
@@ -114,12 +114,12 @@ export function useGalleryQuery(
   }, []);
 
   // Consume tour search prefill (reactive: tour sets value, gallery picks it up once)
-  const tourSearchPrefill = usePersonaStore((s) => s.tourSearchPrefill);
+  const tourSearchPrefill = useSystemStore((s) => s.tourSearchPrefill);
   useEffect(() => {
     if (tourSearchPrefill) {
       setSearchRaw(tourSearchPrefill);
       setDebouncedSearch(tourSearchPrefill);
-      usePersonaStore.getState().consumeTourSearchPrefill();
+      useSystemStore.getState().consumeTourSearchPrefill();
     }
   }, [tourSearchPrefill]);
 

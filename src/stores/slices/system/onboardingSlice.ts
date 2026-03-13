@@ -1,5 +1,6 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { SystemStore } from "../../storeTypes";
+import { useAgentStore } from "../../agentStore";
 import * as Sentry from "@sentry/react";
 
 // -- Types --------------------------------------------------------------
@@ -61,7 +62,7 @@ const INITIAL_STEP_STATUS: Record<OnboardingStep, boolean> = {
 };
 
 export const createOnboardingSlice: StateCreator<
-  PersonaStore,
+  SystemStore,
   [],
   [],
   OnboardingSlice
@@ -75,7 +76,7 @@ export const createOnboardingSlice: StateCreator<
 
   startOnboarding: () => {
     // Don't start if already completed or if user has personas already
-    if (get().onboardingCompleted || get().personas.length > 0) return;
+    if (get().onboardingCompleted || useAgentStore.getState().personas.length > 0) return;
     try {
       Sentry.metrics.count("onboarding.started", 1);
     } catch {

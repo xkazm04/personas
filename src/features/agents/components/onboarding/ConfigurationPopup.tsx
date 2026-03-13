@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Key } from 'lucide-react';
-import { getAppSetting, setAppSetting } from '@/api/tauriApi';
+import { getAppSetting, setAppSetting } from "@/api/system/settings";
 import { useToastStore } from '@/stores/toastStore';
 
 export interface ConfigField {

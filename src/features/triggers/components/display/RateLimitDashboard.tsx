@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Shield, Layers, AlertTriangle } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { usePipelineStore } from "@/stores/pipelineStore";
 import type { PersonaTrigger } from '@/lib/types/types';
 import { extractRateLimit, hasActiveRateLimit } from '@/lib/utils/platform/triggerConstants';
 
@@ -14,7 +14,7 @@ function parseConfig(config: string | null): Record<string, unknown> {
 }
 
 export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
-  const rateLimits = usePersonaStore((s) => s.triggerRateLimits);
+  const rateLimits = usePipelineStore((s) => s.triggerRateLimits);
 
   const stats = useMemo(() => {
     let totalQueued = 0;

@@ -1,0 +1,19 @@
+/**
+ * Pipeline domain store -- triggers, teams, groups, and recipes.
+ */
+import { create } from "zustand";
+import type { PipelineStore } from "./storeTypes";
+
+import { createTriggerSlice } from "./slices/pipeline/triggerSlice";
+import { createTeamSlice } from "./slices/pipeline/teamSlice";
+import { createGroupSlice } from "./slices/pipeline/groupSlice";
+import { createRecipeSlice } from "./slices/pipeline/recipeSlice";
+
+export const usePipelineStore = create<PipelineStore>()((...a) => ({
+  error: null,
+  isLoading: false,
+  ...createTriggerSlice(...a),
+  ...createTeamSlice(...a),
+  ...createGroupSlice(...a),
+  ...createRecipeSlice(...a),
+}));

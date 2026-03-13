@@ -8,7 +8,7 @@ import { ExecutionTerminal } from '@/features/agents/sub_executions';
 import { N8nEntitiesTab } from '../edit/N8nEntitiesTab';
 import { N8nUseCasesTab } from '../edit/N8nUseCasesTab';
 import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 
 interface N8nEditStepProps {
   draft: N8nPersonaDraft;
@@ -68,7 +68,7 @@ export function N8nEditStep({
   const [connectorsMissing, setConnectorsMissing] = useState(0);
 
   // Initialize manualLinks from persisted credential_links in design_context
-  const credentials = usePersonaStore((s) => s.credentials);
+  const credentials = useVaultStore((s) => s.credentials);
   useEffect(() => {
     const data = parseDesignContext(draft.design_context);
     if (data.credentialLinks && Object.keys(data.credentialLinks).length > 0) {

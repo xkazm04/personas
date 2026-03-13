@@ -1,5 +1,23 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { PersonaAutomation, AutomationRun, CreateAutomationInput, UpdateAutomationInput } from "@/lib/bindings/PersonaAutomation";
+import type { N8nWorkflow } from "@/lib/bindings/N8nWorkflow";
+import type { N8nActivateResult } from "@/lib/bindings/N8nActivateResult";
+import type { ZapierZap } from "@/lib/bindings/ZapierZap";
+import type { ZapierWebhookResult } from "@/lib/bindings/ZapierWebhookResult";
+import type { GitHubRepo } from "@/lib/bindings/GitHubRepo";
+import type { GitHubPermissions } from "@/lib/bindings/GitHubPermissions";
+import type { DeployAutomationInput } from "@/lib/bindings/DeployAutomationInput";
+import type { DeployAutomationResult } from "@/lib/bindings/DeployAutomationResult";
+
+export type { N8nWorkflow } from "@/lib/bindings/N8nWorkflow";
+export type { N8nActivateResult } from "@/lib/bindings/N8nActivateResult";
+export type { ZapierZap } from "@/lib/bindings/ZapierZap";
+export type { ZapierStep } from "@/lib/bindings/ZapierStep";
+export type { ZapierWebhookResult } from "@/lib/bindings/ZapierWebhookResult";
+export type { GitHubRepo } from "@/lib/bindings/GitHubRepo";
+export type { GitHubPermissions } from "@/lib/bindings/GitHubPermissions";
+export type { DeployAutomationInput } from "@/lib/bindings/DeployAutomationInput";
+export type { DeployAutomationResult } from "@/lib/bindings/DeployAutomationResult";
 
 export const listAutomations = (personaId: string) =>
   invoke<PersonaAutomation[]>("list_automations", { personaId });
@@ -33,19 +51,6 @@ export const cancelAutomationDesign = () =>
   invoke<void>("cancel_automation_design");
 
 // n8n Platform API
-export interface N8nWorkflow {
-  id: string;
-  name: string;
-  active: boolean;
-  tags: { id: string; name: string }[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface N8nActivateResult {
-  id: string;
-  active: boolean;
-}
 
 export const n8nListWorkflows = (credentialId: string) =>
   invoke<N8nWorkflow[]>("n8n_list_workflows", { credentialId });
@@ -63,25 +68,6 @@ export const n8nTriggerWebhook = (credentialId: string, webhookUrl: string, body
   invoke<Record<string, unknown>>("n8n_trigger_webhook", { credentialId, webhookUrl, body: body ?? null });
 
 // Zapier Platform API
-export interface ZapierZap {
-  id: string;
-  title: string;
-  status: 'on' | 'off' | 'draft';
-  steps: ZapierStep[];
-  updatedAt: string;
-}
-
-export interface ZapierStep {
-  app: string;
-  action: string;
-  position: number;
-}
-
-export interface ZapierWebhookResult {
-  success: boolean;
-  status: number;
-  requestId: string | null;
-}
 
 export const zapierListZaps = (credentialId: string) =>
   invoke<ZapierZap[]>("zapier_list_zaps", { credentialId });
@@ -93,19 +79,6 @@ export const zapierTriggerWebhook = (credentialId: string, webhookUrl: string, b
   invoke<ZapierWebhookResult>("zapier_trigger_webhook", { credentialId, webhookUrl, body: body ?? null });
 
 // GitHub Platform API
-export interface GitHubRepo {
-  id: number;
-  name: string;
-  fullName: string;
-  private: boolean;
-  defaultBranch: string;
-}
-
-export interface GitHubPermissions {
-  hasRepo: boolean;
-  hasWorkflow: boolean;
-  scopes: string[];
-}
 
 export const githubListRepos = (credentialId: string) =>
   invoke<GitHubRepo[]>("github_list_repos", { credentialId });
@@ -114,20 +87,6 @@ export const githubCheckPermissions = (credentialId: string) =>
   invoke<GitHubPermissions>("github_check_permissions", { credentialId });
 
 // Deploy Automation (platform-smart deploy + save)
-export interface DeployAutomationInput {
-  personaId: string;
-  credentialId: string;
-  designResult: Record<string, unknown>;
-  githubRepo?: string | null;
-  useCaseId?: string | null;
-}
-
-export interface DeployAutomationResult {
-  automation: PersonaAutomation;
-  platformUrl: string | null;
-  webhookUrl: string | null;
-  deploymentMessage: string;
-}
 
 export const deployAutomation = (input: DeployAutomationInput) =>
   invoke<DeployAutomationResult>("deploy_automation", { input });

@@ -4,7 +4,7 @@ import { ChevronRight, AlertCircle, CheckCircle2, Clock, Loader2, ArrowRight, Se
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_LABELS, clampLabel } from '../../libs/visualizationHelpers';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 
 interface Props {
   events: RealtimeEvent[];
@@ -48,7 +48,7 @@ function tryParsePayload(raw: string | null | undefined): string | null {
 }
 
 export default function EventLogSidebar({ events, onSelectEvent }: Props) {
-  const allPersonas = usePersonaStore(s => s.personas);
+  const allPersonas = useAgentStore(s => s.personas);
   const [logSearch, setLogSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const logRef = useRef<HTMLDivElement>(null);

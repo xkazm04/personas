@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { X, DollarSign, RotateCcw, FileText } from 'lucide-react';
-import type { DbPersonaGroup } from '@/lib/types/types';
+import type { PersonaGroup } from '@/lib/types/types';
 
 interface WorkspaceSettingsProps {
-  group: DbPersonaGroup;
+  group: PersonaGroup;
   onUpdate: (updates: Partial<{
     description: string;
     defaultModelProfile: string;

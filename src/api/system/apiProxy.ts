@@ -1,39 +1,10 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// -- Types --------------------------------------------------------------
-
-export interface ApiProxyResponse {
-  status: number;
-  status_text: string;
-  headers: Record<string, string>;
-  body: string;
-  duration_ms: number;
-  content_type: string | null;
-}
-
-export interface ApiEndpoint {
-  method: string;
-  path: string;
-  summary: string | null;
-  description: string | null;
-  parameters: ApiParameter[];
-  request_body: ApiRequestBody | null;
-  tags: string[];
-}
-
-export interface ApiParameter {
-  name: string;
-  location: string;
-  required: boolean;
-  schema_type: string | null;
-  description: string | null;
-}
-
-export interface ApiRequestBody {
-  content_type: string;
-  schema_json: string | null;
-  required: boolean;
-}
+import type { ApiProxyResponse } from "@/lib/bindings/ApiProxyResponse";
+import type { ApiEndpoint } from "@/lib/bindings/ApiEndpoint";
+import type { ApiParameter } from "@/lib/bindings/ApiParameter";
+import type { ApiRequestBody } from "@/lib/bindings/ApiRequestBody";
+export type { ApiProxyResponse, ApiEndpoint, ApiParameter, ApiRequestBody };
 
 // -- API Proxy ----------------------------------------------------------
 

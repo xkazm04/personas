@@ -1,7 +1,8 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { OverviewStore } from "../../storeTypes";
 import type { CronAgent } from "@/lib/bindings/CronAgent";
-import * as api from "@/api/tauriApi";
+import { listCronAgents } from "@/api/pipeline/triggers";
+
 import { useToastStore } from "@/stores/toastStore";
 
 export interface CronAgentsSlice {
@@ -10,14 +11,14 @@ export interface CronAgentsSlice {
   fetchCronAgents: () => Promise<void>;
 }
 
-export const createCronAgentsSlice: StateCreator<PersonaStore, [], [], CronAgentsSlice> = (set) => ({
+export const createCronAgentsSlice: StateCreator<OverviewStore, [], [], CronAgentsSlice> = (set) => ({
   cronAgents: [],
   cronAgentsLoading: false,
 
   fetchCronAgents: async () => {
     set({ cronAgentsLoading: true });
     try {
-      const agents = await api.listCronAgents();
+      const agents = await listCronAgents();
       set({ cronAgents: agents, cronAgentsLoading: false });
     } catch {
       set({ cronAgentsLoading: false });

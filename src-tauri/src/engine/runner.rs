@@ -1,100 +1,11 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, OnceLock};
 use tauri::{AppHandle, Emitter};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::Command;
 use tokio::sync::Mutex;
 
-/// Maximum bytes read for a single stdout line before truncation.
-/// Prevents OOM from CLI processes that emit huge single-line output
-/// (binary data, base64 blobs, minified JSON, infinite loops without newlines).
-const MAX_LINE_BYTES: usize = 64 * 1024; // 64 KB
-
-/// Watchdog timeout: if no newline arrives within this duration, the line
-/// read is aborted and whatever has been buffered so far is returned.
-/// Prevents indefinite hangs from processes that produce output without newlines.
-const LINE_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
-
-/// Read the next line from a buffered reader with per-line size and time limits.
-///
-/// Returns `Ok(Some(line))` for each line, `Ok(None)` at EOF.
-/// Lines exceeding `MAX_LINE_BYTES` are truncated with a `...[truncated]` suffix.
-/// If no newline arrives within `LINE_READ_TIMEOUT`, returns whatever has been
-/// accumulated so far (with a `...[timeout]` suffix if non-empty).
-async fn read_line_limited<R: tokio::io::AsyncBufRead + Unpin>(
-    reader: &mut R,
-) -> std::io::Result<Option<String>> {
-    let mut line_buf = Vec::with_capacity(4096);
-    let mut truncated = false;
-
-    loop {
-        // Apply watchdog timeout to each fill_buf call
-        let fill_result = tokio::time::timeout(LINE_READ_TIMEOUT, reader.fill_buf()).await;
-
-        let available = match fill_result {
-            Ok(Ok(buf)) => buf,
-            Ok(Err(e)) => return Err(e),
-            Err(_) => {
-                // Watchdog timeout -- no newline within the time limit
-                if line_buf.is_empty() {
-                    // Nothing buffered and timed out -- treat as EOF
-                    return Ok(None);
-                }
-                let mut s = String::from_utf8_lossy(&line_buf).into_owned();
-                s.push_str("...[timeout]");
-                return Ok(Some(s));
-            }
-        };
-
-        if available.is_empty() {
-            // EOF
-            if line_buf.is_empty() {
-                return Ok(None);
-            }
-            return Ok(Some(String::from_utf8_lossy(&line_buf).into_owned()));
-        }
-
-        // Search for newline in the available buffer
-        let (consumed, found_newline) = if let Some(nl_pos) = available.iter().position(|&b| b == b'\n') {
-            // Copy up to newline (excluding the newline itself)
-            let take = nl_pos;
-            if !truncated && line_buf.len() + take <= MAX_LINE_BYTES {
-                line_buf.extend_from_slice(&available[..take]);
-            } else if !truncated {
-                // Partial fit -- fill up to the limit
-                let remaining = MAX_LINE_BYTES - line_buf.len();
-                line_buf.extend_from_slice(&available[..remaining]);
-                truncated = true;
-            }
-            (nl_pos + 1, true) // +1 to consume the newline
-        } else {
-            // No newline found -- take the whole buffer
-            let take = available.len();
-            if !truncated && line_buf.len() + take <= MAX_LINE_BYTES {
-                line_buf.extend_from_slice(available);
-            } else if !truncated {
-                let remaining = MAX_LINE_BYTES.saturating_sub(line_buf.len());
-                if remaining > 0 {
-                    line_buf.extend_from_slice(&available[..remaining]);
-                }
-                truncated = true;
-            }
-            (take, false)
-        };
-
-        reader.consume(consumed);
-
-        if found_newline {
-            let mut s = String::from_utf8_lossy(&line_buf).into_owned();
-            if truncated {
-                s.push_str("...[truncated]");
-            }
-            return Ok(Some(s));
-        }
-    }
-}
+use super::cli_process::{read_line_limited, CliProcessDriver};
 
 /// Per-credential mutex to prevent concurrent OAuth token refreshes from racing.
 /// Keyed by credential ID. The outer std::sync::Mutex guards brief map access;
@@ -102,9 +13,28 @@ async fn read_line_limited<R: tokio::io::AsyncBufRead + Unpin>(
 static CREDENTIAL_REFRESH_LOCKS: OnceLock<std::sync::Mutex<HashMap<String, Arc<Mutex<()>>>>> =
     OnceLock::new();
 
+/// Pruning interval: clean up stale entries every N acquisitions to amortize cost.
+const CREDENTIAL_LOCK_PRUNE_INTERVAL: usize = 32;
+/// Counter for acquisitions since last prune.
+static CREDENTIAL_LOCK_ACQUIRE_COUNT: std::sync::atomic::AtomicUsize =
+    std::sync::atomic::AtomicUsize::new(0);
+
 fn credential_refresh_lock(credential_id: &str) -> Arc<Mutex<()>> {
     let map_mutex = CREDENTIAL_REFRESH_LOCKS.get_or_init(|| std::sync::Mutex::new(HashMap::new()));
     let mut map = map_mutex.lock().unwrap_or_else(|e| e.into_inner());
+
+    // Periodically prune entries where this map holds the only Arc reference
+    // (strong_count == 1), meaning no caller is currently using that lock.
+    let count = CREDENTIAL_LOCK_ACQUIRE_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    if count % CREDENTIAL_LOCK_PRUNE_INTERVAL == 0 && map.len() > 8 {
+        let before = map.len();
+        map.retain(|_, arc| Arc::strong_count(arc) > 1);
+        let pruned = before - map.len();
+        if pruned > 0 {
+            tracing::debug!(pruned, remaining = map.len(), "Pruned stale credential refresh locks");
+        }
+    }
+
     map.entry(credential_id.to_string())
         .or_insert_with(|| Arc::new(Mutex::new(())))
         .clone()
@@ -396,12 +326,12 @@ pub async fn run_execution(
     let mut cli_provider: Box<dyn provider::CliProvider> = provider::resolve_provider(primary_engine); // overwritten per-candidate
     let mut cli_args;
 
-    let mut child = 'failover: {
+    let mut driver = 'failover: {
         for (candidate_idx, candidate) in failover_chain.iter().enumerate() {
             // Atomically check circuit breaker and reserve a slot.
             // try_acquire prevents the TOCTOU race where another thread could
             // open the circuit between check and use.
-            if !circuit_breaker.try_acquire(candidate.engine_kind) {
+            if !circuit_breaker.try_acquire_and_probe(candidate.engine_kind) {
                 let reason = if circuit_breaker.is_globally_paused() {
                     "global circuit breaker paused"
                 } else {
@@ -484,32 +414,11 @@ pub async fn run_execution(
                 );
             }
 
-            // Spawn CLI process
-            let mut cmd = Command::new(&cli_args.command);
-            cmd.args(&cli_args.args)
-                .current_dir(&exec_dir)
-                .stdin(std::process::Stdio::piped())
-                .stdout(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::piped());
-
-            #[cfg(windows)]
-            {
-                #[allow(unused_imports)]
-                use std::os::windows::process::CommandExt;
-                cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-            }
-
-            for key in &cli_args.env_removals {
-                cmd.env_remove(key);
-            }
-            for (key, val) in &cli_args.env_overrides {
-                cmd.env(key, val);
-            }
-
-            match cmd.spawn() {
-                Ok(c) => {
+            // Spawn CLI process via CliProcessDriver
+            match CliProcessDriver::spawn(&cli_args, exec_dir.clone()) {
+                Ok(driver) => {
                     // Spawn succeeded -- use this provider
-                    break 'failover c;
+                    break 'failover driver;
                 }
                 Err(e) => {
                     let error_msg = if e.kind() == std::io::ErrorKind::NotFound {
@@ -582,19 +491,16 @@ pub async fn run_execution(
     trace.end_span_ok(&spawn_span);
 
     // Register child PID so cancel_execution can kill it
-    if let Some(pid) = child.id() {
-        child_pids.lock().await.insert(execution_id.clone(), pid);
-    }
+    driver.register_pid(&child_pids, &execution_id).await;
 
     // Check if cancellation was requested during spawn. If the user cancelled
     // between task start and PID registration, the cancel_execution call couldn't
     // kill the process (PID wasn't registered yet). Catch it here to avoid
     // wasting API credits on an execution the user already cancelled.
-    if cancelled.load(Ordering::Acquire) {
+    if CliProcessDriver::is_cancelled(&cancelled) {
         logger.log("[CANCELLED] Execution cancelled during startup, killing process");
-        let _ = child.kill().await;
-        let _ = child.wait().await;
-        child_pids.lock().await.remove(&execution_id);
+        driver.kill().await;
+        driver.unregister_pid(&child_pids, &execution_id).await;
         // Stable workspace dirs are not cleaned up (persist across runs)
         logger.close();
 
@@ -620,25 +526,17 @@ pub async fn run_execution(
     match cli_provider.prompt_delivery() {
         PromptDelivery::Stdin => {
             // Claude: write prompt to stdin, then close
-            if let Some(mut stdin) = child.stdin.take() {
-                let prompt_bytes = prompt_text.into_bytes();
-                let _ = stdin.write_all(&prompt_bytes).await;
-                let _ = stdin.shutdown().await;
-            }
+            driver.write_stdin(prompt_text.as_bytes()).await;
         }
         PromptDelivery::PositionalArg | PromptDelivery::Flag(_) => {
             // Codex/Gemini: prompt already embedded in args, just close stdin
-            if let Some(mut stdin) = child.stdin.take() {
-                let _ = stdin.shutdown().await;
-            }
+            driver.close_stdin().await;
         }
     }
 
     // Read stdout line by line (with per-line 64KB cap and 30s watchdog)
-    let stdout = child.stdout.take().expect("stdout was piped");
-    let stderr = child.stderr.take().expect("stderr was piped");
-    let mut stdout_reader = BufReader::new(stdout);
-    let mut stderr_reader = BufReader::new(stderr);
+    let mut stdout_reader = driver.take_stdout_reader().expect("stdout was piped");
+    let stderr = driver.take_stderr().expect("stderr was piped");
 
     let mut metrics = ExecutionMetrics::default();
     let mut assistant_text = String::new();
@@ -652,6 +550,7 @@ pub async fn run_execution(
     let mut output_truncated = false;
 
     // Read stderr in background (capped at 100KB to prevent OOM)
+    let mut stderr_reader = stderr;
     let stderr_handle = tokio::spawn(async move {
         const MAX_STDERR_BYTES: usize = 100 * 1024;
         let mut buf = vec![0u8; MAX_STDERR_BYTES];
@@ -830,8 +729,20 @@ pub async fn run_execution(
                         assistant_text.push('\n');
                     }
 
-                    // Mid-stream protocol message detection
-                    if let Some(protocol_msg) = parser::extract_protocol_message(text_line) {
+                    // Mid-stream protocol message detection.
+                    // Fast prefix check then parse once; use from_value to avoid
+                    // re-deserializing what parse_stream_line already parsed.
+                    let protocol_msg = {
+                        let trimmed = text_line.trim();
+                        if trimmed.starts_with('{') {
+                            serde_json::from_str::<serde_json::Value>(trimmed)
+                                .ok()
+                                .and_then(|v| parser::extract_protocol_message_from_value(&v))
+                        } else {
+                            None
+                        }
+                    };
+                    if let Some(protocol_msg) = protocol_msg {
                         let dispatch_span = trace.start_span(
                             SpanType::ProtocolDispatch,
                             &format!("Protocol: {:?}", std::mem::discriminant(&protocol_msg)),
@@ -881,7 +792,7 @@ pub async fn run_execution(
     let timed_out = stream_result.is_err();
     if timed_out {
         logger.log("[TIMEOUT] Execution timed out, killing process");
-        let _ = child.kill().await;
+        driver.kill().await;
         let _ = app.emit(
             "execution-output",
             ExecutionOutputEvent {
@@ -892,11 +803,11 @@ pub async fn run_execution(
     }
 
     // Wait for process to exit (after timeout kill, if applicable)
-    let exit_status = child.wait().await;
+    let exit_status = driver.wait().await;
     let duration_ms = start_time.elapsed().as_millis() as u64;
 
     // Unregister child PID (process has exited)
-    child_pids.lock().await.remove(&execution_id);
+    driver.unregister_pid(&child_pids, &execution_id).await;
 
     let exit_code = exit_status.map(|s| s.code().unwrap_or(-1)).unwrap_or(-1);
 
@@ -1304,7 +1215,7 @@ async fn try_refresh_oauth_token(
 
     tracing::info!("Refreshing OAuth access token for connector '{}'", connector_name);
 
-    let response = reqwest::Client::new()
+    let response = crate::SHARED_HTTP
         .post(token_url)
         .header("Accept", "application/json")
         .form(&[

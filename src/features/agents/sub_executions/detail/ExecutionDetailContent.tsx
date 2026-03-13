@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import { ChevronDown, ChevronRight, Clock, Calendar, Shield, RotateCw, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { isTerminalState } from '@/lib/execution/executionState';
 import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
 import { Button } from '@/features/shared/components/buttons';
@@ -13,13 +13,13 @@ import { ExecutionMemories } from './views/ExecutionMemories';
 import { ExecutionLogViewer } from './views/ExecutionLogViewer';
 
 interface ExecutionDetailContentProps {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
   hasInputData: boolean;
   hasOutputData: boolean;
 }
 
 export function ExecutionDetailContent({ execution, hasInputData, hasOutputData }: ExecutionDetailContentProps) {
-  const setRerunInputData = usePersonaStore((s) => s.setRerunInputData);
+  const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
 
   const [showRaw, setShowRaw] = useState(false);
   const [showInputData, setShowInputData] = useState(false);

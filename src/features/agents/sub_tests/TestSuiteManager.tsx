@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BookOpen, Save } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { Button } from '@/features/shared/components/buttons';
 import { SaveFromRunForm } from './SaveFromRunForm';
 import { SuiteListItem } from './SuiteListItem';
@@ -21,9 +21,9 @@ export function TestSuiteManager({
   lastRunId,
   disabled,
 }: TestSuiteManagerProps) {
-  const testSuites = usePersonaStore((s) => s.testSuites);
-  const fetchTestSuites = usePersonaStore((s) => s.fetchTestSuites);
-  const deleteTestSuite = usePersonaStore((s) => s.deleteTestSuite);
+  const testSuites = useAgentStore((s) => s.testSuites);
+  const fetchTestSuites = useAgentStore((s) => s.fetchTestSuites);
+  const deleteTestSuite = useAgentStore((s) => s.deleteTestSuite);
 
   const [expandedSuiteId, setExpandedSuiteId] = useState<string | null>(null);
   const [savingFromRun, setSavingFromRun] = useState(false);

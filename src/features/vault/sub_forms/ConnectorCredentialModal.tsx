@@ -1,5 +1,6 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useCallback } from 'react';
 import { X, Plug, ExternalLink, Check } from 'lucide-react';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
@@ -21,57 +22,7 @@ export function ConnectorCredentialModal({
   onSave,
   onClose,
 }: ConnectorCredentialModalProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
   const health = useCredentialHealth(`connector:${connector.name}`);
-
-  // Close on Escape
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose]);
-
-  // Auto-focus first input on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const firstInput = dialogRef.current?.querySelector<HTMLElement>('input, textarea, select');
-      firstInput?.focus();
-    }, 50);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Focus trap: keep Tab within the modal
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key !== 'Tab' || !dialogRef.current) return;
-
-    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    if (focusable.length === 0) return;
-
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-
-    if (e.shiftKey) {
-      if (document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      }
-    } else {
-      if (document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-  }, []);
-
-  // Click outside to close
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === overlayRef.current) onClose();
-  };
 
   // Merge field definitions: DB connector fields take priority, then CLI-generated ones
   const fields: CredentialTemplateField[] = connectorDefinition?.fields?.length
@@ -100,19 +51,13 @@ export function ConnectorCredentialModal({
   }, [connector.name, label, fields, health.checkDesign]);
 
   return (
-    <div
-      ref={overlayRef}
-      onClick={handleOverlayClick}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      titleId="connector-credential-title"
+      maxWidthClass="max-w-2xl"
+      panelClassName="bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-2xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto"
     >
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="connector-credential-title"
-        onKeyDown={handleKeyDown}
-        className="bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 p-6 max-h-[85vh] overflow-y-auto"
-      >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -223,7 +168,6 @@ export function ConnectorCredentialModal({
             </button>
           </div>
         )}
-      </div>
-    </div>
+    </BaseModal>
   );
 }

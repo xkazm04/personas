@@ -1,5 +1,6 @@
 import { useMemo, useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/libs/periodComparison';
 import { pivotToolUsageOverTime } from '@/features/overview/sub_usage/libs/pivotToolUsage';
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
@@ -11,12 +12,12 @@ import type { PieDataPoint } from '@/features/overview/sub_observability/compone
  * for the analytics dashboard. No side-effects or fetches.
  */
 export function useChartSeries() {
-  const observabilityMetrics = usePersonaStore((s) => s.observabilityMetrics);
-  const toolUsageSummary = usePersonaStore((s) => s.toolUsageSummary);
-  const toolUsageOverTime = usePersonaStore((s) => s.toolUsageOverTime);
-  const executionDashboard = usePersonaStore((s) => s.executionDashboard);
-  const personas = usePersonaStore((s) => s.personas);
-  const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
+  const observabilityMetrics = useOverviewStore((s) => s.observabilityMetrics);
+  const toolUsageSummary = useAgentStore((s) => s.toolUsageSummary);
+  const toolUsageOverTime = useAgentStore((s) => s.toolUsageOverTime);
+  const executionDashboard = useOverviewStore((s) => s.executionDashboard);
+  const personas = useAgentStore((s) => s.personas);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
   const { effectiveDays, compareEnabled, setFailureDrilldownDate } = useOverviewFilters();
 

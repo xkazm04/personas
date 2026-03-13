@@ -38,15 +38,16 @@ pub async fn invoke_automation(
         ))
     })?;
 
-    // Create run record
+    // Resolve auth headers BEFORE creating the run record to prevent
+    // orphaned runs stuck in initial status when auth resolution fails.
+    let auth_headers = resolve_auth_headers(pool, automation).await?;
+
+    // Create run record (only after auth succeeds)
     let run = repo::create_run(pool, &automation.id, execution_id, input_json)?;
 
     let start = Instant::now();
 
-    // Resolve auth headers from platform credential
-    let auth_headers = resolve_auth_headers(pool, automation).await?;
-
-    // Execute the webhook
+    // Execute the webhook (auth_headers already resolved above)
     let method = automation.webhook_method.as_str();
     let body = input_json.unwrap_or("{}");
     let timeout_ms = automation.timeout_ms;

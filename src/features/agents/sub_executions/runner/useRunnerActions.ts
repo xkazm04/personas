@@ -1,8 +1,9 @@
 import { useRef, useEffect, useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
 import { formatElapsed } from '@/lib/utils/formatters';
-import * as api from '@/api/tauriApi';
+import { getExecution } from "@/api/agents/executions";
 import { useToastStore } from '@/stores/toastStore';
 
 interface RunnerActionsArgs {
@@ -30,13 +31,13 @@ export function useRunnerActions({
   executionSummary,
   fetchTypicalDuration,
 }: RunnerActionsArgs) {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const executePersona = usePersonaStore((s) => s.executePersona);
-  const cancelExecution = usePersonaStore((s) => s.cancelExecution);
-  const isExecuting = usePersonaStore((s) => s.isExecuting);
-  const activeExecutionId = usePersonaStore((s) => s.activeExecutionId);
-  const cloudConfig = usePersonaStore((s) => s.cloudConfig);
-  const cloudExecute = usePersonaStore((s) => s.cloudExecute);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const executePersona = useAgentStore((s) => s.executePersona);
+  const cancelExecution = useAgentStore((s) => s.cancelExecution);
+  const isExecuting = useAgentStore((s) => s.isExecuting);
+  const activeExecutionId = useAgentStore((s) => s.activeExecutionId);
+  const cloudConfig = useSystemStore((s) => s.cloudConfig);
+  const cloudExecute = useSystemStore((s) => s.cloudExecute);
 
   const { disconnect } = usePersonaExecution();
 
@@ -105,7 +106,7 @@ export function useRunnerActions({
     let sessionId: string | null = null;
     if (activeExecutionId) {
       try {
-        const exec = await api.getExecution(activeExecutionId, selectedPersona.id);
+        const exec = await getExecution(activeExecutionId, selectedPersona.id);
         sessionId = exec.claude_session_id ?? null;
       } catch { /* intentional */ }
     }

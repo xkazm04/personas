@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
-import * as api from '@/api/tauriApi';
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { createTeamMemory, listTeamMemories } from "@/api/pipeline/teamMemories";
+import { addTeamMember, createTeamConnection, listTeamMembers, suggestTopology, suggestTopologyLlm } from "@/api/pipeline/teams";
+
 import type { TopologyBlueprint } from '@/lib/bindings/TopologyBlueprint';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 
@@ -32,9 +34,9 @@ export interface AutoTeamState {
 }
 
 export function useAutoTeam(): AutoTeamState {
-  const createTeam = usePersonaStore((s) => s.createTeam);
-  const fetchTeams = usePersonaStore((s) => s.fetchTeams);
-  const selectTeam = usePersonaStore((s) => s.selectTeam);
+  const createTeam = usePipelineStore((s) => s.createTeam);
+  const fetchTeams = usePipelineStore((s) => s.fetchTeams);
+  const selectTeam = usePipelineStore((s) => s.selectTeam);
 
   const [phase, setPhase] = useState<AutoTeamPhase>('idle');
   const [query, setQuery] = useState('');
@@ -57,9 +59,9 @@ export function useAutoTeam(): AutoTeamState {
     try {
       let bp: TopologyBlueprint;
       try {
-        bp = await api.suggestTopologyLlm(query.trim());
+        bp = await suggestTopologyLlm(query.trim());
       } catch {
-        bp = await api.suggestTopology(query.trim());
+        bp = await suggestTopology(query.trim());
       }
       if (cancelledRef.current) return;
 
@@ -109,7 +111,7 @@ export function useAutoTeam(): AutoTeamState {
       // 2. Add members and collect their IDs
       const newMemberIds: string[] = [];
       for (const member of blueprint.members) {
-        const added = await api.addTeamMember(
+        const added = await addTeamMember(
           team.id,
           member.persona_id,
           member.role,
@@ -127,7 +129,7 @@ export function useAutoTeam(): AutoTeamState {
         const sourceId = newMemberIds[conn.source_index];
         const targetId = newMemberIds[conn.target_index];
         if (sourceId && targetId) {
-          await api.createTeamConnection(
+          await createTeamConnection(
             team.id,
             sourceId,
             targetId,
@@ -145,7 +147,7 @@ export function useAutoTeam(): AutoTeamState {
 
       try {
         // Find teams with overlapping members to pull relevant memories
-        const allTeams = usePersonaStore.getState().teams;
+        const allTeams = usePipelineStore.getState().teams;
         const blueprintPersonaIds = new Set(blueprint.members.map((m) => m.persona_id));
 
         for (const existingTeam of allTeams) {
@@ -153,16 +155,16 @@ export function useAutoTeam(): AutoTeamState {
 
           // Check if this team has overlapping members
           try {
-            const existingMembers = await api.listTeamMembers(existingTeam.id);
+            const existingMembers = await listTeamMembers(existingTeam.id);
             const overlap = existingMembers.some((m) => blueprintPersonaIds.has(m.persona_id));
             if (!overlap) continue;
 
             // Pull high-importance memories from this team
-            const memories = await api.listTeamMemories(existingTeam.id, undefined, undefined, undefined, 5);
+            const memories = await listTeamMemories(existingTeam.id, undefined, undefined, undefined, 5);
             const highValue = memories.filter((m) => m.importance >= 7);
 
             for (const mem of highValue) {
-              await api.createTeamMemory({
+              await createTeamMemory({
                 team_id: team.id,
                 run_id: null,
                 member_id: null,

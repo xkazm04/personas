@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
 import { useToastStore } from '@/stores/toastStore';
 
 /**
@@ -29,7 +29,7 @@ interface HealingEventPayload {
 }
 
 export function HealingToast() {
-  const fetchHealingIssues = usePersonaStore((s) => s.fetchHealingIssues);
+  const fetchHealingIssues = useOverviewStore((s) => s.fetchHealingIssues);
 
   useEffect(() => {
     let cancelled = false;

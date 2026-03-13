@@ -4,11 +4,11 @@ import { ThemedConnectorIcon } from '@/features/shared/components/display/Connec
 import { DesignCheckbox } from './DesignCheckbox';
 import { SECTION_LABEL } from './helpers';
 import type { AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
-import type { DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import type { PersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 interface ConnectorsSectionProps {
   result: AgentIR;
-  allToolDefs: DbPersonaToolDefinition[];
+  allToolDefs: PersonaToolDefinition[];
   currentToolNames: string[];
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];

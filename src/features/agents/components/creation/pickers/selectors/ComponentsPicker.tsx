@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import type { BuilderComponent, ComponentRole } from '../../steps/builder/types';
 import { COMPONENT_ROLES } from '../../steps/builder/types';
 import { BUILTIN_CONNECTORS } from './componentPickerConstants';
@@ -23,7 +23,7 @@ interface ComponentsPickerProps {
 export function ComponentsPicker({ components, onAdd, onRemove, onSetWatchedTables }: ComponentsPickerProps) {
   const [assignRole, setAssignRole] = useState<ComponentRole | null>(null);
   const [tableSelectorCompId, setTableSelectorCompId] = useState<string | null>(null);
-  const credentials = usePersonaStore((s) => s.credentials);
+  const credentials = useVaultStore((s) => s.credentials);
   const prevCountRef = useRef(components.length);
 
   const componentsByRole = useMemo(() => {

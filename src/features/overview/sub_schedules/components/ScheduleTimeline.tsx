@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, lazy, Suspense } from 'react';
 import {
-  CalendarClock, Loader2, RefreshCw, Pause, Plus,
+  CalendarClock, Loader2, RefreshCw, Pause, Plus, Calendar,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
 import {
   parseScheduleEntry,
   sortByNextRun,
@@ -19,12 +19,14 @@ import type { SchedulerStats } from '@/api/pipeline/scheduler';
 import ScheduleRow from './ScheduleRow';
 import SkippedRecoveryPanel from './SkippedRecoveryPanel';
 
-type ViewMode = 'timeline' | 'grouped';
+const ScheduleCalendar = lazy(() => import('./ScheduleCalendar'));
+
+type ViewMode = 'timeline' | 'grouped' | 'calendar';
 
 export default function ScheduleTimeline() {
-  const cronAgents = usePersonaStore((s) => s.cronAgents);
-  const loading = usePersonaStore((s) => s.cronAgentsLoading);
-  const fetchCronAgents = usePersonaStore((s) => s.fetchCronAgents);
+  const cronAgents = useOverviewStore((s) => s.cronAgents);
+  const loading = useOverviewStore((s) => s.cronAgentsLoading);
+  const fetchCronAgents = useOverviewStore((s) => s.fetchCronAgents);
 
   const [viewMode, setViewMode] = useState<ViewMode>('grouped');
   const [schedulerStats, setSchedulerStats] = useState<SchedulerStats | null>(null);
@@ -107,7 +109,7 @@ export default function ScheduleTimeline() {
         icon={<CalendarClock className="w-5 h-5 text-blue-400" />}
         iconColor="blue"
         title="Schedule Timeline"
-        subtitle="Aggregated view of all scheduled agent executions"
+        subtitle="Aggregated view of all scheduled agent executions. Cron schedules use UTC."
         actions={
           <div className="flex items-center gap-3">
             {/* Scheduler engine status */}
@@ -176,6 +178,17 @@ export default function ScheduleTimeline() {
               >
                 Timeline
               </button>
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={`px-2.5 py-1 text-xs flex items-center gap-1 transition-colors ${
+                  viewMode === 'calendar'
+                    ? 'bg-primary/10 text-foreground/90'
+                    : 'text-muted-foreground/60 hover:text-foreground/70'
+                }`}
+              >
+                <Calendar className="w-3 h-3" />
+                Calendar
+              </button>
             </div>
 
             {/* Refresh */}
@@ -220,15 +233,21 @@ export default function ScheduleTimeline() {
         ) : (
           <div className="space-y-4">
             {/* Skipped execution recovery */}
-            <SkippedRecoveryPanel
-              skipped={skipped}
-              recoveringId={actionState.recovering}
-              onBatchRecover={batchRecover}
-              onManualExecute={(agent) => manualExecute(agent)}
-            />
+            {viewMode !== 'calendar' && (
+              <SkippedRecoveryPanel
+                skipped={skipped}
+                recoveringId={actionState.recovering}
+                onBatchRecover={batchRecover}
+                onManualExecute={(agent) => manualExecute(agent)}
+              />
+            )}
 
             {/* Main schedule view */}
-            {viewMode === 'grouped' ? (
+            {viewMode === 'calendar' ? (
+              <Suspense fallback={<div className="flex items-center justify-center py-12 text-muted-foreground/60"><Loader2 className="w-4 h-4 animate-spin mr-2" />Loading calendar...</div>}>
+                <ScheduleCalendar entries={entries} />
+              </Suspense>
+            ) : viewMode === 'grouped' ? (
               <GroupedView groups={grouped} renderEntries={renderEntries} />
             ) : (
               <div className="space-y-1.5">

@@ -1,36 +1,10 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// ============================================================================
-// Types (mirrors Rust data_portability.rs)
-// ============================================================================
-
-export interface ExportStats {
-  persona_count: number;
-  group_count: number;
-  tool_count: number;
-  team_count: number;
-  connector_count: number;
-  memory_count: number;
-  test_suite_count: number;
-}
-
-export interface PortabilityImportResult {
-  personas_created: number;
-  teams_created: number;
-  tools_created: number;
-  groups_created: number;
-  connectors_created: number;
-  warnings: string[];
-  id_mapping: Record<string, string>;
-}
-
-export interface CompetitiveImportPreview {
-  source_platform: string;
-  workflow_name: string;
-  description: string;
-  suggested_tools: string[];
-  suggested_triggers: string[];
-}
+import type { ExportStats } from "@/lib/bindings/ExportStats";
+import type { PortabilityImportResult } from "@/lib/bindings/PortabilityImportResult";
+import type { CompetitiveImportPreview } from "@/lib/bindings/CompetitiveImportPreview";
+import type { CredentialImportResult } from "@/lib/bindings/CredentialImportResult";
+export type { ExportStats, PortabilityImportResult, CompetitiveImportPreview, CredentialImportResult };
 
 // ============================================================================
 // Commands
@@ -54,11 +28,6 @@ export const previewCompetitiveImport = () =>
 // ============================================================================
 // Encrypted credential export / import
 // ============================================================================
-
-export interface CredentialImportResult {
-  created: number;
-  warnings: string[];
-}
 
 export const exportCredentials = (passphrase: string) =>
   invoke<boolean>("export_credentials", { passphrase });

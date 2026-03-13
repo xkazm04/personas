@@ -91,6 +91,7 @@ export function NotificationChannelCard({
               value={config[field.key] || ''}
               onChange={(e) => onConfigChange(field.key, e.target.value)}
               placeholder={field.placeholder}
+              aria-invalid={isEmpty}
               className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-primary/30 ${isEmpty ? 'border-red-500/50' : 'border-primary/20'}`}
             />
           </div>

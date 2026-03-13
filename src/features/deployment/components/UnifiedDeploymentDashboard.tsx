@@ -3,7 +3,8 @@ import {
   Cloud, GitBranch, RefreshCw, Activity,
   CheckCircle2, PauseCircle,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import type { DeployTarget, DeployStatus, SortKey, SortDir, UnifiedDeployment } from './deploymentTypes';
 import { compareValues } from './deploymentTypes';
 import { SummaryCard } from './DeploymentSubComponents';
@@ -11,20 +12,20 @@ import { DeploymentTable } from './DeploymentTable';
 import { DeploymentFilters } from './DeploymentFilters';
 
 export function UnifiedDeploymentDashboard() {
-  const personas = usePersonaStore((s) => s.personas);
-  const cloudDeployments = usePersonaStore((s) => s.cloudDeployments);
-  const cloudBaseUrl = usePersonaStore((s) => s.cloudBaseUrl);
-  const cloudConfig = usePersonaStore((s) => s.cloudConfig);
-  const gitlabConfig = usePersonaStore((s) => s.gitlabConfig);
-  const gitlabAgents = usePersonaStore((s) => s.gitlabAgents);
-  const gitlabSelectedProjectId = usePersonaStore((s) => s.gitlabSelectedProjectId);
+  const personas = useAgentStore((s) => s.personas);
+  const cloudDeployments = useSystemStore((s) => s.cloudDeployments);
+  const cloudBaseUrl = useSystemStore((s) => s.cloudBaseUrl);
+  const cloudConfig = useSystemStore((s) => s.cloudConfig);
+  const gitlabConfig = useSystemStore((s) => s.gitlabConfig);
+  const gitlabAgents = useSystemStore((s) => s.gitlabAgents);
+  const gitlabSelectedProjectId = useSystemStore((s) => s.gitlabSelectedProjectId);
 
-  const cloudFetchDeployments = usePersonaStore((s) => s.cloudFetchDeployments);
-  const cloudPauseDeploy = usePersonaStore((s) => s.cloudPauseDeploy);
-  const cloudResumeDeploy = usePersonaStore((s) => s.cloudResumeDeploy);
-  const cloudRemoveDeploy = usePersonaStore((s) => s.cloudRemoveDeploy);
-  const gitlabFetchAgents = usePersonaStore((s) => s.gitlabFetchAgents);
-  const gitlabUndeployAgent = usePersonaStore((s) => s.gitlabUndeployAgent);
+  const cloudFetchDeployments = useSystemStore((s) => s.cloudFetchDeployments);
+  const cloudPauseDeploy = useSystemStore((s) => s.cloudPauseDeploy);
+  const cloudResumeDeploy = useSystemStore((s) => s.cloudResumeDeploy);
+  const cloudRemoveDeploy = useSystemStore((s) => s.cloudRemoveDeploy);
+  const gitlabFetchAgents = useSystemStore((s) => s.gitlabFetchAgents);
+  const gitlabUndeployAgent = useSystemStore((s) => s.gitlabUndeployAgent);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);

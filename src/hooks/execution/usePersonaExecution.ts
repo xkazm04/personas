@@ -1,15 +1,15 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { useCorrelatedCliStream } from './useCorrelatedCliStream';
 import { traceStage, runMiddleware, type FinalizeStatusPayload } from '@/lib/execution/pipeline';
 import { isTerminalState } from '@/lib/execution/executionState';
 import type { QueueStatusPayload } from '@/stores/slices/agents/executionSlice';
 
 export function usePersonaExecution() {
-  const clearOutput = usePersonaStore((s) => s.clearExecutionOutput);
-  const activeExecutionId = usePersonaStore((s) => s.activeExecutionId);
-  const selectedPersonaId = usePersonaStore((s) => s.selectedPersonaId);
+  const clearOutput = useAgentStore((s) => s.clearExecutionOutput);
+  const activeExecutionId = useAgentStore((s) => s.activeExecutionId);
+  const selectedPersonaId = useAgentStore((s) => s.selectedPersonaId);
   const prevExecIdRef = useRef<string | null>(null);
   const prevPersonaIdRef = useRef<string | null>(null);
   const streamTracedRef = useRef(false);
@@ -17,7 +17,7 @@ export function usePersonaExecution() {
 
   /** Guard: returns true when the executing persona still matches the selected persona. */
   const isOwnerAligned = (): boolean => {
-    const s = usePersonaStore.getState();
+    const s = useAgentStore.getState();
     // If there's no execution persona or no selection, allow (startup / teardown edge cases)
     if (!s.executionPersonaId || !s.selectedPersonaId) return true;
     return s.executionPersonaId === s.selectedPersonaId;
@@ -25,11 +25,11 @@ export function usePersonaExecution() {
 
   const handleOutputLine = useCallback((line: string) => {
     if (!isOwnerAligned()) return;
-    const store = usePersonaStore.getState();
+    const store = useAgentStore.getState();
     // Pipeline: trace stream_output on first output line
     if (!streamTracedRef.current && store.pipelineTrace) {
       streamTracedRef.current = true;
-      usePersonaStore.setState((state) => ({
+      useAgentStore.setState((state) => ({
         pipelineTrace: state.pipelineTrace
           ? traceStage(state.pipelineTrace, 'stream_output')
           : null,
@@ -45,15 +45,15 @@ export function usePersonaExecution() {
 
     // When promoted from queue to running, clear queue position
     if (status === 'running') {
-      usePersonaStore.getState().setQueueStatus(null, null);
+      useAgentStore.getState().setQueueStatus(null, null);
     }
 
     if (typeof status !== 'string' || !isTerminalState(status)) return;
 
-    const store = usePersonaStore.getState();
+    const store = useAgentStore.getState();
     // Pipeline: trace finalize_status
     if (store.pipelineTrace) {
-      usePersonaStore.setState((state) => ({
+      useAgentStore.setState((state) => ({
         pipelineTrace: state.pipelineTrace
           ? traceStage(state.pipelineTrace, 'finalize_status', {
             status,
@@ -64,7 +64,7 @@ export function usePersonaExecution() {
       }));
 
       // Run finalize_status middleware (fire-and-forget -- non-blocking)
-      const trace = usePersonaStore.getState().pipelineTrace;
+      const trace = useAgentStore.getState().pipelineTrace;
       if (trace) {
         const finalizePayload: FinalizeStatusPayload = {
           executionId: store.activeExecutionId ?? '',
@@ -123,7 +123,7 @@ export function usePersonaExecution() {
       const unlisten = await listen<QueueStatusPayload>('queue-status', (event) => {
         if (cancelled) return;
         const payload = event.payload;
-        const store = usePersonaStore.getState();
+        const store = useAgentStore.getState();
         if (store.activeExecutionId !== payload.execution_id) return;
 
         if (payload.action === 'queued') {
@@ -158,7 +158,7 @@ export function usePersonaExecution() {
   useEffect(() => {
     if (selectedPersonaId !== prevPersonaIdRef.current) {
       if (prevPersonaIdRef.current !== null) {
-        const store = usePersonaStore.getState();
+        const store = useAgentStore.getState();
         if (store.executionPersonaId && store.executionPersonaId !== selectedPersonaId) {
           void cleanup();
         }

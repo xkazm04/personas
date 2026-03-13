@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { startSetupInstall, cancelSetupInstall } from '@/api/tauriApi';
+import { cancelSetupInstall, startSetupInstall } from "@/api/system/system";
+
 
 export type InstallTarget = 'node' | 'claude_cli';
 export type InstallPhase = 'idle' | 'downloading' | 'installing' | 'completed' | 'failed';

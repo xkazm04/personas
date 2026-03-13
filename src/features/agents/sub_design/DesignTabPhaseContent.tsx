@@ -11,7 +11,7 @@ import { DesignPhaseError } from './phases/DesignPhaseError';
 import { DesignConversationHistory } from './DesignConversationHistory';
 import type { DesignAnalysisResult, IntentCompilationResult, DesignPhase, DesignQuestion, DesignConversation } from '@/lib/types/designTypes';
 import type { DesignFilesSection } from '@/lib/types/frontendTypes';
-import type { PersonaWithDetails, DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import type { PersonaWithDetails, PersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { FailedOperation } from '@/hooks/design/credential/applyDesignResult';
 import type { DesignDriftEvent } from '@/lib/design/designDrift';
 import type { ExamplePair } from './wizard/ExamplePairCollector';
@@ -20,7 +20,7 @@ import type { DesignInputMode } from './useDesignTabState';
 export interface DesignTabPhaseContentProps {
   phase: DesignPhase;
   selectedPersona: PersonaWithDetails;
-  toolDefinitions: DbPersonaToolDefinition[];
+  toolDefinitions: PersonaToolDefinition[];
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];
   currentToolNames: string[];

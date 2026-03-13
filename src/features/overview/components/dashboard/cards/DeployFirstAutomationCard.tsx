@@ -12,7 +12,8 @@ import {
   AlertCircle,
   ExternalLink,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { startAutomationDesign, deployAutomation } from '@/api/agents/automations';
 import type { DeployAutomationResult } from '@/api/agents/automations';
@@ -67,8 +68,8 @@ const TEMPLATES: AutomationTemplate[] = [
 type CardPhase = 'prompt' | 'designing' | 'deploying' | 'success' | 'error';
 
 export default function DeployFirstAutomationCard() {
-  const credentials = usePersonaStore((s) => s.credentials);
-  const personas = usePersonaStore((s) => s.personas);
+  const credentials = useVaultStore((s) => s.credentials);
+  const personas = useAgentStore((s) => s.personas);
   const isSimple = useSimpleMode();
 
   const [phase, setPhase] = useState<CardPhase>('prompt');

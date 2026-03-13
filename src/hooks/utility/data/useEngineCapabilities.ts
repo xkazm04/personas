@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAppSetting, setAppSetting } from '@/api/system/settings';
-import { systemHealthCheck } from '@/api';
+import { systemHealthCheck } from "@/api/system/system";
+
 import {
   DEFAULT_CAPABILITIES,
   CAPABILITY_SETTING_KEY,

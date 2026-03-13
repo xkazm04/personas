@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
-import * as api from '@/api/tauriApi';
+import { listExecutions } from "@/api/agents/executions";
 import { getRetryChain } from '@/api/overview/healing';
 import { TEMPLATE_CATALOG } from '@/lib/personas/templates/templateCatalog';
 import { ExecutionComparison } from './comparison/ExecutionComparison';
@@ -22,9 +23,9 @@ const TEMPLATE_SAMPLE_INPUT: Record<string, object> = {
 };
 
 export function ExecutionList() {
-  const selectedPersona = usePersonaStore((state) => state.selectedPersona);
-  const isExecuting = usePersonaStore((state) => state.isExecuting);
-  const setRerunInputData = usePersonaStore((state) => state.setRerunInputData);
+  const selectedPersona = useAgentStore((state) => state.selectedPersona);
+  const isExecuting = useAgentStore((state) => state.isExecuting);
+  const setRerunInputData = useSystemStore((state) => state.setRerunInputData);
   const [executions, setExecutions] = useState<PersonaExecution[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,7 +58,7 @@ export function ExecutionList() {
     if (!personaId) return;
     setLoading(true);
     try {
-      const data = await api.listExecutions(personaId);
+      const data = await listExecutions(personaId);
       setExecutions(data || []);
     } catch (error) {
       console.error('Failed to fetch executions:', error);

@@ -4,11 +4,11 @@ import { EventsSection } from './EventsSection';
 import { MessagesSection } from './MessagesSection';
 import { DesignTestResults } from './DesignTestResults';
 import type { AgentIR, DesignTestResult, SuggestedConnector } from '@/lib/types/designTypes';
-import type { DbPersonaToolDefinition, DbPersonaTrigger, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import type { PersonaToolDefinition, PersonaTrigger, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 interface DesignResultPreviewProps {
   result: AgentIR;
-  allToolDefs: DbPersonaToolDefinition[];
+  allToolDefs: PersonaToolDefinition[];
   currentToolNames: string[];
   credentials: CredentialMetadata[];
   connectorDefinitions?: ConnectorDefinition[];
@@ -23,7 +23,7 @@ interface DesignResultPreviewProps {
   onSubscriptionToggle?: (idx: number) => void;
   onConnectorClick?: (connector: SuggestedConnector) => void;
   readOnly?: boolean;
-  actualTriggers?: DbPersonaTrigger[];
+  actualTriggers?: PersonaTrigger[];
   onTriggerEnabledToggle?: (triggerId: string, enabled: boolean) => void;
   feasibility?: DesignTestResult | null;
 }

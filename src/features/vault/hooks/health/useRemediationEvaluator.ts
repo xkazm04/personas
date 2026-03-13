@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { getRotationStatus, type RotationStatus } from '@/api/vault/rotation';
 import {
   remediationBus,
@@ -56,7 +56,7 @@ function parseAnomalyFromMetadata(
  * Returns the latest evaluation log for UI consumption.
  */
 export function useRemediationEvaluator() {
-  const credentials = usePersonaStore((s) => s.credentials);
+  const credentials = useVaultStore((s) => s.credentials);
   const [lastEvaluation, setLastEvaluation] = useState<EvaluationResult[]>([]);
   const [evaluating, setEvaluating] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);

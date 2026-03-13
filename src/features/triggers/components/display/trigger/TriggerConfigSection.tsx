@@ -1,12 +1,12 @@
 import { Zap, AlertTriangle } from 'lucide-react';
-import type { DbPersonaTrigger } from '@/lib/types/types';
+import type { PersonaTrigger } from '@/lib/types/types';
 import { parseTriggerConfig, getWebhookUrl, IS_WEBHOOK_LOCALHOST } from '@/lib/utils/platform/triggerConstants';
 import { formatInterval } from '@/lib/utils/formatters';
 import { CheckCircle2, Copy } from 'lucide-react';
 import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
 
 interface ConfigSectionProps {
-  trigger: DbPersonaTrigger;
+  trigger: PersonaTrigger;
   credentialEventsList: { id: string; name: string }[];
   detail: ReturnType<typeof useTriggerDetail>;
 }

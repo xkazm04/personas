@@ -173,7 +173,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
   let patternData: Record<string, unknown> = {};
   try { patternData = JSON.parse(entry.pattern_data); } catch { /* intentional */ }
   const recentResults = Array.isArray(patternData.recentResults)
-    ? (patternData.recentResults as unknown[]).filter((v): v is boolean => typeof v === 'boolean')
+    ? (patternData.recentResults as unknown[]).filter((v): v is boolean => typeof v === 'boolean').slice(-10)
     : [];
 
   const toggleExpanded = () => setExpanded(prev => !prev);

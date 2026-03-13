@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { FlaskConical, GitBranch, Wand2, ArrowLeftRight, Grid3X3 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { ArenaPanel } from '../arena/ArenaPanel';
 import { AbPanel } from '../ab/AbPanel';
 import { MatrixPanel } from '../matrix/MatrixPanel';
@@ -22,8 +22,8 @@ const modeTabs: Array<{ id: LabMode; label: string; desc: string; icon: typeof F
 const validModes = new Set<string>(modeTabs.map((t) => t.id));
 
 export function LabTab() {
-  const labMode = usePersonaStore((s) => s.labMode);
-  const setLabMode = usePersonaStore((s) => s.setLabMode);
+  const labMode = useAgentStore((s) => s.labMode);
+  const setLabMode = useAgentStore((s) => s.setLabMode);
 
   // Restore persisted tab on mount
   useEffect(() => {

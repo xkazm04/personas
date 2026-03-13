@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
 import { OverviewFilterProvider } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { useExecutionDashboardPipeline } from '@/hooks/overview/useExecutionDashboardPipeline';
 
@@ -19,7 +19,7 @@ const ScheduleTimeline = lazy(() => import('@/features/overview/sub_schedules/co
 
 function OverviewContent() {
   useExecutionDashboardPipeline();
-  const overviewTab = usePersonaStore((s) => s.overviewTab);
+  const overviewTab = useOverviewStore((s) => s.overviewTab);
 
   return (
     <motion.div

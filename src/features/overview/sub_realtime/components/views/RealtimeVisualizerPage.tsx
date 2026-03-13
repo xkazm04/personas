@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Activity, Orbit, ArrowRightLeft } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useRealtimeEvents } from '@/hooks/realtime/useRealtimeEvents';
 import { useTimelineReplay } from '@/hooks/realtime/useTimelineReplay';
@@ -21,7 +21,7 @@ const VARIANT_META: Record<VisualizationVariant, { icon: typeof Activity; label:
 };
 
 export default function RealtimeVisualizerPage() {
-  const personas = usePersonaStore((s) => s.personas);
+  const personas = useAgentStore((s) => s.personas);
   const [variant, setVariant] = useState<VisualizationVariant>('galaxy');
 
   const {

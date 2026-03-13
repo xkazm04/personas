@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 
 const ProjectManagerPage = lazy(() => import('./sub_projects/ProjectManagerPage'));
 const ContextMapPage = lazy(() => import('./sub_context/ContextMapPage'));
@@ -17,7 +17,7 @@ const SPINNER = (
 
 export default function DevToolsPage() {
   const { shouldAnimate, transition } = useMotion();
-  const devToolsTab = usePersonaStore((s) => s.devToolsTab);
+  const devToolsTab = useSystemStore((s) => s.devToolsTab);
 
   return (
     <AnimatePresence mode="wait" initial={false}>

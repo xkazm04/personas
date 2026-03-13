@@ -2,6 +2,69 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 // ============================================================================
+// Lab: Run Status State Machine
+// ============================================================================
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum LabRunStatus {
+    Drafting,
+    Generating,
+    Running,
+    Completed,
+    Failed,
+    Cancelled,
+}
+
+impl LabRunStatus {
+    pub fn from_db(s: &str) -> Self {
+        match s {
+            "drafting" => Self::Drafting,
+            "generating" => Self::Generating,
+            "running" => Self::Running,
+            "completed" => Self::Completed,
+            "failed" => Self::Failed,
+            "cancelled" => Self::Cancelled,
+            _ => Self::Failed, // unknown statuses treated as failed
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Drafting => "drafting",
+            Self::Generating => "generating",
+            Self::Running => "running",
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+            Self::Cancelled => "cancelled",
+        }
+    }
+
+    pub fn is_terminal(&self) -> bool {
+        matches!(self, Self::Completed | Self::Failed | Self::Cancelled)
+    }
+
+    pub fn validate_transition(&self, next: LabRunStatus) -> Result<(), String> {
+        let allowed = match self {
+            Self::Drafting => matches!(next, Self::Generating | Self::Failed | Self::Cancelled),
+            Self::Generating => matches!(next, Self::Running | Self::Failed | Self::Cancelled),
+            Self::Running => matches!(next, Self::Completed | Self::Failed | Self::Cancelled),
+            Self::Completed | Self::Failed | Self::Cancelled => false,
+        };
+        if allowed {
+            Ok(())
+        } else {
+            Err(format!(
+                "Invalid status transition: {} -> {}",
+                self.as_str(),
+                next.as_str()
+            ))
+        }
+    }
+}
+
+// ============================================================================
 // Lab: Arena (Multi-model comparison)
 // ============================================================================
 
@@ -11,7 +74,7 @@ use ts_rs::TS;
 pub struct LabArenaRun {
     pub id: String,
     pub persona_id: String,
-    pub status: String,
+    pub status: LabRunStatus,
     pub models_tested: String,
     #[ts(type = "number")]
     pub scenarios_count: i32,
@@ -82,7 +145,7 @@ pub struct CreateArenaResultInput {
 pub struct LabAbRun {
     pub id: String,
     pub persona_id: String,
-    pub status: String,
+    pub status: LabRunStatus,
     pub version_a_id: String,
     pub version_b_id: String,
     #[ts(type = "number")]
@@ -165,7 +228,7 @@ pub struct CreateAbResultInput {
 pub struct LabMatrixRun {
     pub id: String,
     pub persona_id: String,
-    pub status: String,
+    pub status: LabRunStatus,
     pub user_instruction: String,
     pub draft_prompt_json: Option<String>,
     pub draft_change_summary: Option<String>,
@@ -242,7 +305,7 @@ pub struct CreateMatrixResultInput {
 pub struct LabEvalRun {
     pub id: String,
     pub persona_id: String,
-    pub status: String,
+    pub status: LabRunStatus,
     /// JSON array of version IDs, e.g. ["uuid1","uuid2","uuid3"]
     pub version_ids: String,
     /// JSON array of version numbers, e.g. [1,3,5]

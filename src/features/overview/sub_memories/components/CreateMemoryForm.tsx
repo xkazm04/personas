@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useOverviewStore } from "@/stores/overviewStore";
 import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -30,8 +31,8 @@ function InteractiveImportanceDots({ value, onChange }: { value: number; onChang
 
 // -- Inline Add Memory Form ---------------------------------------------------
 export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
-  const personas = usePersonaStore((s) => s.personas);
-  const createMemory = usePersonaStore((s) => s.createMemory);
+  const personas = useAgentStore((s) => s.personas);
+  const createMemory = useOverviewStore((s) => s.createMemory);
 
   const [personaId, setPersonaId] = useState(personas[0]?.id ?? '');
   const [title, setTitle] = useState('');

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import type { PersonaEvent } from '@/lib/types/types';
@@ -9,11 +10,11 @@ export type SortDirection = 'desc' | 'asc';
 const PAGE_SIZE = 20;
 
 export function useEventLog() {
-  const recentEvents = usePersonaStore((s) => s.recentEvents);
-  const pendingEventCount = usePersonaStore((s) => s.pendingEventCount);
-  const fetchRecentEvents = usePersonaStore((s) => s.fetchRecentEvents);
-  const pushRecentEvent = usePersonaStore((s) => s.pushRecentEvent);
-  const personas = usePersonaStore((s) => s.personas);
+  const recentEvents = useOverviewStore((s) => s.recentEvents);
+  const pendingEventCount = useOverviewStore((s) => s.pendingEventCount);
+  const fetchRecentEvents = useOverviewStore((s) => s.fetchRecentEvents);
+  const pushRecentEvent = useOverviewStore((s) => s.pushRecentEvent);
+  const personas = useAgentStore((s) => s.personas);
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');

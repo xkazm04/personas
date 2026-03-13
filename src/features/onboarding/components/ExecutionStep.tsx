@@ -6,7 +6,7 @@ import {
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
 export function ExecutionStep({
@@ -18,9 +18,9 @@ export function ExecutionStep({
   personaName: string;
   onComplete: () => void;
 }) {
-  const executePersona = usePersonaStore((s) => s.executePersona);
-  const executionOutput = usePersonaStore((s) => s.executionOutput);
-  const activeExecutionId = usePersonaStore((s) => s.activeExecutionId);
+  const executePersona = useAgentStore((s) => s.executePersona);
+  const executionOutput = useAgentStore((s) => s.executionOutput);
+  const activeExecutionId = useAgentStore((s) => s.activeExecutionId);
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
   const [executionError, setExecutionError] = useState<string | null>(null);

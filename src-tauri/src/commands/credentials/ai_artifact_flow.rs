@@ -17,7 +17,7 @@
 //! AI-generated healthcheck rules, trigger configs) is a matter of
 //! instantiation rather than reimplementation.
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use serde_json::json;
 use tauri::Emitter;
@@ -26,6 +26,7 @@ use tokio::process::Command;
 
 use crate::engine::parser::parse_stream_line;
 use crate::engine::types::StreamLineType;
+use crate::ActiveProcessRegistry;
 
 // -- Message configuration ----------------------------------------
 
@@ -67,13 +68,12 @@ pub struct AiArtifactParams {
     pub task_id: String,
     pub prompt_text: String,
     pub cli_args: crate::engine::types::CliArgs,
-    /// Shared mutex for the currently-active task ID. Used for cancellation
-    /// detection: if the stored value no longer matches `task_id`, the task
-    /// was cancelled.
-    pub active_id: Arc<Mutex<Option<String>>>,
-    /// Optional shared mutex for the child process PID. When provided, the
-    /// PID is stored so cancel handlers can kill the process immediately.
-    pub active_child_pid: Option<Arc<Mutex<Option<u32>>>>,
+    /// Process registry for cancellation detection and child PID tracking.
+    pub registry: Arc<ActiveProcessRegistry>,
+    /// Domain key within the registry (e.g. `"credential_design"`, `"negotiation"`).
+    pub domain: String,
+    /// Whether to track the child PID in the registry (enables kill-on-cancel).
+    pub track_pid: bool,
     pub messages: AiArtifactMessages,
     /// Pluggable extractor: given the full LLM text output, return the parsed
     /// JSON artifact or `None` on failure.
@@ -123,11 +123,18 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
         task_id,
         prompt_text,
         cli_args,
-        active_id,
-        active_child_pid,
+        registry,
+        domain,
+        track_pid,
         messages,
         extractor,
     } = params;
+
+    let pid_tracker: Option<(&ActiveProcessRegistry, &str)> = if track_pid {
+        Some((&registry, &domain))
+    } else {
+        None
+    };
 
     emit_task_status(&app, messages.status_event, messages.id_field, &task_id, messages.initial_status, None, None);
     emit_task_progress(&app, messages.progress_event, messages.id_field, &task_id, "Connecting to Claude...");
@@ -173,15 +180,12 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
             }
             _ => {}
         },
-        active_child_pid.as_ref(),
+        pid_tracker,
     )
     .await;
 
     // Check if cancelled
-    let is_cancelled = {
-        let guard = active_id.lock().unwrap_or_else(|e| e.into_inner());
-        guard.as_deref() != Some(&task_id)
-    };
+    let is_cancelled = registry.get_id(&domain).as_deref() != Some(&task_id);
 
     if is_cancelled {
         let duration_ms = started_at.elapsed().as_millis() as u64;
@@ -200,12 +204,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
     match result {
         Err(error_msg) => {
             // Clear active_id so future operations aren't blocked by a failed task
-            {
-                let mut guard = active_id.lock().unwrap_or_else(|e| e.into_inner());
-                if guard.as_deref() == Some(&task_id) {
-                    *guard = None;
-                }
-            }
+            registry.clear_id_if(&domain, &task_id);
             let is_timeout = error_msg.contains("timed out");
             tracing::error!(
                 task_id = %task_id,
@@ -230,12 +229,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
 
             match extractor(&spawn_result.text_output) {
                 Some(extracted) => {
-                    {
-                        let mut guard = active_id.lock().unwrap_or_else(|e| e.into_inner());
-                        if guard.as_deref() == Some(&task_id) {
-                            *guard = None;
-                        }
-                    }
+                    registry.clear_id_if(&domain, &task_id);
                     tracing::info!(
                         task_id = %task_id,
                         operation = messages.log_label,
@@ -247,12 +241,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
                     emit_task_status(&app, messages.status_event, messages.id_field, &task_id, "completed", Some(extracted), None);
                 }
                 None => {
-                    {
-                        let mut guard = active_id.lock().unwrap_or_else(|e| e.into_inner());
-                        if guard.as_deref() == Some(&task_id) {
-                            *guard = None;
-                        }
-                    }
+                    registry.clear_id_if(&domain, &task_id);
                     let raw_preview: String = spawn_result.text_output.chars().take(500).collect();
                     tracing::warn!(
                         task_id = %task_id,
@@ -301,14 +290,14 @@ fn extract_result_text(line: &str) -> Option<String> {
 /// emit progress events or handle line-type-specific logic. Text accumulation
 /// (AssistantText, Result, Unknown) is handled internally.
 ///
-/// If `child_pid_out` is provided, the child process PID is stored there so
-/// callers can kill the process from a cancel handler.
+/// If `pid_tracker` is provided as `(registry, domain)`, the child PID is
+/// registered so cancel handlers can kill the process immediately.
 pub async fn spawn_claude_and_collect(
     cli_args: &crate::engine::types::CliArgs,
     prompt_text: String,
     timeout_secs: u64,
     mut on_line: impl FnMut(&StreamLineType, &str),
-    child_pid_out: Option<&Arc<Mutex<Option<u32>>>>,
+    pid_tracker: Option<(&ActiveProcessRegistry, &str)>,
 ) -> Result<ClaudeSpawnResult, String> {
     let mut cmd = Command::new(&cli_args.command);
     cmd.args(&cli_args.args)
@@ -342,15 +331,9 @@ pub async fn spawn_claude_and_collect(
     })?;
 
     // Register child PID so cancel handlers can kill the process immediately
-    if let Some(pid_ref) = child_pid_out {
+    if let Some((registry, domain)) = &pid_tracker {
         if let Some(pid) = child.id() {
-            match pid_ref.lock() {
-                Ok(mut guard) => *guard = Some(pid),
-                Err(e) => {
-                    tracing::warn!("Child PID mutex poisoned, recovering: {e}");
-                    *e.into_inner() = Some(pid);
-                }
-            }
+            registry.set_pid(domain, pid);
         }
     }
 
@@ -412,9 +395,8 @@ pub async fn spawn_claude_and_collect(
         tracing::warn!("Claude CLI timed out after {timeout_secs}s -- killing process");
         let _ = child.kill().await;
         // Also kill via PID tree on Windows to clean up child processes
-        if let Some(pid_ref) = child_pid_out {
-            let pid = pid_ref.lock().unwrap_or_else(|e| e.into_inner()).take();
-            if let Some(pid) = pid {
+        if let Some((registry, domain)) = &pid_tracker {
+            if let Some(pid) = registry.take_pid(domain) {
                 #[cfg(windows)]
                 {
                     #[allow(unused_imports)]
@@ -443,8 +425,8 @@ pub async fn spawn_claude_and_collect(
     let stderr_output = stderr_task.await.unwrap_or_default();
 
     // Clear the PID now that the process has exited
-    if let Some(pid_ref) = child_pid_out {
-        *pid_ref.lock().unwrap_or_else(|e| e.into_inner()) = None;
+    if let Some((registry, domain)) = &pid_tracker {
+        registry.clear_pid(domain);
     }
 
     if !exit_status.success() {

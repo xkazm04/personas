@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { useToggleSet } from '@/hooks/utility/interaction/useToggleSet';
 import type { AgentIR } from '@/lib/types/designTypes';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
@@ -117,8 +117,8 @@ export function useChangeSummary(
  * Drift events filtered for current persona.
  */
 export function useDriftEventsForPersona(personaId: string | undefined) {
-  const allDriftEvents = usePersonaStore((s) => s.designDriftEvents);
-  const dismissDriftEvent = usePersonaStore((s) => s.dismissDriftEvent);
+  const allDriftEvents = useAgentStore((s) => s.designDriftEvents);
+  const dismissDriftEvent = useAgentStore((s) => s.dismissDriftEvent);
   const driftEvents = useMemo(
     () => allDriftEvents.filter((e) => e.personaId === personaId),
     [allDriftEvents, personaId],

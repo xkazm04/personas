@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Rocket, RefreshCw } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { Button } from '@/features/shared/components/buttons';
 import type { CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
@@ -36,7 +36,7 @@ export function CloudDeploymentsPanel({
   onRemove,
   onRefresh,
 }: Props) {
-  const personas = usePersonaStore((s) => s.personas);
+  const personas = useAgentStore((s) => s.personas);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
   const [selectedBudget, setSelectedBudget] = useState<number | undefined>(10);
   const [isRefreshing, setIsRefreshing] = useState(false);

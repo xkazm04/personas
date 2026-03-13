@@ -10,7 +10,8 @@ import {
   Clock,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import { isTimestampStale } from '@/stores/slices/agents/healthCheckSlice';
 import type { DryRunIssue, PersonaHealthCheck, HealthScore } from './types';
@@ -124,12 +125,12 @@ function PersonaDigestRow({
 // -- Main digest panel ------------------------------------------------
 
 export function HealthDigestPanel() {
-  const digest = usePersonaStore((s) => s.healthDigest);
-  const running = usePersonaStore((s) => s.healthDigestRunning);
-  const lastDigestAt = usePersonaStore((s) => s.lastDigestAt);
-  const runFullHealthDigest = usePersonaStore((s) => s.runFullHealthDigest);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
+  const digest = useAgentStore((s) => s.healthDigest);
+  const running = useAgentStore((s) => s.healthDigestRunning);
+  const lastDigestAt = useAgentStore((s) => s.lastDigestAt);
+  const runFullHealthDigest = useAgentStore((s) => s.runFullHealthDigest);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
   const isStale = useMemo(() => isTimestampStale(lastDigestAt), [lastDigestAt]);
 
   const handleNavigate = (personaId: string) => {

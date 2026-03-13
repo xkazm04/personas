@@ -2,7 +2,7 @@ import { Zap, ToggleLeft, ToggleRight } from 'lucide-react';
 import { DesignCheckbox } from './DesignCheckbox';
 import { triggerIconMeta, SECTION_LABEL } from './helpers';
 import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
-import type { DbPersonaTrigger } from '@/lib/types/types';
+import type { PersonaTrigger } from '@/lib/types/types';
 import { parseTriggerConfig } from '@/lib/utils/platform/triggerConstants';
 
 interface EventsSectionProps {
@@ -13,7 +13,7 @@ interface EventsSectionProps {
   selectedSubscriptionIndices: Set<number>;
   onSubscriptionToggle?: (idx: number) => void;
   readOnly: boolean;
-  actualTriggers: DbPersonaTrigger[];
+  actualTriggers: PersonaTrigger[];
   onTriggerEnabledToggle?: (triggerId: string, enabled: boolean) => void;
 }
 

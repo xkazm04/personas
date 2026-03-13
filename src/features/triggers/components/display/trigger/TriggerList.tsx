@@ -1,8 +1,10 @@
 import { useMemo, useState, useEffect } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { ChevronRight, Zap, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
-import * as api from '@/api/tauriApi';
+import { listAllTriggers } from "@/api/pipeline/triggers";
+
 import { getTriggerHealthMap } from '@/api/pipeline/triggers';
 import type { PersonaTrigger } from '@/lib/types/types';
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, WEBHOOK_BASE_URL } from '@/lib/utils/platform/triggerConstants';
@@ -17,8 +19,8 @@ interface TriggerListProps {
 }
 
 export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
-  const personas = usePersonaStore((state) => state.personas);
-  const triggerRateLimits = usePersonaStore((s) => s.triggerRateLimits);
+  const personas = useAgentStore((state) => state.personas);
+  const triggerRateLimits = usePipelineStore((s) => s.triggerRateLimits);
   const [allTriggers, setAllTriggers] = useState<Record<string, PersonaTrigger[]>>({});
   const [triggerHealthMap, setTriggerHealthMap] = useState<Record<string, TriggerHealth>>({});
 
@@ -29,7 +31,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
       try {
         // Single IPC call for triggers + single IPC call for health (replaces N+1)
         const [triggers, healthMap] = await Promise.all([
-          api.listAllTriggers(),
+          listAllTriggers(),
           getTriggerHealthMap(),
         ]);
         if (stale) return;

@@ -1,4 +1,4 @@
-import type { CredentialMetadata, ConnectorDefinition, DbPersona, DbCredentialEvent } from '@/lib/types/types';
+import type { CredentialMetadata, ConnectorDefinition, Persona, CredentialEvent } from '@/lib/types/types';
 import type { CredentialDependent } from '@/lib/bindings/CredentialDependent';
 
 // ---------------------------------------------------------------------------
@@ -99,8 +99,8 @@ export function analyzeBlastRadius(
 export function buildCredentialGraph(
   credentials: CredentialMetadata[],
   connectors: ConnectorDefinition[],
-  personas: DbPersona[],
-  credentialEvents: DbCredentialEvent[],
+  personas: Persona[],
+  credentialEvents: CredentialEvent[],
   dependentsMap: Map<string, CredentialDependent[]>,
 ): CredentialGraph {
   const nodes: GraphNode[] = [];

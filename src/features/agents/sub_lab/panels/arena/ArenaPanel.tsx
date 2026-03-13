@@ -1,20 +1,20 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
 import { ALL_MODELS, buildModelConfigs } from './arenaModels';
 import { ArenaConfigPanel } from './ArenaConfigPanel';
 import { ArenaHistory } from './ArenaHistory';
 
 export function ArenaPanel() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const arenaRuns = usePersonaStore((s) => s.arenaRuns);
-  const arenaResultsMap = usePersonaStore((s) => s.arenaResultsMap);
-  const isLabRunning = usePersonaStore((s) => s.isLabRunning);
-  const fetchArenaRuns = usePersonaStore((s) => s.fetchArenaRuns);
-  const startArena = usePersonaStore((s) => s.startArena);
-  const cancelArena = usePersonaStore((s) => s.cancelArena);
-  const fetchArenaResults = usePersonaStore((s) => s.fetchArenaResults);
-  const deleteArenaRun = usePersonaStore((s) => s.deleteArenaRun);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const arenaRuns = useAgentStore((s) => s.arenaRuns);
+  const arenaResultsMap = useAgentStore((s) => s.arenaResultsMap);
+  const isLabRunning = useAgentStore((s) => s.isLabRunning);
+  const fetchArenaRuns = useAgentStore((s) => s.fetchArenaRuns);
+  const startArena = useAgentStore((s) => s.startArena);
+  const cancelArena = useAgentStore((s) => s.cancelArena);
+  const fetchArenaResults = useAgentStore((s) => s.fetchArenaResults);
+  const deleteArenaRun = useAgentStore((s) => s.deleteArenaRun);
 
   const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['haiku', 'sonnet']));
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);

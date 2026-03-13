@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import { Clock, Calendar, RotateCw, RefreshCw, Shield } from 'lucide-react';
 import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { isTerminalState } from '@/lib/execution/executionState';
 import { sanitizeErrorMessage } from '@/lib/utils/sanitizers/maskSensitive';
 import { ErrorExplanationCard } from './ErrorExplanationCard';
@@ -14,14 +15,14 @@ import {
 } from './executionDetailHelpers';
 
 interface ExecutionDetailContentProps {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
 }
 
 export function ExecutionDetailContent({ execution }: ExecutionDetailContentProps) {
-  const setRerunInputData = usePersonaStore((s) => s.setRerunInputData);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
+  const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
 
   const handleErrorAction = useCallback((action: ErrorAction) => {
     switch (action.navigate) {

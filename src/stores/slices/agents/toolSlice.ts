@@ -1,17 +1,18 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { AgentStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
 import type {
-  DbPersonaToolDefinition,
+  PersonaToolDefinition,
   ToolUsageSummary,
   ToolUsageOverTime,
   PersonaUsageSummary,
 } from "@/lib/types/types";
-import * as api from "@/api/tauriApi";
+import { assignTool, bulkAssignTools, bulkUnassignTools, getToolUsageByPersona, getToolUsageOverTime, getToolUsageSummary, listToolDefinitions, unassignTool } from "@/api/agents/tools";
+
 
 export interface ToolSlice {
   // State
-  toolDefinitions: DbPersonaToolDefinition[];
+  toolDefinitions: PersonaToolDefinition[];
   toolUsageSummary: ToolUsageSummary[];
   toolUsageOverTime: ToolUsageOverTime[];
   toolUsageByPersona: PersonaUsageSummary[];
@@ -25,7 +26,7 @@ export interface ToolSlice {
   fetchToolUsage: (days?: number, personaId?: string) => Promise<void>;
 }
 
-export const createToolSlice: StateCreator<PersonaStore, [], [], ToolSlice> = (set, get) => ({
+export const createToolSlice: StateCreator<AgentStore, [], [], ToolSlice> = (set, get) => ({
   toolDefinitions: [],
   toolUsageSummary: [],
   toolUsageOverTime: [],
@@ -33,7 +34,7 @@ export const createToolSlice: StateCreator<PersonaStore, [], [], ToolSlice> = (s
 
   fetchToolDefinitions: async () => {
     try {
-      const toolDefinitions = await api.listToolDefinitions();
+      const toolDefinitions = await listToolDefinitions();
       set({ toolDefinitions });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch tools") });
@@ -43,7 +44,7 @@ export const createToolSlice: StateCreator<PersonaStore, [], [], ToolSlice> = (s
 
   assignTool: async (personaId, toolId) => {
     try {
-      await api.assignTool(personaId, toolId);
+      await assignTool(personaId, toolId);
       get().fetchDetail(personaId);
     } catch (err) {
       set({ error: errMsg(err, "Failed to assign tool") });
@@ -52,7 +53,7 @@ export const createToolSlice: StateCreator<PersonaStore, [], [], ToolSlice> = (s
 
   removeTool: async (personaId, toolId) => {
     try {
-      await api.unassignTool(personaId, toolId);
+      await unassignTool(personaId, toolId);
       get().fetchDetail(personaId);
     } catch (err) {
       set({ error: errMsg(err, "Failed to remove tool") });
@@ -61,7 +62,7 @@ export const createToolSlice: StateCreator<PersonaStore, [], [], ToolSlice> = (s
 
   bulkAssignTools: async (personaId, toolIds) => {
     try {
-      await api.bulkAssignTools(personaId, toolIds);
+      await bulkAssignTools(personaId, toolIds);
     } catch (err) {
       set({ error: errMsg(err, "Failed to assign tools") });
     } finally {
@@ -71,7 +72,7 @@ export const createToolSlice: StateCreator<PersonaStore, [], [], ToolSlice> = (s
 
   bulkRemoveTools: async (personaId, toolIds) => {
     try {
-      await api.bulkUnassignTools(personaId, toolIds);
+      await bulkUnassignTools(personaId, toolIds);
     } catch (err) {
       set({ error: errMsg(err, "Failed to remove tools") });
     } finally {
@@ -83,9 +84,9 @@ export const createToolSlice: StateCreator<PersonaStore, [], [], ToolSlice> = (s
     try {
       const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
       const [summary, overTime, byPersona] = await Promise.all([
-        api.getToolUsageSummary(since, personaId),
-        api.getToolUsageOverTime(since, personaId),
-        api.getToolUsageByPersona(since),
+        getToolUsageSummary(since, personaId),
+        getToolUsageOverTime(since, personaId),
+        getToolUsageByPersona(since),
       ]);
       set({
         toolUsageSummary: summary,

@@ -145,32 +145,47 @@ pub fn auto_rollback_tick(pool: &DbPool) {
 }
 
 /// Perform the actual rollback -- mirrors the logic in observability.rs rollback_prompt_version.
+/// All writes are wrapped in a single SQLite transaction so that a crash or error
+/// cannot leave the persona in a half-rolled-back state.
 fn perform_rollback(pool: &DbPool, persona_id: &str, version_id: &str) -> Result<(), crate::error::AppError> {
     let version = metric_repo::get_prompt_version_by_id(pool, version_id)?;
 
-    let conn = pool.get()?;
+    // Look up current production version before the transaction so the read
+    // uses the pool normally (matching the rest of the codebase).
+    let current_prod = metric_repo::get_production_version(pool, persona_id)?;
+
+    let mut conn = pool.get()?;
+    let tx = conn.transaction().map_err(crate::error::AppError::Database)?;
     let now = chrono::Utc::now().to_rfc3339();
 
     if let Some(ref sp) = version.structured_prompt {
-        conn.execute(
+        tx.execute(
             "UPDATE personas SET structured_prompt = ?1, updated_at = ?2 WHERE id = ?3",
             rusqlite::params![sp, now, persona_id],
-        )?;
+        ).map_err(crate::error::AppError::Database)?;
     }
     if let Some(ref sys) = version.system_prompt {
-        conn.execute(
+        tx.execute(
             "UPDATE personas SET system_prompt = ?1, updated_at = ?2 WHERE id = ?3",
             rusqlite::params![sys, now, persona_id],
-        )?;
+        ).map_err(crate::error::AppError::Database)?;
     }
 
     // Demote current production, promote rollback target
-    if let Ok(Some(current_prod)) = metric_repo::get_production_version(pool, persona_id) {
-        if current_prod.id != version_id {
-            let _ = metric_repo::update_prompt_version_tag(pool, &current_prod.id, "experimental");
+    if let Some(ref current) = current_prod {
+        if current.id != version_id {
+            tx.execute(
+                "UPDATE persona_prompt_versions SET tag = ?1 WHERE id = ?2",
+                rusqlite::params!["experimental", current.id],
+            ).map_err(crate::error::AppError::Database)?;
         }
     }
-    metric_repo::update_prompt_version_tag(pool, version_id, "production")?;
+    tx.execute(
+        "UPDATE persona_prompt_versions SET tag = ?1 WHERE id = ?2",
+        rusqlite::params!["production", version_id],
+    ).map_err(crate::error::AppError::Database)?;
+
+    tx.commit().map_err(crate::error::AppError::Database)?;
 
     Ok(())
 }

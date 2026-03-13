@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Play, RefreshCw, ExternalLink, FileText, Loader2 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { Button } from '@/features/shared/components/buttons';
 import { StatusIcon, statusColor } from './pipelineHelpers';
 import { PipelineRow } from './PipelineRow';
@@ -17,17 +17,17 @@ interface GitLabPipelineViewerProps {
 export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
   const [expandedJobId, setExpandedJobId] = useState<number | null>(null);
 
-  const pipelines = usePersonaStore((s) => s.gitlabPipelines);
-  const activePipeline = usePersonaStore((s) => s.gitlabActivePipeline);
-  const jobs = usePersonaStore((s) => s.gitlabPipelineJobs);
-  const loading = usePersonaStore((s) => s.gitlabPipelineLoading);
-  const triggering = usePersonaStore((s) => s.gitlabTriggeringPipeline);
+  const pipelines = useSystemStore((s) => s.gitlabPipelines);
+  const activePipeline = useSystemStore((s) => s.gitlabActivePipeline);
+  const jobs = useSystemStore((s) => s.gitlabPipelineJobs);
+  const loading = useSystemStore((s) => s.gitlabPipelineLoading);
+  const triggering = useSystemStore((s) => s.gitlabTriggeringPipeline);
 
-  const fetchPipelines = usePersonaStore((s) => s.gitlabFetchPipelines);
-  const triggerPipeline = usePersonaStore((s) => s.gitlabTriggerPipelineAction);
-  const selectPipeline = usePersonaStore((s) => s.gitlabSelectPipeline);
-  const refreshPipeline = usePersonaStore((s) => s.gitlabRefreshPipeline);
-  const clearPipelineState = usePersonaStore((s) => s.gitlabClearPipelineState);
+  const fetchPipelines = useSystemStore((s) => s.gitlabFetchPipelines);
+  const triggerPipeline = useSystemStore((s) => s.gitlabTriggerPipelineAction);
+  const selectPipeline = useSystemStore((s) => s.gitlabSelectPipeline);
+  const refreshPipeline = useSystemStore((s) => s.gitlabRefreshPipeline);
+  const clearPipelineState = useSystemStore((s) => s.gitlabClearPipelineState);
 
   useEffect(() => {
     if (projectId) {

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { MessageSquare, Send, Mail, X, Bell } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
 
@@ -31,8 +31,8 @@ interface ChannelOption {
 }
 
 export function ChannelPicker({ channels, onToggle }: ChannelPickerProps) {
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
 
   // Build channel options from communication-type credentials + in-app default
   const channelOptions = useMemo<ChannelOption[]>(() => {

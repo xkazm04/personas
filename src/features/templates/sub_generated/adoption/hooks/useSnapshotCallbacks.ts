@@ -5,7 +5,7 @@
 import { useCallback } from 'react';
 import { useBackgroundSnapshot } from '@/hooks/utility/data/useBackgroundSnapshot';
 import { getTemplateAdoptSnapshot } from '@/api/templates/templateAdopt';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { normalizeDraft } from '@/features/templates/sub_n8n/hooks/n8nTypes';
 import { sendOsNotification } from '@/lib/utils/platform/osNotification';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
@@ -27,7 +27,7 @@ export function useSnapshotCallbacks({
   setStreamPhase,
   setIsRestoring,
 }: UseSnapshotCallbacksOptions) {
-  const setTemplateAdoptActive = usePersonaStore((s) => s.setTemplateAdoptActive);
+  const setTemplateAdoptActive = useSystemStore((s) => s.setTemplateAdoptActive);
 
   const handleSnapshotLines = useCallback(
     (lines: string[]) => {

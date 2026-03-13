@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import type {
   AutoCredPhase,
   BrowserLogEntry,
@@ -41,9 +41,9 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
   const adapter = options?.adapter ?? null;
   const abortRef = useRef<AbortController | null>(null);
 
-  const createCredential = usePersonaStore((s) => s.createCredential);
-  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
-  const healthcheckPreview = usePersonaStore((s) => s.healthcheckCredentialPreview);
+  const createCredential = useVaultStore((s) => s.createCredential);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
+  const healthcheckPreview = useVaultStore((s) => s.healthcheckCredentialPreview);
 
   const [phase, setPhase] = useState<AutoCredPhase>('consent');
   const [designResult, setDesignResult] = useState<CredentialDesignResult | null>(null);

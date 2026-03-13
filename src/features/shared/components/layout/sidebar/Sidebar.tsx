@@ -1,7 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { getVersion } from '@tauri-apps/api/app';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { useAuthStore } from '@/stores/authStore';
 import type { SidebarSection } from '@/lib/types/types';
 import OnboardingProgressBar from '@/features/onboarding/components/OnboardingProgressBar';
@@ -27,19 +29,19 @@ export default function Sidebar() {
 
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-  const sidebarSection = usePersonaStore((s) => s.sidebarSection);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
-  const pendingReviewCount = usePersonaStore((s) => s.pendingReviewCount);
-  const fetchPendingReviewCount = usePersonaStore((s) => s.fetchPendingReviewCount);
-  const unreadMessageCount = usePersonaStore((s) => s.unreadMessageCount);
-  const fetchUnreadMessageCount = usePersonaStore((s) => s.fetchUnreadMessageCount);
-  const pendingEventCount = usePersonaStore((s) => s.pendingEventCount);
-  const fetchRecentEvents = usePersonaStore((s) => s.fetchRecentEvents);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const setIsCreatingPersona = usePersonaStore((s) => s.setIsCreatingPersona);
-  const settingsTab = usePersonaStore((s) => s.settingsTab);
-  const setSettingsTab = usePersonaStore((s) => s.setSettingsTab);
-  const fetchBudgetSpend = usePersonaStore((s) => s.fetchBudgetSpend);
+  const sidebarSection = useSystemStore((s) => s.sidebarSection);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
+  const fetchPendingReviewCount = useOverviewStore((s) => s.fetchPendingReviewCount);
+  const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
+  const fetchUnreadMessageCount = useOverviewStore((s) => s.fetchUnreadMessageCount);
+  const pendingEventCount = useOverviewStore((s) => s.pendingEventCount);
+  const fetchRecentEvents = useOverviewStore((s) => s.fetchRecentEvents);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
+  const settingsTab = useSystemStore((s) => s.settingsTab);
+  const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
+  const fetchBudgetSpend = useAgentStore((s) => s.fetchBudgetSpend);
 
   const isDev = import.meta.env.DEV;
   const [appVersion, setAppVersion] = useState('');

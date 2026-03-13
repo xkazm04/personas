@@ -1,41 +1,9 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// -- Types --------------------------------------------------------------
-
-export interface DbSchemaTable {
-  id: string;
-  credential_id: string;
-  table_name: string;
-  display_label: string | null;
-  column_hints: string | null;
-  is_favorite: boolean;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DbSavedQuery {
-  id: string;
-  credential_id: string;
-  title: string;
-  query_text: string;
-  language: string;
-  last_run_at: string | null;
-  last_run_ok: boolean | null;
-  last_run_ms: number | null;
-  is_favorite: boolean;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface QueryResult {
-  columns: string[];
-  rows: unknown[][];
-  row_count: number;
-  duration_ms: number;
-  truncated: boolean;
-}
+import type { DbSchemaTable } from "@/lib/bindings/DbSchemaTable";
+import type { DbSavedQuery } from "@/lib/bindings/DbSavedQuery";
+import type { QueryResult } from "@/lib/bindings/QueryResult";
+export type { DbSchemaTable, DbSavedQuery, QueryResult };
 
 // -- Schema Tables ------------------------------------------------------
 

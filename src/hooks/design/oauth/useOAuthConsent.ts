@@ -1,6 +1,8 @@
 import { useRef, useCallback } from 'react';
-import * as api from '@/api/tauriApi';
-import type { GoogleCredentialOAuthStatusResult } from '@/api/tauriApi';
+import { getGoogleCredentialOAuthStatus, startGoogleCredentialOAuth } from "@/api/vault/oauthGatewayApi";
+
+import type { GoogleCredentialOAuthStatusResult } from "@/api/vault/oauthGatewayApi";
+
 import { useOAuthPolling } from './useOAuthPolling';
 import { OAUTH_FIELD } from '@/features/vault/sub_design/CredentialDesignHelpers';
 
@@ -27,8 +29,8 @@ export function useOAuthConsent(): OAuthConsentState {
 
   const polling = useOAuthPolling<[string, string[] | undefined], GoogleCredentialOAuthStatusResult>({
     startFn: (connectorName, extraScopes) =>
-      api.startGoogleCredentialOAuth(undefined, undefined, connectorName, extraScopes),
-    pollFn: (sessionId) => api.getGoogleCredentialOAuthStatus(sessionId),
+      startGoogleCredentialOAuth(undefined, undefined, connectorName, extraScopes),
+    pollFn: (sessionId) => getGoogleCredentialOAuthStatus(sessionId),
     extractValues: (poll, prev) => {
       const effectiveScope = poll.scope ?? scopeRef.current ?? '';
       return {

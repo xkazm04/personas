@@ -1,5 +1,5 @@
 import { useMemo, Fragment } from 'react';
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import { Wrench, Clock, DollarSign, Zap } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { parseToolSteps, formatCost, formatTimeGap } from './inspectorTypes';
@@ -7,7 +7,7 @@ import { ToolCallCard } from './ToolCallCard';
 import { CostBreakdownBar } from './CostBreakdownBar';
 
 interface ExecutionInspectorProps {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
 }
 
 export function ExecutionInspector({ execution }: ExecutionInspectorProps) {

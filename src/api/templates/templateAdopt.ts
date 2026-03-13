@@ -3,14 +3,11 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { N8nPersonaDraft, TransformQuestionResponse } from "@/api/templates/n8nTransform";
+import type { TemplateAdoptStartResult } from "@/lib/bindings/TemplateAdoptStartResult";
+import type { TemplateAdoptConfirmResult } from "@/lib/bindings/TemplateAdoptConfirmResult";
 
-// ============================================================================
-// Template Adoption -- types
-// ============================================================================
-
-export interface TemplateAdoptStartResult {
-  adopt_id: string;
-}
+export type { TemplateAdoptStartResult } from "@/lib/bindings/TemplateAdoptStartResult";
+export type { TemplateAdoptConfirmResult } from "@/lib/bindings/TemplateAdoptConfirmResult";
 
 export interface TemplateAdoptSnapshot {
   adopt_id: string;
@@ -52,15 +49,6 @@ export const clearTemplateAdoptSnapshot = (adoptId: string) =>
 
 export const cancelTemplateAdopt = (adoptId: string) =>
   invoke<void>("cancel_template_adopt", { adoptId });
-
-export interface TemplateAdoptConfirmResult {
-  persona: Persona;
-  triggers_created: number;
-  tools_created: number;
-  connectors_needing_setup: string[];
-  entity_errors: Array<{ entity_type: string; entity_name: string; error: string }>;
-  import_transaction_id?: string;
-}
 
 export const confirmTemplateAdoptDraft = (draftJson: string, templateName?: string) =>
   invoke<TemplateAdoptConfirmResult>("confirm_template_adopt_draft", {

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Database, Table2, Code2 } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { SchemaManagerModal } from './SchemaManagerModal';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
@@ -22,10 +22,10 @@ interface DbRow {
 }
 
 export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const dbSchemaTables = usePersonaStore((s) => s.dbSchemaTables);
-  const dbSavedQueries = usePersonaStore((s) => s.dbSavedQueries);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const dbSchemaTables = useVaultStore((s) => s.dbSchemaTables);
+  const dbSavedQueries = useVaultStore((s) => s.dbSavedQueries);
 
   const [selectedCredential, setSelectedCredential] = useState<CredentialMetadata | null>(null);
   const [typeFilter, setTypeFilter] = useState('');

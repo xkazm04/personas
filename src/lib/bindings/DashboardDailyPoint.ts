@@ -11,5 +11,7 @@ export interface DashboardDailyPoint {
   p50_duration_ms: number;
   p95_duration_ms: number;
   p99_duration_ms: number;
+  /** Total input + output tokens for this date. */
+  total_tokens: number;
   persona_costs: PersonaCostEntry[];
 }

@@ -1,7 +1,9 @@
+import type { LabRunStatus } from "./LabRunStatus";
+
 export interface LabMatrixRun {
   id: string;
   personaId: string;
-  status: string;
+  status: LabRunStatus;
   userInstruction: string;
   draftPromptJson: string | null;
   draftChangeSummary: string | null;

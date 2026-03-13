@@ -354,6 +354,71 @@ pub fn get_monthly_spend(pool: &DbPool, persona_id: &str) -> Result<f64, AppErro
     Ok(spend)
 }
 
+/// Default zombie threshold: 30 minutes.
+const DEFAULT_ZOMBIE_THRESHOLD_SECS: i64 = 30 * 60;
+
+/// Find executions stuck in 'running' state for longer than the zombie threshold
+/// and transition them to 'incomplete'. Returns the IDs of transitioned executions.
+pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
+    let conn = pool.get()?;
+    let now = chrono::Utc::now();
+    let threshold_secs = DEFAULT_ZOMBIE_THRESHOLD_SECS;
+
+    // Find running executions whose started_at is older than the threshold
+    let mut stmt = conn.prepare(
+        "SELECT id, started_at FROM persona_executions WHERE status = 'running'"
+    )?;
+    let candidates: Vec<(String, Option<String>)> = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+        })?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    let mut zombie_ids = Vec::new();
+    for (id, started_at) in candidates {
+        let is_zombie = match &started_at {
+            Some(ts) => {
+                if let Ok(started) = chrono::DateTime::parse_from_rfc3339(ts) {
+                    (now - started.with_timezone(&chrono::Utc)).num_seconds() > threshold_secs
+                } else {
+                    // Unparseable timestamp — treat as zombie
+                    true
+                }
+            }
+            None => {
+                // No started_at — check created_at instead (shouldn't happen, but defensive)
+                true
+            }
+        };
+
+        if is_zombie {
+            let elapsed_str = started_at
+                .as_deref()
+                .unwrap_or("unknown");
+            conn.execute(
+                "UPDATE persona_executions SET
+                    status = 'incomplete',
+                    error_message = ?1,
+                    completed_at = ?2
+                 WHERE id = ?3 AND status = 'running'",
+                params![
+                    format!(
+                        "Execution stalled: running since {} (>{} min) — marked as zombie",
+                        elapsed_str,
+                        threshold_secs / 60,
+                    ),
+                    now.to_rfc3339(),
+                    id,
+                ],
+            )?;
+            zombie_ids.push(id);
+        }
+    }
+
+    Ok(zombie_ids)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

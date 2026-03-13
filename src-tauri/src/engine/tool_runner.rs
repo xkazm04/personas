@@ -4,7 +4,7 @@ use std::time::Instant;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::db::models::PersonaToolDefinition;
+use crate::db::models::{PersonaToolDefinition, ToolKind};
 use crate::db::repos::resources::automations as automation_repo;
 use crate::db::repos::resources::tool_audit_log;
 use crate::db::DbPool;
@@ -81,29 +81,34 @@ pub async fn invoke_tool_direct(
         .map(|(k, v)| (k.as_str(), v.as_str()))
         .collect();
 
-    let result = if tool.category == "automation" {
-        invoke_automation_tool(pool, tool, input_json).await
-    } else if !tool.script_path.is_empty() {
-        // Wrap script execution in a timeout
-        tokio::time::timeout(DIRECT_TOOL_TIMEOUT, invoke_script(tool, input_json, &env_map))
-            .await
-            .map_err(|_| AppError::Execution(format!(
-                "Tool '{}' timed out after {}s",
-                tool.name, DIRECT_TOOL_TIMEOUT.as_secs()
-            )))?
-    } else if let Some(ref guide) = tool.implementation_guide {
-        // Wrap API execution in a timeout
-        tokio::time::timeout(DIRECT_TOOL_TIMEOUT, invoke_api(tool, guide, input_json, &env_map))
-            .await
-            .map_err(|_| AppError::Execution(format!(
-                "Tool '{}' timed out after {}s",
-                tool.name, DIRECT_TOOL_TIMEOUT.as_secs()
-            )))?
-    } else {
-        Err(AppError::Execution(format!(
-            "Tool '{}' has no script_path and no implementation_guide -- cannot invoke directly",
-            tool.name
-        )))
+    let kind = tool.tool_kind().map_err(|msg| AppError::Execution(msg))?;
+
+    let result = match kind {
+        ToolKind::Automation => {
+            tokio::time::timeout(DIRECT_TOOL_TIMEOUT, invoke_automation_tool(pool, tool, input_json))
+                .await
+                .map_err(|_| AppError::Execution(format!(
+                    "Tool '{}' timed out after {}s",
+                    tool.name, DIRECT_TOOL_TIMEOUT.as_secs()
+                )))?
+        }
+        ToolKind::Script => {
+            tokio::time::timeout(DIRECT_TOOL_TIMEOUT, invoke_script(tool, input_json, &env_map))
+                .await
+                .map_err(|_| AppError::Execution(format!(
+                    "Tool '{}' timed out after {}s",
+                    tool.name, DIRECT_TOOL_TIMEOUT.as_secs()
+                )))?
+        }
+        ToolKind::Api => {
+            let guide = tool.implementation_guide.as_ref().unwrap();
+            tokio::time::timeout(DIRECT_TOOL_TIMEOUT, invoke_api(tool, guide, input_json, &env_map))
+                .await
+                .map_err(|_| AppError::Execution(format!(
+                    "Tool '{}' timed out after {}s",
+                    tool.name, DIRECT_TOOL_TIMEOUT.as_secs()
+                )))?
+        }
     };
 
     let duration_ms = start.elapsed().as_millis() as u64;
@@ -118,10 +123,10 @@ pub async fn invoke_tool_direct(
             tool_type,
         },
         Err(e) => {
-            let tool_type = if !tool.script_path.is_empty() {
-                "script"
-            } else {
-                "api"
+            let tool_type = match kind {
+                ToolKind::Automation => "automation",
+                ToolKind::Script => "script",
+                ToolKind::Api => "api",
             };
             ToolInvocationResult {
                 success: false,

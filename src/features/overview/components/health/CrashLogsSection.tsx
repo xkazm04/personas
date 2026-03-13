@@ -8,9 +8,9 @@ import {
   ChevronRight,
   Trash2,
 } from 'lucide-react';
-import { getCrashLogs, clearCrashLogs } from '@/api/tauriApi';
+import { clearCrashLogs, getCrashLogs } from "@/api/system/system";
 import { readCrashLogs, CRASH_STORAGE_KEY } from '@/lib/utils/crashPersistence';
-import type { CrashLogEntry } from '@/api/tauriApi';
+import type { CrashLogEntry } from "@/api/system/system";
 
 export function CrashLogsSection() {
   const [expanded, setExpanded] = useState(false);

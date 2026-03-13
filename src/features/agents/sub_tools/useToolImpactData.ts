@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import type { ToolUsageSummary } from '@/lib/types/types';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 
@@ -86,15 +87,15 @@ function parseUseCaseTitles(designContext: string | null): Map<string, string> {
  * Returns a Map keyed by tool name for O(1) lookup.
  */
 export function useToolImpactData(): Map<string, ToolImpactData> {
-  const executions = usePersonaStore((s) => s.executions);
-  const toolUsageSummary = usePersonaStore((s) => s.toolUsageSummary);
-  const credentials = usePersonaStore((s) => s.credentials);
+  const executions = useAgentStore((s) => s.executions);
+  const toolUsageSummary = useAgentStore((s) => s.toolUsageSummary);
+  const credentials = useVaultStore((s) => s.credentials);
   const credentialTypeSet = useMemo(() => {
     const set = new Set<string>();
     credentials.forEach((c) => set.add(c.service_type));
     return set;
   }, [credentials]);
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const designContext = selectedPersona?.design_context ?? null;
 
   return useMemo(() => {

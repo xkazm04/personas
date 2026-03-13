@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
-import * as api from '@/api/tauriApi';
-import type { GoogleCredentialOAuthStatusResult } from '@/api/tauriApi';
+import { getGoogleCredentialOAuthStatus, startGoogleCredentialOAuth } from "@/api/vault/oauthGatewayApi";
+
+import type { GoogleCredentialOAuthStatusResult } from "@/api/vault/oauthGatewayApi";
+
 import { useOAuthProtocol } from '@/hooks/design/oauth/useOAuthProtocol';
 
 export interface GoogleOAuthTokenData {
@@ -28,8 +30,8 @@ interface UseGoogleOAuthOptions {
 export function useGoogleOAuth(options: UseGoogleOAuthOptions = {}): GoogleOAuthState {
   const protocol = useOAuthProtocol<[string, string[] | undefined], GoogleCredentialOAuthStatusResult>({
     startFn: (connectorName, extraScopes) =>
-      api.startGoogleCredentialOAuth(undefined, undefined, connectorName, extraScopes),
-    pollFn: (sessionId) => api.getGoogleCredentialOAuthStatus(sessionId),
+      startGoogleCredentialOAuth(undefined, undefined, connectorName, extraScopes),
+    pollFn: (sessionId) => getGoogleCredentialOAuthStatus(sessionId),
     extractValues: (poll, prev) => ({
       ...prev,
       refresh_token: poll.refresh_token ?? prev.refresh_token ?? '',

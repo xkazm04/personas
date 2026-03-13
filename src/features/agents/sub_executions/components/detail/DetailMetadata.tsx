@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { ChevronDown, ChevronRight, FileText, Brain, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import { listMemoriesByExecution } from '@/api/overview/memories';
 import { getExecutionLog } from '@/api/agents/executions';
@@ -47,7 +47,7 @@ export function DetailDataSections({
   hasInputData,
   hasOutputData,
 }: {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
   showRaw: boolean;
   hasInputData: boolean;
   hasOutputData: boolean;
@@ -92,7 +92,7 @@ export function DetailDataSections({
   );
 }
 
-export function DetailMemories({ execution }: { execution: DbPersonaExecution }) {
+export function DetailMemories({ execution }: { execution: PersonaExecution }) {
   const [executionMemories, setExecutionMemories] = useState<PersonaMemory[]>([]);
   const [showMemories, setShowMemories] = useState(false);
   const [memoriesLoaded, setMemoriesLoaded] = useState(false);
@@ -137,7 +137,7 @@ export function DetailMemories({ execution }: { execution: DbPersonaExecution })
   );
 }
 
-export function DetailLogSection({ execution }: { execution: DbPersonaExecution }) {
+export function DetailLogSection({ execution }: { execution: PersonaExecution }) {
   const [showLog, setShowLog] = useState(false);
   const [logContent, setLogContent] = useState<string | null>(null);
   const [logLoading, setLogLoading] = useState(false);

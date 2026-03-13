@@ -118,7 +118,7 @@ async fn deliver_slack(
 
     let payload = serde_json::json!({ "text": text });
 
-    let resp = reqwest::Client::new()
+    let resp = crate::SHARED_HTTP
         .post(webhook_url)
         .json(&payload)
         .timeout(std::time::Duration::from_secs(10))
@@ -154,7 +154,7 @@ async fn deliver_telegram(
     let text = format!("*{}*\n{}", title, body);
     let url = format!("https://api.telegram.org/bot{bot_token}/sendMessage");
 
-    let resp = reqwest::Client::new()
+    let resp = crate::SHARED_HTTP
         .post(&url)
         .json(&serde_json::json!({
             "chat_id": chat_id,
@@ -219,7 +219,7 @@ async fn send_via_sendgrid(
         "content": [{ "type": "text/plain", "value": body }],
     });
 
-    let resp = reqwest::Client::new()
+    let resp = crate::SHARED_HTTP
         .post("https://api.sendgrid.com/v3/mail/send")
         .bearer_auth(api_key)
         .json(&payload)
@@ -250,7 +250,7 @@ async fn send_via_resend(
         "text": body,
     });
 
-    let resp = reqwest::Client::new()
+    let resp = crate::SHARED_HTTP
         .post("https://api.resend.com/emails")
         .bearer_auth(api_key)
         .json(&payload)

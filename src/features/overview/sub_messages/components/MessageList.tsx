@@ -1,7 +1,9 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { MessageSquare, CheckCheck, RefreshCw, Send } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
@@ -15,15 +17,15 @@ import { MessageDetailModal } from './MessageDetailModal';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 
 export default function MessageList() {
-  const messages = usePersonaStore((s) => s.messages);
-  const messagesTotal = usePersonaStore((s) => s.messagesTotal);
-  const unreadMessageCount = usePersonaStore((s) => s.unreadMessageCount);
-  const fetchMessages = usePersonaStore((s) => s.fetchMessages);
-  const fetchUnreadMessageCount = usePersonaStore((s) => s.fetchUnreadMessageCount);
-  const markMessageAsRead = usePersonaStore((s) => s.markMessageAsRead);
-  const markAllMessagesAsRead = usePersonaStore((s) => s.markAllMessagesAsRead);
-  const deleteMessage = usePersonaStore((s) => s.deleteMessage);
-  const personas = usePersonaStore((s) => s.personas);
+  const messages = useOverviewStore((s) => s.messages);
+  const messagesTotal = useOverviewStore((s) => s.messagesTotal);
+  const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
+  const fetchMessages = useOverviewStore((s) => s.fetchMessages);
+  const fetchUnreadMessageCount = useOverviewStore((s) => s.fetchUnreadMessageCount);
+  const markMessageAsRead = useOverviewStore((s) => s.markMessageAsRead);
+  const markAllMessagesAsRead = useOverviewStore((s) => s.markAllMessagesAsRead);
+  const deleteMessage = useOverviewStore((s) => s.deleteMessage);
+  const personas = useAgentStore((s) => s.personas);
 
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
@@ -45,10 +47,11 @@ export default function MessageList() {
   }, [fetchMessages]);
 
   const handleMessageCreated = useCallback((raw: RawPersonaMessage) => {
-    const allPersonas = usePersonaStore.getState().personas;
-    const p = allPersonas.find((persona) => persona.id === raw.persona_id);
+    const allPersonas = useAgentStore.getState().personas;
+    const personaMap = new Map(allPersonas.map((p) => [p.id, p]));
+    const p = personaMap.get(raw.persona_id);
     const enriched: PersonaMessage = { ...raw, persona_name: p?.name, persona_icon: p?.icon ?? undefined, persona_color: p?.color ?? undefined };
-    usePersonaStore.setState((state) => {
+    useOverviewStore.setState((state) => {
       const exists = state.messages.some((m) => m.id === enriched.id);
       if (exists) return state;
       return { messages: [enriched, ...state.messages], messagesTotal: state.messagesTotal + 1 };
@@ -125,7 +128,7 @@ export default function MessageList() {
                 <><p className="text-sm text-muted-foreground/90">No {filter === 'unread' ? 'unread' : filter === 'high' ? 'high-priority' : ''} messages{selectedPersonaId ? ' for the selected persona' : ''}</p><p className="text-sm text-muted-foreground/80 mt-1">Try switching to "All" to see all messages</p></>
               ) : (
                 <><p className="text-sm text-muted-foreground/90">No messages yet</p><p className="text-sm text-muted-foreground/80 mt-1.5 max-w-sm mx-auto leading-relaxed">Messages are created when agents run and communicate with each other.</p>
-                  <button onClick={() => usePersonaStore.getState().setSidebarSection('personas')} className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"><Send className="w-3.5 h-3.5" />Go to Agents</button></>
+                  <button onClick={() => useSystemStore.getState().setSidebarSection('personas')} className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"><Send className="w-3.5 h-3.5" />Go to Agents</button></>
               )}
             </div>
           </div>

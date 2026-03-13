@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Terminal } from 'lucide-react';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
+import { RunningIcon } from '../components/ExecutionLifecycleIcons';
 
 /** Replay terminal panel -- shows log lines up to current scrub position. */
 export function ReplayTerminalPanel({
@@ -21,7 +21,7 @@ export function ReplayTerminalPanel({
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
-        <Terminal className="w-3.5 h-3.5 text-muted-foreground/60" />
+        <RunningIcon size={14} className="opacity-60" />
         <span className="text-sm font-medium text-muted-foreground/70">Output</span>
         <span className="ml-auto text-sm tabular-nums text-muted-foreground/60">
           {visibleLines.length}/{totalLines} lines

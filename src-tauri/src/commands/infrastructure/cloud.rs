@@ -105,7 +105,7 @@ pub async fn cloud_connect(
 
     // Push Supabase user token to the cloud client for per-user isolation
     if let Some(ref token) = state.auth.lock().await.access_token {
-        client.set_user_token(Some(token.clone())).await;
+        client.set_user_token(Some(token.expose_secret().to_string())).await;
     }
 
     *state.cloud_client.lock().await = Some(client);
@@ -141,7 +141,7 @@ pub async fn cloud_reconnect_from_keyring(
 
     // Push Supabase user token to the cloud client for per-user isolation
     if let Some(ref token) = state.auth.lock().await.access_token {
-        client.set_user_token(Some(token.clone())).await;
+        client.set_user_token(Some(token.expose_secret().to_string())).await;
     }
 
     *state.cloud_client.lock().await = Some(client);

@@ -2,8 +2,9 @@ import { useMemo } from 'react';
 import { deriveConnectorReadiness } from '../../shared/ConnectorReadiness';
 import { computeAdoptionReadiness, readinessTier } from '../../shared/adoptionReadiness';
 import { verifyTemplate } from '@/lib/templates/templateVerification';
+import { getCachedDesignResult, getCachedLightFields } from './reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
+import type { SuggestedTrigger } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 
@@ -13,9 +14,9 @@ export function useTemplateCardData(
   credentialServiceTypes: Set<string>,
 ) {
   const parsedData = useMemo(() => {
-    const connectors = parseJsonSafe<string[]>(review.connectors_used, []);
+    const { connectors } = getCachedLightFields(review);
     const triggerTypes = parseJsonSafe<string[]>(review.trigger_types, []);
-    const designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
+    const designResult = getCachedDesignResult(review);
     const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
     const displayFlows = flows.length > 0
       ? flows
@@ -33,9 +34,12 @@ export function useTemplateCardData(
 
   const suggestedTriggers: SuggestedTrigger[] = designResult?.suggested_triggers ?? [];
 
-  const readinessStatuses = designResult?.suggested_connectors
-    ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
-    : [];
+  const readinessStatuses = useMemo(
+    () => designResult?.suggested_connectors
+      ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
+      : [],
+    [designResult?.suggested_connectors, installedConnectorNames, credentialServiceTypes],
+  );
 
   const readinessScore = useMemo(
     () => computeAdoptionReadiness(review, installedConnectorNames, credentialServiceTypes),

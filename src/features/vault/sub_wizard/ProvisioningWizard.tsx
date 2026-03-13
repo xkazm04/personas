@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { WizardDetectPhase } from './WizardDetectPhase';
 import { WizardBatchPhase } from './WizardBatchPhase';
 import { cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
@@ -24,8 +24,8 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
   const close = useProvisioningWizardStore((s) => s.close);
 
   const open = useProvisioningWizardStore((s) => s.open);
-  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
-  const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
+  const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
 
   // Auto-open the wizard store when the component mounts with store still closed
   // (happens when user navigates via FSM rather than the store's open())

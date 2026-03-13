@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { OverviewStore } from "../../storeTypes";
 import { log } from "@/lib/log";
 
 // -- Alert Rule Types --------------------------------------------------
@@ -183,10 +183,54 @@ export interface AlertSlice {
   evaluateAlertRules: () => void;
 }
 
-/** Track which rules already fired to avoid repeat alerts in the same session */
-const firedRuleIds = new Set<string>();
+/** Track which rules already fired with a cooldown window to avoid repeat alerts.
+ *  Persisted to localStorage so cooldowns survive page reloads. */
+const FIRED_KEY = '__personas_alert_fired';
+const FIRED_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 
-export const createAlertSlice: StateCreator<PersonaStore, [], [], AlertSlice> = (set, get) => ({
+function loadFiredMap(): Map<string, number> {
+  try {
+    const raw = localStorage.getItem(FIRED_KEY);
+    if (!raw) return new Map();
+    const entries: [string, number][] = JSON.parse(raw);
+    const now = Date.now();
+    // Prune expired entries on load
+    return new Map(entries.filter(([, ts]) => now - ts < FIRED_COOLDOWN_MS));
+  } catch {
+    return new Map();
+  }
+}
+
+function saveFiredMap(map: Map<string, number>) {
+  try {
+    localStorage.setItem(FIRED_KEY, JSON.stringify([...map.entries()]));
+  } catch { /* best-effort */ }
+}
+
+const firedRuleMap = loadFiredMap();
+
+function hasFired(ruleId: string): boolean {
+  const ts = firedRuleMap.get(ruleId);
+  if (ts == null) return false;
+  if (Date.now() - ts >= FIRED_COOLDOWN_MS) {
+    firedRuleMap.delete(ruleId);
+    saveFiredMap(firedRuleMap);
+    return false;
+  }
+  return true;
+}
+
+function markFired(ruleId: string) {
+  firedRuleMap.set(ruleId, Date.now());
+  saveFiredMap(firedRuleMap);
+}
+
+function clearFired(ruleId: string) {
+  firedRuleMap.delete(ruleId);
+  saveFiredMap(firedRuleMap);
+}
+
+export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> = (set, get) => ({
   alertRules: loadRules(),
   alertHistory: loadHistory(),
   activeToasts: [],
@@ -217,7 +261,7 @@ export const createAlertSlice: StateCreator<PersonaStore, [], [], AlertSlice> = 
       const rules = state.alertRules.map(r => r.id === id ? { ...r, ...updates } : r);
       saveRules(rules);
       // Reset fired state so updated rule can fire again
-      firedRuleIds.delete(id);
+      clearFired(id);
       return { alertRules: rules };
     });
   },
@@ -226,7 +270,7 @@ export const createAlertSlice: StateCreator<PersonaStore, [], [], AlertSlice> = 
     set((state) => {
       const rules = state.alertRules.filter(r => r.id !== id);
       saveRules(rules);
-      firedRuleIds.delete(id);
+      clearFired(id);
       return { alertRules: rules };
     });
   },
@@ -235,7 +279,7 @@ export const createAlertSlice: StateCreator<PersonaStore, [], [], AlertSlice> = 
     set((state) => {
       const rules = state.alertRules.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r);
       saveRules(rules);
-      if (!rules.find(r => r.id === id)?.enabled) firedRuleIds.delete(id);
+      if (!rules.find(r => r.id === id)?.enabled) clearFired(id);
       return { alertRules: rules };
     });
   },
@@ -290,7 +334,7 @@ export const createAlertSlice: StateCreator<PersonaStore, [], [], AlertSlice> = 
 
       for (const rule of state.alertRules) {
         if (!rule.enabled) continue;
-        if (firedRuleIds.has(rule.id)) continue;
+        if (hasFired(rule.id)) continue;
         rulesEvaluated++;
 
         // For cost_spike, override snapshot to use today vs average
@@ -301,7 +345,7 @@ export const createAlertSlice: StateCreator<PersonaStore, [], [], AlertSlice> = 
         const { triggered, value } = evaluateRule(rule, evalSnapshot);
         if (triggered) {
           rulesTriggered++;
-          firedRuleIds.add(rule.id);
+          markFired(rule.id);
           const alert: FiredAlert = {
             id: crypto.randomUUID(),
             ruleId: rule.id,

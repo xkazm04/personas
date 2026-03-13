@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import { useToastStore } from '@/stores/toastStore';
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { type PersonaDraft, buildDraft } from '@/features/agents/sub_editor/PersonaDraft';
@@ -37,6 +39,9 @@ const PromptPerformanceCard = lazy(() =>
 const HealthTab = lazy(() =>
   import('@/features/agents/sub_health/HealthTab').then((m) => ({ default: m.HealthTab })),
 );
+const ChatTab = lazy(() =>
+  import('@/features/agents/sub_chat/ChatTab').then((m) => ({ default: m.ChatTab })),
+);
 
 export default function PersonaEditor() {
   return (
@@ -47,13 +52,13 @@ export default function PersonaEditor() {
 }
 
 function PersonaEditorInner() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const editorTab = usePersonaStore((s) => s.editorTab);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
-  const setLabMode = usePersonaStore((s) => s.setLabMode);
-  const deletePersona = usePersonaStore((s) => s.deletePersona);
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const editorTab = useSystemStore((s) => s.editorTab);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const setLabMode = useAgentStore((s) => s.setLabMode);
+  const deletePersona = useAgentStore((s) => s.deletePersona);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pendingPersonaId, setPendingPersonaId] = useState<string | null>(null);
@@ -97,10 +102,10 @@ function PersonaEditorInner() {
   dirtyRef.current = isDirty;
 
   useEffect(() => {
-    const unsub = usePersonaStore.subscribe((state) => {
+    const unsub = useAgentStore.subscribe((state) => {
       const newId = state.selectedPersonaId;
       if (newId !== prevPersonaIdRef.current && dirtyRef.current) {
-        usePersonaStore.setState({ selectedPersonaId: prevPersonaIdRef.current ?? null });
+        useAgentStore.setState({ selectedPersonaId: prevPersonaIdRef.current ?? null });
         cancelAllDebouncedSaves();
         setPendingPersonaId(newId);
       }
@@ -122,7 +127,7 @@ function PersonaEditorInner() {
     setPendingPersonaId(null);
     dirtyRef.current = false;
     clearAllDirty();
-    if (target !== null) usePersonaStore.getState().selectPersona(target);
+    if (target !== null) useAgentStore.getState().selectPersona(target);
   };
 
   const handleSaveAndSwitch = async () => {
@@ -143,7 +148,7 @@ function PersonaEditorInner() {
       setPendingPersonaId(null);
       dirtyRef.current = false;
       clearAllDirty();
-      if (target !== null) usePersonaStore.getState().selectPersona(target);
+      if (target !== null) useAgentStore.getState().selectPersona(target);
     } finally {
       isSwitchingRef.current = false;
     }
@@ -197,6 +202,7 @@ function PersonaEditorInner() {
               {editorTab === 'lab' && <LabTab />}
               {editorTab === 'connectors' && <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />}
               {editorTab === 'design' && <DesignTab />}
+              {editorTab === 'chat' && <ChatTab />}
               {editorTab === 'health' && <HealthTab />}
               {editorTab === 'settings' && (
                 <PersonaSettingsTab

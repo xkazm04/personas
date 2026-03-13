@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { VaultStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
 import type {
   PersonaAutomation,
@@ -31,7 +31,7 @@ export interface AutomationSlice {
   zapierTestWebhook: (credentialId: string, webhookUrl: string, body?: Record<string, unknown>) => Promise<ZapierWebhookResult | null>;
 }
 
-export const createAutomationSlice: StateCreator<PersonaStore, [], [], AutomationSlice> = (set, get) => ({
+export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationSlice> = (set, get) => ({
   automations: [],
   automationRuns: {},
   zapierZaps: [],

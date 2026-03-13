@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { SystemStore } from "../../storeTypes";
 
 export type ViewMode = 'simple' | 'full' | 'dev';
 
@@ -9,7 +9,7 @@ export interface ViewModeSlice {
   toggleViewMode: () => void;
 }
 
-export const createViewModeSlice: StateCreator<PersonaStore, [], [], ViewModeSlice> = (set) => ({
+export const createViewModeSlice: StateCreator<SystemStore, [], [], ViewModeSlice> = (set) => ({
   viewMode: 'full' as ViewMode,
   setViewMode: (mode) => set({ viewMode: mode }),
   toggleViewMode: () => set((s) => ({

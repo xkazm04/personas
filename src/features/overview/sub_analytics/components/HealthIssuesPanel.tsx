@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import {
   Stethoscope, CheckCircle, CheckCircle2, X,
   AlertTriangle, Zap, RefreshCw,
@@ -21,12 +22,30 @@ interface HealthIssuesPanelProps {
   onSelectIssue: (issue: PersonaHealingIssue) => void;
 }
 
-export function HealthIssuesPanel({
+const CIRCUIT_BREAKER_RE = /circuit\s*breaker/i;
+
+function computeAgeLabel(createdAt: string): string {
+  const age = Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60));
+  return age < 1 ? 'just now' : age < 24 ? `${age}h ago` : `${Math.floor(age / 24)}d ago`;
+}
+
+export const HealthIssuesPanel = memo(function HealthIssuesPanel({
   healingIssues, healingRunning, sortedFilteredIssues,
   issueFilter, setIssueFilter, issueCounts,
   analysisResult, analysisError, setAnalysisResult, setAnalysisError,
   handleRunAnalysis, resolveHealingIssue, onSelectIssue,
 }: HealthIssuesPanelProps) {
+  // Pre-compute age labels and circuit breaker flags for all visible issues
+  const issueMetadata = useMemo(() => {
+    const map = new Map<string, { ageLabel: string; isCircuitBreaker: boolean }>();
+    for (const issue of sortedFilteredIssues) {
+      map.set(issue.id, {
+        ageLabel: computeAgeLabel(issue.created_at),
+        isCircuitBreaker: CIRCUIT_BREAKER_RE.test(issue.title),
+      });
+    }
+    return map;
+  }, [sortedFilteredIssues]);
   return (
     <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col">
       <div className="flex items-center justify-between px-4 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
@@ -124,10 +143,10 @@ export function HealthIssuesPanel({
         <div className="divide-y divide-primary/5 bg-gradient-to-b from-transparent to-black/[0.02]">
           {sortedFilteredIssues.map((issue: PersonaHealingIssue) => {
             const sevBadge = SEVERITY_COLORS[issue.severity] ?? SEVERITY_COLORS.medium!;
-            const age = Math.floor((Date.now() - new Date(issue.created_at).getTime()) / (1000 * 60 * 60));
-            const ageLabel = age < 1 ? 'just now' : age < 24 ? `${age}h ago` : `${Math.floor(age / 24)}d ago`;
+            const meta = issueMetadata.get(issue.id);
+            const ageLabel = meta?.ageLabel ?? '';
             const isAutoFixed = issue.auto_fixed;
-            const isCircuitBreaker = /circuit\s*breaker/i.test(issue.title);
+            const isCircuitBreaker = meta?.isCircuitBreaker ?? false;
 
             return (
               <div key={issue.id} className={`flex items-center gap-4 px-4 py-4 hover:bg-white/[0.03] transition-colors group cursor-pointer ${isAutoFixed ? 'opacity-70' : ''} ${isCircuitBreaker ? 'bg-red-500/5' : ''}`}>
@@ -170,4 +189,4 @@ export function HealthIssuesPanel({
       )}
     </div>
   );
-}
+});

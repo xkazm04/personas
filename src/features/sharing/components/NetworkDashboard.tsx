@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Wifi, WifiOff, Radio, Users, AlertTriangle, Hash } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import type { ConnectionHealth } from '@/api/network/discovery';
 
 function healthColor(health: ConnectionHealth | null): string {
@@ -40,10 +40,10 @@ function StatCard({
 }
 
 export function NetworkDashboard() {
-  const networkStatus = usePersonaStore((s) => s.networkStatus);
-  const networkError = usePersonaStore((s) => s.networkError);
-  const health = usePersonaStore((s) => s.connectionHealth);
-  const fetchNetworkSnapshot = usePersonaStore((s) => s.fetchNetworkSnapshot);
+  const networkStatus = useSystemStore((s) => s.networkStatus);
+  const networkError = useSystemStore((s) => s.networkError);
+  const health = useSystemStore((s) => s.connectionHealth);
+  const fetchNetworkSnapshot = useSystemStore((s) => s.fetchNetworkSnapshot);
 
   useEffect(() => {
     fetchNetworkSnapshot();

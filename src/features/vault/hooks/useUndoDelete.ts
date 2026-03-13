@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { DeleteConfirmState, UndoToastState } from '@/features/vault/sub_card/CredentialDeleteDialog';
-import * as api from '@/api/tauriApi';
+import { listCredentialEvents } from "@/api/vault/credentials";
+
 import type { CredentialMetadata } from '@/lib/types/types';
 
 interface UseUndoDeleteOptions {
@@ -33,7 +34,7 @@ export function useUndoDelete({ onDelete, onError }: UseUndoDeleteOptions): Undo
 
   const requestDelete = useCallback(async (credential: CredentialMetadata) => {
     try {
-      const events = await api.listCredentialEvents(credential.id);
+      const events = await listCredentialEvents(credential.id);
       setDeleteConfirm({ credential, eventCount: events.length, eventCountVerified: true });
     } catch {
       // intentional: non-critical -- event count preload failed, show dialog with unverified count

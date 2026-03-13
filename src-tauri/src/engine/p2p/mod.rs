@@ -43,7 +43,8 @@ pub struct NetworkService {
 impl NetworkService {
     /// Create a new NetworkService (does not start background tasks yet).
     pub fn new(pool: DbPool, peer_id: String, display_name: String) -> Result<Self, AppError> {
-        let config = Arc::new(RwLock::new(NetworkConfig::default()));
+        let default_config = NetworkConfig::default();
+        let config = Arc::new(RwLock::new(default_config.clone()));
         let transport = Arc::new(QuicTransport::new(peer_id.clone())?);
         let mdns = Arc::new(MdnsService::new(pool.clone()));
         let connections = Arc::new(ConnectionManager::new(
@@ -51,9 +52,17 @@ impl NetworkService {
             pool.clone(),
             peer_id.clone(),
             display_name.clone(),
+            default_config.max_peers,
         ));
         let manifest_sync = Arc::new(ManifestSync::new(pool.clone(), connections.clone()));
         let messages = Arc::new(MessageRouter::new(connections.clone()));
+
+        // Reset stale is_connected flags from previous app session
+        {
+            let conn = pool.get().map_err(|e| AppError::Internal(format!("Pool error: {e}")))?;
+            conn.execute("UPDATE discovered_peers SET is_connected = 0 WHERE is_connected = 1", [])
+                .map_err(|e| AppError::Internal(format!("Failed to reset peer connections: {e}")))?;
+        }
 
         Ok(Self {
             mdns,
@@ -73,10 +82,16 @@ impl NetworkService {
         pool: DbPool,
         peer_id: String,
         display_name: String,
+        app_handle: Option<tauri::AppHandle>,
     ) -> Result<(), AppError> {
         let mut running = self.running.write().await;
         if *running {
             return Ok(());
+        }
+
+        // Provide app handle to manifest sync for progress events
+        if let Some(app) = app_handle {
+            self.manifest_sync.set_app_handle(app).await;
         }
 
         let config = self.config.read().await;
@@ -91,8 +106,9 @@ impl NetworkService {
         let connections = self.connections.clone();
         let manifest_sync = self.manifest_sync.clone();
         let messages = self.messages.clone();
+        let cancel = self.cancel.clone();
         tokio::spawn(async move {
-            Self::accept_loop(transport, connections, manifest_sync, messages).await;
+            Self::accept_loop(transport, connections, manifest_sync, messages, cancel).await;
         });
 
         // Start mDNS registration and browsing
@@ -103,40 +119,70 @@ impl NetworkService {
             mdns.browse_loop(pool_browse).await;
         });
 
-        // Start health check loop via PeriodicTask harness
+        // Start health check loop via PeriodicTask with live config
         let connections_health = self.connections.clone();
+        let config_health = self.config.clone();
         let cancel = self.cancel.clone();
         tokio::spawn(async move {
-            PeriodicTask::new("p2p_health_check", Duration::from_secs(15), cancel)
-                .run(|| {
-                    let conns = connections_health.clone();
-                    async move { conns.run_health_checks().await.map_err(|e| e.to_string()) }
-                })
-                .await;
+            PeriodicTask::with_dynamic_interval(
+                "p2p_health_check",
+                move || {
+                    let secs = config_health.try_read()
+                        .map(|c| c.health_check_interval_secs)
+                        .unwrap_or(15);
+                    Duration::from_secs(secs)
+                },
+                cancel,
+            )
+            .run(|| {
+                let conns = connections_health.clone();
+                async move { conns.run_health_checks().await.map_err(|e| e.to_string()) }
+            })
+            .await;
         });
 
-        // Start periodic manifest sync via PeriodicTask harness
+        // Start periodic manifest sync via PeriodicTask with live config
         let manifest_sync = self.manifest_sync.clone();
+        let config_manifest = self.config.clone();
         let cancel = self.cancel.clone();
         tokio::spawn(async move {
-            PeriodicTask::new("p2p_manifest_sync", Duration::from_secs(30), cancel)
-                .run(|| {
-                    let ms = manifest_sync.clone();
-                    async move { ms.run_periodic_sync().await.map_err(|e| e.to_string()) }
-                })
-                .await;
+            PeriodicTask::with_dynamic_interval(
+                "p2p_manifest_sync",
+                move || {
+                    let secs = config_manifest.try_read()
+                        .map(|c| c.manifest_sync_interval_secs)
+                        .unwrap_or(30);
+                    Duration::from_secs(secs)
+                },
+                cancel,
+            )
+            .run(|| {
+                let ms = manifest_sync.clone();
+                async move { ms.run_periodic_sync().await.map_err(|e| e.to_string()) }
+            })
+            .await;
         });
 
-        // Start periodic mDNS peer pruning via PeriodicTask harness
+        // Start periodic mDNS peer pruning via PeriodicTask with live config
         let mdns_prune = self.mdns.clone();
+        let config_prune = self.config.clone();
         let cancel = self.cancel.clone();
         tokio::spawn(async move {
-            PeriodicTask::new("p2p_mdns_prune", Duration::from_secs(60), cancel)
-                .run(|| {
-                    let m = mdns_prune.clone();
-                    async move { m.prune_stale_peers(120).map(|_| ()).map_err(|e| e.to_string()) }
-                })
-                .await;
+            PeriodicTask::with_dynamic_interval(
+                "p2p_mdns_prune",
+                move || {
+                    let secs = config_prune.try_read()
+                        .map(|c| c.stale_peer_timeout_secs)
+                        .unwrap_or(60);
+                    Duration::from_secs(secs)
+                },
+                cancel,
+            )
+            .run(|| {
+                let m = mdns_prune.clone();
+                async move { m.prune_stale_peers(120).map(|_| ()).map_err(|e| e.to_string()) }
+            })
+            .await;
         });
 
         // Start message receiver
@@ -182,28 +228,37 @@ impl NetworkService {
         *config = new_config;
     }
 
-    /// Accept incoming QUIC connections in a loop.
+    /// Accept incoming QUIC connections in a loop, exiting when cancelled.
     async fn accept_loop(
         transport: Arc<QuicTransport>,
         connections: Arc<ConnectionManager>,
         manifest_sync: Arc<ManifestSync>,
         messages: Arc<MessageRouter>,
+        cancel: CancellationToken,
     ) {
         loop {
-            match transport.accept().await {
-                Ok(conn) => {
-                    let connections = connections.clone();
-                    let manifest_sync = manifest_sync.clone();
-                    let messages = messages.clone();
-                    tokio::spawn(async move {
-                        if let Err(e) = connections.handle_incoming(conn, &manifest_sync, &messages).await {
-                            tracing::warn!("Incoming connection failed: {}", e);
-                        }
-                    });
+            tokio::select! {
+                _ = cancel.cancelled() => {
+                    tracing::info!("accept_loop shutting down (cancellation received)");
+                    break;
                 }
-                Err(e) => {
-                    tracing::error!("QUIC accept error: {}", e);
-                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                result = transport.accept() => {
+                    match result {
+                        Ok(conn) => {
+                            let connections = connections.clone();
+                            let manifest_sync = manifest_sync.clone();
+                            let messages = messages.clone();
+                            tokio::spawn(async move {
+                                if let Err(e) = connections.handle_incoming(conn, &manifest_sync, &messages).await {
+                                    tracing::warn!("Incoming connection failed: {}", e);
+                                }
+                            });
+                        }
+                        Err(e) => {
+                            tracing::error!("QUIC accept error: {}", e);
+                            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                        }
+                    }
                 }
             }
         }

@@ -3,10 +3,13 @@
 //! Parses OpenAPI 3.x and Swagger 2.x specs into a simplified endpoint list
 //! suitable for the API Explorer playground.
 
+use ts_rs::TS;
+
 use crate::error::AppError;
 
 /// A single API endpoint extracted from an OpenAPI spec.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
+#[ts(export)]
 pub struct ApiEndpoint {
     pub method: String,
     pub path: String,
@@ -18,7 +21,8 @@ pub struct ApiEndpoint {
 }
 
 /// A parameter for an API endpoint.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
+#[ts(export)]
 pub struct ApiParameter {
     pub name: String,
     /// "path", "query", "header", or "cookie"
@@ -29,7 +33,8 @@ pub struct ApiParameter {
 }
 
 /// The request body schema for an endpoint.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
+#[ts(export)]
 pub struct ApiRequestBody {
     pub content_type: String,
     pub schema_json: Option<String>,

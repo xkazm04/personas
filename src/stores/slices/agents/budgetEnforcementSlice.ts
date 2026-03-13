@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { AgentStore } from "../../storeTypes";
 import type { PersonaMonthlySpend } from "@/lib/bindings/PersonaMonthlySpend";
 import { getAllMonthlySpend } from "@/api/overview/observability";
 
@@ -87,7 +87,7 @@ function buildMap(rows: PersonaMonthlySpend[]): Map<string, PersonaBudgetState> 
   return map;
 }
 
-export const createBudgetEnforcementSlice: StateCreator<PersonaStore, [], [], BudgetEnforcementSlice> = (set, get) => ({
+export const createBudgetEnforcementSlice: StateCreator<AgentStore, [], [], BudgetEnforcementSlice> = (set, get) => ({
   budgetSpendMap: new Map(),
   budgetEnforcementLoading: false,
   budgetStale: false,

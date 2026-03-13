@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { SystemStore } from "../../storeTypes";
 import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab } from "@/lib/types/types";
 import type { AdoptWizardStep } from "@/features/templates/sub_generated/adoption/hooks/useAdoptReducer";
 
@@ -77,7 +77,7 @@ export interface UiSlice {
   setContextScanComplete: (complete: boolean) => void;
 }
 
-export const createUiSlice: StateCreator<PersonaStore, [], [], UiSlice> = (set) => ({
+export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) => ({
   sidebarSection: "home" as SidebarSection,
   homeTab: "welcome" as HomeTab,
   templateTab: "generated" as TemplateTab,

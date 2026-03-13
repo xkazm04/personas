@@ -1,5 +1,7 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { usePersonaStore, initHealingListener } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useAgentStore } from "@/stores/agentStore";
+import { initHealingListener } from "@/stores/personaStore";
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
@@ -9,12 +11,12 @@ import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
  * healing issues) and exposes high-level summary metrics.
  */
 export function useOverviewMetrics() {
-  const fetchObservabilityMetrics = usePersonaStore((s) => s.fetchObservabilityMetrics);
-  const observabilityMetrics = usePersonaStore((s) => s.observabilityMetrics);
-  const observabilityError = usePersonaStore((s) => s.observabilityError);
-  const fetchHealingIssues = usePersonaStore((s) => s.fetchHealingIssues);
-  const fetchToolUsage = usePersonaStore((s) => s.fetchToolUsage);
-  const executionDashboard = usePersonaStore((s) => s.executionDashboard);
+  const fetchObservabilityMetrics = useOverviewStore((s) => s.fetchObservabilityMetrics);
+  const observabilityMetrics = useOverviewStore((s) => s.observabilityMetrics);
+  const observabilityError = useOverviewStore((s) => s.observabilityError);
+  const fetchHealingIssues = useOverviewStore((s) => s.fetchHealingIssues);
+  const fetchToolUsage = useAgentStore((s) => s.fetchToolUsage);
+  const executionDashboard = useOverviewStore((s) => s.executionDashboard);
 
   const {
     selectedPersonaId,

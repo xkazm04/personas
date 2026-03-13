@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import * as credApi from '@/api/vault/credentials';
 import { toCredentialMetadata, type CredentialMetadata } from '@/lib/types/types';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from '@/stores/vaultStore';
 import {
   getCredentialTags,
   buildMetadataWithTags,
@@ -28,7 +28,7 @@ export function useCredentialTags(credential: CredentialMetadata) {
         metadata,
       });
       const updated = toCredentialMetadata(updatedRaw);
-      usePersonaStore.setState((s) => ({
+      useVaultStore.setState((s) => ({
         credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
       }));
     } catch {

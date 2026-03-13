@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { VaultStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
 import type { DbSchemaTable, DbSavedQuery, QueryResult } from "@/api/vault/database/dbSchema";
 import * as dbApi from "@/api/vault/database/dbSchema";
@@ -45,7 +45,7 @@ export interface DatabaseSlice {
   ) => Promise<QueryResult>;
 }
 
-export const createDatabaseSlice: StateCreator<PersonaStore, [], [], DatabaseSlice> = (set) => ({
+export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice> = (set) => ({
   dbSchemaTables: [],
   dbSavedQueries: [],
 

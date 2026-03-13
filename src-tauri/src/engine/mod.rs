@@ -63,6 +63,7 @@ pub mod api_proxy;
 pub mod api_definition;
 pub mod mcp_tools;
 pub mod automation_runner;
+pub mod cli_process;
 pub mod platforms;
 #[cfg(feature = "desktop")]
 pub mod desktop_bridges;
@@ -1263,13 +1264,13 @@ fn evaluate_healing_and_retry(
 
     let category = healing::classify_error(error_str, timed_out, result.session_limit_reached);
 
-    let kb_delay = resolve_service_knowledge_delay(pool, persona_id, &category);
+    let kb_hint = resolve_service_knowledge_hint(pool, persona_id, &category);
 
     let current_retry_count = exec_repo::get_by_id(pool, exec_id)
         .map(|e| e.retry_count)
         .unwrap_or(0);
 
-    let diagnosis = healing::diagnose(&category, error_str, timeout_ms, consecutive, current_retry_count);
+    let diagnosis = healing::diagnose(&category, error_str, timeout_ms, consecutive, current_retry_count, kb_hint.as_ref());
 
     record_failure_to_knowledge_base(pool, persona_id, &category, &diagnosis);
 
@@ -1326,10 +1327,7 @@ fn evaluate_healing_and_retry(
     let (strategy, backoff_seconds) = if auto_fixed {
         match &diagnosis.action {
             healing::HealingAction::RetryWithBackoff { delay_secs } => {
-                let effective = kb_delay
-                    .map(|kb| std::cmp::max(kb, *delay_secs))
-                    .unwrap_or(*delay_secs);
-                (Some("Exponential backoff".to_string()), Some(effective))
+                (Some("Exponential backoff".to_string()), Some(*delay_secs))
             }
             healing::HealingAction::RetryWithTimeout { new_timeout_ms } => {
                 (Some(format!("Increased timeout to {new_timeout_ms}ms")), Some(5u64))
@@ -1372,7 +1370,6 @@ fn evaluate_healing_and_retry(
             exec_id,
             persona_id,
             current_retry_count,
-            kb_delay,
             &diagnosis,
             tracker.clone(),
             child_pids.clone(),
@@ -1483,7 +1480,6 @@ fn spawn_healing_retry(
     exec_id: &str,
     persona_id: &str,
     current_retry_count: i64,
-    kb_delay: Option<u64>,
     diagnosis: &healing::HealingDiagnosis,
     tracker: Arc<Mutex<ConcurrencyTracker>>,
     child_pids: Arc<Mutex<HashMap<String, u32>>>,
@@ -1499,18 +1495,15 @@ fn spawn_healing_retry(
 
     match &diagnosis.action {
         healing::HealingAction::RetryWithBackoff { delay_secs } => {
-            let effective_delay = kb_delay
-                .map(|kb| std::cmp::max(kb, *delay_secs))
-                .unwrap_or(*delay_secs);
             tracing::info!(
                 persona_id = %persona_id,
-                delay_secs = effective_delay,
+                delay_secs = *delay_secs,
                 retry_count = next_retry_count,
                 "Healing: spawning delayed retry after {}s backoff",
-                effective_delay,
+                delay_secs,
             );
             spawn_delayed_retry(
-                effective_delay,
+                *delay_secs,
                 None,
                 pool.clone(),
                 app.clone(),
@@ -2119,16 +2112,16 @@ fn find_matching_connector_names(
     names
 }
 
-/// Resolve a service-level recommended delay from the knowledge base.
+/// Resolve a service-level [`KnowledgeHint`] from the healing knowledge base.
 ///
 /// Looks up connectors associated with the persona's tools to determine
 /// which service types are in use, then queries the knowledge base for
-/// matching failure patterns.
-fn resolve_service_knowledge_delay(
+/// matching failure patterns. Returns the first match.
+fn resolve_service_knowledge_hint(
     pool: &DbPool,
     persona_id: &str,
     category: &healing::FailureCategory,
-) -> Option<u64> {
+) -> Option<healing::KnowledgeHint> {
     let pattern_key = match category {
         healing::FailureCategory::RateLimit => "rate_limit",
         healing::FailureCategory::Timeout => "timeout",
@@ -2139,10 +2132,10 @@ fn resolve_service_knowledge_delay(
     let connectors = crate::db::repos::resources::connectors::get_all(pool).ok()?;
 
     for service_name in find_matching_connector_names(&tools, &connectors) {
-        if let Ok(Some(delay)) =
-            healing_repo::get_recommended_delay(pool, &service_name, pattern_key)
+        if let Ok(Some(hint)) =
+            healing_repo::get_knowledge_hint(pool, &service_name, pattern_key)
         {
-            return Some(delay);
+            return Some(hint);
         }
     }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { FlaskConical, Play, Square, ChevronDown, AlertCircle, Filter } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { usePersonaTests } from '@/hooks/tests/usePersonaTests';
 import { TestSuiteManager } from './TestSuiteManager';
 import { TestModelSelector } from './TestModelSelector';
@@ -12,17 +12,17 @@ import { ALL_MODELS } from '@/lib/models/modelCatalog';
 import type { ModelTestConfig } from '@/api/agents/tests';
 
 export function PersonaTestsTab() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const testRuns = usePersonaStore((s) => s.testRuns);
-  const isTestRunning = usePersonaStore((s) => s.isTestRunning);
-  const testRunProgress = usePersonaStore((s) => s.testRunProgress);
-  const activeTestResults = usePersonaStore((s) => s.activeTestResults);
-  const activeTestResultsRunId = usePersonaStore((s) => s.activeTestResultsRunId);
-  const fetchTestRuns = usePersonaStore((s) => s.fetchTestRuns);
-  const startTest = usePersonaStore((s) => s.startTest);
-  const cancelTest = usePersonaStore((s) => s.cancelTest);
-  const fetchTestResults = usePersonaStore((s) => s.fetchTestResults);
-  const deleteTest = usePersonaStore((s) => s.deleteTest);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const testRuns = useAgentStore((s) => s.testRuns);
+  const isTestRunning = useAgentStore((s) => s.isTestRunning);
+  const testRunProgress = useAgentStore((s) => s.testRunProgress);
+  const activeTestResults = useAgentStore((s) => s.activeTestResults);
+  const activeTestResultsRunId = useAgentStore((s) => s.activeTestResultsRunId);
+  const fetchTestRuns = useAgentStore((s) => s.fetchTestRuns);
+  const startTest = useAgentStore((s) => s.startTest);
+  const cancelTest = useAgentStore((s) => s.cancelTest);
+  const fetchTestResults = useAgentStore((s) => s.fetchTestResults);
+  const deleteTest = useAgentStore((s) => s.deleteTest);
 
   const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['haiku', 'sonnet']));
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);

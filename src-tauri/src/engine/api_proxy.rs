@@ -6,6 +6,8 @@
 use std::collections::HashMap;
 use std::time::Instant;
 
+use ts_rs::TS;
+
 use crate::db::repos::resources::connectors as connector_repo;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::DbPool;
@@ -80,7 +82,8 @@ const MAX_REQUEST_BODY_BYTES: usize = 10 * 1024 * 1024;
 const BLOCKED_HEADERS: &[&str] = &["authorization", "cookie", "host", "proxy-authorization"];
 
 /// Result of a proxied API request.
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, TS)]
+#[ts(export)]
 pub struct ApiProxyResponse {
     pub status: u16,
     pub status_text: String,
@@ -168,13 +171,10 @@ pub async fn execute_api_request(
         connector_strategy::registry()?.get(&credential.service_type, connector_metadata);
     let token = strategy
         .resolve_auth_token(connector_metadata, &fields)
-        .await?;
+        .await?
+        .map(|r| r.token);
 
-    // Build HTTP client with timeout
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
+    let client = crate::SHARED_HTTP.clone();
 
     let start = Instant::now();
 

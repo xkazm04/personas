@@ -1,5 +1,6 @@
 import { Loader2, Lock, Save, Info } from 'lucide-react';
-import type { VaultStatus } from '@/api/tauriApi';
+import type { VaultStatus } from "@/api/vault/credentials";
+
 import type { CredentialTemplateField } from '@/lib/types/types';
 
 interface FormActionsProps {

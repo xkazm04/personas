@@ -1,14 +1,14 @@
 import { useState, useCallback } from 'react';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { DbPersona, DbPersonaGroup } from '@/lib/types/types';
+import type { Persona, PersonaGroup } from '@/lib/types/types';
 import type { DragPayload, DropPayload } from '@/lib/types/frontendTypes';
 import { GroupHeader } from './GroupHeader';
 import { WorkspaceSettings, PersonaList } from './GroupBody';
 
 interface DroppableGroupProps {
-  group: DbPersonaGroup;
-  personas: DbPersona[];
+  group: PersonaGroup;
+  personas: Persona[];
   selectedPersonaId: string | null;
   onSelectPersona: (id: string) => void;
   onToggleCollapse: () => void;
@@ -22,7 +22,7 @@ interface DroppableGroupProps {
     sharedInstructions: string;
   }>) => void;
   isDragActive: boolean;
-  onPersonaContextMenu?: (e: React.MouseEvent, persona: DbPersona) => void;
+  onPersonaContextMenu?: (e: React.MouseEvent, persona: Persona) => void;
 }
 
 export function DroppableGroup({

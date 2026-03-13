@@ -1,6 +1,9 @@
 import { Key, Zap, Users, Sparkles } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useVaultStore } from "@/stores/vaultStore";
+import { useOverviewStore } from "@/stores/overviewStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
 import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
@@ -19,29 +22,29 @@ interface SidebarLevel2Props {
 }
 
 export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
-  const sidebarSection = usePersonaStore((s) => s.sidebarSection);
+  const sidebarSection = useSystemStore((s) => s.sidebarSection);
   const { currentKey: credentialView, navigate } = useCredentialNav();
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const homeTab = usePersonaStore((s) => s.homeTab);
-  const setHomeTab = usePersonaStore((s) => s.setHomeTab);
-  const overviewTab = usePersonaStore((s) => s.overviewTab);
-  const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
-  const templateTab = usePersonaStore((s) => s.templateTab);
-  const setTemplateTab = usePersonaStore((s) => s.setTemplateTab);
-  const pendingReviewCount = usePersonaStore((s) => s.pendingReviewCount);
-  const unreadMessageCount = usePersonaStore((s) => s.unreadMessageCount);
-  const pendingEventCount = usePersonaStore((s) => s.pendingEventCount);
-  const templateGalleryTotal = usePersonaStore((s) => s.templateGalleryTotal);
-  const selectedTeamId = usePersonaStore((s) => s.selectedTeamId);
-  const cloudTab = usePersonaStore((s) => s.cloudTab);
-  const setCloudTab = usePersonaStore((s) => s.setCloudTab);
-  const settingsTab = usePersonaStore((s) => s.settingsTab);
-  const setSettingsTab = usePersonaStore((s) => s.setSettingsTab);
-  const devToolsTab = usePersonaStore((s) => s.devToolsTab);
-  const setDevToolsTab = usePersonaStore((s) => s.setDevToolsTab);
-  const activeProjectId = usePersonaStore((s) => s.activeProjectId);
-  const projects = usePersonaStore((s) => s.projects);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const homeTab = useSystemStore((s) => s.homeTab);
+  const setHomeTab = useSystemStore((s) => s.setHomeTab);
+  const overviewTab = useOverviewStore((s) => s.overviewTab);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
+  const templateTab = useSystemStore((s) => s.templateTab);
+  const setTemplateTab = useSystemStore((s) => s.setTemplateTab);
+  const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
+  const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
+  const pendingEventCount = useOverviewStore((s) => s.pendingEventCount);
+  const templateGalleryTotal = useSystemStore((s) => s.templateGalleryTotal);
+  const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
+  const cloudTab = useSystemStore((s) => s.cloudTab);
+  const setCloudTab = useSystemStore((s) => s.setCloudTab);
+  const settingsTab = useSystemStore((s) => s.settingsTab);
+  const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
+  const devToolsTab = useSystemStore((s) => s.devToolsTab);
+  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const projects = useSystemStore((s) => s.projects);
 
   const isDev = import.meta.env.DEV;
   const isSimple = useSimpleMode();

@@ -3,19 +3,19 @@ import {
   GitBranch, ArrowLeftRight, Shield,
   RotateCcw,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { VersionItem, DiffViewer, type VersionAction } from '@/features/agents/sub_lab_shared';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 
 export function VersionsPanel() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const promptVersions = usePersonaStore((s) => s.promptVersions);
-  const healthErrorRate = usePersonaStore((s) => s.healthErrorRate);
-  const fetchVersions = usePersonaStore((s) => s.fetchVersions);
-  const tagVersion = usePersonaStore((s) => s.tagVersion);
-  const rollbackVersion = usePersonaStore((s) => s.rollbackVersion);
-  const fetchHealthRate = usePersonaStore((s) => s.fetchHealthRate);
-  const setLabMode = usePersonaStore((s) => s.setLabMode);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const promptVersions = useAgentStore((s) => s.promptVersions);
+  const healthErrorRate = useAgentStore((s) => s.healthErrorRate);
+  const fetchVersions = useAgentStore((s) => s.fetchVersions);
+  const tagVersion = useAgentStore((s) => s.tagVersion);
+  const rollbackVersion = useAgentStore((s) => s.rollbackVersion);
+  const fetchHealthRate = useAgentStore((s) => s.fetchHealthRate);
+  const setLabMode = useAgentStore((s) => s.setLabMode);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [compareAId, setCompareAId] = useState<string | null>(null);

@@ -5,10 +5,10 @@ import {
   Pencil, Trash2, X, Check, Settings2,
 } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
-import type { DbPersonaGroup } from '@/lib/types/types';
+import type { PersonaGroup } from '@/lib/types/types';
 
 interface GroupHeaderProps {
-  group: DbPersonaGroup;
+  group: PersonaGroup;
   personaCount: number;
   isCollapsed: boolean;
   hasWorkspaceDefaults: boolean;

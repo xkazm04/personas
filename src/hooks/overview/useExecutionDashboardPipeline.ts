@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 
 /**
@@ -13,7 +13,7 @@ import { useOverviewFilters } from '@/features/overview/components/dashboard/Ove
  */
 export function useExecutionDashboardPipeline() {
   const { effectiveDays, compareEnabled, previousPeriodDays } = useOverviewFilters();
-  const fetchExecutionDashboard = usePersonaStore((s) => s.fetchExecutionDashboard);
+  const fetchExecutionDashboard = useOverviewStore((s) => s.fetchExecutionDashboard);
 
   const fetchDays = compareEnabled ? previousPeriodDays : effectiveDays;
 

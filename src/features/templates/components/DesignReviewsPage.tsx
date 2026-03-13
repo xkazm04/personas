@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { FlaskConical, Users } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useDesignReviews } from '@/hooks/design/template/useDesignReviews';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { GeneratedReviewsTab, TeamSynthesisPanel } from '@/features/templates/sub_generated';
 import N8nImportTab from '@/features/templates/sub_n8n/steps/N8nImportTab';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
@@ -22,13 +23,13 @@ export default function DesignReviewsPage() {
     refresh,
   } = useDesignReviews();
 
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const activeTab = usePersonaStore((s) => s.templateTab);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const activeTab = useSystemStore((s) => s.templateTab);
   const [showSynthesis, setShowSynthesis] = useState(false);
   const [diagramReview, setDiagramReview] = useState<PersonaDesignReview | null>(null);
-  const galleryTotal = usePersonaStore((s) => s.templateGalleryTotal);
-  const setGalleryTotal = usePersonaStore((s) => s.setTemplateGalleryTotal);
+  const galleryTotal = useSystemStore((s) => s.templateGalleryTotal);
+  const setGalleryTotal = useSystemStore((s) => s.setTemplateGalleryTotal);
 
   return (
     <ContentBox>

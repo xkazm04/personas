@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, List, Radio, Zap } from "lucide-react";
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { listAllTriggers, getTriggerHealthMap, listTriggerChains } from '@/api/pipeline/triggers';
 import { listAllSubscriptions } from '@/api/overview/events';
 import type { PersonaTrigger } from '@/lib/types/types';
@@ -43,7 +43,7 @@ function TabHealthDot({ health }: { health: TabHealth }) {
 
 export function EventsPage() {
   const [tab, setTab] = useState<EventTab>("triggers");
-  const personas = usePersonaStore((s) => s.personas);
+  const personas = useAgentStore((s) => s.personas);
 
   const [triggerCount, setTriggerCount] = useState<number | null>(null);
   const [allTriggers, setAllTriggers] = useState<PersonaTrigger[]>([]);

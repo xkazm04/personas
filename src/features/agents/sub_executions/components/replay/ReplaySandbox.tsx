@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import { useReplayTimeline } from '@/hooks/execution/useReplayTimeline';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { getExecutionLog } from '@/api/agents/executions';
 import { TimelineScrubber, ReplayTerminalPanel } from './ReplayControls';
 import { ReplayToolPanel } from './ReplayToolPanel';
@@ -10,11 +10,11 @@ import { ReplayTransport } from './ReplayTransport';
 import { ReplayCostPanel } from './ReplayTimeline';
 
 interface ReplaySandboxProps {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
 }
 
 export function ReplaySandbox({ execution }: ReplaySandboxProps) {
-  const setRerunInputData = usePersonaStore((s) => s.setRerunInputData);
+  const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
 
   // Fetch log content
   const [logContent, setLogContent] = useState<string | null>(null);

@@ -1,5 +1,7 @@
 import { Wifi, Loader2 } from 'lucide-react';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
+import { FormField } from '@/features/shared/components/forms/FormField';
+import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 export interface CloudConnectionFormProps {
   isConnected: boolean;
@@ -49,29 +51,31 @@ export function CloudConnectionForm({
 
   return (
     <div className={`max-w-md ${DEPLOYMENT_TOKENS.panelSpacing}`}>
-      <div className="space-y-1.5">
-        <label htmlFor="orchestrator-url" className="text-sm font-medium text-muted-foreground/80">Orchestrator URL</label>
-        <input
-          id="orchestrator-url"
-          type="text"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://your-orchestrator.example.com"
-          className={`w-full px-3 py-2 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
-        />
-      </div>
+      <FormField label="Orchestrator URL">
+        {(inputProps) => (
+          <input
+            {...inputProps}
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://your-orchestrator.example.com"
+            className={`${INPUT_FIELD} ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
+          />
+        )}
+      </FormField>
 
-      <div className="space-y-1.5">
-        <label htmlFor="cloud-api-key" className="text-sm font-medium text-muted-foreground/80">API Key</label>
-        <input
-          id="cloud-api-key"
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder="Enter API key"
-          className={`w-full px-3 py-2 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
-        />
-      </div>
+      <FormField label="API Key">
+        {(inputProps) => (
+          <input
+            {...inputProps}
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder="Enter API key"
+            className={`${INPUT_FIELD} ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
+          />
+        )}
+      </FormField>
 
       <button
         onClick={onConnect}

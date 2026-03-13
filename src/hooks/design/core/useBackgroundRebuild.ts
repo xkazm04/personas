@@ -3,7 +3,7 @@ import { rebuildDesignReview, getRebuildSnapshot, cancelRebuild } from '@/api/ov
 import { sendAppNotification } from '@/api/system/system';
 import { useBackgroundSnapshot } from '@/hooks/utility/data/useBackgroundSnapshot';
 import type { SnapshotLike } from '@/hooks/utility/data/useBackgroundSnapshot';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 
 export type RebuildPhase = 'idle' | 'input' | 'processing' | 'completed' | 'failed';
 
@@ -31,7 +31,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [reviewName, setReviewName] = useState<string | null>(null);
 
-  const setRebuildActive = usePersonaStore((s) => s.setRebuildActive);
+  const setRebuildActive = useSystemStore((s) => s.setRebuildActive);
 
   const getSnapshot = useCallback(
     async (id: string): Promise<SnapshotLike> => {

@@ -8,7 +8,7 @@ import { parseDesignContext } from '@/features/shared/components/use-cases/UseCa
 import { extractProtocolCapabilities, countByType } from '../../edit/protocolParser';
 import { matchCredentialToConnector } from '../../edit/connectorMatching';
 import { buildConnectorRailItems } from '../../edit/connectorHealth';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { SuccessBanner } from './SuccessBanner';
 import { ConnectorHealthRail } from './ConnectorHealthRail';
 import type { ConfirmResult } from './n8nConfirmTypes';
@@ -52,7 +52,10 @@ export function N8nConfirmStep({
   const toolCount = draftTools ? draftTools.length : selectedTools.length;
   const triggerCount = draftTriggers ? draftTriggers.length : selectedTriggers.length;
   const connectorCount = draftConnectors ? draftConnectors.length : selectedConnectors.length;
-  const credentialLinks = parseDesignContext(draft.design_context).credentialLinks ?? {};
+  const credentialLinks = useMemo(
+    () => parseDesignContext(draft.design_context).credentialLinks ?? {},
+    [draft.design_context],
+  );
 
   // Protocol capability counts from prompt analysis
   const capabilities = useMemo(
@@ -68,7 +71,7 @@ export function N8nConfirmStep({
   const eventCount = capCounts.emit_event || triggerCount;
 
   // Tool-credential validation
-  const credentials = usePersonaStore((s) => s.credentials);
+  const credentials = useVaultStore((s) => s.credentials);
   const toolsNeedingCredentials = useMemo(() => {
     if (!draftTools) return [];
     return draftTools.filter((tool) => {

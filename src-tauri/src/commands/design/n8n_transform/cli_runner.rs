@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use serde_json::json;
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 use tokio_util::sync::CancellationToken;
 
 use crate::db::repos::resources::n8n_sessions;
-use crate::db::models::UpdateN8nSessionInput;
+use crate::db::models::{SessionStatus, UpdateN8nSessionInput};
 use crate::engine::parser::parse_stream_line;
 use crate::engine::prompt;
 use crate::engine::types::StreamLineType;
@@ -114,7 +114,7 @@ pub async fn start_n8n_transform_background(
     if let Some(ref sid) = session_id {
         let state = app.state::<Arc<AppState>>();
         let _ = n8n_sessions::update(&state.db, sid, &UpdateN8nSessionInput {
-            status: Some("transforming".into()),
+            status: Some(SessionStatus::Transforming.as_str().into()),
             step: Some("transform".into()),
             ..Default::default()
         });
@@ -289,7 +289,12 @@ fn build_section_callbacks(
     let id2 = transform_id.to_string();
     let on_section = move |section: &streaming::StreamingSection| {
         if let Ok(serialized) = serde_json::to_value(section) {
-            job_state::store_n8n_transform_section(&id2, serialized);
+            job_state::store_n8n_transform_section(&id2, serialized.clone());
+            // Push section to frontend instantly via Tauri event
+            let _ = app2.emit("n8n-transform-section", json!({
+                "transformId": &id2,
+                "section": serialized,
+            }));
         }
         emit_n8n_transform_line(
             &app2,
@@ -323,7 +328,7 @@ fn handle_transform_result(
                 let state = app.state::<Arc<AppState>>();
                 let draft_str = serde_json::to_string(&draft).unwrap_or_default();
                 let _ = n8n_sessions::update(&state.db, sid, &UpdateN8nSessionInput {
-                    status: Some("editing".into()),
+                    status: Some(SessionStatus::Editing.as_str().into()),
                     step: Some("edit".into()),
                     draft_json: Some(Some(draft_str)),
                     error: Some(None),
@@ -334,12 +339,12 @@ fn handle_transform_result(
         Err(err) => {
             let msg = err.to_string();
             tracing::error!(transform_id = %transform_id, error = %msg, "n8n transform failed");
-            set_n8n_transform_status(app, transform_id, "failed", Some(msg.clone()));
+            set_n8n_transform_status(app, transform_id, SessionStatus::Failed.as_str(), Some(msg.clone()));
             crate::notifications::notify_n8n_transform_completed(app, workflow_name, false);
             if let Some(sid) = session_id {
                 let state = app.state::<Arc<AppState>>();
                 let _ = n8n_sessions::update(&state.db, sid, &UpdateN8nSessionInput {
-                    status: Some("failed".into()),
+                    status: Some(SessionStatus::Failed.as_str().into()),
                     error: Some(Some(msg)),
                     ..Default::default()
                 });
@@ -395,7 +400,7 @@ async fn run_unified_transform_turn1(
     if let Some(questions) = extract_questions_output(&output_text) {
         tracing::info!(transform_id = %transform_id, "Turn 1 produced questions");
         set_n8n_transform_questions(transform_id, questions.clone());
-        set_n8n_transform_status(app, transform_id, "awaiting_answers", None);
+        set_n8n_transform_status(app, transform_id, SessionStatus::AwaitingAnswers.as_str(), None);
         emit_n8n_transform_line(
             app,
             transform_id,

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, ToggleLeft, ToggleRight, Pencil, X, Check, Activity } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from '@/stores/overviewStore';
+import { useAgentStore } from '@/stores/agentStore';
 import {
   ALERT_METRIC_OPTIONS,
   ALERT_SEVERITY_OPTIONS,
@@ -225,13 +226,13 @@ function EvalHealthIndicator({ health }: { health: AlertEvalHealth }) {
 // -- Panel -------------------------------------------------------------
 
 export function AlertRulesPanel() {
-  const alertRules = usePersonaStore((s) => s.alertRules);
-  const addAlertRule = usePersonaStore((s) => s.addAlertRule);
-  const updateAlertRule = usePersonaStore((s) => s.updateAlertRule);
-  const deleteAlertRule = usePersonaStore((s) => s.deleteAlertRule);
-  const toggleAlertRule = usePersonaStore((s) => s.toggleAlertRule);
-  const personas = usePersonaStore((s) => s.personas);
-  const alertEvalHealth = usePersonaStore((s) => s.alertEvalHealth);
+  const alertRules = useOverviewStore((s) => s.alertRules);
+  const addAlertRule = useOverviewStore((s) => s.addAlertRule);
+  const updateAlertRule = useOverviewStore((s) => s.updateAlertRule);
+  const deleteAlertRule = useOverviewStore((s) => s.deleteAlertRule);
+  const toggleAlertRule = useOverviewStore((s) => s.toggleAlertRule);
+  const alertEvalHealth = useOverviewStore((s) => s.alertEvalHealth);
+  const personas = useAgentStore((s) => s.personas);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);

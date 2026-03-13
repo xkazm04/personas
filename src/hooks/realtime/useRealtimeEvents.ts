@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { testEventFlow } from '@/api/tauriApi';
+import { testEventFlow } from "@/api/overview/events";
+
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import { useEventPhaseProgressor } from '@/hooks/realtime/useEventPhaseProgressor';

@@ -6,6 +6,11 @@ import type { UpdateCredentialInput } from "@/lib/bindings/UpdateCredentialInput
 import type { CredentialEvent } from "@/lib/bindings/CredentialEvent";
 import type { CreateCredentialEventInput } from "@/lib/bindings/CreateCredentialEventInput";
 import type { UpdateCredentialEventInput } from "@/lib/bindings/UpdateCredentialEventInput";
+import type { HealthcheckResult } from "@/lib/bindings/HealthcheckResult";
+import type { VaultStatus } from "@/lib/bindings/VaultStatus";
+import type { MigrationResult } from "@/lib/bindings/MigrationResult";
+import type { CredentialFieldMeta } from "@/lib/bindings/CredentialFieldMeta";
+export type { HealthcheckResult, VaultStatus, MigrationResult, CredentialFieldMeta };
 
 // ============================================================================
 // Credentials
@@ -43,17 +48,6 @@ export const deleteCredentialEvent = (id: string) =>
 
 // -- Credential Security -------------------------------------------------
 
-export interface HealthcheckResult {
-  success: boolean;
-  message: string;
-}
-
-export interface VaultStatus {
-  key_source: string;
-  total: number;
-  encrypted: number;
-  plaintext: number;
-}
 
 export const getSessionPublicKey = () =>
   invoke<string>("get_session_public_key");
@@ -75,25 +69,12 @@ export const healthcheckCredentialPreview = (
 export const vaultStatus = () =>
   invoke<VaultStatus>("vault_status");
 
-export interface MigrationResult {
-  migrated: number;
-  failed: number;
-}
 
 export const migratePlaintextCredentials = () =>
   invoke<MigrationResult>("migrate_plaintext_credentials");
 
 // -- Field-level Credential Storage ------------------------------------
 
-export interface CredentialFieldMeta {
-  id: string;
-  credentialId: string;
-  fieldKey: string;
-  fieldType: string;
-  isSensitive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export const listCredentialFields = (credentialId: string) =>
   invoke<CredentialFieldMeta[]>("list_credential_fields", { credentialId });

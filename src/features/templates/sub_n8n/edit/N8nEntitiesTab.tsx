@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link, CheckCircle2, AlertCircle, Loader2, RefreshCw, Wrench, Zap, ListChecks } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
 import {
   useConnectorStatuses,
@@ -28,7 +28,7 @@ export function N8nEntitiesTab({
   onMissingCountChange,
   onGoToAnalyze,
 }: N8nEntitiesTabProps) {
-  const credentials = usePersonaStore((s) => s.credentials);
+  const credentials = useVaultStore((s) => s.credentials);
 
   // -- Extract entities from draft (post-transform) or parser results (pre-transform) --
 

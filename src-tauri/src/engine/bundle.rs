@@ -481,6 +481,9 @@ fn parse_bundle(
     Ok((manifest, sig))
 }
 
+/// Maximum decompressed size for bundle ZIP entries (50 MB).
+const MAX_DECOMPRESSED_SIZE: u64 = 50 * 1024 * 1024;
+
 fn read_zip_entry<R: Read + std::io::Seek>(
     archive: &mut zip::ZipArchive<R>,
     name: &str,
@@ -488,8 +491,26 @@ fn read_zip_entry<R: Read + std::io::Seek>(
     let mut file = archive
         .by_name(name)
         .map_err(|e| AppError::Validation(format!("Missing {name} in bundle: {e}")))?;
+
+    if file.size() > MAX_DECOMPRESSED_SIZE {
+        return Err(AppError::Validation(format!(
+            "{name} decompressed size ({} bytes) exceeds the {} MB limit",
+            file.size(),
+            MAX_DECOMPRESSED_SIZE / (1024 * 1024)
+        )));
+    }
+
+    let mut limited = Read::take(&mut file, MAX_DECOMPRESSED_SIZE + 1);
     let mut content = String::new();
-    file.read_to_string(&mut content)?;
+    limited.read_to_string(&mut content)?;
+
+    if content.len() as u64 > MAX_DECOMPRESSED_SIZE {
+        return Err(AppError::Validation(format!(
+            "{name} decompressed content exceeds the {} MB limit",
+            MAX_DECOMPRESSED_SIZE / (1024 * 1024)
+        )));
+    }
+
     Ok(content)
 }
 

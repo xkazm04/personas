@@ -1,23 +1,24 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useElapsedTimer } from '@/hooks';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
 import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
 import { classifyLine, parseSummaryLine } from '@/lib/utils/terminalColors';
 import type { TerminalEmptyState } from '@/features/shared/components/terminal/TerminalBody';
-import * as api from '@/api/tauriApi';
+import { listExecutions } from "@/api/agents/executions";
 import type { HealingEventPayload, PhaseEntry } from './runnerHelpers';
 import { detectPhaseFromLine, PHASE_META } from './runnerHelpers';
 
 export function useRunnerState(personaId: string) {
-  const isExecuting = usePersonaStore((state) => state.isExecuting);
-  const executionOutput = usePersonaStore((state) => state.executionOutput);
-  const executionPersonaId = usePersonaStore((state) => state.executionPersonaId);
-  const rerunInputData = usePersonaStore((state) => state.rerunInputData);
-  const setRerunInputData = usePersonaStore((state) => state.setRerunInputData);
-  const queuePosition = usePersonaStore((s) => s.queuePosition);
-  const queueDepth = usePersonaStore((s) => s.queueDepth);
+  const isExecuting = useAgentStore((state) => state.isExecuting);
+  const executionOutput = useAgentStore((state) => state.executionOutput);
+  const executionPersonaId = useAgentStore((state) => state.executionPersonaId);
+  const rerunInputData = useSystemStore((state) => state.rerunInputData);
+  const setRerunInputData = useSystemStore((state) => state.setRerunInputData);
+  const queuePosition = useAgentStore((s) => s.queuePosition);
+  const queueDepth = useAgentStore((s) => s.queueDepth);
 
   const { disconnect } = usePersonaExecution();
   const elapsedMs = useElapsedTimer(isExecuting, 500);
@@ -65,7 +66,7 @@ export function useRunnerState(personaId: string) {
 
   const fetchTypicalDuration = useCallback(async (pId: string) => {
     try {
-      const execs = await api.listExecutions(pId, 20);
+      const execs = await listExecutions(pId, 20);
       const durations: number[] = execs
         .filter((e): e is typeof e & { duration_ms: number } =>
           e.status === 'completed' && typeof e.duration_ms === 'number' && e.duration_ms > 0)

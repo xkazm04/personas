@@ -1,31 +1,9 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-export interface AutoCredField {
-  key: string;
-  label: string;
-  field_type: string;
-  required: boolean;
-  placeholder?: string;
-  help_text?: string;
-}
-
-export interface AutoCredBrowserRequest {
-  session_id: string;
-  connector_name: string;
-  connector_label: string;
-  docs_url?: string;
-  setup_instructions?: string;
-  fields: AutoCredField[];
-  saved_procedure?: string;
-  force_guided?: boolean;
-}
-
-export interface AutoCredBrowserResult {
-  session_id: string;
-  extracted_values: Record<string, string>;
-  procedure_log: string;
-  partial: boolean;
-}
+import type { AutoCredField } from "@/lib/bindings/AutoCredField";
+import type { AutoCredBrowserRequest } from "@/lib/bindings/AutoCredBrowserRequest";
+import type { AutoCredBrowserResult } from "@/lib/bindings/AutoCredBrowserResult";
+export type { AutoCredField, AutoCredBrowserRequest, AutoCredBrowserResult };
 
 /** IPC timeout for browser sessions -- 10 minutes to allow manual sign-in steps. */
 const BROWSER_SESSION_TIMEOUT_MS = 10 * 60 * 1000;

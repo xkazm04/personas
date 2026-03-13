@@ -306,6 +306,34 @@ pub fn get_all_knowledge(pool: &DbPool) -> Result<Vec<HealingKnowledge>, AppErro
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
+/// Look up a knowledge hint (recommended delay + occurrence count) for a
+/// specific service + pattern combination. Returns `None` if no entry exists.
+pub fn get_knowledge_hint(
+    pool: &DbPool,
+    service_type: &str,
+    pattern_key: &str,
+) -> Result<Option<crate::engine::healing::KnowledgeHint>, AppError> {
+    let conn = pool.get()?;
+    let result = conn.query_row(
+        "SELECT recommended_delay_secs, occurrence_count FROM healing_knowledge
+         WHERE service_type = ?1 AND pattern_key = ?2",
+        params![service_type, pattern_key],
+        |row| {
+            let delay: Option<i64> = row.get(0)?;
+            let count: i64 = row.get::<_, Option<i64>>(1)?.unwrap_or(1);
+            Ok((delay, count))
+        },
+    );
+    match result {
+        Ok((delay, count)) => Ok(Some(crate::engine::healing::KnowledgeHint {
+            recommended_delay_secs: delay.map(|d| d as u64),
+            occurrence_count: count,
+        })),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(AppError::Database(e)),
+    }
+}
+
 /// Look up recommended delay for a specific service + pattern combination.
 /// Returns the recommended delay if a knowledge entry exists with sufficient occurrences.
 pub fn get_recommended_delay(

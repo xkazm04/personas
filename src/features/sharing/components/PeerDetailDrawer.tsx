@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
   X, RefreshCw,
   Loader2, Package, Clock,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnectedIcon } from './NetworkIcons';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { DiscoveredPeer, ConnectionState, PeerManifestEntry } from '@/api/network/discovery';
 
@@ -25,12 +27,29 @@ export function PeerDetailDrawer({
   onConnect,
   onDisconnect,
 }: PeerDetailDrawerProps) {
-  const peerManifests = usePersonaStore((s) => s.peerManifests);
-  const fetchPeerManifest = usePersonaStore((s) => s.fetchPeerManifest);
-  const syncPeerManifest = usePersonaStore((s) => s.syncPeerManifest);
+  const peerManifests = useSystemStore((s) => s.peerManifests);
+  const fetchPeerManifest = useSystemStore((s) => s.fetchPeerManifest);
+  const syncPeerManifest = useSystemStore((s) => s.syncPeerManifest);
   const addToast = useToastStore((s) => s.addToast);
 
   const [syncing, setSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<{ resourceCount: number; syncedAt: string } | null>(null);
+
+  // Listen for push-based manifest sync progress events
+  useEffect(() => {
+    let unlisten: UnlistenFn | null = null;
+    void listen<{ peerId: string; resourceCount: number; syncedAt: string }>(
+      'p2p:manifest-sync-progress',
+      (event) => {
+        if (event.payload.peerId === peer.peer_id) {
+          setSyncProgress({ resourceCount: event.payload.resourceCount, syncedAt: event.payload.syncedAt });
+          // Refresh manifest data in the store
+          fetchPeerManifest(peer.peer_id);
+        }
+      },
+    ).then((fn) => { unlisten = fn; });
+    return () => { unlisten?.(); };
+  }, [peer.peer_id, fetchPeerManifest]);
 
   const state = connectionState ?? (peer.is_connected ? 'Connected' : 'Disconnected');
   const isConnected = state === 'Connected';
@@ -165,10 +184,30 @@ export function PeerDetailDrawer({
           {/* Manifest / Exposed resources */}
           {isConnected && (
             <div className="space-y-2">
+              {/* Sync progress bar */}
+              {syncing && (
+                <div className="h-0.5 rounded-full overflow-hidden bg-secondary/20">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-violet-500 to-blue-500"
+                    initial={{ width: '0%' }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: 8, ease: 'linear' }}
+                  />
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Package className="w-3.5 h-3.5" />
                   Shared Resources
+                  {(syncProgress || manifest.length > 0) && (
+                    <span className="text-[10px] font-normal text-muted-foreground/60">
+                      {syncProgress?.resourceCount ?? manifest.length} synced
+                      {syncProgress?.syncedAt && (
+                        <> · {formatRelativeTime(syncProgress.syncedAt)}</>
+                      )}
+                    </span>
+                  )}
                 </h4>
                 <button
                   onClick={handleSync}
@@ -201,6 +240,16 @@ export function PeerDetailDrawer({
       </div>
     </div>
   );
+}
+
+function formatRelativeTime(dateStr: string): string {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const diffMins = Math.floor(diffMs / 60_000);
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return `${Math.floor(diffHours / 24)}d ago`;
 }
 
 function ManifestEntryRow({ entry }: { entry: PeerManifestEntry }) {

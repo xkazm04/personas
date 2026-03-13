@@ -1,24 +1,8 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// -- Types ------------------------------------------------------------
-
-export interface SchemaProposalSnapshot {
-  job_id: string;
-  status: 'idle' | 'running' | 'completed' | 'failed';
-  error: string | null;
-  lines: string[];
-  /** The proposed SQL DDL statements */
-  proposed_sql: string | null;
-  /** Human-readable explanation of the schema */
-  explanation: string | null;
-}
-
-export interface SchemaValidationResult {
-  valid: boolean;
-  found: string[];
-  missing: string[];
-  all_tables: string[];
-}
+import type { SchemaProposalSnapshot } from "@/lib/bindings/SchemaProposalSnapshot";
+import type { SchemaValidationResult } from "@/lib/bindings/SchemaValidationResult";
+export type { SchemaProposalSnapshot, SchemaValidationResult };
 
 // -- Commands ---------------------------------------------------------
 

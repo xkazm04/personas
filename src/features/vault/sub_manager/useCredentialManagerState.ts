@@ -1,24 +1,25 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 import { useUndoDelete } from '@/features/vault/hooks/useUndoDelete';
 import { useCredentialViewFSM } from '@/features/vault/hooks/useCredentialViewFSM';
 import { useBulkHealthcheck } from '@/features/vault/hooks/health/useBulkHealthcheck';
-import * as api from '@/api/tauriApi';
-import type { VaultStatus } from '@/api/tauriApi';
+import { vaultStatus } from "@/api/vault/credentials";
+import type { VaultStatus } from "@/api/vault/credentials";
 import { IS_DESKTOP } from '@/lib/utils/platform/platform';
 import { useRotateAll } from './useRotateAll';
 import { useCatalogHandlers } from './useCatalogHandlers';
 
 export function useCredentialManagerState() {
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
-  const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
-  const createCredential = usePersonaStore((s) => s.createCredential);
-  const deleteCredential = usePersonaStore((s) => s.deleteCredential);
-  const globalError = usePersonaStore((s) => s.error);
-  const setGlobalError = usePersonaStore((s) => s.setError);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
+  const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
+  const createCredential = useVaultStore((s) => s.createCredential);
+  const deleteCredential = useVaultStore((s) => s.deleteCredential);
+  const globalError = useSystemStore((s) => s.error);
+  const setGlobalError = useSystemStore((s) => s.setError);
 
   const [loading, setLoading] = useState(true);
   const [vault, setVault] = useState<VaultStatus | null>(null);
@@ -102,7 +103,7 @@ export function useCredentialManagerState() {
     const init = async () => {
       await Promise.all([fetchCredentials(), fetchConnectorDefinitions()]);
       try {
-        const vs = await api.vaultStatus();
+        const vs = await vaultStatus();
         setVault(vs);
       } catch { /* intentional: non-critical */ }
       setLoading(false);

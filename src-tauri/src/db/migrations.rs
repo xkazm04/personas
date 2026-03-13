@@ -1311,6 +1311,41 @@ CREATE TABLE IF NOT EXISTS resource_provenance (
     PRIMARY KEY (resource_type, resource_id)
 );
 
+-- ============================================================================
+-- Webhook Request Log (last 100 per endpoint for inspection/replay)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS webhook_request_log (
+    id              TEXT PRIMARY KEY,
+    trigger_id      TEXT NOT NULL,
+    method          TEXT NOT NULL DEFAULT 'POST',
+    headers         TEXT,
+    body            TEXT,
+    status_code     INTEGER NOT NULL,
+    response_body   TEXT,
+    event_id        TEXT,
+    error_message   TEXT,
+    received_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_wrl_trigger ON webhook_request_log(trigger_id);
+CREATE INDEX IF NOT EXISTS idx_wrl_received ON webhook_request_log(received_at);
+
+-- ============================================================================
+-- Chat Messages (interactive conversational sessions per persona)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id              TEXT PRIMARY KEY,
+    persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+    session_id      TEXT NOT NULL,
+    role            TEXT NOT NULL CHECK(role IN ('user','assistant')),
+    content         TEXT NOT NULL,
+    execution_id    TEXT,
+    metadata        TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_chat_persona   ON chat_messages(persona_id);
+CREATE INDEX IF NOT EXISTS idx_chat_session   ON chat_messages(session_id);
+CREATE INDEX IF NOT EXISTS idx_chat_created   ON chat_messages(created_at);
+
 "#;
 
 /// Incremental migrations for columns added after the initial schema.
@@ -2423,6 +2458,20 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         );
         CREATE INDEX IF NOT EXISTS idx_adoption_log_template ON adoption_log(template_name);
         CREATE INDEX IF NOT EXISTS idx_adoption_log_adopted  ON adoption_log(adopted_at DESC);"
+    )?;
+
+    // Composite indexes for lab result queries:
+    // Results tables: (run_id, scenario_name, model_id) for ORDER BY scenario_name, model_id
+    // Runs tables: (persona_id, created_at DESC) for ORDER BY created_at DESC
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_lab_arena_results_composite ON lab_arena_results(run_id, scenario_name, model_id);
+         CREATE INDEX IF NOT EXISTS idx_lab_ab_results_composite ON lab_ab_results(run_id, scenario_name, model_id);
+         CREATE INDEX IF NOT EXISTS idx_lab_matrix_results_composite ON lab_matrix_results(run_id, variant, scenario_name, model_id);
+         CREATE INDEX IF NOT EXISTS idx_lab_eval_results_composite ON lab_eval_results(run_id, scenario_name, model_id, version_number);
+         CREATE INDEX IF NOT EXISTS idx_lab_arena_runs_persona_created ON lab_arena_runs(persona_id, created_at DESC);
+         CREATE INDEX IF NOT EXISTS idx_lab_ab_runs_persona_created ON lab_ab_runs(persona_id, created_at DESC);
+         CREATE INDEX IF NOT EXISTS idx_lab_matrix_runs_persona_created ON lab_matrix_runs(persona_id, created_at DESC);
+         CREATE INDEX IF NOT EXISTS idx_lab_eval_runs_persona_created ON lab_eval_runs(persona_id, created_at DESC);"
     )?;
 
     Ok(())

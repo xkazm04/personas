@@ -4,12 +4,19 @@ import type { CloudConfig } from "@/lib/bindings/CloudConfig";
 import type { CloudStatusResponse } from "@/lib/bindings/CloudStatusResponse";
 import type { CloudOAuthAuthorizeResponse } from "@/lib/bindings/CloudOAuthAuthorizeResponse";
 import type { CloudOAuthStatusResponse } from "@/lib/bindings/CloudOAuthStatusResponse";
+import type { CloudDeployment } from "@/lib/bindings/CloudDeployment";
+import type { CloudReviewRequest } from "@/lib/bindings/CloudReviewRequest";
+import type { CloudExecution } from "@/lib/bindings/CloudExecution";
+import type { CloudExecutionStats } from "@/lib/bindings/CloudExecutionStats";
+import type { CloudTrigger } from "@/lib/bindings/CloudTrigger";
+import type { CloudTriggerFiring } from "@/lib/bindings/CloudTriggerFiring";
 
 export type { CloudConfig } from "@/lib/bindings/CloudConfig";
 export type { CloudWorkerCounts } from "@/lib/bindings/CloudWorkerCounts";
 export type { CloudStatusResponse } from "@/lib/bindings/CloudStatusResponse";
 export type { CloudOAuthAuthorizeResponse } from "@/lib/bindings/CloudOAuthAuthorizeResponse";
 export type { CloudOAuthStatusResponse } from "@/lib/bindings/CloudOAuthStatusResponse";
+export type { CloudDeployment, CloudReviewRequest, CloudExecution, CloudExecutionStats, CloudTrigger, CloudTriggerFiring };
 
 // Config
 export const cloudConnect = (url: string, apiKey: string) =>
@@ -53,24 +60,6 @@ export const cloudOAuthDisconnect = () =>
 
 // Deployments
 
-export interface CloudDeployment {
-  id: string;
-  project_id: string;
-  persona_id: string;
-  slug: string;
-  label: string;
-  status: string;
-  webhook_enabled: boolean;
-  webhook_secret: string | null;
-  invocation_count: number;
-  last_invoked_at: string | null;
-  max_monthly_budget_usd: number | null;
-  current_month_cost_usd: number | null;
-  budget_month: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export const cloudDeployPersona = (personaId: string, maxMonthlyBudgetUsd?: number) =>
   invoke<CloudDeployment>("cloud_deploy_persona", { personaId, maxMonthlyBudgetUsd: maxMonthlyBudgetUsd ?? null });
 
@@ -91,18 +80,6 @@ export const cloudGetBaseUrl = () =>
 
 // Cloud Reviews (human-in-the-loop)
 
-export interface CloudReviewRequest {
-  review_id: string;
-  execution_id: string;
-  persona_id: string;
-  project_id: string | null;
-  payload: unknown;
-  status: string;
-  created_at: number | null;
-  resolved_at: number | null;
-  response_message: string | null;
-}
-
 export const cloudListPendingReviews = () =>
   invoke<CloudReviewRequest[]>("cloud_list_pending_reviews");
 
@@ -110,36 +87,6 @@ export const cloudRespondToReview = (executionId: string, reviewId: string, deci
   invoke<unknown>("cloud_respond_to_review", { executionId, reviewId, decision, message });
 
 // Execution History & Stats
-
-export interface CloudExecution {
-  id: string;
-  persona_id: string;
-  project_id: string | null;
-  status: string;
-  input_data: string | null;
-  error_message: string | null;
-  duration_ms: number | null;
-  cost_usd: number | null;
-  input_tokens: number | null;
-  output_tokens: number | null;
-  retry_count: number | null;
-  started_at: string | null;
-  completed_at: string | null;
-  created_at: string;
-}
-
-export interface CloudExecutionStats {
-  total_executions: number;
-  completed: number;
-  failed: number;
-  cancelled: number;
-  success_rate: number | null;
-  total_cost_usd: number;
-  avg_cost_usd: number | null;
-  avg_duration_ms: number | null;
-  daily_breakdown: Array<{ date: string; count: number; cost: number; success_rate: number | null }>;
-  top_errors: Array<{ message: string; count: number }>;
-}
 
 export const cloudListExecutions = (personaId?: string, status?: string, limit?: number, offset?: number) =>
   invoke<CloudExecution[]>("cloud_list_executions", {
@@ -156,34 +103,6 @@ export const cloudExecutionStats = (personaId?: string, periodDays?: number) =>
   });
 
 // Cloud Triggers (schedules, webhooks, etc.)
-
-export interface CloudTrigger {
-  id: string;
-  project_id: string;
-  persona_id: string;
-  trigger_type: string;
-  config: string | null;
-  enabled: boolean;
-  last_triggered_at: string | null;
-  next_trigger_at: string | null;
-  health_status: string | null;
-  health_message: string | null;
-  use_case_id: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-}
-
-export interface CloudTriggerFiring {
-  id: string;
-  trigger_id: string;
-  persona_id: string | null;
-  execution_id: string | null;
-  status: string;
-  cost_usd: number | null;
-  duration_ms: number | null;
-  fired_at: string | null;
-  resolved_at: string | null;
-}
 
 export const cloudListTriggers = (personaId: string) =>
   invoke<CloudTrigger[]>("cloud_list_triggers", { personaId });

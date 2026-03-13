@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion';
 import { PanelLeftClose, PanelLeft, Sparkles, LayoutGrid, Wrench } from 'lucide-react';
 import { SidebarIconStyles, SIDEBAR_ICONS } from './SidebarIcons';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useAgentStore } from "@/stores/agentStore";
 import type { SidebarSection } from '@/lib/types/types';
 import { IS_MOBILE, MOBILE_SECTIONS } from '@/lib/utils/platform/platform';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
@@ -23,23 +25,23 @@ export default function SidebarLevel1({
   onMobileDrawerToggle,
   appVersion,
 }: SidebarLevel1Props) {
-  const sidebarSection = usePersonaStore((s) => s.sidebarSection);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
-  const pendingReviewCount = usePersonaStore((s) => s.pendingReviewCount);
-  const n8nTransformActive = usePersonaStore((s) => s.n8nTransformActive);
-  const templateAdoptActive = usePersonaStore((s) => s.templateAdoptActive);
-  const rebuildActive = usePersonaStore((s) => s.rebuildActive);
-  const templateTestActive = usePersonaStore((s) => s.templateTestActive);
-  const isLabRunning = usePersonaStore((s) => s.isLabRunning);
-  const connectorTestActive = usePersonaStore((s) => s.connectorTestActive);
-  const contextScanActive = usePersonaStore((s) => s.contextScanActive);
-  const contextScanComplete = usePersonaStore((s) => s.contextScanComplete);
-  const setContextScanComplete = usePersonaStore((s) => s.setContextScanComplete);
+  const sidebarSection = useSystemStore((s) => s.sidebarSection);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
+  const n8nTransformActive = useSystemStore((s) => s.n8nTransformActive);
+  const templateAdoptActive = useSystemStore((s) => s.templateAdoptActive);
+  const rebuildActive = useSystemStore((s) => s.rebuildActive);
+  const templateTestActive = useSystemStore((s) => s.templateTestActive);
+  const isLabRunning = useAgentStore((s) => s.isLabRunning);
+  const connectorTestActive = useSystemStore((s) => s.connectorTestActive);
+  const contextScanActive = useSystemStore((s) => s.contextScanActive);
+  const contextScanComplete = useSystemStore((s) => s.contextScanComplete);
+  const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
   const isDev = import.meta.env.DEV;
   const isSimple = useSimpleMode();
   const isDevMode = useDevMode();
-  const viewMode = usePersonaStore((s) => s.viewMode);
-  const toggleViewMode = usePersonaStore((s) => s.toggleViewMode);
+  const viewMode = useSystemStore((s) => s.viewMode);
+  const toggleViewMode = useSystemStore((s) => s.toggleViewMode);
 
   return (
     <>

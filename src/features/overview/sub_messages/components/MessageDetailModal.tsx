@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Trash2, ExternalLink, Check, X, Copy } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from '@/stores/agentStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
-import { getMessageDeliveries } from '@/api/tauriApi';
+import { getMessageDeliveries } from "@/api/overview/messages";
+
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { deliveryStatusConfig, channelLabels } from '../libs/messageHelpers';
 import type { PersonaMessage } from '@/lib/types/types';
@@ -65,9 +67,8 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  const store = usePersonaStore.getState();
-                  store.selectPersona(message.persona_id);
-                  store.setEditorTab('use-cases');
+                  useAgentStore.getState().selectPersona(message.persona_id);
+                  useSystemStore.getState().setEditorTab('use-cases');
                 }}
                 className="inline-flex items-center gap-1 text-blue-400/70 hover:text-blue-400 transition-colors"
                 title={message.execution_id}

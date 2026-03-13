@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
 use serde::Serialize;
 use serde_json::json;
@@ -160,14 +159,9 @@ pub async fn start_design_review_run(
     let tool_names: Vec<String> = tools.iter().map(|t| t.name.clone()).collect();
     let connector_names: Vec<String> = connectors.iter().map(|c| c.name.clone()).collect();
 
-    // Register cancellation flag
-    let cancel_flag = Arc::new(AtomicBool::new(false));
-    {
-        let mut map = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        map.insert(run_id.clone(), cancel_flag.clone());
-    }
-    let cancel_map = state.active_test_run_cancelled.clone();
-    let child_pids = state.active_review_child_pids.clone();
+    // Register cancellation flag in process registry
+    let cancel_flag = state.process_registry.register_run("review", &run_id);
+    let registry = state.process_registry.clone();
 
     tokio::spawn(async move {
         for (i, test_case) in test_cases.iter().enumerate() {
@@ -260,7 +254,7 @@ pub async fn start_design_review_run(
                 &app,
                 &run_id_clone,
                 i,
-                &child_pids,
+                &registry,
             )
             .await;
 
@@ -445,14 +439,7 @@ pub async fn start_design_review_run(
         }
 
         // Cleanup cancellation flag and child PID
-        {
-            let mut map = cancel_map.lock().unwrap_or_else(|e| e.into_inner());
-            map.remove(&run_id_clone);
-        }
-        {
-            let mut pids = child_pids.lock().unwrap_or_else(|e| e.into_inner());
-            pids.remove(&run_id_clone);
-        }
+        registry.unregister_run("review", &run_id_clone);
 
         // Emit completion
         let _ = app.emit(
@@ -478,13 +465,10 @@ pub fn cancel_design_review_run(
     run_id: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    let map = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    if let Some(flag) = map.get(&run_id) {
-        flag.store(true, Ordering::Relaxed);
-    }
+    state.process_registry.cancel_run("review", &run_id);
 
     // Kill the currently-running CLI child process to stop API credit consumption immediately.
-    if let Some(pid) = state.active_review_child_pids.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?.remove(&run_id) {
+    if let Some(pid) = state.process_registry.take_run_pid("review", &run_id) {
         tracing::info!(run_id = %run_id, pid = pid, "Killing review CLI child process");
         crate::engine::kill_process(pid);
     }
@@ -830,21 +814,21 @@ pub fn update_manual_review_status(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     id: String,
-    status: String,
+    status: crate::db::models::ManualReviewStatus,
     reviewer_notes: Option<String>,
 ) -> Result<PersonaManualReview, AppError> {
     require_auth_sync(&state)?;
-    manual_repo::update_status(&state.db, &id, &status, reviewer_notes)?;
+    manual_repo::update_status(&state.db, &id, status, reviewer_notes)?;
     let review = manual_repo::get_by_id(&state.db, &id)?;
 
-    if matches!(review.status.as_str(), "approved" | "rejected" | "resolved") {
+    if matches!(review.status, crate::db::models::ManualReviewStatus::Approved | crate::db::models::ManualReviewStatus::Rejected | crate::db::models::ManualReviewStatus::Resolved) {
         let _ = app.emit(
             "manual-review-resolved",
             ManualReviewResolvedEvent {
                 review_id: review.id.clone(),
                 execution_id: review.execution_id.clone(),
                 persona_id: review.persona_id.clone(),
-                status: review.status.clone(),
+                status: review.status.as_str().to_string(),
             },
         );
     }
@@ -1251,7 +1235,7 @@ async fn run_cli_for_template(
     app: &tauri::AppHandle,
     run_id: &str,
     test_case_index: usize,
-    child_pids: &Arc<Mutex<HashMap<String, u32>>>,
+    registry: &Arc<crate::ActiveProcessRegistry>,
 ) -> Result<String, String> {
     let mut cmd = Command::new(&cli_args.command);
     cmd.args(&cli_args.args)
@@ -1286,7 +1270,7 @@ async fn run_cli_for_template(
 
     // Register child PID so cancel can kill it immediately
     if let Some(pid) = child.id() {
-        child_pids.lock().map_err(|_| "Lock poisoned".to_string())?.insert(run_id.to_string(), pid);
+        registry.set_run_pid("review", run_id, pid);
     }
 
     // Write prompt to stdin
@@ -1331,12 +1315,12 @@ async fn run_cli_for_template(
     if stream_result.is_err() {
         let _ = child.kill().await;
         let _ = child.wait().await;
-        child_pids.lock().unwrap_or_else(|e| e.into_inner()).remove(run_id);
+        registry.clear_run_pid("review", run_id);
         return Err("Template generation timed out after 3 minutes".into());
     }
 
     let _ = child.wait().await;
-    child_pids.lock().unwrap_or_else(|e| e.into_inner()).remove(run_id);
+    registry.clear_run_pid("review", run_id);
 
     if full_output.is_empty() {
         // Read stderr for error info

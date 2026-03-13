@@ -1,9 +1,11 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { OverviewStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
+import { useAgentStore } from "../../agentStore";
 import type { PersonaMessage } from "@/lib/types/types";
 import { enrichWithPersona } from "@/lib/types/types";
-import * as api from "@/api/tauriApi";
+import { deleteMessage, getMessageCount, getUnreadMessageCount, listMessages, markAllMessagesRead, markMessageRead } from "@/api/overview/messages";
+
 
 export interface MessageSlice {
   // State
@@ -21,7 +23,7 @@ export interface MessageSlice {
   fetchUnreadMessageCount: () => Promise<void>;
 }
 
-export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice> = (set, get) => ({
+export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlice> = (set, get) => ({
   messages: [],
   messagesTotal: 0,
   unreadMessageCount: 0,
@@ -32,12 +34,12 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
       const PAGE_SIZE = 50;
       const offset = reset ? 0 : get().messages.length;
       const [rawMessages, totalCount, unreadCount] = await Promise.all([
-        api.listMessages(PAGE_SIZE, offset),
-        reset ? api.getMessageCount() : Promise.resolve(get().messagesTotal),
-        api.getUnreadMessageCount(),
+        listMessages(PAGE_SIZE, offset),
+        reset ? getMessageCount() : Promise.resolve(get().messagesTotal),
+        getUnreadMessageCount(),
       ]);
       // Enrich with persona info
-      const { personas } = get();
+      const { personas } = useAgentStore.getState();
       const enriched: PersonaMessage[] = enrichWithPersona(rawMessages, personas);
       if (reset) {
         set({ messages: enriched, messagesTotal: totalCount, unreadMessageCount: unreadCount });
@@ -74,7 +76,7 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
       };
     });
     try {
-      await api.markMessageRead(id);
+      await markMessageRead(id);
       // Success: remove from pending set (count is already correct)
       set((state) => {
         const nextPending = new Set(state._pendingReadIds);
@@ -101,7 +103,7 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
 
   markAllMessagesAsRead: async (personaId?) => {
     try {
-      await api.markAllMessagesRead(personaId);
+      await markAllMessagesRead(personaId);
       set((state) => {
         const updatedMessages = state.messages.map((m) => {
           if (!personaId || m.persona_id === personaId) {
@@ -123,7 +125,7 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
 
   deleteMessage: async (id) => {
     try {
-      await api.deleteMessage(id);
+      await deleteMessage(id);
       set((state) => ({
         messages: state.messages.filter((m) => m.id !== id),
         messagesTotal: Math.max(0, state.messagesTotal - 1),
@@ -135,7 +137,7 @@ export const createMessageSlice: StateCreator<PersonaStore, [], [], MessageSlice
 
   fetchUnreadMessageCount: async () => {
     try {
-      const unread = await api.getUnreadMessageCount();
+      const unread = await getUnreadMessageCount();
       set({ unreadMessageCount: unread });
     } catch (err) {
       console.warn("[messageSlice] fetchUnreadMessageCount failed:", err);

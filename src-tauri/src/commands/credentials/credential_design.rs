@@ -54,13 +54,8 @@ pub async fn start_credential_design(
     let cli_args = build_credential_task_cli_args();
 
     let design_id = uuid::Uuid::new_v4().to_string();
-    let active_id = state.active_credential_design_id.clone();
-    let active_child_pid = state.active_credential_design_child_pid.clone();
-
-    {
-        let mut guard = active_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        *guard = Some(design_id.clone());
-    }
+    let registry = state.process_registry.clone();
+    registry.set_id("credential_design", design_id.clone());
 
     let truncated = if instruction.len() > 120 {
         format!("{}...", &instruction[..120])
@@ -81,8 +76,9 @@ pub async fn start_credential_design(
             task_id: design_id_clone,
             prompt_text: design_prompt,
             cli_args,
-            active_id,
-            active_child_pid: Some(active_child_pid),
+            registry,
+            domain: "credential_design".into(),
+            track_pid: true,
             messages: DESIGN_MESSAGES,
             extractor: credential_design::extract_credential_design_result,
         })
@@ -97,12 +93,8 @@ pub fn cancel_credential_design(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
     require_privileged_sync(&state, "cancel_credential_design")?;
-    let mut guard = state.active_credential_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    *guard = None;
-
-    // Kill the CLI child process to stop API credit consumption immediately.
-    let pid = state.active_credential_design_child_pid.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?.take();
-    if let Some(pid) = pid {
+    // Cancel the active credential design and kill the CLI child process.
+    if let Some(pid) = state.process_registry.cancel("credential_design") {
         tracing::info!(pid = pid, "Killing credential design CLI child process");
         crate::engine::kill_process(pid);
     }

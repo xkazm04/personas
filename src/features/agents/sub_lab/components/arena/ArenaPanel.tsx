@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Play, Square, ChevronDown, Filter, AlertCircle } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { LabProgress } from '../shared/LabProgress';
 import { ArenaHistory } from './ArenaHistory';
 import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
@@ -9,14 +9,14 @@ import { ANTHROPIC_MODELS, OLLAMA_MODELS, ALL_MODELS, selectedModelsToConfigs } 
 import { usePanelRunState } from '../../libs/usePanelRunState';
 
 export function ArenaPanel() {
-  const arenaRuns = usePersonaStore((s) => s.arenaRuns);
-  const arenaResultsMap = usePersonaStore((s) => s.arenaResultsMap);
-  const isLabRunning = usePersonaStore((s) => s.isLabRunning);
-  const startArena = usePersonaStore((s) => s.startArena);
-  const cancelArena = usePersonaStore((s) => s.cancelArena);
-  const fetchArenaRuns = usePersonaStore((s) => s.fetchArenaRuns);
-  const fetchArenaResults = usePersonaStore((s) => s.fetchArenaResults);
-  const deleteArenaRun = usePersonaStore((s) => s.deleteArenaRun);
+  const arenaRuns = useAgentStore((s) => s.arenaRuns);
+  const arenaResultsMap = useAgentStore((s) => s.arenaResultsMap);
+  const isLabRunning = useAgentStore((s) => s.isLabRunning);
+  const startArena = useAgentStore((s) => s.startArena);
+  const cancelArena = useAgentStore((s) => s.cancelArena);
+  const fetchArenaRuns = useAgentStore((s) => s.fetchArenaRuns);
+  const fetchArenaResults = useAgentStore((s) => s.fetchArenaResults);
+  const deleteArenaRun = useAgentStore((s) => s.deleteArenaRun);
 
   const {
     selectedPersona, selectedModels, setSelectedModels, toggleModel,

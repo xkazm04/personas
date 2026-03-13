@@ -1,4 +1,5 @@
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, ShieldAlert, Monitor } from 'lucide-react';
@@ -14,17 +15,17 @@ import { HealingCard, AiHealingCounters } from './RunnerToolCalls';
 import { RunnerPhaseTimeline } from './RunnerStreamView';
 
 export function PersonaRunner() {
-  const selectedPersona = usePersonaStore((state) => state.selectedPersona);
-  const isExecuting = usePersonaStore((state) => state.isExecuting);
-  const activeExecutionId = usePersonaStore((state) => state.activeExecutionId);
-  const cloudConfig = usePersonaStore((s) => s.cloudConfig);
-  const queuePosition = usePersonaStore((s) => s.queuePosition);
-  const queueDepth = usePersonaStore((s) => s.queueDepth);
-  const budgetStatus = usePersonaStore((s) => s.getBudgetStatus(selectedPersona?.id ?? ''));
-  const isBudgetBlocked = usePersonaStore((s) => s.isBudgetBlocked(selectedPersona?.id ?? ''));
-  const overrideBudgetPause = usePersonaStore((s) => s.overrideBudgetPause);
-  const overrideStaleBudget = usePersonaStore((s) => s.overrideStaleBudget);
-  const budgetEntry = usePersonaStore((s) => s.budgetSpendMap.get(selectedPersona?.id ?? ''));
+  const selectedPersona = useAgentStore((state) => state.selectedPersona);
+  const isExecuting = useAgentStore((state) => state.isExecuting);
+  const activeExecutionId = useAgentStore((state) => state.activeExecutionId);
+  const cloudConfig = useSystemStore((s) => s.cloudConfig);
+  const queuePosition = useAgentStore((s) => s.queuePosition);
+  const queueDepth = useAgentStore((s) => s.queueDepth);
+  const budgetStatus = useAgentStore((s) => s.getBudgetStatus(selectedPersona?.id ?? ''));
+  const isBudgetBlocked = useAgentStore((s) => s.isBudgetBlocked(selectedPersona?.id ?? ''));
+  const overrideBudgetPause = useAgentStore((s) => s.overrideBudgetPause);
+  const overrideStaleBudget = useAgentStore((s) => s.overrideStaleBudget);
+  const budgetEntry = useAgentStore((s) => s.budgetSpendMap.get(selectedPersona?.id ?? ''));
   const personaId = selectedPersona?.id || '';
 
   const state = useRunnerState(personaId);

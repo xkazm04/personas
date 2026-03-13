@@ -7,14 +7,14 @@ import { ExamplePairCollector } from '../wizard/ExamplePairCollector';
 
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { DesignContext } from '@/lib/types/frontendTypes';
-import type { PersonaWithDetails, DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import type { PersonaWithDetails, PersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { ExamplePair } from '../wizard/ExamplePairCollector';
 import type { DesignInputMode } from '../libs/useDesignTabState';
 
 export interface DesignPhasePanelProps {
   savedDesignResult: AgentIR | null;
   selectedPersona: PersonaWithDetails;
-  toolDefinitions: DbPersonaToolDefinition[];
+  toolDefinitions: PersonaToolDefinition[];
   currentToolNames: string[];
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];

@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
 import { testN8nDraft } from '@/api/agents/tests';
 import { sendAppNotification } from '@/api/system/system';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 
 export interface UseBackgroundPreviewReturn {
@@ -25,7 +25,7 @@ export function useBackgroundPreview(): UseBackgroundPreviewReturn {
   const [hasStarted, setHasStarted] = useState(false);
   const lastDraftJsonRef = useRef<string | null>(null);
 
-  const setTemplateTestActive = usePersonaStore((s) => s.setTemplateTestActive);
+  const setTemplateTestActive = useSystemStore((s) => s.setTemplateTestActive);
 
   const stream = useCorrelatedCliStream({
     outputEvent: 'n8n-test-output',

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { AnimatePresence } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { FEASIBILITY_COLORS } from '@/lib/utils/designTokens';
 import { isTimestampStale } from '@/stores/slices/agents/healthCheckSlice';
@@ -27,7 +27,7 @@ interface HealthCheckPanelProps {
 export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
   const isSimple = useSimpleMode();
   const { phase, result, score, error, runHealthCheck, markIssueResolved, reset } = healthCheck;
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const handleApplyFix = useApplyHealthFix();
 
   const handleRun = useCallback(async () => {

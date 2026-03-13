@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Eye, RotateCw, Globe, Server, BookOpen, History } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import { useGoogleOAuth } from '@/features/vault/hooks/useGoogleOAuth';
 import { useRotationTicker, formatCountdown } from '@/features/vault/hooks/useRotationTicker';
@@ -68,46 +69,31 @@ export function CredentialPlaygroundModal({ credential, connector, onClose, onDe
     googleOAuth.startConsent(connector?.name || credential.service_type, extraScopes);
   }, [connector?.name, credential.service_type, googleOAuth]);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [onClose]);
-
   return (
-    <AnimatePresence>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="relative w-full max-w-6xl h-[90vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-          <PlaygroundHeader credential={credential} connector={connector} onClose={onClose} />
-          <div className="flex items-center gap-1 px-6 pt-3 border-b border-primary/10 shrink-0">
-            {tabs.map((tab) => {
-              const Icon = tab.icon; const isActive = tab.id === activeTab;
-              return (
-                <Button key={tab.id} variant="ghost" size="sm"
-                  icon={<Icon className="w-3.5 h-3.5" />}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`relative ${isActive ? 'text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}>
-                  {tab.label}
-                  {isActive && <motion.div layoutId="playgroundTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary/60 rounded-full" transition={{ type: 'spring', stiffness: 500, damping: 30 }} />}
-                </Button>
-              );
-            })}
-          </div>
-          <PlaygroundTabContent
-            activeTab={activeTab} credential={credential} connector={connector}
-            isGoogleOAuthFlow={isGoogleOAuthFlow} googleOAuth={googleOAuth}
-            effectiveHealthcheckResult={effectiveHealthcheckResult} isHealthchecking={isHealthchecking}
-            health={health} rotationStatus={rotationStatus} rotationCountdown={rotationCountdown}
-            fetchRotationStatus={fetchRotationStatus} editError={editError} setEditError={setEditError}
-            onOAuthConsent={handleOAuthConsent} onDelete={onDelete}
-          />
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+    <BaseModal isOpen onClose={onClose} titleId="credential-playground-title" size="6xl" panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden h-[90vh]">
+      <PlaygroundHeader credential={credential} connector={connector} onClose={onClose} />
+      <div className="flex items-center gap-1 px-6 pt-3 border-b border-primary/10 shrink-0">
+        {tabs.map((tab) => {
+          const Icon = tab.icon; const isActive = tab.id === activeTab;
+          return (
+            <Button key={tab.id} variant="ghost" size="sm"
+              icon={<Icon className="w-3.5 h-3.5" />}
+              onClick={() => setActiveTab(tab.id)}
+              className={`relative ${isActive ? 'text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}>
+              {tab.label}
+              {isActive && <motion.div layoutId="playgroundTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary/60 rounded-full" transition={{ type: 'spring', stiffness: 500, damping: 30 }} />}
+            </Button>
+          );
+        })}
+      </div>
+      <PlaygroundTabContent
+        activeTab={activeTab} credential={credential} connector={connector}
+        isGoogleOAuthFlow={isGoogleOAuthFlow} googleOAuth={googleOAuth}
+        effectiveHealthcheckResult={effectiveHealthcheckResult} isHealthchecking={isHealthchecking}
+        health={health} rotationStatus={rotationStatus} rotationCountdown={rotationCountdown}
+        fetchRotationStatus={fetchRotationStatus} editError={editError} setEditError={setEditError}
+        onOAuthConsent={handleOAuthConsent} onDelete={onDelete}
+      />
+    </BaseModal>
   );
 }

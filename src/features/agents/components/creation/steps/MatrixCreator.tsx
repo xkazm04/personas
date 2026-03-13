@@ -6,7 +6,8 @@
  */
 import { useMemo, useState, useCallback, type Dispatch } from 'react';
 import { PersonaMatrix } from '@/features/templates/sub_generated/gallery/matrix/PersonaMatrix';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { getArchitectureComponent } from '@/lib/credentials/connectorRoles';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { RequiredConnector } from '@/features/templates/sub_generated/adoption/steps/connect/ConnectStep';
@@ -35,8 +36,8 @@ function triggerToSuggested(preset: TriggerPreset) {
 }
 
 export function MatrixCreator({ state, dispatch, onContinue, onCancel, draftPersonaId, setDraftPersonaId }: MatrixCreatorProps) {
-  const credentials = usePersonaStore((s) => s.credentials);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const credentials = useVaultStore((s) => s.credentials);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   // -- AI orchestration ----------------------------------------------
   const orchestration = useMatrixOrchestration({ state, dispatch, draftPersonaId, setDraftPersonaId });

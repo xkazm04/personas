@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Wand2 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { QuerySidebar } from './QuerySidebar';
 import { QueryEditorPane } from './QueryEditorPane';
 
@@ -11,7 +11,7 @@ interface QueriesTabProps {
 }
 
 export function QueriesTab({ credentialId, language, serviceType }: QueriesTabProps) {
-  const queries = usePersonaStore((s) => s.dbSavedQueries).filter((q) => q.credential_id === credentialId);
+  const queries = useVaultStore((s) => s.dbSavedQueries).filter((q) => q.credential_id === credentialId);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editorValue, setEditorValue] = useState('');

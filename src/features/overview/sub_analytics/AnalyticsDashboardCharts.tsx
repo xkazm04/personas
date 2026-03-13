@@ -6,7 +6,7 @@ import {
 import { MetricChart } from '@/features/overview/sub_usage/charts/MetricChart';
 import { ChartTooltip } from '@/features/overview/sub_usage/charts/ChartTooltip';
 import { CHART_COLORS, CHART_COLORS_PURPLE, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/charts/chartConstants';
-import type { PieDataPoint } from '@/features/overview/sub_observability/MetricsCharts';
+import type { PieDataPoint } from '@/features/overview/sub_observability/components/MetricsCharts';
 import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
 
 function formatToolName(name: string): string {

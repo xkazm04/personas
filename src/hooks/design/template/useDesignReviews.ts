@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import * as api from '@/api/tauriApi';
+import { cancelDesignReviewRun, deleteDesignReview, importDesignReview, listDesignReviews, startDesignReviewRun } from "@/api/overview/reviews";
+
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { getSeedReviews } from '@/lib/personas/templates/seedTemplates';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
@@ -56,7 +57,7 @@ export function useDesignReviews() {
   const refresh = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await api.listDesignReviews();
+      const data = await listDesignReviews();
       setReviews(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch reviews');
@@ -80,9 +81,9 @@ export function useDesignReviews() {
     if (seeds.length === 0) return;
 
     try {
-      await Promise.all(seeds.map((input) => api.importDesignReview(input)));
+      await Promise.all(seeds.map((input) => importDesignReview(input)));
       // Re-fetch to include seeded records
-      const data = await api.listDesignReviews();
+      const data = await listDesignReviews();
       setReviews(data);
     } catch {
       // intentional: non-critical -- seeding catalog templates is best-effort
@@ -93,7 +94,7 @@ export function useDesignReviews() {
     (async () => {
       setIsLoading(true);
       try {
-        const data = await api.listDesignReviews();
+        const data = await listDesignReviews();
         setReviews(data);
         await seedCatalogTemplates(data);
       } catch (err) {
@@ -128,7 +129,7 @@ export function useDesignReviews() {
       // stale events from a previous run latching currentRunId to the wrong
       // value.  Any events emitted during the invoke round-trip are buffered
       // by Tauri and delivered once the listener is registered below.
-      const result = await api.startDesignReviewRun(personaId, testCases ?? []);
+      const result = await startDesignReviewRun(personaId, testCases ?? []);
       currentRunId.current = result.run_id;
 
       unlistenRef.current = await listen<ReviewStatusPayload>('design-review-status', (event) => {
@@ -205,7 +206,7 @@ export function useDesignReviews() {
     // Signal backend to stop processing
     if (currentRunId.current) {
       try {
-        await api.cancelDesignReviewRun(currentRunId.current);
+        await cancelDesignReviewRun(currentRunId.current);
       } catch {
         // intentional: non-critical -- cancellation is best-effort
       }
@@ -231,7 +232,7 @@ export function useDesignReviews() {
 
   const deleteReview = useCallback(async (id: string) => {
     try {
-      await api.deleteDesignReview(id);
+      await deleteDesignReview(id);
       setReviews((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete review');

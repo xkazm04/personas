@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { Clock, RotateCw, ShieldAlert, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { HealingEventPayload } from '../../libs/runnerHelpers';
@@ -12,7 +12,7 @@ export function HealingCard({
   notification: HealingEventPayload;
   onDismiss: () => void;
 }) {
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const isRetry = notification.auto_fixed && notification.backoff_seconds != null;
   const isIssue = !notification.auto_fixed;
 

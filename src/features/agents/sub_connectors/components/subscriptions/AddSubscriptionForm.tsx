@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
-import { FieldHint } from '@/features/shared/components/display/FieldHint';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
-import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { FormField } from '@/features/shared/components/forms/FormField';
+import { inputFieldClass } from '@/lib/utils/designTokens';
 
 const EVENT_TYPES = [
   { value: 'webhook_received', label: 'Webhook Received' },
@@ -63,14 +63,7 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
 
   return (
     <div className="border border-primary/20 rounded-xl p-2.5 space-y-2 bg-secondary/30">
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1">
-          Event Type
-          <FieldHint
-            text="The type of system event that will trigger this persona to run."
-            example="execution_completed"
-          />
-        </label>
+      <FormField label="Event Type" hint="The type of system event that will trigger this persona to run.">
         <ThemedSelect
           value={newEventType}
           onChange={(e) => setNewEventType(e.target.value)}
@@ -81,29 +74,22 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
             <option key={t.value} value={t.value}>{t.label}</option>
           ))}
         </ThemedSelect>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1">
-          Source Filter <span className="text-muted-foreground/80">(optional)</span>
-          <FieldHint
-            text="Only trigger when the event source matches this filter. Supports exact persona IDs or glob patterns with * wildcards."
-            example="persona-abc* or team-*"
+      </FormField>
+      <FormField label="Source Filter" error={validationError ?? undefined} helpText="Supports exact persona IDs or glob patterns with * wildcards.">
+        {(inputProps) => (
+          <input
+            {...inputProps}
+            type="text"
+            value={newSourceFilter}
+            onChange={(e) => {
+              setNewSourceFilter(e.target.value);
+              if (validationError) setValidationError(null);
+            }}
+            placeholder="e.g. persona-id or glob pattern"
+            className={inputFieldClass(!!validationError)}
           />
-        </label>
-        <input
-          type="text"
-          value={newSourceFilter}
-          onChange={(e) => {
-            setNewSourceFilter(e.target.value);
-            if (validationError) setValidationError(null);
-          }}
-          placeholder="e.g. persona-id or glob pattern"
-          className={INPUT_FIELD}
-        />
-        {validationError && (
-          <p className="mt-1 text-sm text-red-400/80">{validationError}</p>
         )}
-      </div>
+      </FormField>
       <div className="flex items-center gap-2 pt-1">
         <button
           onClick={() => void handleAdd()}

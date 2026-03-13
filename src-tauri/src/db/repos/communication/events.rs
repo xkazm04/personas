@@ -370,6 +370,35 @@ pub fn get_subscriptions_by_event_type(
     Ok(collect_rows(rows, "get_subscriptions_by_event_type"))
 }
 
+/// Bulk-fetch enabled subscriptions for multiple event types in a single query.
+pub fn get_subscriptions_by_event_types(
+    pool: &DbPool,
+    event_types: &[String],
+) -> Result<Vec<PersonaEventSubscription>, AppError> {
+    if event_types.is_empty() {
+        return Ok(Vec::new());
+    }
+    let conn = pool.get()?;
+    let placeholders: Vec<String> = event_types
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
+    let sql = format!(
+        "SELECT * FROM persona_event_subscriptions
+         WHERE event_type IN ({}) AND enabled = 1
+         ORDER BY created_at DESC",
+        placeholders.join(", ")
+    );
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = event_types
+        .iter()
+        .map(|s| s as &dyn rusqlite::types::ToSql)
+        .collect();
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(params_ref.as_slice(), row_to_subscription)?;
+    Ok(collect_rows(rows, "get_subscriptions_by_event_types"))
+}
+
 pub fn create_subscription(
     pool: &DbPool,
     input: CreateEventSubscriptionInput,

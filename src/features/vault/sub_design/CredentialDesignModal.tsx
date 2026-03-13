@@ -1,7 +1,6 @@
 import { X, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Button } from '@/features/shared/components/buttons';
-import { MOTION_TIMING } from '@/features/templates/animationPresets';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { computeSubtitle } from '@/features/vault/sub_design/credentialDesignModalTypes';
 import type { CredentialDesignModalProps } from '@/features/vault/sub_design/credentialDesignModalTypes';
 import { useCredentialDesignModal } from '@/features/vault/sub_design/useCredentialDesignModal';
@@ -23,78 +22,58 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
   });
 
   return (
-    <div className={embedded ? "relative" : "fixed inset-0 z-50 flex items-center justify-center"}>
-      {/* Backdrop */}
-      {!embedded && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={MOTION_TIMING.FLOW}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          onClick={modal.handleClose}
-        />
-      )}
-
-      {/* Modal */}
-      <motion.div
-        ref={modal.dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="credential-design-title"
-        tabIndex={-1}
-        onKeyDown={modal.handleFocusTrap}
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={MOTION_TIMING.EASE}
-        className={`relative w-full max-w-3xl ${embedded ? 'max-h-[80vh]' : 'max-h-[min(90vh,960px)]'} overflow-y-auto bg-background border border-primary/15 rounded-2xl ${embedded ? '' : 'shadow-2xl'}`}
-      >
-        {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-background/95 backdrop-blur-sm border-b border-primary/10">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <h2 id="credential-design-title" className="text-base font-semibold text-foreground">Design Credential</h2>
-              <p className="text-sm text-muted-foreground">{subtitle}</p>
-            </div>
+    <BaseModal
+      isOpen={open}
+      onClose={modal.handleClose}
+      titleId="credential-design-title"
+      embedded={embedded}
+      size="lg"
+      panelClassName={embedded ? 'max-h-[80vh] overflow-y-auto bg-background border border-primary/15 rounded-2xl' : 'max-h-[min(90vh,960px)] overflow-y-auto bg-background border border-primary/15 rounded-2xl shadow-2xl'}
+    >
+      {/* Header */}
+      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-background/95 backdrop-blur-sm border-b border-primary/10">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-primary" />
           </div>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            icon={<X className="w-4 h-4" />}
-            onClick={modal.handleClose}
-            className="text-muted-foreground/90 hover:text-foreground hover:bg-secondary/60"
-          />
+          <div>
+            <h2 id="credential-design-title" className="text-base font-semibold text-foreground">Design Credential</h2>
+            <p className="text-sm text-muted-foreground">{subtitle}</p>
+          </div>
         </div>
-
-        {/* Body */}
-        <CredentialDesignModalBody
-          orch={modal.orch}
-          showImport={modal.showImport}
-          setShowImport={modal.setShowImport}
-          importFlow={modal.importFlow}
-          handleImportComplete={modal.handleImportComplete}
-          autoSetupResult={modal.autoSetupResult}
-          setAutoSetupResult={modal.setAutoSetupResult}
-          autoSetupPending={modal.autoSetupPending}
-          handleKeyDown={modal.handleKeyDown}
-          handleAutoSetup={modal.handleAutoSetup}
-          handleClose={modal.handleClose}
-          handleViewCredential={modal.handleViewCredential}
-          showTemplates={modal.showTemplates}
-          setShowTemplates={modal.setShowTemplates}
-          templateSearch={modal.templateSearch}
-          setTemplateSearch={modal.setTemplateSearch}
-          templateConnectors={modal.templateConnectors}
-          expandedTemplateId={modal.expandedTemplateId}
-          setExpandedTemplateId={modal.setExpandedTemplateId}
-          applyTemplate={modal.applyTemplate}
-          onComplete={onComplete}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="w-4 h-4" />}
+          onClick={modal.handleClose}
+          className="text-muted-foreground/90 hover:text-foreground hover:bg-secondary/60"
         />
-      </motion.div>
-    </div>
+      </div>
+
+      {/* Body */}
+      <CredentialDesignModalBody
+        orch={modal.orch}
+        showImport={modal.showImport}
+        setShowImport={modal.setShowImport}
+        importFlow={modal.importFlow}
+        handleImportComplete={modal.handleImportComplete}
+        autoSetupResult={modal.autoSetupResult}
+        setAutoSetupResult={modal.setAutoSetupResult}
+        autoSetupPending={modal.autoSetupPending}
+        handleKeyDown={modal.handleKeyDown}
+        handleAutoSetup={modal.handleAutoSetup}
+        handleClose={modal.handleClose}
+        handleViewCredential={modal.handleViewCredential}
+        showTemplates={modal.showTemplates}
+        setShowTemplates={modal.setShowTemplates}
+        templateSearch={modal.templateSearch}
+        setTemplateSearch={modal.setTemplateSearch}
+        templateConnectors={modal.templateConnectors}
+        expandedTemplateId={modal.expandedTemplateId}
+        setExpandedTemplateId={modal.setExpandedTemplateId}
+        applyTemplate={modal.applyTemplate}
+        onComplete={onComplete}
+      />
+    </BaseModal>
   );
 }

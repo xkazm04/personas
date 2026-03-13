@@ -1,10 +1,12 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { AgentStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
 import type { PersonaTestRun } from "@/lib/bindings/PersonaTestRun";
 import type { PersonaTestResult } from "@/lib/bindings/PersonaTestResult";
 import type { PersonaTestSuite } from "@/lib/bindings/PersonaTestSuite";
-import * as api from "@/api/tauriApi";
+import { ModelTestConfig, cancelTestRun, deleteTestRun, getTestResults, listTestRuns, startTestRun } from "@/api/agents/tests";
+import { createTestSuite, deleteTestSuite, listTestSuites, updateTestSuite } from "@/api/agents/testSuites";
+
 import { createRunLifecycle } from "./runLifecycle";
 
 const testLifecycle = createRunLifecycle('isTestRunning', 'testRunProgress');
@@ -35,7 +37,7 @@ export interface TestSlice {
 
   // Actions
   fetchTestRuns: (personaId: string) => Promise<void>;
-  startTest: (personaId: string, models: api.ModelTestConfig[], useCaseFilter?: string, suiteId?: string, fixtureInputs?: Record<string, unknown>) => Promise<string | null>;
+  startTest: (personaId: string, models: ModelTestConfig[], useCaseFilter?: string, suiteId?: string, fixtureInputs?: Record<string, unknown>) => Promise<string | null>;
   cancelTest: (runId: string) => Promise<void>;
   fetchTestResults: (testRunId: string) => Promise<void>;
   deleteTest: (runId: string) => Promise<void>;
@@ -47,7 +49,7 @@ export interface TestSlice {
   updateTestSuite: (id: string, name?: string, description?: string, scenarios?: string, scenarioCount?: number) => Promise<PersonaTestSuite | null>;
 }
 
-export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (set, get) => ({
+export const createTestSlice: StateCreator<AgentStore, [], [], TestSlice> = (set, get) => ({
   testRuns: [],
   activeTestResults: [],
   activeTestResultsRunId: null,
@@ -57,7 +59,7 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
 
   fetchTestRuns: async (personaId) => {
     try {
-      const runs = await api.listTestRuns(personaId);
+      const runs = await listTestRuns(personaId);
       set({ testRuns: runs });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch test runs") });
@@ -68,7 +70,7 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
     set({ activeTestResults: [], activeTestResultsRunId: null });
     testLifecycle.markStarted(set);
     try {
-      const run = await api.startTestRun(personaId, models, useCaseFilter, suiteId, fixtureInputs);
+      const run = await startTestRun(personaId, models, useCaseFilter, suiteId, fixtureInputs);
       set({
         testRunProgress: {
           runId: run.id,
@@ -85,7 +87,7 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
 
   cancelTest: async (runId) => {
     try {
-      await api.cancelTestRun(runId);
+      await cancelTestRun(runId);
     } catch (err) {
       set({ error: errMsg(err, "Failed to cancel test run") });
     } finally {
@@ -96,7 +98,7 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
   fetchTestResults: async (testRunId) => {
     set({ activeTestResultsRunId: testRunId });
     try {
-      const results = await api.getTestResults(testRunId);
+      const results = await getTestResults(testRunId);
       set((state) => (
         state.activeTestResultsRunId === testRunId
           ? { activeTestResults: results }
@@ -109,7 +111,7 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
 
   deleteTest: async (runId) => {
     try {
-      await api.deleteTestRun(runId);
+      await deleteTestRun(runId);
       set((state) => ({
         testRuns: state.testRuns.filter((r) => r.id !== runId),
       }));
@@ -130,7 +132,7 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
 
   fetchTestSuites: async (personaId) => {
     try {
-      const suites = await api.listTestSuites(personaId);
+      const suites = await listTestSuites(personaId);
       set({ testSuites: suites });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch test suites") });
@@ -139,7 +141,7 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
 
   createTestSuite: async (personaId, name, scenarios, scenarioCount, sourceRunId) => {
     try {
-      const suite = await api.createTestSuite(personaId, name, scenarios, scenarioCount, undefined, sourceRunId);
+      const suite = await createTestSuite(personaId, name, scenarios, scenarioCount, undefined, sourceRunId);
       set((state) => ({ testSuites: [suite, ...state.testSuites] }));
       return suite;
     } catch (err) {
@@ -150,7 +152,7 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
 
   deleteTestSuite: async (id) => {
     try {
-      await api.deleteTestSuite(id);
+      await deleteTestSuite(id);
       set((state) => ({ testSuites: state.testSuites.filter((s) => s.id !== id) }));
     } catch (err) {
       set({ error: errMsg(err, "Failed to delete test suite") });
@@ -159,7 +161,7 @@ export const createTestSlice: StateCreator<PersonaStore, [], [], TestSlice> = (s
 
   updateTestSuite: async (id, name, description, scenarios, scenarioCount) => {
     try {
-      const updated = await api.updateTestSuite(id, name, description, scenarios, scenarioCount);
+      const updated = await updateTestSuite(id, name, description, scenarios, scenarioCount);
       set((state) => ({ testSuites: state.testSuites.map((s) => (s.id === updated.id ? updated : s)) }));
       return updated;
     } catch (err) {

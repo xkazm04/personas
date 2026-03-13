@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use serde::Serialize;
 use tauri::{Emitter, State};
-use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::io::AsyncBufReadExt;
+use ts_rs::TS;
 
 use crate::db::models::{PersonaTestResult, PersonaTestRun};
 use crate::db::repos::core::personas as persona_repo;
@@ -10,7 +11,8 @@ use crate::db::repos::execution::test_runs as repo;
 use crate::db::repos::execution::test_suites as suite_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::engine::{eval, parser, prompt};
-use crate::engine::test_runner::{self, build_cli_command, write_prompt_to_stdin, TestModelConfig, TestScenario};
+use crate::engine::cli_process::CliProcessDriver;
+use crate::engine::test_runner::{self, TestModelConfig, TestScenario};
 use crate::engine::types::{EphemeralPersona, StreamLineType};
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -70,16 +72,12 @@ pub async fn start_test_run(
         .await;
     drop(log_dir); // just used to verify engine is alive
 
-    // Create cancellation flag and register in AppState
-    let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
-    {
-        let mut flags = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        flags.insert(run_id.clone(), cancelled.clone());
-    }
+    // Register cancellation flag in process registry
+    let cancelled = state.process_registry.register_run("test", &run_id);
 
     let cancelled_clone = cancelled.clone();
     let run_id_for_cancel = run_id.clone();
-    let state_arc = state.inner().clone();
+    let registry = state.process_registry.clone();
 
     tokio::spawn(async move {
         test_runner::run_test(
@@ -96,10 +94,7 @@ pub async fn start_test_run(
         )
         .await;
 
-        // Clean up cancellation flag
-        if let Ok(mut flags) = state_arc.active_test_run_cancelled.lock() {
-            flags.remove(&run_id_for_cancel);
-        }
+        registry.unregister_run("test", &run_id_for_cancel);
     });
 
     Ok(run)
@@ -140,11 +135,7 @@ pub fn cancel_test_run(
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     // Set cancellation flag -- the test runner checks this between iterations
-    if let Ok(flags) = state.active_test_run_cancelled.lock() {
-        if let Some(flag) = flags.get(&id) {
-            flag.store(true, std::sync::atomic::Ordering::Release);
-        }
-    }
+    state.process_registry.cancel_run("test", &id);
 
     // Update DB status immediately
     let now = chrono::Utc::now().to_rfc3339();
@@ -155,13 +146,15 @@ pub fn cancel_test_run(
 
 // -- Draft Validation & Streaming Test --------------------------
 
-#[derive(Serialize)]
+#[derive(Serialize, TS)]
+#[ts(export)]
 pub struct ToolIssue {
     tool_name: String,
     issue: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, TS)]
+#[ts(export)]
 pub struct DraftValidationResult {
     passed: bool,
     error: Option<String>,
@@ -312,9 +305,9 @@ pub async fn test_n8n_draft(
 
     let prompt_text = prompt::assemble_prompt(persona, tools, None, cred_hints, None);
 
-    // Build CLI command with shared helper
-    let (mut cmd, exec_dir) = match build_cli_command(&cli_args, "personas-test") {
-        Ok(pair) => pair,
+    // Spawn CLI process via CliProcessDriver (with piped stderr)
+    let mut driver = match CliProcessDriver::spawn_temp(&cli_args, "personas-test") {
+        Ok(d) => d,
         Err(e) => {
             let _ = app.emit(
                 "n8n-test-status",
@@ -328,8 +321,6 @@ pub async fn test_n8n_draft(
             return Ok(());
         }
     };
-    // Override stderr to piped for streaming output
-    cmd.stderr(std::process::Stdio::piped());
 
     // Emit running status
     let _ = app.emit(
@@ -342,30 +333,8 @@ pub async fn test_n8n_draft(
         },
     );
 
-    let mut child = match cmd.spawn() {
-        Ok(c) => c,
-        Err(e) => {
-            let _ = std::fs::remove_dir_all(&exec_dir);
-            let error_msg = if e.kind() == std::io::ErrorKind::NotFound {
-                "Claude CLI not found. Install it from https://docs.anthropic.com/en/docs/claude-code".to_string()
-            } else {
-                format!("Failed to spawn Claude CLI: {e}")
-            };
-            let _ = app.emit(
-                "n8n-test-status",
-                N8nTestStatusEvent {
-                    test_id,
-                    status: "failed".to_string(),
-                    error: Some(error_msg),
-                    passed: Some(false),
-                },
-            );
-            return Ok(());
-        }
-    };
-
     // Write prompt to stdin
-    write_prompt_to_stdin(&mut child, &prompt_text).await;
+    driver.write_stdin(prompt_text.as_bytes()).await;
 
     // Track whether the draft has tools -- confused agents without tool use should fail
     let has_tools = !tools.is_empty();
@@ -374,8 +343,8 @@ pub async fn test_n8n_draft(
     let test_id_bg = test_id.clone();
     let app_bg = app.clone();
     tokio::spawn(async move {
-        let stdout = match child.stdout.take() {
-            Some(s) => s,
+        let mut reader = match driver.take_stdout_reader() {
+            Some(r) => r.lines(),
             None => {
                 let _ = app_bg.emit(
                     "n8n-test-status",
@@ -389,7 +358,6 @@ pub async fn test_n8n_draft(
                 return;
             }
         };
-        let mut reader = BufReader::new(stdout).lines();
 
         let mut saw_init = false;
         let mut saw_text = false;
@@ -445,16 +413,16 @@ pub async fn test_n8n_draft(
         // Wait for process exit
         let _ = tokio::time::timeout(
             tokio::time::Duration::from_secs(5),
-            child.wait(),
+            driver.wait(),
         )
         .await;
 
         // Clean up temp dir
-        let _ = std::fs::remove_dir_all(&exec_dir);
+        driver.cleanup_dir();
 
         // Emit final status -- enhanced validation with confusion detection
         let (status, passed, error) = if read_result.is_err() {
-            let _ = child.kill().await;
+            driver.kill().await;
             ("failed".to_string(), Some(false), Some("Test timed out after 60 seconds".to_string()))
         } else if !saw_init {
             let err = if !error_text.is_empty() {

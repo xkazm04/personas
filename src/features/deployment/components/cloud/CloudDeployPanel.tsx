@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Cloud } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ConnectionStatusBadge } from '@/features/shared/components/feedback/ConnectionStatusBadge';
 import { PanelTabBar } from '@/features/shared/components/layout/PanelTabBar';
@@ -44,33 +44,33 @@ export default function CloudDeployPanel() {
   const [oauthCode, setOauthCode] = useState('');
   const [oauthStartUrl, setOauthStartUrl] = useState<string | null>(null);
 
-  const config = usePersonaStore((s) => s.cloudConfig);
-  const isConnecting = usePersonaStore((s) => s.cloudIsConnecting);
-  const status = usePersonaStore((s) => s.cloudStatus);
-  const isLoadingStatus = usePersonaStore((s) => s.cloudIsLoadingStatus);
-  const oauthStatus = usePersonaStore((s) => s.cloudOAuthStatus);
-  const pendingOAuthState = usePersonaStore((s) => s.cloudPendingOAuthState);
-  const error = usePersonaStore((s) => s.cloudError);
+  const config = useSystemStore((s) => s.cloudConfig);
+  const isConnecting = useSystemStore((s) => s.cloudIsConnecting);
+  const status = useSystemStore((s) => s.cloudStatus);
+  const isLoadingStatus = useSystemStore((s) => s.cloudIsLoadingStatus);
+  const oauthStatus = useSystemStore((s) => s.cloudOAuthStatus);
+  const pendingOAuthState = useSystemStore((s) => s.cloudPendingOAuthState);
+  const error = useSystemStore((s) => s.cloudError);
 
-  const initialize = usePersonaStore((s) => s.cloudInitialize);
-  const connect = usePersonaStore((s) => s.cloudConnectAction);
-  const disconnect = usePersonaStore((s) => s.cloudDisconnectAction);
-  const fetchStatus = usePersonaStore((s) => s.cloudFetchStatus);
-  const fetchOAuthStatus = usePersonaStore((s) => s.cloudFetchOAuthStatus);
-  const startOAuth = usePersonaStore((s) => s.cloudStartOAuth);
-  const cancelPendingOAuth = usePersonaStore((s) => s.cloudCancelPendingOAuth);
-  const completeOAuth = usePersonaStore((s) => s.cloudCompleteOAuth);
-  const refreshOAuth = usePersonaStore((s) => s.cloudRefreshOAuth);
-  const disconnectOAuth = usePersonaStore((s) => s.cloudDisconnectOAuth);
-  const clearError = usePersonaStore((s) => s.cloudClearError);
-  const deployments = usePersonaStore((s) => s.cloudDeployments);
-  const isDeploying = usePersonaStore((s) => s.cloudIsDeploying);
-  const baseUrl = usePersonaStore((s) => s.cloudBaseUrl);
-  const fetchDeployments = usePersonaStore((s) => s.cloudFetchDeployments);
-  const deploy = usePersonaStore((s) => s.cloudDeploy);
-  const pauseDeploy = usePersonaStore((s) => s.cloudPauseDeploy);
-  const resumeDeploy = usePersonaStore((s) => s.cloudResumeDeploy);
-  const removeDeploy = usePersonaStore((s) => s.cloudRemoveDeploy);
+  const initialize = useSystemStore((s) => s.cloudInitialize);
+  const connect = useSystemStore((s) => s.cloudConnectAction);
+  const disconnect = useSystemStore((s) => s.cloudDisconnectAction);
+  const fetchStatus = useSystemStore((s) => s.cloudFetchStatus);
+  const fetchOAuthStatus = useSystemStore((s) => s.cloudFetchOAuthStatus);
+  const startOAuth = useSystemStore((s) => s.cloudStartOAuth);
+  const cancelPendingOAuth = useSystemStore((s) => s.cloudCancelPendingOAuth);
+  const completeOAuth = useSystemStore((s) => s.cloudCompleteOAuth);
+  const refreshOAuth = useSystemStore((s) => s.cloudRefreshOAuth);
+  const disconnectOAuth = useSystemStore((s) => s.cloudDisconnectOAuth);
+  const clearError = useSystemStore((s) => s.cloudClearError);
+  const deployments = useSystemStore((s) => s.cloudDeployments);
+  const isDeploying = useSystemStore((s) => s.cloudIsDeploying);
+  const baseUrl = useSystemStore((s) => s.cloudBaseUrl);
+  const fetchDeployments = useSystemStore((s) => s.cloudFetchDeployments);
+  const deploy = useSystemStore((s) => s.cloudDeploy);
+  const pauseDeploy = useSystemStore((s) => s.cloudPauseDeploy);
+  const resumeDeploy = useSystemStore((s) => s.cloudResumeDeploy);
+  const removeDeploy = useSystemStore((s) => s.cloudRemoveDeploy);
 
   const isConnected = config?.is_connected ?? false;
 
@@ -146,8 +146,9 @@ export default function CloudDeployPanel() {
           tabs={TABS.map((tab) => ({ ...tab, disabled: tab.disabledWhenOffline && !isConnected }))}
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          activeUnderlineClass="after:bg-indigo-500"
+          underlineClass="bg-indigo-500"
           idPrefix="cloud-deploy"
+          layoutIdPrefix="cloud-tab"
         />
       </ContentHeader>
 

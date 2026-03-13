@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 
 interface UsePanelRunStateOptions {
   fetchRuns: (personaId: string) => void;
@@ -14,7 +14,7 @@ export function usePanelRunState({
   cancelRun,
   defaultModels = new Set(['haiku']),
 }: UsePanelRunStateOptions) {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
 
   const [selectedModels, setSelectedModels] = useState<Set<string>>(defaultModels);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);

@@ -103,6 +103,9 @@ export function transformReducer(
     case 'TRANSFORM_SECTIONS':
       return { ...slice, streamingSections: action.sections };
 
+    case 'TRANSFORM_SECTION_PUSH':
+      return { ...slice, streamingSections: [...slice.streamingSections, action.section] };
+
     case 'TRANSFORM_COMPLETED': {
       if (!normalizeDraftFromUnknown(action.draft) || !action.draft.system_prompt?.trim()) {
         return {

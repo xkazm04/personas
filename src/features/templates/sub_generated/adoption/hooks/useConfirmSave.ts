@@ -6,7 +6,8 @@ import {
   clearTemplateAdoptSnapshot,
   confirmTemplateAdoptDraft,
 } from '@/api/templates/templateAdopt';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import {
   normalizeDraftFromUnknown,
   stringifyDraft,
@@ -46,9 +47,9 @@ export function useConfirmSave({
   safetyScan,
   resetAdoptStream,
 }: UseConfirmSaveOptions) {
-  const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const setTemplateAdoptActive = usePersonaStore((s) => s.setTemplateAdoptActive);
+  const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setTemplateAdoptActive = useSystemStore((s) => s.setTemplateAdoptActive);
 
   const confirmSave = useCallback(async () => {
     if (confirmingRef.current) return;
@@ -119,8 +120,8 @@ export function useConfirmSave({
       }
       clearPersistedContext();
       // Emit tour event so the guided tour can advance
-      usePersonaStore.getState().emitTourEvent('tour:template-adopted');
-      usePersonaStore.getState().setTourCreatedPersona(response.persona.id);
+      useSystemStore.getState().emitTourEvent('tour:template-adopted');
+      useSystemStore.getState().setTourCreatedPersona(response.persona.id);
       onPersonaCreated();
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Failed to create persona.';

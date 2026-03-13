@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import {
   migratePromptToStructured,
   parseStructuredPrompt,
@@ -12,7 +12,7 @@ import type { StructuredPrompt } from '@/lib/personas/promptMigration';
  * external-update detection, and baseline tracking.
  */
 export function useStructuredPromptSync() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
 
   const [sp, setSp] = useState<StructuredPrompt>(createEmptyStructuredPrompt());
   const [baseline, setBaseline] = useState<StructuredPrompt>(sp);

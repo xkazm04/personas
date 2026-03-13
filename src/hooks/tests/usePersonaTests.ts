@@ -1,15 +1,15 @@
 import { useMemo } from "react";
-import { usePersonaStore } from "@/stores/personaStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { useRunEventListener, type RunStatusPayload, type RunEventBinding } from "@/hooks/realtime/useRunEventListener";
 
 export function usePersonaTests() {
-  const setTestRunProgress = usePersonaStore((s) => s.setTestRunProgress);
-  const finishTestRun = usePersonaStore((s) => s.finishTestRun);
+  const setTestRunProgress = useAgentStore((s) => s.setTestRunProgress);
+  const finishTestRun = useAgentStore((s) => s.finishTestRun);
 
   const bindings = useMemo((): RunEventBinding[] => [{
     eventName: "test-run-status",
     filter: (p: RunStatusPayload) => {
-      const { isTestRunning, testRunProgress } = usePersonaStore.getState();
+      const { isTestRunning, testRunProgress } = useAgentStore.getState();
       if (!isTestRunning) return false;
       const expectedRunId = testRunProgress?.runId;
       if (expectedRunId && p.run_id !== expectedRunId) return false;

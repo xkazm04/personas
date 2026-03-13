@@ -1,94 +1,14 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// ============================================================================
-// Rotation Policy Types
-// ============================================================================
-
-export interface RotationPolicy {
-  id: string;
-  credential_id: string;
-  enabled: boolean;
-  rotation_interval_days: number;
-  policy_type: string;
-  last_rotated_at: string | null;
-  next_rotation_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateRotationPolicyInput {
-  credential_id: string;
-  rotation_interval_days?: number;
-  policy_type?: string;
-  enabled?: boolean;
-}
-
-export interface UpdateRotationPolicyInput {
-  enabled?: boolean;
-  rotation_interval_days?: number;
-}
-
-// ============================================================================
-// Rotation History Types
-// ============================================================================
-
-export interface RotationHistoryEntry {
-  id: string;
-  credential_id: string;
-  rotation_type: string;
-  status: string;
-  detail: string | null;
-  created_at: string;
-}
-
-// ============================================================================
-// Anomaly Scoring Types
-// ============================================================================
-
-export type Remediation =
-  | "healthy"
-  | "backoff_retry"
-  | "preemptive_rotation"
-  | "rotate_then_alert"
-  | "disable";
-
-export interface AnomalyScore {
-  failure_rate_total: number;
-  failure_rate_5m: number;
-  failure_rate_1h: number;
-  failure_rate_24h: number;
-  permanent_failure_rate_1h: number;
-  transient_failure_rate_1h: number;
-  remediation: Remediation;
-  sample_count: number;
-  data_stale: boolean;
-}
-
-export interface HealthcheckEntry {
-  success: boolean;
-  status_code: number | null;
-  error_class: string | null;
-  message: string;
-  timestamp: string;
-}
-
-// ============================================================================
-// Rotation Status
-// ============================================================================
-
-export interface RotationStatus {
-  has_policy: boolean;
-  policy_enabled: boolean;
-  rotation_interval_days: number | null;
-  next_rotation_at: string | null;
-  last_rotated_at: string | null;
-  last_status: string | null;
-  anomaly_detected: boolean;
-  consecutive_failures: number;
-  recent_history: RotationHistoryEntry[];
-  anomaly_score: AnomalyScore | null;
-  anomaly_tolerance: number;
-}
+import type { RotationPolicy } from "@/lib/bindings/RotationPolicy";
+import type { CreateRotationPolicyInput } from "@/lib/bindings/CreateRotationPolicyInput";
+import type { UpdateRotationPolicyInput } from "@/lib/bindings/UpdateRotationPolicyInput";
+import type { RotationHistoryEntry } from "@/lib/bindings/RotationHistoryEntry";
+import type { Remediation } from "@/lib/bindings/Remediation";
+import type { AnomalyScore } from "@/lib/bindings/AnomalyScore";
+import type { HealthcheckEntry } from "@/lib/bindings/HealthcheckEntry";
+import type { RotationStatus } from "@/lib/bindings/RotationStatus";
+export type { RotationPolicy, CreateRotationPolicyInput, UpdateRotationPolicyInput, RotationHistoryEntry, Remediation, AnomalyScore, HealthcheckEntry, RotationStatus };
 
 // ============================================================================
 // API Functions

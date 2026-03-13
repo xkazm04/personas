@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { extractConnectorNames } from '@/lib/personas/utils';
 import { useOnboardingScore } from '@/features/agents/components/onboarding/useOnboardingChecklist';
 import { SidebarScoreRing } from '@/features/agents/components/onboarding/OnboardingChecklist';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import type { DragPayload } from '@/lib/types/frontendTypes';
 
 export function SidebarPersonaCard({
@@ -15,14 +15,14 @@ export function SidebarPersonaCard({
   onClick,
   onContextMenu,
 }: {
-  persona: DbPersona;
+  persona: Persona;
   isSelected: boolean;
   onClick: () => void;
   onContextMenu?: (e: React.MouseEvent) => void;
 }) {
-  const triggerCount = usePersonaStore((s) => s.personaTriggerCounts[persona.id]);
-  const lastRun = usePersonaStore((s) => s.personaLastRun[persona.id]);
-  const health = usePersonaStore((s) => s.personaHealthMap[persona.id]);
+  const triggerCount = useAgentStore((s) => s.personaTriggerCounts[persona.id]);
+  const lastRun = useAgentStore((s) => s.personaLastRun[persona.id]);
+  const health = useAgentStore((s) => s.personaHealthMap[persona.id]);
   const connectors = useMemo(() => extractConnectorNames(persona), [persona]);
   const onboardingScore = useOnboardingScore(persona.id);
 
@@ -102,7 +102,7 @@ export function DraggablePersonaCard({
   onClick,
   onContextMenu,
 }: {
-  persona: DbPersona;
+  persona: Persona;
   isSelected: boolean;
   onClick: () => void;
   onContextMenu?: (e: React.MouseEvent) => void;

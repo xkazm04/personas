@@ -8,7 +8,8 @@ import {
   ChevronDown,
   ListChecks,
 } from 'lucide-react';
-import { openExternalUrl } from '@/api/tauriApi';
+import { openExternalUrl } from "@/api/system/system";
+
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useStepProgress } from '@/hooks/useStepProgress';
 import { parseSteps, simpleHash, readPersistedSteps, ProgressRingBadge } from '@/features/vault/sub_design/setup/setupInstructionHelpers';

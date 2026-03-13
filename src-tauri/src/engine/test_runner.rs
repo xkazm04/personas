@@ -2,15 +2,15 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::Command;
 use tokio::sync::Mutex;
+
+use super::cli_process::CliProcessDriver;
 
 use serde::{Deserialize, Serialize};
 
 use crate::db::models::{
     CreateTestResultInput, CreateArenaResultInput, CreateAbResultInput, CreateMatrixResultInput,
-    CreateEvalResultInput, Persona, PersonaToolDefinition,
+    CreateEvalResultInput, LabRunStatus, Persona, PersonaToolDefinition,
 };
 use super::types::EphemeralPersona;
 use crate::db::repos::execution::test_runs as repo;
@@ -747,82 +747,24 @@ struct ExecutionOutput {
 ///
 /// Creates the temp dir, configures args, piped stdin/stdout, null stderr,
 /// Windows `CREATE_NO_WINDOW` flag, and env overrides/removals.
-/// Returns `(Command, exec_dir)` -- the caller spawns the command, writes
-/// to stdin, and collects output as needed.
-pub(crate) fn build_cli_command(
-    cli_args: &CliArgs,
-    temp_dir_prefix: &str,
-) -> Result<(Command, PathBuf), String> {
-    let exec_dir = std::env::temp_dir().join(format!(
-        "{}-{}",
-        temp_dir_prefix,
-        uuid::Uuid::new_v4()
-    ));
-    std::fs::create_dir_all(&exec_dir)
-        .map_err(|e| format!("Failed to create temp dir: {e}"))?;
-
-    let mut cmd = Command::new(&cli_args.command);
-    cmd.args(&cli_args.args)
-        .current_dir(&exec_dir)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null());
-
-    #[cfg(windows)]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000);
-    }
-
-    for key in &cli_args.env_removals {
-        cmd.env_remove(key);
-    }
-    for (key, val) in &cli_args.env_overrides {
-        cmd.env(key, val);
-    }
-
-    Ok((cmd, exec_dir))
-}
-
-/// Write the prompt to stdin and shut it down.
-pub(crate) async fn write_prompt_to_stdin(child: &mut tokio::process::Child, prompt_text: &str) {
-    if let Some(mut stdin) = child.stdin.take() {
-        let _ = stdin.write_all(prompt_text.as_bytes()).await;
-        let _ = stdin.shutdown().await;
-    }
-}
-
 /// Spawn Claude CLI, pipe prompt to stdin, collect all output as a plain string.
 /// Used for the coordinator (scenario generation).
 async fn spawn_cli_and_collect(cli_args: &CliArgs, prompt_text: &str) -> Result<String, String> {
-    let (mut cmd, exec_dir) = build_cli_command(cli_args, "personas-test-coord")?;
-    let mut child = cmd.spawn().map_err(|e| format!("Failed to spawn CLI: {e}"))?;
-    write_prompt_to_stdin(&mut child, prompt_text).await;
+    let mut driver = CliProcessDriver::spawn_temp_no_stderr(cli_args, "personas-test-coord")?;
+    driver.write_stdin(prompt_text.as_bytes()).await;
 
-    let stdout = child.stdout.take().ok_or("No stdout")?;
-    let mut reader = BufReader::new(stdout).lines();
     let mut assistant_text = String::new();
-
     let timeout = tokio::time::Duration::from_secs(120);
-    let result = tokio::time::timeout(timeout, async {
-        while let Ok(Some(line)) = reader.next_line().await {
-            let (line_type, _) = parser::parse_stream_line(&line);
-            if let StreamLineType::AssistantText { text } = line_type {
-                assistant_text.push_str(&text);
-                assistant_text.push('\n');
-            }
+
+    driver.collect_lines_with_timeout(timeout, |line| {
+        let (line_type, _) = parser::parse_stream_line(line);
+        if let StreamLineType::AssistantText { text } = line_type {
+            assistant_text.push_str(&text);
+            assistant_text.push('\n');
         }
-    })
-    .await;
+    }).await?;
 
-    let _ = child.wait().await;
-    let _ = std::fs::remove_dir_all(&exec_dir);
-
-    if result.is_err() {
-        return Err("Coordinator CLI timed out after 120 seconds".into());
-    }
-
+    let _ = driver.finish().await;
     Ok(assistant_text)
 }
 
@@ -832,45 +774,38 @@ async fn spawn_cli_and_collect_structured(
     cli_args: &CliArgs,
     prompt_text: &str,
 ) -> Result<ExecutionOutput, String> {
-    let (mut cmd, exec_dir) = build_cli_command(cli_args, "personas-test-exec")?;
+    let mut driver = CliProcessDriver::spawn_temp_no_stderr(cli_args, "personas-test-exec")?;
     let start = std::time::Instant::now();
-    let mut child = cmd.spawn().map_err(|e| format!("Failed to spawn CLI: {e}"))?;
-    write_prompt_to_stdin(&mut child, prompt_text).await;
-
-    let stdout = child.stdout.take().ok_or("No stdout")?;
-    let mut reader = BufReader::new(stdout).lines();
+    driver.write_stdin(prompt_text.as_bytes()).await;
 
     let mut assistant_text = String::new();
     let mut tool_calls: Vec<String> = Vec::new();
     let mut metrics = ExecutionMetrics::default();
 
     let timeout = tokio::time::Duration::from_secs(180);
-    let stream_result = tokio::time::timeout(timeout, async {
-        while let Ok(Some(line)) = reader.next_line().await {
-            let (line_type, _) = parser::parse_stream_line(&line);
+    let stream_err = driver.collect_lines_with_timeout(timeout, |line| {
+        let (line_type, _) = parser::parse_stream_line(line);
 
-            match line_type {
-                StreamLineType::AssistantText { text } => {
-                    assistant_text.push_str(&text);
-                    assistant_text.push('\n');
-                }
-                StreamLineType::AssistantToolUse { tool_name, .. } => {
-                    tool_calls.push(tool_name);
-                }
-                StreamLineType::Result { .. } => {
-                    parser::update_metrics_from_result(&mut metrics, &line_type);
-                }
-                _ => {}
+        match line_type {
+            StreamLineType::AssistantText { text } => {
+                assistant_text.push_str(&text);
+                assistant_text.push('\n');
             }
+            StreamLineType::AssistantToolUse { tool_name, .. } => {
+                tool_calls.push(tool_name);
+            }
+            StreamLineType::Result { .. } => {
+                parser::update_metrics_from_result(&mut metrics, &line_type);
+            }
+            _ => {}
         }
-    })
-    .await;
+    }).await;
 
-    let exit = child.wait().await;
+    let exit = driver.wait().await;
     let duration_ms = start.elapsed().as_millis() as u64;
-    let _ = std::fs::remove_dir_all(&exec_dir);
+    driver.cleanup_dir();
 
-    let error = if stream_result.is_err() {
+    let error = if stream_err.is_err() {
         Some("Execution timed out after 180 seconds".to_string())
     } else if let Ok(status) = exit {
         if !status.success() {
@@ -922,7 +857,7 @@ fn finish_with_error(app: &AppHandle, pool: &DbPool, run_id: &str, error: &str) 
 }
 
 // ============================================================================
-// Lab: Arena -- same flow as run_test but writes to lab_arena tables
+// Lab: Generic executor for arena, A/B, eval, and matrix modes
 // ============================================================================
 
 fn emit_lab_status(app: &AppHandle, event_name: &str, run_id: &str, phase: &str, error: Option<&str>) {
@@ -945,6 +880,234 @@ fn emit_lab_status(app: &AppHandle, event_name: &str, run_id: &str, phase: &str,
     );
 }
 
+/// A variant to test: a persona reference + a label used as tracker key prefix.
+struct LabVariant<'a> {
+    persona: &'a Persona,
+    label: String,
+}
+
+/// Callbacks that abstract mode-specific persistence and summary building.
+struct LabCallbacks<'a> {
+    event_name: &'a str,
+    update_status: Box<dyn Fn(&DbPool, &str, LabRunStatus, Option<i32>, Option<&str>, Option<&str>, Option<&str>) + 'a>,
+    persist_result: Box<dyn Fn(&DbPool, &str, &LabVariant<'_>, &TestScenario, &TestModelConfig, &str, &ScoreResult) + 'a>,
+    build_summary: Box<dyn Fn(&HashMap<String, Vec<(i32, i32, i32, f64, i64)>>, &[TestModelConfig]) -> serde_json::Value + 'a>,
+}
+
+/// Generic lab execution loop shared by arena, A/B, eval, and matrix modes.
+async fn run_lab_loop(
+    app: &AppHandle,
+    pool: &DbPool,
+    run_id: &str,
+    persona_for_scenarios: &Persona,
+    tools: &[PersonaToolDefinition],
+    model_configs: &[TestModelConfig],
+    variants: &[LabVariant<'_>],
+    cancelled: &Arc<std::sync::atomic::AtomicBool>,
+    use_case_filter: Option<&str>,
+    cb: &LabCallbacks<'_>,
+) {
+    emit_lab_status(app, cb.event_name, run_id, "generating", None);
+
+    let scenarios = match generate_scenarios(persona_for_scenarios, tools, use_case_filter, None).await {
+        Ok(s) if s.is_empty() => {
+            let now = chrono::Utc::now().to_rfc3339();
+            let _ = (cb.update_status)(pool, run_id, LabRunStatus::Failed, None, None, Some("No test scenarios were generated"), Some(&now));
+            emit_lab_status(app, cb.event_name, run_id, "failed", Some("No test scenarios were generated"));
+            return;
+        }
+        Ok(s) => s,
+        Err(e) => {
+            let msg = format!("Scenario generation failed: {e}");
+            let now = chrono::Utc::now().to_rfc3339();
+            let _ = (cb.update_status)(pool, run_id, LabRunStatus::Failed, None, None, Some(&msg), Some(&now));
+            emit_lab_status(app, cb.event_name, run_id, "failed", Some(&msg));
+            return;
+        }
+    };
+
+    let scenario_count = scenarios.len();
+    let _ = (cb.update_status)(pool, run_id, LabRunStatus::Running, Some(scenario_count as i32), None, None, None);
+
+    let _ = app.emit(cb.event_name, TestRunStatusEvent {
+        run_id: run_id.to_string(), phase: "generated".into(),
+        scenarios_count: Some(scenario_count), current: None, total: None,
+        model_id: None, scenario_name: None, status: None, scores: None, summary: None, error: None,
+        scenarios: None,
+    });
+
+    let total = scenario_count * model_configs.len() * variants.len();
+    let mut current = 0usize;
+    let mut tracker: HashMap<String, Vec<(i32, i32, i32, f64, i64)>> = HashMap::new();
+
+    for scenario in &scenarios {
+        for model in model_configs {
+            for variant in variants {
+                if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+                    let _ = (cb.update_status)(pool, run_id, LabRunStatus::Cancelled, None, None, None, None);
+                    emit_lab_status(app, cb.event_name, run_id, "cancelled", None);
+                    return;
+                }
+
+                current += 1;
+
+                let _ = app.emit(cb.event_name, TestRunStatusEvent {
+                    run_id: run_id.to_string(), phase: "executing".into(),
+                    scenarios_count: Some(scenario_count), current: Some(current), total: Some(total),
+                    model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
+                    status: Some("running".into()), scores: None, summary: None, error: None,
+                    scenarios: None,
+                });
+
+                let result = execute_scenario(variant.persona, tools, scenario, model).await;
+
+                let (status, scores) = match &result {
+                    Ok(r) => ("passed".to_string(), score_result(r, scenario)),
+                    Err(e) => ("error".to_string(), ScoreResult {
+                        tool_accuracy: 0, output_quality: 0, protocol_compliance: 0,
+                        output_preview: Some(e.clone()), tool_calls_actual: None,
+                        input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
+                        error_message: Some(e.clone()),
+                    }),
+                };
+
+                let key = if variant.label.is_empty() {
+                    model.id.clone()
+                } else {
+                    format!("{}:{}", variant.label, model.id)
+                };
+                tracker.entry(key).or_default().push((
+                    scores.tool_accuracy, scores.output_quality, scores.protocol_compliance,
+                    scores.cost_usd, scores.duration_ms,
+                ));
+
+                (cb.persist_result)(pool, run_id, variant, scenario, model, &status, &scores);
+
+                let _ = app.emit(cb.event_name, TestRunStatusEvent {
+                    run_id: run_id.to_string(), phase: "executing".into(),
+                    scenarios_count: Some(scenario_count), current: Some(current), total: Some(total),
+                    model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
+                    status: Some(status),
+                    scores: Some(TestScores { tool_accuracy: Some(scores.tool_accuracy), output_quality: Some(scores.output_quality), protocol_compliance: Some(scores.protocol_compliance) }),
+                    summary: None, error: scores.error_message,
+                    scenarios: None,
+                });
+            }
+        }
+    }
+
+    let summary = (cb.build_summary)(&tracker, model_configs);
+    let summary_str = serde_json::to_string(&summary).unwrap_or_default();
+    let now = chrono::Utc::now().to_rfc3339();
+    let _ = (cb.update_status)(pool, run_id, LabRunStatus::Completed, None, Some(&summary_str), None, Some(&now));
+
+    let _ = app.emit(cb.event_name, TestRunStatusEvent {
+        run_id: run_id.to_string(), phase: "completed".into(),
+        scenarios_count: Some(scenario_count), current: Some(total), total: Some(total),
+        model_id: None, scenario_name: None, status: None, scores: None,
+        summary: Some(summary), error: None,
+        scenarios: None,
+    });
+}
+
+/// Build a keyed summary (used by A/B, eval, matrix modes).
+fn build_keyed_summary(
+    tracker: &HashMap<String, Vec<(i32, i32, i32, f64, i64)>>,
+    _models: &[TestModelConfig],
+) -> serde_json::Value {
+    let mut summary_obj = serde_json::Map::new();
+    for (key, results) in tracker.iter() {
+        let count = results.len() as f64;
+        let avg_ta = results.iter().map(|r| r.0 as f64).sum::<f64>() / count;
+        let avg_oq = results.iter().map(|r| r.1 as f64).sum::<f64>() / count;
+        let avg_pc = results.iter().map(|r| r.2 as f64).sum::<f64>() / count;
+        let total_cost: f64 = results.iter().map(|r| r.3).sum();
+        let composite = avg_ta * WEIGHT_TOOL_ACCURACY + avg_oq * WEIGHT_OUTPUT_QUALITY + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
+        summary_obj.insert(key.clone(), serde_json::json!({
+            "avg_tool_accuracy": avg_ta.round() as i32,
+            "avg_output_quality": avg_oq.round() as i32,
+            "avg_protocol_compliance": avg_pc.round() as i32,
+            "composite_score": composite.round() as i32,
+            "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
+            "scenarios_tested": count as i32,
+        }));
+    }
+    serde_json::Value::Object(summary_obj)
+}
+
+/// Build arena-style ranked summary.
+fn build_arena_summary(
+    tracker: &HashMap<String, Vec<(i32, i32, i32, f64, i64)>>,
+    models: &[TestModelConfig],
+) -> serde_json::Value {
+    let mut rankings: Vec<serde_json::Value> = Vec::new();
+    for model in models {
+        if let Some(results) = tracker.get(&model.id) {
+            let count = results.len() as f64;
+            let avg_ta = results.iter().map(|r| r.0 as f64).sum::<f64>() / count;
+            let avg_oq = results.iter().map(|r| r.1 as f64).sum::<f64>() / count;
+            let avg_pc = results.iter().map(|r| r.2 as f64).sum::<f64>() / count;
+            let total_cost: f64 = results.iter().map(|r| r.3).sum();
+            let avg_duration = results.iter().map(|r| r.4 as f64).sum::<f64>() / count;
+            let composite = avg_ta * WEIGHT_TOOL_ACCURACY + avg_oq * WEIGHT_OUTPUT_QUALITY + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
+            let value_score = if total_cost > 0.0 {
+                composite / (total_cost * 1000.0 + 1.0) * 100.0
+            } else {
+                composite
+            };
+            rankings.push(serde_json::json!({
+                "model_id": model.id,
+                "provider": model.provider,
+                "avg_tool_accuracy": avg_ta.round() as i32,
+                "avg_output_quality": avg_oq.round() as i32,
+                "avg_protocol_compliance": avg_pc.round() as i32,
+                "composite_score": composite.round() as i32,
+                "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
+                "avg_duration_ms": avg_duration.round() as i64,
+                "value_score": value_score.round() as i32,
+                "scenarios_tested": count as i32,
+            }));
+        }
+    }
+    rankings.sort_by(|a, b| {
+        let sa = a.get("composite_score").and_then(|v| v.as_i64()).unwrap_or(0);
+        let sb = b.get("composite_score").and_then(|v| v.as_i64()).unwrap_or(0);
+        sb.cmp(&sa)
+    });
+    let best_model = rankings.first().and_then(|r| r.get("model_id")).and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
+    let best_value = rankings.iter().max_by_key(|r| r.get("value_score").and_then(|v| v.as_i64()).unwrap_or(0))
+        .and_then(|r| r.get("model_id")).and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
+    serde_json::json!({
+        "best_quality_model": best_model,
+        "best_value_model": best_value,
+        "rankings": rankings,
+    })
+}
+
+fn make_common_result_fields(scenario: &TestScenario, model: &TestModelConfig, status: &str, scores: &ScoreResult) -> (String, String, String, String, Option<String>, Option<String>, Option<String>, Option<i32>, Option<i32>, Option<i32>, i64, i64, f64, i64, Option<String>) {
+    (
+        scenario.name.clone(),
+        model.id.clone(),
+        model.provider.clone(),
+        status.to_string(),
+        scores.output_preview.clone(),
+        scenario.expected_tool_sequence.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
+        scores.tool_calls_actual.clone(),
+        Some(scores.tool_accuracy),
+        Some(scores.output_quality),
+        Some(scores.protocol_compliance),
+        scores.input_tokens,
+        scores.output_tokens,
+        scores.cost_usd,
+        scores.duration_ms,
+        scores.error_message.clone(),
+    )
+}
+
+// ============================================================================
+// Lab: Arena
+// ============================================================================
+
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub async fn run_arena_test(
     app: AppHandle,
@@ -958,121 +1121,31 @@ pub async fn run_arena_test(
 ) {
     let persona = &ephemeral.persona;
     let tools = &ephemeral.tools;
-    emit_lab_status(&app, "lab-arena-status", &run_id, "generating", None);
+    let variants = vec![LabVariant { persona, label: String::new() }];
 
-    let scenarios = match generate_scenarios(persona, tools, use_case_filter.as_deref(), None).await {
-        Ok(s) if s.is_empty() => {
-            let now = chrono::Utc::now().to_rfc3339();
-            let _ = arena_repo::update_run_status(&pool, &run_id, "failed", None, None, Some("No test scenarios were generated"), Some(&now));
-            emit_lab_status(&app, "lab-arena-status", &run_id, "failed", Some("No test scenarios were generated"));
-            return;
-        }
-        Ok(s) => s,
-        Err(e) => {
-            let msg = format!("Scenario generation failed: {e}");
-            let now = chrono::Utc::now().to_rfc3339();
-            let _ = arena_repo::update_run_status(&pool, &run_id, "failed", None, None, Some(&msg), Some(&now));
-            emit_lab_status(&app, "lab-arena-status", &run_id, "failed", Some(&msg));
-            return;
-        }
+    let cb = LabCallbacks {
+        event_name: "lab-arena-status",
+        update_status: Box::new(|pool, id, status, sc, sum, err, ca| {
+            let _ = arena_repo::update_run_status(pool, id, status, sc, sum, err, ca);
+        }),
+        persist_result: Box::new(|pool, run_id, _variant, scenario, model, status, scores| {
+            let f = make_common_result_fields(scenario, model, status, scores);
+            let _ = arena_repo::create_result(pool, &CreateArenaResultInput {
+                run_id: run_id.to_string(), scenario_name: f.0, model_id: f.1, provider: f.2,
+                status: f.3, output_preview: f.4, tool_calls_expected: f.5, tool_calls_actual: f.6,
+                tool_accuracy_score: f.7, output_quality_score: f.8, protocol_compliance: f.9,
+                input_tokens: f.10, output_tokens: f.11, cost_usd: f.12, duration_ms: f.13,
+                error_message: f.14,
+            });
+        }),
+        build_summary: Box::new(build_arena_summary),
     };
 
-    let scenario_count = scenarios.len();
-    let _ = arena_repo::update_run_status(&pool, &run_id, "running", Some(scenario_count as i32), None, None, None);
-
-    let _ = app.emit("lab-arena-status", TestRunStatusEvent {
-        run_id: run_id.clone(), phase: "generated".into(),
-        scenarios_count: Some(scenario_count), current: None, total: None,
-        model_id: None, scenario_name: None, status: None, scores: None, summary: None, error: None,
-        scenarios: None,
-    });
-
-    let total = scenario_count * model_configs.len();
-    let mut current = 0usize;
-    let results_tracker: Arc<Mutex<Vec<(String, i32, i32, i32, f64, i64)>>> = Arc::new(Mutex::new(Vec::new()));
-
-    for scenario in &scenarios {
-        for model in &model_configs {
-            if cancelled.load(std::sync::atomic::Ordering::Acquire) {
-                let _ = arena_repo::update_run_status(&pool, &run_id, "cancelled", None, None, None, None);
-                emit_lab_status(&app, "lab-arena-status", &run_id, "cancelled", None);
-                return;
-            }
-
-            current += 1;
-
-            let _ = app.emit("lab-arena-status", TestRunStatusEvent {
-                run_id: run_id.clone(), phase: "executing".into(),
-                scenarios_count: Some(scenario_count), current: Some(current), total: Some(total),
-                model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
-                status: Some("running".into()), scores: None, summary: None, error: None,
-                scenarios: None,
-            });
-
-            let result = execute_scenario(persona, tools, scenario, model).await;
-
-            let (status, scores) = match &result {
-                Ok(r) => ("passed".to_string(), score_result(r, scenario)),
-                Err(e) => ("error".to_string(), ScoreResult {
-                    tool_accuracy: 0, output_quality: 0, protocol_compliance: 0,
-                    output_preview: Some(e.clone()), tool_calls_actual: None,
-                    input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
-                    error_message: Some(e.clone()),
-                }),
-            };
-
-            {
-                let mut tracker = results_tracker.lock().await;
-                tracker.push((model.id.clone(), scores.tool_accuracy, scores.output_quality, scores.protocol_compliance, scores.cost_usd, scores.duration_ms));
-            }
-
-            let _ = arena_repo::create_result(&pool, &CreateArenaResultInput {
-                run_id: run_id.clone(),
-                scenario_name: scenario.name.clone(),
-                model_id: model.id.clone(),
-                provider: model.provider.clone(),
-                status: status.clone(),
-                output_preview: scores.output_preview.clone(),
-                tool_calls_expected: scenario.expected_tool_sequence.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
-                tool_calls_actual: scores.tool_calls_actual.clone(),
-                tool_accuracy_score: Some(scores.tool_accuracy),
-                output_quality_score: Some(scores.output_quality),
-                protocol_compliance: Some(scores.protocol_compliance),
-                input_tokens: scores.input_tokens,
-                output_tokens: scores.output_tokens,
-                cost_usd: scores.cost_usd,
-                duration_ms: scores.duration_ms,
-                error_message: scores.error_message.clone(),
-            });
-
-            let _ = app.emit("lab-arena-status", TestRunStatusEvent {
-                run_id: run_id.clone(), phase: "executing".into(),
-                scenarios_count: Some(scenario_count), current: Some(current), total: Some(total),
-                model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
-                status: Some(status),
-                scores: Some(TestScores { tool_accuracy: Some(scores.tool_accuracy), output_quality: Some(scores.output_quality), protocol_compliance: Some(scores.protocol_compliance) }),
-                summary: None, error: scores.error_message,
-                scenarios: None,
-            });
-        }
-    }
-
-    let summary = build_summary(&results_tracker, &model_configs).await;
-    let summary_str = serde_json::to_string(&summary).unwrap_or_default();
-    let now = chrono::Utc::now().to_rfc3339();
-    let _ = arena_repo::update_run_status(&pool, &run_id, "completed", None, Some(&summary_str), None, Some(&now));
-
-    let _ = app.emit("lab-arena-status", TestRunStatusEvent {
-        run_id: run_id.clone(), phase: "completed".into(),
-        scenarios_count: Some(scenario_count), current: Some(total), total: Some(total),
-        model_id: None, scenario_name: None, status: None, scores: None,
-        summary: Some(summary), error: None,
-        scenarios: None,
-    });
+    run_lab_loop(&app, &pool, &run_id, persona, tools, &model_configs, &variants, &cancelled, use_case_filter.as_deref(), &cb).await;
 }
 
 // ============================================================================
-// Lab: A/B -- runs scenarios across two prompt versions × models
+// Lab: A/B
 // ============================================================================
 
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
@@ -1080,158 +1153,47 @@ pub async fn run_ab_test(
     app: AppHandle,
     pool: DbPool,
     run_id: String,
-    variants: Vec<(String, i32, Persona)>, // (version_id, version_number, persona_with_that_version)
+    variants: Vec<(String, i32, Persona)>,
     tools: Vec<PersonaToolDefinition>,
     model_configs: Vec<TestModelConfig>,
     cancelled: Arc<std::sync::atomic::AtomicBool>,
     use_case_filter: Option<String>,
 ) {
-    emit_lab_status(&app, "lab-ab-status", &run_id, "generating", None);
+    // Capture version lookup data before borrowing personas
+    let version_lookup: Vec<(String, i32)> = variants.iter()
+        .map(|(vid, vnum, _)| (vid.clone(), *vnum))
+        .collect();
 
-    // Generate scenarios from the first variant (primary)
+    let lab_variants: Vec<LabVariant<'_>> = variants.iter()
+        .map(|(_, num, p)| LabVariant { persona: p, label: format!("v{}", num) })
+        .collect();
     let primary_persona = &variants[0].2;
-    let scenarios = match generate_scenarios(primary_persona, &tools, use_case_filter.as_deref(), None).await {
-        Ok(s) if s.is_empty() => {
-            let now = chrono::Utc::now().to_rfc3339();
-            let _ = ab_repo::update_run_status(&pool, &run_id, "failed", None, None, Some("No test scenarios were generated"), Some(&now));
-            emit_lab_status(&app, "lab-ab-status", &run_id, "failed", Some("No test scenarios were generated"));
-            return;
-        }
-        Ok(s) => s,
-        Err(e) => {
-            let msg = format!("Scenario generation failed: {e}");
-            let now = chrono::Utc::now().to_rfc3339();
-            let _ = ab_repo::update_run_status(&pool, &run_id, "failed", None, None, Some(&msg), Some(&now));
-            emit_lab_status(&app, "lab-ab-status", &run_id, "failed", Some(&msg));
-            return;
-        }
+
+    let cb = LabCallbacks {
+        event_name: "lab-ab-status",
+        update_status: Box::new(|pool, id, status, sc, sum, err, ca| {
+            let _ = ab_repo::update_run_status(pool, id, status, sc, sum, err, ca);
+        }),
+        persist_result: Box::new(move |pool, run_id, variant, scenario, model, status, scores| {
+            let src = version_lookup.iter().find(|(_, num)| format!("v{}", num) == variant.label).unwrap();
+            let f = make_common_result_fields(scenario, model, status, scores);
+            let _ = ab_repo::create_result(pool, &CreateAbResultInput {
+                run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1,
+                scenario_name: f.0, model_id: f.1, provider: f.2, status: f.3,
+                output_preview: f.4, tool_calls_expected: f.5, tool_calls_actual: f.6,
+                tool_accuracy_score: f.7, output_quality_score: f.8, protocol_compliance: f.9,
+                input_tokens: f.10, output_tokens: f.11, cost_usd: f.12, duration_ms: f.13,
+                error_message: f.14,
+            });
+        }),
+        build_summary: Box::new(build_keyed_summary),
     };
 
-    let scenario_count = scenarios.len();
-    let _ = ab_repo::update_run_status(&pool, &run_id, "running", Some(scenario_count as i32), None, None, None);
-
-    let _ = app.emit("lab-ab-status", TestRunStatusEvent {
-        run_id: run_id.clone(), phase: "generated".into(),
-        scenarios_count: Some(scenario_count), current: None, total: None,
-        model_id: None, scenario_name: None, status: None, scores: None, summary: None, error: None,
-        scenarios: None,
-    });
-
-    let total = scenario_count * model_configs.len() * variants.len();
-    let mut current = 0usize;
-    let results_tracker: Arc<Mutex<HashMap<String, Vec<(i32, i32, i32, f64, i64)>>>> = Arc::new(Mutex::new(HashMap::new()));
-
-    for scenario in &scenarios {
-        for model in &model_configs {
-            for (version_id, version_num, persona_variant) in &variants {
-                if cancelled.load(std::sync::atomic::Ordering::Acquire) {
-                    let _ = ab_repo::update_run_status(&pool, &run_id, "cancelled", None, None, None, None);
-                    emit_lab_status(&app, "lab-ab-status", &run_id, "cancelled", None);
-                    return;
-                }
-
-                current += 1;
-
-                let _ = app.emit("lab-ab-status", TestRunStatusEvent {
-                    run_id: run_id.clone(), phase: "executing".into(),
-                    scenarios_count: Some(scenario_count), current: Some(current), total: Some(total),
-                    model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
-                    status: Some("running".into()), scores: None, summary: None, error: None,
-                    scenarios: None,
-                });
-
-                let result = execute_scenario(persona_variant, &tools, scenario, model).await;
-
-                let (status, scores) = match &result {
-                    Ok(r) => ("passed".to_string(), score_result(r, scenario)),
-                    Err(e) => ("error".to_string(), ScoreResult {
-                        tool_accuracy: 0, output_quality: 0, protocol_compliance: 0,
-                        output_preview: Some(e.clone()), tool_calls_actual: None,
-                        input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
-                        error_message: Some(e.clone()),
-                    }),
-                };
-
-                {
-                    let key = format!("v{}:{}", version_num, model.id);
-                    let mut tracker = results_tracker.lock().await;
-                    tracker.entry(key).or_default().push((
-                        scores.tool_accuracy, scores.output_quality, scores.protocol_compliance,
-                        scores.cost_usd, scores.duration_ms,
-                    ));
-                }
-
-                let _ = ab_repo::create_result(&pool, &CreateAbResultInput {
-                    run_id: run_id.clone(),
-                    version_id: version_id.clone(),
-                    version_number: *version_num,
-                    scenario_name: scenario.name.clone(),
-                    model_id: model.id.clone(),
-                    provider: model.provider.clone(),
-                    status: status.clone(),
-                    output_preview: scores.output_preview.clone(),
-                    tool_calls_expected: scenario.expected_tool_sequence.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
-                    tool_calls_actual: scores.tool_calls_actual.clone(),
-                    tool_accuracy_score: Some(scores.tool_accuracy),
-                    output_quality_score: Some(scores.output_quality),
-                    protocol_compliance: Some(scores.protocol_compliance),
-                    input_tokens: scores.input_tokens,
-                    output_tokens: scores.output_tokens,
-                    cost_usd: scores.cost_usd,
-                    duration_ms: scores.duration_ms,
-                    error_message: scores.error_message.clone(),
-                });
-
-                let _ = app.emit("lab-ab-status", TestRunStatusEvent {
-                    run_id: run_id.clone(), phase: "executing".into(),
-                    scenarios_count: Some(scenario_count), current: Some(current), total: Some(total),
-                    model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
-                    status: Some(status),
-                    scores: Some(TestScores { tool_accuracy: Some(scores.tool_accuracy), output_quality: Some(scores.output_quality), protocol_compliance: Some(scores.protocol_compliance) }),
-                    summary: None, error: scores.error_message,
-                    scenarios: None,
-                });
-            }
-        }
-    }
-
-    // Build A/B summary
-    let tracker_data = results_tracker.lock().await;
-    let mut summary_obj = serde_json::Map::new();
-    for (key, results) in tracker_data.iter() {
-        let count = results.len() as f64;
-        let avg_ta = results.iter().map(|r| r.0 as f64).sum::<f64>() / count;
-        let avg_oq = results.iter().map(|r| r.1 as f64).sum::<f64>() / count;
-        let avg_pc = results.iter().map(|r| r.2 as f64).sum::<f64>() / count;
-        let total_cost: f64 = results.iter().map(|r| r.3).sum();
-        let composite = avg_ta * WEIGHT_TOOL_ACCURACY + avg_oq * WEIGHT_OUTPUT_QUALITY + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
-        summary_obj.insert(key.clone(), serde_json::json!({
-            "avg_tool_accuracy": avg_ta.round() as i32,
-            "avg_output_quality": avg_oq.round() as i32,
-            "avg_protocol_compliance": avg_pc.round() as i32,
-            "composite_score": composite.round() as i32,
-            "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
-            "scenarios_tested": count as i32,
-        }));
-    }
-    drop(tracker_data);
-
-    let summary = serde_json::Value::Object(summary_obj);
-    let summary_str = serde_json::to_string(&summary).unwrap_or_default();
-    let now = chrono::Utc::now().to_rfc3339();
-    let _ = ab_repo::update_run_status(&pool, &run_id, "completed", None, Some(&summary_str), None, Some(&now));
-
-    let _ = app.emit("lab-ab-status", TestRunStatusEvent {
-        run_id: run_id.clone(), phase: "completed".into(),
-        scenarios_count: Some(scenario_count), current: Some(total), total: Some(total),
-        model_id: None, scenario_name: None, status: None, scores: None,
-        summary: Some(summary), error: None,
-        scenarios: None,
-    });
+    run_lab_loop(&app, &pool, &run_id, primary_persona, &tools, &model_configs, &lab_variants, &cancelled, use_case_filter.as_deref(), &cb).await;
 }
 
 // ============================================================================
-// Lab: Eval -- N prompt versions × M models evaluation matrix
+// Lab: Eval
 // ============================================================================
 
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
@@ -1239,154 +1201,42 @@ pub async fn run_eval_test(
     app: AppHandle,
     pool: DbPool,
     run_id: String,
-    variants: Vec<(String, i32, Persona)>, // (version_id, version_number, persona_with_that_version)
+    variants: Vec<(String, i32, Persona)>,
     tools: Vec<PersonaToolDefinition>,
     model_configs: Vec<TestModelConfig>,
     cancelled: Arc<std::sync::atomic::AtomicBool>,
     use_case_filter: Option<String>,
 ) {
-    emit_lab_status(&app, "lab-eval-status", &run_id, "generating", None);
+    let version_lookup: Vec<(String, i32)> = variants.iter()
+        .map(|(vid, vnum, _)| (vid.clone(), *vnum))
+        .collect();
 
-    // Generate scenarios from the first variant (primary)
+    let lab_variants: Vec<LabVariant<'_>> = variants.iter()
+        .map(|(_, num, p)| LabVariant { persona: p, label: format!("v{}", num) })
+        .collect();
     let primary_persona = &variants[0].2;
-    let scenarios = match generate_scenarios(primary_persona, &tools, use_case_filter.as_deref(), None).await {
-        Ok(s) if s.is_empty() => {
-            let now = chrono::Utc::now().to_rfc3339();
-            let _ = eval_repo::update_run_status(&pool, &run_id, "failed", None, None, Some("No test scenarios were generated"), Some(&now));
-            emit_lab_status(&app, "lab-eval-status", &run_id, "failed", Some("No test scenarios were generated"));
-            return;
-        }
-        Ok(s) => s,
-        Err(e) => {
-            let msg = format!("Scenario generation failed: {e}");
-            let now = chrono::Utc::now().to_rfc3339();
-            let _ = eval_repo::update_run_status(&pool, &run_id, "failed", None, None, Some(&msg), Some(&now));
-            emit_lab_status(&app, "lab-eval-status", &run_id, "failed", Some(&msg));
-            return;
-        }
+
+    let cb = LabCallbacks {
+        event_name: "lab-eval-status",
+        update_status: Box::new(|pool, id, status, sc, sum, err, ca| {
+            let _ = eval_repo::update_run_status(pool, id, status, sc, sum, err, ca);
+        }),
+        persist_result: Box::new(move |pool, run_id, variant, scenario, model, status, scores| {
+            let src = version_lookup.iter().find(|(_, num)| format!("v{}", num) == variant.label).unwrap();
+            let f = make_common_result_fields(scenario, model, status, scores);
+            let _ = eval_repo::create_result(pool, &CreateEvalResultInput {
+                run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1,
+                scenario_name: f.0, model_id: f.1, provider: f.2, status: f.3,
+                output_preview: f.4, tool_calls_expected: f.5, tool_calls_actual: f.6,
+                tool_accuracy_score: f.7, output_quality_score: f.8, protocol_compliance: f.9,
+                input_tokens: f.10, output_tokens: f.11, cost_usd: f.12, duration_ms: f.13,
+                error_message: f.14,
+            });
+        }),
+        build_summary: Box::new(build_keyed_summary),
     };
 
-    let scenario_count = scenarios.len();
-    let _ = eval_repo::update_run_status(&pool, &run_id, "running", Some(scenario_count as i32), None, None, None);
-
-    let _ = app.emit("lab-eval-status", TestRunStatusEvent {
-        run_id: run_id.clone(), phase: "generated".into(),
-        scenarios_count: Some(scenario_count), current: None, total: None,
-        model_id: None, scenario_name: None, status: None, scores: None, summary: None, error: None,
-        scenarios: None,
-    });
-
-    let total = scenario_count * model_configs.len() * variants.len();
-    let mut current = 0usize;
-    let results_tracker: Arc<Mutex<HashMap<String, Vec<(i32, i32, i32, f64, i64)>>>> = Arc::new(Mutex::new(HashMap::new()));
-
-    for scenario in &scenarios {
-        for model in &model_configs {
-            for (version_id, version_num, persona_variant) in &variants {
-                if cancelled.load(std::sync::atomic::Ordering::Acquire) {
-                    let _ = eval_repo::update_run_status(&pool, &run_id, "cancelled", None, None, None, None);
-                    emit_lab_status(&app, "lab-eval-status", &run_id, "cancelled", None);
-                    return;
-                }
-
-                current += 1;
-
-                let _ = app.emit("lab-eval-status", TestRunStatusEvent {
-                    run_id: run_id.clone(), phase: "executing".into(),
-                    scenarios_count: Some(scenario_count), current: Some(current), total: Some(total),
-                    model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
-                    status: Some("running".into()), scores: None, summary: None, error: None,
-                    scenarios: None,
-                });
-
-                let result = execute_scenario(persona_variant, &tools, scenario, model).await;
-
-                let (status, scores) = match &result {
-                    Ok(r) => ("passed".to_string(), score_result(r, scenario)),
-                    Err(e) => ("error".to_string(), ScoreResult {
-                        tool_accuracy: 0, output_quality: 0, protocol_compliance: 0,
-                        output_preview: Some(e.clone()), tool_calls_actual: None,
-                        input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
-                        error_message: Some(e.clone()),
-                    }),
-                };
-
-                {
-                    let key = format!("v{}:{}", version_num, model.id);
-                    let mut tracker = results_tracker.lock().await;
-                    tracker.entry(key).or_default().push((
-                        scores.tool_accuracy, scores.output_quality, scores.protocol_compliance,
-                        scores.cost_usd, scores.duration_ms,
-                    ));
-                }
-
-                let _ = eval_repo::create_result(&pool, &CreateEvalResultInput {
-                    run_id: run_id.clone(),
-                    version_id: version_id.clone(),
-                    version_number: *version_num,
-                    scenario_name: scenario.name.clone(),
-                    model_id: model.id.clone(),
-                    provider: model.provider.clone(),
-                    status: status.clone(),
-                    output_preview: scores.output_preview.clone(),
-                    tool_calls_expected: scenario.expected_tool_sequence.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
-                    tool_calls_actual: scores.tool_calls_actual.clone(),
-                    tool_accuracy_score: Some(scores.tool_accuracy),
-                    output_quality_score: Some(scores.output_quality),
-                    protocol_compliance: Some(scores.protocol_compliance),
-                    input_tokens: scores.input_tokens,
-                    output_tokens: scores.output_tokens,
-                    cost_usd: scores.cost_usd,
-                    duration_ms: scores.duration_ms,
-                    error_message: scores.error_message.clone(),
-                });
-
-                let _ = app.emit("lab-eval-status", TestRunStatusEvent {
-                    run_id: run_id.clone(), phase: "executing".into(),
-                    scenarios_count: Some(scenario_count), current: Some(current), total: Some(total),
-                    model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
-                    status: Some(status),
-                    scores: Some(TestScores { tool_accuracy: Some(scores.tool_accuracy), output_quality: Some(scores.output_quality), protocol_compliance: Some(scores.protocol_compliance) }),
-                    summary: None, error: scores.error_message,
-                    scenarios: None,
-                });
-            }
-        }
-    }
-
-    // Build eval summary
-    let tracker_data = results_tracker.lock().await;
-    let mut summary_obj = serde_json::Map::new();
-    for (key, results) in tracker_data.iter() {
-        let count = results.len() as f64;
-        let avg_ta = results.iter().map(|r| r.0 as f64).sum::<f64>() / count;
-        let avg_oq = results.iter().map(|r| r.1 as f64).sum::<f64>() / count;
-        let avg_pc = results.iter().map(|r| r.2 as f64).sum::<f64>() / count;
-        let total_cost: f64 = results.iter().map(|r| r.3).sum();
-        let composite = avg_ta * WEIGHT_TOOL_ACCURACY + avg_oq * WEIGHT_OUTPUT_QUALITY + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
-        summary_obj.insert(key.clone(), serde_json::json!({
-            "avg_tool_accuracy": avg_ta.round() as i32,
-            "avg_output_quality": avg_oq.round() as i32,
-            "avg_protocol_compliance": avg_pc.round() as i32,
-            "composite_score": composite.round() as i32,
-            "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
-            "scenarios_tested": count as i32,
-        }));
-    }
-    drop(tracker_data);
-
-    let summary = serde_json::Value::Object(summary_obj);
-    let summary_str = serde_json::to_string(&summary).unwrap_or_default();
-    let now = chrono::Utc::now().to_rfc3339();
-    let _ = eval_repo::update_run_status(&pool, &run_id, "completed", None, Some(&summary_str), None, Some(&now));
-
-    let _ = app.emit("lab-eval-status", TestRunStatusEvent {
-        run_id: run_id.clone(), phase: "completed".into(),
-        scenarios_count: Some(scenario_count), current: Some(total), total: Some(total),
-        model_id: None, scenario_name: None, status: None, scores: None,
-        summary: Some(summary), error: None,
-        scenarios: None,
-    });
+    run_lab_loop(&app, &pool, &run_id, primary_persona, &tools, &model_configs, &lab_variants, &cancelled, use_case_filter.as_deref(), &cb).await;
 }
 
 // ============================================================================
@@ -1406,6 +1256,7 @@ pub async fn run_matrix_test(
 ) {
     let persona = &ephemeral.persona;
     let tools = &ephemeral.tools;
+
     // Phase 0: Generate draft persona
     emit_lab_status(&app, "lab-matrix-status", &run_id, "drafting", None);
 
@@ -1419,173 +1270,54 @@ pub async fn run_matrix_test(
         Err(e) => {
             let msg = format!("Draft generation failed: {e}");
             let now = chrono::Utc::now().to_rfc3339();
-            let _ = matrix_repo::update_run_status(&pool, &run_id, "failed", None, None, Some(&msg), Some(&now));
+            let _ = matrix_repo::update_run_status(&pool, &run_id, LabRunStatus::Failed, None, None, Some(&msg), Some(&now));
             emit_lab_status(&app, "lab-matrix-status", &run_id, "failed", Some(&msg));
             return;
         }
     };
 
-    // Parse draft JSON from output
     let (draft_structured_prompt, draft_change_summary) = match parse_draft_from_output(&draft_output) {
         Ok(v) => v,
         Err(e) => {
             let msg = format!("Failed to parse draft: {e}");
             let now = chrono::Utc::now().to_rfc3339();
-            let _ = matrix_repo::update_run_status(&pool, &run_id, "failed", None, None, Some(&msg), Some(&now));
+            let _ = matrix_repo::update_run_status(&pool, &run_id, LabRunStatus::Failed, None, None, Some(&msg), Some(&now));
             emit_lab_status(&app, "lab-matrix-status", &run_id, "failed", Some(&msg));
             return;
         }
     };
 
-    // Save draft to run
     let draft_json_str = serde_json::to_string(&draft_structured_prompt).unwrap_or_default();
     let _ = matrix_repo::update_run_draft(&pool, &run_id, &draft_json_str, &draft_change_summary);
 
-    // Build draft persona variant
     let mut draft_persona = persona.clone();
     draft_persona.structured_prompt = Some(draft_json_str.clone());
 
-    // Now run the same flow as A/B but with "current" and "draft" variants
-    emit_lab_status(&app, "lab-matrix-status", &run_id, "generating", None);
+    let variants = vec![
+        LabVariant { persona, label: "current".to_string() },
+        LabVariant { persona: &draft_persona, label: "draft".to_string() },
+    ];
 
-    let scenarios = match generate_scenarios(persona, tools, use_case_filter.as_deref(), None).await {
-        Ok(s) if s.is_empty() => {
-            let now = chrono::Utc::now().to_rfc3339();
-            let _ = matrix_repo::update_run_status(&pool, &run_id, "failed", None, None, Some("No test scenarios were generated"), Some(&now));
-            emit_lab_status(&app, "lab-matrix-status", &run_id, "failed", Some("No test scenarios were generated"));
-            return;
-        }
-        Ok(s) => s,
-        Err(e) => {
-            let msg = format!("Scenario generation failed: {e}");
-            let now = chrono::Utc::now().to_rfc3339();
-            let _ = matrix_repo::update_run_status(&pool, &run_id, "failed", None, None, Some(&msg), Some(&now));
-            emit_lab_status(&app, "lab-matrix-status", &run_id, "failed", Some(&msg));
-            return;
-        }
+    let cb = LabCallbacks {
+        event_name: "lab-matrix-status",
+        update_status: Box::new(|pool, id, status, sc, sum, err, ca| {
+            let _ = matrix_repo::update_run_status(pool, id, status, sc, sum, err, ca);
+        }),
+        persist_result: Box::new(|pool, run_id, variant, scenario, model, status, scores| {
+            let f = make_common_result_fields(scenario, model, status, scores);
+            let _ = matrix_repo::create_result(pool, &CreateMatrixResultInput {
+                run_id: run_id.to_string(), variant: variant.label.clone(),
+                scenario_name: f.0, model_id: f.1, provider: f.2, status: f.3,
+                output_preview: f.4, tool_calls_expected: f.5, tool_calls_actual: f.6,
+                tool_accuracy_score: f.7, output_quality_score: f.8, protocol_compliance: f.9,
+                input_tokens: f.10, output_tokens: f.11, cost_usd: f.12, duration_ms: f.13,
+                error_message: f.14,
+            });
+        }),
+        build_summary: Box::new(build_keyed_summary),
     };
 
-    let scenario_count = scenarios.len();
-    let _ = matrix_repo::update_run_status(&pool, &run_id, "running", Some(scenario_count as i32), None, None, None);
-
-    let _ = app.emit("lab-matrix-status", TestRunStatusEvent {
-        run_id: run_id.clone(), phase: "generated".into(),
-        scenarios_count: Some(scenario_count), current: None, total: None,
-        model_id: None, scenario_name: None, status: None, scores: None, summary: None, error: None,
-        scenarios: None,
-    });
-
-    let variants: Vec<(&str, &Persona)> = vec![("current", persona), ("draft", &draft_persona)];
-    let total = scenario_count * model_configs.len() * variants.len();
-    let mut current_idx = 0usize;
-    let results_tracker: Arc<Mutex<HashMap<String, Vec<(i32, i32, i32, f64, i64)>>>> = Arc::new(Mutex::new(HashMap::new()));
-
-    for scenario in &scenarios {
-        for model in &model_configs {
-            for (variant_label, persona_variant) in &variants {
-                if cancelled.load(std::sync::atomic::Ordering::Acquire) {
-                    let _ = matrix_repo::update_run_status(&pool, &run_id, "cancelled", None, None, None, None);
-                    emit_lab_status(&app, "lab-matrix-status", &run_id, "cancelled", None);
-                    return;
-                }
-
-                current_idx += 1;
-
-                let _ = app.emit("lab-matrix-status", TestRunStatusEvent {
-                    run_id: run_id.clone(), phase: "executing".into(),
-                    scenarios_count: Some(scenario_count), current: Some(current_idx), total: Some(total),
-                    model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
-                    status: Some("running".into()), scores: None, summary: None, error: None,
-                    scenarios: None,
-                });
-
-                let result = execute_scenario(persona_variant, tools, scenario, model).await;
-
-                let (status, scores) = match &result {
-                    Ok(r) => ("passed".to_string(), score_result(r, scenario)),
-                    Err(e) => ("error".to_string(), ScoreResult {
-                        tool_accuracy: 0, output_quality: 0, protocol_compliance: 0,
-                        output_preview: Some(e.clone()), tool_calls_actual: None,
-                        input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
-                        error_message: Some(e.clone()),
-                    }),
-                };
-
-                {
-                    let key = format!("{}:{}", variant_label, model.id);
-                    let mut tracker = results_tracker.lock().await;
-                    tracker.entry(key).or_default().push((
-                        scores.tool_accuracy, scores.output_quality, scores.protocol_compliance,
-                        scores.cost_usd, scores.duration_ms,
-                    ));
-                }
-
-                let _ = matrix_repo::create_result(&pool, &CreateMatrixResultInput {
-                    run_id: run_id.clone(),
-                    variant: variant_label.to_string(),
-                    scenario_name: scenario.name.clone(),
-                    model_id: model.id.clone(),
-                    provider: model.provider.clone(),
-                    status: status.clone(),
-                    output_preview: scores.output_preview.clone(),
-                    tool_calls_expected: scenario.expected_tool_sequence.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
-                    tool_calls_actual: scores.tool_calls_actual.clone(),
-                    tool_accuracy_score: Some(scores.tool_accuracy),
-                    output_quality_score: Some(scores.output_quality),
-                    protocol_compliance: Some(scores.protocol_compliance),
-                    input_tokens: scores.input_tokens,
-                    output_tokens: scores.output_tokens,
-                    cost_usd: scores.cost_usd,
-                    duration_ms: scores.duration_ms,
-                    error_message: scores.error_message.clone(),
-                });
-
-                let _ = app.emit("lab-matrix-status", TestRunStatusEvent {
-                    run_id: run_id.clone(), phase: "executing".into(),
-                    scenarios_count: Some(scenario_count), current: Some(current_idx), total: Some(total),
-                    model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
-                    status: Some(status),
-                    scores: Some(TestScores { tool_accuracy: Some(scores.tool_accuracy), output_quality: Some(scores.output_quality), protocol_compliance: Some(scores.protocol_compliance) }),
-                    summary: None, error: scores.error_message,
-                    scenarios: None,
-                });
-            }
-        }
-    }
-
-    // Build matrix summary
-    let tracker_data = results_tracker.lock().await;
-    let mut summary_obj = serde_json::Map::new();
-    for (key, results) in tracker_data.iter() {
-        let count = results.len() as f64;
-        let avg_ta = results.iter().map(|r| r.0 as f64).sum::<f64>() / count;
-        let avg_oq = results.iter().map(|r| r.1 as f64).sum::<f64>() / count;
-        let avg_pc = results.iter().map(|r| r.2 as f64).sum::<f64>() / count;
-        let total_cost: f64 = results.iter().map(|r| r.3).sum();
-        let composite = avg_ta * WEIGHT_TOOL_ACCURACY + avg_oq * WEIGHT_OUTPUT_QUALITY + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
-        summary_obj.insert(key.clone(), serde_json::json!({
-            "avg_tool_accuracy": avg_ta.round() as i32,
-            "avg_output_quality": avg_oq.round() as i32,
-            "avg_protocol_compliance": avg_pc.round() as i32,
-            "composite_score": composite.round() as i32,
-            "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
-            "scenarios_tested": count as i32,
-        }));
-    }
-    drop(tracker_data);
-
-    let summary = serde_json::Value::Object(summary_obj);
-    let summary_str = serde_json::to_string(&summary).unwrap_or_default();
-    let now = chrono::Utc::now().to_rfc3339();
-    let _ = matrix_repo::update_run_status(&pool, &run_id, "completed", None, Some(&summary_str), None, Some(&now));
-
-    let _ = app.emit("lab-matrix-status", TestRunStatusEvent {
-        run_id: run_id.clone(), phase: "completed".into(),
-        scenarios_count: Some(scenario_count), current: Some(total), total: Some(total),
-        model_id: None, scenario_name: None, status: None, scores: None,
-        summary: Some(summary), error: None,
-        scenarios: None,
-    });
+    run_lab_loop(&app, &pool, &run_id, persona, tools, &model_configs, &variants, &cancelled, use_case_filter.as_deref(), &cb).await;
 }
 
 // -- Matrix helpers ---------------------------------------------

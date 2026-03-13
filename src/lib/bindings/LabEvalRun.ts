@@ -1,7 +1,9 @@
+import type { LabRunStatus } from "./LabRunStatus";
+
 export interface LabEvalRun {
   id: string;
   personaId: string;
-  status: string;
+  status: LabRunStatus;
   versionIds: string;
   versionNumbers: string;
   modelsTested: string;

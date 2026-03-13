@@ -8,7 +8,7 @@ import { ScanResultsBanner } from '../../../shared/ScanResultsBanner';
 import { N8nUseCasesTab } from '@/features/templates/sub_n8n/edit/N8nUseCasesTab';
 import { N8nEntitiesTab } from '@/features/templates/sub_n8n/edit/N8nEntitiesTab';
 import { useTemplateMotion } from '@/features/templates/animationPresets';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { CreateSuccessState } from './CreateSuccessState';
 import { CreateIdentityCard } from './CreateIdentityCard';
 import { CreateReadinessChecklist } from './CreateReadinessChecklist';
@@ -28,7 +28,7 @@ export function CreateStep() {
     cleanupAll,
   } = useAdoptionWizard();
 
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   const {
     draft,

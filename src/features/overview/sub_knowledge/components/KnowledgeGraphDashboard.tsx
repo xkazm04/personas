@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, X, Plus, MessageSquare, Play, Brain, Sparkles } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { getKnowledgeSummary, listExecutionKnowledge, seedMockKnowledge } from '@/api/overview/intelligence/knowledge';
 import type { KnowledgeGraphSummary } from '@/lib/bindings/KnowledgeGraphSummary';
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
@@ -16,7 +16,7 @@ import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollectio
 import { AnnotateModal } from './AnnotateModal';
 
 export default function KnowledgeGraphDashboard() {
-  const personas = usePersonaStore((s) => s.personas);
+  const personas = useAgentStore((s) => s.personas);
   const [summary, setSummary] = useState<KnowledgeGraphSummary | null>(null);
   const [entries, setEntries] = useState<ExecutionKnowledge[]>([]);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);

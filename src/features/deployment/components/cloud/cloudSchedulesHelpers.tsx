@@ -25,10 +25,10 @@ export const CRON_PRESETS = [
   { label: 'Every 15 min', cron: '*/15 * * * *' },
   { label: 'Every hour', cron: '0 * * * *' },
   { label: 'Every 6 hours', cron: '0 */6 * * *' },
-  { label: 'Daily at midnight', cron: '0 0 * * *' },
-  { label: 'Daily at 9am', cron: '0 9 * * *' },
-  { label: 'Weekdays at 9am', cron: '0 9 * * 1-5' },
-  { label: 'Weekly (Sun midnight)', cron: '0 0 * * 0' },
+  { label: 'Daily at midnight UTC', cron: '0 0 * * *' },
+  { label: 'Daily at 9am UTC', cron: '0 9 * * *' },
+  { label: 'Weekdays at 9am UTC', cron: '0 9 * * 1-5' },
+  { label: 'Weekly (Sun midnight UTC)', cron: '0 0 * * 0' },
 ] as const;
 
 // ---------------------------------------------------------------------------

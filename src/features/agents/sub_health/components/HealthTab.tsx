@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import { Activity } from 'lucide-react';
 import { useHealthCheck, HealthCheckPanel } from '@/features/agents/health';
 import { isTimestampStale } from '@/stores/slices/agents/healthCheckSlice';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 
 export function HealthTab() {
   const healthCheck = useHealthCheck();
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const autoRefreshed = useRef(false);
 
   // Auto-trigger a refresh when the tab becomes visible with stale data

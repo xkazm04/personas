@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import type { SchemaFormConfig } from './schemaFormTypes';
 import { sanitize } from './schemaFormTypes';
 import { ExtraFieldRenderer } from './ExtraFieldRenderers';
@@ -50,11 +50,11 @@ export function CredentialSchemaForm({
     return { ...init, ...initialExtras };
   });
 
-  const createCredential = usePersonaStore((s) => s.createCredential);
-  const createConnectorDefinition = usePersonaStore((s) => s.createConnectorDefinition);
-  const deleteConnectorDefinition = usePersonaStore((s) => s.deleteConnectorDefinition);
-  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
-  const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
+  const createCredential = useVaultStore((s) => s.createCredential);
+  const createConnectorDefinition = useVaultStore((s) => s.createConnectorDefinition);
+  const deleteConnectorDefinition = useVaultStore((s) => s.deleteConnectorDefinition);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
+  const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
   const health = useCredentialHealth(config.healthKey);
 
   const activeSubType = (config.subTypes.find((st) => st.id === subTypeId) ?? config.subTypes[0])!;
@@ -183,6 +183,8 @@ export function CredentialSchemaForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={config.namePlaceholder}
+            aria-invalid={!!error}
+            aria-describedby={error ? 'schema-form-error' : undefined}
             className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30"
           />
         </div>
@@ -257,7 +259,7 @@ export function CredentialSchemaForm({
         <ExtraFieldRenderer key={ef.key} def={ef} state={extraState} setState={setExtraState} />
       ))}
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p id="schema-form-error" role="alert" className="text-sm text-red-400">{error}</p>}
     </motion.div>
   );
 }

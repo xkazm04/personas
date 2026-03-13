@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Users, RefreshCw, Wifi, AlertTriangle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import { PeerCard } from './PeerCard';
 import { PeerDetailDrawer } from './PeerDetailDrawer';
@@ -23,13 +23,13 @@ function useRelativeTime(ts: number | null): string {
 }
 
 export function PeerList() {
-  const discoveredPeers = usePersonaStore((s) => s.discoveredPeers);
-  const connectionStates = usePersonaStore((s) => s.connectionStates);
-  const trustedPeers = usePersonaStore((s) => s.trustedPeers);
-  const networkError = usePersonaStore((s) => s.networkError);
-  const fetchNetworkSnapshot = usePersonaStore((s) => s.fetchNetworkSnapshot);
-  const connectToPeer = usePersonaStore((s) => s.connectToPeer);
-  const disconnectPeer = usePersonaStore((s) => s.disconnectPeer);
+  const discoveredPeers = useSystemStore((s) => s.discoveredPeers);
+  const connectionStates = useSystemStore((s) => s.connectionStates);
+  const trustedPeers = useSystemStore((s) => s.trustedPeers);
+  const networkError = useSystemStore((s) => s.networkError);
+  const fetchNetworkSnapshot = useSystemStore((s) => s.fetchNetworkSnapshot);
+  const connectToPeer = useSystemStore((s) => s.connectToPeer);
+  const disconnectPeer = useSystemStore((s) => s.disconnectPeer);
   const addToast = useToastStore((s) => s.addToast);
 
   const [loading, setLoading] = useState(true);

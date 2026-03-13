@@ -1,10 +1,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import type { SmartSearchResult } from "@/lib/bindings/SmartSearchResult";
 
-export interface SmartSearchResult {
-  rankedIds: string[];
-  rationale: string;
-  cliLog: string[];
-}
+export type { SmartSearchResult } from "@/lib/bindings/SmartSearchResult";
 
 export const smartSearchTemplates = (query: string) =>
   invoke<SmartSearchResult>("smart_search_templates", { query });

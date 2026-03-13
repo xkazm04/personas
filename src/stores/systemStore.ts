@@ -1,0 +1,51 @@
+/**
+ * System domain store -- UI chrome, cloud, GitLab, onboarding, guided tour,
+ * view-mode, dev-tools, network / P2P, and setup wizard.
+ */
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { SystemStore } from "./storeTypes";
+
+import { createUiSlice } from "./slices/system/uiSlice";
+import { createCloudSlice } from "./slices/system/cloudSlice";
+import { createGitLabSlice } from "./slices/system/gitlabSlice";
+import { createOnboardingSlice } from "./slices/system/onboardingSlice";
+import { createTourSlice } from "./slices/system/tourSlice";
+import { createViewModeSlice } from "./slices/system/viewModeSlice";
+import { createDevToolsSlice } from "./slices/system/devToolsSlice";
+import { createNetworkSlice } from "./slices/network/networkSlice";
+import { createSetupSlice } from "./slices/system/setupSlice";
+
+export const useSystemStore = create<SystemStore>()(
+  persist(
+    (...a) => ({
+      ...createUiSlice(...a),
+      ...createCloudSlice(...a),
+      ...createGitLabSlice(...a),
+      ...createOnboardingSlice(...a),
+      ...createTourSlice(...a),
+      ...createViewModeSlice(...a),
+      ...createDevToolsSlice(...a),
+      ...createNetworkSlice(...a),
+      ...createSetupSlice(...a),
+    }),
+    {
+      name: "persona-ui-system",
+      partialize: (state) => ({
+        sidebarSection: state.sidebarSection,
+        homeTab: state.homeTab,
+        editorTab: state.editorTab,
+        cloudTab: state.cloudTab,
+        settingsTab: state.settingsTab,
+        onboardingCompleted: state.onboardingCompleted,
+        tourCompleted: state.tourCompleted,
+        tourDismissed: state.tourDismissed,
+        viewMode: state.viewMode,
+        setupRole: state.setupRole,
+        setupTool: state.setupTool,
+        setupGoal: state.setupGoal,
+        setupCompleted: state.setupCompleted,
+      }),
+    },
+  ),
+);

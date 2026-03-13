@@ -1,10 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 
 export function LabProgress() {
-  const isLabRunning = usePersonaStore((s) => s.isLabRunning);
-  const labProgress = usePersonaStore((s) => s.labProgress);
+  const isLabRunning = useAgentStore((s) => s.isLabRunning);
+  const labProgress = useAgentStore((s) => s.labProgress);
 
   return (
     <AnimatePresence>

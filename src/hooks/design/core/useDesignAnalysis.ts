@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { startDesignAnalysis, refineDesign, cancelDesignAnalysis, compileFromIntent } from '@/api/templates/design';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { useTauriStream } from './useTauriStream';
 import { applyDesignResult, retryFailedOperations, type ApplyDesignSelections, type FailedOperation } from '../credential/applyDesignResult';
 import type { DesignPhase, AgentIR, DesignQuestion } from '@/lib/types/designTypes';
@@ -63,8 +63,8 @@ export function useDesignAnalysis() {
   // Share the ref with the module-level callbacks
   _designIdRef = designIdRef;
 
-  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
-  const refreshPersonas = usePersonaStore((s) => s.fetchPersonas);
+  const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
+  const refreshPersonas = useAgentStore((s) => s.fetchPersonas);
 
   // -- Core streaming via useTauriStream -----------------------------
   // Handles: listener lifecycle, line accumulation, cleanup on unmount,

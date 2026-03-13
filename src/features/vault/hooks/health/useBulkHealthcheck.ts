@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as credApi from '@/api/vault/credentials';
 import { toCredentialMetadata, type CredentialMetadata } from '@/lib/types/types';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from '@/stores/vaultStore';
 import { createModuleCache, useModuleCacheSubscription } from '@/hooks/utility/data/useModuleSubscription';
 
 // -- Re-use the same shared caches from useCredentialHealth ----------
@@ -95,7 +95,7 @@ export function useBulkHealthcheck() {
             try {
               const updatedRaw = await credApi.patchCredentialMetadata(cred.id, patch);
               const updated = toCredentialMetadata(updatedRaw);
-              usePersonaStore.setState((s) => ({
+              useVaultStore.setState((s) => ({
                 credentials: s.credentials.map((c) => (c.id === cred.id ? updated : c)),
               }));
             } catch { /* intentional: non-critical -- healthcheck metadata persistence is best-effort */ }

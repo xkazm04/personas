@@ -12,6 +12,44 @@ use crate::AppState;
 
 use crate::engine::healing::MAX_RETRY_COUNT;
 
+/// Resolve a [`KnowledgeHint`] from the healing knowledge base for the given
+/// persona and failure category. Mirrors the engine-level lookup by iterating
+/// over connectors associated with the persona's tools.
+fn resolve_knowledge_hint(
+    pool: &crate::db::DbPool,
+    persona_id: &str,
+    category: &healing::FailureCategory,
+) -> Option<healing::KnowledgeHint> {
+    let pattern_key = match category {
+        healing::FailureCategory::RateLimit => "rate_limit",
+        healing::FailureCategory::Timeout => "timeout",
+        _ => return None,
+    };
+
+    let tools = crate::db::repos::resources::tools::get_tools_for_persona(pool, persona_id).ok()?;
+    let connectors = crate::db::repos::resources::connectors::get_all(pool).ok()?;
+
+    for tool in &tools {
+        for connector in &connectors {
+            let services: Vec<serde_json::Value> =
+                serde_json::from_str(&connector.services).unwrap_or_default();
+            let tool_listed = services.iter().any(|s| {
+                s.get("toolName")
+                    .and_then(|v| v.as_str())
+                    .map(|name| name == tool.name)
+                    .unwrap_or(false)
+            });
+            if tool_listed {
+                if let Ok(Some(hint)) = repo::get_knowledge_hint(pool, &connector.name, pattern_key) {
+                    return Some(hint);
+                }
+            }
+        }
+    }
+
+    None
+}
+
 /// Verify that the healing issue belongs to the expected persona.
 fn verify_healing_owner(issue: &PersonaHealingIssue, caller_persona_id: &str) -> Result<(), AppError> {
     if issue.persona_id != caller_persona_id {
@@ -88,7 +126,8 @@ pub async fn run_healing_analysis(
         let timeout_ms = exec.duration_ms.unwrap_or(600_000) as u64;
 
         let category = healing::classify_error(error, timed_out, session_limit);
-        let diagnosis = healing::diagnose(&category, error, timeout_ms, consecutive, exec.retry_count);
+        let kb_hint = resolve_knowledge_hint(pool, &persona_id, &category);
+        let diagnosis = healing::diagnose(&category, error, timeout_ms, consecutive, exec.retry_count, kb_hint.as_ref());
 
         // INSERT OR IGNORE: returns None if a duplicate already exists for
         // this (persona_id, execution_id), preventing concurrent-scan races.

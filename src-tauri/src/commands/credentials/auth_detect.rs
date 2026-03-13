@@ -313,9 +313,12 @@ fn probe_browser_cookies() -> Vec<AuthDetection> {
             "Auth detection: probing browser cookies (read-only copy) for service session detection"
         );
 
-        // Copy to temp file to avoid lock conflicts
-        let temp_dir = std::env::temp_dir();
-        let temp_path = temp_dir.join(format!("personas_cookie_probe_{}.db", std::process::id()));
+        // Copy to a secure temp file (auto-deleted on drop, even on panic)
+        let temp_file = match tempfile::NamedTempFile::new() {
+            Ok(f) => f,
+            Err(_) => continue,
+        };
+        let temp_path = temp_file.path().to_path_buf();
 
         if std::fs::copy(&cookie_path, &temp_path).is_err() {
             continue;
@@ -359,11 +362,7 @@ fn probe_browser_cookies() -> Vec<AuthDetection> {
                 }
             }
         }
-
-        // Clean up temp file -- log failure since it may contain sensitive cookie data
-        if let Err(e) = std::fs::remove_file(&temp_path) {
-            tracing::warn!(target: "audit", "Failed to remove temp cookie probe file: {}", e);
-        }
+        // temp_file is dropped here, auto-removing the temp file
     }
 
     detected.into_values().collect()
@@ -383,12 +382,30 @@ fn chrome_epoch_now() -> i64 {
 
 // -- Public API ---------------------------------------------------------
 
+/// How long cached auth detection results remain valid.
+const AUTH_DETECT_CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
+
 /// Detect all authenticated services using CLI probing and browser cookies.
+///
+/// Results are cached for 5 minutes to avoid re-spawning 9 CLI subprocesses
+/// and copying browser cookie databases on repeated wizard calls.
 #[tauri::command]
 pub async fn detect_authenticated_services(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<AuthDetection>, AppError> {
     require_auth(&state).await?;
+
+    // Return cached results if still fresh
+    {
+        let cache = state.auth_detect_cache.lock().await;
+        if let Some((cached_at, ref results)) = *cache {
+            if cached_at.elapsed() < AUTH_DETECT_CACHE_TTL {
+                tracing::debug!("Returning cached auth detection results");
+                return Ok(results.clone());
+            }
+        }
+    }
+
     // Run CLI probes (async) and cookie probes (sync, in blocking thread) in parallel
     let (cli_results, cookie_results) = tokio::join!(
         probe_cli_tools(),
@@ -408,6 +425,9 @@ pub async fn detect_authenticated_services(
             }
         }
     }
+
+    // Cache the results
+    *state.auth_detect_cache.lock().await = Some((std::time::Instant::now(), results.clone()));
 
     Ok(results)
 }

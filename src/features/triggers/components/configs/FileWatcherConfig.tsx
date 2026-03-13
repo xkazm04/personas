@@ -36,6 +36,8 @@ export function FileWatcherConfig({
                 if (validationError) setValidationError(null);
               }}
               placeholder="C:\Users\me\projects or /home/me/src"
+              aria-invalid={!!validationError}
+              aria-describedby={validationError ? 'watch-paths-error' : undefined}
               className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 transition-all ${
                 validationError ? 'border-red-500/30' : 'border-primary/15 focus:ring-orange-400/40'
               }`}
@@ -50,7 +52,7 @@ export function FileWatcherConfig({
         <button type="button" onClick={() => setWatchPaths([...watchPaths, ''])} className="flex items-center gap-1 text-sm text-orange-400/80 hover:text-orange-400 transition-colors">
           <Plus className="w-3.5 h-3.5" /> Add path
         </button>
-        {validationError && <p className="text-sm text-red-400/80 mt-1">{validationError}</p>}
+        {validationError && <p id="watch-paths-error" className="text-sm text-red-400/80 mt-1">{validationError}</p>}
       </div>
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-1.5">File Events</label>

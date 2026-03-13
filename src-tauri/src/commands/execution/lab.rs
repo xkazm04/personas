@@ -52,14 +52,10 @@ pub async fn lab_start_arena(
     let run = arena_repo::create_run(&state.db, &persona_id, &models_json, use_case_filter.as_deref())?;
     let run_id = run.id.clone();
 
-    let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
-    {
-        let mut flags = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        flags.insert(run_id.clone(), cancelled.clone());
-    }
+    let cancelled = state.process_registry.register_run("test", &run_id);
 
     let pool = state.db.clone();
-    let state_arc = state.inner().clone();
+    let registry = state.process_registry.clone();
     let cancelled_clone = cancelled.clone();
     let run_id_clone = run_id.clone();
 
@@ -76,9 +72,7 @@ pub async fn lab_start_arena(
         )
         .await;
 
-        if let Ok(mut flags) = state_arc.active_test_run_cancelled.lock() {
-            flags.remove(&run_id_clone);
-        }
+        registry.unregister_run("test", &run_id_clone);
     });
 
     Ok(run)
@@ -118,13 +112,9 @@ pub fn lab_cancel_arena(
     id: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    if let Ok(flags) = state.active_test_run_cancelled.lock() {
-        if let Some(flag) = flags.get(&id) {
-            flag.store(true, std::sync::atomic::Ordering::Release);
-        }
-    }
+    state.process_registry.cancel_run("test", &id);
     let now = chrono::Utc::now().to_rfc3339();
-    arena_repo::update_run_status(&state.db, &id, "cancelled", None, None, None, Some(&now))?;
+    arena_repo::update_run_status(&state.db, &id, LabRunStatus::Cancelled, None, None, None, Some(&now))?;
     Ok(())
 }
 
@@ -184,31 +174,19 @@ pub async fn lab_start_ab(
     )?;
     let run_id = run.id.clone();
 
-    let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
-    {
-        let mut flags = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        flags.insert(run_id.clone(), cancelled.clone());
-    }
+    let cancelled = state.process_registry.register_run("test", &run_id);
 
-    // Build persona variants
+    // Build persona variants — apply both fields from version to avoid hybrid state
     let mut persona_a = persona.clone();
-    if let Some(ref sp) = version_a.structured_prompt {
-        persona_a.structured_prompt = Some(sp.clone());
-    }
-    if let Some(ref sys) = version_a.system_prompt {
-        persona_a.system_prompt = sys.clone();
-    }
+    persona_a.structured_prompt = version_a.structured_prompt.clone();
+    persona_a.system_prompt = version_a.system_prompt.clone().unwrap_or_default();
 
     let mut persona_b = persona;
-    if let Some(ref sp) = version_b.structured_prompt {
-        persona_b.structured_prompt = Some(sp.clone());
-    }
-    if let Some(ref sys) = version_b.system_prompt {
-        persona_b.system_prompt = sys.clone();
-    }
+    persona_b.structured_prompt = version_b.structured_prompt.clone();
+    persona_b.system_prompt = version_b.system_prompt.clone().unwrap_or_default();
 
     let pool = state.db.clone();
-    let state_arc = state.inner().clone();
+    let registry = state.process_registry.clone();
     let cancelled_clone = cancelled.clone();
     let run_id_clone = run_id.clone();
     let va_id = version_a.id.clone();
@@ -232,9 +210,7 @@ pub async fn lab_start_ab(
         )
         .await;
 
-        if let Ok(mut flags) = state_arc.active_test_run_cancelled.lock() {
-            flags.remove(&run_id_clone);
-        }
+        registry.unregister_run("test", &run_id_clone);
     });
 
     Ok(run)
@@ -274,13 +250,9 @@ pub fn lab_cancel_ab(
     id: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    if let Ok(flags) = state.active_test_run_cancelled.lock() {
-        if let Some(flag) = flags.get(&id) {
-            flag.store(true, std::sync::atomic::Ordering::Release);
-        }
-    }
+    state.process_registry.cancel_run("test", &id);
     let now = chrono::Utc::now().to_rfc3339();
-    ab_repo::update_run_status(&state.db, &id, "cancelled", None, None, None, Some(&now))?;
+    ab_repo::update_run_status(&state.db, &id, LabRunStatus::Cancelled, None, None, None, Some(&now))?;
     Ok(())
 }
 
@@ -327,14 +299,10 @@ pub async fn lab_start_matrix(
     )?;
     let run_id = run.id.clone();
 
-    let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
-    {
-        let mut flags = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        flags.insert(run_id.clone(), cancelled.clone());
-    }
+    let cancelled = state.process_registry.register_run("test", &run_id);
 
     let pool = state.db.clone();
-    let state_arc = state.inner().clone();
+    let registry = state.process_registry.clone();
     let cancelled_clone = cancelled.clone();
     let run_id_clone = run_id.clone();
 
@@ -351,9 +319,7 @@ pub async fn lab_start_matrix(
         )
         .await;
 
-        if let Ok(mut flags) = state_arc.active_test_run_cancelled.lock() {
-            flags.remove(&run_id_clone);
-        }
+        registry.unregister_run("test", &run_id_clone);
     });
 
     Ok(run)
@@ -393,13 +359,9 @@ pub fn lab_cancel_matrix(
     id: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    if let Ok(flags) = state.active_test_run_cancelled.lock() {
-        if let Some(flag) = flags.get(&id) {
-            flag.store(true, std::sync::atomic::Ordering::Release);
-        }
-    }
+    state.process_registry.cancel_run("test", &id);
     let now = chrono::Utc::now().to_rfc3339();
-    matrix_repo::update_run_status(&state.db, &id, "cancelled", None, None, None, Some(&now))?;
+    matrix_repo::update_run_status(&state.db, &id, LabRunStatus::Cancelled, None, None, None, Some(&now))?;
     Ok(())
 }
 
@@ -499,27 +461,19 @@ pub async fn lab_start_eval(
     )?;
     let run_id = run.id.clone();
 
-    let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
-    {
-        let mut flags = state.active_test_run_cancelled.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        flags.insert(run_id.clone(), cancelled.clone());
-    }
+    let cancelled = state.process_registry.register_run("test", &run_id);
 
-    // Build persona variants -- one per version
+    // Build persona variants -- one per version, applying both fields to avoid hybrid state
     let mut variants: Vec<(String, i32, crate::db::models::Persona)> = Vec::new();
     for version in &versions {
         let mut p = persona.clone();
-        if let Some(ref sp) = version.structured_prompt {
-            p.structured_prompt = Some(sp.clone());
-        }
-        if let Some(ref sys) = version.system_prompt {
-            p.system_prompt = sys.clone();
-        }
+        p.structured_prompt = version.structured_prompt.clone();
+        p.system_prompt = version.system_prompt.clone().unwrap_or_default();
         variants.push((version.id.clone(), version.version_number, p));
     }
 
     let pool = state.db.clone();
-    let state_arc = state.inner().clone();
+    let registry = state.process_registry.clone();
     let cancelled_clone = cancelled.clone();
     let run_id_clone = run_id.clone();
 
@@ -536,9 +490,7 @@ pub async fn lab_start_eval(
         )
         .await;
 
-        if let Ok(mut flags) = state_arc.active_test_run_cancelled.lock() {
-            flags.remove(&run_id_clone);
-        }
+        registry.unregister_run("test", &run_id_clone);
     });
 
     Ok(run)
@@ -578,13 +530,9 @@ pub fn lab_cancel_eval(
     id: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    if let Ok(flags) = state.active_test_run_cancelled.lock() {
-        if let Some(flag) = flags.get(&id) {
-            flag.store(true, std::sync::atomic::Ordering::Release);
-        }
-    }
+    state.process_registry.cancel_run("test", &id);
     let now = chrono::Utc::now().to_rfc3339();
-    eval_repo::update_run_status(&state.db, &id, "cancelled", None, None, None, Some(&now))?;
+    eval_repo::update_run_status(&state.db, &id, LabRunStatus::Cancelled, None, None, None, Some(&now))?;
     Ok(())
 }
 
@@ -638,18 +586,13 @@ pub fn lab_rollback_version(
 
     let conn = state.db.get()?;
     let now = chrono::Utc::now().to_rfc3339();
-    if let Some(ref sp) = version.structured_prompt {
-        conn.execute(
-            "UPDATE personas SET structured_prompt = ?1, updated_at = ?2 WHERE id = ?3",
-            rusqlite::params![sp, now, version.persona_id],
-        )?;
-    }
-    if let Some(ref sys) = version.system_prompt {
-        conn.execute(
-            "UPDATE personas SET system_prompt = ?1, updated_at = ?2 WHERE id = ?3",
-            rusqlite::params![sys, now, version.persona_id],
-        )?;
-    }
+    // Apply both fields atomically — if a field is None in the version,
+    // explicitly clear it on the persona to avoid a hybrid state where
+    // structured_prompt comes from one version and system_prompt from another.
+    conn.execute(
+        "UPDATE personas SET structured_prompt = ?1, system_prompt = COALESCE(?2, ''), updated_at = ?3 WHERE id = ?4",
+        rusqlite::params![version.structured_prompt, version.system_prompt, now, version.persona_id],
+    )?;
 
     if let Ok(Some(current_prod)) = metrics_repo::get_production_version(&state.db, &version.persona_id) {
         if current_prod.id != version_id {

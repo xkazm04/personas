@@ -1,3 +1,5 @@
+import type { LabRunStatus } from "./LabRunStatus";
+
 export interface LabMatrixResult {
   id: string;
   runId: string;
@@ -5,7 +7,7 @@ export interface LabMatrixResult {
   scenarioName: string;
   modelId: string;
   provider: string;
-  status: string;
+  status: LabRunStatus;
   outputPreview: string | null;
   toolCallsExpected: string | null;
   toolCallsActual: string | null;

@@ -2,7 +2,7 @@ import { Component, type ReactNode } from 'react';
 import { RefreshCw, ChevronDown, ChevronRight, Copy, Check, Home, LifeBuoy } from 'lucide-react';
 import { useState } from 'react';
 import { persistCrash } from '@/lib/utils/crashPersistence';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -79,7 +79,7 @@ function ErrorFallback({
 }) {
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState(false);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   const handleGoHome = () => {
     setSidebarSection('home');

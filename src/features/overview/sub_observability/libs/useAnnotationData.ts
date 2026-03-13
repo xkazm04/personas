@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import { getPromptVersions } from '@/api/overview/observability';
 import { getRotationHistory } from '@/api/vault/rotation';
 import type { ChartAnnotationRecord } from './chartAnnotations';
@@ -16,8 +17,8 @@ interface AnnotationDataOptions {
 
 /** Loads and composes chart annotations from prompts, rotations, and healing issues. */
 export function useAnnotationData({ selectedPersonaId, healingIssues }: AnnotationDataOptions) {
-  const personas = usePersonaStore((s) => s.personas);
-  const credentials = usePersonaStore((s) => s.credentials);
+  const personas = useAgentStore((s) => s.personas);
+  const credentials = useVaultStore((s) => s.credentials);
 
   const [promptAnnotations, setPromptAnnotations] = useState<ChartAnnotationRecord[]>([]);
   const [rotationAnnotations, setRotationAnnotations] = useState<ChartAnnotationRecord[]>([]);

@@ -1,19 +1,21 @@
 import { useState, useEffect } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useVaultStore } from "@/stores/vaultStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { Plus, X } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { AnimatePresence } from 'framer-motion';
-import type { DbPersonaTrigger } from '@/lib/types/types';
+import type { PersonaTrigger } from '@/lib/types/types';
 import { TriggerAddForm } from '@/features/triggers/components/form/TriggerAddForm';
 import { TriggerListItem } from '@/features/triggers/components/display/trigger/TriggerListItem';
 import { useTriggerOperations } from '@/features/triggers/hooks/useTriggerOperations';
 
 export function TriggerConfig() {
-  const selectedPersona = usePersonaStore((state) => state.selectedPersona);
-  const credentialEvents = usePersonaStore((s) => s.credentialEvents);
-  const fetchCredentialEvents = usePersonaStore((s) => s.fetchCredentialEvents);
-  const triggerError = usePersonaStore((s) => s.triggerError);
-  const clearTriggerError = usePersonaStore((s) => s.clearTriggerError);
+  const selectedPersona = useAgentStore((state) => state.selectedPersona);
+  const credentialEvents = useVaultStore((s) => s.credentialEvents);
+  const fetchCredentialEvents = useVaultStore((s) => s.fetchCredentialEvents);
+  const triggerError = usePipelineStore((s) => s.triggerError);
+  const clearTriggerError = usePipelineStore((s) => s.clearTriggerError);
 
   const personaId = selectedPersona?.id || '';
   const triggers = selectedPersona?.triggers || [];
@@ -86,7 +88,7 @@ export function TriggerConfig() {
 
       {/* Trigger List */}
       <div className="space-y-2">
-        {triggers.map((trigger: DbPersonaTrigger) => (
+        {triggers.map((trigger: PersonaTrigger) => (
           <TriggerListItem
             key={trigger.id}
             trigger={trigger}

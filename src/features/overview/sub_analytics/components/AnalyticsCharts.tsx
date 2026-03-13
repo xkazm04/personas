@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   AreaChart, Area, LineChart, Line, PieChart, Pie, Cell,
@@ -21,7 +22,7 @@ interface AnalyticsChartsProps {
   handleFailureBarClick: (data: { date?: string; failed?: number }) => void;
 }
 
-export function AnalyticsCharts({
+export const AnalyticsCharts = memo(function AnalyticsCharts({
   chartData, compareEnabled, areaData, allToolNames,
   pieData, latencyData, barData, handleFailureBarClick,
 }: AnalyticsChartsProps) {
@@ -144,4 +145,4 @@ export function AnalyticsCharts({
       )}
     </>
   );
-}
+});

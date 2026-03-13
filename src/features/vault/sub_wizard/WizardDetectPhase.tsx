@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Search, Radar, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { detectAuthenticatedServices, type AuthDetection } from '@/api/auth/authDetect';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { WizardDetectGrid } from './WizardDetectGrid';
@@ -11,8 +11,8 @@ interface WizardDetectPhaseProps {
 }
 
 export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const existingCredentials = usePersonaStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const existingCredentials = useVaultStore((s) => s.credentials);
 
   const [search, setSearch] = useState('');
   const [detections, setDetections] = useState<AuthDetection[]>([]);

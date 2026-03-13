@@ -11,7 +11,7 @@ import {
 import { usePromptPerformanceSummary, type TrendDirection } from '../../libs/usePromptPerformanceSummary';
 import { rollbackPromptVersion } from '@/api/overview/observability';
 import { getAppSetting, setAppSetting } from '@/api/system/settings';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import { fmtPct } from '../../libs/performanceHelpers';
 import { AutoRollbackProToggle } from './AutoRollbackProToggle';
@@ -32,7 +32,7 @@ const TREND_CONFIG: Record<TrendDirection, { icon: typeof TrendingUp; label: str
 
 export function PromptPerformanceCard({ personaId, onOpenLab }: PromptPerformanceCardProps) {
   const { errorRates, trend, versionComparison, loading, error, refresh } = usePromptPerformanceSummary(personaId);
-  const fetchDetail = usePersonaStore((s) => s.fetchDetail);
+  const fetchDetail = useAgentStore((s) => s.fetchDetail);
   const addToast = useToastStore((s) => s.addToast);
   const [rollingBack, setRollingBack] = useState(false);
   const [autoRollbackEnabled, setAutoRollbackEnabled] = useState(false);

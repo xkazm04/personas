@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { usePersonaStore } from "@/stores/personaStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { Link, Plus, Server } from "lucide-react";
 import type { TriggerChainLink } from "@/lib/bindings/TriggerChainLink";
 import { useTriggerOperations } from "@/features/triggers/hooks/useTriggerOperations";
@@ -10,11 +11,11 @@ import { AddChainModal } from "./AddChainModal";
 
 // --- Component ----------------------------------------------------------
 export function TriggerFlowBuilder() {
-  const fetchTriggerChains = usePersonaStore((s) => s.fetchTriggerChains);
-  const fetchWebhookStatus = usePersonaStore((s) => s.fetchWebhookStatus);
-  const triggerChains = usePersonaStore((s) => s.triggerChains);
-  const webhookStatus = usePersonaStore((s) => s.webhookStatus);
-  const personas = usePersonaStore((s) => s.personas);
+  const fetchTriggerChains = usePipelineStore((s) => s.fetchTriggerChains);
+  const fetchWebhookStatus = usePipelineStore((s) => s.fetchWebhookStatus);
+  const triggerChains = usePipelineStore((s) => s.triggerChains);
+  const webhookStatus = usePipelineStore((s) => s.webhookStatus);
+  const personas = useAgentStore((s) => s.personas);
   const ops = useTriggerOperations("");
 
   const [showAddModal, setShowAddModal] = useState(false);

@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { SystemStore } from "../../storeTypes";
 import { translateGitLabError } from "./deployTarget";
 import { emitDeploymentEvent } from "@/hooks/realtime/emitDeploymentEvent";
 import {
@@ -68,7 +68,7 @@ export interface GitLabSlice {
   gitlabClearPipelineState: () => void;
 }
 
-export const createGitLabSlice: StateCreator<PersonaStore, [], [], GitLabSlice> = (set) => ({
+export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> = (set) => ({
   gitlabConfig: null,
   gitlabIsConnecting: false,
   gitlabProjects: [],

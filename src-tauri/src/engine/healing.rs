@@ -104,6 +104,19 @@ const MAX_BACKOFF_SECS: u64 = 300;
 const MAX_TIMEOUT_MS: u64 = 1_800_000;
 /// Maximum number of retries for a single execution chain.
 pub const MAX_RETRY_COUNT: i64 = 3;
+/// Occurrence count threshold at which the knowledge base triggers preemptive
+/// escalation (skip retries and go straight to [`HealingAction::CreateIssue`]).
+const KB_ESCALATION_THRESHOLD: i64 = 5;
+
+/// Fleet-wide knowledge about a failure pattern, looked up from the
+/// `healing_knowledge` table before diagnosis.
+#[derive(Debug, Clone, Default)]
+pub struct KnowledgeHint {
+    /// Recommended backoff delay (seconds) learned from past failures.
+    pub recommended_delay_secs: Option<u64>,
+    /// How many times this pattern has been observed fleet-wide.
+    pub occurrence_count: i64,
+}
 
 /// Produce a full [`HealingDiagnosis`] with a recommended action.
 ///
@@ -113,16 +126,27 @@ pub const MAX_RETRY_COUNT: i64 = 3;
 /// `retry_count` is the number of retries already attempted for this specific
 /// execution chain. When it reaches [`MAX_RETRY_COUNT`], retryable actions
 /// escalate to [`HealingAction::CreateIssue`].
+///
+/// `kb_hint` is an optional [`KnowledgeHint`] from the healing knowledge base.
+/// When present, the recommended delay overrides the computed backoff and high
+/// occurrence counts trigger preemptive escalation.
 pub fn diagnose(
     category: &FailureCategory,
     error: &str,
     current_timeout_ms: u64,
     consecutive_failures: u32,
     retry_count: i64,
+    kb_hint: Option<&KnowledgeHint>,
 ) -> HealingDiagnosis {
     match category {
         FailureCategory::RateLimit => {
-            if retry_count >= MAX_RETRY_COUNT {
+            // Preemptive escalation: if the knowledge base has seen this
+            // pattern many times, skip retries entirely.
+            let kb_escalate = kb_hint
+                .map(|h| h.occurrence_count >= KB_ESCALATION_THRESHOLD)
+                .unwrap_or(false);
+
+            if retry_count >= MAX_RETRY_COUNT || kb_escalate {
                 return HealingDiagnosis {
                     category: category.clone(),
                     action: HealingAction::CreateIssue,
@@ -139,7 +163,13 @@ pub fn diagnose(
                     ),
                 };
             }
-            let delay = std::cmp::min(30u64.saturating_mul(1 << consecutive_failures), MAX_BACKOFF_SECS);
+            // Use knowledge-base recommended delay when available, otherwise
+            // fall back to exponential backoff.
+            let computed_delay = std::cmp::min(30u64.saturating_mul(1 << consecutive_failures), MAX_BACKOFF_SECS);
+            let delay = kb_hint
+                .and_then(|h| h.recommended_delay_secs)
+                .map(|kb_delay| std::cmp::min(kb_delay, MAX_BACKOFF_SECS))
+                .unwrap_or(computed_delay);
             HealingDiagnosis {
                 category: category.clone(),
                 action: HealingAction::RetryWithBackoff { delay_secs: delay },
@@ -169,8 +199,12 @@ pub fn diagnose(
             ),
         },
         FailureCategory::Timeout => {
-            if consecutive_failures >= 1 || retry_count >= MAX_RETRY_COUNT {
-                // Already retried once or retry limit exhausted -- escalate to manual issue
+            let kb_escalate = kb_hint
+                .map(|h| h.occurrence_count >= KB_ESCALATION_THRESHOLD)
+                .unwrap_or(false);
+
+            if consecutive_failures >= 1 || retry_count >= MAX_RETRY_COUNT || kb_escalate {
+                // Already retried once, retry limit exhausted, or KB escalation -- escalate to manual issue
                 HealingDiagnosis {
                     category: category.clone(),
                     action: HealingAction::CreateIssue,
@@ -366,7 +400,7 @@ mod tests {
 
     #[test]
     fn test_diagnose_rate_limit_backoff() {
-        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, 0);
+        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, 0, None);
         assert_eq!(d.action, HealingAction::RetryWithBackoff { delay_secs: 30 });
         assert_eq!(d.severity, "medium");
     }
@@ -374,14 +408,14 @@ mod tests {
     #[test]
     fn test_diagnose_rate_limit_escalating_backoff() {
         // consecutive_failures = 3 -> 30 * 2^3 = 240
-        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 3, 0);
+        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 3, 0, None);
         assert_eq!(
             d.action,
             HealingAction::RetryWithBackoff { delay_secs: 240 }
         );
 
         // consecutive_failures = 5 -> 30 * 32 = 960 -> capped at 300
-        let d2 = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 5, 0);
+        let d2 = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 5, 0, None);
         assert_eq!(
             d2.action,
             HealingAction::RetryWithBackoff { delay_secs: 300 }
@@ -391,18 +425,18 @@ mod tests {
     #[test]
     fn test_diagnose_rate_limit_retries_exhausted() {
         // retry_count = MAX_RETRY_COUNT -> escalate to CreateIssue
-        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, MAX_RETRY_COUNT);
+        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, MAX_RETRY_COUNT, None);
         assert_eq!(d.action, HealingAction::CreateIssue);
         assert_eq!(d.severity, "high");
 
         // retry_count > MAX_RETRY_COUNT -> still CreateIssue
-        let d2 = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, MAX_RETRY_COUNT + 1);
+        let d2 = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, MAX_RETRY_COUNT + 1, None);
         assert_eq!(d2.action, HealingAction::CreateIssue);
     }
 
     #[test]
     fn test_diagnose_timeout_retry() {
-        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 0, 0);
+        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 0, 0, None);
         assert_eq!(
             d.action,
             HealingAction::RetryWithTimeout {
@@ -414,7 +448,7 @@ mod tests {
     #[test]
     fn test_diagnose_timeout_max_cap() {
         // 1_200_000 * 2 = 2_400_000 -> capped at 1_800_000
-        let d = diagnose(&FailureCategory::Timeout, "timed out", 1_200_000, 0, 0);
+        let d = diagnose(&FailureCategory::Timeout, "timed out", 1_200_000, 0, 0, None);
         assert_eq!(
             d.action,
             HealingAction::RetryWithTimeout {
@@ -425,7 +459,7 @@ mod tests {
 
     #[test]
     fn test_diagnose_timeout_consecutive_creates_issue() {
-        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 1, 0);
+        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 1, 0, None);
         assert_eq!(d.action, HealingAction::CreateIssue);
         assert_eq!(d.severity, "high");
     }
@@ -433,7 +467,7 @@ mod tests {
     #[test]
     fn test_diagnose_timeout_retries_exhausted() {
         // Even with consecutive_failures = 0, retry_count at limit should escalate
-        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 0, MAX_RETRY_COUNT);
+        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 0, MAX_RETRY_COUNT, None);
         assert_eq!(d.action, HealingAction::CreateIssue);
     }
 
@@ -445,5 +479,63 @@ mod tests {
         assert!(!is_auto_fixable(&FailureCategory::CliNotFound));
         assert!(!is_auto_fixable(&FailureCategory::CredentialError));
         assert!(!is_auto_fixable(&FailureCategory::Unknown));
+    }
+
+    // --- knowledge hint ---
+
+    #[test]
+    fn test_kb_hint_overrides_backoff_delay() {
+        let hint = KnowledgeHint {
+            recommended_delay_secs: Some(120),
+            occurrence_count: 3,
+        };
+        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, 0, Some(&hint));
+        // KB delay (120) overrides computed delay (30)
+        assert_eq!(d.action, HealingAction::RetryWithBackoff { delay_secs: 120 });
+    }
+
+    #[test]
+    fn test_kb_hint_delay_capped_at_max() {
+        let hint = KnowledgeHint {
+            recommended_delay_secs: Some(999),
+            occurrence_count: 2,
+        };
+        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, 0, Some(&hint));
+        assert_eq!(d.action, HealingAction::RetryWithBackoff { delay_secs: MAX_BACKOFF_SECS });
+    }
+
+    #[test]
+    fn test_kb_high_occurrence_escalates_rate_limit() {
+        let hint = KnowledgeHint {
+            recommended_delay_secs: Some(60),
+            occurrence_count: 5, // meets KB_ESCALATION_THRESHOLD
+        };
+        // Even with retry_count=0 and consecutive_failures=0, high occurrence escalates
+        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, 0, Some(&hint));
+        assert_eq!(d.action, HealingAction::CreateIssue);
+    }
+
+    #[test]
+    fn test_kb_high_occurrence_escalates_timeout() {
+        let hint = KnowledgeHint {
+            recommended_delay_secs: None,
+            occurrence_count: 5,
+        };
+        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 0, 0, Some(&hint));
+        assert_eq!(d.action, HealingAction::CreateIssue);
+    }
+
+    #[test]
+    fn test_kb_low_occurrence_does_not_escalate() {
+        let hint = KnowledgeHint {
+            recommended_delay_secs: None,
+            occurrence_count: 4, // below threshold
+        };
+        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 0, 0, Some(&hint));
+        // Should still retry, not escalate
+        assert_eq!(
+            d.action,
+            HealingAction::RetryWithTimeout { new_timeout_ms: 1_200_000 }
+        );
     }
 }

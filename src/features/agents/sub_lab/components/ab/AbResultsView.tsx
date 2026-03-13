@@ -2,75 +2,18 @@ import { useMemo } from 'react';
 import { Trophy, Target, FileText, Shield, DollarSign, Clock } from 'lucide-react';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
+import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
+import { aggregateAbResults } from '../../libs/labAggregation';
 
 interface Props {
   results: LabAbResult[];
 }
 
-interface VersionAggregate {
-  versionId: string;
-  versionNumber: number;
-  avgToolAccuracy: number;
-  avgOutputQuality: number;
-  avgProtocolCompliance: number;
-  compositeScore: number;
-  totalCost: number;
-  avgDuration: number;
-  count: number;
-}
-
 export function AbResultsView({ results }: Props) {
-  const { versionAggs, scenarios, matrix, winnerId } = useMemo(() => {
-    const versionMap = new Map<string, LabAbResult[]>();
-    const scenarioSet = new Set<string>();
-    const modelSet = new Set<string>();
-
-    for (const r of results) {
-      const key = r.versionId;
-      if (!versionMap.has(key)) versionMap.set(key, []);
-      versionMap.get(key)!.push(r);
-      scenarioSet.add(r.scenarioName);
-      modelSet.add(r.modelId);
-    }
-
-    const aggs: VersionAggregate[] = [];
-    for (const [vId, rows] of versionMap) {
-      const n = rows.length || 1;
-      const avgTA = rows.reduce((s, r) => s + (r.toolAccuracyScore ?? 0), 0) / n;
-      const avgOQ = rows.reduce((s, r) => s + (r.outputQualityScore ?? 0), 0) / n;
-      const avgPC = rows.reduce((s, r) => s + (r.protocolCompliance ?? 0), 0) / n;
-      aggs.push({
-        versionId: vId,
-        versionNumber: rows[0]?.versionNumber ?? 0,
-        avgToolAccuracy: Math.round(avgTA),
-        avgOutputQuality: Math.round(avgOQ),
-        avgProtocolCompliance: Math.round(avgPC),
-        compositeScore: compositeScore(avgTA, avgOQ, avgPC),
-        totalCost: rows.reduce((s, r) => s + r.costUsd, 0),
-        avgDuration: Math.round(rows.reduce((s, r) => s + r.durationMs, 0) / n),
-        count: rows.length,
-      });
-    }
-
-    aggs.sort((a, b) => b.compositeScore - a.compositeScore);
-    const winnerId = aggs[0]?.versionId ?? null;
-
-    // Build matrix: scenario -> versionId -> result (per model)
-    const mtx: Record<string, Record<string, LabAbResult[]>> = {};
-    for (const r of results) {
-      if (!mtx[r.scenarioName]) mtx[r.scenarioName] = {};
-      if (!mtx[r.scenarioName]![r.versionId]) mtx[r.scenarioName]![r.versionId] = [];
-      mtx[r.scenarioName]![r.versionId]!.push(r);
-    }
-
-    return {
-      versionAggs: aggs,
-      scenarios: [...scenarioSet],
-      models: [...modelSet],
-      matrix: mtx,
-      winnerId,
-    };
-  }, [results]);
+  const { versionAggs, scenarios, matrix, winnerId } = useMemo(
+    () => aggregateAbResults(results),
+    [results],
+  );
 
   if (results.length === 0) {
     return (
@@ -165,9 +108,11 @@ export function AbResultsView({ results }: Props) {
                 ))}
               </tr>
             </thead>
-            <tbody>
-              {scenarios.map((scenario) => (
-                <tr key={scenario} className="border-b border-primary/10 hover:bg-secondary/10 transition-colors">
+            <VirtualizedTableBody
+              items={scenarios}
+              rowKey={(s) => s}
+              renderRow={(scenario) => (
+                <>
                   <td className="px-3 py-2.5 text-foreground/80 font-medium max-w-[200px] truncate">
                     {scenario}
                   </td>
@@ -186,9 +131,9 @@ export function AbResultsView({ results }: Props) {
                       </td>
                     );
                   })}
-                </tr>
-              ))}
-            </tbody>
+                </>
+              )}
+            />
           </table>
         </div>
       </div>

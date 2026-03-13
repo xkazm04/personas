@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Radio, Plus, Trash2, Loader2 } from 'lucide-react';
-import { listSubscriptions, createSubscription, updateSubscription, deleteSubscription } from '@/api/tauriApi';
+import { createSubscription, deleteSubscription, listSubscriptions, updateSubscription } from "@/api/overview/events";
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';

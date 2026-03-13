@@ -20,7 +20,7 @@ import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types'
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { TemplateVerification } from '@/lib/types/templateTypes';
 import type { ScanResult } from '@/lib/templates/personaSafetyScanner';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { verifyTemplate } from '@/lib/templates/templateVerification';
 import { scanPersonaDraft } from '@/lib/templates/personaSafetyScanner';
 import { useAdoptReducer } from './hooks/useAdoptReducer';
@@ -64,7 +64,7 @@ export function AdoptionWizardProvider({
   onPersonaCreated,
   children,
 }: AdoptionWizardProviderProps) {
-  const storeCredentials = usePersonaStore((s) => s.credentials);
+  const storeCredentials = useVaultStore((s) => s.credentials);
   const wizard = useAdoptReducer();
   const { state } = wizard;
 

@@ -1,13 +1,13 @@
 import { Pencil } from 'lucide-react';
 import { DesignResultPreview } from '@/features/templates/sub_generated';
 import type { AgentIR } from '@/lib/types/designTypes';
-import type { PersonaWithDetails, DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import type { PersonaWithDetails, PersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { allIndices } from '../DesignTabHelpers';
 
 interface DesignPhasePanelSavedProps {
   savedDesignResult: AgentIR;
   selectedPersona: PersonaWithDetails;
-  toolDefinitions: DbPersonaToolDefinition[];
+  toolDefinitions: PersonaToolDefinition[];
   currentToolNames: string[];
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];

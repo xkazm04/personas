@@ -4,7 +4,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { AnimatePresence } from 'framer-motion';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import * as recipeApi from '@/api/templates/recipes';
-import { usePersonaStore } from '@/stores/personaStore';
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { useToastStore } from '@/stores/toastStore';
 import { useRecipeGenerator } from '@/hooks/design/template/useRecipeGenerator';
 import { RecipePlaygroundModal } from '@/features/recipes/sub_playground/components/RecipePlaygroundModal';
@@ -16,7 +16,7 @@ interface CredentialRecipesTabProps {
 }
 
 export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps) {
-  const fetchRecipes = usePersonaStore((s) => s.fetchRecipes);
+  const fetchRecipes = usePipelineStore((s) => s.fetchRecipes);
 
   const [recipes, setRecipes] = useState<RecipeDefinition[]>([]);
   const [loading, setLoading] = useState(true);

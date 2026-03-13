@@ -34,6 +34,8 @@ export function CompositeConfig({
                 if (validationError) setValidationError(null);
               }}
               placeholder="Event type (e.g. file_changed)"
+              aria-invalid={!!validationError}
+              aria-describedby={validationError ? 'composite-conditions-error' : undefined}
               className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 transition-all ${
                 validationError ? 'border-red-500/30' : 'border-primary/15 focus:ring-rose-400/40'
               }`}
@@ -60,7 +62,7 @@ export function CompositeConfig({
         <button type="button" onClick={() => setCompositeConditions([...compositeConditions, { event_type: '' }])} className="flex items-center gap-1 text-sm text-rose-400/80 hover:text-rose-400 transition-colors">
           <Plus className="w-3.5 h-3.5" /> Add condition
         </button>
-        {validationError && <p className="text-sm text-red-400/80 mt-1">{validationError}</p>}
+        {validationError && <p id="composite-conditions-error" className="text-sm text-red-400/80 mt-1">{validationError}</p>}
       </div>
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-1.5">Operator</label>

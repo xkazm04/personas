@@ -14,10 +14,177 @@ mod utils;
 mod validation;
 
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, LazyLock, Mutex};
 
 use db::DbPool;
 use tauri::Manager;
+
+/// Shared HTTP client for all general-purpose HTTP callsites.
+///
+/// `reqwest::Client` is backed by an `Arc` internally, so `.clone()` is cheap
+/// and all clones share the same connection pool, TLS sessions, and DNS cache.
+/// This eliminates the overhead of constructing a fresh TLS connector and
+/// connection pool on every request.
+pub(crate) static SHARED_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .expect("Failed to build shared HTTP client")
+});
+
+/// Tracks an active CLI-backed process: its task ID and optional child PID.
+#[derive(Default)]
+pub struct ActiveProcess {
+    /// The ID of the currently-running task (e.g. design_id, negotiation_id).
+    pub id: Option<String>,
+    /// PID of the CLI child process, used to kill on cancel.
+    pub child_pid: Option<u32>,
+}
+
+/// Unified registry for all active child processes and cancellation flags.
+///
+/// Consolidates two patterns into a single structure:
+///
+/// 1. **Single-process domains** (design, credential_design, negotiation,
+///    automation_design, auto_cred): one active (id, child_pid) pair per domain.
+///
+/// 2. **Multi-run domains** (test, pipeline, review, setup): multiple concurrent
+///    runs per domain, each with an `AtomicBool` cancellation flag and optional
+///    child PID. Keyed by `"{domain}\0{run_id}"` internally.
+pub struct ActiveProcessRegistry {
+    /// Single-process domains: one active (id, pid) per domain.
+    processes: Mutex<HashMap<String, ActiveProcess>>,
+    /// Multi-run cancellation flags keyed by `"{domain}\0{run_id}"`.
+    run_flags: Mutex<HashMap<String, Arc<AtomicBool>>>,
+    /// Multi-run child PIDs keyed by `"{domain}\0{run_id}"`.
+    run_pids: Mutex<HashMap<String, u32>>,
+}
+
+impl ActiveProcessRegistry {
+    pub fn new() -> Self {
+        Self {
+            processes: Mutex::new(HashMap::new()),
+            run_flags: Mutex::new(HashMap::new()),
+            run_pids: Mutex::new(HashMap::new()),
+        }
+    }
+
+    fn run_key(domain: &str, run_id: &str) -> String {
+        format!("{domain}\0{run_id}")
+    }
+
+    // ── Single-process domain methods ──────────────────────────────
+
+    /// Set the active task ID for a domain.
+    pub fn set_id(&self, domain: &str, id: String) {
+        let mut map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
+        map.entry(domain.to_string()).or_default().id = Some(id);
+    }
+
+    /// Get the active task ID for a domain.
+    pub fn get_id(&self, domain: &str) -> Option<String> {
+        let map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(domain).and_then(|p| p.id.clone())
+    }
+
+    /// Clear the active task ID for a domain (only if it matches the expected value).
+    pub fn clear_id_if(&self, domain: &str, expected: &str) {
+        let mut map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(proc) = map.get_mut(domain) {
+            if proc.id.as_deref() == Some(expected) {
+                proc.id = None;
+            }
+        }
+    }
+
+    /// Clear the active task ID unconditionally and return the old value.
+    pub fn take_id(&self, domain: &str) -> Option<String> {
+        let mut map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
+        map.get_mut(domain).and_then(|p| p.id.take())
+    }
+
+    /// Set the child PID for a domain.
+    pub fn set_pid(&self, domain: &str, pid: u32) {
+        let mut map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
+        map.entry(domain.to_string()).or_default().child_pid = Some(pid);
+    }
+
+    /// Take (remove and return) the child PID for a domain.
+    pub fn take_pid(&self, domain: &str) -> Option<u32> {
+        let mut map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
+        map.get_mut(domain).and_then(|p| p.child_pid.take())
+    }
+
+    /// Clear the child PID for a domain.
+    pub fn clear_pid(&self, domain: &str) {
+        let mut map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(proc) = map.get_mut(domain) {
+            proc.child_pid = None;
+        }
+    }
+
+    /// Cancel an active process: clear the ID and kill the child process if running.
+    pub fn cancel(&self, domain: &str) -> Option<u32> {
+        let mut map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(proc) = map.get_mut(domain) {
+            proc.id = None;
+            proc.child_pid.take()
+        } else {
+            None
+        }
+    }
+
+    // ── Multi-run domain methods ───────────────────────────────────
+
+    /// Register a new run and return its cancellation flag (initialised to `false`).
+    pub fn register_run(&self, domain: &str, run_id: &str) -> Arc<AtomicBool> {
+        let flag = Arc::new(AtomicBool::new(false));
+        let key = Self::run_key(domain, run_id);
+        let mut map = self.run_flags.lock().unwrap_or_else(|e| e.into_inner());
+        map.insert(key, flag.clone());
+        flag
+    }
+
+    /// Set the cancellation flag for a run to `true`.
+    pub fn cancel_run(&self, domain: &str, run_id: &str) {
+        let key = Self::run_key(domain, run_id);
+        let map = self.run_flags.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(flag) = map.get(&key) {
+            flag.store(true, Ordering::Release);
+        }
+    }
+
+    /// Remove a run's cancellation flag (cleanup after completion).
+    pub fn unregister_run(&self, domain: &str, run_id: &str) {
+        let key = Self::run_key(domain, run_id);
+        let mut flags = self.run_flags.lock().unwrap_or_else(|e| e.into_inner());
+        flags.remove(&key);
+        let mut pids = self.run_pids.lock().unwrap_or_else(|e| e.into_inner());
+        pids.remove(&key);
+    }
+
+    /// Store a child PID for a multi-run.
+    pub fn set_run_pid(&self, domain: &str, run_id: &str, pid: u32) {
+        let key = Self::run_key(domain, run_id);
+        let mut map = self.run_pids.lock().unwrap_or_else(|e| e.into_inner());
+        map.insert(key, pid);
+    }
+
+    /// Take (remove and return) the child PID for a multi-run.
+    pub fn take_run_pid(&self, domain: &str, run_id: &str) -> Option<u32> {
+        let key = Self::run_key(domain, run_id);
+        let mut map = self.run_pids.lock().unwrap_or_else(|e| e.into_inner());
+        map.remove(&key)
+    }
+
+    /// Remove a multi-run's child PID without returning it.
+    pub fn clear_run_pid(&self, domain: &str, run_id: &str) {
+        let key = Self::run_key(domain, run_id);
+        let mut map = self.run_pids.lock().unwrap_or_else(|e| e.into_inner());
+        map.remove(&key);
+    }
+}
 
 /// Shared application state accessible from all Tauri commands.
 pub struct AppState {
@@ -27,26 +194,9 @@ pub struct AppState {
     pub user_db: db::UserDbPool,
     pub engine: Arc<engine::ExecutionEngine>,
     pub scheduler: Arc<engine::background::SchedulerState>,
-    /// Tracks the currently active design analysis ID.
-    /// Set when analysis starts, cleared on cancel or completion.
-    pub active_design_id: Arc<Mutex<Option<String>>>,
-    /// PID of the CLI child process for the active design analysis.
-    /// Used to kill the process when the user cancels.
-    pub active_design_child_pid: Arc<Mutex<Option<u32>>>,
-    /// Tracks the currently active credential design ID.
-    pub active_credential_design_id: Arc<Mutex<Option<String>>>,
-    /// PID of the CLI child process for the active credential design.
-    /// Used to kill the process when the user cancels.
-    pub active_credential_design_child_pid: Arc<Mutex<Option<u32>>>,
-    /// Tracks the currently active credential negotiation ID.
-    /// Separate from credential design so the two flows don't corrupt each other.
-    pub active_negotiation_id: Arc<Mutex<Option<String>>>,
-    /// PID of the CLI child process for the active credential negotiation.
-    pub active_negotiation_child_pid: Arc<Mutex<Option<u32>>>,
-    /// Tracks the currently active automation design ID.
-    pub active_automation_design_id: Arc<Mutex<Option<String>>>,
-    /// PID of the CLI child process for the active automation design.
-    pub active_automation_design_child_pid: Arc<Mutex<Option<u32>>>,
+    /// Registry of active CLI-backed processes (design, credential_design,
+    /// negotiation, automation_design, auto_cred).
+    pub process_registry: Arc<ActiveProcessRegistry>,
     /// Authentication state (Supabase OAuth).
     pub auth: Arc<tokio::sync::Mutex<commands::infrastructure::auth::AuthStateInner>>,
     /// Serialises token refresh attempts so that only one in-flight refresh
@@ -57,18 +207,6 @@ pub struct AppState {
     pub cloud_client: Arc<tokio::sync::Mutex<Option<Arc<cloud::client::CloudClient>>>>,
     /// Maps local execution ID -> cloud execution ID for active cloud runs.
     pub cloud_exec_ids: Arc<tokio::sync::Mutex<HashMap<String, String>>>,
-    /// PID of the CLI child process for the active auto-cred browser session.
-    /// Used to kill the process when the user cancels.
-    pub active_auto_cred_child_pid: Arc<Mutex<Option<u32>>>,
-    /// Cancellation flag for the auto-installer (setup commands).
-    pub active_setup_cancelled: Arc<Mutex<bool>>,
-    /// Cancellation flags for active test runs, keyed by run ID.
-    pub active_test_run_cancelled: Arc<Mutex<HashMap<String, Arc<std::sync::atomic::AtomicBool>>>>,
-    /// Cancellation flags for active pipeline runs, keyed by run ID.
-    pub active_pipeline_cancelled: Arc<Mutex<HashMap<String, Arc<std::sync::atomic::AtomicBool>>>>,
-    /// PID of the currently-running CLI child process for each design review run.
-    /// Used to kill the process immediately when the user cancels a batch review.
-    pub active_review_child_pids: Arc<Mutex<HashMap<String, u32>>>,
     /// GitLab API client (None when not connected).
     pub gitlab_client: Arc<tokio::sync::Mutex<Option<Arc<gitlab::client::GitLabClient>>>>,
     /// Rate limiter for event publishing and webhook intake.
@@ -85,6 +223,9 @@ pub struct AppState {
     pub desktop_runtime: Arc<engine::desktop_runtime::DesktopRuntime>,
     /// P2P network service (LAN discovery, QUIC transport, manifest sync).
     pub network: Option<Arc<engine::p2p::NetworkService>>,
+    /// Cached auth detection results with expiry time.
+    /// Avoids re-spawning 9 CLI probes + cookie DB copies on repeated wizard calls.
+    pub auth_detect_cache: Arc<tokio::sync::Mutex<Option<(std::time::Instant, Vec<commands::credentials::auth_detect::AuthDetection>)>>>,
     /// Embedding manager for vector knowledge bases (lazy-loaded model).
     pub embedding_manager: Option<Arc<engine::embedder::EmbeddingManager>>,
     /// SQLite-vec vector store for knowledge bases.
@@ -196,6 +337,22 @@ pub fn run() {
                 }
             }
 
+            // Encrypt any legacy plaintext notification channel secrets
+            match engine::crypto::migrate_plaintext_notification_secrets(&pool) {
+                Ok((migrated, skipped)) => {
+                    if migrated > 0 || skipped > 0 {
+                        tracing::info!(
+                            "Notification channel secret migration: {} encrypted, {} skipped",
+                            migrated,
+                            skipped
+                        );
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("Notification channel secret migration skipped: {}", e);
+                }
+            }
+
             // Initialise the connector strategy registry (healthcheck + rotation dispatch)
             engine::connector_strategy::init_registry();
 
@@ -295,23 +452,11 @@ pub fn run() {
                 user_db: user_db_pool,
                 engine: engine.clone(),
                 scheduler: scheduler.clone(),
-                active_design_id: Arc::new(Mutex::new(None)),
-                active_design_child_pid: Arc::new(Mutex::new(None)),
-                active_credential_design_id: Arc::new(Mutex::new(None)),
-                active_credential_design_child_pid: Arc::new(Mutex::new(None)),
-                active_negotiation_id: Arc::new(Mutex::new(None)),
-                active_negotiation_child_pid: Arc::new(Mutex::new(None)),
-                active_automation_design_id: Arc::new(Mutex::new(None)),
-                active_automation_design_child_pid: Arc::new(Mutex::new(None)),
+                process_registry: Arc::new(ActiveProcessRegistry::new()),
                 auth: auth.clone(),
                 refresh_lock: Arc::new(tokio::sync::Mutex::new(())),
                 cloud_client: Arc::new(tokio::sync::Mutex::new(cloud_client_opt)),
                 cloud_exec_ids: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
-                active_auto_cred_child_pid: Arc::new(Mutex::new(None)),
-                active_setup_cancelled: Arc::new(Mutex::new(false)),
-                active_test_run_cancelled: Arc::new(Mutex::new(HashMap::new())),
-                active_pipeline_cancelled: Arc::new(Mutex::new(HashMap::new())),
-                active_review_child_pids: Arc::new(Mutex::new(HashMap::new())),
                 gitlab_client: Arc::new(tokio::sync::Mutex::new(gitlab_client_opt)),
                 rate_limiter: Arc::new(engine::rate_limiter::RateLimiter::new()),
                 session_key: Arc::new(engine::crypto::SessionKeyPair::generate()?),
@@ -320,6 +465,7 @@ pub fn run() {
                 desktop_approvals: Arc::new(engine::desktop_security::DesktopApprovalStore::new()),
                 #[cfg(feature = "desktop")]
                 desktop_runtime: Arc::new(engine::desktop_runtime::DesktopRuntime::new()),
+                auth_detect_cache: Arc::new(tokio::sync::Mutex::new(None)),
                 network: network_service.clone(),
                 embedding_manager: Some(embedding_manager),
                 vector_store: Some(vector_store),
@@ -399,10 +545,11 @@ pub fn run() {
             // Auto-start P2P network service after a brief delay
             if let Some(ns) = network_service {
                 let ns_pool = state_arc.db.clone();
+                let p2p_app_handle = restore_handle.clone();
                 tauri::async_runtime::spawn(async move {
                     tokio::time::sleep(std::time::Duration::from_secs(3)).await;
                     if let Ok(identity) = engine::identity::get_or_create_identity(&ns_pool) {
-                        if let Err(e) = ns.start(ns_pool, identity.peer_id, identity.display_name).await {
+                        if let Err(e) = ns.start(ns_pool, identity.peer_id, identity.display_name, Some(p2p_app_handle)).await {
                             tracing::warn!("P2P network service start failed: {}", e);
                         }
                     }
@@ -460,6 +607,11 @@ pub fn run() {
             commands::core::saved_views::create_saved_view,
             commands::core::saved_views::list_saved_views,
             commands::core::saved_views::delete_saved_view,
+            // Core -- Chat
+            commands::core::chat::list_chat_sessions,
+            commands::core::chat::get_chat_messages,
+            commands::core::chat::create_chat_message,
+            commands::core::chat::delete_chat_session,
             // Execution -- Executions
             commands::execution::executions::list_executions,
             commands::execution::executions::list_all_executions,
@@ -559,6 +711,7 @@ pub fn run() {
             commands::design::n8n_sessions::create_n8n_session,
             commands::design::n8n_sessions::get_n8n_session,
             commands::design::n8n_sessions::list_n8n_sessions,
+            commands::design::n8n_sessions::list_n8n_session_summaries,
             commands::design::n8n_sessions::update_n8n_session,
             commands::design::n8n_sessions::delete_n8n_session,
             // Design -- Template Adopt
@@ -879,6 +1032,11 @@ pub fn run() {
             commands::tools::triggers::preview_cron_schedule,
             commands::tools::triggers::dry_run_trigger,
             commands::tools::triggers::list_cron_agents,
+            // Tools -- Webhook Request Inspector
+            commands::tools::triggers::list_webhook_request_logs,
+            commands::tools::triggers::clear_webhook_request_logs,
+            commands::tools::triggers::replay_webhook_request,
+            commands::tools::triggers::webhook_request_to_curl,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,

@@ -4,10 +4,10 @@ import {
   cloudCreateTrigger,
 } from '@/api/system/cloud';
 import { CRON_PRESETS } from './cloudSchedulesHelpers';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 
 interface CreateTriggerFormProps {
-  deployedPersonas: DbPersona[];
+  deployedPersonas: Persona[];
   onCreated: () => void;
   onCancel: () => void;
 }
@@ -83,7 +83,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
       {/* Cron config */}
       {createType === 'schedule' && (
         <div className="space-y-2">
-          <label className="text-xs text-muted-foreground/70">Cron Expression</label>
+          <label className="text-xs text-muted-foreground/70">Cron Expression <span className="text-amber-400/60 font-medium">(UTC)</span></label>
           <input
             type="text"
             value={createCron}

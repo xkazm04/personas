@@ -7,7 +7,8 @@ import { useAuthStore } from '@/stores/authStore';
 import { useAutoInstaller } from '@/hooks/utility/data/useAutoInstaller';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ConfigurationPopup } from '@/features/agents/components/onboarding/ConfigurationPopup';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 
 import { SECTION_ICONS, SECTION_STYLES, DEFAULT_SECTION_STYLE, SKELETON_SECTIONS } from './healthPanelConstants';
 import { OLLAMA_FIELDS, OLLAMA_FOOTER, LITELLM_FIELDS } from './popupFieldConfigs';
@@ -27,10 +28,10 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const { nodeState, claudeState, install } = useAutoInstaller();
   const [showOllamaPopup, setShowOllamaPopup] = useState(false);
   const [showLiteLLMPopup, setShowLiteLLMPopup] = useState(false);
-  const personas = usePersonaStore((s) => s.personas);
-  const onboardingCompleted = usePersonaStore((s) => s.onboardingCompleted);
-  const onboardingActive = usePersonaStore((s) => s.onboardingActive);
-  const startOnboarding = usePersonaStore((s) => s.startOnboarding);
+  const personas = useAgentStore((s) => s.personas);
+  const onboardingCompleted = useSystemStore((s) => s.onboardingCompleted);
+  const onboardingActive = useSystemStore((s) => s.onboardingActive);
+  const startOnboarding = useSystemStore((s) => s.startOnboarding);
 
   useEffect(() => {
     if (!loading && !ipcError) {

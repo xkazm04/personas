@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import {
   FlaskConical, Play, Square, ChevronDown, Filter, AlertCircle,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import {
@@ -59,7 +59,7 @@ export function TestRunnerConfig({
   selectedUseCaseId,
   onSelectedUseCaseIdChange,
 }: TestRunnerConfigProps) {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const hasTools = (selectedPersona?.tools?.length ?? 0) > 0;
 
   // Parse use cases from design_context

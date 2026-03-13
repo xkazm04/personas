@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Bell } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { useEditorDirty } from '@/features/agents/sub_editor';
@@ -18,8 +18,8 @@ interface NotificationChannelSettingsProps {
 
 export function NotificationChannelSettings({ personaId, credentials, connectorDefinitions, draftChannels, onDraftChannelsChange }: NotificationChannelSettingsProps) {
   const isDraftMode = draftChannels !== undefined && onDraftChannelsChange !== undefined;
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
 
   const [channels, setChannelsInternal] = useState<NotificationChannel[]>([]);
   const [isDirty, setIsDirty] = useState(false);

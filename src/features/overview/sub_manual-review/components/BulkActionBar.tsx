@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, AlertTriangle } from 'lucide-react';
-import type { ManualReviewStatus } from '@/lib/types/frontendTypes';
+import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 
 interface BulkActionBarProps {
   activeSelectionCount: number;

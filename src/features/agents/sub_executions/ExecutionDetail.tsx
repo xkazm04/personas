@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import { Search, ListTree, Zap, Activity, Play } from 'lucide-react';
 import { ExecutionInspector } from './components/detail/ExecutionInspector';
 import { TraceInspector } from './components/detail/TraceInspector';
@@ -10,7 +10,7 @@ import { hasNonEmptyJson } from './executionDetailHelpers';
 import { ExecutionDetailContent } from './ExecutionDetailContent';
 
 interface ExecutionDetailProps {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
 }
 
 export function ExecutionDetail({ execution }: ExecutionDetailProps) {

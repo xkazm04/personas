@@ -61,14 +61,8 @@ export const getToolUsageByPersona = (since: string) =>
 
 // -- Direct Tool Invocation ----------------------------------------------
 
-export interface ToolInvocationResult {
-  success: boolean;
-  output: string;
-  error: string | null;
-  duration_ms: number;
-  tool_name: string;
-  tool_type: string;
-}
+import type { ToolInvocationResult } from "@/lib/bindings/ToolInvocationResult";
+export type { ToolInvocationResult } from "@/lib/bindings/ToolInvocationResult";
 
 export const invokeToolDirect = (toolId: string, personaId: string, inputJson: string) =>
   invoke<ToolInvocationResult>("invoke_tool_direct", { toolId, personaId, inputJson });

@@ -1,5 +1,10 @@
 import { invoke, type InvokeArgs, type InvokeOptions } from "@tauri-apps/api/core";
 import { recordIpcCall } from "./ipcMetrics";
+import type { CommandName as RegisteredCommand } from "./commandNames.generated";
+import type { UnregisteredCommand } from "./commandNames.overrides";
+
+/** All valid command names: registered + known-unregistered forward-references. */
+export type CommandName = RegisteredCommand | UnregisteredCommand;
 
 /** Default timeout for Tauri IPC calls (30 seconds). */
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -18,13 +23,17 @@ export class InvokeTimeoutError extends Error {
  *
  * Every call is recorded into the IPC metrics ring buffer for observability.
  *
- * @param cmd      The Tauri command name.
+ * The `cmd` parameter is constrained to the `CommandName` union type
+ * auto-generated from the Rust invoke_handler, so command name typos are
+ * caught at compile time.
+ *
+ * @param cmd      The Tauri command name (must be a valid registered command).
  * @param args     Optional arguments forwarded to `invoke`.
  * @param options  Optional InvokeOptions forwarded to `invoke`.
  * @param timeoutMs Timeout in milliseconds. Defaults to 30 000 (30 s).
  */
 export function invokeWithTimeout<T>(
-  cmd: string,
+  cmd: CommandName,
   args?: InvokeArgs,
   options?: InvokeOptions,
   timeoutMs: number = DEFAULT_TIMEOUT_MS,

@@ -117,6 +117,31 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         jobs.retain(|_, job| job.status == "running" || job.created_at.elapsed() < cutoff);
     }
 
+    /// Evict completed/failed jobs older than `ttl`, then enforce a maximum
+    /// entry cap using LRU (oldest `created_at` first).
+    pub fn evict_completed_with_cap(
+        &self,
+        jobs: &mut HashMap<String, JobEntry<E>>,
+        ttl: Duration,
+        max_entries: usize,
+    ) {
+        // Phase 1: remove completed/failed jobs past the TTL
+        jobs.retain(|_, job| job.status == "running" || job.created_at.elapsed() < ttl);
+
+        // Phase 2: if still over cap, evict oldest non-running entries first
+        while jobs.len() > max_entries {
+            let oldest = jobs
+                .iter()
+                .filter(|(_, j)| j.status != "running")
+                .min_by_key(|(_, j)| j.created_at)
+                .map(|(id, _)| id.clone());
+            match oldest {
+                Some(id) => { jobs.remove(&id); }
+                None => break, // all entries are running, can't evict more
+            }
+        }
+    }
+
     /// Mark any running jobs that have exceeded the stale timeout + grace period
     /// as failed with a timeout diagnostic. Returns the IDs of jobs that were
     /// marked stale (for logging).

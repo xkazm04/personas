@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef } from 'react';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { type PersonaDraft, draftChanged, SETTINGS_KEYS, MODEL_KEYS } from './PersonaDraft';
 import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '../sub_model_config/OllamaCloudPresets';
 import { getCopilotPreset } from '../sub_model_config/CopilotPresets';
@@ -14,8 +14,8 @@ interface UseEditorSaveOptions {
 }
 
 export function useEditorSave({ draft, baseline, setBaseline, pendingPersonaId }: UseEditorSaveOptions) {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
   const settingsSaveInFlightRef = useRef<Promise<void> | null>(null);
   const modelSaveInFlightRef = useRef<Promise<void> | null>(null);
 

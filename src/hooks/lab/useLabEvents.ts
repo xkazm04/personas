@@ -1,6 +1,7 @@
 import { useMemo } from "react";
-import { usePersonaStore } from "@/stores/personaStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { sendAppNotification } from "@/api/system/system";
+import type { LabRunStatus } from "@/lib/bindings/LabRunStatus";
 import type { LabMode, LabRunProgress } from "@/stores/slices/agents/labSlice";
 import { useRunEventListener, type RunStatusPayload, type RunEventBinding } from "@/hooks/realtime/useRunEventListener";
 
@@ -14,7 +15,7 @@ function mapPayload(p: RunStatusPayload, mode: LabMode): LabRunProgress {
     total: p.total,
     modelId: p.model_id,
     scenarioName: p.scenario_name,
-    status: p.status,
+    status: p.status as LabRunStatus | undefined,
     scores: p.scores,
     summary: p.summary,
     error: p.error,
@@ -39,8 +40,8 @@ function notifyTerminal(mode: LabMode, phase: string) {
 }
 
 export function useLabEvents() {
-  const setLabProgress = usePersonaStore((s) => s.setLabProgress);
-  const finishLabRun = usePersonaStore((s) => s.finishLabRun);
+  const setLabProgress = useAgentStore((s) => s.setLabProgress);
+  const finishLabRun = useAgentStore((s) => s.finishLabRun);
 
   const bindings = useMemo((): RunEventBinding[] => {
     const modes: { event: string; mode: LabMode }[] = [

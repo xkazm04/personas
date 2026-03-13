@@ -6,7 +6,8 @@
  */
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { validateVariables, getAdoptionRequirements } from '../templateVariables';
 import type { RequiredConnector } from '../steps/connect/ConnectStep';
@@ -35,8 +36,8 @@ export function useAdoptionActions({
   adoptionRequirements,
   manualSelectionsRef,
 }: UseAdoptionActionsOptions) {
-  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
-  const setAdoptionDraft = usePersonaStore((s) => s.setAdoptionDraft);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
+  const setAdoptionDraft = useSystemStore((s) => s.setAdoptionDraft);
 
   // -- Step transition handler --
 

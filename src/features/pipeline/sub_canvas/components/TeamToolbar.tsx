@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Plus, LayoutGrid, Save, ChevronDown, Check, Loader2, StickyNote } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { PersonaAvatar } from '../libs/teamConstants';
 
 interface TeamToolbarProps {
@@ -14,8 +15,8 @@ interface TeamToolbarProps {
 }
 
 export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, onAddMember, onAddNote, saveStatus = 'saved' }: TeamToolbarProps) {
-  const personas = usePersonaStore((s) => s.personas);
-  const teamMembers = usePersonaStore((s) => s.teamMembers);
+  const personas = useAgentStore((s) => s.personas);
+  const teamMembers = usePipelineStore((s) => s.teamMembers);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 

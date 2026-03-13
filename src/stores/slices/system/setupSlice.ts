@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand';
-import type { PersonaStore } from '../../storeTypes';
+import type { SystemStore } from '../../storeTypes';
 
 export interface SetupSlice {
   setupRole: string | null;
@@ -12,7 +12,7 @@ export interface SetupSlice {
   dismissSetup: () => void;
 }
 
-export const createSetupSlice: StateCreator<PersonaStore, [], [], SetupSlice> = (set) => ({
+export const createSetupSlice: StateCreator<SystemStore, [], [], SetupSlice> = (set) => ({
   setupRole: null,
   setupTool: null,
   setupGoal: null,

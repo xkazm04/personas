@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Radio, Loader2 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import * as eventsApi from '@/api/overview/events';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import { AddSubscriptionForm } from './AddSubscriptionForm';
 import { SubscriptionRow } from './SubscriptionRow';
 
 export function EventSubscriptionsPanel() {
-  const personas = usePersonaStore((s) => s.personas);
+  const personas = useAgentStore((s) => s.personas);
 
   const [subscriptions, setSubscriptions] = useState<PersonaEventSubscription[]>([]);
   const [loading, setLoading] = useState(true);

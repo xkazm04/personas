@@ -1,4 +1,4 @@
-import type { ManualReviewStatus } from '@/lib/types/frontendTypes';
+import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 
 export const STATUS_LABELS: Record<string, string> = {
   pending: 'Pending',
@@ -20,6 +20,7 @@ export const FILTER_LABELS: Record<FilterStatus, string> = {
   pending: 'Pending',
   approved: 'Approved',
   rejected: 'Rejected',
+  resolved: 'Resolved',
 };
 
 export const SOURCE_LABELS: Record<SourceFilter, string> = {

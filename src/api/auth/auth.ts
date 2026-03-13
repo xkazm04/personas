@@ -1,21 +1,8 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// ============================================================================
-// Auth
-// ============================================================================
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  display_name: string | null;
-  avatar_url: string | null;
-}
-
-export interface AuthStateResponse {
-  is_authenticated: boolean;
-  is_offline: boolean;
-  user: AuthUser | null;
-}
+import type { AuthUser } from "@/lib/bindings/AuthUser";
+import type { AuthStateResponse } from "@/lib/bindings/AuthStateResponse";
+export type { AuthUser, AuthStateResponse };
 
 export const loginWithGoogle = () =>
   invoke<void>("login_with_google");

@@ -1,6 +1,6 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{CreateManualReviewInput, CreateReviewMessageInput, PersonaManualReview, ReviewMessage};
+use crate::db::models::{CreateManualReviewInput, CreateReviewMessageInput, ManualReviewStatus, PersonaManualReview, ReviewMessage};
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -15,7 +15,7 @@ fn row_to_review(row: &Row) -> rusqlite::Result<PersonaManualReview> {
         severity: row.get("severity")?,
         context_data: row.get("context_data")?,
         suggested_actions: row.get("suggested_actions")?,
-        status: row.get("status")?,
+        status: ManualReviewStatus::from_db(&row.get::<_, String>("status")?),
         reviewer_notes: row.get("reviewer_notes")?,
         resolved_at: row.get("resolved_at")?,
         created_at: row.get("created_at")?,
@@ -135,15 +135,19 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaManualReview, AppErro
 pub fn update_status(
     pool: &DbPool,
     id: &str,
-    status: &str,
+    status: ManualReviewStatus,
     reviewer_notes: Option<String>,
 ) -> Result<(), AppError> {
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
 
+    // Fetch current status and validate the transition
+    let current = get_by_id(pool, id)?;
+    current.status.validate_transition(status).map_err(AppError::Validation)?;
+
     let resolved_at = match status {
-        "approved" | "rejected" | "resolved" => Some(now.clone()),
-        _ => None,
+        ManualReviewStatus::Approved | ManualReviewStatus::Rejected | ManualReviewStatus::Resolved => Some(now.clone()),
+        ManualReviewStatus::Pending => None,
     };
 
     let rows = conn.execute(
@@ -153,7 +157,7 @@ pub fn update_status(
              resolved_at = COALESCE(?3, resolved_at),
              updated_at = ?4
          WHERE id = ?5",
-        params![status, reviewer_notes, resolved_at, now, id],
+        params![status.as_str(), reviewer_notes, resolved_at, now, id],
     )?;
 
     if rows == 0 {
@@ -287,7 +291,7 @@ mod tests {
             },
         )
         .unwrap();
-        assert_eq!(review.status, "pending");
+        assert_eq!(review.status, ManualReviewStatus::Pending);
         assert_eq!(review.severity, "warning");
         assert_eq!(review.title, "Check output quality");
         assert_eq!(review.persona_id, persona_id);
@@ -318,9 +322,9 @@ mod tests {
         assert_eq!(count_all, 1);
 
         // Update status
-        update_status(&pool, &review.id, "resolved", Some("Looks good".into())).unwrap();
+        update_status(&pool, &review.id, ManualReviewStatus::Approved, Some("Looks good".into())).unwrap();
         let updated = get_by_id(&pool, &review.id).unwrap();
-        assert_eq!(updated.status, "resolved");
+        assert_eq!(updated.status, ManualReviewStatus::Approved);
         assert_eq!(updated.reviewer_notes, Some("Looks good".into()));
         assert!(updated.resolved_at.is_some(), "resolved_at should be set when status is resolved");
 

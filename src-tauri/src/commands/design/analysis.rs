@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use serde::Serialize;
 use serde_json::json;
@@ -13,6 +13,7 @@ use crate::engine;
 use crate::engine::compiler::{self, CompilationInput, ParseOutcome};
 use crate::engine::design;
 use crate::engine::prompt;
+use crate::ActiveProcessRegistry;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -53,25 +54,18 @@ fn spawn_design_run(
     let pool = state.db.clone();
     let persona_id_owned = persona_id.to_string();
     let design_id_clone = design_id.clone();
-    let active_design_id = state.active_design_id.clone();
-    let active_child_pid = state.active_design_child_pid.clone();
+    let registry = state.process_registry.clone();
 
     // Kill any existing design analysis child process before spawning a new one.
     // Without this, rapid clicks on "Generate Design" spawn multiple concurrent
     // CLI processes, but only the last PID is tracked -- earlier ones become
     // unkillable orphans that silently consume API credits.
-    {
-        let old_pid = state.active_design_child_pid.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?.take();
-        if let Some(pid) = old_pid {
-            tracing::info!(pid = pid, "Killing previous design analysis before starting new one");
-            engine::kill_process(pid);
-        }
+    if let Some(old_pid) = registry.take_pid("design") {
+        tracing::info!(pid = old_pid, "Killing previous design analysis before starting new one");
+        engine::kill_process(old_pid);
     }
 
-    {
-        let mut guard = state.active_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        *guard = Some(design_id.clone());
-    }
+    registry.set_id("design", design_id.clone());
 
     tokio::spawn(async move {
         run_design_analysis(DesignRunParams {
@@ -83,8 +77,7 @@ fn spawn_design_run(
             cli_args,
             tool_names,
             connector_names,
-            active_design_id,
-            active_child_pid,
+            registry,
         })
         .await;
     });
@@ -197,12 +190,8 @@ pub fn cancel_design_analysis(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    let mut guard = state.active_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    *guard = None;
-
-    // Kill the CLI child process to stop API credit consumption immediately.
-    let pid = state.active_design_child_pid.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?.take();
-    if let Some(pid) = pid {
+    // Cancel the active design and kill the CLI child process to stop API credit consumption.
+    if let Some(pid) = state.process_registry.cancel("design") {
         tracing::info!(pid = pid, "Killing design analysis CLI child process");
         engine::kill_process(pid);
     }
@@ -254,8 +243,7 @@ struct DesignRunParams {
     cli_args: crate::engine::types::CliArgs,
     tool_names: Vec<String>,
     connector_names: Vec<String>,
-    active_design_id: Arc<Mutex<Option<String>>>,
-    active_child_pid: Arc<Mutex<Option<u32>>>,
+    registry: Arc<ActiveProcessRegistry>,
 }
 
 async fn run_design_analysis(params: DesignRunParams) {
@@ -268,8 +256,7 @@ async fn run_design_analysis(params: DesignRunParams) {
         cli_args,
         tool_names,
         connector_names,
-        active_design_id,
-        active_child_pid,
+        registry,
     } = params;
     // Emit analyzing status
     let _ = app.emit(
@@ -329,7 +316,7 @@ async fn run_design_analysis(params: DesignRunParams) {
 
     // Register child PID so cancel can kill it
     if let Some(pid) = child.id() {
-        *active_child_pid.lock().unwrap_or_else(|e| e.into_inner()) = Some(pid);
+        registry.set_pid("design", pid);
     }
 
     // Write prompt to stdin
@@ -388,7 +375,7 @@ async fn run_design_analysis(params: DesignRunParams) {
     if stream_result.is_err() {
         let _ = child.kill().await;
         let _ = child.wait().await;
-        *active_child_pid.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        registry.clear_pid("design");
         let _ = app.emit(
             "design-status",
             DesignStatusEvent {
@@ -404,13 +391,10 @@ async fn run_design_analysis(params: DesignRunParams) {
 
     // Normal exit -- wait for process and clear the PID
     let _ = child.wait().await;
-    *active_child_pid.lock().unwrap_or_else(|e| e.into_inner()) = None;
+    registry.clear_pid("design");
 
     // Check if this analysis was cancelled before persisting
-    let is_cancelled = {
-        let guard = active_design_id.lock().unwrap_or_else(|e| e.into_inner());
-        guard.as_deref() != Some(&design_id)
-    };
+    let is_cancelled = registry.get_id("design").as_deref() != Some(&design_id);
 
     if is_cancelled {
         tracing::info!(design_id = %design_id, "Design analysis cancelled, skipping DB write");
@@ -462,12 +446,7 @@ async fn run_design_analysis(params: DesignRunParams) {
             }
 
             // Clear active design ID on successful completion
-            {
-                let mut guard = active_design_id.lock().unwrap_or_else(|e| e.into_inner());
-                if guard.as_deref() == Some(&design_id) {
-                    *guard = None;
-                }
-            }
+            registry.clear_id_if("design", &design_id);
 
             let _ = app.emit(
                 "design-status",
@@ -482,12 +461,7 @@ async fn run_design_analysis(params: DesignRunParams) {
         }
         ParseOutcome::Failed => {
             // Clear active design ID on failure
-            {
-                let mut guard = active_design_id.lock().unwrap_or_else(|e| e.into_inner());
-                if guard.as_deref() == Some(&design_id) {
-                    *guard = None;
-                }
-            }
+            registry.clear_id_if("design", &design_id);
 
             let _ = app.emit(
                 "design-status",

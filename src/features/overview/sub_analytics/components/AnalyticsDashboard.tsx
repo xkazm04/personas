@@ -2,7 +2,7 @@ import { RefreshCw, BarChart3, AlertTriangle } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import HealingIssueModal from '@/features/overview/sub_observability/components/HealingIssueModal';
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewMetrics } from '../libs/useOverviewMetrics';
 import { useChartSeries } from '../libs/useChartSeries';
 import { useHealingWorkflow } from '../libs/useHealingWorkflow';
@@ -10,6 +10,7 @@ import { AnalyticsSummaryCards } from './AnalyticsSummaryCards';
 import { AnalyticsFilters } from './AnalyticsFilters';
 import { AnalyticsCharts } from './AnalyticsCharts';
 import { HealthIssuesPanel } from './HealthIssuesPanel';
+import { RotationOverviewPanel } from './RotationOverviewPanel';
 
 export default function AnalyticsDashboard() {
   const metrics = useOverviewMetrics();
@@ -25,7 +26,7 @@ export default function AnalyticsDashboard() {
     compareEnabled,
     setCompareEnabled,
   } = useOverviewFilters();
-  const personas = usePersonaStore((s) => s.personas);
+  const personas = useAgentStore((s) => s.personas);
 
   return (
     <ContentBox>
@@ -125,6 +126,8 @@ export default function AnalyticsDashboard() {
             barData={charts.barData}
             handleFailureBarClick={charts.handleFailureBarClick}
           />
+
+          <RotationOverviewPanel />
 
           <HealthIssuesPanel
             healingIssues={healing.healingIssues}

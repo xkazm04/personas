@@ -154,6 +154,9 @@ pub struct DashboardDailyPoint {
     pub p50_duration_ms: f64,
     pub p95_duration_ms: f64,
     pub p99_duration_ms: f64,
+    /// Total input + output tokens for this date.
+    #[ts(type = "number")]
+    pub total_tokens: i64,
     /// Per-persona cost breakdown for this date.
     pub persona_costs: Vec<PersonaCostEntry>,
 }
@@ -201,9 +204,15 @@ pub struct ExecutionDashboardData {
     pub cost_anomalies: Vec<DashboardCostAnomaly>,
     #[ts(type = "number")]
     pub total_executions: i64,
+    #[ts(type = "number")]
+    pub successful_executions: i64,
+    #[ts(type = "number")]
+    pub failed_executions: i64,
     pub total_cost: f64,
     pub overall_success_rate: f64,
     pub avg_latency_ms: f64,
+    #[ts(type = "number")]
+    pub active_personas: i64,
     pub projected_monthly_cost: Option<f64>,
     pub burn_rate: Option<f64>,
 }

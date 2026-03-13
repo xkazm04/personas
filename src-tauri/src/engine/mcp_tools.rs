@@ -4,11 +4,15 @@
 //! - Discover available tools (`tools/list`)
 //! - Execute tools (`tools/call`)
 //!
-//! Uses spawn-per-request model: each invocation starts a fresh process/connection
-//! and cleans up after completion.
+//! Stdio transport uses a session pool keyed by credential_id to keep processes
+//! warm between calls, eliminating the 200-500ms startup + handshake overhead
+//! for repeated tool invocations during agent executions.
 
 use std::collections::HashMap;
+use std::sync::Mutex;
 use std::time::Instant;
+
+use ts_rs::TS;
 
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::repos::resources::tool_audit_log;
@@ -28,8 +32,195 @@ const MAX_ARGUMENT_BYTES: usize = 1024 * 1024;
 /// Overall timeout for a complete MCP stdio session (connect + handshake + call).
 const MCP_SESSION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
 
+/// TTL for cached `tools/list` responses (60 seconds).
+const TOOLS_LIST_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(60);
+
+/// Timeout for MCP stdin write + flush operations (prevents hung process accumulation).
+const MCP_WRITE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+
+/// Idle timeout for pooled MCP stdio sessions before they are reaped.
+const STDIO_POOL_IDLE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(45);
+
+/// Maximum number of concurrent sessions in the pool.
+const STDIO_POOL_MAX_SESSIONS: usize = 32;
+
+// ============================================================================
+// tools/list response cache
+// ============================================================================
+
+/// Cached `tools/list` response with timestamp.
+struct CachedToolsList {
+    tools: Vec<McpTool>,
+    fetched_at: Instant,
+}
+
+/// Global in-memory cache for `tools/list` responses, keyed by credential_id.
+/// Eliminates redundant `tools/list` round-trips before every `tools/call`.
+fn tools_list_cache() -> &'static Mutex<HashMap<String, CachedToolsList>> {
+    static CACHE: std::sync::OnceLock<Mutex<HashMap<String, CachedToolsList>>> =
+        std::sync::OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// Look up a cached `tools/list` response. Returns `None` if missing or expired.
+fn get_cached_tools(credential_id: &str) -> Option<Vec<McpTool>> {
+    let cache = tools_list_cache().lock().ok()?;
+    let entry = cache.get(credential_id)?;
+    if entry.fetched_at.elapsed() < TOOLS_LIST_CACHE_TTL {
+        Some(entry.tools.clone())
+    } else {
+        None
+    }
+}
+
+/// Store a `tools/list` response in the cache.
+fn set_cached_tools(credential_id: &str, tools: Vec<McpTool>) {
+    if let Ok(mut cache) = tools_list_cache().lock() {
+        // Evict expired entries opportunistically (keep cache bounded)
+        cache.retain(|_, v| v.fetched_at.elapsed() < TOOLS_LIST_CACHE_TTL);
+        cache.insert(
+            credential_id.to_string(),
+            CachedToolsList {
+                tools,
+                fetched_at: Instant::now(),
+            },
+        );
+    }
+}
+
+/// Invalidate the cache entry for a credential (e.g. after server reconnect).
+pub fn invalidate_tools_cache(credential_id: &str) {
+    if let Ok(mut cache) = tools_list_cache().lock() {
+        cache.remove(credential_id);
+    }
+}
+
+// ============================================================================
+// Stdio session pool — keeps MCP processes alive between calls
+// ============================================================================
+
+/// A live MCP stdio session that has completed the initialization handshake.
+/// The child process is kept alive so subsequent tool calls skip the spawn +
+/// handshake overhead (~200-500ms per call).
+struct PooledStdioSession {
+    child: tokio::process::Child,
+    stdin: tokio::process::ChildStdin,
+    reader: tokio::io::BufReader<tokio::process::ChildStdout>,
+    last_used: Instant,
+    /// Monotonically increasing JSON-RPC request ID for this session.
+    next_id: u64,
+}
+
+/// Global pool of warm MCP stdio sessions, keyed by credential_id.
+fn stdio_session_pool() -> &'static tokio::sync::Mutex<HashMap<String, PooledStdioSession>> {
+    static POOL: std::sync::OnceLock<tokio::sync::Mutex<HashMap<String, PooledStdioSession>>> =
+        std::sync::OnceLock::new();
+    POOL.get_or_init(|| tokio::sync::Mutex::new(HashMap::new()))
+}
+
+/// Take a live session from the pool if one exists and is still alive.
+async fn take_pooled_session(credential_id: &str) -> Option<PooledStdioSession> {
+    let mut pool = stdio_session_pool().lock().await;
+    // Evict expired sessions opportunistically
+    pool.retain(|_, s| s.last_used.elapsed() < STDIO_POOL_IDLE_TIMEOUT);
+    let mut session = pool.remove(credential_id)?;
+    // Verify the process hasn't exited while idle
+    match session.child.try_wait() {
+        Ok(None) => Some(session), // still running
+        _ => {
+            let _ = session.child.start_kill();
+            None
+        }
+    }
+}
+
+/// Return a session to the pool for future reuse.
+async fn return_pooled_session(credential_id: &str, mut session: PooledStdioSession) {
+    session.last_used = Instant::now();
+    let mut pool = stdio_session_pool().lock().await;
+    pool.retain(|_, s| s.last_used.elapsed() < STDIO_POOL_IDLE_TIMEOUT);
+    if pool.len() >= STDIO_POOL_MAX_SESSIONS {
+        // Pool is full — drop session (kill_on_drop handles cleanup)
+        return;
+    }
+    // If a session already exists for this credential (race), the old one is
+    // dropped and killed via kill_on_drop.
+    pool.insert(credential_id.to_string(), session);
+}
+
+/// Spawn a new MCP stdio process and perform the initialization handshake.
+async fn spawn_stdio_session(
+    fields: &HashMap<String, String>,
+) -> Result<PooledStdioSession, AppError> {
+    let command = fields
+        .get("command")
+        .ok_or_else(|| AppError::Validation("MCP server has no 'command' field".into()))?;
+    let env_vars = parse_env_vars(fields);
+
+    let mut child = spawn_mcp_process(command, fields.get("working_directory"), &env_vars)?;
+
+    let stdin = child
+        .stdin
+        .take()
+        .ok_or_else(|| AppError::Internal("MCP process stdin not available".into()))?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| AppError::Internal("MCP process stdout not available".into()))?;
+    let reader = tokio::io::BufReader::new(stdout);
+
+    let mut session = PooledStdioSession {
+        child,
+        stdin,
+        reader,
+        last_used: Instant::now(),
+        next_id: 1,
+    };
+
+    // MCP initialize handshake
+    let init_req = jsonrpc_request(session.next_id, "initialize", serde_json::json!({
+        "protocolVersion": "2024-11-05",
+        "capabilities": {},
+        "clientInfo": { "name": "personas-playground", "version": "1.0.0" }
+    }));
+    session.next_id += 1;
+
+    write_session_jsonrpc(&mut session.stdin, &init_req).await?;
+    let _init_resp = read_session_jsonrpc(&mut session.reader).await?;
+
+    // notifications/initialized
+    let initialized = serde_json::json!({
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized"
+    });
+    write_session_jsonrpc(&mut session.stdin, &initialized).await?;
+
+    Ok(session)
+}
+
+/// Invalidate (kill) any pooled session for a credential.
+pub async fn invalidate_pooled_session(credential_id: &str) {
+    let mut pool = stdio_session_pool().lock().await;
+    if let Some(mut session) = pool.remove(credential_id) {
+        let _ = session.child.start_kill();
+    }
+}
+
+/// Kill all pooled sessions (e.g. on app shutdown).
+pub async fn shutdown_stdio_pool() {
+    let mut pool = stdio_session_pool().lock().await;
+    for (_, mut session) in pool.drain() {
+        let _ = session.child.start_kill();
+    }
+}
+
+// ============================================================================
+// Public types
+// ============================================================================
+
 /// An MCP tool definition as returned by `tools/list`.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
+#[ts(export)]
 pub struct McpTool {
     pub name: String,
     pub description: Option<String>,
@@ -37,7 +228,8 @@ pub struct McpTool {
 }
 
 /// A content block returned by tool execution.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, TS)]
+#[ts(export)]
 pub struct McpToolContent {
     #[serde(rename = "type")]
     pub content_type: String,
@@ -45,12 +237,25 @@ pub struct McpToolContent {
 }
 
 /// Result of executing an MCP tool.
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, TS)]
+#[ts(export)]
 pub struct McpToolResult {
     pub content: Vec<McpToolContent>,
     pub is_error: bool,
     pub duration_ms: u64,
 }
+
+/// Result of an MCP server ping / connection test.
+#[derive(Debug, serde::Serialize, TS)]
+#[ts(export)]
+pub struct PingResult {
+    pub success: bool,
+    pub message: String,
+}
+
+// ============================================================================
+// Public API
+// ============================================================================
 
 /// Ping an MCP server using raw field values (no stored credential required).
 ///
@@ -63,7 +268,7 @@ pub async fn ping(fields: &HashMap<String, String>) -> Result<PingResult, AppErr
         .unwrap_or("stdio");
 
     let result = match connection_type {
-        "stdio" => list_tools_stdio(fields).await,
+        "stdio" => list_tools_stdio(fields, None).await,
         "sse" => list_tools_sse(fields).await,
         other => Err(AppError::Validation(format!(
             "Unsupported MCP connection type: '{other}'"
@@ -82,18 +287,18 @@ pub async fn ping(fields: &HashMap<String, String>) -> Result<PingResult, AppErr
     }
 }
 
-/// Result of an MCP server ping / connection test.
-#[derive(Debug, serde::Serialize)]
-pub struct PingResult {
-    pub success: bool,
-    pub message: String,
-}
-
 /// List available tools from an MCP server.
+///
+/// Results are cached per credential_id for 60s to avoid redundant round-trips.
 pub async fn list_tools(
     pool: &DbPool,
     credential_id: &str,
 ) -> Result<Vec<McpTool>, AppError> {
+    // Return cached result if fresh
+    if let Some(cached) = get_cached_tools(credential_id) {
+        return Ok(cached);
+    }
+
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
 
@@ -102,13 +307,16 @@ pub async fn list_tools(
         .map(|s| s.as_str())
         .unwrap_or("stdio");
 
-    match connection_type {
-        "stdio" => list_tools_stdio(&fields).await,
+    let tools = match connection_type {
+        "stdio" => list_tools_stdio(&fields, Some(credential_id)).await,
         "sse" => list_tools_sse(&fields).await,
         other => Err(AppError::Validation(format!(
             "Unsupported MCP connection type: '{other}'"
         ))),
-    }
+    }?;
+
+    set_cached_tools(credential_id, tools.clone());
+    Ok(tools)
 }
 
 /// Execute a tool on an MCP server.
@@ -151,11 +359,16 @@ pub async fn execute_tool(
         .map(|s| s.as_str())
         .unwrap_or("stdio");
 
+    // Try to resolve input_schema from cache to skip redundant tools/list call
+    let cached_schema = get_cached_tools(credential_id).and_then(|tools| {
+        tools.into_iter().find(|t| t.name == tool_name).map(|t| t.input_schema)
+    });
+
     let start = Instant::now();
 
     let result = match connection_type {
-        "stdio" => execute_tool_stdio(&fields, tool_name, &arguments).await,
-        "sse" => execute_tool_sse(&fields, tool_name, &arguments).await,
+        "stdio" => execute_tool_stdio(&fields, tool_name, &arguments, cached_schema.as_ref(), Some(credential_id)).await,
+        "sse" => execute_tool_sse(&fields, tool_name, &arguments, cached_schema.as_ref()).await,
         other => Err(AppError::Validation(format!(
             "Unsupported MCP connection type: '{other}'"
         ))),
@@ -194,56 +407,131 @@ pub async fn execute_tool(
 }
 
 // ============================================================================
-// stdio transport
+// stdio transport (session-pooled)
 // ============================================================================
 
 async fn list_tools_stdio(
     fields: &HashMap<String, String>,
+    credential_id: Option<&str>,
 ) -> Result<Vec<McpTool>, AppError> {
-    tokio::time::timeout(MCP_SESSION_TIMEOUT, list_tools_stdio_inner(fields))
-        .await
-        .map_err(|_| AppError::Internal(
-            "MCP stdio session timed out during tools/list".into(),
-        ))?
+    tokio::time::timeout(
+        MCP_SESSION_TIMEOUT,
+        list_tools_stdio_inner(fields, credential_id),
+    )
+    .await
+    .map_err(|_| AppError::Internal(
+        "MCP stdio session timed out during tools/list".into(),
+    ))?
 }
 
 async fn list_tools_stdio_inner(
     fields: &HashMap<String, String>,
+    credential_id: Option<&str>,
 ) -> Result<Vec<McpTool>, AppError> {
-    let command = fields
-        .get("command")
-        .ok_or_else(|| AppError::Validation("MCP server has no 'command' field".into()))?;
+    // Try to acquire a pooled session
+    let (mut session, from_pool) = match credential_id {
+        Some(cid) => match take_pooled_session(cid).await {
+            Some(s) => {
+                tracing::debug!(credential_id = %cid, "Reusing pooled MCP stdio session for tools/list");
+                (s, true)
+            }
+            None => (spawn_stdio_session(fields).await?, false),
+        },
+        None => (spawn_stdio_session(fields).await?, false),
+    };
 
-    let env_vars = parse_env_vars(fields);
+    let result = list_tools_on_session(&mut session).await;
 
-    let mut child = spawn_mcp_process(command, fields.get("working_directory"), &env_vars)?;
+    match (&result, from_pool) {
+        (Err(e), true) if is_io_error(e) => {
+            // Stale pooled session; retry with a fresh process
+            tracing::debug!("Pooled MCP session failed for tools/list, spawning fresh process");
+            let _ = session.child.start_kill();
+            let mut fresh = spawn_stdio_session(fields).await?;
+            let retry = list_tools_on_session(&mut fresh).await;
+            finish_session(fresh, credential_id, retry.is_ok()).await;
+            retry
+        }
+        (Ok(_), _) => {
+            finish_session(session, credential_id, true).await;
+            result
+        }
+        _ => {
+            finish_session(session, credential_id, false).await;
+            result
+        }
+    }
+}
 
-    // Initialize
-    let init_req = jsonrpc_request(1, "initialize", serde_json::json!({
-        "protocolVersion": "2024-11-05",
-        "capabilities": {},
-        "clientInfo": { "name": "personas-playground", "version": "1.0.0" }
-    }));
+async fn execute_tool_stdio(
+    fields: &HashMap<String, String>,
+    tool_name: &str,
+    arguments: &serde_json::Value,
+    cached_schema: Option<&Option<serde_json::Value>>,
+    credential_id: Option<&str>,
+) -> Result<McpToolResult, AppError> {
+    tokio::time::timeout(
+        MCP_SESSION_TIMEOUT,
+        execute_tool_stdio_inner(fields, tool_name, arguments, cached_schema, credential_id),
+    )
+    .await
+    .map_err(|_| AppError::Internal(
+        format!("MCP stdio session timed out executing tool '{tool_name}'"),
+    ))?
+}
 
-    write_jsonrpc(&mut child, &init_req).await?;
-    let _init_resp = read_jsonrpc(&mut child).await?;
+async fn execute_tool_stdio_inner(
+    fields: &HashMap<String, String>,
+    tool_name: &str,
+    arguments: &serde_json::Value,
+    cached_schema: Option<&Option<serde_json::Value>>,
+    credential_id: Option<&str>,
+) -> Result<McpToolResult, AppError> {
+    // Try to acquire a pooled session
+    let (mut session, from_pool) = match credential_id {
+        Some(cid) => match take_pooled_session(cid).await {
+            Some(s) => {
+                tracing::debug!(credential_id = %cid, tool = %tool_name, "Reusing pooled MCP stdio session");
+                (s, true)
+            }
+            None => (spawn_stdio_session(fields).await?, false),
+        },
+        None => (spawn_stdio_session(fields).await?, false),
+    };
 
-    // Send initialized notification
-    let initialized = serde_json::json!({
-        "jsonrpc": "2.0",
-        "method": "notifications/initialized"
-    });
-    write_jsonrpc(&mut child, &initialized).await?;
+    let result = execute_tool_on_session(&mut session, tool_name, arguments, cached_schema).await;
 
-    // List tools
-    let list_req = jsonrpc_request(2, "tools/list", serde_json::json!({}));
-    write_jsonrpc(&mut child, &list_req).await?;
-    let list_resp = read_jsonrpc(&mut child).await?;
+    match (&result, from_pool) {
+        (Err(e), true) if is_io_error(e) => {
+            // Stale pooled session; retry with a fresh process
+            tracing::debug!(tool = %tool_name, "Pooled MCP session failed, spawning fresh process");
+            let _ = session.child.start_kill();
+            let mut fresh = spawn_stdio_session(fields).await?;
+            let retry = execute_tool_on_session(&mut fresh, tool_name, arguments, cached_schema).await;
+            finish_session(fresh, credential_id, retry.is_ok()).await;
+            retry
+        }
+        (Ok(_), _) => {
+            finish_session(session, credential_id, true).await;
+            result
+        }
+        _ => {
+            finish_session(session, credential_id, false).await;
+            result
+        }
+    }
+}
 
-    // Kill process
-    let _ = child.kill().await;
+/// Execute `tools/list` on an already-initialized session.
+async fn list_tools_on_session(
+    session: &mut PooledStdioSession,
+) -> Result<Vec<McpTool>, AppError> {
+    let list_req = jsonrpc_request(session.next_id, "tools/list", serde_json::json!({}));
+    session.next_id += 1;
 
-    // Parse tools from response
+    write_session_jsonrpc(&mut session.stdin, &list_req).await?;
+    let list_resp = read_session_jsonrpc(&mut session.reader).await?;
+
     let tools_val = list_resp
         .get("result")
         .and_then(|r| r.get("tools"))
@@ -258,72 +546,55 @@ async fn list_tools_stdio_inner(
     Ok(tools)
 }
 
-async fn execute_tool_stdio(
-    fields: &HashMap<String, String>,
+/// Execute `tools/call` on an already-initialized session, with schema validation.
+async fn execute_tool_on_session(
+    session: &mut PooledStdioSession,
     tool_name: &str,
     arguments: &serde_json::Value,
+    cached_schema: Option<&Option<serde_json::Value>>,
 ) -> Result<McpToolResult, AppError> {
-    tokio::time::timeout(
-        MCP_SESSION_TIMEOUT,
-        execute_tool_stdio_inner(fields, tool_name, arguments),
-    )
-    .await
-    .map_err(|_| AppError::Internal(
-        format!("MCP stdio session timed out executing tool '{tool_name}'"),
-    ))?
-}
+    // Validate arguments: use cached schema if available, otherwise fetch via tools/list
+    if let Some(schema_opt) = cached_schema {
+        validate_arguments_against_schema(arguments, schema_opt.as_ref())?;
+    } else {
+        let list_req = jsonrpc_request(session.next_id, "tools/list", serde_json::json!({}));
+        session.next_id += 1;
+        write_session_jsonrpc(&mut session.stdin, &list_req).await?;
+        let list_resp = read_session_jsonrpc(&mut session.reader).await?;
 
-async fn execute_tool_stdio_inner(
-    fields: &HashMap<String, String>,
-    tool_name: &str,
-    arguments: &serde_json::Value,
-) -> Result<McpToolResult, AppError> {
-    let command = fields
-        .get("command")
-        .ok_or_else(|| AppError::Validation("MCP server has no 'command' field".into()))?;
-
-    let env_vars = parse_env_vars(fields);
-
-    let mut child = spawn_mcp_process(command, fields.get("working_directory"), &env_vars)?;
-
-    // Initialize
-    let init_req = jsonrpc_request(1, "initialize", serde_json::json!({
-        "protocolVersion": "2024-11-05",
-        "capabilities": {},
-        "clientInfo": { "name": "personas-playground", "version": "1.0.0" }
-    }));
-
-    write_jsonrpc(&mut child, &init_req).await?;
-    let _init_resp = read_jsonrpc(&mut child).await?;
-
-    // Send initialized notification
-    let initialized = serde_json::json!({
-        "jsonrpc": "2.0",
-        "method": "notifications/initialized"
-    });
-    write_jsonrpc(&mut child, &initialized).await?;
-
-    // List tools to get input_schema for validation
-    let list_req = jsonrpc_request(2, "tools/list", serde_json::json!({}));
-    write_jsonrpc(&mut child, &list_req).await?;
-    let list_resp = read_jsonrpc(&mut child).await?;
-
-    let schema = extract_tool_schema(&list_resp, tool_name)?;
-    validate_arguments_against_schema(arguments, schema.as_ref())?;
+        let schema = extract_tool_schema(&list_resp, tool_name)?;
+        validate_arguments_against_schema(arguments, schema.as_ref())?;
+    }
 
     // Call tool
-    let call_req = jsonrpc_request(3, "tools/call", serde_json::json!({
+    let call_req = jsonrpc_request(session.next_id, "tools/call", serde_json::json!({
         "name": tool_name,
         "arguments": arguments,
     }));
+    session.next_id += 1;
 
-    write_jsonrpc(&mut child, &call_req).await?;
-    let call_resp = read_jsonrpc(&mut child).await?;
-
-    // Kill process
-    let _ = child.kill().await;
+    write_session_jsonrpc(&mut session.stdin, &call_req).await?;
+    let call_resp = read_session_jsonrpc(&mut session.reader).await?;
 
     parse_tool_result(&call_resp)
+}
+
+/// Return a session to the pool on success, or kill it on failure.
+async fn finish_session(session: PooledStdioSession, credential_id: Option<&str>, success: bool) {
+    if success {
+        if let Some(cid) = credential_id {
+            return_pooled_session(cid, session).await;
+            return;
+        }
+    }
+    // Session dropped here — kill_on_drop(true) handles cleanup
+}
+
+/// Returns true for errors that indicate the session/process is broken (I/O failures).
+/// Validation errors don't indicate a broken session but we still don't pool on error
+/// paths to keep the logic simple.
+fn is_io_error(e: &AppError) -> bool {
+    matches!(e, AppError::Internal(_))
 }
 
 // ============================================================================
@@ -336,12 +607,15 @@ async fn list_tools_sse(
     let url = fields
         .get("url")
         .ok_or_else(|| AppError::Validation("MCP server has no 'url' field".into()))?;
+
+    // SSRF protection: reject private/internal/metadata URLs
+    super::url_safety::validate_url_safety(url).map_err(|reason| {
+        AppError::Validation(format!("MCP SSE URL blocked: {reason}"))
+    })?;
+
     let auth_token = fields.get("auth_token");
 
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
+    let client = crate::SHARED_HTTP.clone();
 
     // Initialize
     let init_payload = jsonrpc_request(1, "initialize", serde_json::json!({
@@ -374,16 +648,20 @@ async fn execute_tool_sse(
     fields: &HashMap<String, String>,
     tool_name: &str,
     arguments: &serde_json::Value,
+    cached_schema: Option<&Option<serde_json::Value>>,
 ) -> Result<McpToolResult, AppError> {
     let url = fields
         .get("url")
         .ok_or_else(|| AppError::Validation("MCP server has no 'url' field".into()))?;
+
+    // SSRF protection: reject private/internal/metadata URLs
+    super::url_safety::validate_url_safety(url).map_err(|reason| {
+        AppError::Validation(format!("MCP SSE URL blocked: {reason}"))
+    })?;
+
     let auth_token = fields.get("auth_token");
 
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
+    let client = crate::SHARED_HTTP.clone();
 
     // Initialize
     let init_payload = jsonrpc_request(1, "initialize", serde_json::json!({
@@ -393,12 +671,16 @@ async fn execute_tool_sse(
     }));
     let _init_resp = send_sse_request(&client, url, auth_token, &init_payload).await?;
 
-    // List tools to get input_schema for validation
-    let list_payload = jsonrpc_request(2, "tools/list", serde_json::json!({}));
-    let list_resp = send_sse_request(&client, url, auth_token, &list_payload).await?;
+    // Validate arguments: use cached schema if available, otherwise fetch via tools/list
+    if let Some(schema_opt) = cached_schema {
+        validate_arguments_against_schema(arguments, schema_opt.as_ref())?;
+    } else {
+        let list_payload = jsonrpc_request(2, "tools/list", serde_json::json!({}));
+        let list_resp = send_sse_request(&client, url, auth_token, &list_payload).await?;
 
-    let schema = extract_tool_schema(&list_resp, tool_name)?;
-    validate_arguments_against_schema(arguments, schema.as_ref())?;
+        let schema = extract_tool_schema(&list_resp, tool_name)?;
+        validate_arguments_against_schema(arguments, schema.as_ref())?;
+    }
 
     // Call tool
     let call_payload = jsonrpc_request(3, "tools/call", serde_json::json!({
@@ -639,19 +921,12 @@ fn spawn_mcp_process(
         .map_err(|e| AppError::Internal(format!("Failed to spawn MCP process: {e}")))
 }
 
-/// Timeout for MCP stdin write + flush operations (prevents hung process accumulation).
-const MCP_WRITE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
-
-async fn write_jsonrpc(
-    child: &mut tokio::process::Child,
+/// Write a JSON-RPC message to a session's stdin with Content-Length framing.
+async fn write_session_jsonrpc(
+    stdin: &mut tokio::process::ChildStdin,
     payload: &serde_json::Value,
 ) -> Result<(), AppError> {
     use tokio::io::AsyncWriteExt;
-
-    let stdin = child
-        .stdin
-        .as_mut()
-        .ok_or_else(|| AppError::Internal("MCP process stdin not available".into()))?;
 
     let json = serde_json::to_string(payload)
         .map_err(|e| AppError::Internal(format!("JSON serialize error: {e}")))?;
@@ -676,17 +951,11 @@ async fn write_jsonrpc(
     .map_err(|_| AppError::Internal("Timeout writing to MCP process stdin".into()))?
 }
 
-async fn read_jsonrpc(
-    child: &mut tokio::process::Child,
+/// Read a JSON-RPC response from a session's buffered stdout reader.
+async fn read_session_jsonrpc(
+    reader: &mut tokio::io::BufReader<tokio::process::ChildStdout>,
 ) -> Result<serde_json::Value, AppError> {
     use tokio::io::AsyncBufReadExt;
-
-    let stdout = child
-        .stdout
-        .as_mut()
-        .ok_or_else(|| AppError::Internal("MCP process stdout not available".into()))?;
-
-    let mut reader = tokio::io::BufReader::new(stdout);
 
     // Read headers with a total timeout (prevents slowloris-style attacks
     // where the server sends headers one byte at a time).

@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, AlertTriangle, Wrench, Zap, Link, Clock, ExternalLink, Cpu } from 'lucide-react';
 import { TEAM_ROLES, PersonaAvatar } from '@/features/pipeline/sub_canvas';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { extractConnectorNames } from '@/lib/personas/utils';
 import type { AgentIR } from '@/lib/types/designTypes';
 
@@ -50,12 +51,12 @@ function formatRelativeTime(iso: string): string {
 export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemove }: TeamConfigPanelProps) {
   const [confirmRemove, setConfirmRemove] = useState(false);
 
-  const personas = usePersonaStore((s) => s.personas);
-  const personaTriggerCounts = usePersonaStore((s) => s.personaTriggerCounts);
-  const personaLastRun = usePersonaStore((s) => s.personaLastRun);
-  const personaHealthMap = usePersonaStore((s) => s.personaHealthMap);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const personas = useAgentStore((s) => s.personas);
+  const personaTriggerCounts = useAgentStore((s) => s.personaTriggerCounts);
+  const personaLastRun = useAgentStore((s) => s.personaLastRun);
+  const personaHealthMap = useAgentStore((s) => s.personaHealthMap);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   // Auto-revert confirm state after 3 seconds
   useEffect(() => {

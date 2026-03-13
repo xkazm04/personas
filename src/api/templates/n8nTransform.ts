@@ -181,6 +181,11 @@ export const listN8nSessions = () =>
     "list_n8n_sessions",
   );
 
+export const listN8nSessionSummaries = () =>
+  invoke<import('@/lib/bindings/N8nSessionSummary').N8nSessionSummary[]>(
+    "list_n8n_session_summaries",
+  );
+
 export const updateN8nSession = (
   id: string,
   updates: {

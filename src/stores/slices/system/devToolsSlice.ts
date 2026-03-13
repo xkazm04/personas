@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { SystemStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
 import type { DevProject } from "@/lib/bindings/DevProject";
 import type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
@@ -126,7 +126,7 @@ export interface DevToolsSlice {
   getBatchStatus: (batchId: string) => Promise<{ batch_id: string; total: number; completed: number; failed: number; running: number; pending: number; tasks: DevTask[] }>;
 }
 
-export const createDevToolsSlice: StateCreator<PersonaStore, [], [], DevToolsSlice> = (set, get) => ({
+export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlice> = (set, get) => ({
   // -- Projects state --------------------------------------------------
   projects: [],
   activeProjectId: null,

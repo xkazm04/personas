@@ -3,20 +3,20 @@ import {
   ArrowLeftRight, Play, Square, Loader2, ChevronDown, AlertCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import type { ModelTestConfig } from '@/api/agents/tests';
 import { ALL_COMPARE_MODELS, toTestConfig, aggregateResults } from '../../libs/compareHelpers';
 import { ModelDropdown } from './ModelDropdown';
 import { ComparisonResults } from './CompareResultsTable';
 
 export function ModelABCompare() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const isLabRunning = usePersonaStore((s) => s.isLabRunning);
-  const startArena = usePersonaStore((s) => s.startArena);
-  const cancelArena = usePersonaStore((s) => s.cancelArena);
-  const arenaResultsMap = usePersonaStore((s) => s.arenaResultsMap);
-  const fetchArenaResults = usePersonaStore((s) => s.fetchArenaResults);
-  const labProgress = usePersonaStore((s) => s.labProgress);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const isLabRunning = useAgentStore((s) => s.isLabRunning);
+  const startArena = useAgentStore((s) => s.startArena);
+  const cancelArena = useAgentStore((s) => s.cancelArena);
+  const arenaResultsMap = useAgentStore((s) => s.arenaResultsMap);
+  const fetchArenaResults = useAgentStore((s) => s.fetchArenaResults);
+  const labProgress = useAgentStore((s) => s.labProgress);
 
   const [expanded, setExpanded] = useState(false);
   const [modelA, setModelA] = useState('haiku');

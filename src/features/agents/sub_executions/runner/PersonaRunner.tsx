@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useElapsedTimer } from '@/hooks';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import { Play, Clock } from 'lucide-react';
@@ -9,7 +10,7 @@ import { classifyLine, parseSummaryLine } from '@/lib/utils/terminalColors';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExecutionTerminal } from '@/features/agents/sub_executions/runner/ExecutionTerminal';
 import type { TerminalEmptyState } from '@/features/shared/components/terminal/TerminalBody';
-import * as api from '@/api/tauriApi';
+import { listExecutions } from "@/api/agents/executions";
 
 import type { HealingEventPayload } from '../runnerTypes';
 import { HealingCard } from '../detail/HealingCard';
@@ -25,16 +26,16 @@ import { useRunnerActions } from './useRunnerActions';
 
 
 export function PersonaRunner() {
-  const selectedPersona = usePersonaStore((state) => state.selectedPersona);
-  const isExecuting = usePersonaStore((state) => state.isExecuting);
-  const activeExecutionId = usePersonaStore((state) => state.activeExecutionId);
-  const executionOutput = usePersonaStore((state) => state.executionOutput);
-  const executionPersonaId = usePersonaStore((state) => state.executionPersonaId);
-  const rerunInputData = usePersonaStore((state) => state.rerunInputData);
-  const setRerunInputData = usePersonaStore((state) => state.setRerunInputData);
-  const queuePosition = usePersonaStore((s) => s.queuePosition);
-  const queueDepth = usePersonaStore((s) => s.queueDepth);
-  const cloudConfig = usePersonaStore((s) => s.cloudConfig);
+  const selectedPersona = useAgentStore((state) => state.selectedPersona);
+  const isExecuting = useAgentStore((state) => state.isExecuting);
+  const activeExecutionId = useAgentStore((state) => state.activeExecutionId);
+  const executionOutput = useAgentStore((state) => state.executionOutput);
+  const executionPersonaId = useAgentStore((state) => state.executionPersonaId);
+  const rerunInputData = useSystemStore((state) => state.rerunInputData);
+  const setRerunInputData = useSystemStore((state) => state.setRerunInputData);
+  const queuePosition = useAgentStore((s) => s.queuePosition);
+  const queueDepth = useAgentStore((s) => s.queueDepth);
+  const cloudConfig = useSystemStore((s) => s.cloudConfig);
 
   const runnerRef = useRef<HTMLDivElement>(null);
   const [inputData, setInputData] = useState('{}');
@@ -73,7 +74,7 @@ export function PersonaRunner() {
 
   const fetchTypicalDuration = useCallback(async (pId: string) => {
     try {
-      const execs = await api.listExecutions(pId, 20);
+      const execs = await listExecutions(pId, 20);
       const durations: number[] = execs
         .filter((e): e is typeof e & { duration_ms: number } =>
           e.status === 'completed' && typeof e.duration_ms === 'number' && e.duration_ms > 0)

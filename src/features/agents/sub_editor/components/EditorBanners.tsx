@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Wand2, Cloud, LogIn, X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { useAuthStore } from '@/stores/authStore';
 
 type BannerColorScheme = 'amber' | 'violet' | 'sky' | 'red';
@@ -96,10 +96,10 @@ export function UnsavedChangesBanner({
 }
 
 export function DesignNudgeBanner() {
-  const showDesignNudge = usePersonaStore((s) => s.showDesignNudge);
-  const setShowDesignNudge = usePersonaStore((s) => s.setShowDesignNudge);
-  const editorTab = usePersonaStore((s) => s.editorTab);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
+  const showDesignNudge = useSystemStore((s) => s.showDesignNudge);
+  const setShowDesignNudge = useSystemStore((s) => s.setShowDesignNudge);
+  const editorTab = useSystemStore((s) => s.editorTab);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
 
   return (
     <BannerPrimitive
@@ -122,9 +122,9 @@ export function DesignNudgeBanner() {
 }
 
 export function CloudNudgeBanner() {
-  const showCloudNudge = usePersonaStore((s) => s.showCloudNudge);
-  const setShowCloudNudge = usePersonaStore((s) => s.setShowCloudNudge);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const showCloudNudge = useSystemStore((s) => s.showCloudNudge);
+  const setShowCloudNudge = useSystemStore((s) => s.setShowCloudNudge);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return (

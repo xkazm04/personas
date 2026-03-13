@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useCallback, useRef, useState } from 'react';
-import { usePersonaStore, initHealingListener } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useAgentStore } from "@/stores/agentStore";
+import { initHealingListener } from "@/stores/personaStore";
 import { DollarSign, Zap, CheckCircle, TrendingUp, RefreshCw, BarChart3 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import HealingIssueModal from '@/features/overview/sub_observability/HealingIssueModal';
+import HealingIssueModal from '@/features/overview/sub_observability/components/HealingIssueModal';
 import { DayRangePicker, PersonaSelect, CompareToggle } from '@/features/overview/sub_usage/DashboardFilters';
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/charts/periodComparison';
 import { pivotToolUsageOverTime } from '@/features/overview/sub_usage/charts/pivotToolUsage';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
-import type { PieDataPoint } from '@/features/overview/sub_observability/MetricsCharts';
+import type { PieDataPoint } from '@/features/overview/sub_observability/components/MetricsCharts';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
 import { ErrorBanner, CostAnomalyAlerts } from './AnalyticsDashboardAlerts';
@@ -20,21 +22,21 @@ function formatToolName(name: string): string {
 }
 
 export default function AnalyticsDashboard() {
-  const fetchObservabilityMetrics = usePersonaStore((s) => s.fetchObservabilityMetrics);
-  const observabilityMetrics = usePersonaStore((s) => s.observabilityMetrics);
-  const observabilityError = usePersonaStore((s) => s.observabilityError);
-  const healingIssues = usePersonaStore((s) => s.healingIssues);
-  const healingRunning = usePersonaStore((s) => s.healingRunning);
-  const fetchHealingIssues = usePersonaStore((s) => s.fetchHealingIssues);
-  const triggerHealing = usePersonaStore((s) => s.triggerHealing);
-  const resolveHealingIssue = usePersonaStore((s) => s.resolveHealingIssue);
-  const executionDashboard = usePersonaStore((s) => s.executionDashboard);
-  const fetchExecutionDashboard = usePersonaStore((s) => s.fetchExecutionDashboard);
-  const toolUsageSummary = usePersonaStore((s) => s.toolUsageSummary);
-  const toolUsageOverTime = usePersonaStore((s) => s.toolUsageOverTime);
-  const fetchToolUsage = usePersonaStore((s) => s.fetchToolUsage);
-  const personas = usePersonaStore((s) => s.personas);
-  const setOverviewTab = usePersonaStore((s) => s.setOverviewTab);
+  const fetchObservabilityMetrics = useOverviewStore((s) => s.fetchObservabilityMetrics);
+  const observabilityMetrics = useOverviewStore((s) => s.observabilityMetrics);
+  const observabilityError = useOverviewStore((s) => s.observabilityError);
+  const healingIssues = useOverviewStore((s) => s.healingIssues);
+  const healingRunning = useOverviewStore((s) => s.healingRunning);
+  const fetchHealingIssues = useOverviewStore((s) => s.fetchHealingIssues);
+  const triggerHealing = useOverviewStore((s) => s.triggerHealing);
+  const resolveHealingIssue = useOverviewStore((s) => s.resolveHealingIssue);
+  const executionDashboard = useOverviewStore((s) => s.executionDashboard);
+  const fetchExecutionDashboard = useOverviewStore((s) => s.fetchExecutionDashboard);
+  const toolUsageSummary = useAgentStore((s) => s.toolUsageSummary);
+  const toolUsageOverTime = useAgentStore((s) => s.toolUsageOverTime);
+  const fetchToolUsage = useAgentStore((s) => s.fetchToolUsage);
+  const personas = useAgentStore((s) => s.personas);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
   const {
     dayRange: days, setDayRange: setDays, selectedPersonaId, setSelectedPersonaId,

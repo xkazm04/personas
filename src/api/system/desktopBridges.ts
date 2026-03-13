@@ -1,15 +1,8 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// -- Bridge action types ----------------------------------------------
-
-export interface BridgeActionResult {
-  success: boolean;
-  output: string;
-  error: string | null;
-  duration_ms: number;
-  bridge: string;
-  action: string;
-}
+import type { BridgeActionResult } from "@/lib/bindings/BridgeActionResult";
+import type { RuntimeStatus } from "@/lib/bindings/RuntimeStatus";
+export type { BridgeActionResult, RuntimeStatus };
 
 // VS Code actions
 export type VsCodeAction =
@@ -101,13 +94,6 @@ export interface PlanExecutionResult {
   step_results: StepResult[];
   total_duration_ms: number;
   failed_step?: string;
-}
-
-export interface RuntimeStatus {
-  active_plan: string | null;
-  completed_steps: number;
-  total_steps: number;
-  current_step: string | null;
 }
 
 // -- Bridge metadata --------------------------------------------------

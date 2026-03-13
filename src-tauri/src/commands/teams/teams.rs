@@ -292,17 +292,13 @@ pub async fn execute_team(
     );
 
     // Set up cancellation flag
-    let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
-    {
-        let mut map = state.active_pipeline_cancelled.lock().unwrap_or_else(|e| e.into_inner());
-        map.insert(run_id.clone(), cancelled.clone());
-    }
+    let cancelled = state.process_registry.register_run("pipeline", &run_id);
 
     // Clone what we need for the async task
     let db = state.db.clone();
     let engine = state.engine.clone();
     let run_id_clone = run_id.clone();
-    let pipeline_cancelled_map = state.active_pipeline_cancelled.clone();
+    let registry = state.process_registry.clone();
 
     // Build predecessor map from non-feedback edges so each node receives
     // output from its actual predecessor(s) rather than a global last_output.
@@ -601,9 +597,7 @@ pub async fn execute_team(
         );
 
         // Clean up cancellation flag
-        if let Ok(mut map) = pipeline_cancelled_map.lock() {
-            map.remove(&run_id_clone);
-        }
+        registry.unregister_run("pipeline", &run_id_clone);
     });
 
     Ok(run_id)
@@ -616,14 +610,9 @@ pub fn cancel_pipeline(
     run_id: String,
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
-    let map = state.active_pipeline_cancelled.lock().unwrap_or_else(|e| e.into_inner());
-    if let Some(flag) = map.get(&run_id) {
-        flag.store(true, std::sync::atomic::Ordering::Relaxed);
-        tracing::info!(run_id = %run_id, "Pipeline cancellation requested");
-        Ok(true)
-    } else {
-        Ok(false)
-    }
+    state.process_registry.cancel_run("pipeline", &run_id);
+    tracing::info!(run_id = %run_id, "Pipeline cancellation requested");
+    Ok(true)
 }
 
 // ============================================================================

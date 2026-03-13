@@ -1,16 +1,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import type { SchedulerStats } from "@/lib/bindings/SchedulerStats";
 
-// ============================================================================
-// Scheduler
-// ============================================================================
-
-export interface SchedulerStats {
-  running: boolean;
-  events_processed: number;
-  events_delivered: number;
-  events_failed: number;
-  triggers_fired: number;
-}
+export type { SchedulerStats } from "@/lib/bindings/SchedulerStats";
 
 export const getSchedulerStatus = () =>
   invoke<SchedulerStats>("get_scheduler_status");

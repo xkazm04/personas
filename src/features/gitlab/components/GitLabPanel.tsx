@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GitBranch } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ConnectionStatusBadge } from '@/features/shared/components/feedback/ConnectionStatusBadge';
 import { PanelTabBar } from '@/features/shared/components/layout/PanelTabBar';
@@ -38,23 +39,23 @@ export default function GitLabPanel() {
   const [activeTab, setActiveTab] = useState<TabId>('connection');
   const [token, setToken] = useState('');
 
-  const config = usePersonaStore((s) => s.gitlabConfig);
-  const isConnecting = usePersonaStore((s) => s.gitlabIsConnecting);
-  const projects = usePersonaStore((s) => s.gitlabProjects);
-  const agents = usePersonaStore((s) => s.gitlabAgents);
-  const error = usePersonaStore((s) => s.gitlabError);
-  const selectedProjectId = usePersonaStore((s) => s.gitlabSelectedProjectId);
-  const personas = usePersonaStore((s) => s.personas);
+  const config = useSystemStore((s) => s.gitlabConfig);
+  const isConnecting = useSystemStore((s) => s.gitlabIsConnecting);
+  const projects = useSystemStore((s) => s.gitlabProjects);
+  const agents = useSystemStore((s) => s.gitlabAgents);
+  const error = useSystemStore((s) => s.gitlabError);
+  const selectedProjectId = useSystemStore((s) => s.gitlabSelectedProjectId);
+  const personas = useAgentStore((s) => s.personas);
 
-  const initialize = usePersonaStore((s) => s.gitlabInitialize);
-  const connect = usePersonaStore((s) => s.gitlabConnectAction);
-  const disconnect = usePersonaStore((s) => s.gitlabDisconnectAction);
-  const fetchProjects = usePersonaStore((s) => s.gitlabFetchProjects);
-  const deployPersona = usePersonaStore((s) => s.gitlabDeployPersona);
-  const fetchAgents = usePersonaStore((s) => s.gitlabFetchAgents);
-  const undeployAgent = usePersonaStore((s) => s.gitlabUndeployAgent);
-  const clearError = usePersonaStore((s) => s.gitlabClearError);
-  const createPersona = usePersonaStore((s) => s.createPersona);
+  const initialize = useSystemStore((s) => s.gitlabInitialize);
+  const connect = useSystemStore((s) => s.gitlabConnectAction);
+  const disconnect = useSystemStore((s) => s.gitlabDisconnectAction);
+  const fetchProjects = useSystemStore((s) => s.gitlabFetchProjects);
+  const deployPersona = useSystemStore((s) => s.gitlabDeployPersona);
+  const fetchAgents = useSystemStore((s) => s.gitlabFetchAgents);
+  const undeployAgent = useSystemStore((s) => s.gitlabUndeployAgent);
+  const clearError = useSystemStore((s) => s.gitlabClearError);
+  const createPersona = useAgentStore((s) => s.createPersona);
 
   const isConnected = config?.isConnected ?? false;
 
@@ -78,7 +79,7 @@ export default function GitLabPanel() {
   };
 
   const handleSelectProject = (id: number) => {
-    usePersonaStore.setState({ gitlabSelectedProjectId: id });
+    useSystemStore.setState({ gitlabSelectedProjectId: id });
   };
 
   const handleDeploySuccess = useCallback(() => {
@@ -111,8 +112,9 @@ export default function GitLabPanel() {
           tabs={TABS.map((tab) => ({ ...tab, disabled: tab.disabledWhenOffline && !isConnected }))}
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          activeUnderlineClass="after:bg-orange-500"
+          underlineClass="bg-orange-500"
           idPrefix="gitlab-deploy"
+          layoutIdPrefix="gitlab-tab"
         />
       </ContentHeader>
 

@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, Zap, Clock, AlertTriangle, Activity, Moon } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -39,12 +40,12 @@ const SECTION_META = {
 } as const;
 
 export default function PersonaOverviewPage() {
-  const personas = usePersonaStore(s => s.personas);
-  const selectPersona = usePersonaStore(s => s.selectPersona);
-  const triggerCounts = usePersonaStore(s => s.personaTriggerCounts);
-  const lastRunMap = usePersonaStore(s => s.personaLastRun);
-  const healthMap = usePersonaStore(s => s.personaHealthMap);
-  const groups = usePersonaStore(s => s.groups);
+  const personas = useAgentStore((s) => s.personas);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const triggerCounts = useAgentStore((s) => s.personaTriggerCounts);
+  const lastRunMap = useAgentStore((s) => s.personaLastRun);
+  const healthMap = useAgentStore((s) => s.personaHealthMap);
+  const groups = usePipelineStore((s) => s.groups);
 
   const scored = useRelevanceSort(personas, healthMap, lastRunMap, triggerCounts);
 

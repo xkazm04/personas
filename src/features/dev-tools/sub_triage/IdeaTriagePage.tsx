@@ -6,7 +6,7 @@ import {
   ArrowLeftRight, ThumbsDown, ThumbsUp, Trash2, ChevronLeft, ChevronRight, HelpCircle,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { AGENT_CATEGORIES } from '../constants/scanAgents';
 
 // ---------------------------------------------------------------------------
@@ -171,7 +171,7 @@ function SwipeCard({
 // ---------------------------------------------------------------------------
 
 export default function IdeaTriagePage() {
-  const store = usePersonaStore.getState();
+  const store = useSystemStore.getState();
   const triageIdea = (store as any).triageIdea as ((id: string, decision: 'accepted' | 'rejected') => Promise<void>) | undefined;
   const deleteIdea = (store as any).deleteIdea as ((id: string) => Promise<void>) | undefined;
 

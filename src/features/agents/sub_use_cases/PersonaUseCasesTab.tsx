@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useRef, memo } from 'react';
 import { ListChecks, Wrench, ChevronDown, ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 import type { DesignUseCase as UseCaseItem } from '@/lib/types/frontendTypes';
 import { UseCaseRow } from '@/features/shared/components/use-cases/UseCaseRow';
@@ -29,8 +29,8 @@ interface PersonaUseCasesTabProps {
 }
 
 export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, connectorDefinitions }: PersonaUseCasesTabProps) {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const isExecuting = usePersonaStore((s) => s.isExecuting);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const isExecuting = useAgentStore((s) => s.isExecuting);
 
   const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
   const [expandedHistoryIds, setExpandedHistoryIds] = useState<Set<string>>(new Set());

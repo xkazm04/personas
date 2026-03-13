@@ -1,4 +1,5 @@
 use rusqlite::params;
+use ts_rs::TS;
 
 use crate::db::DbPool;
 use crate::engine::byom::ProviderAuditEntry;
@@ -111,7 +112,8 @@ pub fn list_by_persona(
 }
 
 /// Get aggregate provider usage stats.
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, TS)]
+#[ts(export)]
 pub struct ProviderUsageStats {
     pub engine_kind: String,
     pub execution_count: i64,

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 
 export interface ChecklistItem {
   id: string;
@@ -23,9 +23,9 @@ export interface OnboardingChecklist {
  * Returns a checklist with per-item completion and an overall score.
  */
 export function useOnboardingChecklist(personaId: string | undefined): OnboardingChecklist {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const triggerCount = usePersonaStore((s) => personaId ? s.personaTriggerCounts[personaId] : undefined);
-  const lastRun = usePersonaStore((s) => personaId ? s.personaLastRun[personaId] : undefined);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const triggerCount = useAgentStore((s) => personaId ? s.personaTriggerCounts[personaId] : undefined);
+  const lastRun = useAgentStore((s) => personaId ? s.personaLastRun[personaId] : undefined);
 
   return useMemo(() => {
     if (!selectedPersona || selectedPersona.id !== personaId) {
@@ -69,9 +69,9 @@ export function useOnboardingChecklist(personaId: string | undefined): Onboardin
  * Lightweight version for sidebar cards -- only needs personaId, no selectedPersona.
  */
 export function useOnboardingScore(personaId: string): number {
-  const personas = usePersonaStore((s) => s.personas);
-  const triggerCount = usePersonaStore((s) => s.personaTriggerCounts[personaId]);
-  const lastRun = usePersonaStore((s) => s.personaLastRun[personaId]);
+  const personas = useAgentStore((s) => s.personas);
+  const triggerCount = useAgentStore((s) => s.personaTriggerCounts[personaId]);
+  const lastRun = useAgentStore((s) => s.personaLastRun[personaId]);
 
   return useMemo(() => {
     const persona = personas.find((p) => p.id === personaId);

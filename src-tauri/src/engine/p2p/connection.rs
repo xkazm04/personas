@@ -3,11 +3,11 @@
 //! Tracks active connections by peer_id, handles Hello/HelloAck handshake,
 //! health checks (Ping/Pong), and auto-reconnect.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
 
 use super::manifest_sync::ManifestSync;
 use super::messaging::MessageRouter;
@@ -30,6 +30,9 @@ pub struct ConnectionManager {
     local_peer_id: String,
     local_display_name: String,
     connections: RwLock<HashMap<String, PeerConnection>>,
+    /// Tracks peer_ids with in-progress connection attempts to prevent duplicates.
+    connecting: Mutex<HashSet<String>>,
+    max_peers: usize,
     max_retries: u32,
 }
 
@@ -39,6 +42,7 @@ impl ConnectionManager {
         pool: DbPool,
         local_peer_id: String,
         local_display_name: String,
+        max_peers: usize,
     ) -> Self {
         Self {
             transport,
@@ -46,8 +50,20 @@ impl ConnectionManager {
             local_peer_id,
             local_display_name,
             connections: RwLock::new(HashMap::new()),
+            connecting: Mutex::new(HashSet::new()),
+            max_peers,
             max_retries: 3,
         }
+    }
+
+    /// Update the max_peers limit.
+    pub fn set_max_peers(&mut self, max_peers: usize) {
+        self.max_peers = max_peers;
+    }
+
+    /// Check if the connection capacity has been reached.
+    async fn is_at_capacity(&self) -> bool {
+        self.connections.read().await.len() >= self.max_peers
     }
 
     /// Connect to a peer by peer_id (looks up address from discovered_peers).
@@ -62,6 +78,34 @@ impl ConnectionManager {
             return Ok(());
         }
 
+        // Enforce max_peers limit
+        if self.is_at_capacity().await {
+            return Err(AppError::Validation(format!(
+                "Connection limit reached ({} peers). Disconnect a peer first.",
+                self.max_peers
+            )));
+        }
+
+        // Serialize concurrent connect attempts for the same peer_id.
+        // If another task is already connecting, return early.
+        {
+            let mut connecting = self.connecting.lock().await;
+            if !connecting.insert(peer_id.to_string()) {
+                tracing::debug!(peer_id = %peer_id, "Connection attempt already in progress, skipping");
+                return Ok(());
+            }
+        }
+
+        let result = self.connect_to_peer_inner(peer_id).await;
+
+        // Always remove from connecting set
+        self.connecting.lock().await.remove(peer_id);
+
+        result
+    }
+
+    /// Inner connection logic, separated so `connect_to_peer` can manage the connecting guard.
+    async fn connect_to_peer_inner(&self, peer_id: &str) -> Result<(), AppError> {
         // Look up the peer's address from the discovered_peers table
         let addr = self.resolve_peer_address(peer_id)?;
 
@@ -158,6 +202,15 @@ impl ConnectionManager {
         _manifest_sync: &ManifestSync,
         _messages: &MessageRouter,
     ) -> Result<(), AppError> {
+        // Enforce max_peers limit for incoming connections
+        if self.is_at_capacity().await {
+            quinn_conn.close(quinn::VarInt::from_u32(1), b"capacity exceeded");
+            return Err(AppError::Validation(format!(
+                "Rejecting incoming connection: at capacity ({} peers)",
+                self.max_peers
+            )));
+        }
+
         let (send, recv) = quinn_conn.accept_bi().await.map_err(|e| {
             AppError::Internal(format!("Failed to accept stream: {e}"))
         })?;
@@ -279,8 +332,40 @@ impl ConnectionManager {
             .map(|c| c.quinn_conn.clone())
     }
 
-    /// Run a single health check pass: ping all connected peers and disconnect dead ones.
+    /// Open a buffered bidirectional stream to a peer.
+    ///
+    /// Centralizes the open_bi → BufWriter/BufReader pattern used by ping,
+    /// manifest sync, and messaging. This makes it trivial to add stream
+    /// pooling later if profiling shows open_bi overhead is significant.
+    pub async fn open_stream(
+        &self,
+        peer_id: &str,
+    ) -> Result<
+        (
+            tokio::io::BufWriter<quinn::SendStream>,
+            tokio::io::BufReader<quinn::RecvStream>,
+        ),
+        AppError,
+    > {
+        let quinn_conn = self.get_quinn_conn(peer_id).await.ok_or_else(|| {
+            AppError::NotFound(format!("Not connected to peer {}", peer_id))
+        })?;
+
+        let (send, recv) = quinn_conn.open_bi().await.map_err(|e| {
+            AppError::Internal(format!("Failed to open stream to {}: {e}", peer_id))
+        })?;
+
+        Ok((
+            tokio::io::BufWriter::new(send),
+            tokio::io::BufReader::new(recv),
+        ))
+    }
+
+    /// Run a single health check pass: ping all connected peers concurrently
+    /// (up to 8 at a time) and disconnect dead ones.
     pub async fn run_health_checks(&self) -> Result<(), crate::error::AppError> {
+        use futures_util::stream::{self, StreamExt};
+
         let peer_ids: Vec<String> = self
             .connections
             .read()
@@ -289,11 +374,23 @@ impl ConnectionManager {
             .cloned()
             .collect();
 
-        for peer_id in peer_ids {
-            if let Err(e) = self.ping_peer(&peer_id).await {
-                tracing::warn!(peer_id = %peer_id, "Ping failed: {}", e);
-                let _ = self.disconnect_peer(&peer_id).await;
-            }
+        let failed: Vec<String> = stream::iter(peer_ids)
+            .map(|peer_id| async move {
+                match self.ping_peer(&peer_id).await {
+                    Ok(()) => None,
+                    Err(e) => {
+                        tracing::warn!(peer_id = %peer_id, "Ping failed: {}", e);
+                        Some(peer_id)
+                    }
+                }
+            })
+            .buffer_unordered(8)
+            .filter_map(|opt| async { opt })
+            .collect()
+            .await;
+
+        for peer_id in failed {
+            let _ = self.disconnect_peer(&peer_id).await;
         }
         Ok(())
     }
@@ -309,16 +406,7 @@ impl ConnectionManager {
 
     /// Send a Ping and wait for a Pong.
     async fn ping_peer(&self, peer_id: &str) -> Result<(), AppError> {
-        let quinn_conn = self.get_quinn_conn(peer_id).await.ok_or_else(|| {
-            AppError::Internal(format!("No connection to peer {}", peer_id))
-        })?;
-
-        let (send, recv) = quinn_conn.open_bi().await.map_err(|e| {
-            AppError::Internal(format!("Failed to open ping stream: {e}"))
-        })?;
-
-        let mut send = tokio::io::BufWriter::new(send);
-        let mut recv = tokio::io::BufReader::new(recv);
+        let (mut send, mut recv) = self.open_stream(peer_id).await?;
 
         let ping_start = std::time::Instant::now();
         protocol::write_message(&mut send, &Message::Ping).await?;

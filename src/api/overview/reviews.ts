@@ -1,5 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
+import type { ManualReviewStatus } from "@/lib/bindings/ManualReviewStatus";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { PersonaManualReview } from "@/lib/bindings/PersonaManualReview";
 import type { ReviewMessage } from "@/lib/bindings/ReviewMessage";
@@ -147,7 +148,7 @@ export const listManualReviews = (personaId?: string, status?: string) =>
 
 export const updateManualReviewStatus = (
   id: string,
-  status: string,
+  status: ManualReviewStatus,
   reviewerNotes?: string,
 ) =>
   invoke<PersonaManualReview>("update_manual_review_status", {

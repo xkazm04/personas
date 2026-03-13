@@ -1,6 +1,6 @@
 import { AnimatePresence } from 'framer-motion';
 import { Users } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { usePipelineStore } from "@/stores/pipelineStore";
 import {
   NodeContextMenu,
   EdgeDeleteTooltip,
@@ -55,17 +55,17 @@ export default function CanvasOverlays({
   handleDeleteEdge, handleChangeConnectionType,
   setSelectedMember, setContextMenu, setEdgeTooltip,
 }: CanvasOverlaysProps) {
-  const teamMemories = usePersonaStore((s) => s.teamMemories);
-  const teamMemoriesTotal = usePersonaStore((s) => s.teamMemoriesTotal);
-  const teamMemoryStats = usePersonaStore((s) => s.teamMemoryStats);
-  const memoryFilterCategory = usePersonaStore((s) => s.memoryFilterCategory);
-  const memoryFilterSearch = usePersonaStore((s) => s.memoryFilterSearch);
-  const fetchTeamMemories = usePersonaStore((s) => s.fetchTeamMemories);
-  const loadMoreTeamMemories = usePersonaStore((s) => s.loadMoreTeamMemories);
-  const createTeamMemory = usePersonaStore((s) => s.createTeamMemory);
-  const deleteTeamMemory = usePersonaStore((s) => s.deleteTeamMemory);
-  const updateTeamMemoryImportance = usePersonaStore((s) => s.updateTeamMemoryImportance);
-  const updateTeamMemory = usePersonaStore((s) => s.updateTeamMemory);
+  const teamMemories = usePipelineStore((s) => s.teamMemories);
+  const teamMemoriesTotal = usePipelineStore((s) => s.teamMemoriesTotal);
+  const teamMemoryStats = usePipelineStore((s) => s.teamMemoryStats);
+  const memoryFilterCategory = usePipelineStore((s) => s.memoryFilterCategory);
+  const memoryFilterSearch = usePipelineStore((s) => s.memoryFilterSearch);
+  const fetchTeamMemories = usePipelineStore((s) => s.fetchTeamMemories);
+  const loadMoreTeamMemories = usePipelineStore((s) => s.loadMoreTeamMemories);
+  const createTeamMemory = usePipelineStore((s) => s.createTeamMemory);
+  const deleteTeamMemory = usePipelineStore((s) => s.deleteTeamMemory);
+  const updateTeamMemoryImportance = usePipelineStore((s) => s.updateTeamMemoryImportance);
+  const updateTeamMemory = usePipelineStore((s) => s.updateTeamMemory);
 
   return (
     <>

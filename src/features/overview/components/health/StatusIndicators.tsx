@@ -1,6 +1,6 @@
 import { CheckCircle2, AlertTriangle, XCircle, Info } from 'lucide-react';
 import { SIMPLE_MODE } from '@/lib/utils/designTokens';
-import type { HealthCheckItem } from '@/api/tauriApi';
+import type { HealthCheckItem } from "@/api/system/system";
 
 export function getStatusIcon(status: string) {
   if (status === 'ok') return <CheckCircle2 className="w-4 h-4 text-status-success" />;

@@ -70,7 +70,7 @@ describe("personaStore", () => {
         list_executions: [],
       });
 
-      await usePersonaStore.getState().fetchPersonas();
+      await useAgentStore.getState().fetchPersonas();
 
       const state = usePersonaStore.getState();
       expect(state.personas).toHaveLength(2);
@@ -82,7 +82,7 @@ describe("personaStore", () => {
       const { invoke } = await import("@tauri-apps/api/core");
       vi.mocked(invoke).mockRejectedValue(new Error("DB connection failed"));
 
-      await expect(usePersonaStore.getState().fetchPersonas()).rejects.toThrow("DB connection failed");
+      await expect(useAgentStore.getState().fetchPersonas()).rejects.toThrow("DB connection failed");
 
       const state = usePersonaStore.getState();
       expect(state.error).toBe("DB connection failed");
@@ -99,7 +99,7 @@ describe("personaStore", () => {
         list_subscriptions: [],
       });
 
-      usePersonaStore.getState().selectPersona("p-1");
+      useAgentStore.getState().selectPersona("p-1");
 
       const state = usePersonaStore.getState();
       expect(state.selectedPersonaId).toBe("p-1");
@@ -109,7 +109,7 @@ describe("personaStore", () => {
     it("clears selection when null", () => {
       usePersonaStore.setState({ selectedPersonaId: "p-1" });
 
-      usePersonaStore.getState().selectPersona(null);
+      useAgentStore.getState().selectPersona(null);
 
       const state = usePersonaStore.getState();
       expect(state.selectedPersonaId).toBeNull();
@@ -119,20 +119,20 @@ describe("personaStore", () => {
 
   describe("UI actions", () => {
     it("setSidebarSection updates section", () => {
-      usePersonaStore.getState().setSidebarSection("overview");
-      expect(usePersonaStore.getState().sidebarSection).toBe("overview");
+      useSystemStore.getState().setSidebarSection("overview");
+      expect(useSystemStore.getState().sidebarSection).toBe("overview");
     });
 
     it("setEditorTab updates tab", () => {
-      usePersonaStore.getState().setEditorTab("settings");
-      expect(usePersonaStore.getState().editorTab).toBe("settings");
+      useSystemStore.getState().setEditorTab("settings");
+      expect(useSystemStore.getState().editorTab).toBe("settings");
     });
 
     it("setError updates and clears error", () => {
-      usePersonaStore.getState().setError("Something went wrong");
+      useSystemStore.getState().setError("Something went wrong");
       expect(usePersonaStore.getState().error).toBe("Something went wrong");
 
-      usePersonaStore.getState().setError(null);
+      useSystemStore.getState().setError(null);
       expect(usePersonaStore.getState().error).toBeNull();
     });
 
@@ -140,12 +140,12 @@ describe("personaStore", () => {
 
   describe("execution actions", () => {
     it("appendExecutionOutput appends lines", async () => {
-      usePersonaStore.getState().appendExecutionOutput("Line 1");
-      usePersonaStore.getState().appendExecutionOutput("Line 2");
+      useAgentStore.getState().appendExecutionOutput("Line 1");
+      useAgentStore.getState().appendExecutionOutput("Line 2");
 
       await new Promise<void>((resolve) => queueMicrotask(resolve));
 
-      expect(usePersonaStore.getState().executionOutput).toEqual(["Line 1", "Line 2"]);
+      expect(useAgentStore.getState().executionOutput).toEqual(["Line 1", "Line 2"]);
     });
 
     it("clearExecutionOutput resets state", () => {
@@ -155,7 +155,7 @@ describe("personaStore", () => {
         isExecuting: true,
       });
 
-      usePersonaStore.getState().clearExecutionOutput();
+      useAgentStore.getState().clearExecutionOutput();
 
       const state = usePersonaStore.getState();
       expect(state.executionOutput).toEqual([]);
@@ -166,9 +166,9 @@ describe("personaStore", () => {
     it("finishExecution sets isExecuting to false", () => {
       usePersonaStore.setState({ isExecuting: true });
 
-      usePersonaStore.getState().finishExecution();
+      useAgentStore.getState().finishExecution();
 
-      expect(usePersonaStore.getState().isExecuting).toBe(false);
+      expect(useAgentStore.getState().isExecuting).toBe(false);
     });
   });
 
@@ -183,7 +183,7 @@ describe("personaStore", () => {
         selectedPersona: { id: "p-1" } as any,
       });
 
-      await usePersonaStore.getState().deletePersona("p-1");
+      await useAgentStore.getState().deletePersona("p-1");
 
       const state = usePersonaStore.getState();
       expect(state.personas).toHaveLength(1);

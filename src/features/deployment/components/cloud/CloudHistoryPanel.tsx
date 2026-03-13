@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, Loader2, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, XCircle, Ban } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { cloudListExecutions, cloudExecutionStats } from '@/api/system/cloud';
 import type { CloudExecution, CloudExecutionStats } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
@@ -47,7 +47,7 @@ function timeAgo(iso: string | null): string {
 // ---------------------------------------------------------------------------
 
 export function CloudHistoryPanel() {
-  const personas = usePersonaStore((s) => s.personas);
+  const personas = useAgentStore((s) => s.personas);
   const [executions, setExecutions] = useState<CloudExecution[]>([]);
   const [stats, setStats] = useState<CloudExecutionStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);

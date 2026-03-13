@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager};
 use ts_rs::TS;
 
+use crate::engine::crypto::SecureString;
 use crate::error::AppError;
 use crate::AppState;
 
@@ -53,7 +54,7 @@ pub struct AuthStateResponse {
 
 #[derive(Default)]
 pub struct AuthStateInner {
-    pub access_token: Option<String>,
+    pub access_token: Option<SecureString>,
     pub user: Option<AuthUser>,
     pub subscription: Option<AuthSubscription>,
     pub is_offline: bool,
@@ -219,7 +220,7 @@ async fn fetch_user_profile(access_token: &str) -> Result<AuthUser, AppError> {
     let url = format!("{}/auth/v1/user", supabase_url()?);
     let anon_key = supabase_anon_key()?;
 
-    let resp = reqwest::Client::new()
+    let resp = crate::SHARED_HTTP
         .get(&url)
         .header("apikey", &anon_key)
         .header("Authorization", format!("Bearer {access_token}"))
@@ -252,7 +253,7 @@ async fn refresh_access_token(
     );
     let anon_key = supabase_anon_key()?;
 
-    let resp = reqwest::Client::new()
+    let resp = crate::SHARED_HTTP
         .post(&url)
         .header("apikey", &anon_key)
         .header("Content-Type", "application/json")
@@ -453,10 +454,10 @@ pub async fn refresh_session(
             let expires_at = std::time::Instant::now()
                 + std::time::Duration::from_secs(token_resp.expires_in);
 
-            let access_token = token_resp.access_token;
+            let access_token = SecureString::new(token_resp.access_token);
             let response = {
                 let mut auth = state.auth.lock().await;
-                auth.access_token = Some(access_token.clone());
+                auth.access_token = Some(access_token.duplicate());
                 auth.user = Some(user);
                 auth.is_offline = false;
                 auth.token_expires_at = Some(expires_at);
@@ -465,7 +466,7 @@ pub async fn refresh_session(
 
             // Push refreshed Supabase JWT to cloud client
             if let Some(ref client) = *state.cloud_client.lock().await {
-                client.set_user_token(Some(access_token)).await;
+                client.set_user_token(Some(access_token.expose_secret().to_string())).await;
             }
 
             let _ = app.emit("auth-state-changed", &response);
@@ -565,9 +566,10 @@ pub async fn handle_auth_callback(
         std::time::Instant::now() + std::time::Duration::from_secs(expires_in);
 
     // Update in-memory state
+    let access_token = SecureString::new(access_token);
     let response = {
         let mut auth = state.auth.lock().await;
-        auth.access_token = Some(access_token.clone());
+        auth.access_token = Some(access_token.duplicate());
         auth.user = Some(user);
         auth.subscription = None; // Fetched lazily or in Phase 12
         auth.is_offline = false;
@@ -577,7 +579,7 @@ pub async fn handle_auth_callback(
 
     // Push Supabase JWT to cloud client for per-user isolation
     if let Some(ref client) = *state.cloud_client.lock().await {
-        client.set_user_token(Some(access_token)).await;
+        client.set_user_token(Some(access_token.expose_secret().to_string())).await;
     }
 
     let _ = app.emit("auth-state-changed", &response);
@@ -626,7 +628,7 @@ pub async fn try_restore_session(app: &AppHandle, state: &Arc<AppState>) {
 
             let response = {
                 let mut auth = state.auth.lock().await;
-                auth.access_token = Some(token_resp.access_token);
+                auth.access_token = Some(SecureString::new(token_resp.access_token));
                 auth.user = Some(user);
                 auth.is_offline = false;
                 auth.token_expires_at = Some(expires_at);
@@ -711,7 +713,7 @@ mod tests {
     #[test]
     fn test_to_response_authenticated() {
         let inner = AuthStateInner {
-            access_token: Some("token".into()),
+            access_token: Some(SecureString::new("token".into())),
             user: Some(AuthUser {
                 id: "u1".into(),
                 email: "test@example.com".into(),

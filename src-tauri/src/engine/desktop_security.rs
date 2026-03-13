@@ -8,6 +8,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
+use ts_rs::TS;
 
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -15,7 +16,8 @@ use crate::error::AppError;
 // -- Capability declarations ------------------------------------------
 
 /// Granular capabilities a desktop connector can request.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum DesktopCapability {
     /// Read files within specified paths.
@@ -64,7 +66,8 @@ impl DesktopCapability {
 // -- Connector manifest ----------------------------------------------
 
 /// Security manifest declaring what a desktop connector needs.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct DesktopConnectorManifest {
     /// Connector identifier (e.g., "desktop_vscode").
     pub connector_id: String,
@@ -74,7 +77,17 @@ pub struct DesktopConnectorManifest {
     /// Empty means no process spawning allowed.
     pub allowed_binaries: Vec<String>,
     /// Allowed file path prefixes for read/write.
-    /// Empty means no file access allowed.
+    ///
+    /// **Lifecycle**: Built-in manifests (see `get_manifest()`) declare this as
+    /// empty.  The caller (typically the connector setup UI or workspace
+    /// configuration flow) is responsible for populating `allowed_paths`
+    /// *before* the connector performs any file operations.  For example,
+    /// the VS Code connector receives the workspace root from the user and
+    /// appends it here; the Obsidian connector uses the vault path.
+    ///
+    /// **Security invariant**: empty `allowed_paths` = *all* file operations
+    /// denied (safe default).  If a connector attempts file I/O while this
+    /// list is empty, `is_path_allowed()` returns `false`.
     pub allowed_paths: Vec<String>,
     /// Allowed localhost ports for network access.
     pub allowed_ports: Vec<u16>,
@@ -84,30 +97,129 @@ pub struct DesktopConnectorManifest {
 
 impl DesktopConnectorManifest {
     /// Validate that a binary path is in the allowlist.
+    ///
+    /// Uses filesystem canonicalization when available to resolve symlinks,
+    /// NTFS junctions, and 8.3 short names before comparison.
     pub fn is_binary_allowed(&self, binary: &str) -> bool {
         if self.allowed_binaries.is_empty() {
             return false;
         }
+
+        // Try canonical form first (resolves symlinks, junctions, 8.3 names).
+        let canonical = std::path::Path::new(binary)
+            .canonicalize()
+            .map(|p| p.to_string_lossy().replace('\\', "/").to_lowercase());
         let normalized = binary.replace('\\', "/").to_lowercase();
+
         self.allowed_binaries
             .iter()
             .any(|allowed| {
                 let norm_allowed = allowed.replace('\\', "/").to_lowercase();
+                let canon_allowed = std::path::Path::new(allowed)
+                    .canonicalize()
+                    .map(|p| p.to_string_lossy().replace('\\', "/").to_lowercase());
+
+                // Prefer canonical comparison when both sides resolve.
+                if let (Ok(ref cb), Ok(ref ca)) = (&canonical, &canon_allowed) {
+                    return *cb == *ca || cb.ends_with(&format!("/{ca}"));
+                }
+
+                // Fall back to normalized string matching (bare binary names
+                // like "docker" won't have a canonical path).
                 normalized == norm_allowed || normalized.ends_with(&format!("/{norm_allowed}"))
             })
     }
 
     /// Validate that a file path is within allowed prefixes.
+    ///
+    /// Returns `false` (deny) when `allowed_paths` is empty -- see the
+    /// `allowed_paths` field documentation for the population lifecycle.
+    ///
+    /// Security: resolves symlinks, NTFS junctions, 8.3 short names, and
+    /// alternate data streams before comparing.  For new files that don't
+    /// exist yet, the *parent* directory is canonicalized to prevent
+    /// symlink-in-parent attacks.
     pub fn is_path_allowed(&self, path: &str) -> bool {
         if self.allowed_paths.is_empty() {
+            tracing::warn!(
+                connector_id = %self.connector_id,
+                requested_path = %path,
+                "File access denied: allowed_paths is empty (not yet populated by workspace config)"
+            );
             return false;
         }
+
+        // Reject paths containing traversal segments before any prefix check.
+        // This prevents escapes like "/allowed/../etc/passwd".
         let normalized = path.replace('\\', "/").to_lowercase();
+        if normalized.split('/').any(|seg| seg == "..") {
+            tracing::warn!(
+                connector_id = %self.connector_id,
+                requested_path = %path,
+                "File access denied: path contains '..' traversal segments"
+            );
+            return false;
+        }
+
+        // Reject NTFS alternate data streams (e.g., "file.txt:hidden").
+        // A colon after the drive letter prefix (like "C:") indicates an ADS.
+        if has_ntfs_ads(&normalized) {
+            tracing::warn!(
+                connector_id = %self.connector_id,
+                requested_path = %path,
+                "File access denied: path contains NTFS alternate data stream"
+            );
+            return false;
+        }
+
+        // Resolve the real filesystem path.  If the file already exists,
+        // canonicalize resolves symlinks, junctions, and 8.3 short names.
+        // If the file doesn't exist yet, canonicalize the parent directory
+        // (which must exist for any write to succeed) and append the filename.
+        let p = std::path::Path::new(path);
+        let check_path = match p.canonicalize() {
+            Ok(canon) => canon.to_string_lossy().replace('\\', "/").to_lowercase(),
+            Err(_) => {
+                // File doesn't exist -- canonicalize parent to block
+                // symlink-in-parent attacks, then append the filename.
+                if let (Some(parent), Some(file_name)) = (p.parent(), p.file_name()) {
+                    match parent.canonicalize() {
+                        Ok(canon_parent) => {
+                            let mut full = canon_parent
+                                .to_string_lossy()
+                                .replace('\\', "/")
+                                .to_lowercase();
+                            full.push('/');
+                            full.push_str(&file_name.to_string_lossy().to_lowercase());
+                            full
+                        }
+                        // Parent also doesn't exist -- deny.
+                        Err(_) => {
+                            tracing::warn!(
+                                connector_id = %self.connector_id,
+                                requested_path = %path,
+                                "File access denied: cannot resolve parent directory"
+                            );
+                            return false;
+                        }
+                    }
+                } else {
+                    return false;
+                }
+            }
+        };
+
         self.allowed_paths
             .iter()
             .any(|prefix| {
-                let norm_prefix = prefix.replace('\\', "/").to_lowercase();
-                normalized.starts_with(&norm_prefix)
+                // Canonicalize the prefix too so that both sides use
+                // the same real-path representation.
+                let canon_prefix = std::path::Path::new(prefix)
+                    .canonicalize()
+                    .map(|cp| cp.to_string_lossy().replace('\\', "/").to_lowercase())
+                    .unwrap_or_else(|_| prefix.replace('\\', "/").to_lowercase());
+
+                check_path.starts_with(&canon_prefix)
             })
     }
 
@@ -260,6 +372,25 @@ impl DesktopApprovalStore {
     }
 }
 
+// -- Helpers ---------------------------------------------------------
+
+/// Detect NTFS alternate data streams in a forward-slash-normalised,
+/// lowercased path.  A colon is legal only as part of the drive letter
+/// prefix (e.g. `c:/`).  Any subsequent colon (e.g. `c:/dir/file.txt:ads`)
+/// indicates an alternate data stream.
+fn has_ntfs_ads(normalized: &str) -> bool {
+    // Strip the optional drive-letter prefix ("x:").
+    let after_drive = if normalized.len() >= 2
+        && normalized.as_bytes()[0].is_ascii_alphabetic()
+        && normalized.as_bytes()[1] == b':'
+    {
+        &normalized[2..]
+    } else {
+        normalized
+    };
+    after_drive.contains(':')
+}
+
 // -- Built-in manifests ----------------------------------------------
 
 /// Get the security manifest for a known desktop connector.
@@ -276,7 +407,7 @@ pub fn get_manifest(connector_name: &str) -> Option<DesktopConnectorManifest> {
                 "code".into(), "code.cmd".into(), "code.exe".into(),
                 "code-insiders".into(), "code-insiders.cmd".into(),
             ],
-            allowed_paths: vec![], // populated dynamically from workspace
+            allowed_paths: vec![], // see allowed_paths field docs for population lifecycle
             allowed_ports: vec![],
             justifications: HashMap::from([
                 ("process_spawn".into(), "Launch VS Code CLI to open files, run tasks, and manage extensions".into()),
@@ -315,7 +446,7 @@ pub fn get_manifest(connector_name: &str) -> Option<DesktopConnectorManifest> {
                 "bash".into(), "sh".into(), "zsh".into(),
                 "powershell.exe".into(), "pwsh.exe".into(), "cmd.exe".into(),
             ],
-            allowed_paths: vec![], // populated dynamically
+            allowed_paths: vec![], // see allowed_paths field docs for population lifecycle
             allowed_ports: vec![],
             justifications: HashMap::from([
                 ("process_spawn".into(), "Execute shell commands".into()),
@@ -333,7 +464,7 @@ pub fn get_manifest(connector_name: &str) -> Option<DesktopConnectorManifest> {
                 DesktopCapability::NetworkLocal,
             ],
             allowed_binaries: vec![],
-            allowed_paths: vec![], // populated from vault path
+            allowed_paths: vec![], // see allowed_paths field docs for population lifecycle
             allowed_ports: vec![27123, 27124], // Obsidian Local REST API plugin
             justifications: HashMap::from([
                 ("file_read".into(), "Read notes from your Obsidian vault".into()),

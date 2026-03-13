@@ -1,43 +1,11 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
-// -- Types --------------------------------------------------------------
-
-export type ForageSource =
-  | "aws_credentials"
-  | "aws_config"
-  | "kube_config"
-  | "env_var"
-  | "dot_env"
-  | "npmrc"
-  | "docker_config"
-  | "git_hub_cli"
-  | "ssh_key"
-  | "git_config";
-
-export type ForageConfidence = "high" | "medium" | "low";
-
-export interface ForagedCredential {
-  id: string;
-  label: string;
-  service_type: string;
-  source: ForageSource;
-  fields: Record<string, string>;
-  already_imported: boolean;
-  confidence: ForageConfidence;
-}
-
-export interface ForagingScanResult {
-  credentials: ForagedCredential[];
-  scanned_sources: string[];
-  scan_duration_ms: number;
-}
-
-export interface ForageImportResult {
-  id: string;
-  name: string;
-  service_type: string;
-  field_count: number;
-}
+import type { ForageSource } from "@/lib/bindings/ForageSource";
+import type { ForageConfidence } from "@/lib/bindings/ForageConfidence";
+import type { ForagedCredential } from "@/lib/bindings/ForagedCredential";
+import type { ForagingScanResult } from "@/lib/bindings/ForagingScanResult";
+import type { ForageImportResult } from "@/lib/bindings/ForageImportResult";
+export type { ForageSource, ForageConfidence, ForagedCredential, ForagingScanResult, ForageImportResult };
 
 // -- API calls ----------------------------------------------------------
 

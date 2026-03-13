@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { usePersonaTests } from '@/hooks/tests/usePersonaTests';
 import { TestSuiteManager } from './TestSuiteManager';
 import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
@@ -10,14 +10,14 @@ import { TestHistory } from './TestHistory';
 import type { ModelTestConfig } from '@/api/agents/tests';
 
 export function PersonaTestsTab() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const isTestRunning = usePersonaStore((s) => s.isTestRunning);
-  const testRunProgress = usePersonaStore((s) => s.testRunProgress);
-  const fetchTestRuns = usePersonaStore((s) => s.fetchTestRuns);
-  const startTest = usePersonaStore((s) => s.startTest);
-  const cancelTest = usePersonaStore((s) => s.cancelTest);
-  const fetchTestResults = usePersonaStore((s) => s.fetchTestResults);
-  const deleteTest = usePersonaStore((s) => s.deleteTest);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const isTestRunning = useAgentStore((s) => s.isTestRunning);
+  const testRunProgress = useAgentStore((s) => s.testRunProgress);
+  const fetchTestRuns = useAgentStore((s) => s.fetchTestRuns);
+  const startTest = useAgentStore((s) => s.startTest);
+  const cancelTest = useAgentStore((s) => s.cancelTest);
+  const fetchTestResults = useAgentStore((s) => s.fetchTestResults);
+  const deleteTest = useAgentStore((s) => s.deleteTest);
 
   const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['haiku', 'sonnet']));
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);

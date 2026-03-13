@@ -10,7 +10,8 @@ import {
   Terminal,
   PinOff,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { Button } from '@/features/shared/components/buttons';
 import { useElapsedTimer } from '@/hooks/utility/timing/useElapsedTimer';
@@ -21,21 +22,21 @@ import { PipelineDots, StatusIndicator } from './PipelineDots';
 
 export default function ExecutionMiniPlayer() {
   const isSimple = useSimpleMode();
-  const miniPlayerPinned = usePersonaStore((s) => s.miniPlayerPinned);
-  const miniPlayerExpanded = usePersonaStore((s) => s.miniPlayerExpanded);
-  const miniPlayerPosition = usePersonaStore((s) => s.miniPlayerPosition);
-  const unpinMiniPlayer = usePersonaStore((s) => s.unpinMiniPlayer);
-  const toggleMiniPlayerExpanded = usePersonaStore((s) => s.toggleMiniPlayerExpanded);
-  const setMiniPlayerPosition = usePersonaStore((s) => s.setMiniPlayerPosition);
+  const miniPlayerPinned = useAgentStore((s) => s.miniPlayerPinned);
+  const miniPlayerExpanded = useAgentStore((s) => s.miniPlayerExpanded);
+  const miniPlayerPosition = useAgentStore((s) => s.miniPlayerPosition);
+  const unpinMiniPlayer = useAgentStore((s) => s.unpinMiniPlayer);
+  const toggleMiniPlayerExpanded = useAgentStore((s) => s.toggleMiniPlayerExpanded);
+  const setMiniPlayerPosition = useAgentStore((s) => s.setMiniPlayerPosition);
 
-  const isExecuting = usePersonaStore((s) => s.isExecuting);
-  const executionOutput = usePersonaStore((s) => s.executionOutput);
-  const activeExecutionId = usePersonaStore((s) => s.activeExecutionId);
-  const executionPersonaId = usePersonaStore((s) => s.executionPersonaId);
-  const pipelineTrace = usePersonaStore((s) => s.pipelineTrace);
-  const cancelExecution = usePersonaStore((s) => s.cancelExecution);
-  const personas = usePersonaStore((s) => s.personas);
-  const error = usePersonaStore((s) => s.error);
+  const isExecuting = useAgentStore((s) => s.isExecuting);
+  const executionOutput = useAgentStore((s) => s.executionOutput);
+  const activeExecutionId = useAgentStore((s) => s.activeExecutionId);
+  const executionPersonaId = useAgentStore((s) => s.executionPersonaId);
+  const pipelineTrace = useAgentStore((s) => s.pipelineTrace);
+  const cancelExecution = useAgentStore((s) => s.cancelExecution);
+  const personas = useAgentStore((s) => s.personas);
+  const error = useSystemStore((s) => s.error);
 
   const elapsed = useElapsedTimer(isExecuting);
 

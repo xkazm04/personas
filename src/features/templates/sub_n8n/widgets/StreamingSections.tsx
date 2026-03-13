@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2,
@@ -128,8 +128,8 @@ const SectionRow = memo(function SectionRow({
       && prev.section.index === next.section.index
       && prev.section.label === next.section.label
       && prev.section.validation.valid === next.section.validation.valid
-      && prev.section.validation.errors.join('|') === next.section.validation.errors.join('|')
-      && prev.section.validation.warnings.join('|') === next.section.validation.warnings.join('|')
+      && prev.section.validation.errors.length === next.section.validation.errors.length
+      && prev.section.validation.warnings.length === next.section.validation.warnings.length
     );
   }
   return true;
@@ -143,13 +143,22 @@ interface StreamingSectionsProps {
 }
 
 export function StreamingSections({ sections, isStreaming }: StreamingSectionsProps) {
-  if (sections.length === 0 && !isStreaming) return null;
+  const { validCount, warningCount, errorCount } = useMemo(() => {
+    let valid = 0;
+    let warning = 0;
+    let error = 0;
+    for (const s of sections) {
+      if (s.validation.valid) {
+        valid++;
+        if (s.validation.warnings.length > 0) warning++;
+      } else {
+        error++;
+      }
+    }
+    return { validCount: valid, warningCount: warning, errorCount: error };
+  }, [sections]);
 
-  const validCount = sections.filter((s) => s.validation.valid).length;
-  const warningCount = sections.filter(
-    (s) => s.validation.valid && s.validation.warnings.length > 0,
-  ).length;
-  const errorCount = sections.filter((s) => !s.validation.valid).length;
+  if (sections.length === 0 && !isStreaming) return null;
 
   return (
     <motion.div

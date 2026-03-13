@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Zap, Loader2 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
-import type { CredentialTemplateEvent, DbCredentialEvent } from '@/lib/types/types';
+import { useVaultStore } from "@/stores/vaultStore";
+import type { CredentialTemplateEvent, CredentialEvent } from '@/lib/types/types';
 import {
   safeParseConfig,
   ROTATION_EVENT_TEMPLATES,
@@ -18,10 +18,10 @@ interface CredentialEventConfigProps {
 }
 
 export function CredentialEventConfig({ credentialId, events: eventsProp }: CredentialEventConfigProps) {
-  const credentialEvents = usePersonaStore((s) => s.credentialEvents);
-  const fetchCredentialEvents = usePersonaStore((s) => s.fetchCredentialEvents);
-  const createCredentialEvent = usePersonaStore((s) => s.createCredentialEvent);
-  const updateCredentialEvent = usePersonaStore((s) => s.updateCredentialEvent);
+  const credentialEvents = useVaultStore((s) => s.credentialEvents);
+  const fetchCredentialEvents = useVaultStore((s) => s.fetchCredentialEvents);
+  const createCredentialEvent = useVaultStore((s) => s.createCredentialEvent);
+  const updateCredentialEvent = useVaultStore((s) => s.updateCredentialEvent);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -49,7 +49,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
-  const getEventForTemplate = (eventTemplateId: string): DbCredentialEvent | undefined => {
+  const getEventForTemplate = (eventTemplateId: string): CredentialEvent | undefined => {
     return myEvents.find(e => e.event_template_id === eventTemplateId);
   };
 

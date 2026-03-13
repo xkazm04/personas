@@ -1,11 +1,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import type { TeamSynthesisResult } from "@/lib/bindings/TeamSynthesisResult";
 
-export interface TeamSynthesisResult {
-  team_id: string;
-  team_name: string;
-  member_count: number;
-  description: string;
-}
+export type { TeamSynthesisResult } from "@/lib/bindings/TeamSynthesisResult";
 
 export async function synthesizeTeamFromTemplates(
   query: string,

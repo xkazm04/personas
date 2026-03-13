@@ -1,9 +1,11 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { ClipboardCheck, Plus } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
-import type { ManualReviewStatus } from '@/lib/types/frontendTypes';
+import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { seedMockManualReview } from '@/api/overview/reviews';
 import { FILTER_LABELS, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
@@ -13,14 +15,14 @@ import { ReviewInboxPanel } from './ReviewInboxPanel';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
 
 export default function ManualReviewList() {
-  const manualReviews = usePersonaStore((s) => s.manualReviews);
-  const cloudReviews = usePersonaStore((s) => s.cloudReviews);
-  const isCloudConnected = usePersonaStore((s) => s.cloudConfig?.is_connected ?? false);
-  const personas = usePersonaStore((s) => s.personas);
-  const fetchManualReviews = usePersonaStore((s) => s.fetchManualReviews);
-  const fetchCloudReviews = usePersonaStore((s) => s.fetchCloudReviews);
-  const updateManualReview = usePersonaStore((s) => s.updateManualReview);
-  const respondToCloudReview = usePersonaStore((s) => s.respondToCloudReview);
+  const manualReviews = useOverviewStore((s) => s.manualReviews);
+  const cloudReviews = useOverviewStore((s) => s.cloudReviews);
+  const isCloudConnected = useSystemStore((s) => s.cloudConfig?.is_connected ?? false);
+  const personas = useAgentStore((s) => s.personas);
+  const fetchManualReviews = useOverviewStore((s) => s.fetchManualReviews);
+  const fetchCloudReviews = useOverviewStore((s) => s.fetchCloudReviews);
+  const updateManualReview = useOverviewStore((s) => s.updateManualReview);
+  const respondToCloudReview = useOverviewStore((s) => s.respondToCloudReview);
 
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
@@ -51,6 +53,8 @@ export default function ManualReviewList() {
     for (const r of allReviews) { if (r.status in counts) counts[r.status] = (counts[r.status] ?? 0) + 1; }
     return counts;
   }, [allReviews]);
+
+  const reviewMap = useMemo(() => new Map(allReviews.map((r) => [r.id, r])), [allReviews]);
 
   const { filtered: filteredReviews } = useFilteredCollection(allReviews, {
     exact: [
@@ -100,7 +104,7 @@ export default function ManualReviewList() {
     try {
       const decision = status === 'approved' ? 'approve' : 'reject';
       await Promise.allSettled(Array.from(selectedIds).map((id) => {
-        const review = allReviews.find((r) => r.id === id);
+        const review = reviewMap.get(id);
         if (!review) return Promise.resolve();
         if (review.source === 'cloud') return respondToCloudReview(review.id, review.execution_id, decision, '');
         return updateManualReview(id, { status });
@@ -108,7 +112,7 @@ export default function ManualReviewList() {
       setSelectedIds(new Set());
       setConfirmAction(null);
     } finally { setIsBulkProcessing(false); }
-  }, [selectedIds, allReviews, updateManualReview, respondToCloudReview]);
+  }, [selectedIds, reviewMap, updateManualReview, respondToCloudReview]);
 
   const activeSelectionCount = useMemo(() => Array.from(selectedIds).filter((id) => selectablePendingIds.has(id)).length, [selectedIds, selectablePendingIds]);
 

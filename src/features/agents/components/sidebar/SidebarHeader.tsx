@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, LayoutGrid, FolderPlus, X, Check } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { SearchFilterBar } from '@/features/agents/components/sub_sidebar/components/SearchFilterBar';
 import type { usePersonaFilters } from '@/features/agents/components/sub_sidebar/libs/usePersonaFilters';
 import { GROUP_COLORS } from './sidebarDragHelpers';
@@ -29,10 +30,10 @@ export function SidebarHeader({
   onToggleTag,
   onClearFilters,
 }: SidebarHeaderProps) {
-  const selectedPersonaId = usePersonaStore((s) => s.selectedPersonaId);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const groups = usePersonaStore((s) => s.groups);
-  const createGroup = usePersonaStore((s) => s.createGroup);
+  const selectedPersonaId = useAgentStore((s) => s.selectedPersonaId);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const groups = usePipelineStore((s) => s.groups);
+  const createGroup = usePipelineStore((s) => s.createGroup);
 
   const [showNewGroup, setShowNewGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');

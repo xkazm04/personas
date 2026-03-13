@@ -24,3 +24,6 @@ export const PromptPerformanceCard = lazy(() =>
 export const HealthTab = lazy(() =>
   import('@/features/agents/sub_health').then((m) => ({ default: m.HealthTab })),
 );
+export const ChatTab = lazy(() =>
+  import('@/features/agents/sub_chat/ChatTab').then((m) => ({ default: m.ChatTab })),
+);

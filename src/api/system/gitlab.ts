@@ -5,6 +5,8 @@ import type { GitLabUser } from "@/lib/bindings/GitLabUser";
 import type { GitLabProject } from "@/lib/bindings/GitLabProject";
 import type { GitLabAgent } from "@/lib/bindings/GitLabAgent";
 import type { GitLabDeployResult } from "@/lib/bindings/GitLabDeployResult";
+import type { GitLabPipeline } from "@/lib/bindings/GitLabPipeline";
+import type { GitLabJob } from "@/lib/bindings/GitLabJob";
 
 export type { GitLabConfig } from "@/lib/bindings/GitLabConfig";
 export type { GitLabUser } from "@/lib/bindings/GitLabUser";
@@ -13,6 +15,8 @@ export type { GitLabAgent } from "@/lib/bindings/GitLabAgent";
 export type { GitLabAgentDefinition } from "@/lib/bindings/GitLabAgentDefinition";
 export type { GitLabAgentTool } from "@/lib/bindings/GitLabAgentTool";
 export type { GitLabDeployResult } from "@/lib/bindings/GitLabDeployResult";
+export type { GitLabPipeline } from "@/lib/bindings/GitLabPipeline";
+export type { GitLabJob } from "@/lib/bindings/GitLabJob";
 
 // Connection
 export const gitlabConnect = (token: string) =>
@@ -55,27 +59,6 @@ export const gitlabUndeployAgent = (projectId: number, agentId: string) =>
   invoke<void>("gitlab_undeploy_agent", { projectId, agentId });
 
 // Pipelines
-
-export interface GitLabPipeline {
-  id: number;
-  status: string;
-  ref: string;
-  webUrl: string;
-  createdAt: string;
-  updatedAt: string;
-  duration: number | null;
-}
-
-export interface GitLabJob {
-  id: number;
-  name: string;
-  stage: string;
-  status: string;
-  webUrl: string;
-  duration: number | null;
-  startedAt: string | null;
-  finishedAt: string | null;
-}
 
 export const gitlabTriggerPipeline = (projectId: number, ref?: string) =>
   invoke<GitLabPipeline>("gitlab_trigger_pipeline", {

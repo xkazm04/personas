@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Check, Palette, Type, Sparkles, LayoutGrid, Wrench } from 'lucide-react';
 import { useThemeStore, THEMES, TEXT_SCALES } from '@/stores/themeStore';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import type { ThemeId, ThemeDefinition, TextScale } from '@/stores/themeStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
@@ -88,8 +88,8 @@ export default function AppearanceSettings() {
   const setTheme = useThemeStore((s) => s.setTheme);
   const textScale = useThemeStore((s) => s.textScale);
   const setTextScale = useThemeStore((s) => s.setTextScale);
-  const viewMode = usePersonaStore((s) => s.viewMode);
-  const setViewMode = usePersonaStore((s) => s.setViewMode);
+  const viewMode = useSystemStore((s) => s.viewMode);
+  const setViewMode = useSystemStore((s) => s.setViewMode);
 
   const darkThemes = THEMES.filter((t) => !t.isLight);
   const lightThemes = THEMES.filter((t) => t.isLight);

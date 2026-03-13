@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Trash2, Pencil, RotateCw, ShieldCheck, Clock, Plus, Loader2 } from 'lucide-react';
-import * as api from '@/api/tauriApi';
+import { listRotationPolicies } from "@/api/vault/rotation";
+
 import type { RotationStatus } from '@/api/vault/rotation';
 import { createRotationPolicy, updateRotationPolicy, rotateCredentialNow, deleteRotationPolicy } from '@/api/vault/rotation';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
@@ -82,7 +83,7 @@ export function RotationPolicyControls({
                 setIsRemovingPolicy(true);
                 onError(null);
                 try {
-                  const allPolicies = await api.listRotationPolicies(credentialId);
+                  const allPolicies = await listRotationPolicies(credentialId);
                   for (const p of allPolicies) {
                     await deleteRotationPolicy(p.id);
                   }
@@ -120,7 +121,7 @@ export function RotationPolicyControls({
                 onClick={async () => {
                   onError(null);
                   try {
-                    const allPolicies = await api.listRotationPolicies(credentialId);
+                    const allPolicies = await listRotationPolicies(credentialId);
                     if (allPolicies.length > 0) {
                       await updateRotationPolicy(allPolicies[0]!.id, { rotation_interval_days: rotationDays });
                     }

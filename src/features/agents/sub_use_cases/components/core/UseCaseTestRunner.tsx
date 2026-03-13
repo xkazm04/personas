@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { FlaskConical, Play, Square, Loader2, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
 import type { TestFixture } from '@/lib/types/frontendTypes';
 import { resolveEffectiveModel } from '../../libs/useCaseDetailHelpers';
@@ -15,12 +16,12 @@ interface UseCaseTestRunnerProps {
 }
 
 export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: UseCaseTestRunnerProps) {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const isTestRunning = usePersonaStore((s) => s.isTestRunning);
-  const testRunProgress = usePersonaStore((s) => s.testRunProgress);
-  const startTest = usePersonaStore((s) => s.startTest);
-  const cancelTest = usePersonaStore((s) => s.cancelTest);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const isTestRunning = useAgentStore((s) => s.isTestRunning);
+  const testRunProgress = useAgentStore((s) => s.testRunProgress);
+  const startTest = useAgentStore((s) => s.startTest);
+  const cancelTest = useAgentStore((s) => s.cancelTest);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
 
   const [selectedFixtureId, setSelectedFixtureId] = useState<string | null>(null);
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { User, BookOpen, Wrench, Code, AlertTriangle, Layers, Globe } from 'lucide-react';
 import { useTabSection } from '@/features/agents/sub_editor/useTabSection';
 import {
@@ -32,8 +32,8 @@ function promptChanged(current: StructuredPrompt, baseline: StructuredPrompt): b
 }
 
 export function PersonaPromptEditor() {
-  const selectedPersona = usePersonaStore((state) => state.selectedPersona);
-  const applyPersonaOp = usePersonaStore((state) => state.applyPersonaOp);
+  const selectedPersona = useAgentStore((state) => state.selectedPersona);
+  const applyPersonaOp = useAgentStore((state) => state.applyPersonaOp);
   const [activeTab, setActiveTab] = useState<SubTab>('instructions');
 
   const isAnthropic = useMemo(() => {

@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useVaultStore } from "@/stores/vaultStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { usePersonaCompiler } from '@/hooks/design/core/usePersonaCompiler';
 import { useDesignConversation } from '@/hooks/design/core/useDesignConversation';
 import { useToggleSet } from '@/hooks/utility/interaction/useToggleSet';
@@ -16,15 +18,15 @@ import { formatExamplePairsAsIntent } from './wizard/ExamplePairCollector';
 export type DesignInputMode = 'design' | 'intent' | 'example';
 
 export function useDesignTabState() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const toolDefinitions = usePersonaStore((s) => s.toolDefinitions);
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
-  const autoStartDesignInstruction = usePersonaStore((s) => s.autoStartDesignInstruction);
-  const setAutoStartDesignInstruction = usePersonaStore((s) => s.setAutoStartDesignInstruction);
-  const allDriftEvents = usePersonaStore((s) => s.designDriftEvents);
-  const dismissDriftEvent = usePersonaStore((s) => s.dismissDriftEvent);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const toolDefinitions = useAgentStore((s) => s.toolDefinitions);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
+  const autoStartDesignInstruction = useSystemStore((s) => s.autoStartDesignInstruction);
+  const setAutoStartDesignInstruction = useSystemStore((s) => s.setAutoStartDesignInstruction);
+  const allDriftEvents = useAgentStore((s) => s.designDriftEvents);
+  const dismissDriftEvent = useAgentStore((s) => s.dismissDriftEvent);
 
   useEffect(() => {
     if (connectorDefinitions.length === 0) fetchConnectorDefinitions();

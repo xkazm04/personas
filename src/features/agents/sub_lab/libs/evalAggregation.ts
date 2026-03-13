@@ -24,39 +24,49 @@ export interface EvalGridData {
   winnerId: string | null;
 }
 
+interface VersionAccum {
+  versionNumber: number;
+  toolAccuracy: number;
+  outputQuality: number;
+  protocolCompliance: number;
+  totalCost: number;
+  totalDuration: number;
+  count: number;
+}
+
+/**
+ * Single-pass aggregation: builds version aggregates AND per-cell grid
+ * in one iteration over results, then finalizes averages.
+ */
 export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
-  const versionMap = new Map<string, LabEvalResult[]>();
+  const versionAccums = new Map<string, VersionAccum>();
+  const versionOrder: string[] = [];
   const modelSet = new Set<string>();
-
-  for (const r of results) {
-    if (!versionMap.has(r.versionId)) versionMap.set(r.versionId, []);
-    versionMap.get(r.versionId)!.push(r);
-    modelSet.add(r.modelId);
-  }
-
-  const aggs: VersionAggregate[] = [];
-  for (const [vId, rows] of versionMap) {
-    const n = rows.length || 1;
-    const avgTA = rows.reduce((s, r) => s + (r.toolAccuracyScore ?? 0), 0) / n;
-    const avgOQ = rows.reduce((s, r) => s + (r.outputQualityScore ?? 0), 0) / n;
-    const avgPC = rows.reduce((s, r) => s + (r.protocolCompliance ?? 0), 0) / n;
-    aggs.push({
-      versionId: vId,
-      versionNumber: rows[0]?.versionNumber ?? 0,
-      avgToolAccuracy: Math.round(avgTA),
-      avgOutputQuality: Math.round(avgOQ),
-      avgProtocolCompliance: Math.round(avgPC),
-      compositeScore: compositeScore(avgTA, avgOQ, avgPC),
-      totalCost: rows.reduce((s, r) => s + r.costUsd, 0),
-      avgDuration: Math.round(rows.reduce((s, r) => s + r.durationMs, 0) / n),
-      count: rows.length,
-    });
-  }
-  aggs.sort((a, b) => b.compositeScore - a.compositeScore);
-  const winnerId = aggs[0]?.versionId ?? null;
-
   const grid: Record<string, Record<string, CellAggregate>> = {};
+
   for (const r of results) {
+    // Version-level accumulation
+    if (!versionAccums.has(r.versionId)) {
+      versionAccums.set(r.versionId, {
+        versionNumber: r.versionNumber,
+        toolAccuracy: 0, outputQuality: 0, protocolCompliance: 0,
+        totalCost: 0, totalDuration: 0, count: 0,
+      });
+      versionOrder.push(r.versionId);
+    }
+    const va = versionAccums.get(r.versionId)!;
+    const ta = r.toolAccuracyScore ?? 0;
+    const oq = r.outputQualityScore ?? 0;
+    const pc = r.protocolCompliance ?? 0;
+    va.toolAccuracy += ta;
+    va.outputQuality += oq;
+    va.protocolCompliance += pc;
+    va.totalCost += r.costUsd;
+    va.totalDuration += r.durationMs;
+    va.count++;
+
+    // Grid cell accumulation
+    modelSet.add(r.modelId);
     if (!grid[r.versionId]) grid[r.versionId] = {};
     if (!grid[r.versionId]![r.modelId]) {
       grid[r.versionId]![r.modelId] = {
@@ -66,12 +76,35 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
     }
     const cell = grid[r.versionId]![r.modelId]!;
     cell.count++;
-    cell.avgToolAccuracy += r.toolAccuracyScore ?? 0;
-    cell.avgOutputQuality += r.outputQualityScore ?? 0;
-    cell.avgProtocolCompliance += r.protocolCompliance ?? 0;
+    cell.avgToolAccuracy += ta;
+    cell.avgOutputQuality += oq;
+    cell.avgProtocolCompliance += pc;
     cell.totalCost += r.costUsd;
     cell.avgDuration += r.durationMs;
   }
+
+  // Finalize version aggregates
+  const aggs: VersionAggregate[] = versionOrder.map((vId) => {
+    const a = versionAccums.get(vId)!;
+    const n = a.count || 1;
+    const avgTA = a.toolAccuracy / n;
+    const avgOQ = a.outputQuality / n;
+    const avgPC = a.protocolCompliance / n;
+    return {
+      versionId: vId,
+      versionNumber: a.versionNumber,
+      avgToolAccuracy: Math.round(avgTA),
+      avgOutputQuality: Math.round(avgOQ),
+      avgProtocolCompliance: Math.round(avgPC),
+      compositeScore: compositeScore(avgTA, avgOQ, avgPC),
+      totalCost: a.totalCost,
+      avgDuration: Math.round(a.totalDuration / n),
+      count: a.count,
+    };
+  });
+  aggs.sort((a, b) => b.compositeScore - a.compositeScore);
+
+  // Finalize grid cells
   for (const vId of Object.keys(grid)) {
     for (const mId of Object.keys(grid[vId]!)) {
       const c = grid[vId]![mId]!;
@@ -90,6 +123,6 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
     versions: aggs.map((a) => a.versionId),
     models: [...modelSet],
     grid,
-    winnerId,
+    winnerId: aggs[0]?.versionId ?? null,
   };
 }

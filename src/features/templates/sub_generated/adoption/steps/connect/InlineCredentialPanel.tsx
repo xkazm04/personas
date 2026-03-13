@@ -17,7 +17,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { useCredentialDesign, type CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import { AutoCredPanel } from '@/features/vault/sub_autoCred/steps/AutoCredPanel';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { AnalyzingPhase } from '@/features/vault/sub_design/phases/AnalyzingPhase';
 import { useTemplateMotion } from '@/features/templates/animationPresets';
 
@@ -51,7 +51,7 @@ export function InlineCredentialPanel({
   const [activeDesignResult, setActiveDesignResult] = useState<CredentialDesignResult | null>(null);
 
   const design = useCredentialDesign();
-  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
 
   // Synthetic result from known connector fields
   const syntheticResult = useMemo(
@@ -107,7 +107,7 @@ export function InlineCredentialPanel({
   const handleAutoComplete = useCallback(() => {
     // Credential already saved by useAutoCredSession -- refresh and map
     void fetchCredentials().then(() => {
-      const creds = usePersonaStore.getState().credentials;
+      const creds = useVaultStore.getState().credentials;
       const match = creds
         .filter((c) => c.service_type === connectorName)
         .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];

@@ -42,6 +42,17 @@ static ADOPT_JOBS: BackgroundJobManager<AdoptExtra> = BackgroundJobManager::new(
     "template-adopt-output",
 );
 
+/// 10-minute TTL for completed adopt jobs, max 50 entries.
+const ADOPT_JOB_TTL: std::time::Duration = std::time::Duration::from_secs(10 * 60);
+const ADOPT_MAX_ENTRIES: usize = 50;
+
+/// Sweep completed adopt jobs past 10-minute TTL and enforce 50-entry cap.
+fn sweep_adopt_jobs() {
+    if let Ok(mut jobs) = ADOPT_JOBS.lock() {
+        ADOPT_JOBS.evict_completed_with_cap(&mut jobs, ADOPT_JOB_TTL, ADOPT_MAX_ENTRIES);
+    }
+}
+
 fn set_adopt_draft(adopt_id: &str, draft: &N8nPersonaOutput) {
     if let Ok(serialized) = serde_json::to_value(draft) {
         ADOPT_JOBS.update_extra(adopt_id, |extra| {
@@ -67,6 +78,7 @@ fn get_adopt_claude_session(adopt_id: &str) -> Option<String> {
 }
 
 fn get_adopt_snapshot_internal(adopt_id: &str) -> Option<crate::background_job::BackgroundTaskSnapshot<AdoptSnapshotExtras>> {
+    sweep_adopt_jobs();
     ADOPT_JOBS.get_task_snapshot(adopt_id, |extra| AdoptSnapshotExtras {
         adopt_id: adopt_id.to_string(),
         draft: extra.draft.clone(),
@@ -76,6 +88,7 @@ fn get_adopt_snapshot_internal(adopt_id: &str) -> Option<crate::background_job::
 
 /// List all template adopt job snapshots (for unified workflows view).
 pub fn list_adopt_jobs() -> Vec<crate::background_job::JobSnapshot> {
+    sweep_adopt_jobs();
     ADOPT_JOBS.list_snapshots()
 }
 
@@ -92,6 +105,38 @@ pub fn cancel_adopt_job(app: &tauri::AppHandle, adopt_id: &str) -> Result<(), cr
 /// Cancel a generate job (non-command wrapper for workflows).
 pub fn cancel_generate_job(app: &tauri::AppHandle, gen_id: &str) -> Result<(), crate::error::AppError> {
     GEN_JOBS.cancel(app, gen_id)
+}
+
+// -- Payload validation ------------------------------------------
+
+/// Maximum size for any single JSON payload field (512 KB).
+const MAX_JSON_PAYLOAD_BYTES: usize = 512 * 1024;
+
+/// Validate that a JSON string field is well-formed and within the size limit.
+fn validate_json_field(name: &str, value: &str) -> Result<(), AppError> {
+    if value.len() > MAX_JSON_PAYLOAD_BYTES {
+        return Err(AppError::Validation(format!(
+            "{name} exceeds maximum size ({} bytes, limit {MAX_JSON_PAYLOAD_BYTES})",
+            value.len()
+        )));
+    }
+    // Validate it's well-formed JSON
+    if let Err(e) = serde_json::from_str::<serde_json::Value>(value) {
+        return Err(AppError::Validation(format!(
+            "{name} contains invalid JSON: {e}"
+        )));
+    }
+    Ok(())
+}
+
+/// Validate an optional JSON field if present and non-empty.
+fn validate_optional_json_field(name: &str, value: &Option<String>) -> Result<(), AppError> {
+    if let Some(v) = value {
+        if !v.trim().is_empty() {
+            validate_json_field(name, v)?;
+        }
+    }
+    Ok(())
 }
 
 // -- Commands ----------------------------------------------------
@@ -115,6 +160,12 @@ pub async fn start_template_adopt_background(
             "Design result JSON cannot be empty".into(),
         ));
     }
+
+    // Validate all JSON payloads at the trust boundary
+    validate_json_field("design_result_json", &design_result_json)?;
+    validate_optional_json_field("previous_draft_json", &previous_draft_json)?;
+    validate_optional_json_field("user_answers_json", &user_answers_json)?;
+    validate_optional_json_field("connector_swaps_json", &connector_swaps_json)?;
 
     let cancel_token = CancellationToken::new();
     ADOPT_JOBS.insert_running(adopt_id.clone(), cancel_token.clone(), AdoptExtra::default())?;
@@ -216,6 +267,52 @@ pub async fn continue_template_adopt(
     user_answers_json: String,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
+    validate_json_field("user_answers_json", &user_answers_json)?;
+
+    // Validate that answers match the stored questions from Turn 1
+    let stored_questions = ADOPT_JOBS
+        .read_extra(&adopt_id, |extra| extra.questions.clone())
+        .flatten();
+    if let Some(questions_val) = &stored_questions {
+        if let Some(questions_arr) = questions_val.as_array() {
+            let answers: serde_json::Value = serde_json::from_str(&user_answers_json)
+                .map_err(|e| AppError::Validation(format!("user_answers_json parse error: {e}")))?;
+            if let Some(answers_obj) = answers.as_object() {
+                // Check that every required question has a non-empty answer
+                let mut missing = Vec::new();
+                for q in questions_arr {
+                    if let Some(id) = q.get("id").and_then(|v| v.as_str()) {
+                        match answers_obj.get(id).and_then(|v| v.as_str()) {
+                            Some(a) if !a.trim().is_empty() => {}
+                            _ => missing.push(id.to_string()),
+                        }
+                    }
+                }
+                if !missing.is_empty() {
+                    return Err(AppError::Validation(format!(
+                        "Missing answers for questions: {}",
+                        missing.join(", ")
+                    )));
+                }
+                // Check for unknown answer keys
+                let valid_ids: std::collections::HashSet<&str> = questions_arr
+                    .iter()
+                    .filter_map(|q| q.get("id").and_then(|v| v.as_str()))
+                    .collect();
+                let unknown: Vec<&String> = answers_obj
+                    .keys()
+                    .filter(|k| !valid_ids.contains(k.as_str()))
+                    .collect();
+                if !unknown.is_empty() {
+                    return Err(AppError::Validation(format!(
+                        "Unknown question IDs in answers: {}",
+                        unknown.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")
+                    )));
+                }
+            }
+        }
+    }
+
     let claude_session_id = get_adopt_claude_session(&adopt_id)
         .ok_or_else(|| AppError::NotFound("No Claude session found for this adoption".into()))?;
 

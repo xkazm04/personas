@@ -7,7 +7,7 @@ import type { CredentialDesignResult } from '@/hooks/design/credential/useCreden
 import { useCredentialDesign } from '@/hooks/design/credential/useCredentialDesign';
 import { AutoCredPanel } from './AutoCredPanel';
 import { AnalyzingPhase } from '@/features/vault/sub_design/phases/AnalyzingPhase';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { checkPlaywrightAvailable } from '@/api/vault/autoCredBrowser';
 import { isDesktopBridge } from '@/lib/utils/platform/connectors';
 import { lookupRecipeAsDesignResult } from '@/lib/credentials/credentialRecipeRegistry';
@@ -85,7 +85,7 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
 
   const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
   const hasSetupInstructions = typeof metadata.setup_instructions === 'string' && metadata.setup_instructions.length > 0;
-  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
 
   // If connector already has setup instructions, go directly to auto phase
   // Otherwise, use AI to discover them first

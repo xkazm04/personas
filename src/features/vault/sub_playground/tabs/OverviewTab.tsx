@@ -7,7 +7,7 @@ import { CredentialEventConfig } from '@/features/vault/sub_features/CredentialE
 import { CredentialIntelligence } from '@/features/vault/sub_features/CredentialIntelligence';
 import { VaultErrorBanner } from '@/features/vault/sub_card/banners/VaultErrorBanner';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import type { RotationStatus } from '@/api/vault/rotation';
 import type { HealthResult } from '@/features/vault/hooks/health/useCredentialHealth';
 import type { GoogleOAuthState } from '@/features/vault/hooks/useGoogleOAuth';
@@ -51,7 +51,7 @@ export function OverviewTab({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const updateCredential = usePersonaStore((s) => s.updateCredential);
+  const updateCredential = useVaultStore((s) => s.updateCredential);
 
   const copyCredentialId = useCallback(async () => {
     try {

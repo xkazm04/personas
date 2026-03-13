@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { usePersonaStore } from '@/stores/personaStore';
-import * as api from '@/api/tauriApi';
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { executeTeam, getPipelineAnalytics, suggestTopology, suggestTopologyLlm } from "@/api/pipeline/teams";
 import type { PipelineNodeStatus, DryRunState } from '@/features/pipeline/sub_canvas';
 import type { useCanvasReducer } from '@/features/pipeline/sub_canvas';
 import type { TopologySuggestion } from '@/lib/bindings/TopologySuggestion';
@@ -16,18 +16,18 @@ interface UseCanvasPipelineActionsArgs {
 }
 
 export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActionsArgs) {
-  const selectedTeamId = usePersonaStore((s) => s.selectedTeamId);
-  const teamMembers = usePersonaStore((s) => s.teamMembers) as PersonaTeamMember[];
-  const addTeamMember = usePersonaStore((s) => s.addTeamMember);
-  const createTeamConnection = usePersonaStore((s) => s.createTeamConnection);
-  const fetchTeamMemories = usePersonaStore((s) => s.fetchTeamMemories);
+  const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
+  const teamMembers = usePipelineStore((s) => s.teamMembers) as PersonaTeamMember[];
+  const addTeamMember = usePipelineStore((s) => s.addTeamMember);
+  const createTeamConnection = usePipelineStore((s) => s.createTeamConnection);
+  const fetchTeamMemories = usePipelineStore((s) => s.fetchTeamMemories);
 
   // -- Analytics ------------------------------------------------------
   const fetchAnalytics = useCallback(async () => {
     if (!selectedTeamId) return;
     dispatch({ type: 'SET_ANALYTICS_LOADING', loading: true });
     try {
-      const data = await api.getPipelineAnalytics(selectedTeamId);
+      const data = await getPipelineAnalytics(selectedTeamId);
       dispatch({ type: 'SET_ANALYTICS', analytics: data });
     } catch (err) { console.error('Failed to fetch pipeline analytics:', err); }
     finally { dispatch({ type: 'SET_ANALYTICS_LOADING', loading: false }); }
@@ -55,7 +55,7 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
             setTimeout(() => {
               fetchAnalytics();
               if (selectedTeamId) {
-                const { memoryFilterCategory: cat, memoryFilterSearch: srch } = usePersonaStore.getState();
+                const { memoryFilterCategory: cat, memoryFilterSearch: srch } = usePipelineStore.getState();
                 fetchTeamMemories(selectedTeamId, cat, srch);
               }
               dispatch({ type: 'SET_MEMORIES_PULSING', pulsing: false });
@@ -70,7 +70,7 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
   // -- Pipeline execution ---------------------------------------------
   const handleExecuteTeam = useCallback(async () => {
     if (!selectedTeamId || cs.pipelineRunning) return;
-    try { dispatch({ type: 'SET_PIPELINE_RUNNING', running: true }); await api.executeTeam(selectedTeamId); }
+    try { dispatch({ type: 'SET_PIPELINE_RUNNING', running: true }); await executeTeam(selectedTeamId); }
     catch (err) { console.error('Failed to execute team:', err); dispatch({ type: 'SET_PIPELINE_RUNNING', running: false }); }
   }, [selectedTeamId, cs.pipelineRunning, dispatch]);
 
@@ -90,8 +90,8 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
 
   // -- Canvas assistant -----------------------------------------------
   const handleAssistantSuggest = useCallback(async (query: string) => {
-    try { return await api.suggestTopologyLlm(query, selectedTeamId ?? undefined); }
-    catch (err) { console.warn('LLM topology failed, falling back to keyword-based:', err); return api.suggestTopology(query, selectedTeamId ?? undefined); }
+    try { return await suggestTopologyLlm(query, selectedTeamId ?? undefined); }
+    catch (err) { console.warn('LLM topology failed, falling back to keyword-based:', err); return suggestTopology(query, selectedTeamId ?? undefined); }
   }, [selectedTeamId]);
 
   const handleAssistantApply = useCallback(async (blueprint: TopologyBlueprint) => {

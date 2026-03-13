@@ -1,24 +1,8 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import type { WorkflowsOverview } from "@/lib/bindings/WorkflowsOverview";
 
-// -- Types --------------------------------------------------------------
-
-export interface WorkflowJob {
-  job_id: string;
-  job_type: "n8n_transform" | "template_adopt" | "template_generate" | "query_debug" | "schema_proposal";
-  status: "running" | "completed" | "failed" | "cancelled";
-  error: string | null;
-  output_tail: string[];
-  line_count: number;
-  elapsed_secs: number;
-}
-
-export interface WorkflowsOverview {
-  jobs: WorkflowJob[];
-  running_count: number;
-  completed_count: number;
-  failed_count: number;
-  total_count: number;
-}
+export type { WorkflowJob } from "@/lib/bindings/WorkflowJob";
+export type { WorkflowsOverview } from "@/lib/bindings/WorkflowsOverview";
 
 // -- API ----------------------------------------------------------------
 

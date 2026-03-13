@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { formatElapsed } from '@/lib/utils/formatters';
-import * as api from '@/api/tauriApi';
+import { getExecution } from "@/api/agents/executions";
 import { useToastStore } from '@/stores/toastStore';
 
 interface UseRunnerExecutionArgs {
@@ -35,13 +36,13 @@ export function useRunnerExecution({
   isTerminalFullscreen,
   setIsTerminalFullscreen,
 }: UseRunnerExecutionArgs) {
-  const executePersona = usePersonaStore((state) => state.executePersona);
-  const cancelExecution = usePersonaStore((state) => state.cancelExecution);
-  const isExecuting = usePersonaStore((state) => state.isExecuting);
-  const activeExecutionId = usePersonaStore((state) => state.activeExecutionId);
-  const selectedPersona = usePersonaStore((state) => state.selectedPersona);
-  const cloudConfig = usePersonaStore((s) => s.cloudConfig);
-  const cloudExecute = usePersonaStore((s) => s.cloudExecute);
+  const executePersona = useAgentStore((state) => state.executePersona);
+  const cancelExecution = useAgentStore((state) => state.cancelExecution);
+  const isExecuting = useAgentStore((state) => state.isExecuting);
+  const activeExecutionId = useAgentStore((state) => state.activeExecutionId);
+  const selectedPersona = useAgentStore((state) => state.selectedPersona);
+  const cloudConfig = useSystemStore((s) => s.cloudConfig);
+  const cloudExecute = useSystemStore((s) => s.cloudExecute);
 
   const handleExecute = async () => {
     let parsedInput = {};
@@ -90,10 +91,10 @@ export function useRunnerExecution({
     let sessionId: string | null = null;
     // activeExecutionId is null after cancel/finish -- use lastExecutionId to
     // fetch the session for true session resumption.
-    const resumeExecId = activeExecutionId ?? usePersonaStore.getState().lastExecutionId;
+    const resumeExecId = activeExecutionId ?? useAgentStore.getState().lastExecutionId;
     if (resumeExecId) {
       try {
-        const exec = await api.getExecution(resumeExecId, selectedPersona.id);
+        const exec = await getExecution(resumeExecId, selectedPersona.id);
         sessionId = exec.claude_session_id ?? null;
       } catch { /* intentional */ }
     }

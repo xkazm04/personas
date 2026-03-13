@@ -1,21 +1,22 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { OverviewStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
-import type { DbPersonaMemory } from "@/lib/types/types";
+import type { PersonaMemory } from "@/lib/types/types";
 import type { MemoryStats, MemoryReviewResult } from "@/api/overview/memories";
 import type { MemoryAction } from "@/features/overview/sub_memories/libs/memoryActions";
 import { extractActionsFromReview, loadActions, saveActions } from "@/features/overview/sub_memories/libs/memoryActions";
-import * as api from "@/api/tauriApi";
+import { createMemory, deleteMemory, listMemoriesWithStats, reviewMemoriesWithCli } from "@/api/overview/memories";
+
 
 export interface MemorySlice {
   // State
-  memories: DbPersonaMemory[];
+  memories: PersonaMemory[];
   memoriesTotal: number;
   memoryStats: MemoryStats | null;
   memoryActions: MemoryAction[];
 
   // Actions
-  fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string }) => Promise<void>;
+  fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string; sort_column?: string; sort_direction?: string }) => Promise<void>;
   createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] }) => Promise<boolean>;
   deleteMemory: (id: string) => Promise<void>;
   reviewMemories: (personaId?: string) => Promise<MemoryReviewResult>;
@@ -23,7 +24,7 @@ export interface MemorySlice {
   loadMemoryActions: () => void;
 }
 
-export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> = (set, get) => ({
+export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice> = (set, get) => ({
   memories: [],
   memoriesTotal: 0,
   memoryStats: null,
@@ -33,12 +34,14 @@ export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> 
     try {
       const hasSearch = !!filters?.search?.trim();
       const limit = hasSearch ? 500 : 100;
-      const result = await api.listMemoriesWithStats(
+      const result = await listMemoriesWithStats(
         filters?.persona_id,
         filters?.category,
         filters?.search,
         limit,
         0,
+        filters?.sort_column,
+        filters?.sort_direction,
       );
       set({ memories: result.memories, memoriesTotal: result.total, memoryStats: result.stats });
     } catch (err) {
@@ -48,7 +51,7 @@ export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> 
 
   createMemory: async (input) => {
     try {
-      const created = await api.createMemory({
+      const created = await createMemory({
         persona_id: input.persona_id,
         title: input.title,
         content: input.content,
@@ -70,7 +73,7 @@ export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> 
 
   deleteMemory: async (id) => {
     try {
-      await api.deleteMemory(id);
+      await deleteMemory(id);
       set((state) => ({
         memories: state.memories.filter((m) => m.id !== id),
         memoriesTotal: Math.max(0, state.memoriesTotal - 1),
@@ -83,7 +86,7 @@ export const createMemorySlice: StateCreator<PersonaStore, [], [], MemorySlice> 
   reviewMemories: async (personaId?) => {
     try {
       const memoriesBefore = get().memories;
-      const result = await api.reviewMemoriesWithCli(personaId);
+      const result = await reviewMemoriesWithCli(personaId);
       // Refresh memories list after review
       await get().fetchMemories();
 

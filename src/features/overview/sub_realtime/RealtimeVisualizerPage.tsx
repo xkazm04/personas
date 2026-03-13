@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Activity } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useRealtimeEvents } from '@/hooks/realtime/useRealtimeEvents';
 import { useTimelineReplay } from '@/hooks/realtime/useTimelineReplay';
@@ -13,7 +13,7 @@ import EventBusFilterBar from '@/features/overview/sub_realtime/event_bus/state/
 import { useEventBusFilter } from '@/features/overview/sub_realtime/useEventBusFilter';
 
 export default function RealtimeVisualizerPage() {
-  const personas = usePersonaStore((s) => s.personas);
+  const personas = useAgentStore((s) => s.personas);
 
   // -- Live event stream --------------------------------------------
   const {

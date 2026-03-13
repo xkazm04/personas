@@ -7,11 +7,13 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use ts_rs::TS;
 
 use crate::error::AppError;
 
 /// A discovered desktop application.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct DiscoveredApp {
     /// Internal connector name (e.g., "desktop_vscode").
     pub connector_name: String,
@@ -30,7 +32,8 @@ pub struct DiscoveredApp {
 }
 
 /// An MCP server configuration imported from Claude Desktop.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct ImportedMcpServer {
     /// Server name from the config key.
     pub name: String,

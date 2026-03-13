@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Bot, Trash2, ExternalLink, RefreshCw, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
 import type { GitLabAgent } from '@/api/system/gitlab';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 
 interface GitLabAgentListProps {
   projectId: number | null;
@@ -108,8 +108,8 @@ export function GitLabAgentList({
 // ---------------------------------------------------------------------------
 
 function PipelineStatusBadge({ projectId }: { projectId: number }) {
-  const pipelines = usePersonaStore((s) => s.gitlabPipelines);
-  const fetchPipelines = usePersonaStore((s) => s.gitlabFetchPipelines);
+  const pipelines = useSystemStore((s) => s.gitlabPipelines);
+  const fetchPipelines = useSystemStore((s) => s.gitlabFetchPipelines);
 
   useEffect(() => {
     if (pipelines.length === 0) {

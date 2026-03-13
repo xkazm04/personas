@@ -10,6 +10,7 @@ use pbkdf2::pbkdf2_hmac;
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use tauri::{AppHandle, State};
+use ts_rs::TS;
 use tauri_plugin_dialog::DialogExt;
 
 use crate::db::repos::communication::events as event_repo;
@@ -172,7 +173,8 @@ pub struct ConnectorExport {
 // Import result types
 // ============================================================================
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
 pub struct PortabilityImportResult {
     pub personas_created: u32,
     pub teams_created: u32,
@@ -187,7 +189,8 @@ pub struct PortabilityImportResult {
 // Export stats (for UI preview)
 // ============================================================================
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
 pub struct ExportStats {
     pub persona_count: u32,
     pub group_count: u32,
@@ -218,7 +221,7 @@ pub async fn get_export_stats(
     let mut memory_count: u32 = 0;
     let mut test_suite_count: u32 = 0;
     for p in &personas {
-        memory_count += memory_repo::get_all(pool, Some(&p.id), None, None, None, None)?
+        memory_count += memory_repo::get_all(pool, Some(&p.id), None, None, None, None, None, None)?
             .len() as u32;
         test_suite_count += suite_repo::list_by_persona(pool, &p.id)?.len() as u32;
     }
@@ -350,7 +353,8 @@ pub async fn preview_competitive_import(
     Ok(Some(previews))
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
 pub struct CompetitiveImportPreview {
     pub source_platform: String,
     pub workflow_name: String,
@@ -390,7 +394,7 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
 
         let triggers = trigger_repo::get_by_persona_id(pool, &p.id)?;
         let subscriptions = event_repo::get_subscriptions_by_persona(pool, &p.id)?;
-        let memories = memory_repo::get_all(pool, Some(&p.id), None, None, None, None)?;
+        let memories = memory_repo::get_all(pool, Some(&p.id), None, None, None, None, None, None)?;
         let tools = tool_repo::get_tools_for_persona(pool, &p.id)?;
         let test_suites = suite_repo::list_by_persona(pool, &p.id)?;
 
@@ -611,6 +615,9 @@ fn create_zip_bundle(json: &str) -> Result<Vec<u8>, AppError> {
     Ok(buf.into_inner())
 }
 
+/// Maximum decompressed size for ZIP entries (50 MB).
+const MAX_DECOMPRESSED_SIZE: u64 = 50 * 1024 * 1024;
+
 fn read_zip_bundle(path: &std::path::Path) -> Result<String, AppError> {
     let file = std::fs::File::open(path)
         .map_err(|e| AppError::Internal(format!("Failed to open ZIP: {e}")))?;
@@ -619,10 +626,30 @@ fn read_zip_bundle(path: &std::path::Path) -> Result<String, AppError> {
     let mut manifest = archive
         .by_name("manifest.json")
         .map_err(|_| AppError::Validation("ZIP archive does not contain manifest.json".into()))?;
+
+    // Guard against zip bombs: reject entries whose declared size exceeds the limit
+    if manifest.size() > MAX_DECOMPRESSED_SIZE {
+        return Err(AppError::Validation(format!(
+            "manifest.json decompressed size ({} bytes) exceeds the {} MB limit",
+            manifest.size(),
+            MAX_DECOMPRESSED_SIZE / (1024 * 1024)
+        )));
+    }
+
+    // Read with a capped reader so even a lying size header cannot exhaust memory
+    let mut limited = std::io::Read::take(&mut manifest, MAX_DECOMPRESSED_SIZE + 1);
     let mut content = String::new();
-    manifest
+    limited
         .read_to_string(&mut content)
         .map_err(|e| AppError::Internal(format!("Failed to read manifest: {e}")))?;
+
+    if content.len() as u64 > MAX_DECOMPRESSED_SIZE {
+        return Err(AppError::Validation(format!(
+            "manifest.json decompressed content exceeds the {} MB limit",
+            MAX_DECOMPRESSED_SIZE / (1024 * 1024)
+        )));
+    }
+
     Ok(content)
 }
 
@@ -630,6 +657,9 @@ fn import_bundle(
     pool: &DbPool,
     bundle: &PortabilityBundle,
 ) -> Result<PortabilityImportResult, AppError> {
+    let mut conn = pool.get()?;
+    let tx = conn.transaction().map_err(AppError::Database)?;
+
     let mut result = PortabilityImportResult {
         personas_created: 0,
         teams_created: 0,
@@ -640,19 +670,20 @@ fn import_bundle(
         id_mapping: std::collections::HashMap::new(),
     };
 
+    let now = chrono::Utc::now().to_rfc3339();
+
     // Phase 1: Import groups (map old IDs to new IDs)
     for g in &bundle.groups {
-        match group_repo::create(
-            pool,
-            crate::db::models::CreatePersonaGroupInput {
-                name: format!("{} (imported)", g.name),
-                color: g.color.clone(),
-                sort_order: Some(g.sort_order),
-                description: g.description.clone(),
-            },
+        let id = uuid::Uuid::new_v4().to_string();
+        let name = format!("{} (imported)", g.name);
+        let color = g.color.as_deref().unwrap_or("#6B7280");
+        match tx.execute(
+            "INSERT INTO persona_groups (id, name, color, sort_order, collapsed, description, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?6)",
+            rusqlite::params![id, name, color, g.sort_order, g.description, now],
         ) {
-            Ok(new_group) => {
-                result.id_mapping.insert(g.id.clone(), new_group.id);
+            Ok(_) => {
+                result.id_mapping.insert(g.id.clone(), id);
                 result.groups_created += 1;
             }
             Err(e) => result
@@ -665,32 +696,43 @@ fn import_bundle(
     for t in &bundle.tool_definitions {
         if t.is_builtin {
             // Builtin tools already exist -- try to find matching by name
-            if let Ok(all_defs) = tool_repo::get_all_definitions(pool) {
-                if let Some(existing) = all_defs.iter().find(|d| d.name == t.name) {
-                    result
-                        .id_mapping
-                        .insert(t.id.clone(), existing.id.clone());
-                    continue;
-                }
+            let found = tx
+                .query_row(
+                    "SELECT id FROM persona_tool_definitions WHERE name = ?1 LIMIT 1",
+                    rusqlite::params![t.name],
+                    |row| row.get::<_, String>(0),
+                )
+                .ok();
+            if let Some(existing_id) = found {
+                result.id_mapping.insert(t.id.clone(), existing_id);
+                continue;
             }
         }
 
-        match tool_repo::create_definition(
-            pool,
-            crate::db::models::CreateToolDefinitionInput {
-                name: t.name.clone(),
-                category: t.category.clone(),
-                description: t.description.clone(),
-                script_path: String::new(),
-                input_schema: t.input_schema.clone(),
-                output_schema: None,
-                requires_credential_type: t.requires_credential_type.clone(),
-                implementation_guide: t.implementation_guide.clone(),
-                is_builtin: Some(t.is_builtin),
-            },
+        let id = uuid::Uuid::new_v4().to_string();
+        let is_builtin_i = if t.is_builtin { 1i32 } else { 0i32 };
+        match tx.execute(
+            "INSERT INTO persona_tool_definitions
+             (id, name, category, description, script_path,
+              input_schema, output_schema, requires_credential_type,
+              implementation_guide, is_builtin, created_at, updated_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
+            rusqlite::params![
+                id,
+                t.name,
+                t.category,
+                t.description,
+                "",
+                t.input_schema,
+                Option::<String>::None,
+                t.requires_credential_type,
+                t.implementation_guide,
+                is_builtin_i,
+                now,
+            ],
         ) {
-            Ok(new_tool) => {
-                result.id_mapping.insert(t.id.clone(), new_tool.id);
+            Ok(_) => {
+                result.id_mapping.insert(t.id.clone(), id);
                 result.tools_created += 1;
             }
             Err(e) => result
@@ -702,26 +744,39 @@ fn import_bundle(
     // Phase 3: Import connectors
     for c in &bundle.connectors {
         // Skip if connector with same name already exists
-        if let Ok(existing) = connector_repo::get_all(pool) {
-            if existing.iter().any(|e| e.name == c.name) {
-                continue;
-            }
+        let exists = tx
+            .query_row(
+                "SELECT COUNT(*) FROM connector_definitions WHERE name = ?1",
+                rusqlite::params![c.name],
+                |row| row.get::<_, i32>(0),
+            )
+            .unwrap_or(0)
+            > 0;
+        if exists {
+            continue;
         }
-        match connector_repo::create(
-            pool,
-            crate::db::models::CreateConnectorDefinitionInput {
-                name: c.name.clone(),
-                label: c.label.clone(),
-                icon_url: None,
-                color: None,
-                category: Some(c.category.clone()),
-                fields: c.fields.clone(),
-                healthcheck_config: None,
-                services: Some(c.services.clone()),
-                events: None,
-                metadata: None,
-                is_builtin: None,
-            },
+
+        let id = uuid::Uuid::new_v4().to_string();
+        match tx.execute(
+            "INSERT INTO connector_definitions
+             (id, name, label, icon_url, color, category, fields,
+              healthcheck_config, services, events, metadata, is_builtin,
+              created_at, updated_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,0,?12,?12)",
+            rusqlite::params![
+                id,
+                c.name,
+                c.label,
+                Option::<String>::None,
+                "#6B7280",
+                c.category,
+                c.fields,
+                Option::<String>::None,
+                c.services,
+                "[]",
+                Option::<String>::None,
+                now,
+            ],
         ) {
             Ok(_) => result.connectors_created += 1,
             Err(e) => result
@@ -738,43 +793,53 @@ fn import_bundle(
             .and_then(|gid| result.id_mapping.get(gid))
             .cloned();
 
-        match persona_repo::create(
-            pool,
-            crate::db::models::CreatePersonaInput {
-                name: format!("{} (imported)", p.name),
-                system_prompt: p.system_prompt.clone(),
-                project_id: None,
-                description: p.description.clone(),
-                structured_prompt: p.structured_prompt.clone(),
-                icon: p.icon.clone(),
-                color: p.color.clone(),
-                enabled: Some(false),
-                max_concurrent: Some(p.max_concurrent),
-                timeout_ms: Some(p.timeout_ms),
-                model_profile: p.model_profile.clone(),
-                max_budget_usd: p.max_budget_usd,
-                max_turns: p.max_turns,
-                design_context: p.design_context.clone(),
-                group_id: mapped_group_id,
-                notification_channels: p.notification_channels.clone(),
-            },
+        let new_id = uuid::Uuid::new_v4().to_string();
+        let persona_name = format!("{} (imported)", p.name);
+        let enabled_i = 0i32; // imported personas start disabled
+        let max_concurrent = p.max_concurrent as i32;
+        let timeout_ms = p.timeout_ms as i32;
+
+        match tx.execute(
+            "INSERT INTO personas
+             (id, project_id, name, description, system_prompt, structured_prompt,
+              icon, color, enabled, sensitive, max_concurrent, timeout_ms,
+              model_profile, max_budget_usd, max_turns, design_context, group_id,
+              notification_channels, created_at, updated_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,0,?10,?11,?12,?13,?14,?15,?16,?17,?18,?18)",
+            rusqlite::params![
+                new_id,
+                "default",
+                persona_name,
+                p.description,
+                p.system_prompt,
+                p.structured_prompt,
+                p.icon,
+                p.color,
+                enabled_i,
+                max_concurrent,
+                timeout_ms,
+                p.model_profile,
+                p.max_budget_usd,
+                p.max_turns,
+                p.design_context,
+                mapped_group_id,
+                p.notification_channels,
+                now,
+            ],
         ) {
-            Ok(new_persona) => {
-                let new_id = new_persona.id.clone();
+            Ok(_) => {
                 result.id_mapping.insert(p.id.clone(), new_id.clone());
                 result.personas_created += 1;
 
                 // Sub-entities: triggers
                 for t in &p.triggers {
-                    if let Err(e) = trigger_repo::create(
-                        pool,
-                        crate::db::models::CreateTriggerInput {
-                            persona_id: new_id.clone(),
-                            trigger_type: t.trigger_type.clone(),
-                            config: t.config.clone(),
-                            enabled: Some(t.enabled),
-                            use_case_id: t.use_case_id.clone(),
-                        },
+                    let tid = uuid::Uuid::new_v4().to_string();
+                    let enabled_i = if t.enabled { 1i32 } else { 0i32 };
+                    if let Err(e) = tx.execute(
+                        "INSERT INTO persona_triggers
+                         (id, persona_id, trigger_type, config, enabled, use_case_id, created_at, updated_at)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+                        rusqlite::params![tid, new_id, t.trigger_type, t.config, enabled_i, t.use_case_id, now],
                     ) {
                         result.warnings.push(format!(
                             "Persona '{}' trigger ({}): {}",
@@ -785,15 +850,13 @@ fn import_bundle(
 
                 // Sub-entities: subscriptions
                 for s in &p.subscriptions {
-                    if let Err(e) = event_repo::create_subscription(
-                        pool,
-                        crate::db::models::CreateEventSubscriptionInput {
-                            persona_id: new_id.clone(),
-                            event_type: s.event_type.clone(),
-                            source_filter: s.source_filter.clone(),
-                            enabled: Some(s.enabled),
-                            use_case_id: s.use_case_id.clone(),
-                        },
+                    let sid = uuid::Uuid::new_v4().to_string();
+                    let enabled_i = if s.enabled { 1i32 } else { 0i32 };
+                    if let Err(e) = tx.execute(
+                        "INSERT OR IGNORE INTO persona_event_subscriptions
+                         (id, persona_id, event_type, source_filter, enabled, use_case_id, created_at, updated_at)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+                        rusqlite::params![sid, new_id, s.event_type, s.source_filter, enabled_i, s.use_case_id, now],
                     ) {
                         result.warnings.push(format!(
                             "Persona '{}' subscription ({}): {}",
@@ -804,17 +867,14 @@ fn import_bundle(
 
                 // Sub-entities: memories
                 for m in &p.memories {
-                    if let Err(e) = memory_repo::create(
-                        pool,
-                        crate::db::models::CreatePersonaMemoryInput {
-                            persona_id: new_id.clone(),
-                            title: m.title.clone(),
-                            content: m.content.clone(),
-                            category: Some(m.category.clone()),
-                            source_execution_id: None,
-                            importance: Some(m.importance),
-                            tags: m.tags.clone(),
-                        },
+                    let mid = uuid::Uuid::new_v4().to_string();
+                    let category = m.category.as_str();
+                    let importance = m.importance as i32;
+                    if let Err(e) = tx.execute(
+                        "INSERT INTO persona_memories
+                         (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
+                        rusqlite::params![mid, new_id, m.title, m.content, category, Option::<String>::None, importance, m.tags, now],
                     ) {
                         result.warnings.push(format!(
                             "Persona '{}' memory ({}): {}",
@@ -826,9 +886,12 @@ fn import_bundle(
                 // Sub-entities: tool assignments
                 for old_tool_id in &p.tool_ids {
                     if let Some(new_tool_id) = result.id_mapping.get(old_tool_id) {
-                        if let Err(e) =
-                            tool_repo::assign_tool(pool, &new_id, new_tool_id, None)
-                        {
+                        let aid = uuid::Uuid::new_v4().to_string();
+                        if let Err(e) = tx.execute(
+                            "INSERT INTO persona_tools (id, persona_id, tool_id, tool_config, created_at)
+                             VALUES (?1, ?2, ?3, ?4, ?5)",
+                            rusqlite::params![aid, new_id, new_tool_id, Option::<String>::None, now],
+                        ) {
                             result.warnings.push(format!(
                                 "Persona '{}' tool assignment: {}",
                                 p.name, e
@@ -839,14 +902,11 @@ fn import_bundle(
 
                 // Sub-entities: test suites
                 for s in &p.test_suites {
-                    if let Err(e) = suite_repo::create(
-                        pool,
-                        &new_id,
-                        &s.name,
-                        s.description.as_deref(),
-                        &s.scenarios,
-                        s.scenario_count,
-                        None,
+                    let sid = uuid::Uuid::new_v4().to_string();
+                    if let Err(e) = tx.execute(
+                        "INSERT INTO test_suites (id, persona_id, name, description, scenarios, scenario_count, source_run_id, created_at, updated_at)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+                        rusqlite::params![sid, new_id, s.name, s.description, s.scenarios, s.scenario_count, Option::<String>::None, now],
                     ) {
                         result.warnings.push(format!(
                             "Persona '{}' test suite ({}): {}",
@@ -863,22 +923,29 @@ fn import_bundle(
 
     // Phase 5: Import teams (remap member persona IDs)
     for t in &bundle.teams {
-        match team_repo::create(
-            pool,
-            crate::db::models::CreateTeamInput {
-                name: format!("{} (imported)", t.name),
-                project_id: None,
-                parent_team_id: None,
-                description: t.description.clone(),
-                canvas_data: t.canvas_data.clone(),
-                team_config: t.team_config.clone(),
-                icon: t.icon.clone(),
-                color: None,
-                enabled: Some(false),
-            },
+        let new_team_id = uuid::Uuid::new_v4().to_string();
+        let team_name = format!("{} (imported)", t.name);
+        let enabled_i = 0i32; // imported teams start disabled
+
+        match tx.execute(
+            "INSERT INTO persona_teams
+             (id, project_id, parent_team_id, name, description, canvas_data, team_config, icon, color, enabled, created_at, updated_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
+            rusqlite::params![
+                new_team_id,
+                Option::<String>::None,
+                Option::<String>::None,
+                team_name,
+                t.description,
+                t.canvas_data,
+                t.team_config,
+                t.icon,
+                "#6B7280",
+                enabled_i,
+                now,
+            ],
         ) {
-            Ok(new_team) => {
-                let new_team_id = new_team.id.clone();
+            Ok(_) => {
                 result.id_mapping.insert(t.id.clone(), new_team_id.clone());
                 result.teams_created += 1;
 
@@ -893,18 +960,19 @@ fn import_bundle(
                         .cloned()
                         .unwrap_or_else(|| m.persona_id.clone());
 
-                    match team_repo::add_member(
-                        pool,
-                        &new_team_id,
-                        &new_persona_id,
-                        m.role.clone(),
-                        m.position_x,
-                        m.position_y,
-                        m.config.clone(),
+                    let mid = uuid::Uuid::new_v4().to_string();
+                    let role = m.role.as_deref().unwrap_or("worker");
+                    let px = m.position_x.unwrap_or(0.0);
+                    let py = m.position_y.unwrap_or(0.0);
+
+                    match tx.execute(
+                        "INSERT INTO persona_team_members (id, team_id, persona_id, role, position_x, position_y, config, created_at)
+                         VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+                        rusqlite::params![mid, new_team_id, new_persona_id, role, px, py, m.config, now],
                     ) {
-                        Ok(new_member) => {
+                        Ok(_) => {
                             member_id_map
-                                .insert(m.persona_id.clone(), new_member.id.clone());
+                                .insert(m.persona_id.clone(), mid);
                         }
                         Err(e) => result.warnings.push(format!(
                             "Team '{}' member: {}",
@@ -923,14 +991,14 @@ fn import_bundle(
                         .cloned()
                         .unwrap_or_else(|| c.target_persona_id.clone());
 
-                    if let Err(e) = team_repo::create_connection(
-                        pool,
-                        &new_team_id,
-                        &source_id,
-                        &target_id,
-                        c.connection_type.clone(),
-                        c.condition.clone(),
-                        c.label.clone(),
+                    let cid = uuid::Uuid::new_v4().to_string();
+                    let conn_type = c.connection_type.as_deref().unwrap_or("sequential");
+
+                    if let Err(e) = tx.execute(
+                        "INSERT INTO persona_team_connections
+                         (id, team_id, source_member_id, target_member_id, connection_type, condition, label, created_at)
+                         VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+                        rusqlite::params![cid, new_team_id, source_id, target_id, conn_type, c.condition, c.label, now],
                     ) {
                         result.warnings.push(format!(
                             "Team '{}' connection: {}",
@@ -944,6 +1012,11 @@ fn import_bundle(
                 .push(format!("Team '{}': {}", t.name, e)),
         }
     }
+
+    // Commit the transaction -- all entities are persisted atomically.
+    // If anything above returned a hard error (not a warning), we would
+    // have already returned Err and the transaction would roll back on drop.
+    tx.commit().map_err(AppError::Database)?;
 
     Ok(result)
 }
@@ -1144,7 +1217,8 @@ struct CredentialExportEnvelope {
     ciphertext: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
 pub struct CredentialImportResult {
     pub created: u32,
     pub warnings: Vec<String>,

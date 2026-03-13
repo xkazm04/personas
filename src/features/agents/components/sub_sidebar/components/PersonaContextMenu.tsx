@@ -2,14 +2,14 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useViewportClampFixed } from '@/hooks/utility/interaction/useViewportClamp';
 import { motion } from 'framer-motion';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import { useContextMenuActions } from './ContextMenuActions';
 import { MenuItems, ModelSubmenu } from './ContextMenuSections';
 
 // -- Context Menu Component --------------------------------------------
 
 export interface ContextMenuState {
-  persona: DbPersona;
+  persona: Persona;
   x: number;
   y: number;
 }

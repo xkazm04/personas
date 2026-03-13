@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useVaultStore } from "@/stores/vaultStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { listDesignReviews, getTrendingTemplates } from '@/api/overview/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import {
@@ -10,22 +12,22 @@ import {
 } from '@/api/system/desktop';
 
 export function useOnboardingState() {
-  const onboardingActive = usePersonaStore((s) => s.onboardingActive);
-  const onboardingStep = usePersonaStore((s) => s.onboardingStep);
-  const onboardingStepCompleted = usePersonaStore((s) => s.onboardingStepCompleted);
-  const onboardingSelectedReviewId = usePersonaStore((s) => s.onboardingSelectedReviewId);
-  const onboardingCreatedPersonaId = usePersonaStore((s) => s.onboardingCreatedPersonaId);
-  const setOnboardingStep = usePersonaStore((s) => s.setOnboardingStep);
-  const completeOnboardingStep = usePersonaStore((s) => s.completeOnboardingStep);
-  const setOnboardingSelectedReview = usePersonaStore((s) => s.setOnboardingSelectedReview);
-  const setOnboardingCreatedPersona = usePersonaStore((s) => s.setOnboardingCreatedPersona);
-  const finishOnboarding = usePersonaStore((s) => s.finishOnboarding);
-  const dismissOnboarding = usePersonaStore((s) => s.dismissOnboarding);
+  const onboardingActive = useSystemStore((s) => s.onboardingActive);
+  const onboardingStep = useSystemStore((s) => s.onboardingStep);
+  const onboardingStepCompleted = useSystemStore((s) => s.onboardingStepCompleted);
+  const onboardingSelectedReviewId = useSystemStore((s) => s.onboardingSelectedReviewId);
+  const onboardingCreatedPersonaId = useSystemStore((s) => s.onboardingCreatedPersonaId);
+  const setOnboardingStep = useSystemStore((s) => s.setOnboardingStep);
+  const completeOnboardingStep = useSystemStore((s) => s.completeOnboardingStep);
+  const setOnboardingSelectedReview = useSystemStore((s) => s.setOnboardingSelectedReview);
+  const setOnboardingCreatedPersona = useSystemStore((s) => s.setOnboardingCreatedPersona);
+  const finishOnboarding = useSystemStore((s) => s.finishOnboarding);
+  const dismissOnboarding = useSystemStore((s) => s.dismissOnboarding);
 
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const personas = usePersonaStore((s) => s.personas);
-  const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const personas = useAgentStore((s) => s.personas);
+  const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
 
   const [templates, setTemplates] = useState<PersonaDesignReview[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
@@ -137,8 +139,7 @@ export function useOnboardingState() {
     setShowAdoptionWizard(false);
     completeOnboardingStep('adopt');
     fetchPersonas().then(() => {
-      const store = usePersonaStore.getState();
-      const sorted = [...store.personas].sort(
+      const sorted = [...useAgentStore.getState().personas].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
       const newest = sorted[0];

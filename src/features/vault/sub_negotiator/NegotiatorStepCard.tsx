@@ -6,7 +6,8 @@ import {
   Globe,
   Loader2,
 } from 'lucide-react';
-import { openExternalUrl } from '@/api/tauriApi';
+import { openExternalUrl } from "@/api/system/system";
+
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import {
   ACTION_ICONS,

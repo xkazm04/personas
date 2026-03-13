@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BookOpen, Plus, Play, Unlink, Loader2 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
@@ -14,9 +14,9 @@ interface LinkedRecipesSectionProps {
 }
 
 export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
-  const fetchPersonaRecipes = usePersonaStore((s) => s.fetchPersonaRecipes);
-  const linkRecipeToPersona = usePersonaStore((s) => s.linkRecipeToPersona);
-  const unlinkRecipeFromPersona = usePersonaStore((s) => s.unlinkRecipeFromPersona);
+  const fetchPersonaRecipes = usePipelineStore((s) => s.fetchPersonaRecipes);
+  const linkRecipeToPersona = usePipelineStore((s) => s.linkRecipeToPersona);
+  const unlinkRecipeFromPersona = usePipelineStore((s) => s.unlinkRecipeFromPersona);
 
   const [linkedRecipes, setLinkedRecipes] = useState<RecipeDefinition[]>([]);
   const [loading, setLoading] = useState(true);

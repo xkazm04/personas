@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion';
 import { Sparkles, X, CheckCircle2, Trash2, AlertCircle } from 'lucide-react';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import type { MemoryReviewResult } from '@/api/overview/memories';
 
 interface ReviewResultsModalProps {
@@ -12,19 +12,11 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
   if (!reviewResult && !reviewError) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="relative w-full max-w-2xl mx-4 bg-background border border-primary/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <BaseModal isOpen onClose={onClose} titleId="review-results-title" size="lg" panelClassName="bg-background border border-primary/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
         {/* Header */}
         <div className="flex items-start justify-between p-4 border-b border-primary/10 flex-shrink-0">
           <div className="flex-1 min-w-0 pr-4">
-            <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
+            <h3 id="review-results-title" className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-cyan-400" />
               AI Memory Review
             </h3>
@@ -92,7 +84,6 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
             </div>
           ) : null}
         </div>
-      </motion.div>
-    </div>
+    </BaseModal>
   );
 }

@@ -7,6 +7,7 @@ import type { TriggerChainLink } from "@/lib/bindings/TriggerChainLink";
 import type { TriggerValidationResult } from "@/lib/bindings/TriggerValidationResult";
 import type { WebhookStatus } from "@/lib/bindings/WebhookStatus";
 import type { CronAgent } from "@/lib/bindings/CronAgent";
+import type { WebhookRequestLog } from "@/lib/bindings/WebhookRequestLog";
 
 // ============================================================================
 // Triggers
@@ -118,3 +119,19 @@ export const listCronAgents = () =>
 
 export const seedMockCronAgent = () =>
   invoke<CronAgent>("seed_mock_cron_agent", {});
+
+// ============================================================================
+// Webhook Request Inspector
+// ============================================================================
+
+export const listWebhookRequestLogs = (triggerId: string) =>
+  invoke<WebhookRequestLog[]>("list_webhook_request_logs", { triggerId });
+
+export const clearWebhookRequestLogs = (triggerId: string) =>
+  invoke<number>("clear_webhook_request_logs", { triggerId });
+
+export const replayWebhookRequest = (logId: string) =>
+  invoke<string>("replay_webhook_request", { logId });
+
+export const webhookRequestToCurl = (logId: string) =>
+  invoke<string>("webhook_request_to_curl", { logId });

@@ -3,7 +3,7 @@ import {
   Play, Square, ChevronDown,
   Filter, Check,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { Button } from '@/features/shared/components/buttons';
 import { LabProgress } from '../../shared/LabProgress';
 import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
@@ -13,17 +13,17 @@ import { ANTHROPIC_MODELS, ALL_MODELS } from './evalModels';
 import { EvalHistory } from './EvalHistory';
 
 export function EvalPanel() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const promptVersions = usePersonaStore((s) => s.promptVersions);
-  const evalRuns = usePersonaStore((s) => s.evalRuns);
-  const evalResultsMap = usePersonaStore((s) => s.evalResultsMap);
-  const isLabRunning = usePersonaStore((s) => s.isLabRunning);
-  const fetchVersions = usePersonaStore((s) => s.fetchVersions);
-  const fetchEvalRuns = usePersonaStore((s) => s.fetchEvalRuns);
-  const startEval = usePersonaStore((s) => s.startEval);
-  const cancelEval = usePersonaStore((s) => s.cancelEval);
-  const fetchEvalResults = usePersonaStore((s) => s.fetchEvalResults);
-  const deleteEvalRun = usePersonaStore((s) => s.deleteEvalRun);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const promptVersions = useAgentStore((s) => s.promptVersions);
+  const evalRuns = useAgentStore((s) => s.evalRuns);
+  const evalResultsMap = useAgentStore((s) => s.evalResultsMap);
+  const isLabRunning = useAgentStore((s) => s.isLabRunning);
+  const fetchVersions = useAgentStore((s) => s.fetchVersions);
+  const fetchEvalRuns = useAgentStore((s) => s.fetchEvalRuns);
+  const startEval = useAgentStore((s) => s.startEval);
+  const cancelEval = useAgentStore((s) => s.cancelEval);
+  const fetchEvalResults = useAgentStore((s) => s.fetchEvalResults);
+  const deleteEvalRun = useAgentStore((s) => s.deleteEvalRun);
 
   const [selectedVersionIds, setSelectedVersionIds] = useState<Set<string>>(new Set());
   const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['haiku']));

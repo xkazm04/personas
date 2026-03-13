@@ -1,4 +1,5 @@
 use serde::Serialize;
+use ts_rs::TS;
 
 use crate::db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
 
@@ -6,7 +7,8 @@ use crate::db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
 // Feasibility Result
 // ============================================================================
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
 pub struct FeasibilityResult {
     pub confirmed_capabilities: Vec<String>,
     pub issues: Vec<String>,

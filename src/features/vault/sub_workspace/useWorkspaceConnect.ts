@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useGoogleOAuth } from '@/features/vault/hooks/useGoogleOAuth';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { OAUTH_FIELD } from '@/features/vault/sub_design/CredentialDesignHelpers';
 import type { WorkspaceProvider, WorkspaceService } from './workspaceProviders';
 import { aggregateScopes } from './workspaceProviders';
@@ -38,8 +38,8 @@ export interface WorkspaceConnectState {
 }
 
 export function useWorkspaceConnect(provider: WorkspaceProvider): WorkspaceConnectState {
-  const createCredential = usePersonaStore((s) => s.createCredential);
-  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
+  const createCredential = useVaultStore((s) => s.createCredential);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
 
   const [selectedServices, setSelectedServices] = useState<WorkspaceService[]>(
     () => [...provider.services],

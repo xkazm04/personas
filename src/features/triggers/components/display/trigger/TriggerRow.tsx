@@ -1,12 +1,12 @@
 import { memo } from 'react';
 import { ToggleLeft, ToggleRight, ChevronDown, ShieldAlert } from 'lucide-react';
 import { motion } from 'framer-motion';
-import type { DbPersonaTrigger } from '@/lib/types/types';
-import { usePersonaStore } from '@/stores/personaStore';
+import type { PersonaTrigger } from '@/lib/types/types';
+import { useAgentStore } from "@/stores/agentStore";
 import { TriggerStatusSummary } from './TriggerStatusSummary';
 
 interface TriggerRowProps {
-  trigger: DbPersonaTrigger;
+  trigger: PersonaTrigger;
   expanded: boolean;
   onToggleExpand: () => void;
   onToggleEnabled: (triggerId: string, currentEnabled: boolean) => void;
@@ -14,7 +14,7 @@ interface TriggerRowProps {
 
 /** Collapsed trigger row: always visible, shows type + config summary + toggle + expand. */
 export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggleExpand, onToggleEnabled }: TriggerRowProps) {
-  const budgetStatus = usePersonaStore((s) => s.getBudgetStatus(trigger.persona_id));
+  const budgetStatus = useAgentStore((s) => s.getBudgetStatus(trigger.persona_id));
 
   return (
     <motion.div

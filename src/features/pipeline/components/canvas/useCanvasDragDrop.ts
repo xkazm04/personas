@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { useCanvasDragRef } from '@/features/pipeline/sub_canvas';
 import type { useCanvasReducer } from '@/features/pipeline/sub_canvas';
 import { snapToGrid } from './useCanvasHandlers';
@@ -15,8 +16,8 @@ export function useCanvasDragDrop({ cs, setGhostNode }: UseCanvasDragDropArgs) {
   const canvasDragRef = useCanvasDragRef();
   const lastGhostPos = useRef({ x: 0, y: 0 });
 
-  const personas = usePersonaStore((s) => s.personas);
-  const addTeamMember = usePersonaStore((s) => s.addTeamMember);
+  const personas = useAgentStore((s) => s.personas);
+  const addTeamMember = usePipelineStore((s) => s.addTeamMember);
 
   const onCanvasDragOver = useCallback((e: React.DragEvent) => {
     if (!e.dataTransfer.types.includes('application/persona-id')) return;

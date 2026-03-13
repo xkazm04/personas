@@ -171,17 +171,20 @@ fn extract_automation_design_result(text: &str) -> Option<serde_json::Value> {
                 depth += 1;
             }
             '}' => {
-                depth -= 1;
-                if depth == 0 {
-                    if let Some(s) = start {
-                        let candidate = &trimmed[s..=i];
-                        if let Ok(val) = serde_json::from_str::<serde_json::Value>(candidate) {
-                            if val.is_object() && val.get("name").is_some() {
-                                return Some(val);
+                // Guard: only decrement when depth > 0 to handle stray closing braces
+                if depth > 0 {
+                    depth -= 1;
+                    if depth == 0 {
+                        if let Some(s) = start {
+                            let candidate = &trimmed[s..=i];
+                            if let Ok(val) = serde_json::from_str::<serde_json::Value>(candidate) {
+                                if val.is_object() && val.get("name").is_some() {
+                                    return Some(val);
+                                }
                             }
                         }
+                        start = None;
                     }
-                    start = None;
                 }
             }
             _ => {}
@@ -259,13 +262,8 @@ pub async fn start_automation_design(
 
     let cli_args = build_credential_task_cli_args();
     let design_id = uuid::Uuid::new_v4().to_string();
-    let active_id = state.active_automation_design_id.clone();
-    let active_child_pid = state.active_automation_design_child_pid.clone();
-
-    {
-        let mut guard = active_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        *guard = Some(design_id.clone());
-    }
+    let registry = state.process_registry.clone();
+    registry.set_id("automation_design", design_id.clone());
 
     let design_id_clone = design_id.clone();
 
@@ -275,8 +273,9 @@ pub async fn start_automation_design(
             task_id: design_id_clone,
             prompt_text,
             cli_args,
-            active_id,
-            active_child_pid: Some(active_child_pid),
+            registry,
+            domain: "automation_design".into(),
+            track_pid: true,
             messages: AUTOMATION_DESIGN_MESSAGES,
             extractor: extract_automation_design_result,
         })
@@ -291,11 +290,7 @@ pub fn cancel_automation_design(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    let mut guard = state.active_automation_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    *guard = None;
-
-    let pid = state.active_automation_design_child_pid.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?.take();
-    if let Some(pid) = pid {
+    if let Some(pid) = state.process_registry.cancel("automation_design") {
         tracing::info!(pid = pid, "Killing automation design CLI child process");
         crate::engine::kill_process(pid);
     }

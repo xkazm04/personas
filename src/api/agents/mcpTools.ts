@@ -1,30 +1,12 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import type { McpTool } from "@/lib/bindings/McpTool";
+import type { McpToolResult } from "@/lib/bindings/McpToolResult";
+import type { McpPingResult } from "@/lib/bindings/McpPingResult";
 
-// -- Types --------------------------------------------------------------
-
-export interface McpTool {
-  name: string;
-  description: string | null;
-  input_schema: Record<string, unknown> | null;
-}
-
-export interface McpToolContent {
-  content_type: string;
-  text: string | null;
-}
-
-export interface McpToolResult {
-  content: McpToolContent[];
-  is_error: boolean;
-  duration_ms: number;
-}
-
-// -- MCP Connection Test -------------------------------------------------
-
-export interface McpPingResult {
-  success: boolean;
-  message: string;
-}
+export type { McpTool } from "@/lib/bindings/McpTool";
+export type { McpToolContent } from "@/lib/bindings/McpToolContent";
+export type { McpToolResult } from "@/lib/bindings/McpToolResult";
+export type { McpPingResult } from "@/lib/bindings/McpPingResult";
 
 export const healthcheckMcpPreview = (fields: Record<string, string>) =>
   invoke<McpPingResult>('healthcheck_mcp_preview', { fields }, undefined, 90_000);

@@ -1,7 +1,7 @@
 import { Search, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 
 export interface MemoryFilterBarProps {
@@ -13,7 +13,7 @@ export interface MemoryFilterBarProps {
   onCategoryChange: (value: string | null) => void;
   hasFilters: boolean;
   onClearFilters: () => void;
-  personas: DbPersona[];
+  personas: Persona[];
 }
 
 export function MemoryFilterBar({

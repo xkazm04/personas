@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, CheckCircle2, Trash2, AlertTriangle, Info, XCircle } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
 import type { FiredAlert } from '@/stores/slices/overview/alertSlice';
 
 const SEVERITY_CONFIG: Record<string, { icon: typeof Info; color: string }> = {
@@ -54,9 +54,9 @@ function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => vo
 }
 
 export function AlertHistoryPanel() {
-  const alertHistory = usePersonaStore((s) => s.alertHistory);
-  const dismissAlert = usePersonaStore((s) => s.dismissAlert);
-  const clearAlertHistory = usePersonaStore((s) => s.clearAlertHistory);
+  const alertHistory = useOverviewStore((s) => s.alertHistory);
+  const dismissAlert = useOverviewStore((s) => s.dismissAlert);
+  const clearAlertHistory = useOverviewStore((s) => s.clearAlertHistory);
 
   const activeCount = alertHistory.filter(a => !a.dismissed).length;
 

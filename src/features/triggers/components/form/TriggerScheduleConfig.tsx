@@ -69,6 +69,8 @@ export function IntervalConfig({
             }}
             min="60"
             placeholder="Seconds (min 60)"
+            aria-invalid={!!validationError}
+            aria-describedby={validationError ? 'interval-error' : undefined}
             className={`w-full px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm focus:outline-none focus:ring-2 transition-all ${
               validationError
                 ? 'border-red-500/30 ring-1 ring-red-500/30 focus:ring-red-500/40 focus:border-red-500/40'
@@ -76,7 +78,7 @@ export function IntervalConfig({
             }`}
           />
           {validationError && (
-            <p className="text-sm text-red-400/80 mt-1">{validationError}</p>
+            <p id="interval-error" className="text-sm text-red-400/80 mt-1">{validationError}</p>
           )}
           {!validationError && (() => {
             const secs = parseInt(interval) || 0;
@@ -112,9 +114,9 @@ export function IntervalConfig({
 const CRON_PRESETS = [
   { label: 'Every minute', value: '* * * * *' },
   { label: 'Hourly', value: '0 * * * *' },
-  { label: 'Daily 9 AM', value: '0 9 * * *' },
-  { label: 'Daily midnight', value: '0 0 * * *' },
-  { label: 'Weekdays 9 AM', value: '0 9 * * 1-5' },
+  { label: 'Daily 9 AM UTC', value: '0 9 * * *' },
+  { label: 'Daily midnight UTC', value: '0 0 * * *' },
+  { label: 'Weekdays 9 AM UTC', value: '0 9 * * 1-5' },
   { label: 'Weekly Mon', value: '0 0 * * 1' },
   { label: 'Monthly 1st', value: '0 0 1 * *' },
   { label: 'Every 6h', value: '0 */6 * * *' },
@@ -173,6 +175,8 @@ export function CronConfig({
             value={cronExpression}
             onChange={(e) => setCronExpression(e.target.value)}
             placeholder="* * * * *  (min hour dom mon dow)"
+            aria-invalid={!!(hasError || validationError)}
+            aria-describedby={validationError ? 'cron-validation-error' : hasError ? 'cron-preview-error' : undefined}
             className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 transition-all ${
               hasError || validationError
                 ? 'border-red-500/30 ring-1 ring-red-500/30 focus:ring-red-500/40 focus:border-red-500/40'
@@ -186,10 +190,10 @@ export function CronConfig({
 
         {/* Validation error */}
         {validationError && (
-          <p className="text-sm text-red-400/80 mt-1">{validationError}</p>
+          <p id="cron-validation-error" className="text-sm text-red-400/80 mt-1">{validationError}</p>
         )}
         {hasError && !validationError && (
-          <p className="text-sm text-red-400/80 mt-1">{cronPreview?.error}</p>
+          <p id="cron-preview-error" className="text-sm text-red-400/80 mt-1">{cronPreview?.error}</p>
         )}
 
         {/* Human description */}
@@ -200,12 +204,13 @@ export function CronConfig({
         )}
 
         {/* Field legend */}
-        <div className="flex gap-3 mt-2 text-sm text-muted-foreground/50 font-mono">
+        <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground/50 font-mono">
           <span>min</span>
           <span>hour</span>
           <span>day</span>
           <span>month</span>
           <span>weekday</span>
+          <span className="ml-auto text-amber-400/60 text-xs font-sans font-medium">UTC</span>
         </div>
       </div>
 

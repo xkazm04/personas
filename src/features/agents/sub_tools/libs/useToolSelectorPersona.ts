@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 
 /**
@@ -7,12 +8,12 @@ import { getConnectorMeta } from '@/features/shared/components/display/Connector
  * assigned tools, credential state, and usage metrics.
  */
 export function useToolSelectorPersona() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const toolDefinitions = usePersonaStore((s) => s.toolDefinitions);
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const toolUsageSummary = usePersonaStore((s) => s.toolUsageSummary);
-  const fetchToolUsage = usePersonaStore((s) => s.fetchToolUsage);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const toolDefinitions = useAgentStore((s) => s.toolDefinitions);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const toolUsageSummary = useAgentStore((s) => s.toolUsageSummary);
+  const fetchToolUsage = useAgentStore((s) => s.fetchToolUsage);
 
   useEffect(() => { fetchToolUsage(30); }, [fetchToolUsage]);
 

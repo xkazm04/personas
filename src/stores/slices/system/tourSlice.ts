@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { SystemStore } from "../../storeTypes";
 
 // -- Types --------------------------------------------------------------
 
@@ -121,7 +121,7 @@ const INITIAL_STEP_STATUS: Record<TourStepId, boolean> = {
 };
 
 export const createTourSlice: StateCreator<
-  PersonaStore,
+  SystemStore,
   [],
   [],
   TourSlice

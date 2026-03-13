@@ -6,7 +6,10 @@ import {
   ChevronRight,
   Sparkles,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { useSystemStore } from "@/stores/systemStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { IconSelector } from '@/features/shared/components/forms/IconSelector';
@@ -23,14 +26,14 @@ interface IdentityStepProps {
 }
 
 export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityStepProps) {
-  const createPersona = usePersonaStore((s) => s.createPersona);
-  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const movePersonaToGroup = usePersonaStore((s) => s.movePersonaToGroup);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const groups = usePersonaStore((s) => s.groups);
+  const createPersona = useAgentStore((s) => s.createPersona);
+  const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const movePersonaToGroup = usePipelineStore((s) => s.movePersonaToGroup);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const groups = usePipelineStore((s) => s.groups);
 
   const [name, setName] = useState(deriveNameFromState(builderState));
   const [description, setDescription] = useState(deriveDescription(builderState));

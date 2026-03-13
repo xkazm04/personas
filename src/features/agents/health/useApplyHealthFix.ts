@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { DryRunIssue } from './types';
 import type { DesignContextData } from '@/lib/types/frontendTypes';
 
 export function useApplyHealthFix() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
   const addToast = useToastStore((s) => s.addToast);
 
   const handleApplyFix = useCallback(async (issue: DryRunIssue) => {

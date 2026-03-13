@@ -1,11 +1,12 @@
 import { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { PersonaContextMenu, type ContextMenuState } from '@/features/agents/components/sub_sidebar/components/PersonaContextMenu';
 import { usePersonaFilters } from '@/features/agents/components/sub_sidebar/libs/usePersonaFilters';
 import { buildSidebarTree } from '@/lib/types/frontendTypes';
 import { Button } from '@/features/shared/components/buttons';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import { SidebarHeader } from './SidebarHeader';
 import { SidebarDndSection } from './SidebarDndSection';
 
@@ -14,17 +15,17 @@ interface GroupedAgentSidebarProps {
 }
 
 export default function GroupedAgentSidebar({ onCreatePersona }: GroupedAgentSidebarProps) {
-  const personas = usePersonaStore((s) => s.personas);
-  const groups = usePersonaStore((s) => s.groups);
-  const personaHealthMap = usePersonaStore((s) => s.personaHealthMap);
-  const personaLastRun = usePersonaStore((s) => s.personaLastRun);
+  const personas = useAgentStore((s) => s.personas);
+  const groups = usePipelineStore((s) => s.groups);
+  const personaHealthMap = useAgentStore((s) => s.personaHealthMap);
+  const personaLastRun = useAgentStore((s) => s.personaLastRun);
 
   const {
     filters, setSearch, toggleTag, clearFilters, hasActiveFilters, filteredIds, allAutoTags,
   } = usePersonaFilters(personas, personaHealthMap, personaLastRun);
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
-  const handleContextMenu = useCallback((e: React.MouseEvent, persona: DbPersona) => {
+  const handleContextMenu = useCallback((e: React.MouseEvent, persona: Persona) => {
     e.preventDefault();
     e.stopPropagation();
     setContextMenu({ persona, x: e.clientX, y: e.clientY });

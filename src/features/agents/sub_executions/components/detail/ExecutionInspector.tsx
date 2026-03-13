@@ -1,8 +1,8 @@
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import { InspectorTabs } from './InspectorTabs';
 
 interface ExecutionInspectorProps {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
 }
 
 export function ExecutionInspector({ execution }: ExecutionInspectorProps) {

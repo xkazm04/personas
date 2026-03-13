@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import { ChevronDown, ChevronRight, FileText, Loader2, Brain } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
@@ -14,7 +14,7 @@ import { HighlightedJsonBlock } from './comparison/HighlightedJsonBlock';
 import { hasNonEmptyJson } from './executionDetailHelpers';
 
 interface DetailCollapsibleSectionsProps {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
   showRaw: boolean;
 }
 

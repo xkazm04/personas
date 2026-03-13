@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { mergeCredentialLink } from '@/features/shared/components/use-cases/UseCasesList';
 import { matchCredentialToConnector } from './connectorMatching';
 import { buildConnectorRailItems } from './connectorHealth';
@@ -62,11 +62,11 @@ export function useConnectorStatuses({
   onMissingCountChange,
   onCredentialCreated,
 }: UseConnectorStatusesOptions) {
-  const credentials = usePersonaStore((s) => s.credentials);
-  const connectorDefinitions = usePersonaStore((s) => s.connectorDefinitions);
-  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
-  const fetchConnectorDefinitions = usePersonaStore((s) => s.fetchConnectorDefinitions);
-  const healthcheckCredential = usePersonaStore((s) => s.healthcheckCredential);
+  const credentials = useVaultStore((s) => s.credentials);
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
+  const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
+  const healthcheckCredential = useVaultStore((s) => s.healthcheckCredential);
 
   const [statuses, setStatuses] = useState<ConnectorStatus[]>([]);
   const [designOpen, setDesignOpen] = useState(false);

@@ -143,6 +143,7 @@ export type N8nImportAction =
   | { type: 'TRANSFORM_LINES'; lines: string[] }
   | { type: 'TRANSFORM_PHASE'; phase: CliRunPhase }
   | { type: 'TRANSFORM_SECTIONS'; sections: StreamingSection[] }
+  | { type: 'TRANSFORM_SECTION_PUSH'; section: StreamingSection }
   | { type: 'TRANSFORM_COMPLETED'; draft: N8nPersonaDraft }
   | { type: 'TRANSFORM_FAILED'; error: string }
   | { type: 'TRANSFORM_CANCELLED' }

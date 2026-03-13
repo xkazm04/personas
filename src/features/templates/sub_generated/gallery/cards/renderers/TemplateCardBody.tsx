@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Clock, CircleDot } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -23,6 +24,11 @@ export function TemplateCardBody({
   readinessStatuses,
   onViewFlows,
 }: TemplateCardBodyProps) {
+  const readinessMap = useMemo(
+    () => new Map(readinessStatuses.map((s) => [s.connector_name, s])),
+    [readinessStatuses],
+  );
+
   return (
     <>
       {/* Compact Body (mobile) */}
@@ -85,7 +91,7 @@ export function TemplateCardBody({
             <div className="flex flex-wrap gap-2">
               {connectors.map((c) => {
                 const meta = getConnectorMeta(c);
-                const status = readinessStatuses.find((s) => s.connector_name === c);
+                const status = readinessMap.get(c);
                 const isReady = status?.health === 'ready';
                 return (
                   <Tooltip content={`${meta.label}${isReady ? '' : ' (not configured)'}`} placement="bottom">

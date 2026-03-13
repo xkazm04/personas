@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import type { BuilderState, DryRunResult, DryRunIssue, DryRunProposal } from './types';
 import { toDesignContext } from './builderReducer';
 import { testDesignFeasibility, type FeasibilityResult } from '@/api/templates/design';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 
 // -- Public interface ------------------------------------------------
 
@@ -174,7 +174,7 @@ export function useDryRun(): UseDryRunReturn {
       }
 
       // Get credentials from store for proposal generation
-      const creds = usePersonaStore.getState().credentials;
+      const creds = useVaultStore.getState().credentials;
       const credentials = creds.map((c) => ({ id: c.id, service_type: c.service_type }));
 
       const parsed = parseFeasibilityResult(raw, state, credentials);

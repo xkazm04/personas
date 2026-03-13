@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Network, List } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { ToolsSection } from './ToolsSection';
@@ -20,7 +20,7 @@ interface PersonaConnectorsTabProps {
 }
 
 export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectorsTabProps) {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const {
     statuses, tools, requiredCredTypes, credentials,
     testingAll, readinessCounts, fetchCredentials, testConnector,

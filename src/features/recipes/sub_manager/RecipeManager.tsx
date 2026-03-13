@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { BookOpen, Plus, Search, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { RecipeList } from '@/features/recipes/sub_list/RecipeList';
@@ -11,9 +11,9 @@ import { useRecipeViewFSM } from '@/features/recipes/hooks/useRecipeViewFSM';
 import { TRANSITION_FAST, TRANSITION_NORMAL } from '@/features/templates/animationPresets';
 
 export function RecipeManager() {
-  const recipes = usePersonaStore((s) => s.recipes);
-  const fetchRecipes = usePersonaStore((s) => s.fetchRecipes);
-  const deleteRecipe = usePersonaStore((s) => s.deleteRecipe);
+  const recipes = usePipelineStore((s) => s.recipes);
+  const fetchRecipes = usePipelineStore((s) => s.fetchRecipes);
+  const deleteRecipe = usePipelineStore((s) => s.deleteRecipe);
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

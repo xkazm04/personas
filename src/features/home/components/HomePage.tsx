@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { SystemHealthPanel } from '@/features/overview/components/health/SystemHealthPanel';
 import HomeWelcome from '@/features/home/components/HomeWelcome';
 
 export default function HomePage() {
-  const homeTab = usePersonaStore((s) => s.homeTab);
+  const homeTab = useSystemStore((s) => s.homeTab);
   const showSystemCheck = homeTab === 'system-check' && import.meta.env.DEV;
 
   return (

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import type { PersonaDraft } from './PersonaDraft';
 import type { PersonaWithDetails } from '@/lib/types/types';
 
@@ -16,7 +16,7 @@ export function useEffectivePersona(
   draft: PersonaDraft,
   baseline: PersonaDraft,
 ): PersonaWithDetails | null {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
 
   return useMemo(() => {
     if (!selectedPersona) return null;

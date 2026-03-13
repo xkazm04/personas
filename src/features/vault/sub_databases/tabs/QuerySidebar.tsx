@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Plus, Trash2, Star, Check, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 
 interface QuerySidebarProps {
   credentialId: string;
@@ -11,10 +11,10 @@ interface QuerySidebarProps {
 }
 
 export function QuerySidebar({ credentialId, language, selectedId, onSelect }: QuerySidebarProps) {
-  const queries = usePersonaStore((s) => s.dbSavedQueries).filter((q) => q.credential_id === credentialId);
-  const createQuery = usePersonaStore((s) => s.createDbSavedQuery);
-  const updateQuery = usePersonaStore((s) => s.updateDbSavedQuery);
-  const deleteQuery = usePersonaStore((s) => s.deleteDbSavedQuery);
+  const queries = useVaultStore((s) => s.dbSavedQueries).filter((q) => q.credential_id === credentialId);
+  const createQuery = useVaultStore((s) => s.createDbSavedQuery);
+  const updateQuery = useVaultStore((s) => s.updateDbSavedQuery);
+  const deleteQuery = useVaultStore((s) => s.deleteDbSavedQuery);
 
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');

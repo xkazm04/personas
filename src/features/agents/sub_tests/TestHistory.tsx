@@ -3,7 +3,7 @@ import {
   FlaskConical, ChevronDown, ChevronRight,
   Trash2, Clock, Trophy, Loader2, AlertCircle,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { TestComparisonTable } from './TestComparisonTable';
 import { statusBadge } from './testUtils';
 import type { PersonaTestRun } from '@/lib/bindings/PersonaTestRun';
@@ -32,9 +32,9 @@ interface TestHistoryProps {
 }
 
 export function TestHistory({ expandedRunId, onToggleExpand, onDelete }: TestHistoryProps) {
-  const testRuns = usePersonaStore((s) => s.testRuns);
-  const activeTestResults = usePersonaStore((s) => s.activeTestResults);
-  const activeTestResultsRunId = usePersonaStore((s) => s.activeTestResultsRunId);
+  const testRuns = useAgentStore((s) => s.testRuns);
+  const activeTestResults = useAgentStore((s) => s.activeTestResults);
+  const activeTestResultsRunId = useAgentStore((s) => s.activeTestResultsRunId);
 
   return (
     <div className="space-y-3">

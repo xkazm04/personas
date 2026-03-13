@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { openExternalUrl } from '@/api/tauriApi';
+import { openExternalUrl } from "@/api/system/system";
+
 
 /** Result returned by the generic start function. */
 export interface OAuthStartResult {

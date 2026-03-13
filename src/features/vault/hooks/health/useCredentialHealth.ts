@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import * as credApi from '@/api/vault/credentials';
 import { testCredentialDesignHealthcheck, type CredentialDesignHealthcheckResult } from '@/api/vault/credentialDesign';
 import { toCredentialMetadata } from '@/lib/types/types';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/useModuleSubscription';
 
 // -- Types -------------------------------------------------------------
@@ -152,7 +152,7 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
       const hcResult = await credApi.healthcheckCredential(key);
 
       // Persist healthcheck metadata on the credential
-      const credentials = usePersonaStore.getState().credentials;
+      const credentials = useVaultStore.getState().credentials;
       const cred = credentials.find((c) => c.id === key);
       if (cred) {
         const nowIso = new Date().toISOString();
@@ -165,7 +165,7 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
 
         const updatedRaw = await credApi.patchCredentialMetadata(key, patch);
         const updated = toCredentialMetadata(updatedRaw);
-        usePersonaStore.setState((s) => ({
+        useVaultStore.setState((s) => ({
           credentials: s.credentials.map((c) => (c.id === key ? updated : c)),
         }));
       }

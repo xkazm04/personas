@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Sparkles, Check } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import type { OnboardingStep } from '@/stores/slices/system/onboardingSlice';
 
 const STEP_LABELS: Record<OnboardingStep, string> = {
@@ -13,11 +14,11 @@ const STEP_LABELS: Record<OnboardingStep, string> = {
 const STEP_ORDER: OnboardingStep[] = ['discover', 'pick-template', 'adopt', 'execute'];
 
 export default function OnboardingProgressBar() {
-  const onboardingActive = usePersonaStore((s) => s.onboardingActive);
-  const onboardingCompleted = usePersonaStore((s) => s.onboardingCompleted);
-  const onboardingStep = usePersonaStore((s) => s.onboardingStep);
-  const onboardingStepCompleted = usePersonaStore((s) => s.onboardingStepCompleted);
-  const personas = usePersonaStore((s) => s.personas);
+  const onboardingActive = useSystemStore((s) => s.onboardingActive);
+  const onboardingCompleted = useSystemStore((s) => s.onboardingCompleted);
+  const onboardingStep = useSystemStore((s) => s.onboardingStep);
+  const onboardingStepCompleted = useSystemStore((s) => s.onboardingStepCompleted);
+  const personas = useAgentStore((s) => s.personas);
 
   // Don't show if onboarding is completed or if user already has personas
   if (onboardingCompleted || personas.length > 0) return null;

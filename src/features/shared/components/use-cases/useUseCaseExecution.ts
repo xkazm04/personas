@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
 import { useElapsedTimer } from '@/hooks/utility/timing/useElapsedTimer';
 import type { UseCaseItem } from './UseCasesList';
 
 export function useUseCaseExecution(personaId: string, useCase: UseCaseItem, onExecutionFinished?: () => void) {
-  const executePersona = usePersonaStore((s) => s.executePersona);
-  const cancelExecution = usePersonaStore((s) => s.cancelExecution);
-  const isExecuting = usePersonaStore((s) => s.isExecuting);
-  const activeExecutionId = usePersonaStore((s) => s.activeExecutionId);
-  const executionOutput = usePersonaStore((s) => s.executionOutput);
-  const executionPersonaId = usePersonaStore((s) => s.executionPersonaId);
-  const activeUseCaseId = usePersonaStore((s) => s.activeUseCaseId);
+  const executePersona = useAgentStore((s) => s.executePersona);
+  const cancelExecution = useAgentStore((s) => s.cancelExecution);
+  const isExecuting = useAgentStore((s) => s.isExecuting);
+  const activeExecutionId = useAgentStore((s) => s.activeExecutionId);
+  const executionOutput = useAgentStore((s) => s.executionOutput);
+  const executionPersonaId = useAgentStore((s) => s.executionPersonaId);
+  const activeUseCaseId = useAgentStore((s) => s.activeUseCaseId);
 
   const { disconnect } = usePersonaExecution();
 

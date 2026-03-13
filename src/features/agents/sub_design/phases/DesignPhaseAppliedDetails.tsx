@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Key, Zap, Play, FileText, ChevronRight, type LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import type { AgentIR } from '@/lib/types/designTypes';
 
 interface NextStep {
@@ -19,8 +19,8 @@ interface DesignPhaseAppliedDetailsProps {
 }
 
 export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseAppliedDetailsProps) {
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
 
   // Build summary stats from the applied result
   const stats = useMemo(() => {

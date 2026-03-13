@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 
@@ -9,11 +10,11 @@ import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
  * (fetched by useOverviewMetrics).
  */
 export function useHealingWorkflow() {
-  const healingIssues = usePersonaStore((s) => s.healingIssues);
-  const healingRunning = usePersonaStore((s) => s.healingRunning);
-  const triggerHealing = usePersonaStore((s) => s.triggerHealing);
-  const resolveHealingIssue = usePersonaStore((s) => s.resolveHealingIssue);
-  const personas = usePersonaStore((s) => s.personas);
+  const healingIssues = useOverviewStore((s) => s.healingIssues);
+  const healingRunning = useOverviewStore((s) => s.healingRunning);
+  const triggerHealing = useOverviewStore((s) => s.triggerHealing);
+  const resolveHealingIssue = useOverviewStore((s) => s.resolveHealingIssue);
+  const personas = useAgentStore((s) => s.personas);
 
   const { selectedPersonaId } = useOverviewFilters();
 

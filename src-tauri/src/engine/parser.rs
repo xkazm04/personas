@@ -200,7 +200,22 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                 Some(display),
             )
         }
-        _ => (StreamLineType::Unknown, None),
+        _ => {
+            // No recognized stream type -- check if this is a raw protocol message
+            // on stdout. Reuses the already-parsed Value to avoid a second parse.
+            if let Some(_protocol_msg) = extract_protocol_message_from_value(&value) {
+                // Return as AssistantText so the runner's protocol detection path
+                // picks it up and dispatches it, using the original line as text.
+                (
+                    StreamLineType::AssistantText {
+                        text: trimmed.to_string(),
+                    },
+                    None,
+                )
+            } else {
+                (StreamLineType::Unknown, None)
+            }
+        }
     }
 }
 
@@ -321,24 +336,39 @@ fn parse_knowledge_annotation(msg: &serde_json::Value) -> Option<ProtocolMessage
 /// Check if a trimmed line is a known protocol JSON message.
 ///
 /// Returns the parsed protocol message, or None if not a protocol message
-/// or if parsing fails.
+/// or if parsing fails. Prefer `extract_protocol_message_from_value` when
+/// the caller already has a parsed `serde_json::Value` to avoid redundant
+/// deserialization.
+#[allow(dead_code)]
 pub fn extract_protocol_message(line: &str) -> Option<ProtocolMessage> {
     let trimmed = line.trim();
     if trimmed.is_empty() {
         return None;
     }
 
-    for &(key, parser_fn) in PROTOCOL_KEYS {
-        // Fast prefix check: {"key": or {"key" :
-        if trimmed.starts_with(&format!("{{\"{key}\":"))
+    // Fast prefix check before parsing: only deserialize if a known key is likely present
+    let has_prefix = PROTOCOL_KEYS.iter().any(|&(key, _)| {
+        trimmed.starts_with(&format!("{{\"{key}\":"))
             || trimmed.starts_with(&format!("{{\"{key}\" :"))
-        {
-            let wrapper: serde_json::Value = serde_json::from_str(trimmed).ok()?;
-            let msg = wrapper.get(key)?;
+    });
+    if !has_prefix {
+        return None;
+    }
+
+    let value: serde_json::Value = serde_json::from_str(trimmed).ok()?;
+    extract_protocol_message_from_value(&value)
+}
+
+/// Extract a protocol message from an already-parsed JSON value.
+///
+/// Use this when the caller already has a parsed `serde_json::Value` (e.g.,
+/// from `parse_stream_line`) to avoid a redundant `serde_json::from_str`.
+pub fn extract_protocol_message_from_value(value: &serde_json::Value) -> Option<ProtocolMessage> {
+    for &(key, parser_fn) in PROTOCOL_KEYS {
+        if let Some(msg) = value.get(key) {
             return parser_fn(msg);
         }
     }
-
     None
 }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { HealthCheckSection, HealthCheckItem } from '@/api/tauriApi';
-import { healthCheckLocal, healthCheckAgents, healthCheckCloud, healthCheckAccount } from '@/api/tauriApi';
+import type { HealthCheckItem, HealthCheckSection } from "@/api/system/system";
+import { healthCheckAccount, healthCheckAgents, healthCheckCloud, healthCheckLocal } from "@/api/system/system";
 
 const SECTION_ORDER = ['local', 'agents', 'cloud', 'account'];
 

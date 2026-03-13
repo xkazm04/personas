@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { Shield, Map, RotateCcw, Play, Trash2, Check, AlertTriangle } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
 
 export default function AdminSettings() {
-  const tourActive = usePersonaStore((s) => s.tourActive);
-  const tourCompleted = usePersonaStore((s) => s.tourCompleted);
-  const tourDismissed = usePersonaStore((s) => s.tourDismissed);
-  const tourCurrentStepIndex = usePersonaStore((s) => s.tourCurrentStepIndex);
-  const tourStepCompleted = usePersonaStore((s) => s.tourStepCompleted);
-  const resetTour = usePersonaStore((s) => s.resetTour);
-  const finishTour = usePersonaStore((s) => s.finishTour);
-  const dismissTour = usePersonaStore((s) => s.dismissTour);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
+  const tourActive = useSystemStore((s) => s.tourActive);
+  const tourCompleted = useSystemStore((s) => s.tourCompleted);
+  const tourDismissed = useSystemStore((s) => s.tourDismissed);
+  const tourCurrentStepIndex = useSystemStore((s) => s.tourCurrentStepIndex);
+  const tourStepCompleted = useSystemStore((s) => s.tourStepCompleted);
+  const resetTour = useSystemStore((s) => s.resetTour);
+  const finishTour = useSystemStore((s) => s.finishTour);
+  const dismissTour = useSystemStore((s) => s.dismissTour);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -24,7 +24,7 @@ export default function AdminSettings() {
     setTimeout(() => {
       // After reset, startTour guard checks tourCompleted/tourDismissed.
       // Since we just reset, those are false, so we can start directly.
-      usePersonaStore.getState().startTour();
+      useSystemStore.getState().startTour();
       setSidebarSection('home');
     }, 50);
   };

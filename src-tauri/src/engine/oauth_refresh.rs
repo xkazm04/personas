@@ -94,16 +94,16 @@ pub async fn refresh_single_credential(
     }
 
     // resolve_auth_token will use the refresh_token to get a fresh access_token
-    let fresh_token = strategy
+    let resolved = strategy
         .resolve_auth_token(connector_meta.as_deref(), &fields)
         .await?;
 
-    let fresh_token = fresh_token.ok_or_else(|| {
+    let resolved = resolved.ok_or_else(|| {
         AppError::Internal("Strategy returned no token after refresh".into())
     })?;
 
     // Persist the fresh access_token
-    cred_repo::upsert_field(pool, &cred.id, "access_token", &fresh_token, true)?;
+    cred_repo::upsert_field(pool, &cred.id, "access_token", &resolved.token, true)?;
 
     // Update metadata with refresh stats
     let now = chrono::Utc::now().to_rfc3339();
@@ -125,8 +125,9 @@ pub async fn refresh_single_credential(
         serde_json::json!(now),
     );
 
-    // Estimate new expiry (most OAuth providers give 1h tokens)
-    let new_expiry = (chrono::Utc::now() + chrono::Duration::seconds(3600)).to_rfc3339();
+    // Use the provider-reported expiry if available, otherwise fall back to 1h
+    let expiry_secs = resolved.expires_in_secs.unwrap_or(3600) as i64;
+    let new_expiry = (chrono::Utc::now() + chrono::Duration::seconds(expiry_secs)).to_rfc3339();
     patch.insert(
         "oauth_token_expires_at".to_string(),
         serde_json::json!(new_expiry),
@@ -149,8 +150,9 @@ pub async fn refresh_single_credential(
     );
 
     Ok(format!(
-        "Token refreshed successfully (refresh #{})",
-        current_count + 1
+        "Token refreshed successfully (refresh #{}, expires in {}s)",
+        current_count + 1,
+        expiry_secs,
     ))
 }
 

@@ -1,15 +1,15 @@
 import { useDroppable } from '@dnd-kit/core';
 import { DraggablePersonaCard } from '@/features/agents/components/sub_sidebar/DraggablePersonaCard';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import type { DropPayload } from '@/lib/types/frontendTypes';
 
 interface UngroupedZoneProps {
-  ungrouped: DbPersona[];
+  ungrouped: Persona[];
   groupsLength: number;
   activeId: string | null;
   selectedPersonaId: string | null;
   selectPersona: (id: string | null) => void;
-  handleContextMenu: (e: React.MouseEvent, persona: DbPersona) => void;
+  handleContextMenu: (e: React.MouseEvent, persona: Persona) => void;
 }
 
 export function UngroupedZone({

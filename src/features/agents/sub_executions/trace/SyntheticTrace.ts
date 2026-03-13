@@ -1,11 +1,11 @@
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import type { PipelineTrace, PipelineStage, UnifiedSpan } from '@/lib/execution/pipeline';
 
 // ---------------------------------------------------------------------------
 // Synthetic trace builder (for historical executions without live trace)
 // ---------------------------------------------------------------------------
 
-export function buildSyntheticTrace(execution: DbPersonaExecution): PipelineTrace | null {
+export function buildSyntheticTrace(execution: PersonaExecution): PipelineTrace | null {
   if (!execution.started_at && !execution.created_at) return null;
 
   const startTime = new Date(execution.started_at ?? execution.created_at).getTime();

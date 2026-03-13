@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, Zap } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import type { PersonaAutomation, AutomationDeploymentStatus } from '@/lib/bindings/PersonaAutomation';
 import { AutomationCard } from './AutomationCard';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
@@ -18,9 +18,9 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string }>>({});
 
-  const testAutomation = usePersonaStore((s) => s.testAutomation);
-  const updateAutomation = usePersonaStore((s) => s.updateAutomation);
-  const deleteAutomation = usePersonaStore((s) => s.deleteAutomation);
+  const testAutomation = useVaultStore((s) => s.testAutomation);
+  const updateAutomation = useVaultStore((s) => s.updateAutomation);
+  const deleteAutomation = useVaultStore((s) => s.deleteAutomation);
 
   const handleTest = async (id: string) => {
     setTestingId(id);

@@ -15,8 +15,10 @@ use sha2::Sha256;
 use tokio::sync::watch;
 
 use crate::db::models::CreatePersonaEventInput;
+use crate::db::models::webhook_log::CreateWebhookRequestLogInput;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
+use crate::db::repos::resources::webhook_log as webhook_log_repo;
 use crate::db::DbPool;
 use crate::engine::rate_limiter::{RateLimiter, WEBHOOK_TRIGGER_WINDOW};
 use crate::engine::tier::TierConfig;
@@ -113,6 +115,20 @@ struct WebhookResponse {
     error: Option<String>,
 }
 
+/// Serialize request headers to a JSON string for logging.
+fn serialize_headers(headers: &HeaderMap) -> String {
+    let map: serde_json::Map<String, serde_json::Value> = headers
+        .iter()
+        .map(|(name, value)| {
+            (
+                name.as_str().to_string(),
+                serde_json::Value::String(value.to_str().unwrap_or("<binary>").to_string()),
+            )
+        })
+        .collect();
+    serde_json::Value::Object(map).to_string()
+}
+
 /// POST /webhook/{trigger_id} -- receive webhook payload, validate HMAC, publish event.
 async fn handle_webhook(
     AxumState(state): AxumState<Arc<WebhookState>>,
@@ -120,17 +136,48 @@ async fn handle_webhook(
     headers: HeaderMap,
     body: Bytes,
 ) -> impl IntoResponse {
+    let headers_json = serialize_headers(&headers);
+    let body_str = String::from_utf8_lossy(&body).to_string();
+    let body_for_log = if body_str.is_empty() { None } else { Some(body_str.clone()) };
+
+    let (status, response) = process_webhook(&state, &trigger_id, &headers, &body).await;
+
+    // Log the request regardless of outcome
+    let log_input = CreateWebhookRequestLogInput {
+        trigger_id: trigger_id.clone(),
+        method: "POST".into(),
+        headers: Some(headers_json),
+        body: body_for_log,
+        status_code: status.as_u16() as i32,
+        response_body: serde_json::to_string(&response).ok(),
+        event_id: response.event_id.clone(),
+        error_message: response.error.clone(),
+    };
+    if let Err(e) = webhook_log_repo::create(&state.pool, log_input) {
+        tracing::warn!("Failed to log webhook request: {}", e);
+    }
+
+    (status, Json(response))
+}
+
+/// Core webhook processing logic, separated for clean logging.
+async fn process_webhook(
+    state: &WebhookState,
+    trigger_id: &str,
+    headers: &HeaderMap,
+    body: &Bytes,
+) -> (StatusCode, WebhookResponse) {
     // 1. Look up the trigger
-    let trigger = match trigger_repo::get_by_id(&state.pool, &trigger_id) {
+    let trigger = match trigger_repo::get_by_id(&state.pool, trigger_id) {
         Ok(t) => t,
         Err(_) => {
             return (
                 StatusCode::NOT_FOUND,
-                Json(WebhookResponse {
+                WebhookResponse {
                     accepted: false,
                     event_id: None,
                     error: Some("Trigger not found".into()),
-                }),
+                },
             );
         }
     };
@@ -139,22 +186,22 @@ async fn handle_webhook(
     if trigger.trigger_type != "webhook" {
         return (
             StatusCode::BAD_REQUEST,
-            Json(WebhookResponse {
+            WebhookResponse {
                 accepted: false,
                 event_id: None,
                 error: Some("Not a webhook trigger".into()),
-            }),
+            },
         );
     }
 
     if !trigger.enabled {
         return (
             StatusCode::FORBIDDEN,
-            Json(WebhookResponse {
+            WebhookResponse {
                 accepted: false,
                 event_id: None,
                 error: Some("Trigger is disabled".into()),
-            }),
+            },
         );
     }
 
@@ -169,14 +216,14 @@ async fn handle_webhook(
         );
         return (
             StatusCode::TOO_MANY_REQUESTS,
-            Json(WebhookResponse {
+            WebhookResponse {
                 accepted: false,
                 event_id: None,
                 error: Some(format!(
                     "Rate limited: max {} webhook calls/minute per trigger. Retry after {}s",
                     webhook_trigger_max, retry_after
                 )),
-            }),
+            },
         );
     }
 
@@ -201,55 +248,54 @@ async fn handle_webhook(
 
             match signature {
                 Some(sig) => {
-                    if !verify_hmac_sha256(secret, &body, sig) {
+                    if !verify_hmac_sha256(secret, body, sig) {
                         return (
                             StatusCode::UNAUTHORIZED,
-                            Json(WebhookResponse {
+                            WebhookResponse {
                                 accepted: false,
                                 event_id: None,
                                 error: Some("Invalid HMAC signature".into()),
-                            }),
+                            },
                         );
                     }
                 }
                 None => {
                     return (
                         StatusCode::UNAUTHORIZED,
-                        Json(WebhookResponse {
+                        WebhookResponse {
                             accepted: false,
                             event_id: None,
                             error: Some(
                                 "Missing signature header (x-hub-signature-256, x-signature-256, or x-webhook-signature)".into(),
                             ),
-                        }),
+                        },
                     );
                 }
             }
         }
         _ => {
             // No secret configured or empty -- reject as misconfigured.
-            // Webhook triggers must have a non-empty secret.
             tracing::warn!(
                 trigger_id = %trigger_id,
                 "Webhook trigger has no HMAC secret configured -- rejecting request",
             );
             return (
                 StatusCode::FORBIDDEN,
-                Json(WebhookResponse {
+                WebhookResponse {
                     accepted: false,
                     event_id: None,
                     error: Some("Webhook trigger has no HMAC secret configured".into()),
-                }),
+                },
             );
         }
     }
 
     // 4. Parse body as JSON payload (or use raw string)
-    let payload = match serde_json::from_slice::<serde_json::Value>(&body) {
+    let payload = match serde_json::from_slice::<serde_json::Value>(body) {
         Ok(v) => Some(serde_json::to_string(&v).unwrap_or_default()),
         Err(_) => {
             // Not JSON -- wrap as raw text
-            let text = String::from_utf8_lossy(&body);
+            let text = String::from_utf8_lossy(body);
             if text.is_empty() {
                 None
             } else {
@@ -267,7 +313,7 @@ async fn handle_webhook(
         CreatePersonaEventInput {
             event_type,
             source_type: "webhook".into(),
-            source_id: Some(trigger_id.clone()),
+            source_id: Some(trigger_id.to_string()),
             target_persona_id: Some(trigger.persona_id.clone()),
             project_id: None,
             payload,
@@ -276,7 +322,7 @@ async fn handle_webhook(
     ) {
         Ok(event) => {
             // 7. Mark trigger as fired
-            let _ = trigger_repo::mark_triggered(&state.pool, &trigger_id, None, trigger.next_trigger_at.as_deref());
+            let _ = trigger_repo::mark_triggered(&state.pool, trigger_id, None, trigger.next_trigger_at.as_deref());
 
             tracing::info!(
                 trigger_id = %trigger_id,
@@ -287,22 +333,22 @@ async fn handle_webhook(
 
             (
                 StatusCode::OK,
-                Json(WebhookResponse {
+                WebhookResponse {
                     accepted: true,
                     event_id: Some(event.id),
                     error: None,
-                }),
+                },
             )
         }
         Err(e) => {
             tracing::error!(trigger_id = %trigger_id, "Failed to publish webhook event: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(WebhookResponse {
+                WebhookResponse {
                     accepted: false,
                     event_id: None,
                     error: Some("Failed to process webhook".into()),
-                }),
+                },
             )
         }
     }

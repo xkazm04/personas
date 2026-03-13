@@ -12,6 +12,7 @@ use std::sync::{Arc, Mutex};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tauri::{Emitter, Manager, State};
+use ts_rs::TS;
 
 use crate::commands::credentials::ai_artifact_flow::spawn_claude_and_collect;
 use crate::engine::prompt::build_cli_args;
@@ -45,7 +46,8 @@ const USER_INPUT_PREFIX: &str = "USER_INPUT:";
 /// from a misbehaving MCP server or looping browser automation.
 const MAX_TOOL_INVOCATIONS: u32 = 500;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export)]
 pub struct AutoCredBrowserRequest {
     pub session_id: String,
     pub connector_name: String,
@@ -59,7 +61,8 @@ pub struct AutoCredBrowserRequest {
     pub force_guided: Option<bool>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export)]
 pub struct AutoCredField {
     pub key: String,
     pub label: String,
@@ -70,7 +73,8 @@ pub struct AutoCredField {
     pub help_text: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
 pub struct AutoCredBrowserResult {
     pub session_id: String,
     pub extracted_values: serde_json::Value,
@@ -419,7 +423,7 @@ pub async fn start_auto_cred_browser(
     request: AutoCredBrowserRequest,
 ) -> Result<AutoCredBrowserResult, String> {
     require_privileged(&state, "start_auto_cred_browser").await.map_err(|e| e.to_string())?;
-    let pid_ref = Arc::clone(&state.active_auto_cred_child_pid);
+    let registry = Arc::clone(&state.process_registry);
     let session_id = request.session_id.clone();
     let force_guided = request.force_guided.unwrap_or(false);
 
@@ -698,12 +702,12 @@ pub async fn start_auto_cred_browser(
                 _ => {}
             }
         },
-        Some(&pid_ref),
+        Some((&registry, "auto_cred")),
     )
     .await;
 
     // Clear PID on completion
-    *pid_ref.lock().unwrap() = None;
+    registry.clear_pid("auto_cred");
 
     // Snapshot the accumulated session context
     let session_ctx = ctx_acc.lock().ok().map(|g| g.clone());
@@ -1059,10 +1063,7 @@ fn extract_urls(text: &str) -> Vec<String> {
 pub async fn cancel_auto_cred_browser(
     state: State<'_, Arc<AppState>>,
 ) -> Result<(), String> {
-    let pid = {
-        let mut guard = state.active_auto_cred_child_pid.lock().unwrap();
-        guard.take()
-    };
+    let pid = state.process_registry.take_pid("auto_cred");
     if let Some(pid) = pid {
         tracing::info!(pid, "Killing auto-cred CLI subprocess");
         #[cfg(windows)]

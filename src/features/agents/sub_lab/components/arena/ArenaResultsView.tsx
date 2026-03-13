@@ -2,63 +2,18 @@ import { useMemo } from 'react';
 import { Trophy, DollarSign, Clock, Target, FileText, Shield } from 'lucide-react';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import { statusBadge, compositeScore, scoreColor } from '@/lib/eval/evalFramework';
+import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
+import { aggregateArenaResults } from '../../libs/labAggregation';
 
 interface Props {
   results: LabArenaResult[];
 }
 
-interface ModelAggregate {
-  modelId: string;
-  provider: string;
-  avgToolAccuracy: number;
-  avgOutputQuality: number;
-  avgProtocolCompliance: number;
-  compositeScore: number;
-  totalCost: number;
-  avgDuration: number;
-  count: number;
-}
-
 export function ArenaResultsView({ results }: Props) {
-  const { models, scenarios, matrix, aggregates, bestModelId } = useMemo(() => {
-    const modelSet = new Set<string>();
-    const scenarioSet = new Set<string>();
-    const mtx: Record<string, Record<string, LabArenaResult>> = {};
-
-    for (const r of results) {
-      modelSet.add(r.modelId);
-      scenarioSet.add(r.scenarioName);
-      if (!mtx[r.scenarioName]) mtx[r.scenarioName] = {};
-      mtx[r.scenarioName]![r.modelId] = r;
-    }
-
-    const models = [...modelSet];
-    const scenarios = [...scenarioSet];
-
-    const aggs: ModelAggregate[] = models.map((mid) => {
-      const rows = results.filter((r) => r.modelId === mid);
-      const n = rows.length || 1;
-      const avgTA = rows.reduce((s, r) => s + (r.toolAccuracyScore ?? 0), 0) / n;
-      const avgOQ = rows.reduce((s, r) => s + (r.outputQualityScore ?? 0), 0) / n;
-      const avgPC = rows.reduce((s, r) => s + (r.protocolCompliance ?? 0), 0) / n;
-      return {
-        modelId: mid,
-        provider: rows[0]?.provider ?? 'unknown',
-        avgToolAccuracy: Math.round(avgTA),
-        avgOutputQuality: Math.round(avgOQ),
-        avgProtocolCompliance: Math.round(avgPC),
-        compositeScore: compositeScore(avgTA, avgOQ, avgPC),
-        totalCost: rows.reduce((s, r) => s + r.costUsd, 0),
-        avgDuration: Math.round(rows.reduce((s, r) => s + r.durationMs, 0) / n),
-        count: rows.length,
-      };
-    });
-
-    aggs.sort((a, b) => b.compositeScore - a.compositeScore);
-    const bestModelId = aggs[0]?.modelId ?? null;
-
-    return { models, scenarios, matrix: mtx, aggregates: aggs, bestModelId };
-  }, [results]);
+  const { models, scenarios, matrix, aggregates, bestModelId } = useMemo(
+    () => aggregateArenaResults(results),
+    [results],
+  );
 
   if (results.length === 0) {
     return (
@@ -159,9 +114,11 @@ export function ArenaResultsView({ results }: Props) {
                 ))}
               </tr>
             </thead>
-            <tbody>
-              {scenarios.map((scenario) => (
-                <tr key={scenario} className="border-b border-primary/10 hover:bg-secondary/10 transition-colors">
+            <VirtualizedTableBody
+              items={scenarios}
+              rowKey={(s) => s}
+              renderRow={(scenario) => (
+                <>
                   <td className="px-3 py-2.5 text-foreground/80 font-medium max-w-[200px] truncate">
                     {scenario}
                   </td>
@@ -188,9 +145,9 @@ export function ArenaResultsView({ results }: Props) {
                       </td>
                     );
                   })}
-                </tr>
-              ))}
-            </tbody>
+                </>
+              )}
+            />
           </table>
         </div>
       </div>

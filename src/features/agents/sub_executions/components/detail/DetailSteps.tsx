@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react';
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import { Clock, Calendar, RotateCw, RefreshCw, Search, ListTree, Activity, Zap, Shield, Play } from 'lucide-react';
 import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { isTerminalState } from '@/lib/execution/executionState';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { hasNonEmptyJson, type ErrorAction } from '../../libs/useExecutionDetail';
 import { ErrorDisplay } from './DetailHeader';
 import { DetailDataSections, DetailMemories, DetailLogSection } from './DetailMetadata';
@@ -13,14 +14,14 @@ import { PipelineWaterfall } from '../replay/PipelineWaterfall';
 import { ReplaySandbox } from '../replay/ReplaySandbox';
 
 interface ExecutionDetailProps {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
 }
 
 export function ExecutionDetail({ execution }: ExecutionDetailProps) {
-  const setRerunInputData = usePersonaStore((s) => s.setRerunInputData);
-  const setSidebarSection = usePersonaStore((s) => s.setSidebarSection);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
+  const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
   const [activeTab, setActiveTab] = useState<'detail' | 'inspector' | 'trace' | 'pipeline' | 'replay'>('detail');
 
   const handleErrorAction = useCallback((action: ErrorAction) => {

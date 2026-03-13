@@ -55,6 +55,8 @@ export function FieldCaptureRow({
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isEditable = mode !== 'readonly' && !!onChange;
   const isSecret = inputType === 'password';
+  const fieldId = testIdBase ?? label.toLowerCase().replace(/\s+/g, '-');
+  const errorId = `${fieldId}-error`;
 
   useEffect(() => {
     return () => {
@@ -163,6 +165,8 @@ export function FieldCaptureRow({
           onChange={(e) => onChange?.(e.target.value)}
           onBlur={onBlur}
           disabled={!isEditable}
+          aria-invalid={!!error}
+          aria-describedby={error ? errorId : undefined}
           className={`rounded-xl ${error ? 'border-red-500/50' : ''}`}
         >
           <option value="">{placeholder || 'Select...'}</option>
@@ -178,13 +182,15 @@ export function FieldCaptureRow({
           onBlur={onBlur}
           disabled={!isEditable}
           placeholder={placeholder}
+          aria-invalid={!!error}
+          aria-describedby={error ? errorId : undefined}
           className={`w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-red-500/50' : valueClass}`}
           data-testid={testIdBase ? `${testIdBase}-input` : undefined}
         />
       )}
 
       {error ? (
-        <p className="text-sm text-red-400">{error}</p>
+        <p id={errorId} className="text-sm text-red-400">{error}</p>
       ) : (
         (helpText ? <p className="text-sm text-muted-foreground/60">{helpText}</p> : null)
       )}

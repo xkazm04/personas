@@ -1,20 +1,22 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useVaultStore } from "@/stores/vaultStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { useCredentialNav } from '@/features/vault/hooks/CredentialNavContext';
 
 export function useToolSelectorState() {
-  const selectedPersona = usePersonaStore((state) => state.selectedPersona);
-  const toolDefinitions = usePersonaStore((state) => state.toolDefinitions);
-  const credentials = usePersonaStore((state) => state.credentials);
-  const assignTool = usePersonaStore((state) => state.assignTool);
-  const removeTool = usePersonaStore((state) => state.removeTool);
-  const bulkAssignTools = usePersonaStore((state) => state.bulkAssignTools);
-  const bulkRemoveTools = usePersonaStore((state) => state.bulkRemoveTools);
-  const setSidebarSection = usePersonaStore((state) => state.setSidebarSection);
-  const toolUsageSummary = usePersonaStore((state) => state.toolUsageSummary);
-  const fetchToolUsage = usePersonaStore((state) => state.fetchToolUsage);
-  const connectorDefinitions = usePersonaStore((state) => state.connectorDefinitions);
+  const selectedPersona = useAgentStore((state) => state.selectedPersona);
+  const toolDefinitions = useAgentStore((state) => state.toolDefinitions);
+  const credentials = useVaultStore((state) => state.credentials);
+  const assignTool = useAgentStore((state) => state.assignTool);
+  const removeTool = useAgentStore((state) => state.removeTool);
+  const bulkAssignTools = useAgentStore((state) => state.bulkAssignTools);
+  const bulkRemoveTools = useAgentStore((state) => state.bulkRemoveTools);
+  const setSidebarSection = useSystemStore((state) => state.setSidebarSection);
+  const toolUsageSummary = useAgentStore((state) => state.toolUsageSummary);
+  const fetchToolUsage = useAgentStore((state) => state.fetchToolUsage);
+  const connectorDefinitions = useVaultStore((state) => state.connectorDefinitions);
   const { navigate } = useCredentialNav();
 
   const credentialLabel = useCallback((credType: string): string => {

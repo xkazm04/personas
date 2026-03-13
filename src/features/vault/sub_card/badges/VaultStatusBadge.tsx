@@ -1,8 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Shield, ShieldAlert, ShieldCheck, ChevronDown, Lock, KeyRound, HardDrive, Loader2 } from 'lucide-react';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
-import type { VaultStatus } from '@/api/tauriApi';
-import { migratePlaintextCredentials, vaultStatus as refreshVaultStatus } from '@/api/tauriApi';
+import type { VaultStatus } from "@/api/vault/credentials";
+import { migratePlaintextCredentials, vaultStatus as refreshVaultStatus } from "@/api/vault/credentials";
+
 
 interface VaultStatusBadgeProps {
   vault: VaultStatus;

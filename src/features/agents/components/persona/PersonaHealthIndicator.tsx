@@ -1,6 +1,6 @@
 import { Bot, Check, Minus, X } from 'lucide-react';
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 
 type HealthLevel = 'healthy' | 'degraded' | 'failing' | 'dormant';
@@ -28,7 +28,7 @@ const HEALTH_LABEL: Record<HealthLevel, string> = {
 };
 
 interface PersonaHealthIndicatorProps {
-  persona: DbPersona;
+  persona: Persona;
   health?: PersonaHealth;
 }
 

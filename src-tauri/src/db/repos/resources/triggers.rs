@@ -285,6 +285,37 @@ pub fn get_event_listeners_for_event_type(
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
+/// Bulk-fetch enabled event_listener triggers for multiple event types in a single query.
+pub fn get_event_listeners_for_event_types(
+    pool: &DbPool,
+    event_types: &[String],
+) -> Result<Vec<PersonaTrigger>, AppError> {
+    if event_types.is_empty() {
+        return Ok(Vec::new());
+    }
+    let conn = pool.get()?;
+    let placeholders: Vec<String> = event_types
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
+    let sql = format!(
+        "SELECT * FROM persona_triggers
+         WHERE trigger_type = 'event_listener'
+           AND enabled = 1
+           AND json_extract(config, '$.listen_event_type') IN ({})
+         ORDER BY created_at DESC",
+        placeholders.join(", ")
+    );
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = event_types
+        .iter()
+        .map(|s| s as &dyn rusqlite::types::ToSql)
+        .collect();
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(params_ref.as_slice(), row_to_trigger)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
 /// Get enabled triggers of a specific type using SQL-level filtering.
 /// Avoids loading all triggers and filtering in Rust — mirrors the pattern
 /// used by `get_chain_triggers_for_source` and `get_event_listeners_for_event_type`.

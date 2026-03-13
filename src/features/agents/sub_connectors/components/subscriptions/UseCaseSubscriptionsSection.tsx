@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { ChevronDown, Radio } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
@@ -8,7 +8,7 @@ import { UseCaseSubscriptions } from '@/features/agents/sub_use_cases/components
 import { useSubscriptionManager } from '../../libs/subscriptionLifecycle';
 
 export function UseCaseSubscriptionsSection() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
 
   const manager = useSubscriptionManager(selectedPersona);
 

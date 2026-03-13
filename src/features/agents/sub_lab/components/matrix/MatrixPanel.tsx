@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Square, ChevronDown, Filter, Wand2, AlertCircle } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { LabProgress } from '../shared/LabProgress';
 import { MatrixHistory } from './MatrixHistory';
 import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
@@ -9,14 +9,14 @@ import { ANTHROPIC_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCat
 import { usePanelRunState } from '../../libs/usePanelRunState';
 
 export function MatrixPanel() {
-  const matrixRuns = usePersonaStore((s) => s.matrixRuns);
-  const matrixResultsMap = usePersonaStore((s) => s.matrixResultsMap);
-  const isLabRunning = usePersonaStore((s) => s.isLabRunning);
-  const startMatrix = usePersonaStore((s) => s.startMatrix);
-  const cancelMatrix = usePersonaStore((s) => s.cancelMatrix);
-  const fetchMatrixRuns = usePersonaStore((s) => s.fetchMatrixRuns);
-  const fetchMatrixResults = usePersonaStore((s) => s.fetchMatrixResults);
-  const deleteMatrixRun = usePersonaStore((s) => s.deleteMatrixRun);
+  const matrixRuns = useAgentStore((s) => s.matrixRuns);
+  const matrixResultsMap = useAgentStore((s) => s.matrixResultsMap);
+  const isLabRunning = useAgentStore((s) => s.isLabRunning);
+  const startMatrix = useAgentStore((s) => s.startMatrix);
+  const cancelMatrix = useAgentStore((s) => s.cancelMatrix);
+  const fetchMatrixRuns = useAgentStore((s) => s.fetchMatrixRuns);
+  const fetchMatrixResults = useAgentStore((s) => s.fetchMatrixResults);
+  const deleteMatrixRun = useAgentStore((s) => s.deleteMatrixRun);
 
   const {
     selectedPersona, selectedModels, toggleModel,

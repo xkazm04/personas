@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useState, useMemo, useCallback } from 'react';
+import { useVaultStore } from '@/stores/vaultStore';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { CredentialTemplateForm } from '@/features/vault/sub_forms/CredentialTemplateForm';
 import { isGoogleOAuthConnector } from '@/lib/utils/platform/connectors';
 import { testCredentialDesignHealthcheck } from '@/api/vault/credentialDesign';
@@ -16,9 +17,6 @@ export function CatalogCredentialModal({
   onSave,
   onClose,
 }: CatalogCredentialModalProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-
   const isGoogleTemplate = isGoogleOAuthConnector(connectorDefinition);
 
   const effectiveTemplateFields = useMemo(() => {
@@ -42,25 +40,12 @@ export function CatalogCredentialModal({
   const [isAuthorizingOAuth, setIsAuthorizingOAuth] = useState(false);
   const [oauthCompletedAt] = useState<string | null>(null);
 
-  // Close on Escape
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose]);
-
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === overlayRef.current) onClose();
-  };
-
   const handleHealthcheck = useCallback(
     async (values: Record<string, string>) => {
       setIsHealthchecking(true);
       setHealthcheckResult(null);
       try {
-        const result = await usePersonaStore
+        const result = await useVaultStore
           .getState()
           .healthcheckCredentialPreview(connectorDefinition.name, values);
         setHealthcheckResult(result);
@@ -105,17 +90,7 @@ export function CatalogCredentialModal({
   }, []);
 
   return (
-    <div
-      ref={overlayRef}
-      onClick={handleOverlayClick}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
-    >
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        className="max-w-2xl w-full mx-4 max-h-[85vh] overflow-y-auto"
-      >
+    <BaseModal isOpen onClose={onClose} titleId="catalog-credential-title" maxWidthClass="max-w-2xl" panelClassName="max-h-[85vh] overflow-y-auto">
         <CredentialTemplateForm
           selectedConnector={connectorDefinition}
           credentialName={credentialName}
@@ -136,7 +111,6 @@ export function CatalogCredentialModal({
           isHealthchecking={isHealthchecking}
           healthcheckResult={healthcheckResult}
         />
-      </div>
-    </div>
+    </BaseModal>
   );
 }

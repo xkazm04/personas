@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 
 /**
  * Search, filter, and category state for the tool selector.
  * Reads toolDefinitions from the store and derives filtered/grouped results.
  */
 export function useToolSelectorSearch() {
-  const toolDefinitions = usePersonaStore((s) => s.toolDefinitions);
+  const toolDefinitions = useAgentStore((s) => s.toolDefinitions);
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');

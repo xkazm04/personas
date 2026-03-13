@@ -5,6 +5,8 @@ use std::time::Duration;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
+use std::collections::HashMap;
+
 use crate::db::models::{CreatePersonaEventInput, PersonaEvent, UpdateExecutionStatus};
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::{personas as persona_repo, settings};
@@ -125,6 +127,7 @@ pub fn start_loops(
         }),
         Box::new(RotationSubscription {
             pool: pool.clone(),
+            app: app.clone(),
         }),
         Box::new(CompositeSubscription {
             pool: pool.clone(),
@@ -134,6 +137,10 @@ pub fn start_loops(
         }),
         Box::new(OAuthRefreshSubscription {
             pool: pool.clone(),
+        }),
+        Box::new(subscription::ZombieExecutionSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
         }),
     ];
 
@@ -194,6 +201,10 @@ pub fn stop_loops(scheduler: &SchedulerState) {
 
 /// One tick of the event bus: fetch pending events, match to subscriptions,
 /// and dispatch executions.
+///
+/// Uses batch pre-fetching to minimize SQLite queries: instead of querying
+/// per-event and per-match, we bulk-fetch subscriptions, listeners, personas,
+/// and tools for the entire tick cycle (~3 queries instead of ~350).
 pub(crate) async fn event_bus_tick(
     scheduler: &SchedulerState,
     app: &AppHandle,
@@ -209,55 +220,62 @@ pub(crate) async fn event_bus_tick(
         }
     };
 
-    for event in events {
-        // 2. Mark as processing
+    if events.is_empty() {
+        return;
+    }
+
+    // 2. Collect unique event types for batch queries
+    let event_types: Vec<String> = {
+        let mut types: Vec<String> = events.iter().map(|e| e.event_type.clone()).collect();
+        types.sort();
+        types.dedup();
+        types
+    };
+
+    // 3. Bulk-fetch all subscriptions and listeners for these event types (2 queries)
+    let all_subs = match event_repo::get_subscriptions_by_event_types(pool, &event_types) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::error!("Event bus: bulk subscription fetch failed: {}", e);
+            // Fall through with empty — individual events will be marked skipped
+            Vec::new()
+        }
+    };
+    let all_listeners = trigger_repo::get_event_listeners_for_event_types(pool, &event_types)
+        .unwrap_or_default();
+
+    tracing::debug!(
+        event_count = events.len(),
+        event_types = event_types.len(),
+        subscriptions = all_subs.len(),
+        listeners = all_listeners.len(),
+        "Event bus: batch pre-fetch complete"
+    );
+
+    // 4. Match all events against the pre-fetched subscriptions/listeners
+    //    and collect (event_index, matches) pairs.
+    let mut event_matches: Vec<(usize, Vec<bus::EventMatch>)> = Vec::new();
+    for (idx, event) in events.iter().enumerate() {
         let _ = event_repo::update_status(pool, &event.id, "processing", None);
 
-        // 3. Get matching subscriptions from legacy table AND event_listener triggers.
-        // Both paths are checked to handle pre-migration and post-migration states.
-        let subs = match event_repo::get_subscriptions_by_event_type(pool, &event.event_type) {
-            Ok(s) => s,
-            Err(e) => {
-                tracing::error!(event_id = %event.id, "Failed to fetch subscriptions: {}", e);
-                let _ = event_repo::update_status(
-                    pool,
-                    &event.id,
-                    "failed",
-                    Some("Failed to fetch subscriptions".into()),
-                );
-                scheduler.events_failed.fetch_add(1, Ordering::Relaxed);
-                continue;
-            }
-        };
+        // Match against legacy subscriptions
+        let mut matches = bus::match_event(event, &all_subs);
 
-        // 4. Match event to legacy subscriptions
-        let mut matches = bus::match_event(&event, &subs);
+        // Also match event_listener triggers (unified model).
+        // Deduplicate by persona_id to avoid double-fire.
+        let listener_matches = bus::match_event_listeners(event, &all_listeners);
+        for lm in listener_matches {
+            if !matches.iter().any(|m| m.persona_id == lm.persona_id) {
+                matches.push(lm);
+            }
+        }
+
         tracing::debug!(
             event_id = %event.id,
             event_type = %event.event_type,
-            subscriptions_checked = subs.len(),
-            subscription_matches = matches.len(),
-            "Event bus: subscription matching complete"
+            match_count = matches.len(),
+            "Event bus: matching complete"
         );
-
-        // 4b. Also match event_listener triggers (unified model).
-        // Deduplicate by persona_id to avoid double-fire when a subscription
-        // has been migrated to a trigger but the legacy row still exists.
-        if let Ok(listeners) = trigger_repo::get_event_listeners_for_event_type(pool, &event.event_type) {
-            let listener_matches = bus::match_event_listeners(&event, &listeners);
-            tracing::debug!(
-                event_id = %event.id,
-                event_type = %event.event_type,
-                listeners_checked = listeners.len(),
-                listener_matches = listener_matches.len(),
-                "Event bus: listener matching complete"
-            );
-            for lm in listener_matches {
-                if !matches.iter().any(|m| m.persona_id == lm.persona_id) {
-                    matches.push(lm);
-                }
-            }
-        }
 
         if matches.is_empty() {
             tracing::info!(
@@ -267,23 +285,71 @@ pub(crate) async fn event_bus_tick(
             );
             let _ = event_repo::update_status(pool, &event.id, "skipped", None);
             scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
-            emit_event_to_frontend(app, &event, "skipped");
-            continue;
+            emit_event_to_frontend(app, event, "skipped");
+        } else {
+            event_matches.push((idx, matches));
         }
+    }
 
+    if event_matches.is_empty() {
+        return;
+    }
+
+    // 5. Collect unique persona IDs across all matches for bulk persona + tool fetch
+    let persona_ids: Vec<String> = {
+        let mut ids: Vec<String> = event_matches
+            .iter()
+            .flat_map(|(_, matches)| matches.iter().map(|m| m.persona_id.clone()))
+            .collect();
+        ids.sort();
+        ids.dedup();
+        ids
+    };
+
+    // 6. Bulk-fetch personas (1 query)
+    let persona_map: HashMap<String, crate::db::models::Persona> =
+        match persona_repo::get_by_ids(pool, &persona_ids) {
+            Ok(personas) => personas.into_iter().map(|p| (p.id.clone(), p)).collect(),
+            Err(e) => {
+                tracing::error!("Event bus: bulk persona fetch failed: {}", e);
+                HashMap::new()
+            }
+        };
+
+    // 7. Bulk-fetch tools for all matched personas (1 query)
+    let tools_map: HashMap<String, Vec<crate::db::models::PersonaToolDefinition>> = {
+        let pairs = tool_repo::get_tools_for_personas(pool, &persona_ids).unwrap_or_default();
+        let mut map: HashMap<String, Vec<crate::db::models::PersonaToolDefinition>> =
+            HashMap::new();
+        for (pid, def) in pairs {
+            map.entry(pid).or_default().push(def);
+        }
+        map
+    };
+
+    tracing::debug!(
+        personas_fetched = persona_map.len(),
+        personas_with_tools = tools_map.len(),
+        "Event bus: batch persona/tool fetch complete"
+    );
+
+    // 8. Dispatch executions using the pre-fetched maps
+    for (idx, matches) in &event_matches {
+        let event = &events[*idx];
         let mut any_failed = false;
-        for m in &matches {
-            // 5. Get persona
-            let persona = match persona_repo::get_by_id(pool, &m.persona_id) {
-                Ok(p) => p,
-                Err(e) => {
-                    tracing::warn!(persona_id = %m.persona_id, "Event bus: persona not found: {}", e);
+
+        for m in matches {
+            // Resolve persona from map
+            let persona = match persona_map.get(&m.persona_id) {
+                Some(p) => p.clone(),
+                None => {
+                    tracing::warn!(persona_id = %m.persona_id, "Event bus: persona not found in batch");
                     any_failed = true;
                     continue;
                 }
             };
 
-            // 6. Create execution record
+            // Create execution record (must be per-match, not batchable)
             let exec = match exec_repo::create(
                 pool,
                 &persona.id,
@@ -300,15 +366,17 @@ pub(crate) async fn event_bus_tick(
                 }
             };
 
-            // 7. Get tools
-            let tools = tool_repo::get_tools_for_persona(pool, &persona.id)
+            // Resolve tools from map
+            let tools = tools_map
+                .get(&persona.id)
+                .cloned()
                 .unwrap_or_default();
 
-            // 8. Parse input
+            // Parse input
             let input_val: Option<serde_json::Value> =
                 m.payload.as_deref().and_then(|s| serde_json::from_str(s).ok());
 
-            // 9. Start execution (admit() handles concurrency atomically --
+            // Start execution (admit() handles concurrency atomically --
             //    no separate has_capacity check to avoid TOCTOU gap)
             if let Err(e) = engine
                 .start_execution(
@@ -323,7 +391,6 @@ pub(crate) async fn event_bus_tick(
                 .await
             {
                 tracing::error!(execution_id = %exec.id, "Event bus: failed to start execution: {}", e);
-                // Mark the orphaned execution record as failed
                 super::persist_status_update(
                     pool,
                     Some(app),
@@ -342,11 +409,10 @@ pub(crate) async fn event_bus_tick(
             scheduler.events_delivered.fetch_add(1, Ordering::Relaxed);
         }
 
-        // 12. Update event status
         let final_status = if any_failed { "partial" } else { "delivered" };
         let _ = event_repo::update_status(pool, &event.id, final_status, None);
         scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
-        emit_event_to_frontend(app, &event, final_status);
+        emit_event_to_frontend(app, event, final_status);
     }
 }
 
@@ -469,6 +535,44 @@ fn emit_event_to_frontend(app: &AppHandle, event: &PersonaEvent, status: &str) {
 
     if let Err(e) = app.emit("event-bus", payload) {
         tracing::warn!(event_id = %event.id, error = %e, "Failed to emit event-bus event to frontend");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Zombie execution sweep
+// ---------------------------------------------------------------------------
+
+/// Tauri event emitted when zombie executions are detected and transitioned.
+#[derive(Clone, Serialize)]
+pub struct ZombieExecutionEvent {
+    /// IDs of executions that were transitioned to incomplete.
+    pub zombie_ids: Vec<String>,
+    /// Number of zombies found in this sweep.
+    pub count: usize,
+}
+
+/// One tick of the zombie execution sweep: find executions stuck in 'running'
+/// beyond the threshold and transition them to 'incomplete'.
+pub(crate) fn zombie_execution_tick(pool: &DbPool, app: &AppHandle) {
+    match exec_repo::sweep_zombie_executions(pool) {
+        Ok(zombie_ids) => {
+            if !zombie_ids.is_empty() {
+                let count = zombie_ids.len();
+                tracing::warn!(
+                    count,
+                    ids = ?zombie_ids,
+                    "Zombie execution sweep: transitioned {} stale executions to incomplete",
+                    count,
+                );
+                let _ = app.emit("zombie-executions-detected", ZombieExecutionEvent {
+                    zombie_ids,
+                    count,
+                });
+            }
+        }
+        Err(e) => {
+            tracing::error!("Zombie execution sweep failed: {}", e);
+        }
     }
 }
 

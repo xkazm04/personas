@@ -119,7 +119,7 @@ export default function FrequencyEditor({
                   : 'bg-secondary/30 border-primary/10 text-muted-foreground/70 hover:bg-secondary/50'
               }`}
             >
-              Cron expression
+              Cron expression <span className="text-amber-400/60 font-medium">(UTC)</span>
             </button>
             <button
               onClick={() => setMode('preset')}
@@ -158,7 +158,7 @@ export default function FrequencyEditor({
                       <p className="font-medium">{preview.description}</p>
                       {preview.next_runs.length > 0 && (
                         <div className="mt-1 space-y-0.5">
-                          <p className="text-muted-foreground/50 text-[10px] uppercase tracking-wider">Next runs</p>
+                          <p className="text-muted-foreground/50 text-[10px] uppercase tracking-wider">Next runs (local time)</p>
                           {preview.next_runs.slice(0, 3).map((run, i) => (
                             <p key={i} className="font-mono text-[11px] text-muted-foreground/70">
                               {new Date(run).toLocaleString()}

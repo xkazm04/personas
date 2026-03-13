@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { getSelectAllQuery } from '../introspectionQueries';
 import { TableContextMenu, type TableContextMenuState } from './TableContextMenu';
 import { useTableIntrospection, getCachedColumns } from '@/hooks/database/useTableIntrospection';
@@ -12,9 +12,9 @@ interface TablesTabProps {
 }
 
 export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
-  const executeDbQuery = usePersonaStore((s) => s.executeDbQuery);
-  const pinnedTables = usePersonaStore((s) => s.dbSchemaTables).filter((t) => t.credential_id === credentialId);
-  const createTable = usePersonaStore((s) => s.createDbSchemaTable);
+  const executeDbQuery = useVaultStore((s) => s.executeDbQuery);
+  const pinnedTables = useVaultStore((s) => s.dbSchemaTables).filter((t) => t.credential_id === credentialId);
+  const createTable = useVaultStore((s) => s.createDbSchemaTable);
 
   const {
     tables,

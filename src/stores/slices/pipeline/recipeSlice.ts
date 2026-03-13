@@ -1,10 +1,11 @@
 import type { StateCreator } from "zustand";
-import type { PersonaStore } from "../../storeTypes";
+import type { PipelineStore } from "../../storeTypes";
 import { errMsg } from "../../storeTypes";
 import type { RecipeDefinition } from "@/lib/bindings/RecipeDefinition";
 import type { CreateRecipeInput } from "@/lib/bindings/CreateRecipeInput";
 import type { UpdateRecipeInput } from "@/lib/bindings/UpdateRecipeInput";
-import * as api from "@/api/tauriApi";
+import { createRecipe, deleteRecipe, getPersonaRecipes, linkRecipeToPersona, listRecipes, unlinkRecipeFromPersona, updateRecipe } from "@/api/templates/recipes";
+
 
 export interface RecipeSlice {
   // State
@@ -20,12 +21,12 @@ export interface RecipeSlice {
   fetchPersonaRecipes: (personaId: string) => Promise<RecipeDefinition[]>;
 }
 
-export const createRecipeSlice: StateCreator<PersonaStore, [], [], RecipeSlice> = (set, get) => ({
+export const createRecipeSlice: StateCreator<PipelineStore, [], [], RecipeSlice> = (set, get) => ({
   recipes: [],
 
   fetchRecipes: async () => {
     try {
-      const recipes = await api.listRecipes();
+      const recipes = await listRecipes();
       set({ recipes, error: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch recipes") });
@@ -35,7 +36,7 @@ export const createRecipeSlice: StateCreator<PersonaStore, [], [], RecipeSlice> 
 
   createRecipe: async (input) => {
     try {
-      const created = await api.createRecipe(input);
+      const created = await createRecipe(input);
       await get().fetchRecipes();
       set({ error: null });
       return created.id;
@@ -47,7 +48,7 @@ export const createRecipeSlice: StateCreator<PersonaStore, [], [], RecipeSlice> 
 
   updateRecipe: async (id, input) => {
     try {
-      await api.updateRecipe(id, input);
+      await updateRecipe(id, input);
       await get().fetchRecipes();
       set({ error: null });
     } catch (err) {
@@ -58,7 +59,7 @@ export const createRecipeSlice: StateCreator<PersonaStore, [], [], RecipeSlice> 
 
   deleteRecipe: async (id) => {
     try {
-      await api.deleteRecipe(id);
+      await deleteRecipe(id);
       await get().fetchRecipes();
       set({ error: null });
     } catch (err) {
@@ -69,7 +70,7 @@ export const createRecipeSlice: StateCreator<PersonaStore, [], [], RecipeSlice> 
 
   linkRecipeToPersona: async (personaId, recipeId) => {
     try {
-      await api.linkRecipeToPersona({ persona_id: personaId, recipe_id: recipeId, sort_order: null, config: null });
+      await linkRecipeToPersona({ persona_id: personaId, recipe_id: recipeId, sort_order: null, config: null });
       set({ error: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to link recipe") });
@@ -79,7 +80,7 @@ export const createRecipeSlice: StateCreator<PersonaStore, [], [], RecipeSlice> 
 
   unlinkRecipeFromPersona: async (personaId, recipeId) => {
     try {
-      await api.unlinkRecipeFromPersona(personaId, recipeId);
+      await unlinkRecipeFromPersona(personaId, recipeId);
       set({ error: null });
     } catch (err) {
       set({ error: errMsg(err, "Failed to unlink recipe") });
@@ -89,7 +90,7 @@ export const createRecipeSlice: StateCreator<PersonaStore, [], [], RecipeSlice> 
 
   fetchPersonaRecipes: async (personaId) => {
     try {
-      const recipes = await api.getPersonaRecipes(personaId);
+      const recipes = await getPersonaRecipes(personaId);
       return recipes;
     } catch (err) {
       set({ error: errMsg(err, "Failed to fetch persona recipes") });

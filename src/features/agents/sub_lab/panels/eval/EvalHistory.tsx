@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, Trash2, Clock, Grid3X3, AlertCircle } from 'lucide-react';
-import { EvalResultsGrid } from '../../results/EvalResultsGrid';
+import { EvalResultsGrid } from '../../components/eval/EvalResultsGrid';
 import { statusBadge } from '../../shared/labUtils';
 import type { LabEvalRun } from '@/lib/bindings/LabEvalRun';
 

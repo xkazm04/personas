@@ -20,13 +20,8 @@ export const getHealingIssue = (id: string, callerPersonaId: string) =>
 export const updateHealingStatus = (id: string, status: string, callerPersonaId: string) =>
   invoke<void>("update_healing_status", { id, status, callerPersonaId });
 
-export interface HealingAnalysisResult {
-  status: string;
-  failures_analyzed: number;
-  issues_created: number;
-  auto_fixed: number;
-  auto_retried: number;
-}
+import type { HealingAnalysisResult } from "@/lib/bindings/HealingAnalysisResult";
+export type { HealingAnalysisResult } from "@/lib/bindings/HealingAnalysisResult";
 
 export const runHealingAnalysis = (personaId: string) =>
   invoke<HealingAnalysisResult>("run_healing_analysis", { personaId });

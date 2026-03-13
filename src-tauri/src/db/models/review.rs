@@ -5,6 +5,61 @@ use ts_rs::TS;
 // Manual Reviews
 // ============================================================================
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum ManualReviewStatus {
+    Pending,
+    Approved,
+    Rejected,
+    Resolved,
+}
+
+impl ManualReviewStatus {
+    /// Parse from a DB string, falling back to Pending for unknown values.
+    pub fn from_db(s: &str) -> Self {
+        match s {
+            "approved" => Self::Approved,
+            "rejected" => Self::Rejected,
+            "resolved" => Self::Resolved,
+            _ => Self::Pending,
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Pending => "pending",
+            Self::Approved => "approved",
+            Self::Rejected => "rejected",
+            Self::Resolved => "resolved",
+        }
+    }
+
+    /// Validate a status transition. Returns Ok(()) if the transition is allowed.
+    pub fn validate_transition(&self, next: ManualReviewStatus) -> Result<(), String> {
+        let allowed = match self {
+            Self::Pending => matches!(next, Self::Approved | Self::Rejected | Self::Resolved),
+            Self::Approved | Self::Rejected => matches!(next, Self::Resolved),
+            Self::Resolved => false,
+        };
+        if allowed {
+            Ok(())
+        } else {
+            Err(format!(
+                "Invalid status transition: {} -> {}",
+                self.as_str(),
+                next.as_str()
+            ))
+        }
+    }
+}
+
+impl std::fmt::Display for ManualReviewStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct PersonaManualReview {
@@ -16,7 +71,7 @@ pub struct PersonaManualReview {
     pub severity: String,
     pub context_data: Option<String>,
     pub suggested_actions: Option<String>,
-    pub status: String,
+    pub status: ManualReviewStatus,
     pub reviewer_notes: Option<String>,
     pub resolved_at: Option<String>,
     pub created_at: String,
@@ -38,7 +93,7 @@ pub struct CreateManualReviewInput {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct UpdateManualReviewInput {
-    pub status: Option<String>,
+    pub status: Option<ManualReviewStatus>,
     pub reviewer_notes: Option<String>,
     pub resolved_at: Option<String>,
 }

@@ -1,14 +1,14 @@
 import { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import type { DbPersonaTrigger } from '@/lib/types/types';
-import { usePersonaStore } from '@/stores/personaStore';
+import type { PersonaTrigger } from '@/lib/types/types';
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { extractRateLimit, type TriggerRateLimitConfig } from '@/lib/utils/platform/triggerConstants';
 import { TriggerRow } from './TriggerRow';
 import { TriggerDetailDrawer } from './TriggerDetailDrawer';
 import { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
 
 export interface TriggerListItemProps {
-  trigger: DbPersonaTrigger;
+  trigger: PersonaTrigger;
   credentialEventsList: { id: string; name: string }[];
   onToggleEnabled: (triggerId: string, currentEnabled: boolean) => void;
   onDelete: (triggerId: string) => void;
@@ -35,8 +35,8 @@ export function TriggerListItem({
 }: TriggerListItemProps) {
   const [expanded, setExpanded] = useState(false);
   const detail = useTriggerDetail(trigger.id, trigger.persona_id);
-  const updateTrigger = usePersonaStore((s) => s.updateTrigger);
-  const rateLimitState = usePersonaStore((s) => s.triggerRateLimits[trigger.id] ?? null);
+  const updateTrigger = usePipelineStore((s) => s.updateTrigger);
+  const rateLimitState = usePipelineStore((s) => s.triggerRateLimits[trigger.id] ?? null);
 
   const rateLimit = useMemo(
     () => extractRateLimit(parseRawConfig(trigger.config)),

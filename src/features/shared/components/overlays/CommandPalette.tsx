@@ -4,7 +4,9 @@ import {
   Search, Bot, Home, BarChart3, Zap, Key, FlaskConical, Users,
   Cloud, Settings, Plus, Power,
 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { useSystemStore } from "@/stores/systemStore";
 import type { SidebarSection } from '@/lib/types/types';
 import {
   type PaletteItem, type ResultKind,
@@ -33,11 +35,11 @@ export default function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const personas = usePersonaStore(s => s.personas);
-  const groups = usePersonaStore(s => s.groups);
-  const setSidebarSection = usePersonaStore(s => s.setSidebarSection);
-  const selectPersona = usePersonaStore(s => s.selectPersona);
-  const setIsCreatingPersona = usePersonaStore(s => s.setIsCreatingPersona);
+  const personas = useAgentStore((s) => s.personas);
+  const groups = usePipelineStore((s) => s.groups);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

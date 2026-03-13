@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { profileToDropdownValue, OLLAMA_CLOUD_PRESETS, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 
@@ -46,7 +47,7 @@ export function quickModelToProfile(value: string): string | null {
 }
 
 /** Read the current dropdown value from a persona's model_profile JSON. */
-export function currentModelValue(persona: DbPersona): string {
+export function currentModelValue(persona: Persona): string {
   if (!persona.model_profile) return 'opus';
   try {
     const mp: ModelProfile = JSON.parse(persona.model_profile);
@@ -58,10 +59,10 @@ export function currentModelValue(persona: DbPersona): string {
 
 /** Hook providing all context menu action handlers. */
 export function useContextMenuActions(personaId: string, enabled: boolean, onClose: () => void) {
-  const applyPersonaOp = usePersonaStore((s) => s.applyPersonaOp);
-  const duplicatePersona = usePersonaStore((s) => s.duplicatePersona);
-  const selectPersona = usePersonaStore((s) => s.selectPersona);
-  const deletePersona = usePersonaStore((s) => s.deletePersona);
+  const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
+  const duplicatePersona = useAgentStore((s) => s.duplicatePersona);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const deletePersona = useAgentStore((s) => s.deletePersona);
   const addToast = useToastStore((s) => s.addToast);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -105,9 +106,9 @@ export function useContextMenuActions(personaId: string, enabled: boolean, onClo
     onClose();
   }, [confirmDelete, personaId, deletePersona, onClose]);
 
-  const createExposedResource = usePersonaStore((s) => s.createExposedResource);
-  const fetchExposedResources = usePersonaStore((s) => s.fetchExposedResources);
-  const exportBundle = usePersonaStore((s) => s.exportBundle);
+  const createExposedResource = useSystemStore((s) => s.createExposedResource);
+  const fetchExposedResources = useSystemStore((s) => s.fetchExposedResources);
+  const exportBundle = useSystemStore((s) => s.exportBundle);
 
   const handleExportPersona = useCallback(async () => {
     try {
@@ -133,7 +134,7 @@ export function useContextMenuActions(personaId: string, enabled: boolean, onClo
       } catch {
         // Already exposed -- find existing
         await fetchExposedResources();
-        const existing = usePersonaStore.getState().exposedResources
+        const existing = useSystemStore.getState().exposedResources
           .find((r) => r.resource_type === 'persona' && r.resource_id === personaId);
         if (!existing) throw new Error('Could not find or create exposure');
         exposureId = existing.id;

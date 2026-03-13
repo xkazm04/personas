@@ -3,7 +3,10 @@
 //! On connect, automatically requests the peer's manifest. Periodically
 //! re-syncs every 30s for connected peers.
 
+use std::collections::HashMap;
 use std::sync::Arc;
+
+use tokio::sync::RwLock;
 
 use super::connection::ConnectionManager;
 use super::protocol::{self, ManifestEntry, Message};
@@ -12,29 +15,65 @@ use crate::db::repos::resources::exposure as exposure_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
+/// Maximum manifest entries accepted from a single peer.
+/// Prevents a malicious or misconfigured peer from causing unbounded DB inserts.
+const MAX_MANIFEST_ENTRIES: usize = 1000;
+
 /// Handles manifest exchange and storage.
 pub struct ManifestSync {
     pool: DbPool,
     connections: Arc<ConnectionManager>,
+    app_handle: RwLock<Option<tauri::AppHandle>>,
+    /// Cached content hashes per peer to skip redundant DB writes.
+    manifest_hashes: RwLock<HashMap<String, String>>,
 }
 
 impl ManifestSync {
     pub fn new(pool: DbPool, connections: Arc<ConnectionManager>) -> Self {
-        Self { pool, connections }
+        Self {
+            pool,
+            connections,
+            app_handle: RwLock::new(None),
+            manifest_hashes: RwLock::new(HashMap::new()),
+        }
+    }
+
+    /// Compute a content hash of manifest entries for delta comparison.
+    fn compute_manifest_hash(resources: &[ManifestEntry]) -> String {
+        use std::hash::{Hash, Hasher};
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        for entry in resources {
+            entry.resource_type.hash(&mut hasher);
+            entry.resource_id.hash(&mut hasher);
+            entry.display_name.hash(&mut hasher);
+            entry.access_level.hash(&mut hasher);
+            entry.tags.hash(&mut hasher);
+        }
+        format!("{:x}", hasher.finish())
+    }
+
+    /// Set the app handle for emitting sync progress events.
+    pub async fn set_app_handle(&self, app: tauri::AppHandle) {
+        *self.app_handle.write().await = Some(app);
+    }
+
+    /// Emit a manifest sync progress event to the frontend.
+    async fn emit_sync_progress(&self, peer_id: &str, synced: usize, total: usize, resource_count: usize) {
+        if let Some(app) = self.app_handle.read().await.as_ref() {
+            use tauri::Emitter;
+            let _ = app.emit("p2p:manifest-sync-progress", serde_json::json!({
+                "peerId": peer_id,
+                "synced": synced,
+                "total": total,
+                "resourceCount": resource_count,
+                "syncedAt": chrono::Utc::now().to_rfc3339(),
+            }));
+        }
     }
 
     /// Request and sync a manifest from a specific peer.
     pub async fn sync_manifest(&self, peer_id: &str) -> Result<(), AppError> {
-        let quinn_conn = self.connections.get_quinn_conn(peer_id).await.ok_or_else(|| {
-            AppError::NotFound(format!("Not connected to peer {}", peer_id))
-        })?;
-
-        let (send, recv) = quinn_conn.open_bi().await.map_err(|e| {
-            AppError::Internal(format!("Failed to open manifest stream: {e}"))
-        })?;
-
-        let mut send = tokio::io::BufWriter::new(send);
-        let mut recv = tokio::io::BufReader::new(recv);
+        let (mut send, mut recv) = self.connections.open_stream(peer_id).await?;
 
         // Send ManifestRequest
         protocol::write_message(&mut send, &Message::ManifestRequest).await?;
@@ -49,7 +88,36 @@ impl ManifestSync {
 
         match response {
             Message::ManifestResponse { resources } => {
+                // Reject oversized manifests to prevent DB insertion bombs
+                if resources.len() > MAX_MANIFEST_ENTRIES {
+                    tracing::warn!(
+                        peer_id = %peer_id,
+                        count = resources.len(),
+                        max = MAX_MANIFEST_ENTRIES,
+                        "Rejected oversized manifest from peer"
+                    );
+                    return Err(AppError::Validation(format!(
+                        "Manifest from peer {} exceeds maximum of {} entries",
+                        peer_id, MAX_MANIFEST_ENTRIES
+                    )));
+                }
+
+                // Delta check: skip DB writes if manifest content hasn't changed
+                let new_hash = Self::compute_manifest_hash(&resources);
+                {
+                    let hashes = self.manifest_hashes.read().await;
+                    if hashes.get(peer_id).map(|h| h.as_str()) == Some(new_hash.as_str()) {
+                        tracing::debug!(
+                            peer_id = %peer_id,
+                            count = resources.len(),
+                            "Manifest unchanged, skipping DB write"
+                        );
+                        return Ok(());
+                    }
+                }
+
                 self.upsert_peer_manifest(peer_id, &resources)?;
+                self.manifest_hashes.write().await.insert(peer_id.to_string(), new_hash);
                 tracing::debug!(
                     peer_id = %peer_id,
                     count = resources.len(),
@@ -176,10 +244,20 @@ impl ManifestSync {
 
         // Get list of connected peer IDs from discovered_peers
         let peer_ids = self.get_connected_peer_ids()?;
+        let total = peer_ids.len();
 
-        for peer_id in peer_ids {
-            if let Err(e) = self.sync_manifest(&peer_id).await {
-                tracing::debug!(peer_id = %peer_id, "Periodic manifest sync failed: {}", e);
+        for (i, peer_id) in peer_ids.iter().enumerate() {
+            match self.sync_manifest(peer_id).await {
+                Ok(()) => {
+                    // Emit progress with resource count from the synced manifest
+                    let resource_count = self.get_peer_manifest(peer_id)
+                        .map(|m| m.len())
+                        .unwrap_or(0);
+                    self.emit_sync_progress(peer_id, i + 1, total, resource_count).await;
+                }
+                Err(e) => {
+                    tracing::debug!(peer_id = %peer_id, "Periodic manifest sync failed: {}", e);
+                }
             }
         }
         Ok(())

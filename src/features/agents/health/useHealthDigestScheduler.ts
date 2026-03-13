@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import { getAppSetting, setAppSetting } from '@/api/system/settings';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 
 const LAST_DIGEST_KEY = 'health_digest_last_run';
 const DIGEST_ENABLED_KEY = 'health_digest_enabled';
@@ -17,7 +17,7 @@ const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 export function useHealthDigestScheduler() {
   const ran = useRef(false);
   const running = useRef(false);
-  const personasLoaded = usePersonaStore((s) => s.personas.length > 0);
+  const personasLoaded = useAgentStore((s) => s.personas.length > 0);
 
   useEffect(() => {
     if (ran.current || running.current || !personasLoaded) return;
@@ -43,7 +43,7 @@ export function useHealthDigestScheduler() {
         }
 
         // Run the digest
-        const digest = await usePersonaStore.getState().runFullHealthDigest();
+        const digest = await useAgentStore.getState().runFullHealthDigest();
         if (!digest) return; // Will retry on next effect cycle
 
         // Record timestamp

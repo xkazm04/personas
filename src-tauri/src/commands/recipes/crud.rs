@@ -176,11 +176,8 @@ pub async fn start_recipe_execution(
     let cli_args = build_credential_task_cli_args();
     let execution_id = uuid::Uuid::new_v4().to_string();
 
-    let active_id = state.active_credential_design_id.clone();
-    {
-        let mut guard = active_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        *guard = Some(execution_id.clone());
-    }
+    let registry = state.process_registry.clone();
+    registry.set_id("credential_design", execution_id.clone());
 
     let exec_id = execution_id.clone();
     let log_exec_id = execution_id.clone();
@@ -192,8 +189,9 @@ pub async fn start_recipe_execution(
             task_id: exec_id,
             prompt_text: rendered,
             cli_args,
-            active_id,
-            active_child_pid: None,
+            registry,
+            domain: "credential_design".into(),
+            track_pid: false,
             messages: recipe_execution::RECIPE_EXECUTION_MESSAGES,
             extractor: recipe_execution::extract_recipe_execution_result,
         })
@@ -210,8 +208,7 @@ pub async fn cancel_recipe_execution(
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
-    let mut guard = state.active_credential_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    let cancelled_id = guard.take();
+    let cancelled_id = state.process_registry.take_id("credential_design");
     let was_running = cancelled_id.is_some();
 
     if let Some(ref id) = cancelled_id {
@@ -258,12 +255,9 @@ pub async fn start_recipe_generation(
     let cli_args = build_credential_task_cli_args();
     let generation_id = uuid::Uuid::new_v4().to_string();
 
-    // Reuse the credential design mutex (one credential op at a time)
-    let active_id = state.active_credential_design_id.clone();
-    {
-        let mut guard = active_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        *guard = Some(generation_id.clone());
-    }
+    // Reuse the credential_design domain (one credential op at a time)
+    let registry = state.process_registry.clone();
+    registry.set_id("credential_design", generation_id.clone());
 
     let gen_id = generation_id.clone();
     let log_gen_id = generation_id.clone();
@@ -275,8 +269,9 @@ pub async fn start_recipe_generation(
             task_id: gen_id,
             prompt_text: prompt,
             cli_args,
-            active_id,
-            active_child_pid: None,
+            registry,
+            domain: "credential_design".into(),
+            track_pid: false,
             messages: recipe_generation::RECIPE_GENERATION_MESSAGES,
             extractor: recipe_generation::extract_recipe_generation_result,
         })
@@ -293,8 +288,7 @@ pub async fn cancel_recipe_generation(
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
-    let mut guard = state.active_credential_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    let cancelled_id = guard.take();
+    let cancelled_id = state.process_registry.take_id("credential_design");
     let was_running = cancelled_id.is_some();
 
     if let Some(ref id) = cancelled_id {
@@ -393,11 +387,8 @@ pub async fn start_recipe_versioning(
     let cli_args = build_credential_task_cli_args();
     let versioning_id = uuid::Uuid::new_v4().to_string();
 
-    let active_id = state.active_credential_design_id.clone();
-    {
-        let mut guard = active_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        *guard = Some(versioning_id.clone());
-    }
+    let registry = state.process_registry.clone();
+    registry.set_id("credential_design", versioning_id.clone());
 
     let ver_id = versioning_id.clone();
     let log_ver_id = versioning_id.clone();
@@ -409,8 +400,9 @@ pub async fn start_recipe_versioning(
             task_id: ver_id,
             prompt_text: prompt,
             cli_args,
-            active_id,
-            active_child_pid: None,
+            registry,
+            domain: "credential_design".into(),
+            track_pid: false,
             messages: recipe_versioning::RECIPE_VERSIONING_MESSAGES,
             extractor: recipe_versioning::extract_recipe_versioning_result,
         })
@@ -427,8 +419,7 @@ pub async fn cancel_recipe_versioning(
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
-    let mut guard = state.active_credential_design_id.lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    let cancelled_id = guard.take();
+    let cancelled_id = state.process_registry.take_id("credential_design");
     let was_running = cancelled_id.is_some();
 
     if let Some(ref id) = cancelled_id {

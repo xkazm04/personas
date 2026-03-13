@@ -8,7 +8,7 @@ import { DesignPhaseApplied } from '../phases/DesignPhaseApplied';
 import { DesignPhaseError } from '../phases/DesignPhaseError';
 import type { AgentIR, IntentCompilationResult, DesignQuestion } from '@/lib/types/designTypes';
 import type { DesignFilesSection } from '@/lib/types/frontendTypes';
-import type { PersonaWithDetails, DbPersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import type { PersonaWithDetails, PersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { FailedOperation } from '@/hooks/design/credential/applyDesignResult';
 import type { ExamplePair } from '../wizard/ExamplePairCollector';
 import type { DesignInputMode } from '../libs/useDesignTabState';
@@ -16,7 +16,7 @@ import type { DesignInputMode } from '../libs/useDesignTabState';
 export interface PhaseRenderProps {
   phase: string;
   selectedPersona: PersonaWithDetails;
-  toolDefinitions: DbPersonaToolDefinition[];
+  toolDefinitions: PersonaToolDefinition[];
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];
   currentToolNames: string[];

@@ -3,7 +3,7 @@ import {
   ChevronDown, ChevronRight,
   Trash2, Clock, Trophy, AlertCircle, FlaskConical,
 } from 'lucide-react';
-import { ArenaResultsView } from '../../results/ArenaResultsView';
+import { ArenaResultsView } from '../../components/arena/ArenaResultsView';
 import { statusBadge } from '../../shared/labUtils';
 import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';
 

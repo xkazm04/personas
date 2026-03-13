@@ -1,8 +1,11 @@
 import { useCallback, useState } from 'react';
-import * as api from '@/api/tauriApi';
+import { executePersona } from "@/api/agents/executions";
+import { previewCronSchedule, updateTrigger } from "@/api/pipeline/triggers";
+
 import type { CronPreview } from '@/api/pipeline/triggers';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 
 export interface ScheduleActionState {
@@ -13,8 +16,8 @@ export interface ScheduleActionState {
 }
 
 export function useScheduleActions() {
-  const fetchCronAgents = usePersonaStore((s) => s.fetchCronAgents);
-  const isBudgetBlocked = usePersonaStore((s) => s.isBudgetBlocked);
+  const fetchCronAgents = useOverviewStore((s) => s.fetchCronAgents);
+  const isBudgetBlocked = useAgentStore((s) => s.isBudgetBlocked);
   const addToast = useToastStore((s) => s.addToast);
   const [state, setState] = useState<ScheduleActionState>({
     executing: null,
@@ -32,7 +35,7 @@ export function useScheduleActions() {
     }
     setState((s) => ({ ...s, executing: agent.trigger_id }));
     try {
-      await api.executePersona(agent.persona_id, agent.trigger_id);
+      await executePersona(agent.persona_id, agent.trigger_id);
       addToast(`Triggered "${agent.persona_name}" manually`, 'success');
       await fetchCronAgents();
     } catch (err) {
@@ -58,7 +61,7 @@ export function useScheduleActions() {
       if (newCron) configObj.cron = newCron;
       if (newIntervalSeconds) configObj.interval_seconds = newIntervalSeconds;
 
-      await api.updateTrigger(agent.trigger_id, agent.persona_id, {
+      await updateTrigger(agent.trigger_id, agent.persona_id, {
         trigger_type: null,
         config: JSON.stringify(configObj),
         enabled: null,
@@ -80,7 +83,7 @@ export function useScheduleActions() {
 
   const toggleEnabled = useCallback(async (agent: CronAgent) => {
     try {
-      await api.updateTrigger(agent.trigger_id, agent.persona_id, {
+      await updateTrigger(agent.trigger_id, agent.persona_id, {
         trigger_type: null,
         config: null,
         enabled: !agent.trigger_enabled,
@@ -103,7 +106,7 @@ export function useScheduleActions() {
 
   const previewCron = useCallback(async (expression: string) => {
     try {
-      const preview = await api.previewCronSchedule(expression, 5);
+      const preview = await previewCronSchedule(expression, 5);
       setState((s) => ({ ...s, cronPreview: preview }));
       return preview;
     } catch {
@@ -125,7 +128,7 @@ export function useScheduleActions() {
       }
       setState((s) => ({ ...s, recovering: agent.trigger_id }));
       try {
-        await api.executePersona(agent.persona_id, agent.trigger_id);
+        await executePersona(agent.persona_id, agent.trigger_id);
         succeeded++;
       } catch {
         failed++;

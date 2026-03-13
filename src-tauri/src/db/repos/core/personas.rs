@@ -269,6 +269,111 @@ fn validate_notification_channels(channels_json: &str) -> Result<(), AppError> {
     Ok(())
 }
 
+// -- Notification channel secret encryption helpers --------------------------
+
+/// Config keys that contain secrets and must be encrypted at rest.
+const SENSITIVE_CHANNEL_KEYS: &[&str] = &[
+    "webhook_url",
+    "bot_token",
+    "sendgrid_api_key",
+    "resend_api_key",
+];
+
+/// Encrypt sensitive config values inside notification_channels JSON before DB storage.
+/// For each sensitive key, replaces `key` with `key_enc` (ciphertext) and `key_iv` (nonce).
+fn encrypt_notification_channels(json: &str) -> Result<String, AppError> {
+    let mut channels: Vec<serde_json::Value> = serde_json::from_str(json)
+        .map_err(|e| AppError::Validation(format!("Invalid notification_channels JSON: {e}")))?;
+
+    for ch in channels.iter_mut() {
+        let config = match ch.get_mut("config").and_then(|c| c.as_object_mut()) {
+            Some(c) => c,
+            None => continue,
+        };
+        for &key in SENSITIVE_CHANNEL_KEYS {
+            let value = match config.get(key).and_then(|v| v.as_str()) {
+                Some(v) if !v.is_empty() => v.to_string(),
+                _ => continue,
+            };
+            let (ciphertext, nonce) = crypto::encrypt_for_db(&value)?;
+            config.remove(key);
+            config.insert(format!("{key}_enc"), serde_json::Value::String(ciphertext));
+            config.insert(format!("{key}_iv"), serde_json::Value::String(nonce));
+        }
+    }
+
+    serde_json::to_string(&channels)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize notification_channels: {e}")))
+}
+
+/// Decrypt sensitive config values inside notification_channels JSON when reading from DB.
+/// Reverses the encryption: replaces `key_enc`+`key_iv` back to plaintext `key`.
+fn decrypt_notification_channels(json: &str, persona_id: &str) -> String {
+    let mut channels: Vec<serde_json::Value> = match serde_json::from_str(json) {
+        Ok(v) => v,
+        Err(_) => return json.to_string(),
+    };
+
+    for ch in channels.iter_mut() {
+        let config = match ch.get_mut("config").and_then(|c| c.as_object_mut()) {
+            Some(c) => c,
+            None => continue,
+        };
+        for &key in SENSITIVE_CHANNEL_KEYS {
+            let enc_key = format!("{key}_enc");
+            let iv_key = format!("{key}_iv");
+            let enc = match config.get(&enc_key).and_then(|v| v.as_str()) {
+                Some(v) if !v.is_empty() => v.to_string(),
+                _ => continue,
+            };
+            let iv = match config.get(&iv_key).and_then(|v| v.as_str()) {
+                Some(v) if !v.is_empty() => v.to_string(),
+                _ => continue,
+            };
+            match crypto::decrypt_from_db(&enc, &iv) {
+                Ok(plaintext) => {
+                    config.remove(&enc_key);
+                    config.remove(&iv_key);
+                    config.insert(key.to_string(), serde_json::Value::String(plaintext));
+                }
+                Err(e) => {
+                    let session_failures = DECRYPTION_FAILURE_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
+                    tracing::warn!(
+                        persona_id = %persona_id,
+                        config_key = %key,
+                        session_failure_count = session_failures,
+                        "Failed to decrypt notification channel secret: {}", e
+                    );
+                }
+            }
+        }
+    }
+
+    serde_json::to_string(&channels).unwrap_or_else(|_| json.to_string())
+}
+
+/// Redact all sensitive notification channel config values for list views.
+fn redact_notification_channels(json: &str) -> String {
+    let mut channels: Vec<serde_json::Value> = match serde_json::from_str(json) {
+        Ok(v) => v,
+        Err(_) => return json.to_string(),
+    };
+
+    for ch in channels.iter_mut() {
+        let config = match ch.get_mut("config").and_then(|c| c.as_object_mut()) {
+            Some(c) => c,
+            None => continue,
+        };
+        for &key in SENSITIVE_CHANNEL_KEYS {
+            config.remove(key);
+            config.remove(&format!("{key}_enc"));
+            config.remove(&format!("{key}_iv"));
+        }
+    }
+
+    serde_json::to_string(&channels).unwrap_or_else(|_| json.to_string())
+}
+
 /// How to handle the model_profile auth_token when reading from DB.
 enum ProfileMode {
     /// Decrypt the encrypted token back to plaintext (for detail/engine views).
@@ -284,6 +389,11 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         ProfileMode::Decrypt => decrypt_model_profile(&json, &id),
         ProfileMode::Redact => redact_model_profile(&json),
     });
+    let raw_channels: Option<String> = row.get("notification_channels")?;
+    let notification_channels = raw_channels.map(|json| match mode {
+        ProfileMode::Decrypt => decrypt_notification_channels(&json, &id),
+        ProfileMode::Redact => redact_notification_channels(&json),
+    });
     Ok(Persona {
         id,
         project_id: row.get("project_id")?,
@@ -298,7 +408,7 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         headless: row.get::<_, i32>("headless").unwrap_or(0) != 0,
         max_concurrent: row.get("max_concurrent")?,
         timeout_ms: row.get("timeout_ms")?,
-        notification_channels: row.get("notification_channels")?,
+        notification_channels,
         last_design_result: row.get("last_design_result")?,
         model_profile,
         max_budget_usd: row.get("max_budget_usd")?,
@@ -354,6 +464,30 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
     result
 }
 
+/// Bulk-fetch personas by a list of IDs in a single query.
+pub fn get_by_ids(pool: &DbPool, ids: &[String]) -> Result<Vec<Persona>, AppError> {
+    if ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let conn = pool.get()?;
+    let placeholders: Vec<String> = ids
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
+    let sql = format!(
+        "SELECT * FROM personas WHERE id IN ({})",
+        placeholders.join(", ")
+    );
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = ids
+        .iter()
+        .map(|s| s as &dyn rusqlite::types::ToSql)
+        .collect();
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(params_ref.as_slice(), row_to_persona)?;
+    Ok(collect_rows(rows, "personas::get_by_ids"))
+}
+
 #[instrument(skip(pool))]
 pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     let start = Instant::now();
@@ -392,6 +526,10 @@ pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppEr
     }
 
     let encrypted_profile = encrypt_input_profile(&input.model_profile)?;
+    let encrypted_channels = match &input.notification_channels {
+        Some(json) if !json.trim().is_empty() => Some(encrypt_notification_channels(json)?),
+        other => other.clone(),
+    };
 
     let conn = pool.get()?;
     conn.execute(
@@ -406,7 +544,7 @@ pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppEr
             input.structured_prompt, input.icon, input.color, enabled, sensitive,
             max_concurrent, timeout_ms, encrypted_profile,
             input.max_budget_usd, input.max_turns, input.design_context,
-            input.group_id, input.notification_channels, now,
+            input.group_id, encrypted_channels, now,
         ],
     )?;
 
@@ -450,6 +588,12 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     // Encrypt auth_token inside model_profile before storing
     let encrypted_profile = encrypt_update_profile(&input.model_profile)?;
 
+    // Encrypt sensitive notification channel secrets before storing
+    let encrypted_channels = match &input.notification_channels {
+        Some(json) if !json.trim().is_empty() => Some(encrypt_notification_channels(json)?),
+        other => other.clone(),
+    };
+
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
 
@@ -468,7 +612,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     push_field!(input.headless, "headless", sets, param_idx);
     push_field!(input.max_concurrent, "max_concurrent", sets, param_idx);
     push_field!(input.timeout_ms, "timeout_ms", sets, param_idx);
-    push_field!(input.notification_channels, "notification_channels", sets, param_idx);
+    push_field!(encrypted_channels, "notification_channels", sets, param_idx);
     push_field!(input.last_design_result, "last_design_result", sets, param_idx);
     push_field!(encrypted_profile, "model_profile", sets, param_idx);
     push_field!(input.max_budget_usd, "max_budget_usd", sets, param_idx);
@@ -496,7 +640,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     if let Some(v) = input.headless { param_values.push(Box::new(v as i32)); }
     if let Some(v) = input.max_concurrent { param_values.push(Box::new(v)); }
     if let Some(v) = input.timeout_ms { param_values.push(Box::new(v)); }
-    if let Some(ref v) = input.notification_channels { param_values.push(Box::new(v.clone())); }
+    if let Some(ref v) = encrypted_channels { param_values.push(Box::new(v.clone())); }
     if let Some(ref v) = input.last_design_result { param_values.push(Box::new(v.clone())); }
     if let Some(ref v) = encrypted_profile { param_values.push(Box::new(v.clone())); }
     if let Some(ref v) = input.max_budget_usd { param_values.push(Box::new(*v)); }

@@ -1,12 +1,12 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import type { DbPersonaExecution } from '@/lib/types/types';
+import type { PersonaExecution } from '@/lib/types/types';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { UnifiedTrace, UnifiedSpan } from '@/lib/execution/pipeline';
 import { mergeBackendSpans } from '@/lib/execution/pipeline';
 import { getExecutionTrace } from '@/api/agents/executions';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { formatDuration } from '@/lib/utils/formatters';
 import { Activity } from 'lucide-react';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
@@ -16,7 +16,7 @@ import { SpanRow } from './TraceTree';
 import { TraceSummary, TraceErrors } from './TraceNodeDetail';
 
 interface TraceInspectorProps {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
 }
 
 /** Convert backend ExecutionTrace spans into UnifiedSpan format. */
@@ -42,7 +42,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   const [collapsedSpans, setCollapsedSpans] = useState<Set<string>>(new Set());
 
   // Get pipeline trace from store for merging
-  const pipelineTrace = usePersonaStore((s) => s.pipelineTrace);
+  const pipelineTrace = useAgentStore((s) => s.pipelineTrace);
 
   // Fetch backend trace data
   useEffect(() => {

@@ -35,6 +35,8 @@ import type { ViewModeSlice } from "./slices/system/viewModeSlice";
 import type { DevToolsSlice } from "./slices/system/devToolsSlice";
 import type { NetworkSlice } from "./slices/network/networkSlice";
 import type { SetupSlice } from "./slices/system/setupSlice";
+import type { ChatSlice } from "./slices/agents/chatSlice";
+import type { RotationSlice } from "./slices/vault/rotationSlice";
 
 // -- Shared helper ------------------------------------------------------
 export function errMsg(err: unknown, fallback: string): string {
@@ -44,35 +46,68 @@ export function errMsg(err: unknown, fallback: string): string {
   return fallback;
 }
 
-// -- Combined store type ------------------------------------------------
-export type PersonaStore = PersonaSlice &
+// -- Shared state present in every domain store ----------------------------
+
+/** Common error/loading state replicated in each domain store so slices can
+ *  set({ error, isLoading }) without cross-domain writes. */
+export interface CoreState {
+  error: string | null;
+  isLoading: boolean;
+}
+
+// -- Domain store types --------------------------------------------------
+
+/** Agents domain: personas, tools, executions, tests, lab, mini-player, health, budget, chat */
+export type AgentStore = CoreState &
+  PersonaSlice &
   ToolSlice &
-  TriggerSlice &
   ExecutionSlice &
-  CredentialSlice &
+  TestSlice &
+  LabSlice &
+  MiniPlayerSlice &
+  HealthCheckSlice &
+  BudgetEnforcementSlice &
+  ChatSlice;
+
+/** Overview domain: dashboard, messages, events, healing, memories, cron, alerts */
+export type OverviewStore = CoreState &
   OverviewSlice &
   MessageSlice &
   EventSlice &
   HealingSlice &
+  MemorySlice &
+  CronAgentsSlice &
+  AlertSlice;
+
+/** Pipeline domain: triggers, teams, groups, recipes */
+export type PipelineStore = CoreState &
+  TriggerSlice &
   TeamSlice &
   GroupSlice &
-  MemorySlice &
+  RecipeSlice;
+
+/** Vault domain: credentials, databases, automations, rotation */
+export type VaultStore = CoreState &
+  CredentialSlice &
+  DatabaseSlice &
+  AutomationSlice &
+  RotationSlice;
+
+/** System domain: UI, cloud, GitLab, onboarding, tour, view-mode, dev-tools, network, setup */
+export type SystemStore = CoreState &
   UiSlice &
-  TestSlice &
-  LabSlice &
   CloudSlice &
   GitLabSlice &
-  DatabaseSlice &
-  RecipeSlice &
-  AutomationSlice &
   OnboardingSlice &
-  CronAgentsSlice &
-  MiniPlayerSlice &
-  HealthCheckSlice &
   TourSlice &
-  BudgetEnforcementSlice &
-  AlertSlice &
   ViewModeSlice &
   DevToolsSlice &
   NetworkSlice &
   SetupSlice;
+
+// -- Combined store type (backward compat) --------------------------------
+export type PersonaStore = AgentStore &
+  OverviewStore &
+  PipelineStore &
+  VaultStore &
+  SystemStore;

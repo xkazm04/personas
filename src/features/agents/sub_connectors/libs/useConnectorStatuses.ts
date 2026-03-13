@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useVaultStore } from "@/stores/vaultStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { sendAppNotification } from '@/api/system/system';
 import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
@@ -7,11 +9,11 @@ import type { ConnectorStatus, ConnectorReadiness } from './connectorTypes';
 import { deriveReadiness } from './connectorTypes';
 
 export function useConnectorStatuses() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const credentials = usePersonaStore((s) => s.credentials);
-  const fetchCredentials = usePersonaStore((s) => s.fetchCredentials);
-  const healthcheckCredential = usePersonaStore((s) => s.healthcheckCredential);
-  const setConnectorTestActive = usePersonaStore((s) => s.setConnectorTestActive);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const credentials = useVaultStore((s) => s.credentials);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
+  const healthcheckCredential = useVaultStore((s) => s.healthcheckCredential);
+  const setConnectorTestActive = useSystemStore((s) => s.setConnectorTestActive);
 
   const [statuses, setStatuses] = useState<ConnectorStatus[]>([]);
   const [testingAll, setTestingAll] = useState(false);

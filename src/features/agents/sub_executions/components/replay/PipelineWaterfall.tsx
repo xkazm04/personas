@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import type { DbPersonaExecution } from '@/lib/types/types';
-import { usePersonaStore } from '@/stores/personaStore';
+import type { PersonaExecution } from '@/lib/types/types';
+import { useAgentStore } from "@/stores/agentStore";
 import { Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDuration } from '@/lib/utils/formatters';
@@ -10,11 +10,11 @@ import { StageBar, SubSpanBar } from './WaterfallStage';
 import { CostAccrualOverlay, PipelineSummary, WaterfallErrors } from './WaterfallTimeline';
 
 interface PipelineWaterfallProps {
-  execution: DbPersonaExecution;
+  execution: PersonaExecution;
 }
 
 export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
-  const liveTrace = usePersonaStore((s) => s.pipelineTrace);
+  const liveTrace = useAgentStore((s) => s.pipelineTrace);
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
 
   // Use live trace if it matches this execution; no synthetic fallback needed

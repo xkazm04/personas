@@ -5,6 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use ts_rs::TS;
 
 use crate::error::AppError;
 
@@ -56,7 +57,8 @@ pub struct ManifestEntry {
 }
 
 /// Envelope for agent-to-agent messages.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct AgentEnvelope {
     pub id: String,
     pub source_persona_id: String,

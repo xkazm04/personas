@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { useEditorDirty } from '@/features/agents/sub_editor';
 import { getUseCaseById } from './useCaseHelpers';
 import { mutateSingleUseCase } from '@/hooks/design/core/useDesignContextMutator';
@@ -8,12 +9,12 @@ import type { NotificationChannelType, ModelProfile, ModelProvider, TestFixture 
 import { resolveEffectiveModel, type ModelOption } from './useCaseDetailHelpers';
 
 export function useUseCaseDetail(useCaseId: string) {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const isTestRunning = usePersonaStore((s) => s.isTestRunning);
-  const testRunProgress = usePersonaStore((s) => s.testRunProgress);
-  const startTest = usePersonaStore((s) => s.startTest);
-  const cancelTest = usePersonaStore((s) => s.cancelTest);
-  const setEditorTab = usePersonaStore((s) => s.setEditorTab);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const isTestRunning = useAgentStore((s) => s.isTestRunning);
+  const testRunProgress = useAgentStore((s) => s.testRunProgress);
+  const startTest = useAgentStore((s) => s.startTest);
+  const cancelTest = useAgentStore((s) => s.cancelTest);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
 
   const useCase = getUseCaseById(selectedPersona?.design_context, useCaseId);
   const [isDirty, setIsDirty] = useState(false);

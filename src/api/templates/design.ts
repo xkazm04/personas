@@ -1,18 +1,9 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import type { DesignStartResult } from "@/lib/bindings/DesignStartResult";
+import type { FeasibilityResult } from "@/lib/bindings/FeasibilityResult";
 
-// ============================================================================
-// Design Analysis
-// ============================================================================
-
-export interface DesignStartResult {
-  design_id: string;
-}
-
-export interface FeasibilityResult {
-  confirmed_capabilities: string[];
-  issues: string[];
-  overall: string;
-}
+export type { DesignStartResult } from "@/lib/bindings/DesignStartResult";
+export type { FeasibilityResult } from "@/lib/bindings/FeasibilityResult";
 
 export const startDesignAnalysis = (instruction: string, personaId: string, designId?: string) =>
   invoke<DesignStartResult>("start_design_analysis", { instruction, personaId, designId: designId ?? null });

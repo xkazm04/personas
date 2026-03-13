@@ -1,6 +1,6 @@
 use rusqlite::{named_params, params, Row};
 
-use crate::db::models::{CreateN8nSessionInput, N8nTransformSession, UpdateN8nSessionInput};
+use crate::db::models::{CreateN8nSessionInput, N8nSessionSummary, N8nTransformSession, UpdateN8nSessionInput};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -65,6 +65,28 @@ pub fn list(pool: &DbPool) -> Result<Vec<N8nTransformSession>, AppError> {
         "SELECT * FROM n8n_transform_sessions ORDER BY updated_at DESC",
     )?;
     let rows = stmt.query_map([], row_to_session)?;
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
+}
+
+/// Lightweight list excluding heavy JSON columns (raw_workflow_json, parser_result, etc.).
+pub fn list_summaries(pool: &DbPool) -> Result<Vec<N8nSessionSummary>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, workflow_name, status, step, error, created_at, updated_at
+         FROM n8n_transform_sessions ORDER BY updated_at DESC",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        Ok(N8nSessionSummary {
+            id: row.get("id")?,
+            workflow_name: row.get("workflow_name")?,
+            status: row.get("status")?,
+            step: row.get("step")?,
+            error: row.get("error")?,
+            created_at: row.get("created_at")?,
+            updated_at: row.get("updated_at")?,
+        })
+    })?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(AppError::Database)
 }
@@ -168,6 +190,7 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 mod tests {
     use super::*;
     use crate::db::init_test_db;
+    use crate::db::models::SessionStatus;
 
     #[test]
     fn test_session_crud() {
@@ -180,12 +203,12 @@ mod tests {
                 workflow_name: "Email Manager".into(),
                 raw_workflow_json: r#"{"nodes":[]}"#.into(),
                 step: "upload".into(),
-                status: "draft".into(),
+                status: SessionStatus::Draft.as_str().into(),
             },
         )
         .unwrap();
         assert_eq!(session.workflow_name, "Email Manager");
-        assert_eq!(session.status, "draft");
+        assert_eq!(session.status, SessionStatus::Draft.as_str());
         assert_eq!(session.step, "upload");
 
         // Get
@@ -201,14 +224,14 @@ mod tests {
             &pool,
             &session.id,
             &UpdateN8nSessionInput {
-                status: Some("analyzing".into()),
+                status: Some(SessionStatus::Analyzing.as_str().into()),
                 step: Some("analyze".into()),
                 parser_result: Some(Some(r#"{"tools":[]}"#.into())),
                 ..Default::default()
             },
         )
         .unwrap();
-        assert_eq!(updated.status, "analyzing");
+        assert_eq!(updated.status, SessionStatus::Analyzing.as_str());
         assert_eq!(updated.step, "analyze");
         assert!(updated.parser_result.is_some());
 

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { DbPersona } from '@/lib/types/types';
+import type { Persona } from '@/lib/types/types';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 
 // -- Relevance Score -------------------------------------------------
@@ -11,7 +11,7 @@ import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 //   - Active bonus (0--15): enabled agents rank above disabled
 
 export interface ScoredPersona {
-  persona: DbPersona;
+  persona: Persona;
   score: number;
   section: 'attention' | 'active' | 'idle';
 }
@@ -27,7 +27,7 @@ const STALE_DAYS = 7;
 const MS_PER_DAY = 86_400_000;
 
 function computeRelevanceScore(
-  persona: DbPersona,
+  persona: Persona,
   health: PersonaHealth | undefined,
   lastRun: string | null | undefined,
   triggerCount: number,
@@ -87,7 +87,7 @@ function computeRelevanceScore(
 }
 
 export function useRelevanceSort(
-  personas: DbPersona[],
+  personas: Persona[],
   healthMap: Record<string, PersonaHealth>,
   lastRunMap: Record<string, string | null>,
   triggerCounts: Record<string, number>,

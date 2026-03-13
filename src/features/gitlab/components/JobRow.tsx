@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { ChevronDown, ChevronRight, ExternalLink, Loader2 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useSystemStore } from "@/stores/systemStore";
 import type { GitLabJob } from '@/api/system/gitlab';
 import { StatusIcon, statusBg, formatDuration } from './pipelineHelpers';
 
@@ -54,8 +54,8 @@ interface JobRowProps {
 }
 
 export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
-  const jobLog = usePersonaStore((s) => s.gitlabJobLog);
-  const fetchJobLog = usePersonaStore((s) => s.gitlabFetchJobLog);
+  const jobLog = useSystemStore((s) => s.gitlabJobLog);
+  const fetchJobLog = useSystemStore((s) => s.gitlabFetchJobLog);
 
   const handleToggle = () => {
     if (!isExpanded) {

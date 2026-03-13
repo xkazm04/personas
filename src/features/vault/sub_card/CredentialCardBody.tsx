@@ -3,7 +3,7 @@ import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditFor
 import { CredentialCardDetails } from '@/features/vault/sub_card/CredentialCardDetails';
 import { VaultErrorBanner } from '@/features/vault/sub_card/banners/VaultErrorBanner';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import type { RotationStatus } from '@/api/vault/rotation';
 import type { HealthResult } from '@/features/vault/hooks/health/useCredentialHealth';
 import type { GoogleOAuthState } from '@/features/vault/hooks/useGoogleOAuth';
@@ -43,7 +43,7 @@ export function CredentialCardBody({
   onOAuthConsent,
 }: CredentialCardBodyProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
-  const updateCredential = usePersonaStore((s) => s.updateCredential);
+  const updateCredential = useVaultStore((s) => s.updateCredential);
 
   if (!connector) {
     return (

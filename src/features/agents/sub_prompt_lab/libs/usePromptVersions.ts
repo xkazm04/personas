@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import {
   getPromptVersions,
@@ -11,8 +11,8 @@ import { filterSortGroup, type TagFilter, type SortOrder, type DateGroup } from 
 import type { VersionAction } from '@/features/agents/sub_lab_shared';
 
 export function usePromptVersions() {
-  const selectedPersona = usePersonaStore((s) => s.selectedPersona);
-  const fetchPersonas = usePersonaStore((s) => s.fetchPersonas);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
   const [versions, setVersions] = useState<PersonaPromptVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);

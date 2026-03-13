@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Eye, Pencil, Link } from 'lucide-react';
 import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 import { UseCasesList } from '@/features/shared/components/use-cases/UseCasesList';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { SectionEditor } from './SectionEditor';
 
 interface DesignContextViewerProps {
@@ -14,7 +14,7 @@ interface DesignContextViewerProps {
 export function DesignContextViewer({ value, onChange, disabled }: DesignContextViewerProps) {
   const [mode, setMode] = useState<'structured' | 'raw'>('structured');
   const contextData = useMemo(() => parseDesignContext(value), [value]);
-  const credentials = usePersonaStore((s) => s.credentials);
+  const credentials = useVaultStore((s) => s.credentials);
 
   const hasStructuredData = Boolean(contextData.summary || (contextData.useCases && contextData.useCases.length > 0));
   const credentialLinks = contextData.credentialLinks ?? {};

@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import { testDesignFeasibility, type FeasibilityResult } from '@/api/templates/design';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { DesignContextData } from '@/lib/types/frontendTypes';
@@ -194,7 +194,7 @@ export function useHealthCheck(): UseHealthCheckReturn {
 
       if (gen !== genRef.current) return null;
 
-      const creds = usePersonaStore.getState().credentials;
+      const creds = useVaultStore.getState().credentials;
       const credentials = creds.map((c) => ({ id: c.id, service_type: c.service_type }));
 
       const dryRunResult = parseFeasibilityToHealthResult(raw, persona, credentials);

@@ -1,9 +1,9 @@
-import type { DbPersonaTrigger } from '@/lib/types/types';
+import type { PersonaTrigger } from '@/lib/types/types';
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig, getTriggerCategoryMeta } from '@/lib/utils/platform/triggerConstants';
 import { formatInterval } from '@/lib/utils/formatters';
 
 interface TriggerStatusSummaryProps {
-  trigger: DbPersonaTrigger;
+  trigger: PersonaTrigger;
 }
 
 /** Shared type icon + config badge summary for collapsed trigger rows and list overview. */

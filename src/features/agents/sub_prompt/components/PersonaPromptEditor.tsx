@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { useTabSection } from '@/features/agents/sub_editor';
 import type { StructuredPrompt } from '@/lib/personas/promptMigration';
 import { SectionEditor } from '@/features/shared/components/editors/draft-editor/SectionEditor';
@@ -13,7 +13,7 @@ import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 
 export function PersonaPromptEditor() {
-  const applyPersonaOp = usePersonaStore((state) => state.applyPersonaOp);
+  const applyPersonaOp = useAgentStore((state) => state.applyPersonaOp);
   const [activeTab, setActiveTab] = useState<SubTab>('instructions');
 
   const {

@@ -1,7 +1,7 @@
 import { CheckSquare, Square, X, MessageSquare } from 'lucide-react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import type { ManualReviewItem } from '@/lib/types/types';
-import type { ManualReviewStatus } from '@/lib/types/frontendTypes';
+import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { InboxItem } from './ReviewListItem';
 import { ConversationThread } from './ReviewDetailPanel';
 

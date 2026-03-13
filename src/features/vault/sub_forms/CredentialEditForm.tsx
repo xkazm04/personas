@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { CredentialTemplateField } from '@/lib/types/types';
-import { vaultStatus, type VaultStatus } from '@/api/tauriApi';
+import { vaultStatus, type VaultStatus } from "@/api/vault/credentials";
+
 import { FieldCaptureRow } from './FieldCaptureRow';
 import { OAuthSection } from './OAuthSection';
 import { ConnectionTestSection } from './ConnectionTestSection';

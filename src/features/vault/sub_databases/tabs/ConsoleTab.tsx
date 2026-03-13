@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Play, Loader2 } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useVaultStore } from "@/stores/vaultStore";
 import { SqlEditor } from '../SqlEditor';
 import { QueryResultTable } from '../QueryResultTable';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
@@ -26,7 +26,7 @@ interface HistoryEntry {
 }
 
 export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
-  const executeDbQuery = usePersonaStore((s) => s.executeDbQuery);
+  const executeDbQuery = useVaultStore((s) => s.executeDbQuery);
 
   const [query, setQuery] = useState('');
   const [executing, setExecuting] = useState(false);

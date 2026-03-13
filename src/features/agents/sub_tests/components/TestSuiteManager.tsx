@@ -5,7 +5,7 @@ import {
   Pencil, X, Check, FileText,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { PersonaTestSuite } from '@/lib/bindings/PersonaTestSuite';
 import type { TestSuiteScenario } from '@/lib/bindings/TestSuiteScenario';
@@ -21,11 +21,11 @@ interface TestSuiteManagerProps {
 export function TestSuiteManager({
   personaId, onRunSuite, lastGeneratedScenarios, lastRunId, disabled,
 }: TestSuiteManagerProps) {
-  const testSuites = usePersonaStore((s) => s.testSuites);
-  const fetchTestSuites = usePersonaStore((s) => s.fetchTestSuites);
-  const createTestSuite = usePersonaStore((s) => s.createTestSuite);
-  const deleteTestSuite = usePersonaStore((s) => s.deleteTestSuite);
-  const updateTestSuite = usePersonaStore((s) => s.updateTestSuite);
+  const testSuites = useAgentStore((s) => s.testSuites);
+  const fetchTestSuites = useAgentStore((s) => s.fetchTestSuites);
+  const createTestSuite = useAgentStore((s) => s.createTestSuite);
+  const deleteTestSuite = useAgentStore((s) => s.deleteTestSuite);
+  const updateTestSuite = useAgentStore((s) => s.updateTestSuite);
 
   const [expandedSuiteId, setExpandedSuiteId] = useState<string | null>(null);
   const [editingSuiteId, setEditingSuiteId] = useState<string | null>(null);
@@ -50,7 +50,7 @@ export function TestSuiteManager({
   }, [lastGeneratedScenarios, saveNameInput, createTestSuite, personaId, lastRunId]);
 
   const handleRemoveScenario = useCallback(async (suiteId: string, scenarioIndex: number) => {
-    const currentSuites = usePersonaStore.getState().testSuites;
+    const currentSuites = useAgentStore.getState().testSuites;
     const suite = currentSuites.find((s) => s.id === suiteId);
     if (!suite) return;
     try {

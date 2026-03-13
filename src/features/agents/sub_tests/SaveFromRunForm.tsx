@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X } from 'lucide-react';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useAgentStore } from "@/stores/agentStore";
 
 interface SaveFromRunFormProps {
   personaId: string;
@@ -16,7 +16,7 @@ export function SaveFromRunForm({
   lastRunId,
   onDone,
 }: SaveFromRunFormProps) {
-  const createTestSuite = usePersonaStore((s) => s.createTestSuite);
+  const createTestSuite = useAgentStore((s) => s.createTestSuite);
   const [saveNameInput, setSaveNameInput] = useState('');
 
   const handleSaveFromRun = useCallback(async () => {

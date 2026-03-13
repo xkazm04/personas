@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Shield, ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usePersonaStore } from '@/stores/personaStore';
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import { detectConflicts, type MemoryConflict, type ConflictResolution } from '../libs/memoryConflicts';
 import { mergeMemories } from '../libs/conflictHelpers';
@@ -12,11 +13,11 @@ interface MemoryConflictReviewProps {
 }
 
 export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictReviewProps) {
-  const memories = usePersonaStore((s) => s.memories);
-  const personas = usePersonaStore((s) => s.personas);
-  const deleteMemory = usePersonaStore((s) => s.deleteMemory);
-  const createMemory = usePersonaStore((s) => s.createMemory);
-  const fetchMemories = usePersonaStore((s) => s.fetchMemories);
+  const memories = useOverviewStore((s) => s.memories);
+  const personas = useAgentStore((s) => s.personas);
+  const deleteMemory = useOverviewStore((s) => s.deleteMemory);
+  const createMemory = useOverviewStore((s) => s.createMemory);
+  const fetchMemories = useOverviewStore((s) => s.fetchMemories);
 
   const [expanded, setExpanded] = useState(false);
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
