@@ -227,7 +227,7 @@ function MatrixCellRenderer({
   const filledGlow = isEditMode && cell.filled;
 
   // Whether content should be visible (not hidden/revealed)
-  const hasContent = !cellBuildStatus || (cellBuildStatus !== 'hidden' && cellBuildStatus !== 'revealed');
+  const hasContent = !cellBuildStatus || (cellBuildStatus !== 'hidden' && (cellBuildStatus as string) !== 'revealed');
 
   // Build outer class list -- state-machine classes override defaults when present
   const outerClasses = stateClasses
@@ -295,14 +295,14 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     // so the ghosted outlines are visible before CLI produces content
     if (!designResult && hasBuildStates) {
       return [
-        { key: 'use-cases', label: CELL_LABELS['use-cases'], watermark: UseCasesIcon, watermarkColor: 'text-violet-400', render: () => null },
-        { key: 'connectors', label: CELL_LABELS['connectors'], watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', render: () => null },
-        { key: 'triggers', label: CELL_LABELS['triggers'], watermark: TriggersIcon, watermarkColor: 'text-amber-400', render: () => null },
-        { key: 'human-review', label: CELL_LABELS['human-review'], watermark: HumanReviewIcon, watermarkColor: 'text-rose-400', render: () => null },
-        { key: 'messages', label: CELL_LABELS['messages'], watermark: MessagesIcon, watermarkColor: 'text-blue-400', render: () => null },
-        { key: 'memory', label: CELL_LABELS['memory'], watermark: MemoryIcon, watermarkColor: 'text-purple-400', render: () => null },
-        { key: 'error-handling', label: CELL_LABELS['error-handling'], watermark: ErrorsIcon, watermarkColor: 'text-orange-400', render: () => null },
-        { key: 'events', label: CELL_LABELS['events'], watermark: EventsIcon, watermarkColor: 'text-teal-400', render: () => null },
+        { key: 'use-cases', label: CELL_LABELS['use-cases'] ?? 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400', render: () => null },
+        { key: 'connectors', label: CELL_LABELS['connectors'] ?? 'Connectors', watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', render: () => null },
+        { key: 'triggers', label: CELL_LABELS['triggers'] ?? 'Triggers', watermark: TriggersIcon, watermarkColor: 'text-amber-400', render: () => null },
+        { key: 'human-review', label: CELL_LABELS['human-review'] ?? 'Human Review', watermark: HumanReviewIcon, watermarkColor: 'text-rose-400', render: () => null },
+        { key: 'messages', label: CELL_LABELS['messages'] ?? 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400', render: () => null },
+        { key: 'memory', label: CELL_LABELS['memory'] ?? 'Memory', watermark: MemoryIcon, watermarkColor: 'text-purple-400', render: () => null },
+        { key: 'error-handling', label: CELL_LABELS['error-handling'] ?? 'Error Handling', watermark: ErrorsIcon, watermarkColor: 'text-orange-400', render: () => null },
+        { key: 'events', label: CELL_LABELS['events'] ?? 'Events', watermark: EventsIcon, watermarkColor: 'text-teal-400', render: () => null },
       ];
     }
 
