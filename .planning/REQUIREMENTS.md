@@ -45,8 +45,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **VISL-03**: Framer Motion structural animations for cell enter/exit/reveal with stagger orchestration
 - [x] **VISL-04**: CSS @property decorative animations for glow pulse, shimmer, breathing effects (GPU-accelerated, zero JS cost)
 - [x] **VISL-05**: Non-technical vocabulary for cell labels (e.g., "Apps & Services" not "Connectors", "When it runs" not "Triggers")
-- [ ] **VISL-06**: 60fps animation performance maintained with 8+ simultaneous cell animations
-- [ ] **VISL-07**: Smooth animation at minimum spec (900x600 viewport)
+- [x] **VISL-06**: 60fps animation performance maintained with 8+ simultaneous cell animations
+- [x] **VISL-07**: Smooth animation at minimum spec (900x600 viewport)
 
 ### Integration
 
@@ -118,8 +118,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | VISL-03 | Phase 4 | Complete |
 | VISL-04 | Phase 4 | Complete |
 | VISL-05 | Phase 2 | Complete |
-| VISL-06 | Phase 4 | Pending |
-| VISL-07 | Phase 4 | Pending |
+| VISL-06 | Phase 4 | Complete |
+| VISL-07 | Phase 4 | Complete |
 | INTG-01 | Phase 2 | Pending |
 | INTG-02 | Phase 2 | Pending |
 | INTG-03 | Phase 2 | Pending |
