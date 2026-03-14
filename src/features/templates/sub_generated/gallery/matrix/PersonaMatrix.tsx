@@ -366,7 +366,9 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   }, [designResult, flows, isEditMode, onNavigateCatalog, hasBuildStates, isCreationMode,
     ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
 
-  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={isEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} />);
+  // Creation mode is interactive (textarea + launch orb) even without mode="edit"
+  const commandCenterEditMode = isEditMode || isCreationMode;
+  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} />);
 
   // When cellBuildStates are provided or in creation mode, render even without designResult (ghosted outlines)
   if ((!designResult && !hasBuildStates && !isCreationMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
@@ -375,7 +377,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   const lastFour = cells.slice(4);
 
   return (
-    <div className="space-y-3 w-full">
+    <div className="flex flex-col gap-3 w-full h-full">
       {!hideHeader && (
         <div className="flex items-center gap-2.5">
           <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center border border-primary/25 shadow-sm shadow-primary/20">
@@ -384,13 +386,13 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
           <h4 className="text-base font-bold text-foreground/80 uppercase tracking-wider">Persona Matrix</h4>
         </div>
       )}
-      <div className="grid grid-cols-[1fr_1.3fr_1fr] gap-2.5">
+      <div className="grid grid-cols-[1fr_1.3fr_1fr] grid-rows-3 gap-2.5 flex-1 min-h-0">
         {firstFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} onCellRef={handleCellRef} />))}
         <div className="relative rounded-xl border border-primary/30 p-5 ring-1 ring-primary/10 shadow-2xl shadow-primary/5 overflow-hidden">
           {/* Neon background -- theme-colored radial glow */}
           <div className="absolute inset-0 bg-card-bg" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_70%)] opacity-[0.07]" />
-          <div className="relative z-10">{commandCenter}</div>
+          <div className="relative z-10 h-full">{commandCenter}</div>
         </div>
         {lastFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} onCellRef={handleCellRef} />))}
       </div>
