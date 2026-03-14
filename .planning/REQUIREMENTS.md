@@ -35,15 +35,15 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **LIFE-02**: Mandatory real test run — CLI executes persona against user's use case with actual results
 - [x] **LIFE-03**: Explicit approval gate — user accepts test results before draft becomes real persona
 - [x] **LIFE-04**: Reject action returns to matrix for refinement (not a dead end)
-- [ ] **LIFE-05**: Refine-in-place via command center — user types refinement feedback, CLI adjusts specific cells
-- [ ] **LIFE-06**: Draft-to-production promotion preserves all configured tools, triggers, and credentials
+- [x] **LIFE-05**: Refine-in-place via command center — user types refinement feedback, CLI adjusts specific cells
+- [x] **LIFE-06**: Draft-to-production promotion preserves all configured tools, triggers, and credentials
 
 ### Visual Design
 
-- [ ] **VISL-01**: Futuristic/ambient dark control-room aesthetic with glowing cells and neon accents
-- [ ] **VISL-02**: Cell state-driven glow colors (different glow for pending, filling, resolved, highlighted states)
+- [x] **VISL-01**: Futuristic/ambient dark control-room aesthetic with glowing cells and neon accents
+- [x] **VISL-02**: Cell state-driven glow colors (different glow for pending, filling, resolved, highlighted states)
 - [ ] **VISL-03**: Framer Motion structural animations for cell enter/exit/reveal with stagger orchestration
-- [ ] **VISL-04**: CSS @property decorative animations for glow pulse, shimmer, breathing effects (GPU-accelerated, zero JS cost)
+- [x] **VISL-04**: CSS @property decorative animations for glow pulse, shimmer, breathing effects (GPU-accelerated, zero JS cost)
 - [x] **VISL-05**: Non-technical vocabulary for cell labels (e.g., "Apps & Services" not "Connectors", "When it runs" not "Triggers")
 - [ ] **VISL-06**: 60fps animation performance maintained with 8+ simultaneous cell animations
 - [ ] **VISL-07**: Smooth animation at minimum spec (900x600 viewport)
@@ -111,12 +111,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | LIFE-02 | Phase 3 | Complete |
 | LIFE-03 | Phase 3 | Complete |
 | LIFE-04 | Phase 3 | Complete |
-| LIFE-05 | Phase 3 | Pending |
-| LIFE-06 | Phase 3 | Pending |
-| VISL-01 | Phase 4 | Pending |
-| VISL-02 | Phase 4 | Pending |
+| LIFE-05 | Phase 3 | Complete |
+| LIFE-06 | Phase 3 | Complete |
+| VISL-01 | Phase 4 | Complete |
+| VISL-02 | Phase 4 | Complete |
 | VISL-03 | Phase 4 | Pending |
-| VISL-04 | Phase 4 | Pending |
+| VISL-04 | Phase 4 | Complete |
 | VISL-05 | Phase 2 | Complete |
 | VISL-06 | Phase 4 | Pending |
 | VISL-07 | Phase 4 | Pending |
