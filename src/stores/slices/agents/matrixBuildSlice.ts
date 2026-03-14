@@ -49,6 +49,7 @@ export interface MatrixBuildSlice {
   handleTestComplete: (passed: boolean, outputPreview: string) => void;
   handleTestFailed: (error: string) => void;
   handleRejectTest: () => void;
+  appendTestOutput: (line: string) => void;
 
   // Actions -- lifecycle
   resetBuildSession: () => void;
@@ -58,6 +59,7 @@ export interface MatrixBuildSlice {
 // -- Max output buffer size -------------------------------------------------
 
 const MAX_OUTPUT_LINES = 500;
+const MAX_TEST_OUTPUT_LINES = 200;
 
 // -- Slice creator ----------------------------------------------------------
 
@@ -181,6 +183,17 @@ export const createMatrixBuildSlice: StateCreator<
       buildTestPassed: null,
       buildTestOutputLines: [],
       buildTestError: null,
+    });
+  },
+
+  appendTestOutput: (line) => {
+    set((s) => {
+      const nextLines = [...s.buildTestOutputLines, line];
+      const trimmed =
+        nextLines.length > MAX_TEST_OUTPUT_LINES
+          ? nextLines.slice(nextLines.length - MAX_TEST_OUTPUT_LINES)
+          : nextLines;
+      return { buildTestOutputLines: trimmed };
     });
   },
 
