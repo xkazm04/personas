@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { deriveArchCategories, type ArchCategory } from './architecturalCategories';
 import {
   UseCasesIcon, ConnectorsIcon, TriggersIcon, HumanReviewIcon,
@@ -9,10 +10,14 @@ import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import type { DesignQuestion } from '@/lib/types/designTypes';
+import type { CellBuildStatus, BuildQuestion } from '@/lib/types/buildTypes';
 import type { RequiredConnector } from '../../adoption/steps/connect/ConnectStep';
 import type { MatrixEditState, MatrixEditCallbacks } from './EditableMatrixCells';
 import { ConnectorEditCell, TriggerEditCell, ReviewEditCell, MemoryEditCell, MessagesEditCell, ErrorEditCell, UseCaseEditCell } from './EditableMatrixCells';
 import { MatrixCommandCenter } from './MatrixCommandCenter';
+import { CELL_LABELS } from '@/features/agents/components/matrix/cellVocabulary';
+import { getCellStateClasses } from '@/features/agents/components/matrix/cellStateClasses';
+import { GhostedCellRenderer } from '@/features/agents/components/matrix/GhostedCellRenderer';
 
 /** @deprecated Single theme -- kept for backward compatibility */
 export type MatrixTheme = 'neon';
@@ -79,6 +84,12 @@ interface PersonaMatrixBaseProps {
   designQuestion?: DesignQuestion | null;
   /** Answer a design question */
   onAnswerQuestion?: (answer: string) => void;
+  /** Cell build states from matrixBuildSlice, keyed by cell key */
+  cellBuildStates?: Record<string, CellBuildStatus>;
+  /** Pending Q&A questions for spatial popover anchoring */
+  pendingQuestions?: BuildQuestion[];
+  /** Answer a spatial question (cellKey, answer) */
+  onAnswerBuildQuestion?: (cellKey: string, answer: string) => void;
 }
 
 interface PersonaMatrixViewProps extends PersonaMatrixBaseProps { mode?: 'view'; }
@@ -182,21 +193,63 @@ const TRIGGER_LABELS: Record<string, string> = {
 
 // -- Cell renderer (Neon, dark+light aware) ---------------------------
 
-function MatrixCellRenderer({ cell, isEditMode, buildLocked }: { cell: MatrixCell; isEditMode: boolean; buildLocked?: boolean }) {
+function MatrixCellRenderer({
+  cell,
+  isEditMode,
+  buildLocked,
+  cellBuildStatus,
+}: {
+  cell: MatrixCell;
+  isEditMode: boolean;
+  buildLocked?: boolean;
+  cellBuildStatus?: CellBuildStatus;
+}) {
+  // When cellBuildStatus is 'hidden' or 'revealed', render the ghosted outline
+  if (cellBuildStatus === 'hidden' || cellBuildStatus === 'revealed') {
+    return (
+      <GhostedCellRenderer
+        label={cell.label}
+        watermark={cell.watermark}
+        watermarkColor={cell.watermarkColor}
+      />
+    );
+  }
+
   const Watermark = cell.watermark;
-  const useEditRender = isEditMode && cell.editRender && !buildLocked;
+
+  // Determine if we should use state-machine classes (only when cellBuildStatus is provided)
+  const stateClasses = cellBuildStatus ? getCellStateClasses(cellBuildStatus) : null;
+
+  // When filling, the cell is locked regardless of buildLocked prop
+  const effectiveBuildLocked = buildLocked || cellBuildStatus === 'filling';
+
+  const useEditRender = isEditMode && cell.editRender && !effectiveBuildLocked;
   const filledGlow = isEditMode && cell.filled;
 
+  // Whether content should be visible (not hidden/revealed)
+  const hasContent = !cellBuildStatus || (cellBuildStatus !== 'hidden' && cellBuildStatus !== 'revealed');
+
+  // Build outer class list -- state-machine classes override defaults when present
+  const outerClasses = stateClasses
+    ? [
+        'relative rounded-xl border p-4 transition-[opacity,transform,border-color,background-color] duration-300 shadow-md',
+        stateClasses.bg,
+        stateClasses.border,
+        stateClasses.opacity,
+        useEditRender ? 'ring-1 ring-inset ring-primary/10' : '',
+      ].filter(Boolean).join(' ')
+    : [
+        'relative rounded-xl border p-4 transition-[opacity,transform,border-color,background-color] duration-300 shadow-md',
+        useEditRender
+          ? 'bg-card-bg ring-1 ring-inset ring-primary/10'
+          : 'bg-card-bg',
+        filledGlow
+          ? 'border-primary/20 shadow-lg shadow-primary/[0.03]'
+          : 'border-card-border',
+      ].join(' ');
+
   return (
-    <div className={[
-      'relative rounded-xl border p-4 transition-all duration-300 shadow-md',
-      useEditRender
-        ? 'bg-card-bg ring-1 ring-inset ring-primary/10'
-        : 'bg-card-bg',
-      filledGlow
-        ? 'border-primary/20 shadow-lg shadow-primary/[0.03]'
-        : 'border-card-border',
-    ].join(' ')}>
+    <div className={outerClasses}>
       <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
         <div className={`absolute -right-1 -top-1 ${useEditRender ? 'opacity-[0.15]' : 'opacity-[0.25]'} transition-opacity duration-300`}>
           <Watermark className={`w-22 h-22 ${cell.watermarkColor}`} />
@@ -209,7 +262,20 @@ function MatrixCellRenderer({ cell, isEditMode, buildLocked }: { cell: MatrixCel
         )}
       </div>
       <div className="relative min-h-[52px] flex items-start">
-        {useEditRender ? cell.editRender!() : cell.render()}
+        <AnimatePresence mode="wait">
+          {hasContent && (
+            <motion.div
+              key="cell-content"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="w-full"
+            >
+              {useEditRender ? cell.editRender!() : cell.render()}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -218,10 +284,28 @@ function MatrixCellRenderer({ cell, isEditMode, buildLocked }: { cell: MatrixCel
 // -- Main Component ---------------------------------------------------
 
 export function PersonaMatrix(props: PersonaMatrixProps) {
-  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion } = props;
+  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion, cellBuildStates } = props;
   const isEditMode = props.mode === 'edit';
 
+  // When cellBuildStates is provided (build mode), we create skeleton cells even without designResult
+  const hasBuildStates = cellBuildStates && Object.keys(cellBuildStates).length > 0;
+
   const cells = useMemo<MatrixCell[]>(() => {
+    // In build mode with cellBuildStates but no designResult yet, return skeleton cells
+    // so the ghosted outlines are visible before CLI produces content
+    if (!designResult && hasBuildStates) {
+      return [
+        { key: 'use-cases', label: CELL_LABELS['use-cases'], watermark: UseCasesIcon, watermarkColor: 'text-violet-400', render: () => null },
+        { key: 'connectors', label: CELL_LABELS['connectors'], watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', render: () => null },
+        { key: 'triggers', label: CELL_LABELS['triggers'], watermark: TriggersIcon, watermarkColor: 'text-amber-400', render: () => null },
+        { key: 'human-review', label: CELL_LABELS['human-review'], watermark: HumanReviewIcon, watermarkColor: 'text-rose-400', render: () => null },
+        { key: 'messages', label: CELL_LABELS['messages'], watermark: MessagesIcon, watermarkColor: 'text-blue-400', render: () => null },
+        { key: 'memory', label: CELL_LABELS['memory'], watermark: MemoryIcon, watermarkColor: 'text-purple-400', render: () => null },
+        { key: 'error-handling', label: CELL_LABELS['error-handling'], watermark: ErrorsIcon, watermarkColor: 'text-orange-400', render: () => null },
+        { key: 'events', label: CELL_LABELS['events'], watermark: EventsIcon, watermarkColor: 'text-teal-400', render: () => null },
+      ];
+    }
+
     if (!designResult) return [];
     const connectorNames = designResult.suggested_connectors?.map((c) => c.name) ?? [];
     const archCategories = deriveArchCategories(connectorNames);
@@ -234,43 +318,44 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     const editProps = isEditMode ? props as PersonaMatrixEditProps : null;
 
     return [
-      { key: 'use-cases', label: 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400', filled: flows.length > 0,
+      { key: 'use-cases', label: CELL_LABELS['use-cases'], watermark: UseCasesIcon, watermarkColor: 'text-violet-400', filled: flows.length > 0,
         render: () => flows.length === 0 ? <CellBullets items={['General-purpose agent']} color="text-muted-foreground/50" /> : <CellBullets items={flows.slice(0, 3).map((f) => f.name)} color="text-foreground/70" />,
         editRender: editProps ? () => (<UseCaseEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'connectors', label: 'Connectors', watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', filled: archCategories.length > 0,
+      { key: 'connectors', label: CELL_LABELS['connectors'], watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', filled: archCategories.length > 0,
         render: () => {
           if (archCategories.length === 0) return <CellBullets items={['No external services']} color="text-muted-foreground/50" />;
           return (<div className="space-y-1.5">{archCategories.slice(0, 3).map((cat: ArchCategory) => { const CatIcon = cat.icon; return (<div key={cat.key} className="flex items-center gap-2"><CatIcon className="w-3.5 h-3.5 flex-shrink-0 opacity-70" style={{ color: cat.color }} /><span className="text-sm text-foreground/70 leading-snug">{cat.label}</span></div>); })}{archCategories.length > 3 && <span className="text-sm text-muted-foreground/40 pl-[22px]">+{archCategories.length - 3} more</span>}</div>);
         },
         editRender: editProps ? () => (<ConnectorEditCell requiredConnectors={editProps.requiredConnectors} credentials={editProps.credentials} editState={editProps.editState} callbacks={editProps.editCallbacks} onNavigateCatalog={onNavigateCatalog} />) : undefined },
-      { key: 'triggers', label: 'Triggers', watermark: TriggersIcon, watermarkColor: 'text-amber-400', filled: triggers.length > 0,
+      { key: 'triggers', label: CELL_LABELS['triggers'], watermark: TriggersIcon, watermarkColor: 'text-amber-400', filled: triggers.length > 0,
         render: () => triggers.length === 0 ? <CellBullets items={['Manual execution only']} color="text-muted-foreground/50" /> : <CellBullets items={triggers.slice(0, 3).map((t) => t.label)} color="text-foreground/70" />,
         editRender: editProps ? () => (<TriggerEditCell designResult={designResult} editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'human-review', label: 'Human Review', watermark: HumanReviewIcon, filled: review.level !== 'none',
+      { key: 'human-review', label: CELL_LABELS['human-review'], watermark: HumanReviewIcon, filled: review.level !== 'none',
         watermarkColor: review.level === 'required' ? 'text-rose-400' : review.level === 'optional' ? 'text-amber-400' : 'text-emerald-400',
         render: () => { const dotColor = review.level === 'required' ? 'bg-rose-400' : review.level === 'optional' ? 'bg-amber-400' : 'bg-emerald-400'; return (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} /><span className="text-sm font-medium text-foreground/80">{review.label}</span></div><p className="text-sm text-muted-foreground/60 leading-snug pl-[16px]">{review.context.length > 55 ? review.context.slice(0, 53) + '\u2026' : review.context}</p></div>); },
         editRender: editProps ? () => (<ReviewEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'messages', label: 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400', filled: channels.length > 0,
+      { key: 'messages', label: CELL_LABELS['messages'], watermark: MessagesIcon, watermarkColor: 'text-blue-400', filled: channels.length > 0,
         render: () => { if (channels.length === 0) return <CellBullets items={['In-app notifications only']} color="text-muted-foreground/50" />; const bullets = channels.slice(0, 3).map((ch) => { const prefix = ch.type.charAt(0).toUpperCase() + ch.type.slice(1); return ch.description.length > 3 && ch.description.length <= 40 ? `${prefix}: ${ch.description}` : `${prefix} channel`; }); return <CellBullets items={bullets} color="text-foreground/70" />; },
         editRender: editProps ? () => (<MessagesEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'memory', label: 'Memory', watermark: MemoryIcon, filled: memory.active,
+      { key: 'memory', label: CELL_LABELS['memory'], watermark: MemoryIcon, filled: memory.active,
         watermarkColor: memory.active ? 'text-purple-400' : 'text-zinc-400',
         render: () => (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${memory.active ? 'bg-purple-400' : 'bg-zinc-500'} flex-shrink-0`} /><span className="text-sm font-medium text-foreground/80">{memory.label}</span></div><p className="text-sm text-muted-foreground/60 leading-snug pl-[16px]">{memory.context}</p></div>),
         editRender: editProps ? () => (<MemoryEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'error-handling', label: 'Errors', watermark: ErrorsIcon, watermarkColor: 'text-orange-400', filled: errorStrategies[0] !== 'Default error handling',
+      { key: 'error-handling', label: CELL_LABELS['error-handling'], watermark: ErrorsIcon, watermarkColor: 'text-orange-400', filled: errorStrategies[0] !== 'Default error handling',
         render: () => <CellBullets items={errorStrategies} color="text-foreground/70" />,
         editRender: editProps ? () => (<ErrorEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'events', label: 'Events', watermark: EventsIcon, filled: events.length > 0,
+      { key: 'events', label: CELL_LABELS['events'], watermark: EventsIcon, filled: events.length > 0,
         watermarkColor: events.length > 0 ? 'text-teal-400' : 'text-muted-foreground',
         render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [designResult, flows, isEditMode, onNavigateCatalog,
+  }, [designResult, flows, isEditMode, onNavigateCatalog, hasBuildStates,
     ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
 
   const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={isEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} />);
 
-  if (!designResult || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
+  // When cellBuildStates are provided, render even without designResult (ghosted outlines)
+  if ((!designResult && !hasBuildStates) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
 
   const firstFour = cells.slice(0, 4);
   const lastFour = cells.slice(4);
@@ -286,14 +371,14 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         </div>
       )}
       <div className="grid grid-cols-[1fr_1.3fr_1fr] gap-2.5">
-        {firstFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} />))}
+        {firstFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} />))}
         <div className="relative rounded-xl border border-primary/30 p-5 ring-1 ring-primary/10 shadow-2xl shadow-primary/5 overflow-hidden">
           {/* Neon background -- theme-colored radial glow */}
           <div className="absolute inset-0 bg-card-bg" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_70%)] opacity-[0.07]" />
           <div className="relative z-10">{commandCenter}</div>
         </div>
-        {lastFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} />))}
+        {lastFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} />))}
       </div>
     </div>
   );
