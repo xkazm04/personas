@@ -1,4 +1,5 @@
 pub mod auto_rollback;
+pub mod build_session;
 pub mod identity;
 pub mod bundle;
 pub mod p2p;
@@ -44,6 +45,7 @@ pub mod test_runner;
 pub mod tool_runner;
 pub mod trace;
 pub mod types;
+pub mod lifecycle;
 pub mod webhook;
 pub mod platform_rules;
 pub mod url_safety;
@@ -94,6 +96,11 @@ use crate::error::AppError;
 use self::types::{ExecutionResult, ExecutionState, HealingEventPayload, QueueStatusEvent};
 
 use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
+
+/// Hard engine-level ceiling for any single execution (30 minutes).
+/// This is a non-overridable safety net that prevents runaway executions
+/// regardless of per-persona timeout configuration.
+const ENGINE_MAX_EXECUTION_SECS: u64 = 30 * 60;
 
 /// Maximum retry attempts for DB status persistence.
 const PERSIST_MAX_RETRIES: u32 = 3;
@@ -189,6 +196,67 @@ pub(crate) async fn persist_status_update(
                 max_retries: None,
             },
         );
+    }
+}
+
+/// Run an execution with a hard engine-level timeout ceiling.
+///
+/// Wraps `runner::run_execution` with `tokio::time::timeout` using
+/// `ENGINE_MAX_EXECUTION_SECS` so that no execution can run longer than the
+/// engine ceiling, regardless of per-persona timeout configuration.
+#[allow(clippy::too_many_arguments)]
+async fn run_execution_with_ceiling(
+    app: AppHandle,
+    pool: DbPool,
+    execution_id: String,
+    persona: Persona,
+    tools: Vec<PersonaToolDefinition>,
+    input_data: Option<serde_json::Value>,
+    log_dir: PathBuf,
+    child_pids: Arc<Mutex<HashMap<String, u32>>>,
+    cancelled: Arc<AtomicBool>,
+    continuation: Option<types::Continuation>,
+    chain_trace_id: Option<String>,
+    circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
+) -> ExecutionResult {
+    let ceiling = std::time::Duration::from_secs(ENGINE_MAX_EXECUTION_SECS);
+
+    match tokio::time::timeout(
+        ceiling,
+        runner::run_execution(
+            app,
+            pool,
+            execution_id.clone(),
+            persona,
+            tools,
+            input_data,
+            log_dir,
+            child_pids,
+            cancelled,
+            continuation,
+            chain_trace_id,
+            circuit_breaker,
+        ),
+    )
+    .await
+    {
+        Ok(result) => result,
+        Err(_elapsed) => {
+            tracing::error!(
+                execution_id = %execution_id,
+                ceiling_secs = ENGINE_MAX_EXECUTION_SECS,
+                "Engine safety ceiling reached — execution forcibly terminated",
+            );
+            ExecutionResult {
+                success: false,
+                error: Some(format!(
+                    "Engine safety ceiling exceeded ({}m). Execution forcibly terminated.",
+                    ENGINE_MAX_EXECUTION_SECS / 60,
+                )),
+                duration_ms: ENGINE_MAX_EXECUTION_SECS * 1000,
+                ..Default::default()
+            }
+        }
     }
 }
 
@@ -481,7 +549,7 @@ impl ExecutionEngine {
 
         // Spawn background task
         let handle = tokio::spawn(async move {
-            let result = runner::run_execution(
+            let result = run_execution_with_ceiling(
                 app,
                 pool_clone.clone(),
                 exec_id.clone(),
@@ -985,7 +1053,7 @@ fn drain_and_start_next(
             let circuit_breaker_for_drain = circuit_breaker.clone();
 
             let handle = tokio::spawn(async move {
-                let result = runner::run_execution(
+                let result = run_execution_with_ceiling(
                     app_handle,
                     pool_clone.clone(),
                     exec_id.clone(),
@@ -1681,7 +1749,7 @@ fn spawn_healing_chain(
         );
 
         // 9. Run the execution, resuming the original session
-        let result = runner::run_execution(
+        let result = run_execution_with_ceiling(
             app.clone(),
             pool.clone(),
             exec_id.clone(),
@@ -1955,7 +2023,7 @@ fn spawn_delayed_retry(
         );
 
         // 11. Run the execution
-        let result = runner::run_execution(
+        let result = run_execution_with_ceiling(
             app.clone(),
             pool.clone(),
             exec_id.clone(),

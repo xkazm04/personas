@@ -1,4 +1,5 @@
 pub mod analysis;
+pub mod build_sessions;
 pub mod conversations;
 pub mod n8n_sessions;
 pub mod n8n_transform;

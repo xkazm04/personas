@@ -230,6 +230,8 @@ pub struct AppState {
     pub embedding_manager: Option<Arc<engine::embedder::EmbeddingManager>>,
     /// SQLite-vec vector store for knowledge bases.
     pub vector_store: Option<Arc<engine::vector_store::SqliteVectorStore>>,
+    /// Build session manager for multi-turn agent builder sessions.
+    pub build_session_manager: Arc<engine::build_session::BuildSessionManager>,
 }
 
 /// Hello world IPC command -- verifies the Rust <-> React bridge works.
@@ -326,7 +328,7 @@ pub fn run() {
                 Ok((migrated, failed)) => {
                     if migrated > 0 || failed > 0 {
                         tracing::info!(
-                            "Credential migration: {} encrypted, {} failed",
+                            "Credential migration: {} encrypted, {} failed (unparseable rows remain unencrypted)",
                             migrated,
                             failed
                         );
@@ -469,6 +471,7 @@ pub fn run() {
                 network: network_service.clone(),
                 embedding_manager: Some(embedding_manager),
                 vector_store: Some(vector_store),
+                build_session_manager: Arc::new(engine::build_session::BuildSessionManager::new()),
             });
             app.manage(state_arc.clone());
 
@@ -573,8 +576,10 @@ pub fn run() {
             commands::core::personas::create_persona,
             commands::core::personas::update_persona,
             commands::core::personas::duplicate_persona,
+            commands::core::personas::persona_blast_radius,
             commands::core::personas::delete_persona,
             commands::core::personas::get_persona_summaries,
+            commands::core::personas::get_persona_detail,
             // Core -- Groups
             commands::core::groups::list_groups,
             commands::core::groups::create_group,
@@ -692,6 +697,12 @@ pub fn run() {
             commands::design::analysis::cancel_design_analysis,
             commands::design::analysis::compile_from_intent,
             commands::design::analysis::preview_prompt,
+            // Design -- Build Sessions
+            commands::design::build_sessions::start_build_session,
+            commands::design::build_sessions::answer_build_question,
+            commands::design::build_sessions::cancel_build_session,
+            commands::design::build_sessions::get_active_build_session,
+            commands::design::build_sessions::list_build_sessions,
             // Design -- Conversations
             commands::design::conversations::list_design_conversations,
             commands::design::conversations::get_design_conversation,
@@ -764,6 +775,8 @@ pub fn run() {
             commands::core::memories::seed_mock_memory,
             commands::execution::knowledge::seed_mock_knowledge,
             commands::tools::triggers::seed_mock_cron_agent,
+            commands::communication::messages::seed_mock_message,
+            commands::communication::events::seed_mock_event,
             // Design -- Smart Search
             commands::design::smart_search::smart_search_templates,
             // Credentials -- CRUD
@@ -772,6 +785,7 @@ pub fn run() {
             commands::credentials::crud::create_credential,
             commands::credentials::crud::update_credential,
             commands::credentials::crud::patch_credential_metadata,
+            commands::credentials::crud::credential_blast_radius,
             commands::credentials::crud::delete_credential,
             commands::credentials::crud::list_credential_events,
             commands::credentials::crud::list_all_credential_events,
@@ -1001,6 +1015,7 @@ pub fn run() {
             commands::tools::automations::get_automation,
             commands::tools::automations::create_automation,
             commands::tools::automations::update_automation,
+            commands::tools::automations::automation_blast_radius,
             commands::tools::automations::delete_automation,
             commands::tools::automations::trigger_automation,
             commands::tools::automations::test_automation_webhook,
@@ -1037,6 +1052,7 @@ pub fn run() {
             commands::tools::triggers::clear_webhook_request_logs,
             commands::tools::triggers::replay_webhook_request,
             commands::tools::triggers::webhook_request_to_curl,
+            commands::tools::triggers::get_persona_config_warnings,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,
