@@ -36,6 +36,9 @@ export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
   const pendingQuestions = useAgentStore((s) => s.buildPendingQuestions);
   const outputLines = useAgentStore((s) => s.buildOutputLines);
   const buildError = useAgentStore((s) => s.buildError);
+  const buildTestPassed = useAgentStore((s) => s.buildTestPassed);
+  const buildTestOutputLines = useAgentStore((s) => s.buildTestOutputLines);
+  const buildTestError = useAgentStore((s) => s.buildTestError);
 
   // -- Derived state ------------------------------------------------------
 
@@ -95,6 +98,10 @@ export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
     buildError,
     isBuilding,
     isIdle,
+    // Test lifecycle state
+    buildTestPassed,
+    buildTestOutputLines,
+    buildTestError,
     // Actions
     handleGenerate,
     handleAnswer,

@@ -15,6 +15,7 @@
 import { useState, useCallback } from "react";
 import { PersonaMatrix } from "@/features/templates/sub_generated/gallery/matrix/PersonaMatrix";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
+import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 
@@ -48,6 +49,7 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
   // -- Build orchestration ------------------------------------------------
 
   const build = useMatrixBuild({ personaId: draftPersonaId });
+  const lifecycle = useMatrixLifecycle({ personaId: draftPersonaId });
 
   // -- Handlers -----------------------------------------------------------
 
@@ -104,6 +106,7 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
   // -- Derived props for PersonaMatrix ------------------------------------
 
   const launchDisabled = !intentText.trim() || build.isBuilding;
+  const hasDesignResult = build.buildPhase === "draft_ready" || build.buildPhase === "testing" || build.buildPhase === "test_complete" || build.buildPhase === "promoted";
 
   // -- Render -------------------------------------------------------------
 
@@ -127,6 +130,14 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
           onAnswerBuildQuestion={build.handleAnswer}
           agentName={agentName}
           onAgentNameChange={setAgentName}
+          hasDesignResult={hasDesignResult}
+          buildPhase={build.buildPhase}
+          onStartTest={lifecycle.handleStartTest}
+          onApproveTest={lifecycle.handleApproveTest}
+          onRejectTest={lifecycle.handleRejectTest}
+          testOutputLines={build.buildTestOutputLines}
+          testPassed={build.buildTestPassed}
+          testError={build.buildTestError}
         />
       </div>
 

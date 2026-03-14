@@ -23,9 +23,11 @@ import { createPortal } from 'react-dom';
 import {
   FileText, Play, X, User, Wrench, BookOpen, Shield,
   Globe, Search, Loader2, HelpCircle, CheckCircle2, Sparkles, ArrowRight, Send,
+  XCircle, Eye, RotateCcw,
 } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { AgentIR, DesignQuestion } from '@/lib/types/designTypes';
+import type { BuildPhase } from '@/lib/types/buildTypes';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { BuildQuestionnaireModal } from './BuildQuestionnaireModal';
 
@@ -72,6 +74,7 @@ function LaunchOrb({ onClick, disabled, isRunning, label, icon }: { onClick?: ()
         type="button"
         onClick={onClick}
         disabled={disabled || isRunning}
+        data-testid="agent-launch-btn"
         className="group relative w-16 h-16 rounded-full flex items-center justify-center disabled:cursor-not-allowed transition-all duration-300"
       >
         <span className={`absolute inset-0 rounded-full border-2 transition-colors ${
@@ -169,17 +172,20 @@ function CompletenessRing({ value, size = 56 }: { value: number; size?: number }
 
 /** Post-generation state for creation mode. */
 function CreationPostGeneration({
-  completeness, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange,
+  completeness, onContinue, onRefine, onCreateAgent, onStartTest, agentName, onAgentNameChange,
 }: {
   completeness: number;
   onContinue?: () => void;
   onRefine?: (feedback: string) => void;
   onCreateAgent?: (name: string) => void;
+  /** When provided, shows "Test Agent" button instead of "Create Agent" (mandatory test per LIFE-02) */
+  onStartTest?: () => void;
   agentName?: string;
   onAgentNameChange?: (name: string) => void;
 }) {
   const [refineText, setRefineText] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
   const nameValue = agentName ?? '';
 
   const handleCreate = async () => {
@@ -192,6 +198,19 @@ function CreationPostGeneration({
     }
   };
 
+  const handleTest = async () => {
+    if (!onStartTest || isTesting) return;
+    setIsTesting(true);
+    try {
+      await onStartTest();
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  // When onStartTest is provided, use "Test Agent" as the primary action
+  const showTestButton = !!onStartTest;
+
   return (
     <div className="flex flex-col items-center gap-3 w-full h-full">
       <CompletenessRing value={completeness} />
@@ -202,6 +221,7 @@ function CreationPostGeneration({
         value={nameValue}
         onChange={(e) => onAgentNameChange?.(e.target.value)}
         placeholder="Agent name..."
+        data-testid="agent-name-input"
         className="w-full px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm font-medium text-foreground/90 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors text-center"
       />
 
@@ -227,8 +247,28 @@ function CreationPostGeneration({
         </div>
       )}
 
-      {/* Create Agent button (direct finalization) */}
-      {onCreateAgent && (
+      {/* Test Agent button (mandatory test per LIFE-02) */}
+      {showTestButton && (
+        <button
+          type="button"
+          onClick={handleTest}
+          disabled={completeness < 20 || isTesting}
+          data-testid="agent-test-btn"
+          className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+            completeness >= 80
+              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30'
+              : completeness >= 20
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'bg-primary/30 text-primary-foreground/50 cursor-not-allowed'
+          }`}
+        >
+          {isTesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+          {isTesting ? 'Starting Test...' : 'Test Agent'}
+        </button>
+      )}
+
+      {/* Create Agent button (only shown when no onStartTest -- legacy fallback) */}
+      {!showTestButton && onCreateAgent && (
         <button
           type="button"
           onClick={handleCreate}
@@ -246,8 +286,8 @@ function CreationPostGeneration({
         </button>
       )}
 
-      {/* Fallback Continue button when no onCreateAgent */}
-      {!onCreateAgent && onContinue && (
+      {/* Fallback Continue button when no onCreateAgent and no onStartTest */}
+      {!showTestButton && !onCreateAgent && onContinue && (
         <button
           type="button"
           onClick={onContinue}
@@ -320,6 +360,122 @@ function DesignQuestionPrompt({ question, onAnswer }: { question: DesignQuestion
   );
 }
 
+/** Test running indicator -- streaming output + cancel button. */
+function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { testOutputLines?: string[]; onCancelTest?: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-2 w-full">
+      <BuildStatusIndicator phaseLabel="Testing agent..." />
+      {testOutputLines.length > 0 && (
+        <CliOutputStream lines={testOutputLines} />
+      )}
+      {onCancelTest && (
+        <button
+          type="button"
+          onClick={onCancelTest}
+          className="text-xs text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
+        >
+          Cancel Test
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Test results panel -- pass/fail indicator with approve/reject buttons. */
+function TestResultsPanel({
+  passed, outputLines = [], error, onApprove, onReject,
+}: {
+  passed?: boolean | null;
+  outputLines?: string[];
+  error?: string | null;
+  onApprove?: () => void;
+  onReject?: () => void;
+}) {
+  const didPass = passed === true;
+  return (
+    <div className="flex flex-col items-center gap-3 py-2 w-full">
+      {/* Pass/Fail orb */}
+      <div className="relative w-12 h-12 flex items-center justify-center">
+        <span className={`absolute inset-0 rounded-full border-2 ${didPass ? 'border-emerald-400/25' : 'border-red-400/25'}`} />
+        <span className={`absolute inset-[3px] rounded-full bg-gradient-to-br ${
+          didPass
+            ? 'from-emerald-500/15 via-emerald-500/8 to-emerald-400/10'
+            : 'from-red-500/15 via-red-500/8 to-red-400/10'
+        }`} />
+        {didPass
+          ? <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
+          : <XCircle className="w-5 h-5 text-red-400 relative z-10" />}
+      </div>
+
+      <span className={`text-sm font-medium ${didPass ? 'text-emerald-400' : 'text-red-400'}`}>
+        {didPass ? 'Test Passed' : 'Test Failed'}
+      </span>
+
+      {/* Error message */}
+      {error && (
+        <p className="text-xs text-red-400/80 text-center leading-relaxed px-2">{error}</p>
+      )}
+
+      {/* Output preview */}
+      {outputLines.length > 0 && (
+        <div className="w-full max-h-14 overflow-y-auto rounded-lg bg-black/20 border border-primary/10 px-2 py-1.5 font-mono text-[10px] text-muted-foreground/50 leading-relaxed">
+          {outputLines.slice(-5).map((line, i) => (
+            <div key={i} className="truncate">{line}</div>
+          ))}
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div className="flex gap-2 w-full">
+        {didPass && onApprove && (
+          <button
+            type="button"
+            onClick={onApprove}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Approve
+          </button>
+        )}
+        {onReject && (
+          <button
+            type="button"
+            onClick={onReject}
+            className={`${didPass ? 'flex-1' : 'w-full'} flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-primary/15 text-foreground/70 hover:bg-primary/5 transition-colors`}
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            {didPass ? 'Try Again' : 'Refine & Retry'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Promotion success indicator -- checkmark with emerald glow. */
+function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-2">
+      <div className="relative w-12 h-12 flex items-center justify-center">
+        <span className="absolute inset-0 rounded-full border-2 border-emerald-400/30 shadow-[0_0_16px_rgba(52,211,153,0.2)]" />
+        <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-teal-400/15" />
+        <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
+      </div>
+      <span className="text-sm text-foreground/70 font-medium">Agent Promoted</span>
+      {onViewAgent && (
+        <button
+          type="button"
+          onClick={onViewAgent}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-primary/15 text-sm text-foreground/70 hover:bg-primary/5 transition-colors"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          View Agent
+        </button>
+      )}
+    </div>
+  );
+}
+
 interface MatrixCommandCenterProps {
   designResult: AgentIR | null;
   isEditMode: boolean;
@@ -358,6 +514,22 @@ interface MatrixCommandCenterProps {
   designQuestion?: DesignQuestion | null;
   /** Answer a design question */
   onAnswerQuestion?: (answer: string) => void;
+  /** Current build phase for lifecycle state branching */
+  buildPhase?: BuildPhase;
+  /** Lifecycle: start test run */
+  onStartTest?: () => void;
+  /** Lifecycle: approve test results */
+  onApproveTest?: () => void;
+  /** Lifecycle: reject test results, return to draft_ready */
+  onRejectTest?: () => void;
+  /** Lifecycle: streaming test output lines */
+  testOutputLines?: string[];
+  /** Lifecycle: test pass/fail result */
+  testPassed?: boolean | null;
+  /** Lifecycle: test error message */
+  testError?: string | null;
+  /** Lifecycle: navigate to promoted agent */
+  onViewAgent?: () => void;
 }
 
 export function MatrixCommandCenter({
@@ -371,6 +543,8 @@ export function MatrixCommandCenter({
   completeness = 0, hasDesignResult = false, onContinue, onRefine,
   onCreateAgent, agentName, onAgentNameChange,
   cliOutputLines = [], designQuestion, onAnswerQuestion,
+  buildPhase, onStartTest, onApproveTest, onRejectTest,
+  testOutputLines = [], testPassed, testError, onViewAgent,
 }: MatrixCommandCenterProps) {
   const [openSection, setOpenSection] = useState<PromptSection | null>(null);
   const [localPromptText, setLocalPromptText] = useState('');
@@ -415,6 +589,31 @@ export function MatrixCommandCenter({
       );
     }
 
+    // --- Creation: Testing lifecycle states --------------------------
+    if (isCreation && buildPhase === 'testing') {
+      return (
+        <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
+          <TestRunningIndicator testOutputLines={testOutputLines} onCancelTest={undefined} />
+        </div>
+      );
+    }
+
+    if (isCreation && buildPhase === 'test_complete') {
+      return (
+        <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
+          <TestResultsPanel passed={testPassed} outputLines={testOutputLines} error={testError} onApprove={onApproveTest} onReject={onRejectTest} />
+        </div>
+      );
+    }
+
+    if (isCreation && buildPhase === 'promoted') {
+      return (
+        <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
+          <PromotionSuccessIndicator onViewAgent={onViewAgent} />
+        </div>
+      );
+    }
+
     // --- Creation: Design question awaiting answer ------------------
     if (isCreation && designQuestion && onAnswerQuestion) {
       return (
@@ -450,7 +649,7 @@ export function MatrixCommandCenter({
     if (isCreation && hasDesignResult) {
       return (
         <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
-          <CreationPostGeneration completeness={completeness} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} />
+          <CreationPostGeneration completeness={completeness} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} onStartTest={onStartTest} agentName={agentName} onAgentNameChange={onAgentNameChange} />
         </div>
       );
     }
@@ -463,6 +662,7 @@ export function MatrixCommandCenter({
           onChange={(e) => handleTextChange(e.target.value)}
           placeholder={isCreation ? "Describe what your agent should do..." : "Additional instructions..."}
           rows={isCreation ? 3 : 2}
+          data-testid="agent-intent-input"
           className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
         />
 

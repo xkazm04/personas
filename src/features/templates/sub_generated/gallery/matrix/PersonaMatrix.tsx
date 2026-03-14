@@ -10,7 +10,7 @@ import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import type { DesignQuestion } from '@/lib/types/designTypes';
-import type { CellBuildStatus, BuildQuestion } from '@/lib/types/buildTypes';
+import type { CellBuildStatus, BuildQuestion, BuildPhase } from '@/lib/types/buildTypes';
 import type { RequiredConnector } from '../../adoption/steps/connect/ConnectStep';
 import type { MatrixEditState, MatrixEditCallbacks } from './EditableMatrixCells';
 import { ConnectorEditCell, TriggerEditCell, ReviewEditCell, MemoryEditCell, MessagesEditCell, ErrorEditCell, UseCaseEditCell } from './EditableMatrixCells';
@@ -91,6 +91,22 @@ interface PersonaMatrixBaseProps {
   pendingQuestions?: BuildQuestion[];
   /** Answer a spatial question (cellKey, answer) */
   onAnswerBuildQuestion?: (cellKey: string, answer: string) => void;
+  /** Current build phase for lifecycle state branching in command center */
+  buildPhase?: BuildPhase;
+  /** Lifecycle: start test run */
+  onStartTest?: () => void;
+  /** Lifecycle: approve test results */
+  onApproveTest?: () => void;
+  /** Lifecycle: reject test results */
+  onRejectTest?: () => void;
+  /** Lifecycle: streaming test output lines */
+  testOutputLines?: string[];
+  /** Lifecycle: test pass/fail result */
+  testPassed?: boolean | null;
+  /** Lifecycle: test error message */
+  testError?: string | null;
+  /** Lifecycle: navigate to promoted agent */
+  onViewAgent?: () => void;
 }
 
 interface PersonaMatrixViewProps extends PersonaMatrixBaseProps { mode?: 'view'; }
@@ -291,7 +307,7 @@ function MatrixCellRenderer({
 // -- Main Component ---------------------------------------------------
 
 export function PersonaMatrix(props: PersonaMatrixProps) {
-  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion, cellBuildStates, pendingQuestions, onAnswerBuildQuestion } = props;
+  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion, cellBuildStates, pendingQuestions, onAnswerBuildQuestion, buildPhase, onStartTest, onApproveTest, onRejectTest, testOutputLines, testPassed, testError, onViewAgent } = props;
   const isEditMode = props.mode === 'edit';
 
   // Ref map for cell DOM elements -- used by SpatialQuestionPopover anchoring
@@ -368,7 +384,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
 
   // Creation mode is interactive (textarea + launch orb) even without mode="edit"
   const commandCenterEditMode = isEditMode || isCreationMode;
-  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} />);
+  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onRejectTest={onRejectTest} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} onViewAgent={onViewAgent} />);
 
   // When cellBuildStates are provided or in creation mode, render even without designResult (ghosted outlines)
   if ((!designResult && !hasBuildStates && !isCreationMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
