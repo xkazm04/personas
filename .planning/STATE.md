@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-14T10:35:39Z"
-last_activity: 2026-03-14 -- Completed Plan 01 (Data contracts for unified matrix build surface)
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-14T10:48:24Z"
+last_activity: 2026-03-14 -- Completed Plan 02 (useMatrixBuild + UnifiedMatrixEntry)
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 6
-  completed_plans: 6
-  percent: 30
+  total_plans: 7
+  completed_plans: 7
+  percent: 35
 ---
 
 # Project State
@@ -26,29 +26,29 @@ See: .planning/PROJECT.md (updated 2026-03-14)
 ## Current Position
 
 Phase: 2 of 4 (Unified Matrix Build Surface)
-Plan: 1 of ? in current phase
+Plan: 2 of ? in current phase
 Status: Phase 2 in progress
-Last activity: 2026-03-14 -- Completed Plan 01 (Data contracts for unified matrix build surface)
+Last activity: 2026-03-14 -- Completed Plan 02 (useMatrixBuild + UnifiedMatrixEntry)
 
-Progress: [███░░░░░░░] 30%
+Progress: [████░░░░░░] 35%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 30 min
-- Total execution time: 2.92 hours
+- Total plans completed: 7
+- Average duration: 27 min
+- Total execution time: 3.03 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-session-infrastructure | 5/5 | 163 min | 33 min |
-| 02-unified-matrix-build-surface | 1/? | 10 min | 10 min |
+| 02-unified-matrix-build-surface | 2/? | 17 min | 9 min |
 
 **Recent Trend:**
-- Last 5 plans: 17 min, 18 min, 11 min, 3 min, 10 min
-- Trend: stable (data contracts plan fast -- focused scope)
+- Last 5 plans: 18 min, 11 min, 3 min, 10 min, 7 min
+- Trend: accelerating (TDD plans with clear interfaces execute fast)
 
 *Updated after each plan completion*
 
@@ -77,6 +77,9 @@ Recent decisions affecting current work:
 - [02-01]: PersistedBuildSession.pending_question kept as single object for Rust backward compat; slice wraps into array on hydration
 - [02-01]: clearBuildQuestion does not change buildPhase -- session_status events from CLI drive phase transitions
 - [02-01]: getCellStateClasses falls back to 'hidden' config for unknown statuses (graceful degradation)
+- [02-02]: useMatrixBuild reads buildSessionId via getState() (not selector) for isIdle boolean derivation only
+- [02-02]: UnifiedMatrixEntry passes designResult=null to PersonaMatrix; build state flows through cellStates from CLI events
+- [02-02]: Draft persona creation replicates MatrixCreator pattern (createPersona with intent-derived name)
 
 ### Pending Todos
 
@@ -89,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T10:35:39Z
-Stopped at: Completed 02-01-PLAN.md
-Resume file: .planning/phases/02-unified-matrix-build-surface/02-01-SUMMARY.md
+Last session: 2026-03-14T10:48:24Z
+Stopped at: Completed 02-02-PLAN.md
+Resume file: .planning/phases/02-unified-matrix-build-surface/02-02-SUMMARY.md
