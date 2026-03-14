@@ -49,7 +49,10 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
   // -- Build orchestration ------------------------------------------------
 
   const build = useMatrixBuild({ personaId: draftPersonaId });
-  const lifecycle = useMatrixLifecycle({ personaId: draftPersonaId });
+  const lifecycle = useMatrixLifecycle({
+    personaId: draftPersonaId,
+    handleGenerate: build.handleGenerate,
+  });
 
   // -- Handlers -----------------------------------------------------------
 
@@ -133,7 +136,7 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
           hasDesignResult={hasDesignResult}
           buildPhase={build.buildPhase}
           onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handleApproveTest}
+          onApproveTest={lifecycle.handlePromote}
           onRejectTest={lifecycle.handleRejectTest}
           testOutputLines={build.buildTestOutputLines}
           testPassed={build.buildTestPassed}
