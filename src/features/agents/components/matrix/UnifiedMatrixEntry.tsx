@@ -74,7 +74,7 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
       }
     }
 
-    await build.handleGenerate(trimmed);
+    await build.handleGenerate(trimmed, personaId);
   }, [intentText, build, draftPersonaId, createPersona]);
 
   /**

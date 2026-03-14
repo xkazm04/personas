@@ -151,7 +151,7 @@ export function useBuildSession(
   // -- Session control functions --------------------------------------------
 
   const startSession = useCallback(
-    async (intent: string): Promise<string> => {
+    async (intent: string, overridePersonaId?: string): Promise<string> => {
       // Prevent double-start
       if (channelRef.current && sessionIdRef.current) {
         console.warn(
@@ -161,7 +161,8 @@ export function useBuildSession(
         return sessionIdRef.current;
       }
 
-      if (!personaId) {
+      const effectivePersonaId = overridePersonaId ?? personaId;
+      if (!effectivePersonaId) {
         throw new Error("[useBuildSession] Cannot start session without personaId");
       }
 
@@ -170,7 +171,7 @@ export function useBuildSession(
       channel.onmessage = handleChannelMessage;
 
       // Invoke the Tauri command -- backend starts the CLI process
-      const sessionId = await startBuildSession(channel, personaId, intent);
+      const sessionId = await startBuildSession(channel, effectivePersonaId, intent);
 
       // Store refs
       channelRef.current = channel;

@@ -66,8 +66,8 @@ export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
   // -- Action wrappers ----------------------------------------------------
 
   const handleGenerate = useCallback(
-    async (intent: string) => {
-      await session.startSession(intent);
+    async (intent: string, overridePersonaId?: string) => {
+      await session.startSession(intent, overridePersonaId);
     },
     [session],
   );

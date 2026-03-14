@@ -219,7 +219,7 @@ describe("useMatrixBuild", () => {
         await result.current.handleGenerate("Build a Slack bot");
       });
 
-      expect(mockStartSession).toHaveBeenCalledWith("Build a Slack bot");
+      expect(mockStartSession).toHaveBeenCalledWith("Build a Slack bot", undefined);
     });
   });
 
