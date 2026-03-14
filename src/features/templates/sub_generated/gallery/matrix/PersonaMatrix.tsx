@@ -302,11 +302,12 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
 
   // When cellBuildStates is provided (build mode), we create skeleton cells even without designResult
   const hasBuildStates = cellBuildStates && Object.keys(cellBuildStates).length > 0;
+  const isCreationMode = variant === 'creation';
 
   const cells = useMemo<MatrixCell[]>(() => {
-    // In build mode with cellBuildStates but no designResult yet, return skeleton cells
+    // In creation mode or build mode with cellBuildStates, return skeleton cells
     // so the ghosted outlines are visible before CLI produces content
-    if (!designResult && hasBuildStates) {
+    if (!designResult && (hasBuildStates || isCreationMode)) {
       return [
         { key: 'use-cases', label: CELL_LABELS['use-cases'] ?? 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400', render: () => null },
         { key: 'connectors', label: CELL_LABELS['connectors'] ?? 'Connectors', watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', render: () => null },
@@ -362,13 +363,13 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [designResult, flows, isEditMode, onNavigateCatalog, hasBuildStates,
+  }, [designResult, flows, isEditMode, onNavigateCatalog, hasBuildStates, isCreationMode,
     ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
 
   const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={isEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} />);
 
-  // When cellBuildStates are provided, render even without designResult (ghosted outlines)
-  if ((!designResult && !hasBuildStates) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
+  // When cellBuildStates are provided or in creation mode, render even without designResult (ghosted outlines)
+  if ((!designResult && !hasBuildStates && !isCreationMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
 
   const firstFour = cells.slice(0, 4);
   const lastFour = cells.slice(4);
