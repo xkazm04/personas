@@ -64,11 +64,12 @@ Plans:
   3. User can explicitly approve test results to promote the draft to a real persona, or reject to return to the matrix for refinement -- rejection is not a dead end
   4. User can type refinement feedback in the command center and the CLI adjusts specific cells without starting over
   5. Promoted personas retain all configured tools, triggers, and credentials, and build validation logic (credential coverage checks) prevents incomplete agents from being promoted
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md — BuildPhase enum extension (Rust + TS), matrixBuildSlice test lifecycle state, credential coverage utility
+- [ ] 03-02-PLAN.md — Test run integration hook, command center test/approve/reject UI states
+- [ ] 03-03-PLAN.md — Refinement loop, draft-to-production promotion, end-to-end verification
 
 ### Phase 4: Visual Polish and Performance
 **Goal**: The matrix experience delivers a futuristic, ambient dark control-room aesthetic with GPU-accelerated glow and animation effects while maintaining 60fps performance at minimum viewport specs
@@ -94,5 +95,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Session Infrastructure | 3/5 | Gap closure | - |
 | 2. Unified Matrix Build Surface | 2/5 | In Progress|  |
-| 3. Build Lifecycle and Approval | 0/? | Not started | - |
+| 3. Build Lifecycle and Approval | 0/3 | Planned | - |
 | 4. Visual Polish and Performance | 0/? | Not started | - |
