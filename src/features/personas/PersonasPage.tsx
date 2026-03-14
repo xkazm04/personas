@@ -17,7 +17,7 @@ import DesktopFooter from '@/features/shared/components/layout/DesktopFooter';
 const HomePage = lazy(() => import('@/features/home/components/HomePage'));
 const PersonaEditor = lazy(() => import('@/features/agents/sub_editor').then(m => ({ default: m.PersonaEditor })));
 const PersonaOverviewPage = lazy(() => import('@/features/agents/components/persona/PersonaOverviewPage'));
-const CreationWizard = lazy(() => import('@/features/agents/components/CreationWizard'));
+const UnifiedMatrixEntry = lazy(() => import('@/features/agents/components/matrix/UnifiedMatrixEntry').then(m => ({ default: m.UnifiedMatrixEntry })));
 const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
@@ -53,7 +53,7 @@ export default function PersonasPage() {
 
 
   // True only after fetchPersonas has settled (success or fail).
-  // Prevents showing CreationWizard before the first load completes.
+  // Prevents showing UnifiedMatrixEntry before the first load completes.
   const [personasFetched, setPersonasFetched] = useState(false);
 
   const runStartup = useCallback(() => {
@@ -117,10 +117,10 @@ export default function PersonasPage() {
     // Show unified wizard when no personas exist OR when explicitly creating
     if (sidebarSection === 'personas') {
       if (personasFetched && !isLoading && !error && personas.length === 0) {
-        return <ErrorBoundary name="CreationWizard"><Suspense fallback={SectionFallback}><CreationWizard /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary name="UnifiedMatrixEntry"><Suspense fallback={SectionFallback}><UnifiedMatrixEntry /></Suspense></ErrorBoundary>;
       }
       if (isCreatingPersona) {
-        return <ErrorBoundary name="CreationWizard"><Suspense fallback={SectionFallback}><CreationWizard canCancel /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary name="UnifiedMatrixEntry"><Suspense fallback={SectionFallback}><UnifiedMatrixEntry canCancel /></Suspense></ErrorBoundary>;
       }
     }
 

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { deriveArchCategories, type ArchCategory } from './architecturalCategories';
 import {
@@ -18,6 +18,7 @@ import { MatrixCommandCenter } from './MatrixCommandCenter';
 import { CELL_LABELS } from '@/features/agents/components/matrix/cellVocabulary';
 import { getCellStateClasses } from '@/features/agents/components/matrix/cellStateClasses';
 import { GhostedCellRenderer } from '@/features/agents/components/matrix/GhostedCellRenderer';
+import { SpatialQuestionPopover } from '@/features/agents/components/matrix/SpatialQuestionPopover';
 
 /** @deprecated Single theme -- kept for backward compatibility */
 export type MatrixTheme = 'neon';
@@ -198,11 +199,13 @@ function MatrixCellRenderer({
   isEditMode,
   buildLocked,
   cellBuildStatus,
+  onCellRef,
 }: {
   cell: MatrixCell;
   isEditMode: boolean;
   buildLocked?: boolean;
   cellBuildStatus?: CellBuildStatus;
+  onCellRef?: (key: string, el: HTMLElement | null) => void;
 }) {
   // When cellBuildStatus is 'hidden' or 'revealed', render the ghosted outline
   if (cellBuildStatus === 'hidden' || cellBuildStatus === 'revealed') {
@@ -227,7 +230,8 @@ function MatrixCellRenderer({
   const filledGlow = isEditMode && cell.filled;
 
   // Whether content should be visible (not hidden/revealed)
-  const hasContent = !cellBuildStatus || (cellBuildStatus !== 'hidden' && (cellBuildStatus as string) !== 'revealed');
+  const statusStr = cellBuildStatus as string;
+  const hasContent = !cellBuildStatus || (statusStr !== 'hidden' && statusStr !== 'revealed');
 
   // Build outer class list -- state-machine classes override defaults when present
   const outerClasses = stateClasses
@@ -249,7 +253,10 @@ function MatrixCellRenderer({
       ].join(' ');
 
   return (
-    <div className={outerClasses}>
+    <div
+      ref={(el) => onCellRef?.(cell.key, el)}
+      className={outerClasses}
+    >
       <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
         <div className={`absolute -right-1 -top-1 ${useEditRender ? 'opacity-[0.15]' : 'opacity-[0.25]'} transition-opacity duration-300`}>
           <Watermark className={`w-22 h-22 ${cell.watermarkColor}`} />
@@ -284,8 +291,14 @@ function MatrixCellRenderer({
 // -- Main Component ---------------------------------------------------
 
 export function PersonaMatrix(props: PersonaMatrixProps) {
-  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion, cellBuildStates } = props;
+  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion, cellBuildStates, pendingQuestions, onAnswerBuildQuestion } = props;
   const isEditMode = props.mode === 'edit';
+
+  // Ref map for cell DOM elements -- used by SpatialQuestionPopover anchoring
+  const cellRefsRef = useRef<Record<string, HTMLElement | null>>({});
+  const handleCellRef = (key: string, el: HTMLElement | null) => {
+    cellRefsRef.current[key] = el;
+  };
 
   // When cellBuildStates is provided (build mode), we create skeleton cells even without designResult
   const hasBuildStates = cellBuildStates && Object.keys(cellBuildStates).length > 0;
@@ -318,33 +331,33 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     const editProps = isEditMode ? props as PersonaMatrixEditProps : null;
 
     return [
-      { key: 'use-cases', label: CELL_LABELS['use-cases'], watermark: UseCasesIcon, watermarkColor: 'text-violet-400', filled: flows.length > 0,
+      { key: 'use-cases', label: CELL_LABELS['use-cases']!, watermark: UseCasesIcon, watermarkColor: 'text-violet-400', filled: flows.length > 0,
         render: () => flows.length === 0 ? <CellBullets items={['General-purpose agent']} color="text-muted-foreground/50" /> : <CellBullets items={flows.slice(0, 3).map((f) => f.name)} color="text-foreground/70" />,
         editRender: editProps ? () => (<UseCaseEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'connectors', label: CELL_LABELS['connectors'], watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', filled: archCategories.length > 0,
+      { key: 'connectors', label: CELL_LABELS['connectors']!, watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', filled: archCategories.length > 0,
         render: () => {
           if (archCategories.length === 0) return <CellBullets items={['No external services']} color="text-muted-foreground/50" />;
           return (<div className="space-y-1.5">{archCategories.slice(0, 3).map((cat: ArchCategory) => { const CatIcon = cat.icon; return (<div key={cat.key} className="flex items-center gap-2"><CatIcon className="w-3.5 h-3.5 flex-shrink-0 opacity-70" style={{ color: cat.color }} /><span className="text-sm text-foreground/70 leading-snug">{cat.label}</span></div>); })}{archCategories.length > 3 && <span className="text-sm text-muted-foreground/40 pl-[22px]">+{archCategories.length - 3} more</span>}</div>);
         },
         editRender: editProps ? () => (<ConnectorEditCell requiredConnectors={editProps.requiredConnectors} credentials={editProps.credentials} editState={editProps.editState} callbacks={editProps.editCallbacks} onNavigateCatalog={onNavigateCatalog} />) : undefined },
-      { key: 'triggers', label: CELL_LABELS['triggers'], watermark: TriggersIcon, watermarkColor: 'text-amber-400', filled: triggers.length > 0,
+      { key: 'triggers', label: CELL_LABELS['triggers']!, watermark: TriggersIcon, watermarkColor: 'text-amber-400', filled: triggers.length > 0,
         render: () => triggers.length === 0 ? <CellBullets items={['Manual execution only']} color="text-muted-foreground/50" /> : <CellBullets items={triggers.slice(0, 3).map((t) => t.label)} color="text-foreground/70" />,
         editRender: editProps ? () => (<TriggerEditCell designResult={designResult} editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'human-review', label: CELL_LABELS['human-review'], watermark: HumanReviewIcon, filled: review.level !== 'none',
+      { key: 'human-review', label: CELL_LABELS['human-review']!, watermark: HumanReviewIcon, filled: review.level !== 'none',
         watermarkColor: review.level === 'required' ? 'text-rose-400' : review.level === 'optional' ? 'text-amber-400' : 'text-emerald-400',
         render: () => { const dotColor = review.level === 'required' ? 'bg-rose-400' : review.level === 'optional' ? 'bg-amber-400' : 'bg-emerald-400'; return (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} /><span className="text-sm font-medium text-foreground/80">{review.label}</span></div><p className="text-sm text-muted-foreground/60 leading-snug pl-[16px]">{review.context.length > 55 ? review.context.slice(0, 53) + '\u2026' : review.context}</p></div>); },
         editRender: editProps ? () => (<ReviewEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'messages', label: CELL_LABELS['messages'], watermark: MessagesIcon, watermarkColor: 'text-blue-400', filled: channels.length > 0,
+      { key: 'messages', label: CELL_LABELS['messages']!, watermark: MessagesIcon, watermarkColor: 'text-blue-400', filled: channels.length > 0,
         render: () => { if (channels.length === 0) return <CellBullets items={['In-app notifications only']} color="text-muted-foreground/50" />; const bullets = channels.slice(0, 3).map((ch) => { const prefix = ch.type.charAt(0).toUpperCase() + ch.type.slice(1); return ch.description.length > 3 && ch.description.length <= 40 ? `${prefix}: ${ch.description}` : `${prefix} channel`; }); return <CellBullets items={bullets} color="text-foreground/70" />; },
         editRender: editProps ? () => (<MessagesEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'memory', label: CELL_LABELS['memory'], watermark: MemoryIcon, filled: memory.active,
+      { key: 'memory', label: CELL_LABELS['memory']!, watermark: MemoryIcon, filled: memory.active,
         watermarkColor: memory.active ? 'text-purple-400' : 'text-zinc-400',
         render: () => (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${memory.active ? 'bg-purple-400' : 'bg-zinc-500'} flex-shrink-0`} /><span className="text-sm font-medium text-foreground/80">{memory.label}</span></div><p className="text-sm text-muted-foreground/60 leading-snug pl-[16px]">{memory.context}</p></div>),
         editRender: editProps ? () => (<MemoryEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'error-handling', label: CELL_LABELS['error-handling'], watermark: ErrorsIcon, watermarkColor: 'text-orange-400', filled: errorStrategies[0] !== 'Default error handling',
+      { key: 'error-handling', label: CELL_LABELS['error-handling']!, watermark: ErrorsIcon, watermarkColor: 'text-orange-400', filled: errorStrategies[0] !== 'Default error handling',
         render: () => <CellBullets items={errorStrategies} color="text-foreground/70" />,
         editRender: editProps ? () => (<ErrorEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'events', label: CELL_LABELS['events'], watermark: EventsIcon, filled: events.length > 0,
+      { key: 'events', label: CELL_LABELS['events']!, watermark: EventsIcon, filled: events.length > 0,
         watermarkColor: events.length > 0 ? 'text-teal-400' : 'text-muted-foreground',
         render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
     ];
@@ -371,15 +384,26 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         </div>
       )}
       <div className="grid grid-cols-[1fr_1.3fr_1fr] gap-2.5">
-        {firstFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} />))}
+        {firstFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} onCellRef={handleCellRef} />))}
         <div className="relative rounded-xl border border-primary/30 p-5 ring-1 ring-primary/10 shadow-2xl shadow-primary/5 overflow-hidden">
           {/* Neon background -- theme-colored radial glow */}
           <div className="absolute inset-0 bg-card-bg" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_70%)] opacity-[0.07]" />
           <div className="relative z-10">{commandCenter}</div>
         </div>
-        {lastFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} />))}
+        {lastFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} onCellRef={handleCellRef} />))}
       </div>
+
+      {/* Spatial Q&A popovers anchored to cells with pending questions */}
+      {pendingQuestions?.map((q, i) => (
+        <SpatialQuestionPopover
+          key={q.cellKey}
+          referenceElement={cellRefsRef.current[q.cellKey] ?? null}
+          question={q}
+          onAnswer={onAnswerBuildQuestion!}
+          isPrimaryQuestion={i === 0}
+        />
+      ))}
     </div>
   );
 }

@@ -106,6 +106,9 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
           completeness={build.completeness}
           cliOutputLines={build.outputLines}
           buildLocked={build.isBuilding}
+          cellBuildStates={build.cellStates}
+          pendingQuestions={build.pendingQuestions}
+          onAnswerBuildQuestion={build.handleAnswer}
           agentName={agentName}
           onAgentNameChange={setAgentName}
         />
