@@ -330,6 +330,115 @@ describe("matrixBuildSlice", () => {
 
       expect(useAgentStore.getState().buildProgress).toBe(0);
     });
+
+    it("sets buildPhase to testing from session_status event", () => {
+      useAgentStore.getState().handleBuildSessionStatus({
+        type: "session_status",
+        session_id: "s1",
+        phase: "testing",
+        resolved_count: 8,
+        total_count: 8,
+      });
+
+      expect(useAgentStore.getState().buildPhase).toBe("testing");
+    });
+
+    it("sets buildPhase to test_complete from session_status event", () => {
+      useAgentStore.getState().handleBuildSessionStatus({
+        type: "session_status",
+        session_id: "s1",
+        phase: "test_complete",
+        resolved_count: 8,
+        total_count: 8,
+      });
+
+      expect(useAgentStore.getState().buildPhase).toBe("test_complete");
+    });
+
+    it("sets buildPhase to promoted from session_status event", () => {
+      useAgentStore.getState().handleBuildSessionStatus({
+        type: "session_status",
+        session_id: "s1",
+        phase: "promoted",
+        resolved_count: 8,
+        total_count: 8,
+      });
+
+      expect(useAgentStore.getState().buildPhase).toBe("promoted");
+    });
+  });
+
+  describe("handleStartTest", () => {
+    it("sets buildPhase to testing and stores testId", () => {
+      useAgentStore.getState().handleStartTest("test-run-1");
+
+      const s = useAgentStore.getState();
+      expect(s.buildPhase).toBe("testing");
+      expect(s.buildTestId).toBe("test-run-1");
+    });
+
+    it("clears previous test state when starting new test", () => {
+      // Set up previous test state
+      useAgentStore.setState({
+        buildTestPassed: true,
+        buildTestOutputLines: ["old output"],
+        buildTestError: "old error",
+      });
+
+      useAgentStore.getState().handleStartTest("test-run-2");
+
+      const s = useAgentStore.getState();
+      expect(s.buildTestPassed).toBeNull();
+      expect(s.buildTestOutputLines).toEqual([]);
+      expect(s.buildTestError).toBeNull();
+      expect(s.buildTestId).toBe("test-run-2");
+    });
+  });
+
+  describe("handleTestComplete", () => {
+    it("sets testPassed=true, stores output preview, transitions to test_complete", () => {
+      useAgentStore.getState().handleStartTest("test-run-1");
+      useAgentStore.getState().handleTestComplete(true, "All 5 tests passed");
+
+      const s = useAgentStore.getState();
+      expect(s.buildTestPassed).toBe(true);
+      expect(s.buildTestOutputLines).toEqual(["All 5 tests passed"]);
+      expect(s.buildPhase).toBe("test_complete");
+    });
+  });
+
+  describe("handleTestFailed", () => {
+    it("sets testPassed=false, stores error, transitions to test_complete", () => {
+      useAgentStore.getState().handleStartTest("test-run-1");
+      useAgentStore.getState().handleTestFailed("Assertion failed: expected 200 got 500");
+
+      const s = useAgentStore.getState();
+      expect(s.buildTestPassed).toBe(false);
+      expect(s.buildTestError).toBe("Assertion failed: expected 200 got 500");
+      expect(s.buildPhase).toBe("test_complete");
+    });
+  });
+
+  describe("handleRejectTest", () => {
+    it("resets buildPhase to draft_ready and clears test state", () => {
+      // Set up a test_complete state
+      useAgentStore.setState({
+        buildPhase: "test_complete",
+        buildTestId: "test-run-1",
+        buildTestPassed: false,
+        buildTestOutputLines: ["Test output"],
+        buildTestError: "Some error",
+      });
+
+      useAgentStore.getState().handleRejectTest();
+
+      const s = useAgentStore.getState();
+      expect(s.buildPhase).toBe("draft_ready");
+      expect(s.buildTestId).toBeNull();
+      expect(s.buildTestPassed).toBeNull();
+      expect(s.buildTestOutputLines).toEqual([]);
+      expect(s.buildTestError).toBeNull();
+    });
   });
 
   describe("resetBuildSession", () => {
@@ -357,6 +466,23 @@ describe("matrixBuildSlice", () => {
       expect(s.buildOutputLines).toEqual([]);
       expect(s.buildError).toBeNull();
       expect(s.buildDraft).toBeNull();
+    });
+
+    it("also resets all test lifecycle fields", () => {
+      useAgentStore.setState({
+        buildTestId: "test-run-1",
+        buildTestPassed: true,
+        buildTestOutputLines: ["test output"],
+        buildTestError: "test error",
+      });
+
+      useAgentStore.getState().resetBuildSession();
+
+      const s = useAgentStore.getState();
+      expect(s.buildTestId).toBeNull();
+      expect(s.buildTestPassed).toBeNull();
+      expect(s.buildTestOutputLines).toEqual([]);
+      expect(s.buildTestError).toBeNull();
     });
   });
 
@@ -413,6 +539,54 @@ describe("matrixBuildSlice", () => {
       expect(s.buildCellStates["memory"]).toBe("resolved");
       expect(s.buildPendingQuestions).toEqual([]);
       expect(s.buildDraft).toBeNull();
+    });
+
+    it("handles testing phase from persisted session", () => {
+      useAgentStore.getState().hydrateBuildSession({
+        id: "s3",
+        persona_id: "p-3",
+        phase: "testing",
+        resolved_cells: {},
+        pending_question: null,
+        agent_ir: null,
+        intent: "Build an agent",
+        error_message: null,
+        created_at: "2026-03-14T00:00:00Z",
+      });
+
+      expect(useAgentStore.getState().buildPhase).toBe("testing");
+    });
+
+    it("handles test_complete phase from persisted session", () => {
+      useAgentStore.getState().hydrateBuildSession({
+        id: "s4",
+        persona_id: "p-4",
+        phase: "test_complete",
+        resolved_cells: {},
+        pending_question: null,
+        agent_ir: null,
+        intent: "Build an agent",
+        error_message: null,
+        created_at: "2026-03-14T00:00:00Z",
+      });
+
+      expect(useAgentStore.getState().buildPhase).toBe("test_complete");
+    });
+
+    it("handles promoted phase from persisted session", () => {
+      useAgentStore.getState().hydrateBuildSession({
+        id: "s5",
+        persona_id: "p-5",
+        phase: "promoted",
+        resolved_cells: {},
+        pending_question: null,
+        agent_ir: null,
+        intent: "Build an agent",
+        error_message: null,
+        created_at: "2026-03-14T00:00:00Z",
+      });
+
+      expect(useAgentStore.getState().buildPhase).toBe("promoted");
     });
   });
 });
