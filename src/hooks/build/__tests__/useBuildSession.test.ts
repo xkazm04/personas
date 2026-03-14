@@ -14,27 +14,24 @@ let capturedOnMessage: ((event: BuildEvent) => void) | null = null;
 vi.mock("@tauri-apps/api/core", async () => {
   const actual =
     await vi.importActual<Record<string, unknown>>("@tauri-apps/api/core");
+
+  class MockChannel {
+    private _onmessage: ((event: BuildEvent) => void) | null = null;
+
+    get onmessage() {
+      return this._onmessage;
+    }
+
+    set onmessage(fn: ((event: BuildEvent) => void) | null) {
+      capturedOnMessage = fn;
+      this._onmessage = fn;
+    }
+  }
+
   return {
     ...actual,
     invoke: vi.fn().mockResolvedValue(undefined),
-    Channel: vi.fn().mockImplementation(() => {
-      const instance = {
-        onmessage: (event: BuildEvent) => {
-          /* default no-op */
-        },
-      };
-      // Capture the onmessage setter so tests can push events
-      Object.defineProperty(instance, "onmessage", {
-        get() {
-          return capturedOnMessage;
-        },
-        set(fn: (event: BuildEvent) => void) {
-          capturedOnMessage = fn;
-        },
-        configurable: true,
-      });
-      return instance;
-    }),
+    Channel: MockChannel,
   };
 });
 
