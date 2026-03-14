@@ -268,6 +268,22 @@ impl CliProcessDriver {
         }
     }
 
+    /// Write a line to the child's stdin without consuming or closing it.
+    /// Suitable for multi-turn Q&A where stdin must remain open for subsequent writes.
+    pub async fn write_stdin_line(&mut self, data: &[u8]) -> Result<(), std::io::Error> {
+        if let Some(stdin) = self.child.stdin.as_mut() {
+            stdin.write_all(data).await?;
+            stdin.write_all(b"\n").await?;
+            stdin.flush().await?;
+            Ok(())
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::BrokenPipe,
+                "stdin already consumed or closed",
+            ))
+        }
+    }
+
     /// Close stdin without writing anything.
     pub async fn close_stdin(&mut self) {
         if let Some(mut stdin) = self.child.stdin.take() {

@@ -10,6 +10,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use tauri::ipc::Channel;
+use tokio::io::AsyncWriteExt;
 use tokio::sync::mpsc;
 
 use crate::db::models::{
@@ -223,8 +224,15 @@ async fn run_session(
         );
     }
 
-    // Write intent to stdin
-    driver.write_stdin(intent.as_bytes()).await;
+    // Write intent to stdin (keep stdin open for subsequent Q&A writes)
+    if let Err(e) = driver.write_stdin_line(intent.as_bytes()).await {
+        tracing::error!(session_id = %session_id, error = %e, "Failed to write intent to CLI stdin");
+        let _ = update_phase_with_error(&pool, &session_id, &format!("Failed to send intent: {e}"));
+        emit_error(&channel, &session_id, &format!("Failed to send intent to build process: {e}"), false);
+        let _ = driver.kill().await;
+        cleanup_session(&sessions_map, &registry, &session_id);
+        return;
+    }
 
     // Stream stdout line by line
     let mut reader = match driver.take_stdout_reader() {
@@ -327,9 +335,22 @@ async fn run_session(
                                         resolved_count,
                                         total_count,
                                     );
-                                    // Note: In a full implementation, the answer would be
-                                    // written back to the CLI process or used to spawn a
-                                    // follow-up invocation with accumulated context.
+
+                                    // Forward the answer to the CLI subprocess stdin
+                                    let answer_json = serde_json::json!({
+                                        "cell_key": answer.cell_key,
+                                        "answer": answer.answer,
+                                    });
+                                    let answer_text = answer_json.to_string();
+                                    if let Err(e) = driver.write_stdin_line(answer_text.as_bytes()).await {
+                                        tracing::warn!(
+                                            session_id = %session_id,
+                                            error = %e,
+                                            "Failed to write answer to CLI stdin, attempting follow-up invocation"
+                                        );
+                                        // If stdin write fails (pipe broken), the CLI process likely exited.
+                                        // This will be caught by the next read_line_limited returning None/Err.
+                                    }
                                 }
                                 None => {
                                     // Channel closed -- session was cancelled
@@ -365,6 +386,11 @@ async fn run_session(
                 break;
             }
         }
+    }
+
+    // Close stdin to signal no more input
+    if let Some(mut stdin) = driver.child.stdin.take() {
+        let _ = stdin.shutdown().await;
     }
 
     // Wait for process exit
