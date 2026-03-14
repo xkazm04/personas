@@ -20,7 +20,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **MTRX-01**: Single unified matrix-first entry point replaces Chat, Build, and Matrix creation modes entirely
 - [ ] **MTRX-02**: Guided start experience — initial prompt/question reveals, then matrix progressively reveals as user answers
-- [ ] **MTRX-03**: Cell state machine with full lifecycle: hidden → revealed → pending → filling → resolved → highlighted-for-input
+- [x] **MTRX-03**: Cell state machine with full lifecycle: hidden → revealed → pending → filling → resolved → highlighted-for-input
 - [ ] **MTRX-04**: Cell-by-cell live construction animation as CLI resolves each persona dimension
 - [ ] **MTRX-05**: Click-to-answer spatial Q&A — when CLI needs input, relevant cell highlights/pulses, user clicks to answer
 - [ ] **MTRX-06**: CLI questions mapped to specific matrix cell keys so questions appear WHERE they matter in the grid
@@ -44,7 +44,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **VISL-02**: Cell state-driven glow colors (different glow for pending, filling, resolved, highlighted states)
 - [ ] **VISL-03**: Framer Motion structural animations for cell enter/exit/reveal with stagger orchestration
 - [ ] **VISL-04**: CSS @property decorative animations for glow pulse, shimmer, breathing effects (GPU-accelerated, zero JS cost)
-- [ ] **VISL-05**: Non-technical vocabulary for cell labels (e.g., "Apps & Services" not "Connectors", "When it runs" not "Triggers")
+- [x] **VISL-05**: Non-technical vocabulary for cell labels (e.g., "Apps & Services" not "Connectors", "When it runs" not "Triggers")
 - [ ] **VISL-06**: 60fps animation performance maintained with 8+ simultaneous cell animations
 - [ ] **VISL-07**: Smooth animation at minimum spec (900x600 viewport)
 
@@ -99,7 +99,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | SESS-06 | Phase 1 | Complete |
 | MTRX-01 | Phase 2 | Pending |
 | MTRX-02 | Phase 2 | Pending |
-| MTRX-03 | Phase 2 | Pending |
+| MTRX-03 | Phase 2 | Complete |
 | MTRX-04 | Phase 2 | Pending |
 | MTRX-05 | Phase 2 | Pending |
 | MTRX-06 | Phase 2 | Pending |
@@ -117,7 +117,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | VISL-02 | Phase 4 | Pending |
 | VISL-03 | Phase 4 | Pending |
 | VISL-04 | Phase 4 | Pending |
-| VISL-05 | Phase 2 | Pending |
+| VISL-05 | Phase 2 | Complete |
 | VISL-06 | Phase 4 | Pending |
 | VISL-07 | Phase 4 | Pending |
 | INTG-01 | Phase 2 | Pending |

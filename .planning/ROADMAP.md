@@ -51,7 +51,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 02-01: TBD
+- [x] 02-01-PLAN.md -- Data contracts: cell vocabulary labels, state machine class map, multi-question slice upgrade
 - [ ] 02-02: TBD
 
 ### Phase 3: Build Lifecycle and Approval
@@ -93,6 +93,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Session Infrastructure | 3/5 | Gap closure | - |
-| 2. Unified Matrix Build Surface | 0/? | Not started | - |
+| 2. Unified Matrix Build Surface | 1/? | In progress | - |
 | 3. Build Lifecycle and Approval | 0/? | Not started | - |
 | 4. Visual Polish and Performance | 0/? | Not started | - |
