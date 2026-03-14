@@ -22,6 +22,10 @@ export interface CellStateConfig {
   opacity: string;
   /** Whether the cell accepts pointer interactions in this state. */
   interactive: boolean;
+  /** CSS class(es) for the pseudo-element glow overlay. Empty string = no glow. */
+  glow: string;
+  /** Tailwind opacity class for watermark icon per state. */
+  watermarkOpacity: string;
 }
 
 // -- State-to-class mapping ---------------------------------------------------
@@ -32,42 +36,56 @@ export const CELL_STATE_CLASSES: Record<CellBuildStatus, CellStateConfig> = {
     bg: "bg-transparent",
     opacity: "opacity-0",
     interactive: false,
+    glow: "",
+    watermarkOpacity: "opacity-0",
   },
   revealed: {
     border: "border-card-border/30",
     bg: "bg-card-bg/10",
     opacity: "opacity-100",
     interactive: false,
+    glow: "",
+    watermarkOpacity: "opacity-[0.08]",
   },
   pending: {
     border: "border-primary/20",
     bg: "bg-card-bg/30",
     opacity: "opacity-100",
     interactive: false,
+    glow: "cell-glow cell-glow-pending",
+    watermarkOpacity: "opacity-[0.10]",
   },
   filling: {
     border: "border-primary/30",
     bg: "bg-card-bg/60",
     opacity: "opacity-100",
     interactive: false,
+    glow: "cell-glow cell-glow-filling",
+    watermarkOpacity: "opacity-[0.15]",
   },
   resolved: {
     border: "border-card-border",
     bg: "bg-card-bg",
     opacity: "opacity-100",
     interactive: true,
+    glow: "cell-glow cell-glow-resolved",
+    watermarkOpacity: "opacity-[0.20]",
   },
   highlighted: {
     border: "border-primary/50",
     bg: "bg-card-bg",
     opacity: "opacity-100",
     interactive: true,
+    glow: "cell-glow cell-edge-shimmer",
+    watermarkOpacity: "opacity-[0.20]",
   },
   error: {
     border: "border-red-500/30",
     bg: "bg-red-500/5",
     opacity: "opacity-100",
     interactive: true,
+    glow: "cell-glow cell-glow-error",
+    watermarkOpacity: "opacity-[0.15]",
   },
 };
 
