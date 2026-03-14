@@ -386,7 +386,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
           <h4 className="text-base font-bold text-foreground/80 uppercase tracking-wider">Persona Matrix</h4>
         </div>
       )}
-      <div className="grid grid-cols-[1fr_1.3fr_1fr] grid-rows-3 gap-2.5 flex-1 min-h-0">
+      <div className="grid grid-cols-[1fr_1.3fr_1fr] grid-rows-3 gap-2.5 flex-1 min-h-0 w-full">
         {firstFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} onCellRef={handleCellRef} />))}
         <div className="relative rounded-xl border border-primary/30 p-5 ring-1 ring-primary/10 shadow-2xl shadow-primary/5 overflow-hidden">
           {/* Neon background -- theme-colored radial glow */}

@@ -92,8 +92,8 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
   // -- Render -------------------------------------------------------------
 
   return (
-    <div className="flex flex-col gap-5 h-full">
-      <div className="flex-1 min-h-0 overflow-y-auto">
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden px-4 md:px-6 xl:px-8 pt-4">
+      <div className="flex-1 min-h-0 w-full">
         <PersonaMatrix
           designResult={null}
           variant="creation"
@@ -120,6 +120,7 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
           <button
             type="button"
             onClick={handleCancel}
+            data-testid="agent-cancel-btn"
             className="text-sm text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
           >
             Cancel
