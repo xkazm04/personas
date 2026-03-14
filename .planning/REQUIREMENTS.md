@@ -10,8 +10,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Session Infrastructure
 
 - [x] **SESS-01**: BuildSessionManager in Rust wraps existing design.rs + CliProcessDriver with session state tracking
-- [ ] **SESS-02**: Tauri Channel API streaming pipeline delivers ordered, typed cell updates from Rust to frontend
-- [ ] **SESS-03**: Both Channel and EventBridge approaches implemented and benchmarked — winner selected based on performance, reliability, and interaction plasticity
+- [x] **SESS-02**: Tauri Channel API streaming pipeline delivers ordered, typed cell updates from Rust to frontend
+- [x] **SESS-03**: Both Channel and EventBridge approaches implemented and benchmarked — winner selected based on performance, reliability, and interaction plasticity
 - [x] **SESS-04**: Zustand matrixBuildSlice replaces ephemeral useReducer for build state (survives navigation within app)
 - [x] **SESS-05**: CLI engine emits per-dimension progress events (not just done/not-done) enabling cell-level granularity
 - [x] **SESS-06**: User answers flow back to CLI engine via tokio::mpsc channel with natural suspend/resume of build task
@@ -92,8 +92,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | SESS-01 | Phase 1 | Complete |
-| SESS-02 | Phase 1 | Pending |
-| SESS-03 | Phase 1 | Pending |
+| SESS-02 | Phase 1 | Complete |
+| SESS-03 | Phase 1 | Complete |
 | SESS-04 | Phase 1 | Complete |
 | SESS-05 | Phase 1 | Complete |
 | SESS-06 | Phase 1 | Complete |
