@@ -1,6 +1,3 @@
-export { BuilderStep } from './steps/BuilderStep';
-export { IdentityStep } from './steps/IdentityStep';
-export { MatrixCreator } from './steps/MatrixCreator';
 export { builderReducer, toDesignContext, fromDesignContext, generateSystemPrompt, generateSummary, computeCredentialCoverage, computeRoleCoverage } from './steps/builder/builderReducer';
 export type { BuilderAction } from './steps/builder/builderReducer';
 export { DryRunPanel } from './steps/DryRunPanel';
