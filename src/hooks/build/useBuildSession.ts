@@ -192,8 +192,8 @@ export function useBuildSession(
 
       await answerBuildQuestion(sessionIdRef.current, cellKey, answer);
 
-      // Clear the pending question in the store
-      useAgentStore.setState({ buildCurrentQuestion: null });
+      // Clear only the answered question from the pending array
+      useAgentStore.getState().clearBuildQuestion(cellKey);
     },
     [],
   );

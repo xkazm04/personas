@@ -327,13 +327,15 @@ describe("useBuildSession", () => {
         await result.current.startSession("Build");
       });
 
-      // Set a current question in the store
+      // Set a pending question in the store
       useAgentStore.setState({
-        buildCurrentQuestion: {
-          cellKey: "use-cases",
-          question: "What?",
-          options: null,
-        },
+        buildPendingQuestions: [
+          {
+            cellKey: "use-cases",
+            question: "What?",
+            options: null,
+          },
+        ],
       });
 
       await act(async () => {
@@ -347,7 +349,7 @@ describe("useBuildSession", () => {
       );
     });
 
-    it("clears the current question in the store", async () => {
+    it("clears only the answered question from the array", async () => {
       const { result } = renderHook(() =>
         useBuildSession({ personaId: "p-1" }),
       );
@@ -357,18 +359,27 @@ describe("useBuildSession", () => {
       });
 
       useAgentStore.setState({
-        buildCurrentQuestion: {
-          cellKey: "use-cases",
-          question: "What?",
-          options: null,
-        },
+        buildPendingQuestions: [
+          {
+            cellKey: "use-cases",
+            question: "What?",
+            options: null,
+          },
+          {
+            cellKey: "triggers",
+            question: "When?",
+            options: null,
+          },
+        ],
       });
 
       await act(async () => {
         await result.current.answerQuestion("use-cases", "Review code");
       });
 
-      expect(useAgentStore.getState().buildCurrentQuestion).toBeNull();
+      const pending = useAgentStore.getState().buildPendingQuestions;
+      expect(pending).toHaveLength(1);
+      expect(pending[0]?.cellKey).toBe("triggers");
     });
   });
 

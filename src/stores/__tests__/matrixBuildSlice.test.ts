@@ -23,9 +23,9 @@ describe("matrixBuildSlice", () => {
       expect(s.buildCellStates).toEqual({});
     });
 
-    it("has no current question", () => {
+    it("has empty pending questions array", () => {
       const s = useAgentStore.getState();
-      expect(s.buildCurrentQuestion).toBeNull();
+      expect(s.buildPendingQuestions).toEqual([]);
     });
 
     it("has zero progress", () => {
@@ -86,7 +86,7 @@ describe("matrixBuildSlice", () => {
   });
 
   describe("handleBuildQuestion", () => {
-    it("sets current question and marks cell as highlighted", () => {
+    it("pushes question to buildPendingQuestions and marks cell as highlighted", () => {
       useAgentStore.getState().handleBuildQuestion({
         type: "question",
         session_id: "s1",
@@ -96,11 +96,13 @@ describe("matrixBuildSlice", () => {
       });
 
       const s = useAgentStore.getState();
-      expect(s.buildCurrentQuestion).toEqual({
-        cellKey: "use-cases",
-        question: "What should this agent do?",
-        options: ["Option A", "Option B"],
-      });
+      expect(s.buildPendingQuestions).toEqual([
+        {
+          cellKey: "use-cases",
+          question: "What should this agent do?",
+          options: ["Option A", "Option B"],
+        },
+      ]);
       expect(s.buildCellStates["use-cases"]).toBe("highlighted");
       expect(s.buildPhase).toBe("awaiting_input");
     });
@@ -115,7 +117,106 @@ describe("matrixBuildSlice", () => {
       });
 
       const s = useAgentStore.getState();
-      expect(s.buildCurrentQuestion?.options).toBeNull();
+      expect(s.buildPendingQuestions[0]?.options).toBeNull();
+    });
+
+    it("supports multiple simultaneous questions", () => {
+      const handle = useAgentStore.getState().handleBuildQuestion;
+      handle({
+        type: "question",
+        session_id: "s1",
+        cell_key: "use-cases",
+        question: "What tasks?",
+        options: ["A", "B"],
+      });
+      handle({
+        type: "question",
+        session_id: "s1",
+        cell_key: "triggers",
+        question: "When to run?",
+        options: null,
+      });
+
+      const s = useAgentStore.getState();
+      expect(s.buildPendingQuestions).toHaveLength(2);
+      expect(s.buildPendingQuestions[0]?.cellKey).toBe("use-cases");
+      expect(s.buildPendingQuestions[1]?.cellKey).toBe("triggers");
+      expect(s.buildCellStates["use-cases"]).toBe("highlighted");
+      expect(s.buildCellStates["triggers"]).toBe("highlighted");
+    });
+  });
+
+  describe("clearBuildQuestion", () => {
+    it("removes question by cellKey from the array", () => {
+      // Setup: two pending questions
+      const handle = useAgentStore.getState().handleBuildQuestion;
+      handle({
+        type: "question",
+        session_id: "s1",
+        cell_key: "use-cases",
+        question: "What tasks?",
+        options: null,
+      });
+      handle({
+        type: "question",
+        session_id: "s1",
+        cell_key: "triggers",
+        question: "When to run?",
+        options: null,
+      });
+
+      // Clear one
+      useAgentStore.getState().clearBuildQuestion("use-cases");
+
+      const s = useAgentStore.getState();
+      expect(s.buildPendingQuestions).toHaveLength(1);
+      expect(s.buildPendingQuestions[0]?.cellKey).toBe("triggers");
+    });
+
+    it("results in empty array when last question is cleared", () => {
+      useAgentStore.getState().handleBuildQuestion({
+        type: "question",
+        session_id: "s1",
+        cell_key: "connectors",
+        question: "Which apps?",
+        options: null,
+      });
+
+      useAgentStore.getState().clearBuildQuestion("connectors");
+
+      const s = useAgentStore.getState();
+      expect(s.buildPendingQuestions).toEqual([]);
+    });
+
+    it("does not change phase when clearing (let session_status events handle that)", () => {
+      useAgentStore.getState().handleBuildQuestion({
+        type: "question",
+        session_id: "s1",
+        cell_key: "connectors",
+        question: "Which apps?",
+        options: null,
+      });
+
+      expect(useAgentStore.getState().buildPhase).toBe("awaiting_input");
+
+      useAgentStore.getState().clearBuildQuestion("connectors");
+
+      // Phase stays at awaiting_input -- session_status events drive phase transitions
+      expect(useAgentStore.getState().buildPhase).toBe("awaiting_input");
+    });
+
+    it("is a no-op for non-matching cellKey", () => {
+      useAgentStore.getState().handleBuildQuestion({
+        type: "question",
+        session_id: "s1",
+        cell_key: "connectors",
+        question: "Which apps?",
+        options: null,
+      });
+
+      useAgentStore.getState().clearBuildQuestion("nonexistent");
+
+      expect(useAgentStore.getState().buildPendingQuestions).toHaveLength(1);
     });
   });
 
@@ -238,7 +339,7 @@ describe("matrixBuildSlice", () => {
         buildSessionId: "s1",
         buildPhase: "resolving",
         buildCellStates: { connectors: "resolved" },
-        buildCurrentQuestion: { cellKey: "x", question: "?", options: null },
+        buildPendingQuestions: [{ cellKey: "x", question: "?", options: null }],
         buildProgress: 75,
         buildOutputLines: ["line1", "line2"],
         buildError: "some error",
@@ -251,7 +352,7 @@ describe("matrixBuildSlice", () => {
       expect(s.buildSessionId).toBeNull();
       expect(s.buildPhase).toBe("initializing");
       expect(s.buildCellStates).toEqual({});
-      expect(s.buildCurrentQuestion).toBeNull();
+      expect(s.buildPendingQuestions).toEqual([]);
       expect(s.buildProgress).toBe(0);
       expect(s.buildOutputLines).toEqual([]);
       expect(s.buildError).toBeNull();
@@ -260,7 +361,7 @@ describe("matrixBuildSlice", () => {
   });
 
   describe("hydrateBuildSession", () => {
-    it("populates all fields from PersistedBuildSession", () => {
+    it("wraps single pending_question into buildPendingQuestions array", () => {
       useAgentStore.getState().hydrateBuildSession({
         id: "session-abc",
         persona_id: "p-1",
@@ -285,15 +386,17 @@ describe("matrixBuildSlice", () => {
       expect(s.buildPhase).toBe("awaiting_input");
       expect(s.buildCellStates["connectors"]).toBe("resolved");
       expect(s.buildCellStates["use-cases"]).toBe("resolved");
-      expect(s.buildCurrentQuestion).toEqual({
-        cellKey: "triggers",
-        question: "When should this run?",
-        options: ["On push", "On schedule"],
-      });
+      expect(s.buildPendingQuestions).toEqual([
+        {
+          cellKey: "triggers",
+          question: "When should this run?",
+          options: ["On push", "On schedule"],
+        },
+      ]);
       expect(s.buildDraft).toEqual({ draft: "ir-data" });
     });
 
-    it("sets cells from resolved_cells as resolved status", () => {
+    it("sets empty array when pending_question is null", () => {
       useAgentStore.getState().hydrateBuildSession({
         id: "s2",
         persona_id: "p-2",
@@ -308,7 +411,7 @@ describe("matrixBuildSlice", () => {
 
       const s = useAgentStore.getState();
       expect(s.buildCellStates["memory"]).toBe("resolved");
-      expect(s.buildCurrentQuestion).toBeNull();
+      expect(s.buildPendingQuestions).toEqual([]);
       expect(s.buildDraft).toBeNull();
     });
   });

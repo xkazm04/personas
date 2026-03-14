@@ -22,7 +22,7 @@ export interface MatrixBuildSlice {
   buildSessionId: string | null;
   buildPhase: BuildPhase;
   buildCellStates: Record<string, CellBuildStatus>;
-  buildCurrentQuestion: BuildQuestion | null;
+  buildPendingQuestions: BuildQuestion[];
   buildProgress: number;
   buildOutputLines: string[];
   buildError: string | null;
@@ -34,6 +34,9 @@ export interface MatrixBuildSlice {
   handleBuildProgress: (event: Extract<BuildEvent, { type: "progress" }>) => void;
   handleBuildError: (event: Extract<BuildEvent, { type: "error" }>) => void;
   handleBuildSessionStatus: (event: Extract<BuildEvent, { type: "session_status" }>) => void;
+
+  // Actions -- question management
+  clearBuildQuestion: (cellKey: string) => void;
 
   // Actions -- lifecycle
   resetBuildSession: () => void;
@@ -56,7 +59,7 @@ export const createMatrixBuildSlice: StateCreator<
   buildSessionId: null,
   buildPhase: "initializing",
   buildCellStates: {},
-  buildCurrentQuestion: null,
+  buildPendingQuestions: [],
   buildProgress: 0,
   buildOutputLines: [],
   buildError: null,
@@ -75,11 +78,14 @@ export const createMatrixBuildSlice: StateCreator<
 
   handleBuildQuestion: (event) => {
     set((s) => ({
-      buildCurrentQuestion: {
-        cellKey: event.cell_key,
-        question: event.question,
-        options: event.options,
-      },
+      buildPendingQuestions: [
+        ...s.buildPendingQuestions,
+        {
+          cellKey: event.cell_key,
+          question: event.question,
+          options: event.options,
+        },
+      ],
       buildCellStates: {
         ...s.buildCellStates,
         [event.cell_key]: "highlighted",
@@ -122,6 +128,16 @@ export const createMatrixBuildSlice: StateCreator<
     });
   },
 
+  // -- Question management --------------------------------------------------
+
+  clearBuildQuestion: (cellKey) => {
+    set((s) => ({
+      buildPendingQuestions: s.buildPendingQuestions.filter(
+        (q) => q.cellKey !== cellKey,
+      ),
+    }));
+  },
+
   // -- Lifecycle actions ----------------------------------------------------
 
   resetBuildSession: () => {
@@ -129,7 +145,7 @@ export const createMatrixBuildSlice: StateCreator<
       buildSessionId: null,
       buildPhase: "initializing",
       buildCellStates: {},
-      buildCurrentQuestion: null,
+      buildPendingQuestions: [],
       buildProgress: 0,
       buildOutputLines: [],
       buildError: null,
@@ -144,11 +160,17 @@ export const createMatrixBuildSlice: StateCreator<
       cellStates[key] = "resolved";
     }
 
+    // Handle backward compat: backend sends single pending_question (not array).
+    // Wrap into array if present, empty array if null.
+    const pendingQuestions: BuildQuestion[] = session.pending_question
+      ? [session.pending_question]
+      : [];
+
     set({
       buildSessionId: session.id,
       buildPhase: session.phase,
       buildCellStates: cellStates,
-      buildCurrentQuestion: session.pending_question,
+      buildPendingQuestions: pendingQuestions,
       buildDraft: session.agent_ir,
       buildError: session.error_message,
     });
