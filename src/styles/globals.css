@@ -1640,6 +1640,7 @@ input[type="number"] {
 
 .cell-glow {
   position: relative;
+  contain: layout style;
 }
 
 .cell-glow::before {
@@ -1659,6 +1660,7 @@ input[type="number"] {
 .cell-glow-filling::before {
   opacity: 0.4;
   animation: glow-pulse 2s ease-in-out infinite;
+  will-change: opacity;
 }
 
 .cell-glow-resolved::before {
@@ -1694,6 +1696,7 @@ input[type="number"] {
   animation: spin-glow 3s linear infinite;
   pointer-events: none;
   z-index: 1;
+  will-change: transform;
 }
 
 /* -- Glow color classes (theme-tinted via color-mix) ---------------------- */
@@ -1710,5 +1713,5 @@ input[type="number"] {
 /* -- Utility animation classes -------------------------------------------- */
 
 .animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
-.animate-glow-breathe { animation: glow-breathe 5s ease-in-out infinite; }
+.animate-glow-breathe { animation: glow-breathe 5s ease-in-out infinite; will-change: opacity; }
 .animate-emerald-flash { animation: emerald-flash 0.6s ease-out forwards; }
