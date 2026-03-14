@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-14T10:48:24Z"
-last_activity: 2026-03-14 -- Completed Plan 02 (useMatrixBuild + UnifiedMatrixEntry)
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-03-14T11:09:52Z"
+last_activity: 2026-03-14 -- Completed Plan 03 (Progressive Reveal + GhostedCellRenderer)
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 7
-  completed_plans: 7
-  percent: 35
+  total_plans: 8
+  completed_plans: 8
+  percent: 40
 ---
 
 # Project State
@@ -26,29 +26,29 @@ See: .planning/PROJECT.md (updated 2026-03-14)
 ## Current Position
 
 Phase: 2 of 4 (Unified Matrix Build Surface)
-Plan: 2 of ? in current phase
+Plan: 3 of ? in current phase
 Status: Phase 2 in progress
-Last activity: 2026-03-14 -- Completed Plan 02 (useMatrixBuild + UnifiedMatrixEntry)
+Last activity: 2026-03-14 -- Completed Plan 03 (Progressive Reveal + GhostedCellRenderer)
 
-Progress: [████░░░░░░] 35%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 27 min
-- Total execution time: 3.03 hours
+- Total plans completed: 8
+- Average duration: 26 min
+- Total execution time: 3.30 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-session-infrastructure | 5/5 | 163 min | 33 min |
-| 02-unified-matrix-build-surface | 2/? | 17 min | 9 min |
+| 02-unified-matrix-build-surface | 3/? | 33 min | 11 min |
 
 **Recent Trend:**
-- Last 5 plans: 18 min, 11 min, 3 min, 10 min, 7 min
-- Trend: accelerating (TDD plans with clear interfaces execute fast)
+- Last 5 plans: 11 min, 3 min, 10 min, 7 min, 16 min
+- Trend: consistent (progressive reveal integration slightly longer due to AnimatePresence wiring)
 
 *Updated after each plan completion*
 
@@ -80,6 +80,10 @@ Recent decisions affecting current work:
 - [02-02]: useMatrixBuild reads buildSessionId via getState() (not selector) for isIdle boolean derivation only
 - [02-02]: UnifiedMatrixEntry passes designResult=null to PersonaMatrix; build state flows through cellStates from CLI events
 - [02-02]: Draft persona creation replicates MatrixCreator pattern (createPersona with intent-derived name)
+- [02-03]: GhostedCellRenderer renders hidden/revealed cells; MatrixCellRenderer delegates based on cellBuildStatus
+- [02-03]: Skeleton cells created when cellBuildStates present but designResult null for immediate ghosted outlines
+- [02-03]: AnimatePresence with mode="wait" wraps cell content for smooth ghosted-to-active transitions
+- [02-03]: transition-all replaced with explicit transition-[...] property list to avoid box-shadow animation
 
 ### Pending Todos
 
@@ -92,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T10:48:24Z
-Stopped at: Completed 02-02-PLAN.md
-Resume file: .planning/phases/02-unified-matrix-build-surface/02-02-SUMMARY.md
+Last session: 2026-03-14T11:09:52Z
+Stopped at: Completed 02-03-PLAN.md
+Resume file: .planning/phases/02-unified-matrix-build-surface/02-03-SUMMARY.md

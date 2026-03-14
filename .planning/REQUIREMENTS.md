@@ -19,13 +19,13 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Matrix Interaction
 
 - [x] **MTRX-01**: Single unified matrix-first entry point replaces Chat, Build, and Matrix creation modes entirely
-- [ ] **MTRX-02**: Guided start experience — initial prompt/question reveals, then matrix progressively reveals as user answers
+- [x] **MTRX-02**: Guided start experience — initial prompt/question reveals, then matrix progressively reveals as user answers
 - [x] **MTRX-03**: Cell state machine with full lifecycle: hidden → revealed → pending → filling → resolved → highlighted-for-input
-- [ ] **MTRX-04**: Cell-by-cell live construction animation as CLI resolves each persona dimension
+- [x] **MTRX-04**: Cell-by-cell live construction animation as CLI resolves each persona dimension
 - [ ] **MTRX-05**: Click-to-answer spatial Q&A — when CLI needs input, relevant cell highlights/pulses, user clicks to answer
 - [ ] **MTRX-06**: CLI questions mapped to specific matrix cell keys so questions appear WHERE they matter in the grid
 - [x] **MTRX-07**: Natural language intent input via command center textarea as primary build trigger
-- [ ] **MTRX-08**: Inline cell editing of generated configuration (preserving existing edit cell capabilities)
+- [x] **MTRX-08**: Inline cell editing of generated configuration (preserving existing edit cell capabilities)
 - [x] **MTRX-09**: Cancel/abort generation at any point during build process
 - [x] **MTRX-10**: Completeness scoring with visual ring updated live as cells fill
 
@@ -98,13 +98,13 @@ Deferred to future release. Tracked but not in current roadmap.
 | SESS-05 | Phase 1 | Complete |
 | SESS-06 | Phase 1 | Complete |
 | MTRX-01 | Phase 2 | Complete |
-| MTRX-02 | Phase 2 | Pending |
+| MTRX-02 | Phase 2 | Complete |
 | MTRX-03 | Phase 2 | Complete |
-| MTRX-04 | Phase 2 | Pending |
+| MTRX-04 | Phase 2 | Complete |
 | MTRX-05 | Phase 2 | Pending |
 | MTRX-06 | Phase 2 | Pending |
 | MTRX-07 | Phase 2 | Complete |
-| MTRX-08 | Phase 2 | Pending |
+| MTRX-08 | Phase 2 | Complete |
 | MTRX-09 | Phase 2 | Complete |
 | MTRX-10 | Phase 2 | Complete |
 | LIFE-01 | Phase 3 | Pending |
