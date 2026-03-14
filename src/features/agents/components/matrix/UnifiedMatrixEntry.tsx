@@ -36,12 +36,14 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
     (s) => s.setIsCreatingPersona,
   );
   const createPersona = useAgentStore((s) => s.createPersona);
+  const deletePersona = useAgentStore((s) => s.deletePersona);
 
   // -- Local state --------------------------------------------------------
 
   const [draftPersonaId, setDraftPersonaId] = useState<string | null>(null);
   const [intentText, setIntentText] = useState("");
   const [agentName, setAgentName] = useState("");
+  const [launchError, setLaunchError] = useState<string | null>(null);
 
   // -- Build orchestration ------------------------------------------------
 
@@ -50,12 +52,13 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
   // -- Handlers -----------------------------------------------------------
 
   /**
-   * Launch build: create a draft persona if needed, then start the session.
-   * Follows the same draft creation pattern as MatrixCreator.
+   * Launch build: create a draft persona, start the session, and roll back
+   * the persona if the session fails to start (CLI unavailable, etc.).
    */
   const handleLaunch = useCallback(async () => {
     const trimmed = intentText.trim();
     if (!trimmed || build.isBuilding) return;
+    setLaunchError(null);
 
     let personaId = draftPersonaId;
     if (!personaId) {
@@ -69,13 +72,26 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
         personaId = persona.id;
         setDraftPersonaId(personaId);
       } catch (err) {
+        setLaunchError("Failed to create draft agent.");
         console.error("Failed to create draft persona:", err);
         return;
       }
     }
 
-    await build.handleGenerate(trimmed, personaId);
-  }, [intentText, build, draftPersonaId, createPersona]);
+    try {
+      await build.handleGenerate(trimmed, personaId);
+    } catch (err) {
+      // Build session failed to start — roll back the draft persona
+      console.error("Build session failed to start:", err);
+      setLaunchError(
+        err instanceof Error ? err.message : "Build failed to start. Check CLI configuration.",
+      );
+      try {
+        await deletePersona(personaId);
+      } catch { /* best-effort cleanup */ }
+      setDraftPersonaId(null);
+    }
+  }, [intentText, build, draftPersonaId, createPersona, deletePersona]);
 
   /**
    * Cancel: abort build + exit creation mode.
@@ -113,6 +129,20 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
           onAgentNameChange={setAgentName}
         />
       </div>
+
+      {/* Error banner */}
+      {(launchError || build.buildError) && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/5 text-sm text-red-400 flex-shrink-0">
+          <span className="flex-1">{launchError || build.buildError}</span>
+          <button
+            type="button"
+            onClick={() => setLaunchError(null)}
+            className="text-red-400/60 hover:text-red-400 text-xs"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Cancel link -- same pattern as MatrixCreator */}
       {canCancel && (
