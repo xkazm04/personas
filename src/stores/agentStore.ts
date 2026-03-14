@@ -15,6 +15,7 @@ import { createMiniPlayerSlice } from "./slices/agents/miniPlayerSlice";
 import { createHealthCheckSlice } from "./slices/agents/healthCheckSlice";
 import { createBudgetEnforcementSlice } from "./slices/agents/budgetEnforcementSlice";
 import { createChatSlice } from "./slices/agents/chatSlice";
+import { createMatrixBuildSlice } from "./slices/agents/matrixBuildSlice";
 
 export const useAgentStore = create<AgentStore>()(
   persist(
@@ -30,6 +31,7 @@ export const useAgentStore = create<AgentStore>()(
       ...createHealthCheckSlice(...a),
       ...createBudgetEnforcementSlice(...a),
       ...createChatSlice(...a),
+      ...createMatrixBuildSlice(...a),
     }),
     {
       name: "persona-ui-agents",

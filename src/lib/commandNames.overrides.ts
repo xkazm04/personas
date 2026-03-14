@@ -6,6 +6,9 @@
  * `node scripts/generate-command-names.mjs` and remove it from this list.
  */
 export type UnregisteredCommand =
+  | "persona_blast_radius"
+  | "credential_blast_radius"
+  | "automation_blast_radius"
   | "dev_tools_accept_idea"
   | "dev_tools_batch_create_tasks"
   | "dev_tools_cancel_task"
@@ -30,6 +33,16 @@ export type UnregisteredCommand =
   | "gitlab_list_pipeline_jobs"
   | "gitlab_list_pipelines"
   | "gitlab_trigger_pipeline"
+  | "get_persona_config_warnings"
+  | "get_persona_detail"
+  | "create_chat_session"
+  | "seed_mock_event"
+  | "seed_mock_message"
   | "zapier_create_zap"
   | "zapier_list_zaps"
-  | "zapier_trigger_webhook";
+  | "zapier_trigger_webhook"
+  | "start_build_session"
+  | "answer_build_question"
+  | "cancel_build_session"
+  | "get_active_build_session"
+  | "list_build_sessions";

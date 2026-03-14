@@ -1,9 +1,9 @@
 /**
  * Shared types for the persona store slice architecture.
- * Each slice defines its own interface; PersonaStore is the intersection of all.
+ * Each domain store defines its own composite type.
  */
 
-// Re-export slice interfaces (consumers can import PersonaStore from here)
+// Re-export slice interfaces for domain store composition
 import type { PersonaSlice } from "./slices/agents/personaSlice";
 import type { ToolSlice } from "./slices/agents/toolSlice";
 import type { TriggerSlice } from "./slices/pipeline/triggerSlice";
@@ -36,14 +36,50 @@ import type { DevToolsSlice } from "./slices/system/devToolsSlice";
 import type { NetworkSlice } from "./slices/network/networkSlice";
 import type { SetupSlice } from "./slices/system/setupSlice";
 import type { ChatSlice } from "./slices/agents/chatSlice";
+import type { MatrixBuildSlice } from "./slices/agents/matrixBuildSlice";
 import type { RotationSlice } from "./slices/vault/rotationSlice";
 
-// -- Shared helper ------------------------------------------------------
+// -- Shared helpers ------------------------------------------------------
 export function errMsg(err: unknown, fallback: string): string {
   if (err instanceof Error) return err.message;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (typeof err === "object" && err !== null && "error" in err) return String((err as any).error);
   return fallback;
+}
+
+/**
+ * Unified error reporter that both updates slice error state (for inline
+ * display) AND fires a toast (for transient notification).
+ *
+ * @param err     - The caught error value
+ * @param fallback - Human-readable fallback message
+ * @param set     - Zustand `set` callback from the calling slice
+ * @param options - Optional overrides
+ *   • severity: "toast" = toast only (no state), "state" = state only (no toast),
+ *     "both" (default) = update state AND fire toast
+ *   • stateUpdates - extra fields to merge into the set() call (e.g. isLoading: false)
+ */
+export function reportError(
+  err: unknown,
+  fallback: string,
+  set: (partial: { error: string }) => void,
+  options?: {
+    severity?: "toast" | "state" | "both";
+    stateUpdates?: Record<string, unknown>;
+  },
+): string {
+  const { severity = "both", stateUpdates } = options ?? {};
+  const message = errMsg(err, fallback);
+
+  if (severity !== "toast") {
+    set({ error: message, ...stateUpdates } as { error: string });
+  }
+  if (severity !== "state") {
+    // Lazy import to avoid circular dependency at module load time
+    const { useToastStore } = require("@/stores/toastStore");
+    useToastStore.getState().addToast(message, "error");
+  }
+  return message;
 }
 
 // -- Shared state present in every domain store ----------------------------
@@ -67,7 +103,8 @@ export type AgentStore = CoreState &
   MiniPlayerSlice &
   HealthCheckSlice &
   BudgetEnforcementSlice &
-  ChatSlice;
+  ChatSlice &
+  MatrixBuildSlice;
 
 /** Overview domain: dashboard, messages, events, healing, memories, cron, alerts */
 export type OverviewStore = CoreState &
@@ -105,9 +142,3 @@ export type SystemStore = CoreState &
   NetworkSlice &
   SetupSlice;
 
-// -- Combined store type (backward compat) --------------------------------
-export type PersonaStore = AgentStore &
-  OverviewStore &
-  PipelineStore &
-  VaultStore &
-  SystemStore;
