@@ -57,7 +57,7 @@ export function AutomationConditionStep({
           <div>
             <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Name</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-              className="w-full mt-1.5 px-3 py-2 text-sm rounded-xl border border-border bg-secondary/20 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40" />
+              className="w-full mt-1.5 px-3 py-2 text-sm rounded-xl border border-border bg-secondary/20 text-foreground focus-ring" />
           </div>
           <div>
             <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Platform</label>
@@ -142,7 +142,7 @@ export function AutomationConditionStep({
             <div>
               <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Input Schema</label>
               <textarea placeholder='{ "file_url": "string" }' value={inputSchema} onChange={(e) => setInputSchema(e.target.value)} rows={3}
-                className="w-full mt-1.5 px-3 py-2 text-sm rounded-xl border border-border bg-secondary/20 text-foreground placeholder:text-muted-foreground/50 font-mono focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none" />
+                className="w-full mt-1.5 px-3 py-2 text-sm rounded-xl border border-border bg-secondary/20 text-foreground placeholder:text-muted-foreground/50 font-mono focus-ring resize-none" />
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">On failure</label>
@@ -162,7 +162,7 @@ export function AutomationConditionStep({
               <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Timeout</label>
               <div className="flex items-center gap-2 mt-1.5">
                 <input type="number" min={1} max={300} value={timeoutSecs} onChange={(e) => setTimeoutSecs(Number(e.target.value) || 30)}
-                  className="w-20 px-3 py-2 text-sm rounded-xl border border-border bg-secondary/20 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40" />
+                  className="w-20 px-3 py-2 text-sm rounded-xl border border-border bg-secondary/20 text-foreground focus-ring" />
                 <span className="text-sm text-muted-foreground">seconds</span>
               </div>
             </div>

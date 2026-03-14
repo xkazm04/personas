@@ -10,6 +10,7 @@ import { batchDeleteTeamMemories, createTeamMemory, deleteTeamMemory, getTeamMem
 import { addTeamMember, cloneTeam, createTeam, createTeamConnection, deleteTeam, deleteTeamConnection, listTeamConnections, listTeamMembers, listTeams, removeTeamMember, updateTeamConnection } from "@/api/pipeline/teams";
 
 import { useToastStore } from "@/stores/toastStore";
+import { reportError } from "../../storeTypes";
 
 export interface TeamSlice {
   // State
@@ -60,8 +61,8 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
     try {
       const teams = await listTeams();
       set({ teams });
-    } catch {
-      useToastStore.getState().addToast('Failed to load teams', 'error');
+    } catch (err) {
+      reportError(err, "Failed to load teams", set);
     }
   },
 
@@ -79,8 +80,8 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
       set({ teamMembers: members, teamConnections: connections });
       // Also fetch team memories
       get().fetchTeamMemories(teamId);
-    } catch {
-      useToastStore.getState().addToast('Failed to load team details', 'error');
+    } catch (err) {
+      reportError(err, "Failed to load team details", set);
     }
   },
 
@@ -99,8 +100,8 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
       });
       await get().fetchTeams();
       return team;
-    } catch {
-      useToastStore.getState().addToast('Failed to create team', 'error');
+    } catch (err) {
+      reportError(err, "Failed to create team", set);
       return null;
     }
   },
@@ -111,8 +112,8 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
       await get().fetchTeams();
       useToastStore.getState().addToast('Team forked successfully', 'success');
       return team;
-    } catch {
-      useToastStore.getState().addToast('Failed to fork team', 'error');
+    } catch (err) {
+      reportError(err, "Failed to fork team", set);
       return null;
     }
   },
@@ -122,8 +123,8 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
       await deleteTeam(teamId);
       if (get().selectedTeamId === teamId) set({ selectedTeamId: null, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null, memoryFilterCategory: undefined, memoryFilterSearch: undefined });
       await get().fetchTeams();
-    } catch {
-      useToastStore.getState().addToast('Failed to delete team', 'error');
+    } catch (err) {
+      reportError(err, "Failed to delete team", set);
     }
   },
 
@@ -151,10 +152,10 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
       // Replace temp with real member (use fresh state to avoid overwriting concurrent changes)
       set({ teamMembers: get().teamMembers.map((m) => (m.id === tempId ? realMember : m)) });
       return realMember;
-    } catch {
+    } catch (err) {
       // Rollback
       set({ teamMembers: get().teamMembers.filter((m) => m.id !== tempId) });
-      useToastStore.getState().addToast('Failed to add team member', 'error');
+      reportError(err, "Failed to add team member", set);
       return null;
     }
   },
@@ -175,10 +176,10 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
 
     try {
       await removeTeamMember(memberId);
-    } catch {
+    } catch (err) {
       // Rollback
       set({ teamMembers: prevMembers, teamConnections: prevConnections });
-      useToastStore.getState().addToast('Failed to remove team member', 'error');
+      reportError(err, "Failed to remove team member", set);
     }
   },
 
@@ -205,10 +206,10 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
       const realConn = await createTeamConnection(teamId, sourceMemberId, targetMemberId, connectionType, condition, label);
       set({ teamConnections: get().teamConnections.map((c) => (c.id === tempId ? realConn : c)) });
       return realConn;
-    } catch {
+    } catch (err) {
       // Rollback
       set({ teamConnections: get().teamConnections.filter((c) => c.id !== tempId) });
-      useToastStore.getState().addToast('Failed to create team connection', 'error');
+      reportError(err, "Failed to create team connection", set);
       return null;
     }
   },
@@ -220,10 +221,10 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
 
     try {
       await deleteTeamConnection(connectionId);
-    } catch {
+    } catch (err) {
       // Rollback
       set({ teamConnections: prevConnections });
-      useToastStore.getState().addToast('Failed to delete team connection', 'error');
+      reportError(err, "Failed to delete team connection", set);
     }
   },
 
@@ -238,10 +239,10 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
 
     try {
       await updateTeamConnection(connectionId, connectionType);
-    } catch {
+    } catch (err) {
       // Rollback
       set({ teamConnections: prevConnections });
-      useToastStore.getState().addToast('Failed to update team connection', 'error');
+      reportError(err, "Failed to update team connection", set);
     }
   },
 
@@ -258,8 +259,8 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
         getTeamMemoryStats(teamId, category, search),
       ]);
       set({ teamMemories: memories, teamMemoriesTotal: total, teamMemoryStats: stats });
-    } catch {
-      useToastStore.getState().addToast('Failed to load team memories', 'error');
+    } catch (err) {
+      reportError(err, "Failed to load team memories", set);
     }
   },
 
@@ -268,8 +269,8 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
       const offset = get().teamMemories.length;
       const more = await listTeamMemories(teamId, undefined, category, search, 100, offset);
       set((state) => ({ teamMemories: [...state.teamMemories, ...more] }));
-    } catch {
-      useToastStore.getState().addToast('Failed to load more memories', 'error');
+    } catch (err) {
+      reportError(err, "Failed to load more memories", set);
     }
   },
 
@@ -280,8 +281,8 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
       const { selectedTeamId: teamId, memoryFilterCategory, memoryFilterSearch } = get();
       if (teamId) get().fetchTeamMemories(teamId, memoryFilterCategory, memoryFilterSearch);
       return memory;
-    } catch {
-      useToastStore.getState().addToast('Failed to create team memory', 'error');
+    } catch (err) {
+      reportError(err, "Failed to create team memory", set);
       return null;
     }
   },
@@ -295,9 +296,9 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
     }));
     try {
       await deleteTeamMemory(id);
-    } catch {
+    } catch (err) {
       set({ teamMemories: prev, teamMemoriesTotal: prevTotal });
-      useToastStore.getState().addToast('Failed to delete team memory', 'error');
+      reportError(err, "Failed to delete team memory", set);
     }
   },
 
@@ -310,9 +311,9 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
     }));
     try {
       await batchDeleteTeamMemories(ids);
-    } catch {
+    } catch (err) {
       set({ teamMemories: prev, teamMemoriesTotal: prevTotal });
-      useToastStore.getState().addToast('Failed to delete team memories', 'error');
+      reportError(err, "Failed to delete team memories", set);
     }
   },
 
@@ -323,9 +324,9 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
     });
     try {
       await updateTeamMemoryImportance(id, importance);
-    } catch {
+    } catch (err) {
       set({ teamMemories: prev });
-      useToastStore.getState().addToast('Failed to update memory importance', 'error');
+      reportError(err, "Failed to update memory importance", set);
     }
   },
 
@@ -336,8 +337,8 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
       set({
         teamMemories: prev.map((m) => (m.id === id ? updated : m)),
       });
-    } catch {
-      useToastStore.getState().addToast('Failed to update memory', 'error');
+    } catch (err) {
+      reportError(err, "Failed to update memory", set);
     }
   },
 });

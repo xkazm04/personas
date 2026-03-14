@@ -1,12 +1,10 @@
 import type { StateCreator } from "zustand";
 import type { PipelineStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { errMsg, reportError } from "../../storeTypes";
 import { useAgentStore } from "../../agentStore";
 import type { TriggerChainLink } from "@/lib/bindings/TriggerChainLink";
 import type { WebhookStatus } from "@/lib/bindings/WebhookStatus";
 import { createTrigger, deleteTrigger, getWebhookStatus, listTriggerChains, updateTrigger } from "@/api/pipeline/triggers";
-
-import { useToastStore } from "@/stores/toastStore";
 import type { TriggerRateLimitConfig } from "@/lib/utils/platform/triggerConstants";
 
 /** Discriminated trigger error -- `kind` tells UI whether to render inline or toast. */
@@ -114,8 +112,7 @@ export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlic
       const chains = await listTriggerChains();
       set({ triggerChains: chains });
     } catch (err) {
-      set({ triggerError: { kind: 'fetch', message: errMsg(err, "Failed to load trigger chains") } });
-      useToastStore.getState().addToast('Failed to load trigger chains', 'error');
+      reportError(err, "Failed to load trigger chains", set, { stateUpdates: { triggerError: { kind: 'fetch', message: errMsg(err, "Failed to load trigger chains") } } });
     }
   },
 
@@ -124,8 +121,7 @@ export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlic
       const status = await getWebhookStatus();
       set({ webhookStatus: status });
     } catch (err) {
-      set({ triggerError: { kind: 'fetch', message: errMsg(err, "Failed to load webhook status") } });
-      useToastStore.getState().addToast('Failed to load webhook status', 'error');
+      reportError(err, "Failed to load webhook status", set, { stateUpdates: { triggerError: { kind: 'fetch', message: errMsg(err, "Failed to load webhook status") } } });
     }
   },
 

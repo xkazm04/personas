@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import type { LabArenaRun } from "@/lib/bindings/LabArenaRun";
 import type { LabArenaResult } from "@/lib/bindings/LabArenaResult";
 import type { LabAbRun } from "@/lib/bindings/LabAbRun";
@@ -72,14 +72,14 @@ function createLabCrud<TRun extends { id: string }, TResult>(
         const runs = await calls.list(personaId, RUN_HISTORY_LIMIT);
         set({ [runsKey]: runs } as Partial<AgentStore>);
       } catch (err) {
-        set({ error: errMsg(err, `Failed to fetch ${label} runs`) });
+        reportError(err, `Failed to fetch ${label} runs`, set);
       }
     },
     cancelRun: async (runId) => {
       try {
         await calls.cancel(runId);
       } catch (err) {
-        set({ error: errMsg(err, `Failed to cancel ${label} test`) });
+        reportError(err, `Failed to cancel ${label} test`, set);
       } finally {
         labLifecycle.markCancelled(set);
       }
@@ -101,7 +101,7 @@ function createLabCrud<TRun extends { id: string }, TResult>(
           return { [resultsMapKey]: updated } as Partial<AgentStore>;
         });
       } catch (err) {
-        set({ error: errMsg(err, `Failed to fetch ${label} results`) });
+        reportError(err, `Failed to fetch ${label} results`, set);
       }
     },
     deleteRun: async (runId) => {
@@ -117,7 +117,7 @@ function createLabCrud<TRun extends { id: string }, TResult>(
           } as Partial<AgentStore>;
         });
       } catch (err) {
-        set({ error: errMsg(err, `Failed to delete ${label} run`) });
+        reportError(err, `Failed to delete ${label} run`, set);
       }
     },
     wrapStart: async (fn, ...args) => {
@@ -127,7 +127,7 @@ function createLabCrud<TRun extends { id: string }, TResult>(
         return run.id;
       } catch (err) {
         labLifecycle.markFailed(set);
-        set({ error: errMsg(err, `Failed to start ${label} test`) });
+        reportError(err, `Failed to start ${label} test`, set);
         return null;
       }
     },
@@ -140,6 +140,11 @@ export interface LabSlice {
   // Mode
   labMode: LabMode;
   setLabMode: (mode: LabMode) => void;
+
+  // A/B pre-selection (for deep-linking from compare views)
+  abPreselectedA: string | null;
+  abPreselectedB: string | null;
+  setAbPreselect: (a: string | null, b: string | null) => void;
 
   // Shared running state
   isLabRunning: boolean;
@@ -207,6 +212,11 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
     labMode: "arena",
     setLabMode: (mode) => set({ labMode: mode }),
 
+    // A/B pre-selection
+    abPreselectedA: null,
+    abPreselectedB: null,
+    setAbPreselect: (a, b) => set({ abPreselectedA: a, abPreselectedB: b }),
+
     // Shared
     isLabRunning: false,
     labProgress: null,
@@ -269,7 +279,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         matrix.fetchRuns(personaId);
         get().fetchVersions(personaId);
       } catch (err) {
-        set({ error: errMsg(err, "Failed to accept draft") });
+        reportError(err, "Failed to accept draft", set);
       }
     },
 
@@ -290,7 +300,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         const versions = await api.labGetVersions(personaId);
         set({ promptVersions: versions });
       } catch (err) {
-        set({ error: errMsg(err, "Failed to fetch prompt versions") });
+        reportError(err, "Failed to fetch prompt versions", set);
       }
     },
     tagVersion: async (id, tag) => {
@@ -299,7 +309,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         const personaId = get().selectedPersona?.id;
         if (personaId) get().fetchVersions(personaId);
       } catch (err) {
-        set({ error: errMsg(err, "Failed to tag version") });
+        reportError(err, "Failed to tag version", set);
       }
     },
     rollbackVersion: async (versionId) => {
@@ -311,7 +321,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
           get().selectPersona(personaId);
         }
       } catch (err) {
-        set({ error: errMsg(err, "Failed to rollback version") });
+        reportError(err, "Failed to rollback version", set);
       }
     },
     healthErrorRate: null,
@@ -320,7 +330,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         const rate = await api.labGetErrorRate(personaId);
         set({ healthErrorRate: rate });
       } catch (err) {
-        set({ error: errMsg(err, "Failed to fetch error rate") });
+        reportError(err, "Failed to fetch error rate", set);
       }
     },
   };

@@ -1,6 +1,6 @@
 import { forwardRef, useState, useRef, useCallback, useMemo, useEffect, type SelectHTMLAttributes } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Search, Check } from 'lucide-react';
-import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
 
@@ -70,10 +70,47 @@ function FilterableSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number; flipUp: boolean } | null>(null);
 
   const close = useCallback(() => { setOpen(false); setQuery(''); }, []);
-  useClickOutside(containerRef, open, close);
+
+  // Position the dropdown relative to the trigger via portal
+  useEffect(() => {
+    if (!open || !containerRef.current) return;
+    const updatePos = () => {
+      const rect = containerRef.current!.getBoundingClientRect();
+      const dropdownMaxH = 220; // search bar + max-h-48 options
+      const spaceBelow = window.innerHeight - rect.bottom - 8;
+      const flipUp = spaceBelow < dropdownMaxH && rect.top > spaceBelow;
+      setDropdownPos({
+        top: flipUp ? rect.top - 4 : rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        flipUp,
+      });
+    };
+    updatePos();
+    window.addEventListener('scroll', updatePos, true);
+    window.addEventListener('resize', updatePos);
+    return () => {
+      window.removeEventListener('scroll', updatePos, true);
+      window.removeEventListener('resize', updatePos);
+    };
+  }, [open]);
+
+  // Close on click outside (handles both trigger and portalled dropdown)
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (containerRef.current?.contains(e.target as Node)) return;
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      close();
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open, close]);
 
   // Focus search input when opening
   useEffect(() => {
@@ -99,7 +136,7 @@ function FilterableSelect({
     'w-full appearance-none cursor-pointer',
     'px-3 py-2 pr-8 text-sm rounded-xl',
     'bg-background/50 text-foreground border border-primary/15',
-    'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/30',
+    'focus-ring focus-visible:border-primary/30',
     'transition-all text-left',
     className,
   ].join(' ');
@@ -115,9 +152,18 @@ function FilterableSelect({
       </button>
       <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/60 pointer-events-none transition-transform ${open ? 'rotate-180' : ''}`} />
 
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute top-full mt-1 left-0 right-0 z-50 rounded-xl border border-primary/15 bg-background shadow-lg overflow-hidden">
+      {/* Dropdown -- portalled to body to escape grid/overflow constraints */}
+      {open && dropdownPos && createPortal(
+        <div
+          ref={dropdownRef}
+          className="fixed z-[9990] glass-sm rounded-xl shadow-elevation-3 overflow-hidden"
+          style={{
+            top: dropdownPos.flipUp ? undefined : dropdownPos.top,
+            bottom: dropdownPos.flipUp ? window.innerHeight - dropdownPos.top : undefined,
+            left: dropdownPos.left,
+            width: dropdownPos.width,
+          }}
+        >
           {/* Search */}
           <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
             <Search className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
@@ -127,7 +173,7 @@ function FilterableSelect({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Filter..."
-              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none"
             />
           </div>
 
@@ -153,7 +199,8 @@ function FilterableSelect({
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
@@ -190,7 +237,7 @@ export const ThemedSelect = forwardRef<HTMLSelectElement, ThemedSelectProps>(
             'w-full appearance-none cursor-pointer',
             'px-3 py-2 pr-8 text-sm rounded-xl',
             'bg-background/50 text-foreground border border-primary/15',
-            'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/30',
+            'focus-ring focus-visible:border-primary/30',
             'transition-all',
             '[&>option]:bg-background [&>option]:text-foreground',
             className,

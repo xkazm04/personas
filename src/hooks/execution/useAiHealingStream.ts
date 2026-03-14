@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import {
+  validatePayload,
+  HealingOutputSchema,
+  HealingStatusSchema,
+} from '@/lib/validation/eventPayloads';
 
 export type AiHealingPhase =
   | 'idle'
@@ -63,11 +68,13 @@ export function useAiHealingStream(personaId: string): AiHealingState {
         'ai-healing-output',
         (event) => {
           if (!mounted) return;
-          const payload = event.payload ?? {};
-          if (String(payload['persona_id'] ?? '') !== personaIdRef.current) return;
+          const raw = event.payload ?? {};
+          const validated = validatePayload('ai-healing-output', raw, HealingOutputSchema);
+          if (!validated) return;
+          if (validated.persona_id !== personaIdRef.current) return;
 
-          const rawLine = payload['line'];
-          if (typeof rawLine !== 'string' || rawLine.trim().length === 0) return;
+          const rawLine = validated.line;
+          if (rawLine.trim().length === 0) return;
 
           const line =
             rawLine.length > MAX_LINE_LENGTH
@@ -88,30 +95,22 @@ export function useAiHealingStream(personaId: string): AiHealingState {
         'ai-healing-status',
         (event) => {
           if (!mounted) return;
-          const payload = event.payload ?? {};
-          if (String(payload['persona_id'] ?? '') !== personaIdRef.current) return;
+          const raw = event.payload ?? {};
+          const validated = validatePayload('ai-healing-status', raw, HealingStatusSchema);
+          if (!validated) return;
+          if (validated.persona_id !== personaIdRef.current) return;
 
-          const phase = payload['phase'] as AiHealingPhase | undefined;
-          if (!phase) return;
+          const phase = validated.phase as AiHealingPhase;
 
           setState((prev) => ({
             ...prev,
             phase,
-            executionId:
-              typeof payload['execution_id'] === 'string'
-                ? payload['execution_id']
-                : prev.executionId,
-            diagnosis:
-              typeof payload['diagnosis'] === 'string'
-                ? payload['diagnosis']
-                : prev.diagnosis,
-            fixesApplied: Array.isArray(payload['fixes_applied'])
-              ? (payload['fixes_applied'] as string[])
+            executionId: validated.execution_id ?? prev.executionId,
+            diagnosis: validated.diagnosis ?? prev.diagnosis,
+            fixesApplied: validated.fixes_applied
+              ? (validated.fixes_applied as string[])
               : prev.fixesApplied,
-            shouldRetry:
-              typeof payload['should_retry'] === 'boolean'
-                ? payload['should_retry']
-                : prev.shouldRetry,
+            shouldRetry: validated.should_retry ?? prev.shouldRetry,
           }));
         },
       );

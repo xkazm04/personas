@@ -2,6 +2,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import type { Components } from 'react-markdown';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
 interface MarkdownRendererProps {
   content: string;
@@ -70,11 +71,15 @@ const components: Components = {
   td: ({ children }) => (
     <td className="py-1.5 text-foreground/80 border-b border-border/20">{children}</td>
   ),
-  a: ({ href, children }) => (
-    <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
-      {children}
-    </a>
-  ),
+  a: ({ href, children }) => {
+    const safeHref = sanitizeExternalUrl(href);
+    if (!safeHref) return <span className="text-primary">{children}</span>;
+    return (
+      <a href={safeHref} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    );
+  },
   hr: () => <hr className="border-border/30 my-4" />,
   strong: ({ children }) => (
     <strong className="font-bold text-foreground">{children}</strong>

@@ -42,7 +42,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
         <select
           value={createPersonaId}
           onChange={(e) => setCreatePersonaId(e.target.value)}
-          className="w-full px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
+          className="w-full px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         >
           <option value="">Select persona...</option>
           {deployedPersonas.map((p) => (
@@ -89,7 +89,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
             value={createCron}
             onChange={(e) => setCreateCron(e.target.value)}
             placeholder="0 * * * *"
-            className="w-full px-3 py-1.5 text-sm font-mono rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
+            className="w-full px-3 py-1.5 text-sm font-mono rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
           />
           <div className="flex flex-wrap gap-1.5">
             {CRON_PRESETS.map((preset) => (

@@ -120,7 +120,7 @@ export function ImportPreview({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => onToggleKey(secret.key)}
-                        className="rounded border-primary/30 text-primary focus:ring-primary/30"
+                        className="rounded border-primary/30 text-primary focus-visible:ring-primary/30"
                       />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-mono text-foreground truncate">{secret.key}</p>
@@ -157,7 +157,7 @@ export function ImportPreview({
                   intervalMinutes: 60,
                 });
               }}
-              className="rounded border-cyan-500/30 text-cyan-500 focus:ring-cyan-500/30"
+              className="rounded border-cyan-500/30 text-cyan-500 focus-visible:ring-cyan-500/30"
             />
             <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
             <span className="text-sm font-medium text-cyan-300">Enable sync mode</span>
@@ -176,7 +176,7 @@ export function ImportPreview({
                     sourceId === 'azure_keyvault' ? 'https://myvault.vault.azure.net/...' :
                     'project/config'
                   }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-cyan-500/20 bg-background/40 text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-cyan-500/20 bg-background/40 text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/30"
                 />
               </div>
               <div className="w-28">
@@ -184,7 +184,7 @@ export function ImportPreview({
                 <select
                   value={syncConfig.intervalMinutes}
                   onChange={(e) => onSyncConfigChange({ ...syncConfig, intervalMinutes: Number(e.target.value) })}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-cyan-500/20 bg-background/40 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-cyan-500/20 bg-background/40 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/30"
                 >
                   <option value={15}>15 min</option>
                   <option value={30}>30 min</option>

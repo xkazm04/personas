@@ -44,17 +44,17 @@ export const createTemplateFeedback = (
   invoke<TemplateFeedback>('create_template_feedback', {
     reviewId,
     personaId,
-    executionId: executionId ?? null,
+    executionId: executionId,
     rating,
     labels,
-    comment: comment ?? null,
-    source: source ?? null,
+    comment: comment,
+    source: source,
   });
 
 export const listTemplateFeedback = (reviewId: string, limit?: number) =>
   invoke<TemplateFeedback[]>('list_template_feedback', {
     reviewId,
-    limit: limit ?? null,
+    limit: limit,
   });
 
 export const getTemplatePerformance = (reviewId: string) =>

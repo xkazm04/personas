@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import type { PersonaMemory } from "@/lib/types/types";
 import type { MemoryStats, MemoryReviewResult } from "@/api/overview/memories";
 import type { MemoryAction } from "@/features/overview/sub_memories/libs/memoryActions";
@@ -45,7 +45,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
       );
       set({ memories: result.memories, memoriesTotal: result.total, memoryStats: result.stats });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch memories") });
+      reportError(err, "Failed to fetch memories", set);
     }
   },
 
@@ -66,7 +66,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
       }));
       return true;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create memory") });
+      reportError(err, "Failed to create memory", set);
       return false;
     }
   },
@@ -79,7 +79,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
         memoriesTotal: Math.max(0, state.memoriesTotal - 1),
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete memory") });
+      reportError(err, "Failed to delete memory", set);
     }
   },
 
@@ -102,7 +102,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
 
       return result;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to review memories") });
+      reportError(err, "Failed to review memories", set);
       throw err;
     }
   },

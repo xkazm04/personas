@@ -8,13 +8,14 @@ import { useMemo, useEffect } from 'react';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
-import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import DeployFirstAutomationCard from '@/features/overview/components/dashboard/cards/DeployFirstAutomationCard';
 import { HealthDigestPanel } from '@/features/agents/health';
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import RemoteControlCard from '@/features/overview/components/dashboard/cards/RemoteControlCard';
 import FleetOptimizationCard from '@/features/overview/components/dashboard/cards/FleetOptimizationCard';
+import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { DashboardHeaderBadges } from './widgets/DashboardHeaderBadges';
 import { RecentActivityList } from './widgets/RecentActivityList';
 import { TrafficErrorsChart } from './widgets/TrafficErrorsChart';
@@ -27,23 +28,22 @@ export default function DashboardHome() {
   const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
   const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
   const fetchGlobalExecutions = useOverviewStore((s) => s.fetchGlobalExecutions);
-  const fetchPendingReviewCount = useOverviewStore((s) => s.fetchPendingReviewCount);
-  const fetchUnreadMessageCount = useOverviewStore((s) => s.fetchUnreadMessageCount);
   const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
   const memoryActions = useOverviewStore((s) => s.memoryActions);
   const dismissMemoryAction = useOverviewStore((s) => s.dismissMemoryAction);
-  const { selectedPersonaId, setSelectedPersonaId } = useOverviewFilters();
+  const { selectedPersonaId } = useOverviewFilterValues();
+  const { setSelectedPersonaId } = useOverviewFilterActions();
   const executionDashboard = useOverviewStore((s) => s.executionDashboard);
   const fetchHealingIssues = useOverviewStore((s) => s.fetchHealingIssues);
 
   const dailyPoints = executionDashboard?.daily_points ?? [];
 
+  // Note: fetchPendingReviewCount and fetchUnreadMessageCount are handled by
+  // Sidebar's centralized polling (always mounted when Dashboard is visible).
   useEffect(() => {
     fetchGlobalExecutions(true);
-    fetchPendingReviewCount();
-    fetchUnreadMessageCount();
     fetchHealingIssues();
-  }, [fetchGlobalExecutions, fetchPendingReviewCount, fetchUnreadMessageCount, fetchHealingIssues]);
+  }, [fetchGlobalExecutions, fetchHealingIssues]);
 
   const { filtered: personaExecs } = useFilteredCollection(globalExecutions, {
     exact: [{ field: 'persona_id', value: selectedPersonaId || null }],
@@ -115,7 +115,7 @@ export default function DashboardHome() {
                 {greeting}, {displayName}
               </motion.h2>
               <p className="text-muted-foreground/80 mt-1">
-                You have <span className="text-primary font-medium">{pendingReviewCount} pending reviews</span> requiring attention.
+                You have <span className="text-primary font-medium"><AnimatedCounter value={pendingReviewCount} /> pending reviews</span> requiring attention.
               </p>
             </div>
             <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />

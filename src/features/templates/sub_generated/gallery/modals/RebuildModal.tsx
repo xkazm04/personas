@@ -97,7 +97,7 @@ export function RebuildModal({
                   value={userDirection}
                   onChange={(e) => setUserDirection(e.target.value)}
                   placeholder="Add specific requirements, focus areas, or constraints for this rebuild..."
-                  className="w-full h-28 px-4 py-3 bg-secondary/20 border border-primary/10 rounded-xl text-sm text-foreground/90 placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:border-violet-500/30 focus:ring-1 focus:ring-violet-500/20 transition-colors"
+                  className="w-full h-28 px-4 py-3 bg-secondary/20 border border-primary/10 rounded-xl text-sm text-foreground/90 placeholder:text-muted-foreground/40 resize-none focus-visible:outline-none focus-visible:border-violet-500/30 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
                 />
                 <p className="text-sm text-muted-foreground/60 mt-1">
                   The rebuild will regenerate all 9 data dimensions using the Protocol System.

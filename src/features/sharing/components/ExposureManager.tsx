@@ -131,7 +131,7 @@ function AddExposureForm({
           <select
             value={resourceType}
             onChange={(e) => { setResourceType(e.target.value as ResourceType); setResourceId(''); }}
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/40"
+            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
           >
             {RESOURCE_TYPES.map((t) => (
               <option key={t} value={t}>{t}</option>
@@ -143,7 +143,7 @@ function AddExposureForm({
           <select
             value={accessLevel}
             onChange={(e) => setAccessLevel(e.target.value as AccessLevel)}
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/40"
+            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
           >
             {ACCESS_LEVELS.map((l) => (
               <option key={l} value={l}>{l}</option>
@@ -158,7 +158,7 @@ function AddExposureForm({
           <select
             value={resourceId}
             onChange={(e) => setResourceId(e.target.value)}
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/40"
+            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
           >
             <option value="">Select a persona...</option>
             {personas.map((p) => (
@@ -170,7 +170,7 @@ function AddExposureForm({
             value={resourceId}
             onChange={(e) => setResourceId(e.target.value)}
             placeholder="Resource ID"
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/40"
+            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
           />
         )}
       </div>
@@ -181,7 +181,7 @@ function AddExposureForm({
           value={tags}
           onChange={(e) => setTags(e.target.value)}
           placeholder="e.g. automation, devops"
-          className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/40"
+          className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
         />
       </div>
 

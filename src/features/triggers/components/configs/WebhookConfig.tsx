@@ -34,7 +34,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
               value={hmacSecret}
               onChange={(e) => setHmacSecret(e.target.value)}
               placeholder="Leave empty for no signature verification"
-              className={`w-full px-3 py-2 pr-10 bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all ${showHmacSecret ? 'font-mono text-sm' : ''}`}
+              className={`w-full px-3 py-2 pr-10 bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all ${showHmacSecret ? 'font-mono text-sm' : ''}`}
             />
             <button
               type="button"

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useAgentStore } from "@/stores/agentStore";
-import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { useOverviewFilterValues } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 
 /**
@@ -16,7 +16,7 @@ export function useHealingWorkflow() {
   const resolveHealingIssue = useOverviewStore((s) => s.resolveHealingIssue);
   const personas = useAgentStore((s) => s.personas);
 
-  const { selectedPersonaId } = useOverviewFilters();
+  const { selectedPersonaId } = useOverviewFilterValues();
 
   const [selectedIssue, setSelectedIssue] = useState<PersonaHealingIssue | null>(null);
   const [issueFilter, setIssueFilter] = useState<'all' | 'open' | 'auto-fixed'>('all');

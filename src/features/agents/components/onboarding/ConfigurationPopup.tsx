@@ -27,12 +27,12 @@ interface ConfigurationPopupProps {
 
 const ACCENT_STYLES = {
   emerald: {
-    ring: 'focus:ring-emerald-500/40',
+    ring: 'focus-visible:ring-emerald-500/40',
     icon: 'text-emerald-400',
     button: 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25',
   },
   sky: {
-    ring: 'focus:ring-sky-500/40',
+    ring: 'focus-visible:ring-sky-500/40',
     icon: 'text-sky-400',
     button: 'bg-sky-500/15 text-sky-300 border border-sky-500/25 hover:bg-sky-500/25',
   },
@@ -120,7 +120,7 @@ export function ConfigurationPopup({
                 placeholder={loaded ? field.placeholder : 'Loading\u2026'}
                 disabled={!loaded}
                 autoFocus={field.autoFocus}
-                className={`w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 ${styles.ring} transition-all disabled:opacity-50`}
+                className={`w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${styles.ring} transition-all disabled:opacity-50`}
               />
             </div>
           ))}

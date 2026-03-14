@@ -1,12 +1,13 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import type { ChatMessage } from "@/lib/bindings/ChatMessage";
 import type { ChatSession } from "@/lib/bindings/ChatSession";
 import {
   listChatSessions,
   getChatMessages,
   createChatMessage,
+  createChatSession,
   deleteChatSession,
 } from "@/api/agents/chat";
 import { executePersona } from "@/api/agents/executions";
@@ -21,12 +22,15 @@ export interface ChatSlice {
   // Actions
   fetchChatSessions: (personaId: string) => Promise<void>;
   fetchChatMessages: (personaId: string, sessionId: string) => Promise<void>;
-  startNewChatSession: (personaId: string) => string;
+  startNewChatSession: (personaId: string) => Promise<string>;
   sendChatMessage: (personaId: string, sessionId: string, content: string) => Promise<void>;
   clearChatSession: (personaId: string, sessionId: string) => Promise<void>;
   appendChatStreamLine: (line: string) => void;
   finishChatStream: (fullResponse: string, personaId: string, sessionId: string, executionId?: string) => Promise<void>;
 }
+
+/** Maximum in-memory chat messages per session. Older messages are evicted FIFO. */
+const MAX_CHAT_MESSAGES = 500;
 
 export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set, get) => ({
   chatSessions: [],
@@ -37,24 +41,44 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
   fetchChatSessions: async (personaId) => {
     try {
       const sessions = await listChatSessions(personaId);
-      set({ chatSessions: sessions });
+      const activeId = get().activeChatSessionId;
+      // Clear the active session if it no longer exists in the persisted list
+      const activeGone =
+        activeId && sessions.length > 0 && !sessions.some((s) => s.sessionId === activeId);
+      set({
+        chatSessions: sessions,
+        ...(activeGone ? { activeChatSessionId: null, chatMessages: [] } : {}),
+      });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch chat sessions") });
+      reportError(err, "Failed to fetch chat sessions", set);
     }
   },
 
   fetchChatMessages: async (personaId, sessionId) => {
     try {
       const messages = await getChatMessages(personaId, sessionId);
-      set({ chatMessages: messages, activeChatSessionId: sessionId });
+      // Cap in-memory messages to prevent unbounded growth in long sessions
+      set({ chatMessages: messages.slice(-MAX_CHAT_MESSAGES), activeChatSessionId: sessionId });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch chat messages") });
+      reportError(err, "Failed to fetch chat messages", set);
     }
   },
 
-  startNewChatSession: (_personaId) => {
+  startNewChatSession: async (personaId) => {
     const sessionId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     set({ activeChatSessionId: sessionId, chatMessages: [] });
+    try {
+      await createChatSession(personaId, sessionId);
+    } catch (err) {
+      // Session failed to persist — roll back the optimistic state
+      set((s) =>
+        s.activeChatSessionId === sessionId
+          ? { activeChatSessionId: null, chatMessages: [] }
+          : {},
+      );
+      reportError(err, "Failed to create chat session", set);
+      return "";
+    }
     return sessionId;
   },
 
@@ -66,7 +90,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
       role: "user",
       content,
     });
-    set((s) => ({ chatMessages: [...s.chatMessages, userMsg] }));
+    set((s) => ({ chatMessages: [...s.chatMessages, userMsg].slice(-MAX_CHAT_MESSAGES) }));
 
     // 2. Build conversation context for the execution
     const allMessages = get().chatMessages;
@@ -85,10 +109,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
     try {
       await executePersona(personaId, undefined, conversationInput);
     } catch (err) {
-      set({
-        chatStreaming: false,
-        error: errMsg(err, "Failed to send chat message"),
-      });
+      reportError(err, "Failed to send chat message", set, { stateUpdates: { chatStreaming: false } });
     }
   },
 
@@ -101,7 +122,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
         activeChatSessionId: s.activeChatSessionId === sessionId ? null : s.activeChatSessionId,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to clear chat session") });
+      reportError(err, "Failed to clear chat session", set);
     }
   },
 
@@ -124,7 +145,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
         executionId,
       });
       set((s) => ({
-        chatMessages: [...s.chatMessages, assistantMsg],
+        chatMessages: [...s.chatMessages, assistantMsg].slice(-MAX_CHAT_MESSAGES),
         chatStreaming: false,
       }));
     } catch {

@@ -47,16 +47,4 @@ export function getErrorExplanation(errorMessage: string): { summary: string; gu
   return null;
 }
 
-/** Check whether a raw JSON string parses into a non-empty array or object. */
-export function hasNonEmptyJson(raw: string | null | undefined, type: 'array' | 'object'): boolean {
-  if (!raw) return false;
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (type === 'array') {
-      return Array.isArray(parsed) && parsed.length > 0;
-    }
-    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) && Object.keys(parsed as Record<string, unknown>).length > 0;
-  } catch { // intentional: non-critical -- JSON parse fallback
-    return type === 'object' ? !!raw : false;
-  }
-}
+export { hasNonEmptyJson } from '@/lib/utils/parseJson';

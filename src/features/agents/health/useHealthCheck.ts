@@ -2,9 +2,17 @@ import { useState, useCallback, useRef, useMemo } from 'react';
 import { testDesignFeasibility, type FeasibilityResult } from '@/api/templates/design';
 import { useVaultStore } from "@/stores/vaultStore";
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
+import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { DesignContextData } from '@/lib/types/frontendTypes';
 import type { DryRunResult, DryRunIssue, PersonaHealthCheck, HealthScore, HealthGrade } from './types';
+
+interface ConfigWarning {
+  id: string;
+  severity: string;
+  category: string;
+  description: string;
+}
 
 // -- Scoring helpers --------------------------------------------------
 
@@ -198,6 +206,31 @@ export function useHealthCheck(): UseHealthCheckReturn {
       const credentials = creds.map((c) => ({ id: c.id, service_type: c.service_type }));
 
       const dryRunResult = parseFeasibilityToHealthResult(raw, persona, credentials);
+
+      // Fetch config warnings (chain trigger parse failures, tool kind ambiguity)
+      try {
+        const configWarnings = await invokeWithTimeout<ConfigWarning[]>(
+          'get_persona_config_warnings',
+          { personaId: persona.id },
+        );
+        if (configWarnings && configWarnings.length > 0) {
+          for (const w of configWarnings) {
+            dryRunResult.issues.push({
+              id: `cfg_${w.id}`,
+              severity: w.severity as DryRunIssue['severity'],
+              description: w.description,
+              proposal: null,
+              resolved: false,
+            });
+          }
+          // Downgrade status if we found config warnings
+          if (dryRunResult.status === 'ready') {
+            dryRunResult.status = 'partial';
+          }
+        }
+      } catch {
+        // Best-effort: don't fail the entire health check if config warnings fail
+      }
 
       const check: PersonaHealthCheck = {
         personaId: persona.id,

@@ -35,10 +35,10 @@ export const startTemplateAdoptBackground = (
     adoptId,
     templateName,
     designResultJson,
-    adjustmentRequest: adjustmentRequest ?? null,
-    previousDraftJson: previousDraftJson ?? null,
-    userAnswersJson: userAnswersJson ?? null,
-    connectorSwapsJson: connectorSwapsJson ?? null,
+    adjustmentRequest: adjustmentRequest,
+    previousDraftJson: previousDraftJson,
+    userAnswersJson: userAnswersJson,
+    connectorSwapsJson: connectorSwapsJson,
   });
 
 export const getTemplateAdoptSnapshot = (adoptId: string) =>
@@ -53,7 +53,7 @@ export const cancelTemplateAdopt = (adoptId: string) =>
 export const confirmTemplateAdoptDraft = (draftJson: string, templateName?: string) =>
   invoke<TemplateAdoptConfirmResult>("confirm_template_adopt_draft", {
     draftJson,
-    templateName: templateName ?? null,
+    templateName: templateName,
   });
 
 export const generateTemplateAdoptQuestions = (

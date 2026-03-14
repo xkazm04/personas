@@ -188,7 +188,7 @@ function DatabaseRow({
                   value={schemaName || ''}
                   onChange={(e) => handleSetSchema(e.target.value)}
                   placeholder="public"
-                  className="w-full rounded-lg border border-primary/15 bg-background px-2.5 py-1.5 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="w-full rounded-lg border border-primary/15 bg-background px-2.5 py-1.5 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-ring"
                 />
               </div>
               <div className="space-y-1">
@@ -198,7 +198,7 @@ function DatabaseRow({
                   value={tableName || ''}
                   onChange={(e) => handleSetTable(e.target.value)}
                   placeholder="e.g. persona_data"
-                  className="w-full rounded-lg border border-primary/15 bg-background px-2.5 py-1.5 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="w-full rounded-lg border border-primary/15 bg-background px-2.5 py-1.5 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-ring"
                 />
               </div>
             </div>

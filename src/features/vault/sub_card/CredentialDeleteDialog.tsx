@@ -1,6 +1,8 @@
 import { AlertTriangle, Undo2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { BlastRadiusPanel, useBlastRadius } from '@/features/shared/components/display/BlastRadiusPanel';
+import { getCredentialBlastRadius } from '@/api/vault/credentials';
 import type { CredentialMetadata } from '@/lib/types/types';
 
 export interface DeleteConfirmState {
@@ -30,6 +32,12 @@ export function CredentialDeleteDialog({
   undoToast,
   onUndo,
 }: CredentialDeleteDialogProps) {
+  const credentialId = deleteConfirm?.credential?.id ?? '';
+  const { items: blastItems, loading: blastLoading } = useBlastRadius(
+    () => getCredentialBlastRadius(credentialId),
+    !!deleteConfirm && !!credentialId,
+  );
+
   return (
     <>
       {/* Delete Confirmation Dialog */}
@@ -61,20 +69,9 @@ export function CredentialDeleteDialog({
                 <span className="text-sm font-mono uppercase text-muted-foreground/80">Type</span>
                 <span className="text-sm font-mono text-muted-foreground/80">{deleteConfirm.credential.service_type}</span>
               </div>
-              {deleteConfirm.eventCount > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-mono uppercase text-muted-foreground/80">Event triggers</span>
-                  <span className="text-sm font-medium text-amber-400">
-                    {deleteConfirm.eventCount} will be removed
-                  </span>
-                </div>
-              )}
-              {deleteConfirm.eventCountVerified === false && (
-                <div className="text-sm text-amber-300/90">
-                  Could not verify event trigger count. Deletion may impact active automations.
-                </div>
-              )}
             </div>
+
+            <BlastRadiusPanel items={blastItems} loading={blastLoading} />
 
             <div className="flex items-center justify-end gap-2 pt-1">
               <button

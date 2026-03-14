@@ -3,7 +3,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { sendAppNotification } from '@/api/system/system';
-import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import type { ConnectorStatus, ConnectorReadiness } from './connectorTypes';
 import { deriveReadiness } from './connectorTypes';
@@ -30,10 +30,7 @@ export function useConnectorStatuses() {
     return [...types];
   }, [tools]);
 
-  const credentialLinks = useMemo(
-    () => parseDesignContext(selectedPersona?.design_context).credentialLinks ?? {},
-    [selectedPersona?.design_context],
-  );
+  const credentialLinks = useSelectedCredentialLinks();
 
   // Build connector statuses
   useEffect(() => {

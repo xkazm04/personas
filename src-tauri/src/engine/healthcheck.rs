@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 use std::net::IpAddr;
 
+use tracing;
+
+use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::connectors as connector_repo;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::DbPool;
@@ -32,10 +35,17 @@ pub async fn run_healthcheck(
 
     let fields = cred_repo::get_decrypted_fields(pool, &cred)?;
 
+    let _ = audit_log::log_decrypt(pool, credential_id, &cred.name, "healthcheck", None, None);
+
     let (connector, hc_config) = resolve_connector_healthcheck(pool, &cred.service_type, Some(&fields))?;
 
     // If the matched variant says to skip healthcheck, return success
     if hc_config.skip {
+        tracing::debug!(
+            credential_id = %credential_id,
+            service_type = %cred.service_type,
+            "healthcheck skipped: connection type does not support HTTP healthcheck"
+        );
         return Ok(HealthcheckResult {
             success: true,
             message: "Connection type does not support HTTP healthcheck -- credentials stored".into(),
@@ -47,7 +57,10 @@ pub async fn run_healthcheck(
     let token = strategy.resolve_auth_token(connector.metadata.as_deref(), &fields).await?
         .map(|r| r.token);
 
-    execute_healthcheck_request_with_strategy(strategy, &hc_config, &fields, token).await
+    execute_healthcheck_request_with_strategy(
+        strategy, &hc_config, &fields, token,
+        credential_id, &cred.service_type,
+    ).await
 }
 
 pub async fn run_healthcheck_with_fields(
@@ -59,6 +72,10 @@ pub async fn run_healthcheck_with_fields(
 
     // If the matched variant says to skip healthcheck, return success
     if hc_config.skip {
+        tracing::debug!(
+            service_type = %service_type,
+            "healthcheck skipped: connection type does not support HTTP healthcheck"
+        );
         return Ok(HealthcheckResult {
             success: true,
             message: "Connection type does not support HTTP healthcheck -- credentials stored".into(),
@@ -69,7 +86,10 @@ pub async fn run_healthcheck_with_fields(
     let token = strategy.resolve_auth_token(connector.metadata.as_deref(), fields).await?
         .map(|r| r.token);
 
-    execute_healthcheck_request_with_strategy(strategy, &hc_config, fields, token).await
+    execute_healthcheck_request_with_strategy(
+        strategy, &hc_config, fields, token,
+        "", service_type,
+    ).await
 }
 
 /// Try to find a matching auth_variant for the given fields and return its
@@ -293,6 +313,8 @@ async fn execute_healthcheck_request_with_strategy(
     hc_config: &HealthcheckConfig,
     fields: &HashMap<String, String>,
     token: Option<String>,
+    credential_id: &str,
+    service_type: &str,
 ) -> Result<HealthcheckResult, AppError> {
     let mut resolved_values = fields.clone();
     if let Some(ref tok) = token {
@@ -358,15 +380,34 @@ async fn execute_healthcheck_request_with_strategy(
         request = request.body(resolved_body);
     }
 
+    let start = std::time::Instant::now();
+
     match request.send().await {
         Ok(resp) => {
             let status = resp.status();
+            let latency_ms = start.elapsed().as_millis() as u64;
             if status.is_success() {
+                tracing::info!(
+                    credential_id = %credential_id,
+                    service_type = %service_type,
+                    http_status = status.as_u16(),
+                    latency_ms = latency_ms,
+                    success = true,
+                    "healthcheck passed"
+                );
                 Ok(HealthcheckResult {
                     success: true,
                     message: format!("Connection successful (HTTP {})", status.as_u16()),
                 })
             } else {
+                tracing::warn!(
+                    credential_id = %credential_id,
+                    service_type = %service_type,
+                    http_status = status.as_u16(),
+                    latency_ms = latency_ms,
+                    success = false,
+                    "healthcheck failed: HTTP error"
+                );
                 let msg = format!("Service returned HTTP {}", status.as_u16());
                 Ok(HealthcheckResult {
                     success: false,
@@ -375,6 +416,15 @@ async fn execute_healthcheck_request_with_strategy(
             }
         }
         Err(e) => {
+            let latency_ms = start.elapsed().as_millis() as u64;
+            tracing::warn!(
+                credential_id = %credential_id,
+                service_type = %service_type,
+                latency_ms = latency_ms,
+                success = false,
+                error = %e,
+                "healthcheck failed: connection error"
+            );
             let msg = format!("Connection failed: {e}");
             Ok(HealthcheckResult {
                 success: false,

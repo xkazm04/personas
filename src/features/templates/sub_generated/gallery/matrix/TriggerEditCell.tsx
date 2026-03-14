@@ -32,7 +32,7 @@ function TriggerPopup({
   const isPolling = trigger.trigger_type === 'polling';
 
   const inputClass =
-    'w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground/90 placeholder-muted-foreground/30 focus:outline-none focus:border-violet-500/30 transition-colors';
+    'w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground/90 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors';
 
   return (
     <div

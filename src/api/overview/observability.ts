@@ -13,8 +13,8 @@ import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardDa
 
 export const getMetricsSummary = (days?: number, personaId?: string) =>
   invoke<MetricsSummary>("get_metrics_summary", {
-    days: days ?? null,
-    personaId: personaId ?? null,
+    days: days,
+    personaId: personaId,
   });
 
 export const getMetricsChartData = (
@@ -22,14 +22,14 @@ export const getMetricsChartData = (
   personaId?: string,
 ) =>
   invoke<MetricsChartData>("get_metrics_chart_data", {
-    days: days ?? null,
-    personaId: personaId ?? null,
+    days: days,
+    personaId: personaId,
   });
 
 export const getPromptVersions = (personaId: string, limit?: number) =>
   invoke<PersonaPromptVersion[]>("get_prompt_versions", {
     personaId,
-    limit: limit ?? null,
+    limit: limit,
   });
 
 export const getAllMonthlySpend = () =>
@@ -42,7 +42,7 @@ export const getAllMonthlySpend = () =>
 export const getPromptPerformance = (personaId: string, days?: number) =>
   invoke<PromptPerformanceData>("get_prompt_performance", {
     personaId,
-    days: days ?? null,
+    days: days,
   });
 
 // ============================================================================
@@ -51,7 +51,7 @@ export const getPromptPerformance = (personaId: string, days?: number) =>
 
 export const getExecutionDashboard = (days?: number) =>
   invoke<ExecutionDashboardData>("get_execution_dashboard", {
-    days: days ?? null,
+    days: days,
   });
 
 // ============================================================================
@@ -67,7 +67,7 @@ export const rollbackPromptVersion = (versionId: string) =>
 export const getPromptErrorRate = (personaId: string, window?: number) =>
   invoke<number>("get_prompt_error_rate", {
     personaId,
-    window: window ?? null,
+    window: window,
   });
 
 export const runPromptAbTest = (
@@ -80,5 +80,5 @@ export const runPromptAbTest = (
     personaId,
     versionAId,
     versionBId,
-    testInput: testInput ?? null,
+    testInput: testInput,
   });

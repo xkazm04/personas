@@ -18,6 +18,8 @@ import {
   PersonaPromptEditor, PersonaSettingsTab, PersonaUseCasesTab,
   PersonaConnectorsTab, DesignTab, LabTab, PromptPerformanceCard, HealthTab,
 } from './EditorLazyTabs';
+import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
+import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
 
 export function EditorBody() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
@@ -48,6 +50,19 @@ export function EditorBody() {
   const { isDirty, dirtyTabs: allDirtyTabs, saveAll: saveAllTabs, cancelAll: cancelAllDebouncedSaves, clearAll: clearAllDirty } = useEditorDirtyState();
   const { undo, redo, clearHistory } = useEditorHistory();
 
+  // Global unsaved-changes guard for sidebar section navigation + window close
+  const guard = useUnsavedGuard(isDirty, {
+    onSave: async () => {
+      cancelAllDebouncedSaves();
+      await saveAllTabs();
+    },
+    onDiscard: () => {
+      cancelAllDebouncedSaves();
+      dirtyRef.current = false;
+      clearAllDirty();
+    },
+  });
+
   useEffect(() => {
     if (selectedPersona && !pendingPersonaId) {
       const d = buildDraft(selectedPersona);
@@ -73,12 +88,17 @@ export function EditorBody() {
   dirtyRef.current = isDirty;
 
   useEffect(() => {
+    let lastSeenId = useAgentStore.getState().selectedPersonaId;
     const unsub = useAgentStore.subscribe((state) => {
       const newId = state.selectedPersonaId;
-      if (newId !== prevPersonaIdRef.current && dirtyRef.current) {
+      if (newId === lastSeenId) return;
+      if (dirtyRef.current) {
         useAgentStore.setState({ selectedPersonaId: prevPersonaIdRef.current ?? null });
+        lastSeenId = prevPersonaIdRef.current ?? null;
         cancelAllDebouncedSaves();
         setPendingPersonaId(newId);
+      } else {
+        lastSeenId = newId;
       }
     });
     return unsub;
@@ -206,6 +226,13 @@ export function EditorBody() {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      <UnsavedChangesModal
+        isOpen={guard.isOpen}
+        onAction={guard.resolve}
+        changedSections={changedSections}
+        isSaving={isSaving}
+      />
     </ContentBox>
   );
 }

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, AlertTriangle, ShieldAlert, X } from 'lucide-react';
 import { useToastStore, MAX_VISIBLE_TOASTS } from '@/stores/toastStore';
 import type { StandardToast, HealingToast } from '@/stores/toastStore';
-import { useOverviewStore } from "@/stores/overviewStore";
+import { resolveError, friendlySeverity } from '@/lib/errors/errorRegistry';
 
 // ---------------------------------------------------------------------------
 // Severity styles (healing toasts)
@@ -47,6 +47,9 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
   const elapsedRef = useRef(0);
   const lastTickRef = useRef(Date.now());
 
+  const friendly = toast.type === 'error' ? resolveError(toast.message) : null;
+  const displayMessage = friendly?.message ?? toast.message;
+
   useEffect(() => {
     if (paused) return;
 
@@ -79,19 +82,24 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
         lastTickRef.current = Date.now();
         setPaused(false);
       }}
-      className={`pointer-events-auto rounded-xl border shadow-lg shadow-black/20 backdrop-blur-md overflow-hidden ${
+      className={`pointer-events-auto rounded-xl border shadow-elevation-3 backdrop-blur-md overflow-hidden ${
         toast.type === 'success'
           ? 'bg-emerald-950/90 border-emerald-500/25 text-emerald-300'
           : 'bg-red-950/90 border-red-500/25 text-red-300'
       }`}
     >
-      <div className="flex items-center gap-2.5 px-4 py-2.5">
+      <div className="flex items-start gap-2.5 px-4 py-2.5">
         {toast.type === 'success' ? (
-          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
         ) : (
-          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
         )}
-        <span className="text-sm font-medium whitespace-nowrap">{toast.message}</span>
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-medium block">{displayMessage}</span>
+          {friendly?.suggestion && (
+            <span className="text-xs opacity-70 block mt-0.5">{friendly.suggestion}</span>
+          )}
+        </div>
         <button
           onClick={() => onDismiss(toast.id)}
           className="ml-1 opacity-60 hover:opacity-100 transition-opacity flex-shrink-0"
@@ -124,13 +132,13 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
 // ---------------------------------------------------------------------------
 
 function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss: (id: string) => void }) {
-  const resolveHealingIssue = useOverviewStore((s) => s.resolveHealingIssue);
   const styles = SEVERITY_STYLES[toast.severity] ?? SEVERITY_STYLES.medium!;
 
   const handleResolve = useCallback(async () => {
-    await resolveHealingIssue(toast.issueId);
+    const { useOverviewStore } = await import("@/stores/overviewStore");
+    await useOverviewStore.getState().resolveHealingIssue(toast.issueId);
     onDismiss(toast.id);
-  }, [resolveHealingIssue, toast.issueId, toast.id, onDismiss]);
+  }, [toast.issueId, toast.id, onDismiss]);
 
   return (
     <motion.div
@@ -139,7 +147,7 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 10, scale: 0.95 }}
       transition={{ duration: 0.2, ease: EASE_CURVE }}
-      className={`pointer-events-auto rounded-xl border ${styles.border} bg-background/95 backdrop-blur-md shadow-lg shadow-black/20 overflow-hidden`}
+      className={`pointer-events-auto rounded-xl border ${styles.border} bg-background/95 backdrop-blur-md shadow-elevation-3 overflow-hidden`}
     >
       <div className="px-3.5 py-3 space-y-2">
         {/* Header */}
@@ -150,8 +158,8 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
               <span className="text-sm font-medium text-foreground/90 truncate">
                 {toast.message}
               </span>
-              <span className={`text-sm px-1.5 py-0.5 rounded border font-mono flex-shrink-0 ${styles.badge}`}>
-                {toast.severity}
+              <span className={`text-xs px-1.5 py-0.5 rounded border flex-shrink-0 ${styles.badge}`}>
+                {friendlySeverity(toast.severity)}
               </span>
             </div>
             <span className="text-sm text-muted-foreground/90 mt-0.5 block">

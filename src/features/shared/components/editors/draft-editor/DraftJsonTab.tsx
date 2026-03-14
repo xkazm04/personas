@@ -94,7 +94,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
           value={draftJson}
           onChange={(e) => handleChange(e.target.value)}
           onScroll={handleScroll}
-          className="relative w-full h-72 p-3 text-sm font-mono leading-relaxed resize-y bg-transparent text-transparent caret-foreground/80 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all whitespace-pre-wrap break-words"
+          className="relative w-full h-72 p-3 text-sm font-mono leading-relaxed resize-y bg-transparent text-transparent caret-foreground/80 focus-ring transition-all whitespace-pre-wrap break-words"
           style={{ caretColor: 'var(--foreground)' }}
           disabled={disabled}
           spellCheck={false}

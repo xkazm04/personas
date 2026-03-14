@@ -19,7 +19,7 @@ use crate::db::repos::core::{
 };
 use crate::db::repos::execution::{test_suites as suite_repo};
 use crate::db::repos::resources::{
-    connectors as connector_repo, credentials as cred_repo, teams as team_repo,
+    audit_log, connectors as connector_repo, credentials as cred_repo, teams as team_repo,
     tools as tool_repo, triggers as trigger_repo,
 };
 use crate::db::DbPool;
@@ -1253,6 +1253,7 @@ pub async fn export_credentials(
     for cred in &all_creds {
         let fields = cred_repo::get_decrypted_fields(pool, cred)
             .unwrap_or_default();
+        let _ = audit_log::log_decrypt(pool, &cred.id, &cred.name, "data_portability:export", None, None);
         entries.push(CredentialExportEntry {
             name: cred.name.clone(),
             service_type: cred.service_type.clone(),

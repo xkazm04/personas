@@ -8,7 +8,7 @@ import {
 } from '@/api/overview/observability';
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import { filterSortGroup, type TagFilter, type SortOrder, type DateGroup } from './promptLabUtils';
-import type { VersionAction } from '@/features/agents/sub_lab_shared';
+import type { VersionAction } from '@/features/agents/sub_lab/shared';
 
 export function usePromptVersions() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);

@@ -656,13 +656,19 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
 }
 
 /// Batch-fetch sidebar summary data (enabled trigger count + last execution time + health)
-/// for all personas in a single query, eliminating the N+1 IPC pattern.
+/// for all personas in a single CTE query, eliminating the N+1 per-persona health pattern.
+/// Previously ran 3 queries per persona (recent statuses, runs today, 7-day sparkline);
+/// now uses 1 base query + 3 batched queries across all personas.
 #[instrument(skip(pool))]
 pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
     let start = Instant::now();
     let conn = pool.get()?;
 
-    // Step 1: Basic summary (trigger counts + last run)
+    let today_start = chrono::Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap().to_string();
+    let week_ago = (chrono::Utc::now() - chrono::Duration::days(7)).to_rfc3339();
+    let today = chrono::Utc::now().date_naive();
+
+    // Query 1: Basic summary (trigger counts + last run) — 1 query for all personas
     let mut summary_stmt = conn.prepare(
         "SELECT
              p.id AS persona_id,
@@ -691,18 +697,115 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
     let base_rows: Vec<(String, i64, Option<String>)> =
         collect_rows(base_rows, "personas::get_summaries/base_rows");
 
-    // Step 2: Compute health for each persona from recent executions
-    let today_start = chrono::Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap().to_string();
-    let week_ago = (chrono::Utc::now() - chrono::Duration::days(7)).to_rfc3339();
+    // Query 2: Batched recent statuses — last 10 per persona using ROW_NUMBER window
+    let mut recent_stmt = conn.prepare(
+        "SELECT persona_id, status FROM (
+             SELECT persona_id, status,
+                    ROW_NUMBER() OVER (PARTITION BY persona_id ORDER BY created_at DESC) AS rn
+             FROM persona_executions
+         ) WHERE rn <= 10
+         ORDER BY persona_id, rn",
+    )?;
+    let recent_rows = recent_stmt.query_map([], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+    })?;
+    let mut recent_map: std::collections::HashMap<String, Vec<String>> =
+        std::collections::HashMap::new();
+    for row in collect_rows(recent_rows, "personas::get_summaries/recent_statuses") {
+        recent_map.entry(row.0).or_default().push(row.1);
+    }
 
+    // Query 3: Batched runs-today count — 1 query for all personas
+    let mut today_stmt = conn.prepare(
+        "SELECT persona_id, COUNT(*) AS cnt
+         FROM persona_executions
+         WHERE created_at >= ?1
+         GROUP BY persona_id",
+    )?;
+    let today_rows = today_stmt.query_map(params![today_start], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+    })?;
+    let today_map: std::collections::HashMap<String, i64> =
+        collect_rows(today_rows, "personas::get_summaries/runs_today")
+            .into_iter()
+            .collect();
+
+    // Query 4: Batched 7-day sparkline — 1 query for all personas
+    let mut sparkline_stmt = conn.prepare(
+        "SELECT persona_id, DATE(created_at) AS day, COUNT(*) AS cnt
+         FROM persona_executions
+         WHERE created_at >= ?1
+         GROUP BY persona_id, DATE(created_at)",
+    )?;
+    let spark_rows = sparkline_stmt.query_map(params![week_ago], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, i64>(2)?,
+        ))
+    })?;
+    let mut spark_map: std::collections::HashMap<String, std::collections::HashMap<String, i64>> =
+        std::collections::HashMap::new();
+    for (pid, day, cnt) in collect_rows(spark_rows, "personas::get_summaries/sparkline") {
+        spark_map.entry(pid).or_default().insert(day, cnt);
+    }
+
+    // Assemble results from the batched maps
     let mut summaries = Vec::with_capacity(base_rows.len());
     for (persona_id, enabled_trigger_count, last_run_at) in base_rows {
-        let health = compute_persona_health(&conn, &persona_id, &today_start, &week_ago)?;
+        let recent_statuses = recent_map.remove(&persona_id).unwrap_or_default();
+        let total_recent = recent_statuses.len() as i64;
+
+        let success_count = recent_statuses
+            .iter()
+            .filter(|s| s.as_str() == "completed")
+            .count() as f64;
+        let fail_count = recent_statuses
+            .iter()
+            .filter(|s| s.as_str() == "failed" || s.as_str() == "error")
+            .count() as f64;
+        let success_rate = if total_recent > 0 {
+            success_count / total_recent as f64
+        } else {
+            0.0
+        };
+
+        let status = if total_recent == 0 {
+            "dormant"
+        } else {
+            let fail_ratio = fail_count / total_recent as f64;
+            if fail_ratio == 0.0 {
+                "healthy"
+            } else if fail_ratio >= 0.6 {
+                "failing"
+            } else {
+                "degraded"
+            }
+        }
+        .to_string();
+
+        let runs_today = today_map.get(&persona_id).copied().unwrap_or(0);
+
+        let day_counts = spark_map.remove(&persona_id).unwrap_or_default();
+        let sparkline: Vec<i64> = (0..7)
+            .map(|days_ago| {
+                let day = (today - chrono::Duration::days(6 - days_ago)).to_string();
+                *day_counts.get(&day).unwrap_or(&0)
+            })
+            .collect();
+
         summaries.push(PersonaSummary {
             persona_id,
             enabled_trigger_count,
             last_run_at,
-            health,
+            health: PersonaHealth {
+                status,
+                recent_statuses,
+                success_rate,
+                total_recent,
+                runs_today,
+                sparkline,
+            },
         });
     }
 
@@ -713,105 +816,6 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
     }
 
     Ok(summaries)
-}
-
-/// Compute health data for a single persona from its recent executions.
-#[instrument(skip(conn, today_start, week_ago))]
-fn compute_persona_health(
-    conn: &rusqlite::Connection,
-    persona_id: &str,
-    today_start: &str,
-    week_ago: &str,
-) -> Result<PersonaHealth, AppError> {
-    let start = Instant::now();
-    // Recent statuses (last 10, newest first)
-    let mut status_stmt = conn.prepare_cached(
-        "SELECT status FROM persona_executions
-         WHERE persona_id = ?1
-         ORDER BY created_at DESC
-         LIMIT 10",
-    )?;
-    let status_rows = status_stmt.query_map(params![persona_id], |row| row.get(0))?;
-    let recent_statuses: Vec<String> =
-        collect_rows(status_rows, "personas::compute_persona_health/recent_statuses");
-
-    let total_recent = recent_statuses.len() as i64;
-
-    // Success rate
-    let success_count = recent_statuses
-        .iter()
-        .filter(|s| s.as_str() == "completed")
-        .count() as f64;
-    let fail_count = recent_statuses
-        .iter()
-        .filter(|s| s.as_str() == "failed" || s.as_str() == "error")
-        .count() as f64;
-    let success_rate = if total_recent > 0 {
-        success_count / total_recent as f64
-    } else {
-        0.0
-    };
-
-    // Health status derivation
-    let status = if total_recent == 0 {
-        "dormant"
-    } else {
-        let fail_ratio = fail_count / total_recent as f64;
-        if fail_ratio == 0.0 {
-            "healthy"
-        } else if fail_ratio >= 0.6 {
-            "failing"
-        } else {
-            "degraded"
-        }
-    }
-    .to_string();
-
-    // Runs today
-    let runs_today: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM persona_executions
-         WHERE persona_id = ?1 AND created_at >= ?2",
-        params![persona_id, today_start],
-        |row| row.get(0),
-    )?;
-
-    // 7-day sparkline: count executions per day for the last 7 days
-    let mut sparkline_stmt = conn.prepare_cached(
-        "SELECT DATE(created_at) AS day, COUNT(*) AS cnt
-         FROM persona_executions
-         WHERE persona_id = ?1 AND created_at >= ?2
-         GROUP BY DATE(created_at)",
-    )?;
-    let day_rows = sparkline_stmt.query_map(params![persona_id, week_ago], |row| {
-        Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
-    })?;
-    let day_counts: std::collections::HashMap<String, i64> =
-        collect_rows(day_rows, "personas::compute_persona_health/day_counts")
-            .into_iter()
-            .collect();
-
-    let today = chrono::Utc::now().date_naive();
-    let sparkline: Vec<i64> = (0..7)
-        .map(|days_ago| {
-            let day = (today - chrono::Duration::days(6 - days_ago)).to_string();
-            *day_counts.get(&day).unwrap_or(&0)
-        })
-        .collect();
-
-    let elapsed_ms = start.elapsed().as_millis() as u64;
-    tracing::debug!(elapsed_ms, persona_id, "personas::compute_persona_health");
-    if elapsed_ms > 100 {
-        tracing::warn!(elapsed_ms, persona_id, "personas::compute_persona_health exceeded 100ms threshold");
-    }
-
-    Ok(PersonaHealth {
-        status,
-        recent_statuses,
-        success_rate,
-        total_recent,
-        runs_today,
-        sparkline,
-    })
 }
 
 /// Duplicate a persona server-side, preserving the encrypted model_profile
@@ -846,6 +850,103 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let rows = conn.execute("DELETE FROM personas WHERE id = ?1", params![id])?;
     Ok(rows > 0)
+}
+
+/// Returns a summary of resources that will be affected by deleting a persona.
+#[instrument(skip(pool))]
+pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, AppError> {
+    let conn = pool.get()?;
+    let mut impacts: Vec<(String, String)> = Vec::new();
+
+    // Active automations
+    let active_automations: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM persona_automations WHERE persona_id = ?1 AND deployment_status = 'active'",
+            params![id],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    if active_automations > 0 {
+        impacts.push((
+            "automation".into(),
+            format!("{active_automations} active automation(s) will stop running"),
+        ));
+    }
+
+    // Triggers
+    let triggers: Vec<(String, String)> = {
+        let mut stmt = conn.prepare(
+            "SELECT trigger_type, name FROM persona_triggers WHERE persona_id = ?1",
+        )?;
+        stmt.query_map(params![id], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, Option<String>>(1)?.unwrap_or_default(),
+            ))
+        })?
+        .filter_map(|r| r.ok())
+        .collect()
+    };
+    let scheduled = triggers.iter().filter(|(t, _)| t == "schedule").count();
+    let webhook = triggers.iter().filter(|(t, _)| t == "webhook").count();
+    let other = triggers.len() - scheduled - webhook;
+    if scheduled > 0 {
+        impacts.push(("trigger".into(), format!("{scheduled} scheduled trigger(s) will be removed")));
+    }
+    if webhook > 0 {
+        impacts.push(("trigger".into(), format!("{webhook} webhook trigger(s) will be removed")));
+    }
+    if other > 0 {
+        impacts.push(("trigger".into(), format!("{other} other trigger(s) will be removed")));
+    }
+
+    // Event subscriptions
+    let subs: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM persona_event_subscriptions WHERE persona_id = ?1",
+            params![id],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    if subs > 0 {
+        impacts.push(("subscription".into(), format!("{subs} event subscription(s) will be removed")));
+    }
+
+    // Running executions
+    let running: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?1 AND status IN ('running', 'queued')",
+            params![id],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    if running > 0 {
+        impacts.push(("execution".into(), format!("{running} running/queued execution(s) will be cancelled")));
+    }
+
+    // Chain triggers referencing this persona
+    let chain_dependents: Vec<String> = {
+        let mut stmt = conn.prepare(
+            "SELECT DISTINCT p.name FROM persona_triggers pt
+             INNER JOIN personas p ON p.id = pt.persona_id
+             WHERE pt.trigger_type = 'chain' AND pt.config LIKE ?1 AND pt.persona_id != ?2",
+        )?;
+        let pattern = format!("%{}%", id);
+        stmt.query_map(params![pattern, id], |row| row.get::<_, String>(0))?
+            .filter_map(|r| r.ok())
+            .collect()
+    };
+    if !chain_dependents.is_empty() {
+        impacts.push((
+            "chain".into(),
+            format!(
+                "Agent(s) {} have chain triggers referencing this agent",
+                chain_dependents.join(", ")
+            ),
+        ));
+    }
+
+    Ok(impacts)
 }
 
 #[cfg(test)]

@@ -5,7 +5,13 @@ import type { ChatSession } from "@/lib/bindings/ChatSession";
 export const listChatSessions = (personaId: string, limit?: number) =>
   invoke<ChatSession[]>("list_chat_sessions", {
     personaId,
-    limit: limit ?? null,
+    limit: limit,
+  });
+
+export const createChatSession = (personaId: string, sessionId: string) =>
+  invoke<ChatSession>("create_chat_session", {
+    personaId,
+    sessionId,
   });
 
 export const getChatMessages = (
@@ -16,7 +22,7 @@ export const getChatMessages = (
   invoke<ChatMessage[]>("get_chat_messages", {
     personaId,
     sessionId,
-    limit: limit ?? null,
+    limit: limit,
   });
 
 export const createChatMessage = (input: {
@@ -33,8 +39,8 @@ export const createChatMessage = (input: {
       sessionId: input.sessionId,
       role: input.role,
       content: input.content,
-      executionId: input.executionId ?? null,
-      metadata: input.metadata ?? null,
+      executionId: input.executionId,
+      metadata: input.metadata,
     },
   });
 

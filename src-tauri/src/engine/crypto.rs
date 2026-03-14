@@ -892,51 +892,74 @@ pub fn migrate_plaintext_credentials(pool: &DbPool) -> Result<(usize, usize), Cr
         .map_err(|e| CryptoError::KeyManagement(format!("DB pool error: {e}")))?;
 
     // Collect plaintext rows before starting the transaction.
-    let rows: Vec<(String, String)> = {
+    let (rows, parse_failures): (Vec<(String, String)>, usize) = {
         let mut stmt = conn
             .prepare("SELECT id, encrypted_data FROM persona_credentials WHERE iv = ''")
             .map_err(|e| CryptoError::KeyManagement(format!("Query error: {e}")))?;
 
-        let result: Vec<(String, String)> = stmt
+        let mut result: Vec<(String, String)> = Vec::new();
+        let mut failures = 0usize;
+        for (idx, r) in stmt
             .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
             .map_err(|e| CryptoError::KeyManagement(format!("Query error: {e}")))?
-            .filter_map(|r| r.ok())
-            .collect();
-        result
+            .enumerate()
+        {
+            match r {
+                Ok(row) => result.push(row),
+                Err(e) => {
+                    failures += 1;
+                    tracing::error!(
+                        "migrate_plaintext_credentials: failed to parse row at index {}: {}",
+                        idx, e
+                    );
+                }
+            }
+        }
+        if failures > 0 {
+            tracing::warn!(
+                "migrate_plaintext_credentials: {} row(s) could not be read and remain unencrypted",
+                failures
+            );
+        }
+        (result, failures)
     };
 
-    if rows.is_empty() {
+    if rows.is_empty() && parse_failures == 0 {
         return Ok((0, 0));
     }
 
-    let tx = conn
-        .transaction()
-        .map_err(|e| CryptoError::KeyManagement(format!("Transaction begin error: {e}")))?;
+    if !rows.is_empty() {
+        let tx = conn
+            .transaction()
+            .map_err(|e| CryptoError::KeyManagement(format!("Transaction begin error: {e}")))?;
 
-    let mut migrated = 0;
+        let mut migrated = 0;
 
-    for (id, plaintext_data) in &rows {
-        let (ciphertext, nonce) = encrypt_for_db(plaintext_data).map_err(|e| {
-            tracing::error!("Failed to encrypt credential {}: {}", id, e);
-            e
-        })?;
+        for (id, plaintext_data) in &rows {
+            let (ciphertext, nonce) = encrypt_for_db(plaintext_data).map_err(|e| {
+                tracing::error!("Failed to encrypt credential {}: {}", id, e);
+                e
+            })?;
 
-        tx.execute(
-            "UPDATE persona_credentials SET encrypted_data = ?1, iv = ?2 WHERE id = ?3",
-            rusqlite::params![ciphertext, nonce, id],
-        )
-        .map_err(|e| {
-            tracing::error!("Failed to update credential {}: {}", id, e);
-            CryptoError::KeyManagement(format!("Update error for credential {id}: {e}"))
-        })?;
+            tx.execute(
+                "UPDATE persona_credentials SET encrypted_data = ?1, iv = ?2 WHERE id = ?3",
+                rusqlite::params![ciphertext, nonce, id],
+            )
+            .map_err(|e| {
+                tracing::error!("Failed to update credential {}: {}", id, e);
+                CryptoError::KeyManagement(format!("Update error for credential {id}: {e}"))
+            })?;
 
-        migrated += 1;
+            migrated += 1;
+        }
+
+        tx.commit()
+            .map_err(|e| CryptoError::KeyManagement(format!("Transaction commit error: {e}")))?;
+
+        return Ok((migrated, parse_failures));
     }
 
-    tx.commit()
-        .map_err(|e| CryptoError::KeyManagement(format!("Transaction commit error: {e}")))?;
-
-    Ok((migrated, 0))
+    Ok((0, parse_failures))
 }
 
 // ---------------------------------------------------------------------------
@@ -961,7 +984,7 @@ pub fn migrate_plaintext_notification_secrets(pool: &DbPool) -> Result<(usize, u
         .get()
         .map_err(|e| CryptoError::KeyManagement(format!("DB pool error: {e}")))?;
 
-    let rows: Vec<(String, String)> = {
+    let (rows, parse_failures): (Vec<(String, String)>, usize) = {
         let mut stmt = conn
             .prepare(
                 "SELECT id, notification_channels FROM personas \
@@ -969,13 +992,34 @@ pub fn migrate_plaintext_notification_secrets(pool: &DbPool) -> Result<(usize, u
             )
             .map_err(|e| CryptoError::KeyManagement(format!("Query error: {e}")))?;
 
-        stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+        let mut result: Vec<(String, String)> = Vec::new();
+        let mut failures = 0usize;
+        for (idx, r) in stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
             .map_err(|e| CryptoError::KeyManagement(format!("Query error: {e}")))?
-            .filter_map(|r| r.ok())
-            .collect()
+            .enumerate()
+        {
+            match r {
+                Ok(row) => result.push(row),
+                Err(e) => {
+                    failures += 1;
+                    tracing::error!(
+                        "migrate_plaintext_notification_secrets: failed to parse row at index {}: {}",
+                        idx, e
+                    );
+                }
+            }
+        }
+        if failures > 0 {
+            tracing::warn!(
+                "migrate_plaintext_notification_secrets: {} row(s) could not be read and remain unencrypted",
+                failures
+            );
+        }
+        (result, failures)
     };
 
-    if rows.is_empty() {
+    if rows.is_empty() && parse_failures == 0 {
         return Ok((0, 0));
     }
 
@@ -984,14 +1028,15 @@ pub fn migrate_plaintext_notification_secrets(pool: &DbPool) -> Result<(usize, u
         .map_err(|e| CryptoError::KeyManagement(format!("Transaction begin error: {e}")))?;
 
     let mut migrated = 0;
-    let mut skipped = 0;
+    let mut skipped = parse_failures;
 
     for (id, channels_json) in &rows {
-        let mut channels: Vec<serde_json::Value> = match serde_json::from_str(channels_json) {
+        let channels_orig: Vec<serde_json::Value> = match serde_json::from_str(channels_json) {
             Ok(v) => v,
             Err(_) => { skipped += 1; continue; }
         };
 
+        let mut channels = channels_orig.clone();
         let mut any_encrypted = false;
         for ch in channels.iter_mut() {
             let config = match ch.get_mut("config").and_then(|c| c.as_object_mut()) {

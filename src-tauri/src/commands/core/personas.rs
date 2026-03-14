@@ -1,9 +1,18 @@
 use std::sync::Arc;
+use serde::Serialize;
 use tauri::State;
+use ts_rs::TS;
 
-use crate::db::models::{CreatePersonaInput, Persona, PersonaSummary, UpdateExecutionStatus, UpdatePersonaInput};
+use crate::db::models::{
+    CreatePersonaInput, Persona, PersonaAutomation, PersonaEventSubscription, PersonaSummary,
+    PersonaToolDefinition, PersonaTrigger, UpdateExecutionStatus, UpdatePersonaInput,
+};
+use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::personas as repo;
 use crate::db::repos::execution::executions as exec_repo;
+use crate::db::repos::resources::automations as automation_repo;
+use crate::db::repos::resources::tools as tool_repo;
+use crate::db::repos::resources::triggers as trigger_repo;
 use crate::engine::types::ExecutionState;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -55,6 +64,62 @@ pub fn get_persona_summaries(
 ) -> Result<Vec<PersonaSummary>, AppError> {
     require_auth_sync(&state)?;
     repo::get_summaries(&state.db)
+}
+
+/// Batched persona detail: persona + tools + triggers + subscriptions + automations
+/// in a single IPC round trip.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PersonaDetail {
+    #[serde(flatten)]
+    pub persona: Persona,
+    pub tools: Vec<PersonaToolDefinition>,
+    pub triggers: Vec<PersonaTrigger>,
+    pub subscriptions: Vec<PersonaEventSubscription>,
+    pub automations: Vec<PersonaAutomation>,
+}
+
+#[tauri::command]
+pub fn get_persona_detail(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<PersonaDetail, AppError> {
+    require_auth_sync(&state)?;
+    let persona = repo::get_by_id(&state.db, &id)?;
+    let tools = tool_repo::get_all_definitions(&state.db).unwrap_or_default();
+    let triggers = trigger_repo::get_by_persona_id(&state.db, &id).unwrap_or_default();
+    let subscriptions = event_repo::get_subscriptions_by_persona(&state.db, &id).unwrap_or_default();
+    let automations = automation_repo::get_by_persona(&state.db, &id).unwrap_or_default();
+    Ok(PersonaDetail {
+        persona,
+        tools,
+        triggers,
+        subscriptions,
+        automations,
+    })
+}
+
+/// Pre-delete impact summary for a persona.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct BlastRadiusItem {
+    pub category: String,
+    pub description: String,
+}
+
+#[tauri::command]
+pub fn persona_blast_radius(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<Vec<BlastRadiusItem>, AppError> {
+    require_auth_sync(&state)?;
+    let items = repo::blast_radius(&state.db, &id)?;
+    Ok(items
+        .into_iter()
+        .map(|(category, description)| BlastRadiusItem { category, description })
+        .collect())
 }
 
 #[tauri::command]

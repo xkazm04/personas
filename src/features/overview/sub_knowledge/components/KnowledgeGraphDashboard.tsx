@@ -8,7 +8,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { OverviewStatCard } from '@/features/overview/sub_observability/components/OverviewStatCard';
-import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { KNOWLEDGE_TYPES, SCOPE_TYPES } from '../libs/knowledgeHelpers';
 import { KnowledgeRow } from './KnowledgeRow';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
@@ -25,7 +25,8 @@ export default function KnowledgeGraphDashboard() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [showAnnotateModal, setShowAnnotateModal] = useState(false);
-  const { failureDrilldownDate, setFailureDrilldownDate } = useOverviewFilters();
+  const { failureDrilldownDate } = useOverviewFilterValues();
+  const { setFailureDrilldownDate } = useOverviewFilterActions();
 
   useEffect(() => {
     if (failureDrilldownDate) setSelectedType('failure_pattern');

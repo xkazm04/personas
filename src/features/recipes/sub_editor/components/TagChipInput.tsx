@@ -67,7 +67,7 @@ export function TagChipInput({ tags, onChange }: TagChipInputProps) {
         onKeyDown={handleKeyDown}
         onBlur={() => { if (input.trim()) addTag(input); }}
         placeholder={tags.length === 0 ? 'Type tag and press Enter...' : ''}
-        className="flex-1 min-w-[80px] bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none py-0.5"
+        className="flex-1 min-w-[80px] bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none py-0.5"
       />
     </div>
   );

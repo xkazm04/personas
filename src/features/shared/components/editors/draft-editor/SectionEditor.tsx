@@ -109,7 +109,7 @@ export function SectionEditor({ value, onChange, label, placeholder, disabled }:
               disabled={disabled}
               placeholder={placeholder}
               spellCheck={false}
-              className="relative z-10 w-full h-full px-4 py-3 text-sm font-mono leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="relative z-10 w-full h-full px-4 py-3 text-sm font-mono leading-relaxed resize-none focus-ring"
               style={{
                 background: 'transparent',
                 color: 'transparent',

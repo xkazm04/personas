@@ -18,11 +18,11 @@ export const listTeamMemories = (
 ) =>
   invoke<TeamMemory[]>("list_team_memories", {
     teamId,
-    runId: runId ?? null,
-    category: category ?? null,
-    search: search ?? null,
-    limit: limit ?? null,
-    offset: offset ?? null,
+    runId: runId,
+    category: category,
+    search: search,
+    limit: limit,
+    offset: offset,
   });
 
 export const createTeamMemory = (input: CreateTeamMemoryInput) =>
@@ -40,10 +40,10 @@ export const updateTeamMemory = (
 ) =>
   invoke<TeamMemory>("update_team_memory", {
     id,
-    title: title ?? null,
-    content: content ?? null,
-    category: category ?? null,
-    importance: importance ?? null,
+    title: title,
+    content: content,
+    category: category,
+    importance: importance,
   });
 
 export const updateTeamMemoryImportance = (id: string, importance: number) =>
@@ -55,15 +55,15 @@ export const batchDeleteTeamMemories = (ids: string[]) =>
 export const getTeamMemoryCount = (teamId: string, runId?: string, category?: string) =>
   invoke<number>("get_team_memory_count", {
     teamId,
-    runId: runId ?? null,
-    category: category ?? null,
+    runId: runId,
+    category: category,
   });
 
 export const getTeamMemoryStats = (teamId: string, category?: string, search?: string) =>
   invoke<TeamMemoryStats>("get_team_memory_stats", {
     teamId,
-    category: category ?? null,
-    search: search ?? null,
+    category: category,
+    search: search,
   });
 
 export const listTeamMemoriesByRun = (runId: string) =>

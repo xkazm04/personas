@@ -104,17 +104,17 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
       {/* Content -- lazy mount on first visit, keep mounted to preserve state */}
       <div className="flex-1 min-h-0 relative">
         {visited.has('tables') && (
-          <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'tables' ? '' : 'hidden'}`}>
+          <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'tables' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
             <TablesTab credentialId={credential.id} serviceType={credential.service_type} />
           </div>
         )}
         {visited.has('queries') && (
-          <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'queries' ? '' : 'hidden'}`}>
+          <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'queries' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
             <QueriesTab credentialId={credential.id} language={queryLanguage} serviceType={credential.service_type} />
           </div>
         )}
         {visited.has('console') && (
-          <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'console' ? '' : 'hidden'}`}>
+          <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'console' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
             <ConsoleTab credentialId={credential.id} language={queryLanguage} />
           </div>
         )}

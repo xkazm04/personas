@@ -1,9 +1,12 @@
-import type { SidebarSection } from '@/lib/types/types';
+import type { SidebarSection, CredentialMetadata } from '@/lib/types/types';
 import type { Persona } from '@/lib/bindings/Persona';
+import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
+import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
+import type { TriggerChainLink } from '@/lib/bindings/TriggerChainLink';
 
 // -- Types -------------------------------------------------------------
 
-export type ResultKind = 'agent' | 'navigation' | 'action';
+export type ResultKind = 'agent' | 'credential' | 'template' | 'trigger' | 'automation' | 'navigation' | 'action';
 
 export interface PaletteItem {
   id: string;
@@ -55,7 +58,7 @@ export function getRecentAgentIds(): string[] {
   return recentAgentIds;
 }
 
-// -- Agent item builder ------------------------------------------------
+// -- Item builders -----------------------------------------------------
 
 export function agentItem(
   p: Persona,
@@ -72,5 +75,65 @@ export function agentItem(
     description: p.group_id ? groupMap[p.group_id] : undefined,
     icon: p.enabled ? BotIcon : PowerIcon,
     onSelect: () => { setSidebarSection('personas'); selectPersona(p.id); },
+  };
+}
+
+export function credentialItem(
+  c: CredentialMetadata,
+  setSidebarSection: (s: SidebarSection) => void,
+  icon: React.ReactNode,
+): PaletteItem {
+  return {
+    id: `cred:${c.id}`,
+    kind: 'credential',
+    label: c.name,
+    description: c.service_type,
+    icon,
+    onSelect: () => setSidebarSection('credentials'),
+  };
+}
+
+export function templateItem(
+  r: RecipeDefinition,
+  setSidebarSection: (s: SidebarSection) => void,
+  icon: React.ReactNode,
+): PaletteItem {
+  return {
+    id: `template:${r.id}`,
+    kind: 'template',
+    label: r.name,
+    description: r.category ?? undefined,
+    icon,
+    onSelect: () => setSidebarSection('design-reviews'),
+  };
+}
+
+export function automationItem(
+  a: PersonaAutomation,
+  setSidebarSection: (s: SidebarSection) => void,
+  icon: React.ReactNode,
+): PaletteItem {
+  return {
+    id: `automation:${a.id}`,
+    kind: 'automation',
+    label: a.name,
+    description: a.platform,
+    icon,
+    onSelect: () => setSidebarSection('events'),
+  };
+}
+
+export function triggerItem(
+  t: TriggerChainLink,
+  setSidebarSection: (s: SidebarSection) => void,
+  icon: React.ReactNode,
+): PaletteItem {
+  return {
+    id: `trigger:${t.trigger_id}`,
+    kind: 'trigger',
+    label: `${t.source_persona_name} → ${t.target_persona_name}`,
+    description: t.condition_type,
+    icon,
+    onSelect: () => setSidebarSection('events'),
   };
 }

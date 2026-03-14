@@ -36,7 +36,7 @@ export function BudgetControls({
             const n = parseFloat(e.target.value);
             onMaxBudgetChange(Number.isNaN(n) ? '' : n);
           }}
-          placeholder="No limit"
+          placeholder="Monthly budget in USD — e.g. 25.00"
           min={0}
           step={0.01}
           className={INPUT_FIELD}
@@ -59,7 +59,7 @@ export function BudgetControls({
             const n = parseInt(e.target.value, 10);
             onMaxTurnsChange(Number.isNaN(n) ? '' : n);
           }}
-          placeholder="No limit"
+          placeholder="Max round-trips — e.g. 5"
           min={1}
           step={1}
           className={INPUT_FIELD}

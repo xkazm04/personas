@@ -31,6 +31,10 @@ export const patchCredentialMetadata = (credentialId: string, patch: Record<stri
 export const deleteCredential = (id: string) =>
   invoke<boolean>("delete_credential", { id });
 
+import type { BlastRadiusItem } from "@/api/agents/personas";
+export const getCredentialBlastRadius = (id: string) =>
+  invoke<BlastRadiusItem[]>("credential_blast_radius", { id });
+
 export const listCredentialEvents = (credentialId: string) =>
   invoke<CredentialEvent[]>("list_credential_events", { credentialId });
 

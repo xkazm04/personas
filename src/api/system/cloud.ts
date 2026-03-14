@@ -61,7 +61,7 @@ export const cloudOAuthDisconnect = () =>
 // Deployments
 
 export const cloudDeployPersona = (personaId: string, maxMonthlyBudgetUsd?: number) =>
-  invoke<CloudDeployment>("cloud_deploy_persona", { personaId, maxMonthlyBudgetUsd: maxMonthlyBudgetUsd ?? null });
+  invoke<CloudDeployment>("cloud_deploy_persona", { personaId, maxMonthlyBudgetUsd: maxMonthlyBudgetUsd });
 
 export const cloudListDeployments = () =>
   invoke<CloudDeployment[]>("cloud_list_deployments");
@@ -90,16 +90,16 @@ export const cloudRespondToReview = (executionId: string, reviewId: string, deci
 
 export const cloudListExecutions = (personaId?: string, status?: string, limit?: number, offset?: number) =>
   invoke<CloudExecution[]>("cloud_list_executions", {
-    personaId: personaId ?? null,
-    status: status ?? null,
-    limit: limit ?? null,
-    offset: offset ?? null,
+    personaId: personaId,
+    status: status,
+    limit: limit,
+    offset: offset,
   });
 
 export const cloudExecutionStats = (personaId?: string, periodDays?: number) =>
   invoke<CloudExecutionStats>("cloud_execution_stats", {
-    personaId: personaId ?? null,
-    periodDays: periodDays ?? null,
+    personaId: personaId,
+    periodDays: periodDays,
   });
 
 // Cloud Triggers (schedules, webhooks, etc.)
@@ -117,9 +117,9 @@ export const cloudCreateTrigger = (
   invoke<CloudTrigger>("cloud_create_trigger", {
     personaId,
     triggerType,
-    config: config ?? null,
-    enabled: enabled ?? null,
-    useCaseId: useCaseId ?? null,
+    config: config,
+    enabled: enabled,
+    useCaseId: useCaseId,
   });
 
 export const cloudUpdateTrigger = (
@@ -130,9 +130,9 @@ export const cloudUpdateTrigger = (
 ) =>
   invoke<CloudTrigger>("cloud_update_trigger", {
     triggerId,
-    triggerType: triggerType ?? null,
-    config: config ?? null,
-    enabled: enabled ?? null,
+    triggerType: triggerType,
+    config: config,
+    enabled: enabled,
   });
 
 export const cloudDeleteTrigger = (triggerId: string) =>
@@ -141,5 +141,5 @@ export const cloudDeleteTrigger = (triggerId: string) =>
 export const cloudListTriggerFirings = (triggerId: string, limit?: number) =>
   invoke<CloudTriggerFiring[]>("cloud_list_trigger_firings", {
     triggerId,
-    limit: limit ?? null,
+    limit: limit,
   });

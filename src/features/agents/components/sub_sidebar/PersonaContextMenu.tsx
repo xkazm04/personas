@@ -2,10 +2,13 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useViewportClampFixed } from '@/hooks/utility/interaction/useViewportClamp';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cpu, Copy, Power, PowerOff, Trash2, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Cpu, Copy, Power, PowerOff, Trash2, ChevronRight } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import { Button } from '@/features/shared/components/buttons';
+import { BaseModal } from '@/lib/ui/BaseModal';
+import { BlastRadiusPanel, useBlastRadius } from '@/features/shared/components/display/BlastRadiusPanel';
+import { getPersonaBlastRadius } from '@/api/agents/personas';
 import type { Persona } from '@/lib/types/types';
 import { quickModelToProfile, currentModelValue } from './quickModelUtils';
 import { ModelSubmenu } from './ModelSubmenu';
@@ -33,9 +36,14 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
   const addToast = useToastStore((s) => s.addToast);
 
   const [showModelSub, setShowModelSub] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const modelItemRef = useRef<HTMLButtonElement>(null);
   const subMenuRef = useRef<HTMLDivElement>(null);
+
+  const { items: blastItems, loading: blastLoading } = useBlastRadius(
+    () => getPersonaBlastRadius(persona.id),
+    showDeleteModal,
+  );
 
   const getMainItems = useCallback(() => {
     if (!menuRef.current) return [] as HTMLButtonElement[];
@@ -82,14 +90,21 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
     onClose();
   }, [persona.id, duplicatePersona, selectPersona, addToast, onClose]);
 
-  const handleDelete = useCallback(async () => {
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      return;
+  const handleDeleteClick = useCallback(() => {
+    setShowDeleteModal(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    try {
+      await deletePersona(persona.id);
+      setShowDeleteModal(false);
+      onClose();
+    } catch {
+      addToast('Failed to delete agent', 'error');
+      setShowDeleteModal(false);
+      onClose();
     }
-    await deletePersona(persona.id);
-    onClose();
-  }, [confirmDelete, persona.id, deletePersona, onClose]);
+  }, [persona.id, deletePersona, onClose, addToast]);
 
   // Submenu positioning
   const [subPos, setSubPos] = useState<{ left: number; top: number } | null>(null);
@@ -111,7 +126,7 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
   useEffect(() => {
     const items = getMainItems();
     items[0]?.focus();
-  }, [getMainItems, confirmDelete]);
+  }, [getMainItems]);
 
   const handleMenuKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Escape') {
@@ -161,7 +176,7 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.1 }}
-      className="fixed z-100 w-44 py-1 bg-background/95 backdrop-blur-md border border-primary/20 rounded-lg shadow-xl origin-top-left"
+      className="fixed z-100 w-44 py-1 glass-md rounded-lg shadow-xl origin-top-left"
       style={{ left: pos.x, top: pos.y }}
       role="menu"
       aria-label={`Actions for ${persona.name}`}
@@ -197,18 +212,48 @@ export function PersonaContextMenu({ state, onClose }: PersonaContextMenuProps) 
 
       <div className="my-1 border-t border-primary/10" />
 
-      {!confirmDelete ? (
-        <Button variant="ghost" size="sm" onClick={handleDelete} className="w-full px-3 py-1.5 text-left justify-start gap-2 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 rounded-none" role="menuitem" data-menuitem="true">
-          <Trash2 className="w-3.5 h-3.5" /><span>Delete</span>
-        </Button>
-      ) : (
-        <div className="px-2 py-1.5 flex items-center gap-1.5">
-          <AlertTriangle className="w-3.5 h-3.5 text-amber-400/80 shrink-0" />
-          <span className="text-sm text-amber-400/80 shrink-0">Sure?</span>
-          <Button variant="danger" size="xs" onClick={handleDelete} className="flex-1" role="menuitem" data-menuitem="true">Delete</Button>
-          <Button variant="secondary" size="xs" onClick={() => setConfirmDelete(false)} role="menuitem" data-menuitem="true">No</Button>
+      <Button variant="ghost" size="sm" onClick={handleDeleteClick} className="w-full px-3 py-1.5 text-left justify-start gap-2 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 rounded-none" role="menuitem" data-menuitem="true">
+        <Trash2 className="w-3.5 h-3.5" /><span>Delete</span>
+      </Button>
+
+      <BaseModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        titleId="delete-persona-dialog"
+        maxWidthClass="max-w-sm"
+        panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden"
+      >
+        <div className="p-4 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
+              <Trash2 className="w-5 h-5 text-red-400" />
+            </div>
+            <div>
+              <h3 id="delete-persona-dialog" className="text-sm font-semibold text-foreground/90">Delete Agent</h3>
+              <p className="text-sm text-muted-foreground/90 mt-1">
+                Permanently delete <span className="font-medium">{persona.name}</span> and all associated data.
+              </p>
+            </div>
+          </div>
+
+          <BlastRadiusPanel items={blastItems} loading={blastLoading} />
+
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              className="px-4 py-2 text-sm text-muted-foreground/80 hover:text-foreground/95 rounded-xl hover:bg-secondary/40 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmDelete}
+              className="px-4 py-2 text-sm font-medium rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+            >
+              Delete
+            </button>
+          </div>
         </div>
-      )}
+      </BaseModal>
 
       <AnimatePresence>
         {showModelSub && subPos && (

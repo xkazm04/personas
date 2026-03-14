@@ -228,7 +228,7 @@ pub struct ToolCallStep {
 }
 
 /// Execution result
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 #[allow(dead_code)] // Fields populated by runner, consumed by later phases
 pub struct ExecutionResult {
     pub success: bool,

@@ -122,12 +122,12 @@ export const startN8nTransformBackground = (
     workflowName,
     workflowJson,
     parserResultJson,
-    adjustmentRequest: adjustmentRequest ?? null,
-    previousDraftJson: previousDraftJson ?? null,
-    connectorsJson: connectorsJson ?? null,
-    credentialsJson: credentialsJson ?? null,
-    userAnswersJson: userAnswersJson ?? null,
-    sessionId: sessionId ?? null,
+    adjustmentRequest: adjustmentRequest,
+    previousDraftJson: previousDraftJson,
+    connectorsJson: connectorsJson,
+    credentialsJson: credentialsJson,
+    userAnswersJson: userAnswersJson,
+    sessionId: sessionId,
   });
 
 export const getN8nTransformSnapshot = (transformId: string) =>
@@ -140,7 +140,7 @@ export const cancelN8nTransform = (transformId: string) =>
   invoke<void>("cancel_n8n_transform", { transformId });
 
 export const confirmN8nPersonaDraft = (draftJson: string, sessionId?: string | null) =>
-  invoke<{ persona: Persona }>("confirm_n8n_persona_draft", { draftJson, sessionId: sessionId ?? null });
+  invoke<{ persona: Persona }>("confirm_n8n_persona_draft", { draftJson, sessionId: sessionId });
 
 export const continueN8nTransform = (
   transformId: string,
@@ -150,7 +150,7 @@ export const continueN8nTransform = (
   invoke<{ transform_id: string }>("continue_n8n_transform", {
     transformId,
     userAnswersJson,
-    sessionId: sessionId ?? null,
+    sessionId: sessionId,
   });
 
 // ============================================================================

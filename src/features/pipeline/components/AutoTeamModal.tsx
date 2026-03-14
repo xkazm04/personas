@@ -98,7 +98,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 onChange={(e) => at.setQuery(e.target.value)}
                 disabled={isWorking || at.phase === 'done'}
                 placeholder="What do you want the team to do?"
-                className="w-full px-4 py-3 rounded-xl bg-secondary/30 border border-primary/15 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/25 disabled:opacity-60 pr-10"
+                className="w-full px-4 py-3 rounded-xl bg-secondary/30 border border-primary/15 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500/25 disabled:opacity-60 pr-10"
               />
               {at.phase === 'idle' && at.query.trim() && (
                 <Button

@@ -69,7 +69,7 @@ export function SearchTab({ kb }: SearchTabProps) {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask a question or describe what you're looking for..."
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-secondary/30 border border-primary/15 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/20 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-secondary/30 border border-primary/15 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
               autoFocus
             />
           </div>

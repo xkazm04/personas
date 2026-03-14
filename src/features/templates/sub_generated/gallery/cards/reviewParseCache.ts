@@ -36,7 +36,7 @@ export function getCachedDesignResult(review: PersonaDesignReview): AgentIR | nu
   return cached.designResult;
 }
 
-export type ViewMode = 'list' | 'explore';
+export type { TemplateViewMode as ViewMode } from '@/lib/constants/uiModes';
 
 export type TemplateModal =
   | { type: 'adopt'; review: PersonaDesignReview }

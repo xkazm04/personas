@@ -11,8 +11,8 @@ import type { ReviewMessage } from "@/lib/bindings/ReviewMessage";
 
 export const listDesignReviews = (testRunId?: string, limit?: number) =>
   invoke<PersonaDesignReview[]>("list_design_reviews", {
-    testRunId: testRunId ?? null,
-    limit: limit ?? null,
+    testRunId: testRunId,
+    limit: limit,
   });
 
 export const getDesignReview = (id: string) =>
@@ -33,7 +33,7 @@ export const cancelDesignReviewRun = (runId: string) =>
 export const rebuildDesignReview = (id: string, userInstruction?: string) =>
   invoke<{ rebuild_id: string }>("rebuild_design_review", {
     id,
-    userInstruction: userInstruction ?? null,
+    userInstruction: userInstruction,
   });
 
 export const getRebuildSnapshot = (rebuildId: string) =>
@@ -72,15 +72,15 @@ export interface ReviewQueryParams {
 
 export const listDesignReviewsPaginated = (params: ReviewQueryParams) =>
   invoke<PaginatedReviewsResult>("list_design_reviews_paginated", {
-    search: params.search ?? null,
-    connectorFilter: params.connectorFilter ?? null,
-    categoryFilter: params.categoryFilter ?? null,
-    sortBy: params.sortBy ?? null,
-    sortDir: params.sortDir ?? null,
+    search: params.search,
+    connectorFilter: params.connectorFilter,
+    categoryFilter: params.categoryFilter,
+    sortBy: params.sortBy,
+    sortDir: params.sortDir,
     page: params.page ?? 0,
     perPage: params.perPage ?? 10,
-    coverageFilter: params.coverageFilter ?? null,
-    coverageServiceTypes: params.coverageServiceTypes ?? null,
+    coverageFilter: params.coverageFilter,
+    coverageServiceTypes: params.coverageServiceTypes,
   });
 
 export interface ConnectorWithCount {
@@ -113,7 +113,7 @@ export const backfillRelatedTools = () =>
 
 export const getTrendingTemplates = (limit?: number) =>
   invoke<PersonaDesignReview[]>("get_trending_templates", {
-    limit: limit ?? null,
+    limit: limit,
   });
 
 // ============================================================================
@@ -142,8 +142,8 @@ export const importDesignReview = (input: {
 
 export const listManualReviews = (personaId?: string, status?: string) =>
   invoke<PersonaManualReview[]>("list_manual_reviews", {
-    personaId: personaId ?? null,
-    status: status ?? null,
+    personaId: personaId,
+    status: status,
   });
 
 export const updateManualReviewStatus = (
@@ -154,12 +154,12 @@ export const updateManualReviewStatus = (
   invoke<PersonaManualReview>("update_manual_review_status", {
     id,
     status,
-    reviewerNotes: reviewerNotes ?? null,
+    reviewerNotes: reviewerNotes,
   });
 
 export const getPendingReviewCount = (personaId?: string) =>
   invoke<number>("get_pending_review_count", {
-    personaId: personaId ?? null,
+    personaId: personaId,
   });
 
 // ============================================================================
@@ -179,7 +179,7 @@ export const addReviewMessage = (
     reviewId,
     role,
     content,
-    metadata: metadata ?? null,
+    metadata: metadata,
   });
 
 export const seedMockManualReview = () =>

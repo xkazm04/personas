@@ -9,8 +9,8 @@ import type { PersonaMessageDelivery } from "@/lib/bindings/PersonaMessageDelive
 
 export const listMessages = (limit?: number, offset?: number) =>
   invoke<PersonaMessage[]>("list_messages", {
-    limit: limit ?? null,
-    offset: offset ?? null,
+    limit: limit,
+    offset: offset,
   });
 
 export const getMessage = (id: string) =>
@@ -21,7 +21,7 @@ export const markMessageRead = (id: string) =>
 
 export const markAllMessagesRead = (personaId?: string) =>
   invoke<void>("mark_all_messages_read", {
-    personaId: personaId ?? null,
+    personaId: personaId,
   });
 
 export const deleteMessage = (id: string) =>
@@ -35,3 +35,6 @@ export const getMessageCount = () =>
 
 export const getMessageDeliveries = (messageId: string) =>
   invoke<PersonaMessageDelivery[]>("get_message_deliveries", { messageId });
+
+export const seedMockMessage = () =>
+  invoke<PersonaMessage>("seed_mock_message", {});

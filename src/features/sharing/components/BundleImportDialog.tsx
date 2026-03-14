@@ -573,7 +573,7 @@ function BundlePreviewContent({
                 value={renamePrefix}
                 onChange={(e) => setRenamePrefix(e.target.value)}
                 placeholder="e.g. imported-"
-                className="w-full px-2 py-1 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className="w-full px-2 py-1 text-xs rounded-lg border border-border bg-background focus-ring"
               />
             </div>
           )}

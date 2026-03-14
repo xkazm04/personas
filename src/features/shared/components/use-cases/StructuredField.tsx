@@ -33,7 +33,7 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
             type="number"
             value={String(value ?? field.default ?? '')}
             onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
-            className="flex-1 px-2 py-1 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+            className="flex-1 px-2 py-1 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground focus-ring"
           />
         </div>
       );
@@ -61,7 +61,7 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
             type="text"
             value={String(value ?? field.default ?? '')}
             onChange={(e) => onChange(e.target.value)}
-            className="flex-1 px-2 py-1 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
+            className="flex-1 px-2 py-1 bg-background/50 border border-primary/15 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/40 focus-ring"
           />
         </div>
       );

@@ -142,7 +142,7 @@ export function SavedViewsDropdown({
                 autoFocus
                 type="text"
                 placeholder="View name..."
-                className="flex-1 bg-transparent border border-primary/20 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-primary/50 text-foreground"
+                className="flex-1 bg-transparent border border-primary/20 rounded px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:border-primary/50 text-foreground"
                 value={newViewName}
                 onChange={(e) => setNewViewName(e.target.value)}
                 onKeyDown={(e) => {
@@ -150,7 +150,7 @@ export function SavedViewsDropdown({
                   if (e.key === 'Escape') setIsSaving(false);
                 }}
               />
-              <button onClick={handleSave} disabled={!newViewName.trim()} className="p-1.5 text-green-500 hover:bg-green-500/10 rounded disabled:opacity-50">
+              <button onClick={handleSave} disabled={!newViewName.trim()} title={!newViewName.trim() ? 'Enter a view name to save' : 'Save view'} className="p-1.5 text-green-500 hover:bg-green-500/10 rounded disabled:opacity-50">
                 <Check className="w-4 h-4" />
               </button>
               <button onClick={() => setIsSaving(false)} className="p-1.5 text-muted-foreground hover:bg-secondary rounded">

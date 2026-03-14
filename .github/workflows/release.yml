@@ -202,11 +202,7 @@ jobs:
           # Helper to read a signature file
           read_sig() {
             local pattern="$1"
-<<<<<<< HEAD
             local sig_file=$(ls /tmp/sigs/ 2>/dev/null | grep -iE "$pattern" | head -1)
-=======
-            local sig_file=$(ls /tmp/sigs/ 2>/dev/null | grep -i "$pattern" | head -1)
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             if [ -n "$sig_file" ] && [ -f "/tmp/sigs/$sig_file" ]; then
               cat "/tmp/sigs/$sig_file"
             else
@@ -217,11 +213,7 @@ jobs:
           # Helper to find an asset URL
           find_asset() {
             local pattern="$1"
-<<<<<<< HEAD
             local asset=$(echo "$ASSETS" | grep -iE "$pattern" | grep -v '\.sig$' | head -1)
-=======
-            local asset=$(echo "$ASSETS" | grep -i "$pattern" | grep -v '\.sig$' | head -1)
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
             if [ -n "$asset" ]; then
               echo "${BASE_URL}/${asset}"
             else
@@ -229,7 +221,6 @@ jobs:
             fi
           }
 
-<<<<<<< HEAD
           # Find updater bundles (tauri-action creates .nsis.zip for Windows,
           # .msi.zip as fallback, .app.tar.gz for macOS, .AppImage.tar.gz for Linux)
           # Tauri 2 uses "x64" in filenames for x86_64 and "arm64" or "aarch64" for ARM
@@ -237,32 +228,19 @@ jobs:
           WIN_X64_SIG=$(read_sig 'x64.*(\.nsis\.zip|\.msi\.zip)\.sig$')
           WIN_ARM64_URL=$(find_asset '(arm64|aarch64).*(\.nsis\.zip|\.msi\.zip)$')
           WIN_ARM64_SIG=$(read_sig '(arm64|aarch64).*(\.nsis\.zip|\.msi\.zip)\.sig$')
-=======
-          # Find updater bundles (tauri-action creates .msi.zip and .nsis.zip for Windows,
-          # .app.tar.gz for macOS, .AppImage.tar.gz for Linux)
-          WIN_X64_URL=$(find_asset 'x64.*\.msi\.zip$\|x64.*\.nsis\.zip$')
-          WIN_X64_SIG=$(read_sig 'x64.*\.msi\.zip\.sig$\|x64.*\.nsis\.zip\.sig$')
-          WIN_ARM64_URL=$(find_asset 'arm64.*\.msi\.zip$\|arm64.*\.nsis\.zip$')
-          WIN_ARM64_SIG=$(read_sig 'arm64.*\.msi\.zip\.sig$\|arm64.*\.nsis\.zip\.sig$')
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           MACOS_URL=$(find_asset '\.app\.tar\.gz$')
           MACOS_SIG=$(read_sig '\.app\.tar\.gz\.sig$')
           LINUX_URL=$(find_asset '\.AppImage\.tar\.gz$')
           LINUX_SIG=$(read_sig '\.AppImage\.tar\.gz\.sig$')
 
-<<<<<<< HEAD
           echo "=== All release assets ==="
           echo "$ASSETS"
           echo ""
           echo "=== Matched updater bundles ==="
-=======
-          echo "Assets found:"
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
           echo "  WIN_X64_URL=$WIN_X64_URL"
           echo "  WIN_ARM64_URL=$WIN_ARM64_URL"
           echo "  MACOS_URL=$MACOS_URL"
           echo "  LINUX_URL=$LINUX_URL"
-<<<<<<< HEAD
           echo ""
 
           # Warn if any platform bundle was not found
@@ -274,8 +252,6 @@ jobs:
           if [ -n "$MISSING" ]; then
             echo "::warning::Missing updater bundles for:${MISSING}. Check asset names above."
           fi
-=======
->>>>>>> 4922a97724aa56b26b532cfa6695776f4c697989
 
           # Build latest.json
           jq -n \

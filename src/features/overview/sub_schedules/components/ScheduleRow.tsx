@@ -6,6 +6,7 @@ import {
 import type { ScheduleEntry } from '../libs/scheduleHelpers';
 import { formatRelative } from '../libs/scheduleHelpers';
 import FrequencyEditor from './FrequencyEditor';
+import { useThemeStore } from '@/stores/themeStore';
 
 interface ScheduleRowProps {
   entry: ScheduleEntry;
@@ -35,6 +36,10 @@ export default function ScheduleRow({
   onPreviewCron,
 }: ScheduleRowProps) {
   const [showFreqEditor, setShowFreqEditor] = useState(false);
+  const timezone = useThemeStore((s) => s.timezone);
+  const tzLabel = timezone === 'local' ? Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace(/_/g, ' ') || 'Local'
+    : timezone === 'utc' ? 'UTC'
+    : timezone.split('/').pop()?.replace(/_/g, ' ') || timezone;
   const { agent, schedule, health, nextRun, lastRun } = entry;
   const disabled = health === 'paused';
 
@@ -75,7 +80,7 @@ export default function ScheduleRow({
             <Clock className="w-3 h-3 shrink-0" />
             <span className="font-mono text-xs">{schedule}</span>
             {agent.cron_expression && (
-              <span className="text-amber-400/50 text-[10px] font-medium">UTC</span>
+              <span className="text-amber-400/50 text-[10px] font-medium">{tzLabel}</span>
             )}
             {agent.description && (
               <>

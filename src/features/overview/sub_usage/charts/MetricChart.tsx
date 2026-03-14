@@ -2,6 +2,25 @@ import { ResponsiveContainer } from 'recharts';
 import type { ComponentType, ReactElement, ReactNode, SVGProps } from 'react';
 import { ChartErrorBoundary } from './ChartErrorBoundary';
 
+export type MetricIconColor =
+  | 'cyan' | 'violet' | 'indigo' | 'amber' | 'emerald' | 'blue'
+  | 'rose' | 'purple' | 'sky' | 'teal' | 'orange' | 'pink';
+
+const ICON_COLOR_CLASSES: Record<MetricIconColor, string> = {
+  cyan:    'bg-cyan-500/10 text-cyan-400',
+  violet:  'bg-violet-500/10 text-violet-400',
+  indigo:  'bg-indigo-500/10 text-indigo-400',
+  amber:   'bg-amber-500/10 text-amber-400',
+  emerald: 'bg-emerald-500/10 text-emerald-400',
+  blue:    'bg-blue-500/10 text-blue-400',
+  rose:    'bg-rose-500/10 text-rose-400',
+  purple:  'bg-purple-500/10 text-purple-400',
+  sky:     'bg-sky-500/10 text-sky-400',
+  teal:    'bg-teal-500/10 text-teal-400',
+  orange:  'bg-orange-500/10 text-orange-400',
+  pink:    'bg-pink-500/10 text-pink-400',
+};
+
 interface MetricChartProps {
   title: string;
   /** Optional insight annotation shown below the title. */
@@ -17,7 +36,7 @@ interface MetricChartProps {
   /** Optional Lucide icon rendered as a 24×24 rounded badge left of the title. */
   icon?: ComponentType<SVGProps<SVGSVGElement> & { className?: string }>;
   /** Colour token applied to the icon badge background/text (e.g. "cyan", "violet"). */
-  iconColor?: string;
+  iconColor?: MetricIconColor;
   /** When true, renders a shimmer skeleton in place of the chart. */
   loading?: boolean;
 }
@@ -43,7 +62,7 @@ export function MetricChart({
         <h3 className="text-sm font-bold uppercase tracking-widest text-foreground/80 flex items-center gap-2">
           {Icon && (
             <div
-              className={`p-1.5 rounded-lg bg-${iconColor}-500/10 text-${iconColor}-400`}
+              className={`p-1.5 rounded-lg ${ICON_COLOR_CLASSES[iconColor]}`}
             >
               <Icon className="w-3.5 h-3.5" />
             </div>

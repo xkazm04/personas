@@ -112,7 +112,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 onBlur={() => { setTimeout(() => { setShowTagInput(false); setTagInput(''); setShowSuggestions(false); }, 150); }}
                 autoFocus
                 placeholder="Add tag..."
-                className="w-24 text-xs px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
+                className="w-24 text-xs px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground/80 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
               />
               {showSuggestions && filteredSuggestions.length > 0 && (
                 <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-lg shadow-lg py-1 min-w-[100px]">

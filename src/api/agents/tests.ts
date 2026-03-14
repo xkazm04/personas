@@ -10,12 +10,12 @@ export type { ToolIssue } from "@/lib/bindings/ToolIssue";
 export type { DraftValidationResult } from "@/lib/bindings/DraftValidationResult";
 
 export const startTestRun = (personaId: string, models: ModelTestConfig[], useCaseFilter?: string, suiteId?: string, fixtureInputs?: Record<string, unknown>) =>
-  invoke<PersonaTestRun>("start_test_run", { personaId, models, useCaseFilter: useCaseFilter ?? null, suiteId: suiteId ?? null, fixtureInputs: fixtureInputs ? JSON.stringify(fixtureInputs) : null });
+  invoke<PersonaTestRun>("start_test_run", { personaId, models, useCaseFilter: useCaseFilter, suiteId: suiteId, fixtureInputs: fixtureInputs ? JSON.stringify(fixtureInputs) : null });
 
 export const listTestRuns = (personaId: string, limit?: number) =>
   invoke<PersonaTestRun[]>("list_test_runs", {
     personaId,
-    limit: limit ?? null,
+    limit: limit,
   });
 
 export const getTestResults = (testRunId: string) =>

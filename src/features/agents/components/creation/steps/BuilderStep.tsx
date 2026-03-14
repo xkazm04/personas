@@ -66,9 +66,9 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
               <textarea
                 value={state.intent}
                 onChange={(e) => dispatch({ type: 'SET_INTENT', payload: e.target.value })}
-                placeholder="Describe your agent's purpose..."
+                placeholder="Describe your agent's purpose — e.g. Read incoming emails, categorize them by urgency, and route to the right team"
                 rows={3}
-                className="w-full px-3 py-2 bg-secondary/30 border border-primary/10 rounded-xl text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-y"
+                className="w-full px-3 py-2 bg-secondary/30 border border-primary/10 rounded-xl text-sm text-foreground placeholder-muted-foreground/40 focus-ring resize-y"
               />
             </div>
             <div>
@@ -176,7 +176,7 @@ export function BuilderStep({ state, dispatch, onContinue, onCancel, draftPerson
                 .filter(Boolean)
                 .join(' \u00B7 ') || 'Building...'}
             </p>
-            <Button variant="primary" size="md" onClick={onContinue} disabled={!hasIntent}>
+            <Button variant="primary" size="md" onClick={onContinue} disabled={!hasIntent} disabledReason="Describe what your agent should do to continue">
               Continue
             </Button>
           </div>

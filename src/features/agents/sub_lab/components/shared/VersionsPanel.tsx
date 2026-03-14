@@ -4,7 +4,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
-import { VersionItem, DiffViewer, type VersionAction } from '@/features/agents/sub_lab_shared';
+import { VersionItem, DiffViewer, type VersionAction } from '@/features/agents/sub_lab/shared';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 
 export function VersionsPanel() {
@@ -16,6 +16,7 @@ export function VersionsPanel() {
   const rollbackVersion = useAgentStore((s) => s.rollbackVersion);
   const fetchHealthRate = useAgentStore((s) => s.fetchHealthRate);
   const setLabMode = useAgentStore((s) => s.setLabMode);
+  const setAbPreselect = useAgentStore((s) => s.setAbPreselect);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [compareAId, setCompareAId] = useState<string | null>(null);
@@ -139,7 +140,7 @@ export function VersionsPanel() {
         {/* Compare in A/B button */}
         {compareA && compareB && (
           <button
-            onClick={() => setLabMode('ab')}
+            onClick={() => { setAbPreselect(compareAId, compareBId); setLabMode('ab'); }}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary/80 hover:bg-primary/15 transition-colors text-sm self-start"
           >
             Run these versions in A/B test

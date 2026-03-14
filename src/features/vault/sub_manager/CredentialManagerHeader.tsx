@@ -99,7 +99,7 @@ export function CredentialToolbar({
                 ? 'Search catalog...'
                 : 'Search credentials...'
             }
-            className="w-full pl-8 pr-16 py-1.5 rounded-lg border border-primary/15 bg-background/80 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full pl-8 pr-16 py-1.5 rounded-lg border border-primary/15 bg-background/80 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
           />
           {credentialSearch && (
             <button

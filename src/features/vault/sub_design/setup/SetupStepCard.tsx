@@ -33,7 +33,7 @@ export function SetupStepCard({
       {/* Checkmark button */}
       <button
         onClick={onToggle}
-        className="mt-0.5 shrink-0 focus:outline-none"
+        className="mt-0.5 shrink-0 focus-visible:outline-none"
         title={isCompleted ? 'Mark as not done' : 'Mark as done'}
         aria-label="Mark step complete"
       >

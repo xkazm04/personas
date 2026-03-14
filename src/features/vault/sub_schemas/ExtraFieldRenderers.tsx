@@ -25,7 +25,7 @@ export function ExtraFieldRenderer({
               onChange={(e) => setState((prev) => ({ ...prev, [def.key]: e.target.value }))}
               placeholder={def.placeholder}
               rows={def.rows ?? 4}
-              className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-xl text-foreground text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30 resize-y"
+              className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-xl text-foreground text-sm font-mono focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30 resize-y"
             />
             {def.helpText && <p className="mt-1 text-sm text-muted-foreground/60">{def.helpText}</p>}
           </div>
@@ -39,7 +39,7 @@ export function ExtraFieldRenderer({
             type="checkbox"
             checked={(state[def.key] as boolean) ?? false}
             onChange={(e) => setState((prev) => ({ ...prev, [def.key]: e.target.checked }))}
-            className="w-3.5 h-3.5 rounded border-border/50 bg-background/50 text-primary focus:ring-primary/40"
+            className="w-3.5 h-3.5 rounded border-border/50 bg-background/50 text-primary focus-visible:ring-primary/40"
           />
           <span className="text-sm text-muted-foreground/70 group-hover:text-muted-foreground/90 transition-colors">
             {def.label}
@@ -113,7 +113,7 @@ function KeyValueListField({
                   update(next);
                 }}
                 placeholder="KEY"
-                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-xl text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder-muted-foreground/30"
+                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-xl text-sm text-foreground font-mono focus-ring placeholder-muted-foreground/30"
               />
               <span className="text-muted-foreground/30">=</span>
               <div className="flex-1 relative">
@@ -126,7 +126,7 @@ function KeyValueListField({
                     update(next);
                   }}
                   placeholder="value"
-                  className="w-full px-2.5 py-1.5 pr-8 bg-background/50 border border-border/50 rounded-xl text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder-muted-foreground/30"
+                  className="w-full px-2.5 py-1.5 pr-8 bg-background/50 border border-border/50 rounded-xl text-sm text-foreground font-mono focus-ring placeholder-muted-foreground/30"
                 />
                 <button
                   type="button"

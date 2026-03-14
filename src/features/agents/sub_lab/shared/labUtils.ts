@@ -4,7 +4,7 @@ export {
   formatRelative,
   getSectionSummary,
   diffStrings,
-} from '@/features/agents/sub_lab_shared/labPrimitives';
+} from './labPrimitives';
 
 // -- Scoring utilities -- delegated to unified eval framework --
 // These are re-exported from the single source of truth.

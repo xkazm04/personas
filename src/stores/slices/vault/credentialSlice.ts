@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { VaultStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { errMsg, reportError } from "../../storeTypes";
 import type {
   CredentialMetadata,
   ConnectorDefinition,
@@ -20,6 +20,8 @@ export interface CredentialSlice {
   credentials: CredentialMetadata[];
   credentialEvents: CredentialEvent[];
   connectorDefinitions: ConnectorDefinition[];
+  pendingDeleteCredentialIds: Set<string>;
+  pendingDeleteEventIds: Set<string>;
 
   // Actions
   fetchCredentials: () => Promise<void>;
@@ -53,6 +55,8 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
   credentials: [],
   credentialEvents: [],
   connectorDefinitions: [],
+  pendingDeleteCredentialIds: new Set<string>(),
+  pendingDeleteEventIds: new Set<string>(),
 
   fetchCredentials: async () => {
     try {
@@ -60,7 +64,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
       const credentials = raw.map(toCredMeta);
       set({ credentials, error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch credentials") });
+      reportError(err, "Failed to fetch credentials", set);
       throw err;
     }
   },
@@ -82,7 +86,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
       set({ error: null });
       return created.id;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create credential") });
+      reportError(err, "Failed to create credential", set);
       throw err;
     }
   },
@@ -105,20 +109,35 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
       await get().fetchCredentials();
       set({ error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update credential") });
+      reportError(err, "Failed to update credential", set);
     }
   },
 
   deleteCredential: async (id) => {
+    // Mark as pending delete (greyed out, non-interactive in UI)
+    set((state) => ({
+      pendingDeleteCredentialIds: new Set(state.pendingDeleteCredentialIds).add(id),
+    }));
     try {
       await deleteCredential(id);
-      set((state) => ({
-        credentials: state.credentials.filter((c) => c.id !== id),
-        credentialEvents: state.credentialEvents.filter((e) => e.credential_id !== id),
-        error: null,
-      }));
+      set((state) => {
+        const next = new Set(state.pendingDeleteCredentialIds);
+        next.delete(id);
+        return {
+          credentials: state.credentials.filter((c) => c.id !== id),
+          credentialEvents: state.credentialEvents.filter((e) => e.credential_id !== id),
+          pendingDeleteCredentialIds: next,
+          error: null,
+        };
+      });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete credential") });
+      // Restore: remove from pending set and show error toast
+      set((state) => {
+        const next = new Set(state.pendingDeleteCredentialIds);
+        next.delete(id);
+        return { pendingDeleteCredentialIds: next };
+      });
+      reportError(err, "Failed to delete credential", set);
     }
   },
 
@@ -133,7 +152,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
       await get().fetchCredentials();
       set({ error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update credential field") });
+      reportError(err, "Failed to update credential field", set);
     }
   },
 
@@ -164,7 +183,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
       const connectorDefinitions = raw.map(parseConn);
       set({ connectorDefinitions, error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch connector definitions") });
+      reportError(err, "Failed to fetch connector definitions", set);
     }
   },
 
@@ -187,7 +206,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
       set((state) => ({ connectorDefinitions: [...state.connectorDefinitions, connector], error: null }));
       return connector;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create connector") });
+      reportError(err, "Failed to create connector", set);
       throw err;
     }
   },
@@ -204,7 +223,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete connector") });
+      reportError(err, "Failed to delete connector", set);
     }
   },
 
@@ -213,7 +232,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
       const allEvents = await listAllCredentialEvents();
       set({ credentialEvents: allEvents, error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch credential events") });
+      reportError(err, "Failed to fetch credential events", set);
     }
   },
 
@@ -227,9 +246,9 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         enabled: null,
       });
       set({ error: null });
-      get().fetchCredentialEvents();
+      await get().fetchCredentialEvents();
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create credential event") });
+      reportError(err, "Failed to create credential event", set);
     }
   },
 
@@ -249,19 +268,33 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, 'Failed to update credential event') });
+      reportError(err, "Failed to update credential event", set);
     }
   },
 
   deleteCredentialEvent: async (id) => {
+    // Mark as pending delete
+    set((state) => ({
+      pendingDeleteEventIds: new Set(state.pendingDeleteEventIds).add(id),
+    }));
     try {
       await deleteCredentialEvent(id);
-      set((state) => ({
-        credentialEvents: state.credentialEvents.filter((e) => e.id !== id),
-        error: null,
-      }));
+      set((state) => {
+        const next = new Set(state.pendingDeleteEventIds);
+        next.delete(id);
+        return {
+          credentialEvents: state.credentialEvents.filter((e) => e.id !== id),
+          pendingDeleteEventIds: next,
+          error: null,
+        };
+      });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete credential event") });
+      set((state) => {
+        const next = new Set(state.pendingDeleteEventIds);
+        next.delete(id);
+        return { pendingDeleteEventIds: next };
+      });
+      reportError(err, "Failed to delete credential event", set);
     }
   },
 });

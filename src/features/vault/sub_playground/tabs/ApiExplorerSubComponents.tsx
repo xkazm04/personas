@@ -158,7 +158,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
           value={pasteContent}
           onChange={(e) => setPasteContent(e.target.value)}
           placeholder="Paste your OpenAPI JSON or YAML spec here..."
-          className="w-full h-[300px] p-3 rounded-lg text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:border-primary/25"
+          className="w-full h-[300px] p-3 rounded-lg text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/40 resize-none focus-visible:outline-none focus-visible:border-primary/25"
         />
         <div className="flex justify-end gap-2">
           <Button

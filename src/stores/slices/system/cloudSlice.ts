@@ -2,6 +2,7 @@ import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
 import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
+import { reportError } from "../../storeTypes";
 import { translateCloudError, isAuthError } from "./deployTarget";
 import { emitDeploymentEvent } from "@/hooks/realtime/emitDeploymentEvent";
 import {
@@ -270,8 +271,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       }));
       emitDeploymentEvent({ eventType: 'deploy_paused', target: 'cloud', detail: deploymentId });
     } catch (err) {
-      set({ cloudDeployments: prevDeployments, cloudError: translateCloudError(err) });
-      useToastStore.getState().addToast("Failed to pause deployment.", "error");
+      reportError(err, "Failed to pause deployment", set, { stateUpdates: { cloudDeployments: prevDeployments, cloudError: translateCloudError(err) } });
     }
   },
 
@@ -286,8 +286,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       }));
       emitDeploymentEvent({ eventType: 'deploy_resumed', target: 'cloud', detail: deploymentId });
     } catch (err) {
-      set({ cloudDeployments: prevDeployments, cloudError: translateCloudError(err) });
-      useToastStore.getState().addToast("Failed to resume deployment.", "error");
+      reportError(err, "Failed to resume deployment", set, { stateUpdates: { cloudDeployments: prevDeployments, cloudError: translateCloudError(err) } });
     }
   },
 
@@ -300,8 +299,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       }));
       emitDeploymentEvent({ eventType: 'agent_undeployed', target: 'cloud', detail: deploymentId });
     } catch (err) {
-      set({ cloudDeployments: prevDeployments, cloudError: translateCloudError(err) });
-      useToastStore.getState().addToast("Failed to remove deployment.", "error");
+      reportError(err, "Failed to remove deployment", set, { stateUpdates: { cloudDeployments: prevDeployments, cloudError: translateCloudError(err) } });
     }
   },
 });

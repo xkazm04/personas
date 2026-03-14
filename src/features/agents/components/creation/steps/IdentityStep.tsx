@@ -120,14 +120,14 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
         <div className="space-y-4 min-w-0">
           <div>
             <label className="block text-sm font-medium text-foreground/80 mb-1.5">Name</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Agent name" autoFocus
-              className="w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all" />
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Name your agent — e.g. Invoice Processor, Weekly Report Bot" autoFocus
+              className="w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/40 focus-ring transition-all" />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-foreground/80 mb-1.5">Description <span className="text-muted-foreground/50 font-normal">(optional)</span></label>
-            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description"
-              className="w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all" />
+            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What does this agent do? — e.g. Monitors Slack for support questions and drafts replies"
+              className="w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/40 focus-ring transition-all" />
           </div>
 
           {/* Appearance */}
@@ -166,7 +166,7 @@ export function IdentityStep({ builderState, onBack, draftPersonaId }: IdentityS
           </div>
 
           {/* Submit */}
-          <Button variant="primary" size="lg" block icon={<Sparkles className="w-4 h-4" />} loading={isCreating} disabled={!canSubmit || isCreating} onClick={handleCreate}>
+          <Button variant="primary" size="lg" block icon={<Sparkles className="w-4 h-4" />} loading={isCreating} disabled={!canSubmit || isCreating} disabledReason="Enter a name to continue" onClick={handleCreate}>
             {isCreating ? 'Creating...' : 'Create Agent'}
           </Button>
           {!canSubmit && !isCreating && (

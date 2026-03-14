@@ -93,7 +93,7 @@ export function IdlePhase({
             value={templateSearch}
             onChange={(e) => onTemplateSearchChange(e.target.value)}
             placeholder="Search catalog"
-            className="w-full px-3 py-1.5 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full px-3 py-1.5 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
           />
           {templateConnectors.length === 0 ? (
             <p className="text-sm text-muted-foreground/90">No catalog entries yet. Save a successfully tested connector first.</p>
@@ -177,7 +177,7 @@ export function IdlePhase({
         placeholder="e.g. Slack, OpenAI, GitHub, Stripe..."
         rows={3}
         autoFocus
-        className="w-full px-4 py-3 bg-secondary/40 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all resize-none"
+        className="w-full px-4 py-3 bg-secondary/40 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all resize-none"
       />
       <div className="flex justify-end gap-2.5">
         {onAutoSetup && (

@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use rusqlite::{params, Row};
 
 use crate::db::models::{
@@ -5,6 +7,7 @@ use crate::db::models::{
     UpdateRotationPolicyInput,
 };
 use crate::db::DbPool;
+use crate::engine::lifecycle::RotationEntryStatus;
 use crate::error::AppError;
 
 // ============================================================================
@@ -26,11 +29,13 @@ fn row_to_policy(row: &Row) -> rusqlite::Result<CredentialRotationPolicy> {
 }
 
 fn row_to_history(row: &Row) -> rusqlite::Result<CredentialRotationEntry> {
+    let status_str: String = row.get("status")?;
     Ok(CredentialRotationEntry {
         id: row.get("id")?,
         credential_id: row.get("credential_id")?,
         rotation_type: row.get("rotation_type")?,
-        status: row.get("status")?,
+        status: RotationEntryStatus::from_str(&status_str)
+            .unwrap_or(RotationEntryStatus::Failed),
         detail: row.get("detail")?,
         created_at: row.get("created_at")?,
     })
@@ -254,7 +259,7 @@ pub fn record_rotation(
     pool: &DbPool,
     credential_id: &str,
     rotation_type: &str,
-    status: &str,
+    status: RotationEntryStatus,
     detail: Option<&str>,
 ) -> Result<CredentialRotationEntry, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
@@ -265,7 +270,7 @@ pub fn record_rotation(
         "INSERT INTO credential_rotation_history
          (id, credential_id, rotation_type, status, detail, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![id, credential_id, rotation_type, status, detail, now],
+        params![id, credential_id, rotation_type, status.as_str(), detail, now],
     )?;
 
     conn.query_row(

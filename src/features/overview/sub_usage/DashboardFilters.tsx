@@ -150,7 +150,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
               value={startDate}
               max={endDate || today}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50"
+              className="w-full px-3 py-1.5 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
             />
           </div>
           <div>
@@ -161,7 +161,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
               min={startDate}
               max={today}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50"
+              className="w-full px-3 py-1.5 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
             />
           </div>
           {isValid && (

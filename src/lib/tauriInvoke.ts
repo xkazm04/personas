@@ -32,6 +32,20 @@ export class InvokeTimeoutError extends Error {
  * @param options  Optional InvokeOptions forwarded to `invoke`.
  * @param timeoutMs Timeout in milliseconds. Defaults to 30 000 (30 s).
  */
+/**
+ * Recursively walks an args object and converts every `undefined` value to
+ * `null` so that Rust `Option<T>` fields deserialise correctly.  Arrays and
+ * nested objects are handled; non-plain values are left untouched.
+ */
+function coerceArgs(args: InvokeArgs): InvokeArgs {
+  if (Array.isArray(args)) return args;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(args as Record<string, unknown>)) {
+    out[k] = v === undefined ? null : v;
+  }
+  return out as InvokeArgs;
+}
+
 export function invokeWithTimeout<T>(
   cmd: CommandName,
   args?: InvokeArgs,
@@ -39,7 +53,7 @@ export function invokeWithTimeout<T>(
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): Promise<T> {
   const start = performance.now();
-  const invocation = invoke<T>(cmd, args, options);
+  const invocation = invoke<T>(cmd, args ? coerceArgs(args) : undefined, options);
 
   const timeout = new Promise<never>((_resolve, reject) => {
     const id = setTimeout(() => {

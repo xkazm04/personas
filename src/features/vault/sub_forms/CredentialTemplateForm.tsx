@@ -141,8 +141,8 @@ export function CredentialTemplateForm({
               type="text"
               value={credentialName}
               onChange={(e) => onCredentialNameChange(e.target.value)}
-              placeholder={`My ${selectedConnector.label} Account`}
-              className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all"
+              placeholder={`Label this credential — e.g. My ${selectedConnector.label} Account, Production ${selectedConnector.label}`}
+              className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
             />
           </div>
 

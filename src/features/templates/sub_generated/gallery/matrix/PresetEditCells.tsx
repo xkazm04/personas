@@ -207,7 +207,7 @@ export function UseCaseEditCell({ editState, callbacks }: UseCaseEditCellProps) 
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
             placeholder="Add use case..."
-            className="flex-1 px-2 py-1 rounded-md border border-primary/10 bg-transparent text-sm text-foreground/70 placeholder-muted-foreground/30 focus:outline-none focus:border-primary/25 transition-colors"
+            className="flex-1 px-2 py-1 rounded-md border border-primary/10 bg-transparent text-sm text-foreground/70 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/25 transition-colors"
           />
           <button type="button" onClick={handleAdd} disabled={!newTitle.trim()}
             className="p-1 rounded-md text-primary/60 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors">

@@ -58,7 +58,7 @@ export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscription
           value={newSourceFilter}
           onChange={(e) => setNewSourceFilter(e.target.value)}
           placeholder="e.g. persona-id or glob pattern"
-          className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/20 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/30"
+          className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/20 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus-ring"
         />
       </div>
       <div className="flex items-center gap-2 pt-1">

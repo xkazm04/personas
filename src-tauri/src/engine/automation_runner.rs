@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::time::Instant;
 
 use crate::db::models::{AutomationRun, PersonaAutomation};
+use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::automations as repo;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::repos::resources::tool_audit_log;
@@ -168,6 +169,12 @@ async fn resolve_auth_headers(
             return Ok(headers);
         }
     };
+
+    let _ = audit_log::log_decrypt(
+        pool, cred_id, &credential.name,
+        &format!("automation_runner:{}", automation.name),
+        None, None,
+    );
 
     // Common patterns for webhook auth
     if let Some(token) = fields.get("api_key").or(fields.get("access_token")).or(fields.get("token")) {

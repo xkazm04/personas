@@ -59,7 +59,7 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
         placeholder={placeholder}
         rows={10}
         autoFocus
-        className="w-full px-4 py-3 bg-secondary/40 border border-primary/15 rounded-xl text-foreground text-sm font-mono placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all resize-none"
+        className="w-full px-4 py-3 bg-secondary/40 border border-primary/15 rounded-xl text-foreground text-sm font-mono placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all resize-none"
       />
 
       <div className="flex justify-end">

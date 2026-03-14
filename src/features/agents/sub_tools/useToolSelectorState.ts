@@ -114,36 +114,52 @@ export function useToolSelectorState() {
 
   const handleToggleTool = useCallback(async (toolId: string, toolName: string, isAssigned: boolean) => {
     clearUndoToast();
-    if (isAssigned) {
-      await removeTool(personaId, toolId);
-      setUndoToast({ toolId, toolName });
-      undoTimerRef.current = setTimeout(() => setUndoToast(null), 5000);
-    } else {
-      await assignTool(personaId, toolId);
+    try {
+      if (isAssigned) {
+        await removeTool(personaId, toolId);
+        setUndoToast({ toolId, toolName });
+        undoTimerRef.current = setTimeout(() => setUndoToast(null), 5000);
+      } else {
+        await assignTool(personaId, toolId);
+      }
+      setJustToggledId(toolId);
+      setTimeout(() => setJustToggledId(null), 600);
+    } catch {
+      // error state is set by the store slice
     }
-    setJustToggledId(toolId);
-    setTimeout(() => setJustToggledId(null), 600);
   }, [clearUndoToast, removeTool, assignTool, personaId]);
 
   const handleUndo = useCallback(async () => {
     if (!undoToast) return;
-    await assignTool(personaId, undoToast.toolId);
-    setJustToggledId(undoToast.toolId);
-    setTimeout(() => setJustToggledId(null), 600);
+    try {
+      await assignTool(personaId, undoToast.toolId);
+      setJustToggledId(undoToast.toolId);
+      setTimeout(() => setJustToggledId(null), 600);
+    } catch {
+      // error state is set by the store slice
+    }
     clearUndoToast();
   }, [undoToast, assignTool, personaId, clearUndoToast]);
 
   const handleClearAll = useCallback(async () => {
     clearUndoToast();
-    await bulkRemoveTools(personaId, assignedTools.map((t) => t.id));
+    try {
+      await bulkRemoveTools(personaId, assignedTools.map((t) => t.id));
+    } catch {
+      // error state is set by the store slice
+    }
   }, [clearUndoToast, bulkRemoveTools, personaId, assignedTools]);
 
   const handleBulkToggle = useCallback(async (tools: Array<{ id: string }>, allAssigned: boolean) => {
     clearUndoToast();
-    if (allAssigned) {
-      await bulkRemoveTools(personaId, tools.filter((t) => assignedToolIds.has(t.id)).map((t) => t.id));
-    } else {
-      await bulkAssignTools(personaId, tools.filter((t) => !assignedToolIds.has(t.id)).map((t) => t.id));
+    try {
+      if (allAssigned) {
+        await bulkRemoveTools(personaId, tools.filter((t) => assignedToolIds.has(t.id)).map((t) => t.id));
+      } else {
+        await bulkAssignTools(personaId, tools.filter((t) => !assignedToolIds.has(t.id)).map((t) => t.id));
+      }
+    } catch {
+      // error state is set by the store slice
     }
   }, [clearUndoToast, bulkRemoveTools, bulkAssignTools, personaId, assignedToolIds]);
 

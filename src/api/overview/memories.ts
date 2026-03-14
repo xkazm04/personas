@@ -15,11 +15,11 @@ export const listMemories = (
   offset?: number,
 ) =>
   invoke<PersonaMemory[]>("list_memories", {
-    personaId: personaId ?? null,
-    category: category ?? null,
-    search: search ?? null,
-    limit: limit ?? null,
-    offset: offset ?? null,
+    personaId: personaId,
+    category: category,
+    search: search,
+    limit: limit,
+    offset: offset,
   });
 
 export const createMemory = (input: CreatePersonaMemoryInput) =>
@@ -27,9 +27,9 @@ export const createMemory = (input: CreatePersonaMemoryInput) =>
 
 export const getMemoryCount = (personaId?: string, category?: string, search?: string) =>
   invoke<number>("get_memory_count", {
-    personaId: personaId ?? null,
-    category: category ?? null,
-    search: search ?? null,
+    personaId: personaId,
+    category: category,
+    search: search,
   });
 
 export interface MemoryStats {
@@ -41,9 +41,9 @@ export interface MemoryStats {
 
 export const getMemoryStats = (personaId?: string, category?: string, search?: string) =>
   invoke<MemoryStats>("get_memory_stats", {
-    personaId: personaId ?? null,
-    category: category ?? null,
-    search: search ?? null,
+    personaId: personaId,
+    category: category,
+    search: search,
   });
 
 export interface MemoriesWithStats {
@@ -62,13 +62,13 @@ export const listMemoriesWithStats = (
   sortDirection?: string,
 ) =>
   invoke<MemoriesWithStats>("list_memories_with_stats", {
-    personaId: personaId ?? null,
-    category: category ?? null,
-    search: search ?? null,
-    limit: limit ?? null,
-    offset: offset ?? null,
-    sortColumn: sortColumn ?? null,
-    sortDirection: sortDirection ?? null,
+    personaId: personaId,
+    category: category,
+    search: search,
+    limit: limit,
+    offset: offset,
+    sortColumn: sortColumn,
+    sortDirection: sortDirection,
   });
 
 export const listMemoriesByExecution = (executionId: string) =>
@@ -100,8 +100,8 @@ export interface MemoryReviewResult {
 
 export const reviewMemoriesWithCli = (personaId?: string, threshold?: number) =>
   invoke<MemoryReviewResult>("review_memories_with_cli", {
-    personaId: personaId ?? null,
-    threshold: threshold ?? null,
+    personaId: personaId,
+    threshold: threshold,
   });
 
 export const seedMockMemory = () =>

@@ -54,7 +54,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           {event.payload && (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-foreground/70 font-medium">Payload</span>
+                <span className="text-sm text-foreground/70 font-medium">Event Data</span>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(
@@ -65,7 +65,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                     }).catch(() => { /* intentional: non-critical -- clipboard copy fallback */ });
                   }}
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
-                  title="Copy payload"
+                  title="Copy event data"
                 >
                   {copiedPayload ? (
                     <>

@@ -14,7 +14,6 @@ const MessageList = lazy(() => import('@/features/overview/sub_messages/componen
 const EventLogList = lazy(() => import('@/features/overview/sub_events/components/EventLogList'));
 const KnowledgeHub = lazy(() => import('@/features/overview/components/dashboard/cards/KnowledgeHub'));
 const SLADashboard = lazy(() => import('@/features/overview/sub_sla/components/SLADashboard'));
-const CronAgentsPage = lazy(() => import('@/features/overview/sub_cron_agents/components/CronAgentsPage'));
 const ScheduleTimeline = lazy(() => import('@/features/overview/sub_schedules/components/ScheduleTimeline'));
 
 function OverviewContent() {
@@ -37,7 +36,6 @@ function OverviewContent() {
         overviewTab === 'events' ? <EventLogList /> :
         overviewTab === 'knowledge' ? <KnowledgeHub /> :
         overviewTab === 'sla' ? <SLADashboard /> :
-        overviewTab === 'cron-agents' ? <CronAgentsPage /> :
         overviewTab === 'schedules' ? <ScheduleTimeline /> :
         <DashboardWithSubtabs />}
       </Suspense>

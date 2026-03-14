@@ -76,7 +76,7 @@ export function GitLabConnectionForm({
             value={token}
             onChange={(e) => setToken(e.target.value)}
             placeholder="glpat-xxxxxxxxxxxxxxxxxxxx"
-            className={`w-full px-3 py-2 pr-16 rounded-xl border border-primary/15 bg-background text-sm text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-orange-500/40 ${isConnecting ? 'border-orange-500/35 bg-orange-500/5' : ''}`}
+            className={`w-full px-3 py-2 pr-16 rounded-xl border border-primary/15 bg-background text-sm text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-orange-500/40 ${isConnecting ? 'border-orange-500/35 bg-orange-500/5' : ''}`}
             onKeyDown={(e) => e.key === 'Enter' && onConnect()}
           />
           <button

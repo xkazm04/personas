@@ -4,6 +4,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import { NotificationChannelCard } from './NotificationChannelCard';
 import { AddChannelButton } from './AddChannelButton';
 import { TOOLS_BORDER } from '@/lib/utils/designTokens';
+import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
 
 export const channelTypes: Array<{
   type: NotificationChannelType;
@@ -11,7 +12,7 @@ export const channelTypes: Array<{
   configFields: Array<{ key: string; label: string; placeholder: string }>;
 }> = [
   { type: 'slack', label: 'Slack', configFields: [
-    { key: 'webhook_url', label: 'Webhook URL', placeholder: 'https://hooks.slack.com/services/...' },
+    { key: 'webhook_url', label: 'Notification delivery URL', placeholder: 'e.g. https://hooks.slack.com/services/T00.../B00.../xxxx' },
     { key: 'channel', label: 'Channel (optional)', placeholder: '#general' },
   ] },
   { type: 'telegram', label: 'Telegram', configFields: [
@@ -62,23 +63,30 @@ export function ChannelList({
       </div>
 
       {/* External channels */}
-      {channels.map((channel, index) => {
-        const typeDef = channelTypes.find(t => t.type === channel.type);
-        return (
-          <NotificationChannelCard
-            key={`${channel.type}_${index}`}
-            type={channel.type} enabled={channel.enabled} config={channel.config}
-            credentialId={channel.credential_id}
-            configFields={typeDef?.configFields ?? []}
-            matchingCredentials={getMatchingCredentials(channel.type)}
-            hasValidationErrors={validationErrors.length > 0}
-            onToggleEnabled={() => onToggleEnabled(index)}
-            onRemove={() => onRemove(index)}
-            onConfigChange={(key, value) => onConfigChange(index, key, value)}
-            onCredentialChange={(id) => onCredentialChange(index, id)}
-          />
-        );
-      })}
+      {channels.length > 0 && (
+        <AnimatedList
+          className="space-y-3"
+          keys={channels.map((c, i) => `${c.type}_${i}`)}
+        >
+          {channels.map((channel, index) => {
+            const typeDef = channelTypes.find(t => t.type === channel.type);
+            return (
+              <NotificationChannelCard
+                key={`${channel.type}_${index}`}
+                type={channel.type} enabled={channel.enabled} config={channel.config}
+                credentialId={channel.credential_id}
+                configFields={typeDef?.configFields ?? []}
+                matchingCredentials={getMatchingCredentials(channel.type)}
+                hasValidationErrors={validationErrors.length > 0}
+                onToggleEnabled={() => onToggleEnabled(index)}
+                onRemove={() => onRemove(index)}
+                onConfigChange={(key, value) => onConfigChange(index, key, value)}
+                onCredentialChange={(id) => onCredentialChange(index, id)}
+              />
+            );
+          })}
+        </AnimatedList>
+      )}
 
       <AddChannelButton channelTypes={channelTypes} existingTypes={existingTypes} onAdd={onAdd} />
 

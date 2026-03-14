@@ -318,7 +318,8 @@ pub mod terminal {
                 let base_cmd = command[0].rsplit('/').next().unwrap_or(&command[0]);
                 let base_cmd = base_cmd.rsplit('\\').next().unwrap_or(base_cmd);
                 let base_cmd_lower = base_cmd.to_lowercase();
-                let base_cmd_no_ext = base_cmd_lower.strip_suffix(".exe").unwrap_or(&base_cmd_lower);
+                // Strip all Windows-executable extensions, not just .exe
+                let base_cmd_no_ext = strip_executable_extension(&base_cmd_lower);
 
                 if BLOCKED_COMMANDS.contains(&base_cmd_no_ext) {
                     return Err(AppError::Forbidden(format!(
@@ -448,31 +449,84 @@ pub mod terminal {
         }
     }
 
-    /// Reject paths that attempt directory traversal or access system directories.
+    /// Windows-executable extensions that must be stripped before blocklist comparison.
+    const EXECUTABLE_EXTENSIONS: &[&str] = &[".exe", ".cmd", ".bat", ".com", ".ps1"];
+
+    /// Strip any known Windows-executable extension from a lowercased command name.
+    fn strip_executable_extension(cmd: &str) -> &str {
+        for ext in EXECUTABLE_EXTENSIONS {
+            if let Some(stripped) = cmd.strip_suffix(ext) {
+                return stripped;
+            }
+        }
+        cmd
+    }
+
+    /// Reject paths that attempt directory traversal or access sensitive directories.
     fn validate_path_safety(path: &str) -> Result<(), AppError> {
         let normalized = path.replace('\\', "/");
 
         // Block traversal
-        if normalized.contains("../") || normalized.contains("/..") {
+        if normalized.contains("../") || normalized.contains("/..") || normalized == ".." {
             return Err(AppError::Forbidden("Path traversal (..) is not allowed".into()));
         }
 
-        // Block absolute system paths
+        // Block absolute system paths and sensitive user directories
         #[cfg(target_os = "windows")]
         {
             let lower = normalized.to_lowercase();
-            if lower.starts_with("c:/windows") || lower.starts_with("c:/program files") {
-                return Err(AppError::Forbidden("Access to system directories is blocked".into()));
+            let blocked_prefixes = [
+                "c:/windows",
+                "c:/program files",
+                "c:/program files (x86)",
+            ];
+            for prefix in &blocked_prefixes {
+                if lower.starts_with(prefix) {
+                    return Err(AppError::Forbidden("Access to system directories is blocked".into()));
+                }
+            }
+
+            // Block sensitive user-profile directories (resolve %USERPROFILE% patterns)
+            if let Ok(home) = std::env::var("USERPROFILE") {
+                let home_norm = home.replace('\\', "/").to_lowercase();
+                let sensitive_dirs = [".ssh", ".gnupg", ".aws", ".azure", ".kube",
+                    "AppData/Local/Google/Chrome", "AppData/Local/Microsoft/Edge",
+                    "AppData/Roaming/Mozilla/Firefox"];
+                for dir in &sensitive_dirs {
+                    let blocked = format!("{}/{}", home_norm, dir.to_lowercase());
+                    if lower.starts_with(&blocked) {
+                        return Err(AppError::Forbidden(format!(
+                            "Access to sensitive directory '{}' is blocked", dir
+                        )));
+                    }
+                }
             }
         }
         #[cfg(not(target_os = "windows"))]
         {
-            if normalized.starts_with("/etc/") || normalized.starts_with("/usr/")
-                || normalized.starts_with("/bin/") || normalized.starts_with("/sbin/")
-                || normalized.starts_with("/boot/") || normalized.starts_with("/sys/")
-                || normalized.starts_with("/proc/")
-            {
-                return Err(AppError::Forbidden("Access to system directories is blocked".into()));
+            let system_prefixes = [
+                "/etc/", "/usr/", "/bin/", "/sbin/",
+                "/boot/", "/sys/", "/proc/",
+            ];
+            for prefix in &system_prefixes {
+                if normalized.starts_with(prefix) {
+                    return Err(AppError::Forbidden("Access to system directories is blocked".into()));
+                }
+            }
+
+            // Block sensitive user home directories
+            if let Ok(home) = std::env::var("HOME") {
+                let home_norm = if home.ends_with('/') { home.clone() } else { format!("{}/", home) };
+                let sensitive_dirs = [".ssh", ".gnupg", ".aws", ".azure", ".kube",
+                    ".config/google-chrome", ".mozilla/firefox", ".config/chromium"];
+                for dir in &sensitive_dirs {
+                    let blocked = format!("{}{}", home_norm, dir);
+                    if normalized.starts_with(&blocked) {
+                        return Err(AppError::Forbidden(format!(
+                            "Access to sensitive directory '~/{dir}' is blocked"
+                        )));
+                    }
+                }
             }
         }
 

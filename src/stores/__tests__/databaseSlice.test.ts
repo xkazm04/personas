@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useVaultStore } from "../personaStore";
+import { useVaultStore } from "../vaultStore";
 import { mockInvokeMap, resetInvokeMocks, mockInvokeError } from "@/test/tauriMock";
 import type { DbSchemaTable, DbSavedQuery, QueryResult } from "@/api/vault/database/dbSchema";
 

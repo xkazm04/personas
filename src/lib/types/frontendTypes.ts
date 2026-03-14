@@ -241,6 +241,18 @@ export interface UseCaseEventSubscription {
  * - `useCases` -- structured workflow descriptions from design results
  * - `summary` -- optional human-readable summary (legacy compat)
  */
+/** Metadata preserved for round-tripping BuilderState through design_context. */
+export interface BuilderMeta {
+  errorStrategy?: string;
+  reviewPolicy?: string;
+  channels?: NotificationChannel[];
+  globalTrigger?: { label: string; type: string; cron?: string } | null;
+  /** Component roles keyed by connector name (lost in connectorPipeline otherwise). */
+  componentRoles?: Record<string, string>;
+  /** Which creation method produced this draft ('build' | 'chat' | 'matrix'). */
+  creationMethod?: 'build' | 'chat' | 'matrix';
+}
+
 export interface DesignContextData {
   designFiles?: DesignFilesSection;
   credentialLinks?: Record<string, string>;
@@ -248,6 +260,8 @@ export interface DesignContextData {
   summary?: string;
   connectorPipeline?: import('@/lib/types/designTypes').ConnectorPipelineStep[];
   watchedTables?: Record<string, string[]>;
+  /** Round-trip metadata for resuming builder from a draft. */
+  builderMeta?: BuilderMeta;
 }
 
 // -- Flow Diagram Types ------------------------------------------------

@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { VaultStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import type { DbSchemaTable, DbSavedQuery, QueryResult } from "@/api/vault/database/dbSchema";
 import * as dbApi from "@/api/vault/database/dbSchema";
 
@@ -56,7 +56,7 @@ export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice
       const tables = await dbApi.listDbSchemaTables(credentialId);
       set({ dbSchemaTables: tables });
     } catch (err) {
-      console.error(errMsg(err, "Failed to fetch schema tables"));
+      reportError(err, "Failed to fetch schema tables", set);
     }
   },
 
@@ -66,7 +66,7 @@ export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice
       set((state) => ({ dbSchemaTables: [...state.dbSchemaTables, table] }));
       return table;
     } catch (err) {
-      console.error(errMsg(err, "Failed to create schema table"));
+      reportError(err, "Failed to create schema table", set);
       return undefined;
     }
   },
@@ -78,7 +78,7 @@ export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice
         dbSchemaTables: state.dbSchemaTables.map((t) => (t.id === id ? updated : t)),
       }));
     } catch (err) {
-      console.error(errMsg(err, "Failed to update schema table"));
+      reportError(err, "Failed to update schema table", set);
     }
   },
 
@@ -89,7 +89,7 @@ export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice
         dbSchemaTables: state.dbSchemaTables.filter((t) => t.id !== id),
       }));
     } catch (err) {
-      console.error(errMsg(err, "Failed to delete schema table"));
+      reportError(err, "Failed to delete schema table", set);
     }
   },
 
@@ -100,7 +100,7 @@ export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice
       const queries = await dbApi.listDbSavedQueries(credentialId);
       set({ dbSavedQueries: queries });
     } catch (err) {
-      console.error(errMsg(err, "Failed to fetch saved queries"));
+      reportError(err, "Failed to fetch saved queries", set);
     }
   },
 
@@ -110,7 +110,7 @@ export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice
       set((state) => ({ dbSavedQueries: [...state.dbSavedQueries, query] }));
       return query;
     } catch (err) {
-      console.error(errMsg(err, "Failed to create saved query"));
+      reportError(err, "Failed to create saved query", set);
       return undefined;
     }
   },
@@ -122,7 +122,7 @@ export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice
         dbSavedQueries: state.dbSavedQueries.map((q) => (q.id === id ? updated : q)),
       }));
     } catch (err) {
-      console.error(errMsg(err, "Failed to update saved query"));
+      reportError(err, "Failed to update saved query", set);
     }
   },
 
@@ -133,7 +133,7 @@ export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice
         dbSavedQueries: state.dbSavedQueries.filter((q) => q.id !== id),
       }));
     } catch (err) {
-      console.error(errMsg(err, "Failed to delete saved query"));
+      reportError(err, "Failed to delete saved query", set);
     }
   },
 

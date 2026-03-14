@@ -88,7 +88,7 @@ export function ConnectorFilterDropdown({
                 value={dropdownSearch}
                 onChange={(e) => setDropdownSearch(e.target.value)}
                 placeholder="Search connectors..."
-                className="w-full pl-8 pr-3 py-1.5 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/30 transition-colors"
+                className="w-full pl-8 pr-3 py-1.5 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
               />
             </div>
           </div>

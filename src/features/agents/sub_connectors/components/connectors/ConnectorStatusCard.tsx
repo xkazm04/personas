@@ -5,6 +5,7 @@ import { STATUS_CONFIG, getStatusKey } from '../../libs/connectorTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LinkPicker, SwapPicker, StatusResult } from './ConnectorStatusBadges';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ConnectorStatusCardProps {
   status: ConnectorStatus;
@@ -66,10 +67,12 @@ export function ConnectorStatusCard({
               title="Swap to alternative connector"><ArrowLeftRight className="w-3 h-3" /></button>
           )}
           {status.credentialId ? (
-            <button onClick={() => onTest(status.name, status.credentialId!)} disabled={status.testing}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40">
-              {status.testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Activity className="w-3 h-3" />} Test
-            </button>
+            <Tooltip content={status.testing ? 'Test already in progress' : ''} placement="top" delay={200}>
+              <button onClick={() => onTest(status.name, status.credentialId!)} disabled={status.testing}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                {status.testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Activity className="w-3 h-3" />} Test
+              </button>
+            </Tooltip>
           ) : (
             <>
               {credentials.length > 0 && (

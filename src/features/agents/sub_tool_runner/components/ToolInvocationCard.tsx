@@ -84,7 +84,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
                   value={inputJson}
                   onChange={(e) => setInputJson(e.target.value)}
                   rows={4}
-                  className="w-full rounded-xl border border-primary/20 bg-background/60 px-3 py-2 text-sm font-mono text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-violet-500/30 resize-y"
+                  className="w-full rounded-xl border border-primary/20 bg-background/60 px-3 py-2 text-sm font-mono text-foreground/80 placeholder:text-muted-foreground/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/30 resize-y"
                   placeholder='{ "key": "value" }'
                 />
               </div>

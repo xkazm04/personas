@@ -1,13 +1,14 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, Zap, Clock, AlertTriangle, Activity, Moon } from 'lucide-react';
+import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { extractConnectorNames } from '@/lib/personas/utils';
-import PersonaHoverPreview from './PersonaHoverPreview';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
@@ -46,14 +47,32 @@ export default function PersonaOverviewPage() {
   const lastRunMap = useAgentStore((s) => s.personaLastRun);
   const healthMap = useAgentStore((s) => s.personaHealthMap);
   const groups = usePipelineStore((s) => s.groups);
+  const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
+  const setResumeDraftId = useSystemStore((s) => s.setResumeDraftId);
 
   const scored = useRelevanceSort(personas, healthMap, lastRunMap, triggerCounts);
+
+  // Detect Draft group ID for draft re-entry
+  const draftGroupId = useMemo(() => {
+    const draftGroup = groups.find((g) => g.name === 'Draft');
+    return draftGroup?.id ?? null;
+  }, [groups]);
 
   const groupColorMap = useMemo(() => {
     const map: Record<string, string> = {};
     for (const g of groups) map[g.id] = g.color;
     return map;
   }, [groups]);
+
+  const handleCardClick = useCallback((personaId: string, groupId: string | null) => {
+    // If persona is in Draft group, resume creation in the matrix
+    if (draftGroupId && groupId === draftGroupId) {
+      setResumeDraftId(personaId);
+      setIsCreatingPersona(true);
+      return;
+    }
+    selectPersona(personaId);
+  }, [draftGroupId, selectPersona, setIsCreatingPersona, setResumeDraftId]);
 
   // Group scored personas into sections
   const sections = useMemo(() => {
@@ -71,35 +90,19 @@ export default function PersonaOverviewPage() {
   }, [scored]);
 
   const isSimple = useSimpleMode();
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
   const [activeIndex, setActiveIndex] = useState(0);
 
   // Flat list for keyboard navigation
   const flatList = useMemo(() => scored.map(s => s.persona), [scored]);
 
-  const handleMouseEnter = useCallback((personaId: string) => {
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-    hoverTimerRef.current = setTimeout(() => setHoveredId(personaId), 300);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-    hoverTimerRef.current = null;
-    setHoveredId(null);
-  }, []);
-
   useEffect(() => {
     const validIds = new Set(personas.map((p) => p.id));
     Object.keys(cardRefs.current).forEach((id) => {
       if (!validIds.has(id)) delete cardRefs.current[id];
     });
-    if (hoveredId && !validIds.has(hoveredId)) {
-      setHoveredId(null);
-    }
     setActiveIndex((prev) => (flatList.length === 0 ? 0 : Math.min(prev, flatList.length - 1)));
-  }, [personas, hoveredId, flatList.length]);
+  }, [personas, flatList.length]);
 
   const focusCardAt = useCallback((index: number) => {
     const persona = flatList[index];
@@ -156,7 +159,6 @@ export default function PersonaOverviewPage() {
       {sections.map(({ key, items }) => {
         const meta = SECTION_META[key];
         const Icon = meta.icon;
-        const sectionStart = flatIndex;
 
         const sectionContent = (
           <div key={key} className="mb-6">
@@ -167,7 +169,13 @@ export default function PersonaOverviewPage() {
               <span className="text-sm text-muted-foreground/80">({items.length})</span>
             </div>
 
-            <div role="listbox" aria-label={`${meta.label} agents`} className={`grid gap-3 ${IS_MOBILE ? '[grid-template-columns:1fr]' : '[grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] 3xl:[grid-template-columns:repeat(auto-fill,minmax(320px,1fr))] 4xl:[grid-template-columns:repeat(auto-fill,minmax(360px,1fr))]'}`}>
+            <AnimatedList
+              role="listbox"
+              aria-label={`${meta.label} agents`}
+              className={`grid gap-3 ${IS_MOBILE ? '[grid-template-columns:1fr]' : '[grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] 3xl:[grid-template-columns:repeat(auto-fill,minmax(320px,1fr))] 4xl:[grid-template-columns:repeat(auto-fill,minmax(360px,1fr))]'}`}
+              keys={items.map((sp) => sp.persona.id)}
+              staggerCap={12}
+            >
               {items.map((sp) => {
                 const persona = sp.persona;
                 const i = flatIndex++;
@@ -182,15 +190,10 @@ export default function PersonaOverviewPage() {
                   <motion.button
                     key={persona.id}
                     ref={(el) => { cardRefs.current[persona.id] = el; }}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: isIdle ? 0.6 : 1, y: 0 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25, delay: Math.min(i - sectionStart, 12) * 0.04 }}
                     whileHover={{ y: -2, opacity: 1, transition: { duration: 0.15 } }}
-                    onClick={() => selectPersona(persona.id)}
+                    onClick={() => handleCardClick(persona.id, persona.group_id ?? null)}
                     onFocus={() => setActiveIndex(i)}
                     onKeyDown={(e) => handleCardKeyDown(e, i)}
-                    onMouseEnter={() => handleMouseEnter(persona.id)}
-                    onMouseLeave={handleMouseLeave}
                     tabIndex={i === activeIndex ? 0 : -1}
                     role="option"
                     aria-selected={i === activeIndex}
@@ -203,10 +206,13 @@ export default function PersonaOverviewPage() {
                         ? 'border-emerald-500/10 bg-secondary/30 hover:bg-secondary/50 hover:border-emerald-500/20'
                         : 'border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20'
                     } transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background`}
-                    style={groupColor ? {
-                      borderLeftWidth: 3,
-                      borderImage: `linear-gradient(to bottom, ${groupColor}, transparent) 1`,
-                    } : undefined}
+                    style={{
+                      ...(isIdle ? { opacity: 0.6 } : {}),
+                      ...(groupColor ? {
+                        borderLeftWidth: 3,
+                        borderImage: `linear-gradient(to bottom, ${groupColor}, transparent) 1`,
+                      } : {}),
+                    }}
                   >
                     {/* Connector icons (hidden in simple mode) */}
                     {!isSimple && connectors.length > 0 && (
@@ -256,32 +262,30 @@ export default function PersonaOverviewPage() {
                           {formatRelativeTime(lastRun)}
                         </span>
                       )}
-                      {persona.model_profile && (
-                        <span className="text-sm font-mono px-1.5 py-0.5 rounded-lg bg-primary/5 text-muted-foreground/80 truncate max-w-[100px]" title={persona.model_profile}>
-                          {persona.model_profile}
-                        </span>
-                      )}
+                      {persona.model_profile && (() => {
+                        let label = persona.model_profile;
+                        try {
+                          const parsed = JSON.parse(persona.model_profile) as { model?: string; provider?: string };
+                          label = parsed.model && parsed.provider ? `${parsed.provider}:${parsed.model}` : (parsed.model ?? 'Custom');
+                        } catch { /* non-critical: display raw if not JSON */ }
+                        return (
+                          <span className="text-sm font-mono px-1.5 py-0.5 rounded-lg bg-primary/5 text-muted-foreground/80 truncate max-w-[100px]" title={label}>
+                            {label}
+                          </span>
+                        );
+                      })()}
                     </div>
                     )}
                   </motion.button>
                 );
               })}
-            </div>
+            </AnimatedList>
           </div>
         );
 
         return sectionContent;
       })}
 
-      {/* Hover Preview Popover */}
-      {hoveredId && (
-        <PersonaHoverPreview
-          personaId={hoveredId}
-          triggerCount={triggerCounts[hoveredId]}
-          anchorRef={{ current: cardRefs.current[hoveredId] ?? null }}
-          visible
-        />
-      )}
       </ContentBody>
     </ContentBox>
   );

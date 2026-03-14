@@ -1,7 +1,9 @@
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
+import { VIEW_MODE_CYCLE, DEFAULT_VIEW_MODE } from "@/lib/constants/uiModes";
+import type { ViewMode } from "@/lib/constants/uiModes";
 
-export type ViewMode = 'simple' | 'full' | 'dev';
+export type { ViewMode };
 
 export interface ViewModeSlice {
   viewMode: ViewMode;
@@ -10,9 +12,11 @@ export interface ViewModeSlice {
 }
 
 export const createViewModeSlice: StateCreator<SystemStore, [], [], ViewModeSlice> = (set) => ({
-  viewMode: 'full' as ViewMode,
+  viewMode: DEFAULT_VIEW_MODE,
   setViewMode: (mode) => set({ viewMode: mode }),
-  toggleViewMode: () => set((s) => ({
-    viewMode: s.viewMode === 'simple' ? 'full' : s.viewMode === 'full' ? 'dev' : 'simple',
-  })),
+  toggleViewMode: () => set((s) => {
+    const idx = VIEW_MODE_CYCLE.indexOf(s.viewMode);
+    const next = VIEW_MODE_CYCLE[(idx + 1) % VIEW_MODE_CYCLE.length];
+    return { viewMode: next };
+  }),
 });

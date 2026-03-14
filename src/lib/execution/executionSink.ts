@@ -13,7 +13,17 @@ const MAX_TERMINAL_LINES = 10_000;
 const MAX_LINE_LENGTH = 4096;
 /** Maximum total bytes tracked across all terminal lines (~10 MB). */
 const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
-const OUTPUT_TRUNCATION_NOTICE = "[SYSTEM] Output truncated - 10MB limit reached. Execution continues in background.";
+/** Number of recent lines to keep visible after the byte budget is exceeded. */
+const TAIL_BUFFER_LINES = 200;
+/** Throttle interval (ms) for flushing tail output after truncation. */
+const TAIL_FLUSH_INTERVAL_MS = 500;
+
+const OUTPUT_TRUNCATION_HEADER = "[SYSTEM] Output truncated — 10 MB limit reached. Showing most recent output below.";
+
+function formatTruncationNotice(totalBytes: number): string {
+  const mb = (totalBytes / (1024 * 1024)).toFixed(1);
+  return `${OUTPUT_TRUNCATION_HEADER} (${mb} MB received)`;
+}
 
 // ---------------------------------------------------------------------------
 // Ring buffer -- fixed-capacity store for terminal lines with O(1) append/evict
@@ -86,12 +96,15 @@ export interface SinkFlushCallback {
 
 export class ExecutionSink {
   private ring = new TerminalRingBuffer(MAX_TERMINAL_LINES);
+  private tailRing = new TerminalRingBuffer(TAIL_BUFFER_LINES);
   private batchLines: string[] = [];
   private batchBytes = 0;
   private batchScheduled = false;
   private generation = 0;
-  private truncationShown = false;
+  private truncated = false;
   private totalBytes = 0;
+  private lastTailFlushTime = 0;
+  private tailFlushScheduled = false;
   private onFlush: SinkFlushCallback | null = null;
 
   /** Bind the flush callback. Called once when the slice is created. */
@@ -126,9 +139,12 @@ export class ExecutionSink {
     this.batchLines = [];
     this.batchBytes = 0;
     this.batchScheduled = false;
-    this.truncationShown = false;
+    this.truncated = false;
     this.totalBytes = 0;
+    this.lastTailFlushTime = 0;
+    this.tailFlushScheduled = false;
     this.ring.clear();
+    this.tailRing.clear();
   }
 
   /** Clear everything and notify the store. */
@@ -137,9 +153,12 @@ export class ExecutionSink {
     this.batchLines = [];
     this.batchBytes = 0;
     this.batchScheduled = false;
-    this.truncationShown = false;
+    this.truncated = false;
     this.totalBytes = 0;
+    this.lastTailFlushTime = 0;
+    this.tailFlushScheduled = false;
     this.ring.clear();
+    this.tailRing.clear();
   }
 
   // -- Private --------------------------------------------------------
@@ -156,25 +175,58 @@ export class ExecutionSink {
     this.batchLines = [];
     this.batchBytes = 0;
 
-    // Enforce total byte budget
-    if (this.totalBytes >= MAX_TOTAL_BYTES) {
-      if (!this.truncationShown) {
-        this.truncationShown = true;
-        this.ring.pushMany([OUTPUT_TRUNCATION_NOTICE]);
-        this.onFlush(this.ring.toArray(), this.totalBytes);
-      }
+    this.totalBytes += bytesToFlush;
+
+    // Already in tail mode -- push to tail ring and schedule a throttled flush
+    if (this.truncated) {
+      this.tailRing.pushMany(linesToFlush);
+      this.scheduleTailFlush();
       return;
     }
 
-    this.totalBytes = Math.min(this.totalBytes + bytesToFlush, MAX_TOTAL_BYTES);
+    // Normal mode -- push to main ring
     this.ring.pushMany(linesToFlush);
 
-    if (this.totalBytes >= MAX_TOTAL_BYTES && !this.truncationShown) {
-      this.truncationShown = true;
-      this.ring.pushMany([OUTPUT_TRUNCATION_NOTICE]);
+    // Check if we just crossed the byte budget
+    if (this.totalBytes >= MAX_TOTAL_BYTES) {
+      this.truncated = true;
+      // Freeze the main ring snapshot and start tail mode
+      this.ring.pushMany([formatTruncationNotice(this.totalBytes)]);
+      this.onFlush(this.ring.toArray(), this.totalBytes);
+      return;
     }
 
     this.onFlush(this.ring.toArray(), this.totalBytes);
+  }
+
+  /**
+   * Schedule a throttled flush of the tail buffer so we don't overwhelm the
+   * store with rapid updates after truncation.
+   */
+  private scheduleTailFlush(): void {
+    if (this.tailFlushScheduled || !this.onFlush) return;
+    this.tailFlushScheduled = true;
+
+    const now = Date.now();
+    const elapsed = now - this.lastTailFlushTime;
+    const delay = Math.max(0, TAIL_FLUSH_INTERVAL_MS - elapsed);
+    const gen = this.generation;
+
+    setTimeout(() => {
+      this.tailFlushScheduled = false;
+      if (gen !== this.generation || !this.onFlush) return;
+
+      this.lastTailFlushTime = Date.now();
+
+      // Build output: truncation header + tail lines
+      const tailLines = this.tailRing.toArray();
+      const output = [
+        formatTruncationNotice(this.totalBytes),
+        "",
+        ...tailLines,
+      ];
+      this.onFlush(output, this.totalBytes);
+    }, delay);
   }
 }
 

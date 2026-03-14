@@ -1,5 +1,6 @@
 import { RefreshCw, ExternalLink, Shield, ShieldAlert, ShieldCheck, ShieldX } from 'lucide-react';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
 export interface CloudOAuthPanelProps {
   oauthStatus: { connected: boolean; scopes: string[] | null; expiresAt: string | null; isExpired: boolean | null } | null;
@@ -34,9 +35,9 @@ export function CloudOAuthPanel({
           <p className="text-sm text-foreground/80 leading-relaxed">
             Open the authorization window, approve access, then paste the code below to complete the connection.
           </p>
-          {oauthStartUrl && (
+          {sanitizeExternalUrl(oauthStartUrl) && (
             <a
-              href={oauthStartUrl}
+              href={sanitizeExternalUrl(oauthStartUrl)!}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-300 hover:text-indigo-200"
@@ -55,7 +56,7 @@ export function CloudOAuthPanel({
             value={oauthCode}
             onChange={(e) => setOauthCode(e.target.value)}
             placeholder="Paste the code here"
-            className="w-full px-3 py-2 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
+            className="w-full px-3 py-2 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 placeholder:text-muted-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
           />
         </div>
 
@@ -195,9 +196,9 @@ export function CloudOAuthPanel({
         <ExternalLink className="w-4 h-4" />
         {oauthStartUrl ? 'Refresh Authorization Link' : 'Connect Anthropic Account'}
       </button>
-      {oauthStartUrl && (
+      {sanitizeExternalUrl(oauthStartUrl) && (
         <a
-          href={oauthStartUrl}
+          href={sanitizeExternalUrl(oauthStartUrl)!}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium rounded-xl bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/15 transition-colors"

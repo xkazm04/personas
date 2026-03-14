@@ -34,14 +34,18 @@ export const updateAutomation = (id: string, input: UpdateAutomationInput) =>
 export const deleteAutomation = (id: string) =>
   invoke<boolean>("delete_automation", { id });
 
+import type { BlastRadiusItem } from "@/api/agents/personas";
+export const getAutomationBlastRadius = (id: string) =>
+  invoke<BlastRadiusItem[]>("automation_blast_radius", { id });
+
 export const triggerAutomation = (id: string, inputData?: string | null, executionId?: string | null) =>
-  invoke<AutomationRun>("trigger_automation", { id, inputData: inputData ?? null, executionId: executionId ?? null });
+  invoke<AutomationRun>("trigger_automation", { id, inputData: inputData, executionId: executionId });
 
 export const testAutomationWebhook = (id: string) =>
   invoke<AutomationRun>("test_automation_webhook", { id });
 
 export const getAutomationRuns = (automationId: string, limit?: number | null) =>
-  invoke<AutomationRun[]>("get_automation_runs", { automationId, limit: limit ?? null });
+  invoke<AutomationRun[]>("get_automation_runs", { automationId, limit: limit });
 
 // AI-assisted automation design
 export const startAutomationDesign = (personaId: string, description: string) =>
@@ -65,7 +69,7 @@ export const n8nCreateWorkflow = (credentialId: string, definition: Record<strin
   invoke<Record<string, unknown>>("n8n_create_workflow", { credentialId, definition });
 
 export const n8nTriggerWebhook = (credentialId: string, webhookUrl: string, body?: Record<string, unknown>) =>
-  invoke<Record<string, unknown>>("n8n_trigger_webhook", { credentialId, webhookUrl, body: body ?? null });
+  invoke<Record<string, unknown>>("n8n_trigger_webhook", { credentialId, webhookUrl, body: body });
 
 // Zapier Platform API
 
@@ -76,7 +80,7 @@ export const zapierCreateZap = (credentialId: string, definition: Record<string,
   invoke<{ zapId: string; webhookUrl: string | null }>("zapier_create_zap", { credentialId, definition });
 
 export const zapierTriggerWebhook = (credentialId: string, webhookUrl: string, body?: Record<string, unknown>) =>
-  invoke<ZapierWebhookResult>("zapier_trigger_webhook", { credentialId, webhookUrl, body: body ?? null });
+  invoke<ZapierWebhookResult>("zapier_trigger_webhook", { credentialId, webhookUrl, body: body });
 
 // GitHub Platform API
 

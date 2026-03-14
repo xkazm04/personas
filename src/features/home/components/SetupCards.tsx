@@ -242,7 +242,7 @@ function GoalStep({ value, onChange }: { value: string; onChange: (v: string) =>
         onChange={(e) => onChange(e.target.value)}
         placeholder="e.g. Automatically sync new Jira tickets to a Slack channel..."
         rows={5}
-        className="w-full rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 resize-none transition-all"
+        className="w-full rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus-ring focus-visible:border-primary/30 resize-none transition-all"
       />
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground/50">

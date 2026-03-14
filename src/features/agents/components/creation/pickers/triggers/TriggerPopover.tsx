@@ -55,7 +55,7 @@ export function TriggerPopover({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.1 }}
-            className="absolute z-50 left-0 top-full mt-1 bg-background border border-primary/20 rounded-xl shadow-xl p-2 min-w-[180px]"
+            className="absolute z-50 left-0 top-full mt-1 bg-background border border-primary/20 rounded-xl shadow-elevation-3 p-2 min-w-[180px]"
           >
             <p className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider px-1.5 mb-1">
               Trigger

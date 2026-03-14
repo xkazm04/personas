@@ -72,6 +72,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
           </p>
           <Button
             type="button" onClick={handleRun} disabled={!selectedPersona}
+            disabledReason="Select an agent to run health check"
             variant="primary"
             size="md"
             icon={<Activity className="w-4 h-4" />}

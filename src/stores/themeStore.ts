@@ -1,5 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { CustomThemeConfig } from '@/lib/theme/deriveCustomTheme';
+import { deriveCustomThemeVars, injectCustomThemeStyle, removeCustomThemeStyle } from '@/lib/theme/deriveCustomTheme';
+
+export type { CustomThemeConfig } from '@/lib/theme/deriveCustomTheme';
 
 export type ThemeId =
   | 'dark-midnight'
@@ -12,9 +16,12 @@ export type ThemeId =
   | 'dark-matrix'
   | 'light'
   | 'light-ice'
-  | 'light-news';
+  | 'light-news'
+  | 'custom';
 
 export type TextScale = 'large' | 'larger';
+
+export type TimezoneMode = 'local' | 'utc' | string; // string for IANA like 'America/New_York'
 
 export interface ThemeDefinition {
   id: ThemeId;
@@ -45,15 +52,34 @@ export const TEXT_SCALES: { id: TextScale; label: string; description: string }[
   { id: 'larger', label: 'Larger', description: 'Maximum readability' },
 ];
 
+/** Build a ThemeDefinition from a custom theme config (for rendering a swatch). */
+export function customThemeDef(config: CustomThemeConfig): ThemeDefinition {
+  const vars = deriveCustomThemeVars(config);
+  return {
+    id: 'custom',
+    label: config.label || 'Custom',
+    primaryColor: config.primaryColor,
+    accentColor: config.accentColor ?? vars['--accent'] ?? config.primaryColor,
+    backgroundSample: vars['--background'] ?? '#0a0e14',
+    foregroundSample: vars['--foreground'] ?? '#e2e8f0',
+    isLight: config.baseMode === 'light',
+  };
+}
+
 let transitionTimer: ReturnType<typeof setTimeout> | undefined;
 
-function applyTheme(id: ThemeId) {
+function applyThemeToDOM(id: ThemeId, customConfig?: CustomThemeConfig | null) {
   const el = document.documentElement;
 
   // Add transition class for cross-fade, then remove after animation completes
   clearTimeout(transitionTimer);
   el.classList.add('theme-transitioning');
   transitionTimer = setTimeout(() => el.classList.remove('theme-transitioning'), 250);
+
+  // Inject or remove the custom theme stylesheet
+  if (id === 'custom' && customConfig) {
+    injectCustomThemeStyle(deriveCustomThemeVars(customConfig));
+  }
 
   if (id === 'dark-midnight') {
     el.removeAttribute('data-theme');
@@ -62,7 +88,11 @@ function applyTheme(id: ThemeId) {
   }
 
   // Toggle dark class for Tailwind compatibility
-  if (id.startsWith('light')) {
+  const isLight = id === 'custom'
+    ? customConfig?.baseMode === 'light'
+    : id.startsWith('light');
+
+  if (isLight) {
     el.classList.remove('dark');
   } else {
     el.classList.add('dark');
@@ -76,29 +106,52 @@ function applyTextScale(scale: TextScale) {
 interface ThemeState {
   themeId: ThemeId;
   textScale: TextScale;
+  timezone: TimezoneMode;
+  customTheme: CustomThemeConfig | null;
   setTheme: (id: ThemeId) => void;
   setTextScale: (scale: TextScale) => void;
+  setTimezone: (tz: TimezoneMode) => void;
+  setCustomTheme: (config: CustomThemeConfig) => void;
+  clearCustomTheme: () => void;
 }
 
 export const useThemeStore = create<ThemeState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       themeId: 'dark-midnight' as ThemeId,
       textScale: 'large' as TextScale,
+      timezone: 'local' as TimezoneMode,
+      customTheme: null as CustomThemeConfig | null,
       setTheme: (id: ThemeId) => {
-        applyTheme(id);
+        applyThemeToDOM(id, get().customTheme);
         set({ themeId: id });
       },
       setTextScale: (scale: TextScale) => {
         applyTextScale(scale);
         set({ textScale: scale });
       },
+      setTimezone: (tz: TimezoneMode) => set({ timezone: tz }),
+      setCustomTheme: (config: CustomThemeConfig) => {
+        set({ customTheme: config });
+        // Inject styles and activate
+        applyThemeToDOM('custom', config);
+        set({ themeId: 'custom' });
+      },
+      clearCustomTheme: () => {
+        removeCustomThemeStyle();
+        const fallback: ThemeId = 'dark-midnight';
+        applyThemeToDOM(fallback, null);
+        set({ customTheme: null, themeId: fallback });
+      },
     }),
     {
       name: 'persona-theme',
       onRehydrateStorage: () => (state) => {
         if (state) {
-          applyTheme(state.themeId);
+          if (state.themeId === 'custom' && state.customTheme) {
+            injectCustomThemeStyle(deriveCustomThemeVars(state.customTheme));
+          }
+          applyThemeToDOM(state.themeId, state.customTheme);
           applyTextScale(state.textScale ?? 'large');
         }
       },

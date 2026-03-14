@@ -4,8 +4,7 @@ import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
 import { HealingIssueSummary } from './HealingIssueSummary';
 import { IssuesList } from './IssuesList';
 import { HealingTimeline } from './HealingTimeline';
-
-type ViewMode = 'list' | 'timeline';
+import type { HealingViewMode as ViewMode } from '@/lib/constants/uiModes';
 
 interface HealingIssuesPanelProps {
   healingIssues: PersonaHealingIssue[];

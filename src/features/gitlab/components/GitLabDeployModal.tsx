@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Loader2, Rocket, Check, ExternalLink, ShieldCheck, KeyRound } from 'lucide-react';
 import type { GitLabProject, GitLabDeployResult } from '@/api/system/gitlab';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { CiCdTemplatesPicker } from './CiCdTemplatesPicker';
 import type { CiCdTemplate, GitLabTierId } from '../data/cicdTemplates';
 
@@ -127,7 +128,7 @@ export function GitLabDeployModal({
             type="checkbox"
             checked={provisionCredentials}
             onChange={(e) => setProvisionCredentials(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-primary/20 text-orange-500 focus:ring-orange-500/30"
+            className="mt-0.5 h-4 w-4 rounded border-primary/20 text-orange-500 focus-visible:ring-orange-500/30"
           />
           <div>
             <div className="flex items-center gap-1.5">
@@ -188,9 +189,9 @@ export function GitLabDeployModal({
                   {result.credentialsProvisioned} credential{result.credentialsProvisioned !== 1 ? 's' : ''} provisioned as CI/CD variables
                 </p>
               )}
-              {result.webUrl && (
+              {sanitizeExternalUrl(result.webUrl) && (
                 <a
-                  href={result.webUrl}
+                  href={sanitizeExternalUrl(result.webUrl)!}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-2 flex items-center gap-1.5 text-sm text-orange-400 hover:text-orange-300"

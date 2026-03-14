@@ -74,7 +74,7 @@ export function FilterOption({ label, selected, color, onToggle }: FilterOptionP
         type="checkbox"
         checked={selected}
         onChange={onToggle}
-        className="rounded border-primary/30 text-primary focus:ring-primary/30 w-3.5 h-3.5"
+        className="rounded border-primary/30 text-primary focus-visible:ring-primary/30 w-3.5 h-3.5"
       />
       {color && (
         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />

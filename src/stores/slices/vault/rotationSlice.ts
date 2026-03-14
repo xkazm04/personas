@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { VaultStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import type {
   RotationStatus,
   RotationHistoryEntry,
@@ -85,7 +85,7 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
       });
       return status;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch rotation status") });
+      reportError(err, "Failed to fetch rotation status", set);
       return null;
     }
   },
@@ -124,7 +124,7 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
       get().fetchRotationStatus(input.credential_id);
       return policy;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create rotation policy") });
+      reportError(err, "Failed to create rotation policy", set);
       return null;
     }
   },
@@ -136,7 +136,7 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
       get().fetchAllRotationStatuses();
       return policy;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update rotation policy") });
+      reportError(err, "Failed to update rotation policy", set);
       return null;
     }
   },
@@ -147,7 +147,7 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
       get().fetchAllRotationStatuses();
       return result;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete rotation policy") });
+      reportError(err, "Failed to delete rotation policy", set);
       return false;
     }
   },
@@ -158,7 +158,7 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
       get().fetchRotationStatus(credentialId);
       return result;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to rotate credential") });
+      reportError(err, "Failed to rotate credential", set);
       return null;
     }
   },
@@ -169,7 +169,7 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
       get().fetchRotationStatus(credentialId);
       return result;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to refresh OAuth token") });
+      reportError(err, "Failed to refresh OAuth token", set);
       return null;
     }
   },
@@ -178,7 +178,7 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
     try {
       return await getRotationHistory(credentialId, limit);
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch rotation history") });
+      reportError(err, "Failed to fetch rotation history", set);
       return [];
     }
   },

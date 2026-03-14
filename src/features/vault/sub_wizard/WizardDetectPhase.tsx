@@ -150,7 +150,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search services..."
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all"
+          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 transition-all"
         />
       </div>
 

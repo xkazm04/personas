@@ -67,10 +67,10 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <SummaryCard icon={Zap} label="Total Executions" value={m.data.total_executions.toLocaleString()} color="blue" />
-        <SummaryCard icon={DollarSign} label="Total Cost" value={fmtCost(m.data.total_cost)} color="violet" />
-        <SummaryCard icon={CheckCircle} label="Success Rate" value={`${m.overallSuccessRatePct.toFixed(1)}%`} color="emerald" />
-        <SummaryCard icon={Clock} label="Avg Latency" value={fmtMs(m.data.avg_latency_ms)} color="amber" />
+        <SummaryCard icon={Zap} label="Total Executions" value={m.data.total_executions.toLocaleString()} color="blue" numericValue={m.data.total_executions} formatFn={(v) => Math.round(v).toLocaleString()} />
+        <SummaryCard icon={DollarSign} label="Total Cost" value={fmtCost(m.data.total_cost)} color="violet" numericValue={m.data.total_cost} formatFn={fmtCost} />
+        <SummaryCard icon={CheckCircle} label="Success Rate" value={`${m.overallSuccessRatePct.toFixed(1)}%`} color="emerald" numericValue={m.overallSuccessRatePct} formatFn={(v) => `${v.toFixed(1)}%`} />
+        <SummaryCard icon={Clock} label="Avg Latency" value={fmtMs(m.data.avg_latency_ms)} color="amber" numericValue={m.data.avg_latency_ms} formatFn={fmtMs} />
       </div>
 
       {/* Anomalies */}

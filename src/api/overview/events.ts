@@ -11,8 +11,8 @@ import type { UpdateEventSubscriptionInput } from "@/lib/bindings/UpdateEventSub
 
 export const listEvents = (limit?: number, projectId?: string) =>
   invoke<PersonaEvent[]>("list_events", {
-    limit: limit ?? null,
-    projectId: projectId ?? null,
+    limit: limit,
+    projectId: projectId,
   });
 
 export const listEventsInRange = (since: string, until: string) =>
@@ -38,5 +38,8 @@ export const deleteSubscription = (id: string) =>
 export const testEventFlow = (eventType: string, payload?: string) =>
   invoke<PersonaEvent>("test_event_flow", {
     eventType,
-    payload: payload ?? null,
+    payload: payload,
   });
+
+export const seedMockEvent = () =>
+  invoke<PersonaEvent>("seed_mock_event", {});

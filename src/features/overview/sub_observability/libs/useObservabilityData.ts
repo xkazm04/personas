@@ -2,7 +2,6 @@ import { useEffect, useMemo, useCallback, useState } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
-import { initHealingListener, initZombieExecutionListener } from "@/stores/personaStore";
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import type { PieDataPoint } from '../components/MetricsCharts';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
@@ -68,7 +67,6 @@ export function useObservabilityData() {
     }
   }, [triggerHealing, selectedPersonaId, personas]);
 
-  useEffect(() => { initHealingListener(); initZombieExecutionListener(); }, []);
   useEffect(() => { void fetchCredentials(); }, [fetchCredentials]);
 
   const evaluateAlertRules = useOverviewStore((s) => s.evaluateAlertRules);

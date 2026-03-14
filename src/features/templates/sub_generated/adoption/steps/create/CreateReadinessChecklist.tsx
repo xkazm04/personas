@@ -73,7 +73,7 @@ export function CreateReadinessChecklist({
               checked={safetyCriticalOverride}
               onChange={(e) => onSafetyCriticalOverrideChange(e.target.checked)}
               disabled={confirming}
-              className="mt-0.5 rounded border-red-500/30 text-red-500 focus:ring-red-500/30"
+              className="mt-0.5 rounded border-red-500/30 text-red-500 focus-visible:ring-red-500/30"
             />
             <div>
               <span className="text-sm font-medium text-red-300/90">

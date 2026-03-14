@@ -328,12 +328,14 @@ fn resolve_placeholders(
 ///
 /// - Strips null bytes (prevent C-string truncation)
 /// - Strips carriage returns and newlines (prevent CRLF / header injection)
+/// - Strips Unicode line terminators: U+0085 (NEL), U+000B (VT),
+///   U+2028 (LINE SEPARATOR), U+2029 (PARAGRAPH SEPARATOR)
 /// - Escapes `$` characters so user values cannot trigger secondary placeholder
 ///   expansion (e.g. user providing `${API_KEY}` won't match env var substitution)
 fn sanitize_input_value(value: &str) -> String {
     value
-        .replace(['\0', '\r'], "")
-        .replace('\n', " ")
+        .replace(['\0', '\r', '\u{0085}', '\u{000B}'], "")
+        .replace(['\n', '\u{2028}', '\u{2029}'], " ")
         .replace('$', "\\$")
 }
 

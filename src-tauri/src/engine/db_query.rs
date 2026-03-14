@@ -16,6 +16,7 @@ use std::time::Instant;
 use serde_json::Value;
 
 use crate::db::models::QueryResult;
+use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::{DbPool, UserDbPool};
 use crate::error::AppError;
@@ -100,6 +101,7 @@ pub async fn execute_query(
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
+    let _ = audit_log::log_decrypt(pool, credential_id, &credential.name, "db_query:execute", None, None);
 
     let result = match service {
         "supabase" => execute_supabase(&fields, query_text).await,
@@ -149,6 +151,7 @@ pub async fn introspect_tables(
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
+    let _ = audit_log::log_decrypt(pool, credential_id, &credential.name, "db_query:introspect_tables", None, None);
     let start = Instant::now();
 
     let result = match credential.service_type.as_str() {
@@ -199,6 +202,7 @@ pub async fn introspect_columns(
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
+    let _ = audit_log::log_decrypt(pool, credential_id, &credential.name, "db_query:introspect_columns", None, None);
     let start = Instant::now();
     let safe_name = table_name.replace(|c: char| !c.is_alphanumeric() && c != '_', "");
 

@@ -48,10 +48,10 @@ export const addTeamMember = (
   invoke<PersonaTeamMember>("add_team_member", {
     teamId,
     personaId,
-    role: role ?? null,
-    positionX: positionX ?? null,
-    positionY: positionY ?? null,
-    config: config ?? null,
+    role: role,
+    positionX: positionX,
+    positionY: positionY,
+    config: config,
   });
 
 export const updateTeamMember = (
@@ -63,10 +63,10 @@ export const updateTeamMember = (
 ) =>
   invoke<void>("update_team_member", {
     id,
-    role: role ?? null,
-    positionX: positionX ?? null,
-    positionY: positionY ?? null,
-    config: config ?? null,
+    role: role,
+    positionX: positionX,
+    positionY: positionY,
+    config: config,
   });
 
 export const removeTeamMember = (id: string) =>
@@ -87,9 +87,9 @@ export const createTeamConnection = (
     teamId,
     sourceMemberId,
     targetMemberId,
-    connectionType: connectionType ?? null,
-    condition: condition ?? null,
-    label: label ?? null,
+    connectionType: connectionType,
+    condition: condition,
+    label: label,
   });
 
 export const updateTeamConnection = (id: string, connectionType: string) =>
@@ -104,7 +104,7 @@ import type { PipelineRun } from "@/lib/bindings/PipelineRun";
 export type { PipelineRun } from "@/lib/bindings/PipelineRun";
 
 export const executeTeam = (teamId: string, inputData?: string) =>
-  invoke<string>("execute_team", { teamId, inputData: inputData ?? null });
+  invoke<string>("execute_team", { teamId, inputData: inputData });
 
 export const listPipelineRuns = (teamId: string) =>
   invoke<PipelineRun[]>("list_pipeline_runs", { teamId });
@@ -123,7 +123,7 @@ export const getPipelineAnalytics = (teamId: string) =>
 // -- Canvas Assistant -- Topology Suggestions -----------------------------
 
 export const suggestTopology = (query: string, teamId?: string) =>
-  invoke<TopologyBlueprint>("suggest_topology", { query, teamId: teamId ?? null });
+  invoke<TopologyBlueprint>("suggest_topology", { query, teamId: teamId });
 
 export const suggestTopologyLlm = (query: string, teamId?: string) =>
-  invoke<TopologyBlueprint>("suggest_topology_llm", { query, teamId: teamId ?? null });
+  invoke<TopologyBlueprint>("suggest_topology_llm", { query, teamId: teamId });

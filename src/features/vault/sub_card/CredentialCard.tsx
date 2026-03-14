@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import { CredentialCardHeader } from '@/features/vault/sub_card/CredentialCardHeader';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import { useRotationTicker, formatCountdown } from '@/features/vault/hooks/useRotationTicker';
 import type { RotationStatus } from '@/api/vault/rotation';
 import { getRotationStatus } from '@/api/vault/rotation';
+import { useVaultStore } from '@/stores/vaultStore';
 
 interface CredentialCardProps {
   credential: CredentialMetadata;
@@ -21,6 +23,7 @@ export function CredentialCard({
   onDelete,
 }: CredentialCardProps) {
   const [rotationStatus, setRotationStatus] = useState<RotationStatus | null>(null);
+  const isPendingDelete = useVaultStore((s) => s.pendingDeleteCredentialIds.has(credential.id));
 
   const { result: healthcheckResult } = useCredentialHealth(credential.id);
 
@@ -50,6 +53,21 @@ export function CredentialCard({
             isStale: true,
           }
     ), [healthcheckResult, credential.healthcheck_last_success, credential.healthcheck_last_message]);
+
+  if (isPendingDelete) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 0.4, y: 0 }}
+        className="bg-secondary/25 backdrop-blur-sm border border-red-500/20 rounded-lg overflow-hidden pointer-events-none"
+      >
+        <div className="flex items-center gap-2 px-4 py-3 text-sm text-red-400/70">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          Deleting {credential.name}...
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

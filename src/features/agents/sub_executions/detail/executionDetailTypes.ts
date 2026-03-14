@@ -2,19 +2,7 @@ import { Key, Zap, Settings, Shield, Clock, XCircle, AlertTriangle } from 'lucid
 import type { LucideIcon } from 'lucide-react';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 
-/** Check whether a raw JSON string parses into a non-empty array or object. */
-export function hasNonEmptyJson(raw: string | null | undefined, type: 'array' | 'object'): boolean {
-  if (!raw) return false;
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (type === 'array') {
-      return Array.isArray(parsed) && parsed.length > 0;
-    }
-    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) && Object.keys(parsed as Record<string, unknown>).length > 0;
-  } catch { // intentional: non-critical -- JSON parse fallback
-    return type === 'object' ? !!raw : false;
-  }
-}
+export { hasNonEmptyJson } from '@/lib/utils/parseJson';
 
 export interface ErrorAction {
   label: string;

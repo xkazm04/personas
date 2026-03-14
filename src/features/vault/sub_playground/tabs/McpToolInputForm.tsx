@@ -55,13 +55,13 @@ export function ToolInputForm({
                 onChange={(e) => onChange({ ...values, [key]: e.target.value })}
                 placeholder={`Enter JSON ${propType}...`}
                 rows={3}
-                className="w-full px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 resize-none focus:outline-none focus:border-primary/25"
+                className="w-full px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 resize-none focus-visible:outline-none focus-visible:border-primary/25"
               />
             ) : propType === 'boolean' ? (
               <select
                 value={values[key] || ''}
                 onChange={(e) => onChange({ ...values, [key]: e.target.value })}
-                className="px-2 py-1.5 rounded text-sm bg-secondary/20 border border-primary/10 text-foreground/70 focus:outline-none focus:border-primary/25"
+                className="px-2 py-1.5 rounded text-sm bg-secondary/20 border border-primary/10 text-foreground/70 focus-visible:outline-none focus-visible:border-primary/25"
               >
                 <option value="">-- select --</option>
                 <option value="true">true</option>
@@ -73,7 +73,7 @@ export function ToolInputForm({
                 value={values[key] || ''}
                 onChange={(e) => onChange({ ...values, [key]: e.target.value })}
                 placeholder={`Enter ${propType}...`}
-                className="w-full px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus:outline-none focus:border-primary/25"
+                className="w-full px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus-visible:outline-none focus-visible:border-primary/25"
               />
             )}
           </div>

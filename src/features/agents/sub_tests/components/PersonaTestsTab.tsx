@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { FlaskConical, Play, Square, ChevronDown, AlertCircle, Filter } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePersonaTests } from '@/hooks/tests/usePersonaTests';
 import { TestSuiteManager } from './TestSuiteManager';
 import { TestModelSelector } from './TestModelSelector';
 import { TestProgressPanel } from './TestProgressPanel';
 import { TestHistoryList } from './TestHistoryList';
-import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
+import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { ALL_MODELS } from '@/lib/models/modelCatalog';
 import type { ModelTestConfig } from '@/api/agents/tests';
@@ -32,10 +33,7 @@ export function PersonaTestsTab() {
 
   usePersonaTests();
 
-  const useCases: UseCaseItem[] = useMemo(() => {
-    const ctx = parseDesignContext(selectedPersona?.design_context);
-    return ctx.useCases ?? [];
-  }, [selectedPersona?.design_context]);
+  const useCases = useSelectedUseCases();
 
   const selectedUseCase = useMemo(
     () => useCases.find((uc) => uc.id === selectedUseCaseId) ?? null,
@@ -140,6 +138,7 @@ export function PersonaTestsTab() {
                 ariaLabel="Filter by use case"
                 renderTrigger={({ isOpen, toggle }) => (
                   <button onClick={toggle} disabled={isTestRunning}
+                    title={isTestRunning ? 'Cannot change while test is running' : undefined}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30 text-foreground/90' : 'bg-background/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'} ${isTestRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                     <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? 'All Use Cases'}</span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -165,10 +164,20 @@ export function PersonaTestsTab() {
               <Square className="w-4 h-4" />Cancel Test Run
             </button>
           ) : (
-            <button onClick={handleStartTest} disabled={selectedModels.size === 0 || !hasPrompt}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
-              <Play className="w-4 h-4" />Run Test ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` \u2014 ${selectedUseCase.title}` : ''})
-            </button>
+            <Tooltip
+              content={
+                !hasPrompt ? 'Add a prompt to this persona first'
+                  : selectedModels.size === 0 ? 'Select at least one model'
+                  : ''
+              }
+              placement="top"
+              delay={200}
+            >
+              <button onClick={handleStartTest} disabled={selectedModels.size === 0 || !hasPrompt}
+                className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
+                <Play className="w-4 h-4" />Run Test ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` \u2014 ${selectedUseCase.title}` : ''})
+              </button>
+            </Tooltip>
           )}
           <TestProgressPanel isRunning={isTestRunning} progress={testRunProgress} perModelProgress={perModelProgress} />
         </div>

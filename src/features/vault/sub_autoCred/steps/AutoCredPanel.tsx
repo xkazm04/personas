@@ -29,7 +29,8 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
         setMode(available ? 'playwright' : 'guided');
         setModeChecked(true);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.warn('Playwright availability check failed, falling back to guided mode:', err);
         setMode('guided');
         setModeChecked(true);
       });

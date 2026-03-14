@@ -1,10 +1,11 @@
 import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import { useAgentStore } from "../../agentStore";
 import type { PersonaMessage } from "@/lib/types/types";
 import { enrichWithPersona } from "@/lib/types/types";
 import { deleteMessage, getMessageCount, getUnreadMessageCount, listMessages, markAllMessagesRead, markMessageRead } from "@/api/overview/messages";
+import { deduplicateFetch } from "@/lib/utils/deduplicateFetch";
 
 
 export interface MessageSlice {
@@ -51,7 +52,7 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
         }));
       }
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch messages") });
+      reportError(err, "Failed to fetch messages", set);
     }
   },
 
@@ -97,7 +98,7 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
           unreadMessageCount: state.unreadMessageCount + 1,
         };
       });
-      set({ error: errMsg(err, "Failed to mark message as read") });
+      reportError(err, "Failed to mark message as read", set);
     }
   },
 
@@ -119,7 +120,7 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
       // Fetch authoritative count in case the loaded list is a partial page
       await get().fetchUnreadMessageCount();
     } catch (err) {
-      set({ error: errMsg(err, "Failed to mark all as read") });
+      reportError(err, "Failed to mark all as read", set);
     }
   },
 
@@ -131,16 +132,16 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
         messagesTotal: Math.max(0, state.messagesTotal - 1),
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete message") });
+      reportError(err, "Failed to delete message", set);
     }
   },
 
-  fetchUnreadMessageCount: async () => {
+  fetchUnreadMessageCount: deduplicateFetch('unreadMessageCount', async () => {
     try {
       const unread = await getUnreadMessageCount();
       set({ unreadMessageCount: unread });
     } catch (err) {
       console.warn("[messageSlice] fetchUnreadMessageCount failed:", err);
     }
-  },
+  }),
 });

@@ -167,7 +167,7 @@ export function DesignPhasePreview({
           value={refinement.message}
           onChange={(e) => refinement.onMessageChange(e.target.value)}
           placeholder="Describe what to change..."
-          className="flex-1 min-h-[60px] max-h-[120px] bg-background/50 border border-primary/20 rounded-xl px-3 py-2 text-sm text-foreground font-sans resize-y focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30"
+          className="flex-1 min-h-[60px] max-h-[120px] bg-background/50 border border-primary/20 rounded-xl px-3 py-2 text-sm text-foreground font-sans resize-y focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();

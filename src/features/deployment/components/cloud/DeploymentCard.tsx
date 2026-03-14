@@ -3,6 +3,7 @@ import { Loader2, Pause, Play, Trash2, Copy, ExternalLink, Check, DollarSign } f
 import type { CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { statusColor, timeAgo, budgetUtilization, budgetColor, formatCost } from './cloudDeploymentHelpers';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
 interface DeploymentCardProps {
   deployment: CloudDeployment;
@@ -105,9 +106,9 @@ export function DeploymentCard({
         >
           {copiedId === d.slug ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
         </button>
-        {baseUrl && (
+        {sanitizeExternalUrl(endpointUrl) && (
           <a
-            href={endpointUrl}
+            href={sanitizeExternalUrl(endpointUrl)!}
             target="_blank"
             rel="noopener noreferrer"
             title="Open endpoint"

@@ -30,7 +30,7 @@ export function AppFocusConfig({
                 setAppNames(updated);
               }}
               placeholder="e.g. Code.exe, chrome.exe, Figma.exe"
-              className="flex-1 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 transition-all"
+              className="flex-1 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 transition-all"
             />
             {appNames.length > 1 && (
               <button type="button" onClick={() => setAppNames(appNames.filter((_, j) => j !== i))} className="p-1.5 text-muted-foreground/60 hover:text-red-400 transition-colors">
@@ -53,7 +53,7 @@ export function AppFocusConfig({
           value={titlePattern}
           onChange={(e) => setTitlePattern(e.target.value)}
           placeholder="e.g. .*\\.rs$ or Project - Visual Studio"
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 transition-all"
         />
       </div>
       <div>
@@ -65,7 +65,7 @@ export function AppFocusConfig({
           value={appFocusInterval}
           onChange={(e) => setAppFocusInterval(e.target.value)}
           min="2"
-          className="w-24 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400/40 transition-all"
+          className="w-24 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 transition-all"
         />
       </div>
     </div>

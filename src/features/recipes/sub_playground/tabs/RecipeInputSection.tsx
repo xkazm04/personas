@@ -114,7 +114,7 @@ export function RecipeInputSection({
                     <select
                       value={fieldValues[field.key] ?? ''}
                       onChange={(e) => onFieldChange(field.key, e.target.value)}
-                      className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground focus:outline-none focus:border-emerald-500/50"
+                      className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:border-emerald-500/50"
                     >
                       {field.options.map((opt) => (
                         <option key={opt} value={opt}>{opt}</option>
@@ -141,7 +141,7 @@ export function RecipeInputSection({
                       type={field.type === 'number' ? 'number' : 'text'}
                       value={fieldValues[field.key] ?? ''}
                       onChange={(e) => onFieldChange(field.key, e.target.value)}
-                      className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-emerald-500/50"
+                      className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-emerald-500/50"
                     />
                   )}
                 </div>
@@ -153,7 +153,7 @@ export function RecipeInputSection({
               onChange={(e) => onFreeInputChange(e.target.value)}
               placeholder="Enter input JSON or plain text..."
               rows={3}
-              className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-emerald-500/50 resize-y"
+              className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-emerald-500/50 resize-y"
             />
           )}
         </div>

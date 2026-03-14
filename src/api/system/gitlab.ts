@@ -63,7 +63,7 @@ export const gitlabUndeployAgent = (projectId: number, agentId: string) =>
 export const gitlabTriggerPipeline = (projectId: number, ref?: string) =>
   invoke<GitLabPipeline>("gitlab_trigger_pipeline", {
     projectId,
-    ref: ref ?? null,
+    ref: ref,
   });
 
 export const gitlabGetPipeline = (projectId: number, pipelineId: number) =>
@@ -72,7 +72,7 @@ export const gitlabGetPipeline = (projectId: number, pipelineId: number) =>
 export const gitlabListPipelines = (projectId: number, limit?: number) =>
   invoke<GitLabPipeline[]>("gitlab_list_pipelines", {
     projectId,
-    limit: limit ?? null,
+    limit: limit,
   });
 
 export const gitlabListPipelineJobs = (projectId: number, pipelineId: number) =>

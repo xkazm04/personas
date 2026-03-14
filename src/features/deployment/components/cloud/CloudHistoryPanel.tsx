@@ -100,7 +100,7 @@ export function CloudHistoryPanel() {
         <select
           value={filterPersona}
           onChange={(e) => setFilterPersona(e.target.value)}
-          className="px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
+          className="px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         >
           <option value="">All personas</option>
           {personas.map((p) => (
@@ -111,7 +111,7 @@ export function CloudHistoryPanel() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
+          className="px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         >
           <option value="">All statuses</option>
           <option value="completed">Completed</option>
@@ -122,7 +122,7 @@ export function CloudHistoryPanel() {
         <select
           value={period}
           onChange={(e) => setPeriod(Number(e.target.value))}
-          className="px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
+          className="px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         >
           <option value={7}>Last 7 days</option>
           <option value={30}>Last 30 days</option>

@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::engine::lifecycle::TriggerStatus;
+
 // ============================================================================
 // Triggers
 // ============================================================================
@@ -214,6 +216,15 @@ pub struct UpdateTriggerInput {
 }
 
 impl PersonaTrigger {
+    /// Return the typed lifecycle status derived from the `enabled` column.
+    ///
+    /// Bridges the legacy boolean column to the [`TriggerStatus`] enum so that
+    /// downstream code can reason about trigger state transitions without
+    /// inspecting raw booleans.
+    pub fn status(&self) -> TriggerStatus {
+        TriggerStatus::from_enabled(self.enabled)
+    }
+
     /// Parse the raw `config` JSON string once and return a typed `TriggerConfig`.
     /// All downstream consumers should call this once and reuse the result.
     pub fn parse_config(&self) -> TriggerConfig {

@@ -110,7 +110,9 @@ export function useCredentialDesign() {
       setSavedCredentialId(credId);
 
       // Cache the recipe for reuse by Negotiator and AutoCred paths
-      void saveRecipeFromDesign(snapshot);
+      void saveRecipeFromDesign(snapshot).catch((err) => {
+        console.warn('Failed to cache recipe from design (non-critical):', err);
+      });
 
       flow.setPhase('done');
     } catch (err) {

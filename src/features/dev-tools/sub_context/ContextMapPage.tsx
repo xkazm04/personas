@@ -7,7 +7,7 @@ import {
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
-import { useSystemStore } from '@/stores/systemStore';
+import { useDevToolsActions } from '../hooks/useDevToolsActions';
 
 // ---------------------------------------------------------------------------
 // Types (local until devToolsSlice is wired)
@@ -224,10 +224,7 @@ function GroupColorPicker({
 // ---------------------------------------------------------------------------
 
 export default function ContextMapPage() {
-  const store = useSystemStore.getState();
-  const fetchContextMap = (store as any).fetchContextMap as (() => Promise<void>) | undefined;
-  const createContextGroup = (store as any).createContextGroup as ((data: any) => Promise<void>) | undefined;
-  const runCodebaseScan = (store as any).runCodebaseScan as (() => Promise<void>) | undefined;
+  const { fetchContextMap, createContextGroup, scanCodebase } = useDevToolsActions();
 
   const [groups, _setGroups] = useState<ContextGroup[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -240,7 +237,7 @@ export default function ContextMapPage() {
   const { staggerDelay } = useMotion();
 
   useEffect(() => {
-    fetchContextMap?.();
+    fetchContextMap();
   }, []);
 
   const toggleGroup = (id: string) => {
@@ -263,17 +260,17 @@ export default function ContextMapPage() {
       });
     }, 400);
     try {
-      await runCodebaseScan?.();
+      await scanCodebase();
     } finally {
       clearInterval(interval);
       setScanProgress(100);
       setTimeout(() => { setScanning(false); setScanProgress(0); }, 600);
     }
-  }, [runCodebaseScan]);
+  }, [scanCodebase]);
 
   const handleCreateGroup = () => {
     if (!newGroupName.trim()) return;
-    createContextGroup?.({ name: newGroupName.trim(), color: newGroupColor });
+    createContextGroup({ name: newGroupName.trim(), color: newGroupColor });
     setNewGroupName('');
     setShowNewGroup(false);
   };
@@ -336,10 +333,10 @@ export default function ContextMapPage() {
                         onChange={(e) => setNewGroupName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleCreateGroup()}
                         placeholder="Group name..."
-                        className="flex-1 px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                        className="flex-1 px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
                         autoFocus
                       />
-                      <Button variant="accent" accentColor="amber" size="sm" disabled={!newGroupName.trim()} onClick={handleCreateGroup}>
+                      <Button variant="accent" accentColor="amber" size="sm" disabled={!newGroupName.trim()} disabledReason="Enter a group name to create" onClick={handleCreateGroup}>
                         Create
                       </Button>
                       <Button variant="ghost" size="icon-sm" onClick={() => setShowNewGroup(false)}>

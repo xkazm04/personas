@@ -17,10 +17,21 @@ pub fn require_valid_id(field: &str, value: &str) -> Result<(), AppError> {
     if trimmed.len() > 200 {
         return Err(AppError::Validation(format!("{field} is too long (max 200 chars)")));
     }
-    // Reject characters that could be used for path traversal or injection
-    if trimmed.contains("..") || trimmed.contains('/') || trimmed.contains('\\') {
+    // Whitelist: only allow alphanumeric, dash, underscore, and dot.
+    // This eliminates entire classes of injection (null bytes, control chars,
+    // path traversal, CRLF injection, SQL injection via special chars).
+    if !trimmed
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
+    {
         return Err(AppError::Validation(format!(
-            "{field} contains invalid characters"
+            "{field} contains invalid characters (only alphanumeric, dash, underscore, and dot are allowed)"
+        )));
+    }
+    // Still reject consecutive dots to prevent path traversal like "../"
+    if trimmed.contains("..") {
+        return Err(AppError::Validation(format!(
+            "{field} contains invalid character sequence"
         )));
     }
     Ok(())

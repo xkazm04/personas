@@ -1,9 +1,8 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useAgentStore } from "@/stores/agentStore";
-import { initHealingListener } from "@/stores/personaStore";
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
-import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { useOverviewFilterValues } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 
 /**
@@ -23,7 +22,7 @@ export function useOverviewMetrics() {
     effectiveDays,
     compareEnabled,
     previousPeriodDays,
-  } = useOverviewFilters();
+  } = useOverviewFilterValues();
 
   const [autoRefresh, setAutoRefresh] = useState(false);
   const refreshInFlightRef = useRef<Promise<void> | null>(null);
@@ -61,7 +60,6 @@ export function useOverviewMetrics() {
     }
   }, [refreshAll]);
 
-  useEffect(() => { initHealingListener(); }, []);
   useEffect(() => { void refreshAllSafe(); }, [refreshAllSafe]);
 
   usePolling(refreshAllSafe, {

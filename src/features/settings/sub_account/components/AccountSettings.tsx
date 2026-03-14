@@ -1,5 +1,7 @@
-import { Chrome, LogOut, User } from 'lucide-react';
+import { Chrome, LogOut, User, Check, Sparkles, LayoutGrid, Wrench } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import { useSystemStore } from '@/stores/systemStore';
+import { VIEW_MODES } from '@/lib/constants/uiModes';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 
 export default function AccountSettings() {
@@ -9,6 +11,8 @@ export default function AccountSettings() {
   const isLoading = useAuthStore((s) => s.isLoading);
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const logout = useAuthStore((s) => s.logout);
+  const viewMode = useSystemStore((s) => s.viewMode);
+  const setViewMode = useSystemStore((s) => s.setViewMode);
 
   return (
     <ContentBox>
@@ -20,6 +24,42 @@ export default function AccountSettings() {
       />
 
       <ContentBody centered>
+        <div className="space-y-6">
+        {/* Interface mode */}
+        <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 text-violet-400" />
+            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Interface Mode</h2>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {([
+              { mode: VIEW_MODES.SIMPLE, icon: Sparkles, label: 'Simple', desc: 'Streamlined view', color: 'violet' },
+              { mode: VIEW_MODES.FULL, icon: LayoutGrid, label: 'Full', desc: 'All features', color: 'primary' },
+              { mode: VIEW_MODES.DEV, icon: Wrench, label: 'Dev', desc: 'Full + Dev Tools', color: 'amber' },
+            ] as const).map(({ mode, icon: Icon, label, desc, color }) => {
+              const isActive = viewMode === mode;
+              return (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${
+                    isActive
+                      ? `border-${color}-500/30 bg-${color}-500/5`
+                      : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? `text-${color}-400` : 'text-muted-foreground/50'}`} />
+                  <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>{label}</span>
+                  <span className="text-[11px] text-muted-foreground/50 text-center">{desc}</span>
+                  {isActive && (
+                    <div className="absolute top-2 right-2"><Check className={`w-3.5 h-3.5 text-${color}-400`} /></div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-6">
           {isAuthenticated && user ? (
             <>
@@ -79,6 +119,7 @@ export default function AccountSettings() {
               </button>
             </div>
           )}
+        </div>
         </div>
       </ContentBody>
     </ContentBox>

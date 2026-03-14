@@ -91,7 +91,7 @@ export function TestSuiteManager({
               <p className="text-sm text-muted-foreground/90">Save the {lastGeneratedScenarios!.length} generated scenarios as a reusable test suite.</p>
               <div className="flex items-center gap-2">
                 <input type="text" value={saveNameInput} onChange={(e) => setSaveNameInput(e.target.value)} placeholder="Suite name (optional)"
-                  className="flex-1 px-3 py-2 rounded-xl text-sm bg-background/40 border border-primary/10 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
+                  className="flex-1 px-3 py-2 rounded-xl text-sm bg-background/40 border border-primary/10 text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/30"
                   data-testid="save-suite-name-input" />
                 <Button onClick={handleSaveFromRun}
                   variant="secondary"
@@ -138,7 +138,7 @@ export function TestSuiteManager({
                         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)}
                             onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); if (e.key === 'Escape') handleCancelRename(); }}
-                            className="flex-1 px-2 py-0.5 rounded text-sm bg-background/40 border border-primary/20 text-foreground focus:outline-none focus:border-primary/40"
+                            className="flex-1 px-2 py-0.5 rounded text-sm bg-background/40 border border-primary/20 text-foreground focus-visible:outline-none focus-visible:border-primary/40"
                             autoFocus data-testid={`suite-rename-input-${suite.id}`} />
                           <Button onClick={handleSaveRename} variant="ghost" size="xs" className="p-1 text-primary" data-testid={`suite-rename-save-${suite.id}`} icon={<Check className="w-3.5 h-3.5" />} />
                           <Button onClick={handleCancelRename} variant="ghost" size="xs" className="p-1 text-muted-foreground" data-testid={`suite-rename-cancel-${suite.id}`} icon={<X className="w-3.5 h-3.5" />} />

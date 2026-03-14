@@ -110,7 +110,7 @@ export function AutoCredReview({
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
-          className="w-full px-3 py-2 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full px-3 py-2 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground focus-ring"
         />
       </div>
 

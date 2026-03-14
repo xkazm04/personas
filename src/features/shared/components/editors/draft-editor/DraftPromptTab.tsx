@@ -166,7 +166,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                           updatePrompt({ ...editable, customSections: nextSections });
                         }}
                         disabled={disabled}
-                        className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring"
                       />
                       <input
                         type="text"
@@ -179,7 +179,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                           updatePrompt({ ...editable, customSections: nextSections });
                         }}
                         disabled={disabled}
-                        className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring"
                       />
                     </div>
                     <div className="flex-1 min-h-0">

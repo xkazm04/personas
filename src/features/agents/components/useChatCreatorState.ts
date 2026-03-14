@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { useToastStore } from '@/stores/toastStore';
 import { useDesignAnalysis } from '@/hooks/design/core/useDesignAnalysis';
 import { deriveName, calcCompleteness } from './designUtils';
@@ -125,6 +126,21 @@ export function useChatCreatorState({ onCreated, onActivated }: UseChatCreatorSt
         });
         setDraftPersonaId(persona.id);
         onCreated?.(persona.id);
+
+        // Move to Draft group (consistent with Build/Matrix flows)
+        try {
+          const { groups, createGroup, movePersonaToGroup } = usePipelineStore.getState();
+          let draftGroup = groups.find((g) => g.name === 'Draft');
+          if (!draftGroup) {
+            draftGroup = await createGroup({ name: 'Draft', color: '#6B7280', description: 'Agents being designed' }) ?? undefined;
+          }
+          if (draftGroup) {
+            await movePersonaToGroup(persona.id, draftGroup.id);
+          }
+        } catch {
+          // intentional: non-critical -- best-effort group assignment
+        }
+
         await design.startIntentCompilation(persona.id, text);
       } catch (err) {
         isCreatingRef.current = false;

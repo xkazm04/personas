@@ -75,7 +75,7 @@ export function SavedViewsDropdown({
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             placeholder="View name..."
             autoFocus
-            className="flex-1 px-2 py-1 text-sm rounded border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
+            className="flex-1 px-2 py-1 text-sm rounded border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-ring"
           />
           <button
             onClick={handleSave}

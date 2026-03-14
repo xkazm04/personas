@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
-import { PanelLeftClose, PanelLeft, Sparkles, LayoutGrid, Wrench } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { SidebarIconStyles, SIDEBAR_ICONS } from './SidebarIcons';
 import { useSystemStore } from "@/stores/systemStore";
-import { useOverviewStore } from "@/stores/overviewStore";
 import { useAgentStore } from "@/stores/agentStore";
+import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
 import type { SidebarSection } from '@/lib/types/types';
 import { IS_MOBILE, MOBILE_SECTIONS } from '@/lib/utils/platform/platform';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
@@ -12,7 +12,6 @@ import { sections } from './sidebarData';
 
 interface SidebarLevel1Props {
   collapsed: boolean;
-  onToggleCollapsed: () => void;
   disabledSections: Set<SidebarSection>;
   onMobileDrawerToggle: (section: SidebarSection) => void;
   appVersion: string;
@@ -20,28 +19,38 @@ interface SidebarLevel1Props {
 
 export default function SidebarLevel1({
   collapsed,
-  onToggleCollapsed,
   disabledSections,
   onMobileDrawerToggle,
   appVersion,
 }: SidebarLevel1Props) {
-  const sidebarSection = useSystemStore((s) => s.sidebarSection);
+  const {
+    sidebarSection,
+    n8nTransformActive,
+    templateAdoptActive,
+    rebuildActive,
+    templateTestActive,
+    connectorTestActive,
+    contextScanActive,
+    contextScanComplete,
+  } = useSystemStore(
+    useShallow((s) => ({
+      sidebarSection: s.sidebarSection,
+      n8nTransformActive: s.n8nTransformActive,
+      templateAdoptActive: s.templateAdoptActive,
+      rebuildActive: s.rebuildActive,
+      templateTestActive: s.templateTestActive,
+      connectorTestActive: s.connectorTestActive,
+      contextScanActive: s.contextScanActive,
+      contextScanComplete: s.contextScanComplete,
+    }))
+  );
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
-  const n8nTransformActive = useSystemStore((s) => s.n8nTransformActive);
-  const templateAdoptActive = useSystemStore((s) => s.templateAdoptActive);
-  const rebuildActive = useSystemStore((s) => s.rebuildActive);
-  const templateTestActive = useSystemStore((s) => s.templateTestActive);
-  const isLabRunning = useAgentStore((s) => s.isLabRunning);
-  const connectorTestActive = useSystemStore((s) => s.connectorTestActive);
-  const contextScanActive = useSystemStore((s) => s.contextScanActive);
-  const contextScanComplete = useSystemStore((s) => s.contextScanComplete);
   const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
+  const { pendingReviewCount } = useBadgeCounts();
+  const isLabRunning = useAgentStore((s) => s.isLabRunning);
   const isDev = import.meta.env.DEV;
   const isSimple = useSimpleMode();
   const isDevMode = useDevMode();
-  const viewMode = useSystemStore((s) => s.viewMode);
-  const toggleViewMode = useSystemStore((s) => s.toggleViewMode);
 
   return (
     <>
@@ -143,33 +152,7 @@ export default function SidebarLevel1({
           );
         })}
 
-        {!IS_MOBILE && (
-          <button
-            onClick={onToggleCollapsed}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors mt-1"
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-          </button>
-        )}
-
         <div className="flex-1" />
-
-        {!IS_MOBILE && (
-          <button
-            onClick={toggleViewMode}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors mb-1 ${
-              viewMode === 'simple'
-                ? 'text-violet-400 bg-violet-500/15 hover:bg-violet-500/25'
-                : viewMode === 'dev'
-                  ? 'text-amber-400 bg-amber-500/15 hover:bg-amber-500/25'
-                  : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50'
-            }`}
-            title={viewMode === 'simple' ? 'Switch to Full mode' : viewMode === 'full' ? 'Switch to Dev mode' : 'Switch to Simple mode'}
-          >
-            {viewMode === 'simple' ? <Sparkles className="w-4 h-4" /> : viewMode === 'dev' ? <Wrench className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
-          </button>
-        )}
 
         {!collapsed && appVersion && (
           <div className="pb-1 pt-1">

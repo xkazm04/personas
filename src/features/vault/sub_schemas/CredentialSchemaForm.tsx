@@ -185,7 +185,7 @@ export function CredentialSchemaForm({
             placeholder={config.namePlaceholder}
             aria-invalid={!!error}
             aria-describedby={error ? 'schema-form-error' : undefined}
-            className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30"
+            className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-xl text-foreground text-sm focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
           />
         </div>
       )}

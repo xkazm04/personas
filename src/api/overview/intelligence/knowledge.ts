@@ -10,8 +10,8 @@ export const listExecutionKnowledge = (
 ) =>
   invoke<ExecutionKnowledge[]>('list_execution_knowledge', {
     personaId,
-    knowledgeType: knowledgeType ?? null,
-    limit: limit ?? null,
+    knowledgeType: knowledgeType,
+    limit: limit,
   });
 
 export const getKnowledgeInjection = (
@@ -20,12 +20,12 @@ export const getKnowledgeInjection = (
 ) =>
   invoke<ExecutionKnowledge[]>('get_knowledge_injection', {
     personaId,
-    useCaseId: useCaseId ?? null,
+    useCaseId: useCaseId,
   });
 
 export const getKnowledgeSummary = (personaId?: string) =>
   invoke<KnowledgeGraphSummary>('get_knowledge_summary', {
-    personaId: personaId ?? null,
+    personaId: personaId,
   });
 
 export const listScopedKnowledge = (
@@ -35,8 +35,8 @@ export const listScopedKnowledge = (
 ) =>
   invoke<ExecutionKnowledge[]>('list_scoped_knowledge', {
     scopeType,
-    scopeId: scopeId ?? null,
-    limit: limit ?? null,
+    scopeId: scopeId,
+    limit: limit,
   });
 
 export const upsertKnowledgeAnnotation = (
@@ -51,7 +51,7 @@ export const upsertKnowledgeAnnotation = (
     scopeType,
     scopeId,
     annotationText,
-    annotationSource: annotationSource ?? null,
+    annotationSource: annotationSource,
   });
 
 export const verifyKnowledgeAnnotation = (knowledgeId: string) =>

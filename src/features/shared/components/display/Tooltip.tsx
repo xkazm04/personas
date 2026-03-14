@@ -137,7 +137,7 @@ export function Tooltip({
               exit={{ opacity: 0, y: 4 }}
               transition={{ duration: 0.15 }}
               role="tooltip"
-              className="fixed z-[9999] pointer-events-none max-w-[240px] text-xs text-foreground bg-background/95 backdrop-blur-sm border border-primary/15 rounded-lg px-2.5 py-1.5 shadow-lg"
+              className="fixed z-[9999] pointer-events-none max-w-[240px] text-xs text-foreground glass-sm rounded-lg px-2.5 py-1.5 shadow-elevation-3"
               style={pos ? { top: pos.top, left: pos.left } : { visibility: 'hidden' as const, top: 0, left: 0 }}
             >
               {content}

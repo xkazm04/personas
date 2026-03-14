@@ -10,6 +10,7 @@ use std::sync::OnceLock;
 use async_trait::async_trait;
 
 use crate::db::models::PersonaCredential;
+use crate::db::repos::resources::audit_log;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -71,6 +72,7 @@ pub trait ConnectorStrategy: Send + Sync {
     ) -> Result<String, AppError> {
         // 1. Snapshot current fields before rotation attempt
         let original_fields = crate::db::repos::resources::credentials::get_decrypted_fields(pool, credential)?;
+        let _ = audit_log::log_decrypt(pool, &credential.id, &credential.name, "connector_strategy:rotate_snapshot", None, None);
 
         // 2. Attempt rotation via healthcheck
         let result = super::healthcheck::run_healthcheck(pool, &credential.id).await;
@@ -78,6 +80,7 @@ pub trait ConnectorStrategy: Send + Sync {
         match result {
             Ok(hc) if hc.success => {
                 let fields = crate::db::repos::resources::credentials::get_decrypted_fields(pool, credential)?;
+                let _ = audit_log::log_decrypt(pool, &credential.id, &credential.name, "connector_strategy:rotate_verify", None, None);
                 if self.is_oauth(&fields) {
                     Ok(format!("OAuth token refreshed and verified: {}", hc.message))
                 } else {
@@ -297,6 +300,7 @@ impl ConnectorStrategy for DefaultStrategy {
         credential: &PersonaCredential,
     ) -> Result<String, AppError> {
         let fields = crate::db::repos::resources::credentials::get_decrypted_fields(pool, credential)?;
+        let _ = audit_log::log_decrypt(pool, &credential.id, &credential.name, "connector_strategy:rotate", None, None);
         if self.is_oauth(&fields) {
             // OAuth path: refresh + verify
             let refresh_msg = super::oauth_refresh::refresh_single_credential(pool, credential).await?;

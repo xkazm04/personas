@@ -17,10 +17,10 @@ import type { ModelTestConfig } from "./tests";
 // ============================================================================
 
 export const labStartArena = (personaId: string, models: ModelTestConfig[], useCaseFilter?: string) =>
-  invoke<LabArenaRun>("lab_start_arena", { personaId, models, useCaseFilter: useCaseFilter ?? null });
+  invoke<LabArenaRun>("lab_start_arena", { personaId, models, useCaseFilter: useCaseFilter });
 
 export const labListArenaRuns = (personaId: string, limit?: number) =>
-  invoke<LabArenaRun[]>("lab_list_arena_runs", { personaId, limit: limit ?? null });
+  invoke<LabArenaRun[]>("lab_list_arena_runs", { personaId, limit: limit });
 
 export const labGetArenaResults = (runId: string) =>
   invoke<LabArenaResult[]>("lab_get_arena_results", { runId });
@@ -48,12 +48,12 @@ export const labStartAb = (
     versionAId,
     versionBId,
     models,
-    useCaseFilter: useCaseFilter ?? null,
-    testInput: testInput ?? null,
+    useCaseFilter: useCaseFilter,
+    testInput: testInput,
   });
 
 export const labListAbRuns = (personaId: string, limit?: number) =>
-  invoke<LabAbRun[]>("lab_list_ab_runs", { personaId, limit: limit ?? null });
+  invoke<LabAbRun[]>("lab_list_ab_runs", { personaId, limit: limit });
 
 export const labGetAbResults = (runId: string) =>
   invoke<LabAbResult[]>("lab_get_ab_results", { runId });
@@ -78,11 +78,11 @@ export const labStartMatrix = (
     personaId,
     userInstruction: instruction,
     models,
-    useCaseFilter: useCaseFilter ?? null,
+    useCaseFilter: useCaseFilter,
   });
 
 export const labListMatrixRuns = (personaId: string, limit?: number) =>
-  invoke<LabMatrixRun[]>("lab_list_matrix_runs", { personaId, limit: limit ?? null });
+  invoke<LabMatrixRun[]>("lab_list_matrix_runs", { personaId, limit: limit });
 
 export const labGetMatrixResults = (runId: string) =>
   invoke<LabMatrixResult[]>("lab_get_matrix_results", { runId });
@@ -111,12 +111,12 @@ export const labStartEval = (
     personaId,
     versionIds,
     models,
-    useCaseFilter: useCaseFilter ?? null,
-    testInput: testInput ?? null,
+    useCaseFilter: useCaseFilter,
+    testInput: testInput,
   });
 
 export const labListEvalRuns = (personaId: string, limit?: number) =>
-  invoke<LabEvalRun[]>("lab_list_eval_runs", { personaId, limit: limit ?? null });
+  invoke<LabEvalRun[]>("lab_list_eval_runs", { personaId, limit: limit });
 
 export const labGetEvalResults = (runId: string) =>
   invoke<LabEvalResult[]>("lab_get_eval_results", { runId });
@@ -132,7 +132,7 @@ export const labCancelEval = (id: string) =>
 // ============================================================================
 
 export const labGetVersions = (personaId: string, limit?: number) =>
-  invoke<PersonaPromptVersion[]>("lab_get_versions", { personaId, limit: limit ?? null });
+  invoke<PersonaPromptVersion[]>("lab_get_versions", { personaId, limit: limit });
 
 export const labTagVersion = (id: string, tag: string) =>
   invoke<PersonaPromptVersion>("lab_tag_version", { id, tag });
@@ -141,4 +141,4 @@ export const labRollbackVersion = (versionId: string) =>
   invoke<PersonaPromptVersion>("lab_rollback_version", { versionId });
 
 export const labGetErrorRate = (personaId: string, window?: number) =>
-  invoke<number>("lab_get_error_rate", { personaId, window: window ?? null });
+  invoke<number>("lab_get_error_rate", { personaId, window: window });

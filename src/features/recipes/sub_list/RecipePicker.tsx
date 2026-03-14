@@ -65,7 +65,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search recipes..."
               autoFocus
-              className="w-full rounded-xl border border-border/50 bg-background/50 pl-8 pr-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50"
+              className="w-full rounded-xl border border-border/50 bg-background/50 pl-8 pr-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50"
             />
           </div>
         </div>

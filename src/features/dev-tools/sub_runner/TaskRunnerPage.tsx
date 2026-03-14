@@ -7,7 +7,7 @@ import {
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
-import { useSystemStore } from '@/stores/systemStore';
+import { useDevToolsActions } from '../hooks/useDevToolsActions';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -120,7 +120,7 @@ function TaskModal({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Task title..."
-                className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/30"
+                className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
               />
             </div>
             <div>
@@ -130,7 +130,7 @@ function TaskModal({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe what this task should accomplish..."
                 rows={3}
-                className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/30 resize-none"
+                className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30 resize-none"
               />
             </div>
             <div>
@@ -143,7 +143,7 @@ function TaskModal({
                   value={goalId}
                   onChange={(e) => setGoalId(e.target.value)}
                   placeholder="Goal ID or name..."
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/30"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
                 />
               </div>
             </div>
@@ -259,11 +259,7 @@ function TaskCard({
 // ---------------------------------------------------------------------------
 
 export default function TaskRunnerPage() {
-  const store = useSystemStore.getState();
-  const createTask = (store as any).createRunnerTask as ((data: any) => Promise<void>) | undefined;
-  const batchFromAccepted = (store as any).batchFromAcceptedIdeas as (() => Promise<void>) | undefined;
-  const startBatch = (store as any).startBatch as (() => Promise<void>) | undefined;
-  const cancelAll = (store as any).cancelAllTasks as (() => Promise<void>) | undefined;
+  const { createTask, batchFromAcceptedIdeas: batchFromAccepted, startBatch, cancelAllTasks: cancelAll } = useDevToolsActions();
 
   const [tasks] = useState<RunnerTask[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -279,7 +275,7 @@ export default function TaskRunnerPage() {
     : 0;
 
   const handleCreateTask = useCallback((data: { title: string; description: string; goalId?: string }) => {
-    createTask?.(data);
+    createTask(data);
   }, [createTask]);
 
   return (
@@ -303,7 +299,7 @@ export default function TaskRunnerPage() {
               variant="secondary"
               size="sm"
               icon={<ListChecks className="w-3.5 h-3.5" />}
-              onClick={() => batchFromAccepted?.()}
+              onClick={() => batchFromAccepted()}
             >
               Batch from Accepted
             </Button>
@@ -313,7 +309,7 @@ export default function TaskRunnerPage() {
               size="sm"
               icon={<Play className="w-3.5 h-3.5" />}
               disabled={queuedCount === 0 && runningCount === 0}
-              onClick={() => startBatch?.()}
+              onClick={() => startBatch()}
             >
               Start Batch
             </Button>
@@ -322,7 +318,7 @@ export default function TaskRunnerPage() {
               size="sm"
               icon={<XCircle className="w-3.5 h-3.5" />}
               disabled={runningCount === 0 && queuedCount === 0}
-              onClick={() => cancelAll?.()}
+              onClick={() => cancelAll()}
             >
               Cancel All
             </Button>
@@ -403,7 +399,7 @@ export default function TaskRunnerPage() {
                     accentColor="amber"
                     size="sm"
                     icon={<ListChecks className="w-3.5 h-3.5" />}
-                    onClick={() => batchFromAccepted?.()}
+                    onClick={() => batchFromAccepted()}
                   >
                     Batch from Accepted
                   </Button>

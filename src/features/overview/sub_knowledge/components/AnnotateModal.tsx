@@ -66,7 +66,7 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
               value={scopeId}
               onChange={(e) => setScopeId(e.target.value)}
               placeholder={scopeType === 'tool' ? 'e.g. http_request' : 'e.g. google_workspace'}
-              className="w-full px-3 py-1.5 rounded-xl bg-secondary/40 border border-primary/10 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
+              className="w-full px-3 py-1.5 rounded-xl bg-secondary/40 border border-primary/10 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
             />
           </div>
         )}
@@ -78,7 +78,7 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
             onChange={(e) => setText(e.target.value)}
             placeholder="e.g. Stripe webhook verification requires the raw request body, not the parsed JSON"
             rows={3}
-            className="w-full px-3 py-2 rounded-xl bg-secondary/40 border border-primary/10 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30 resize-none"
+            className="w-full px-3 py-2 rounded-xl bg-secondary/40 border border-primary/10 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30 resize-none"
           />
         </div>
       </div>

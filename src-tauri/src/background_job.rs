@@ -350,6 +350,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     pub fn get_snapshot(&self, job_id: &str) -> Option<JobSnapshot> {
         let mut jobs = self.lock().ok()?;
         self.sweep_stale_running(&mut jobs);
+        self.evict_stale(&mut jobs);
         jobs.get(job_id).map(|job| JobSnapshot {
             job_id: job_id.to_string(),
             status: if job.status.is_empty() {
@@ -368,6 +369,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     pub fn list_snapshots(&self) -> Vec<JobSnapshot> {
         let Ok(mut jobs) = self.lock() else { return Vec::new() };
         self.sweep_stale_running(&mut jobs);
+        self.evict_stale(&mut jobs);
         jobs.iter()
             .map(|(id, job)| JobSnapshot {
                 job_id: id.clone(),
@@ -392,6 +394,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     ) -> Option<R> {
         let mut jobs = self.lock().ok()?;
         self.sweep_stale_running(&mut jobs);
+        self.evict_stale(&mut jobs);
         jobs.get(job_id).map(|job| f(job_id, job))
     }
 
@@ -405,6 +408,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     ) -> Option<BackgroundTaskSnapshot<T>> {
         let mut jobs = self.lock().ok()?;
         self.sweep_stale_running(&mut jobs);
+        self.evict_stale(&mut jobs);
         jobs.get(job_id).map(|job| BackgroundTaskSnapshot {
             job_id: job_id.to_string(),
             status: if job.status.is_empty() {

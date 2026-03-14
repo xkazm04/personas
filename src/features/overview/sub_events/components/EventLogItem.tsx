@@ -63,7 +63,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
       {event.payload && (
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-sm text-foreground/70 font-medium">Payload</span>
+            <span className="text-sm text-foreground/70 font-medium">Event Data</span>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(
@@ -74,7 +74,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
                 }).catch(() => { /* intentional */ });
               }}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
-              title="Copy payload"
+              title="Copy event data"
             >
               {copiedPayload ? (
                 <><Check className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>

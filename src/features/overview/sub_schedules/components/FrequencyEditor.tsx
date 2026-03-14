@@ -3,6 +3,7 @@ import { X, Clock, Check } from 'lucide-react';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import type { CronPreview } from '@/api/pipeline/triggers';
 import { CRON_PRESETS } from '../libs/scheduleHelpers';
+import { useThemeStore } from '@/stores/themeStore';
 
 interface FrequencyEditorProps {
   agent: CronAgent;
@@ -28,6 +29,8 @@ export default function FrequencyEditor({
   );
   const [preview, setPreview] = useState<CronPreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const timezone = useThemeStore((s) => s.timezone);
+  const tzLabel = timezone === 'local' ? 'Local' : timezone === 'utc' ? 'UTC' : timezone.split('/').pop()?.replace(/_/g, ' ') || timezone;
 
   // Live preview for custom cron
   useEffect(() => {
@@ -63,9 +66,9 @@ export default function FrequencyEditor({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-[520px] max-w-[calc(100%-2rem)] mx-4 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-primary/10 bg-primary/5">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-primary/5">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/25 flex items-center justify-center">
               <Clock className="w-4 h-4 text-blue-400" />
@@ -83,7 +86,7 @@ export default function FrequencyEditor({
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="px-6 py-5 space-y-5">
           {/* Current schedule */}
           <div className="text-xs text-muted-foreground/60">
             Current: <span className="font-mono text-muted-foreground/90">{currentSchedule}</span>
@@ -119,7 +122,7 @@ export default function FrequencyEditor({
                   : 'bg-secondary/30 border-primary/10 text-muted-foreground/70 hover:bg-secondary/50'
               }`}
             >
-              Cron expression <span className="text-amber-400/60 font-medium">(UTC)</span>
+              Cron expression <span className="text-amber-400/60 font-medium">({tzLabel})</span>
             </button>
             <button
               onClick={() => setMode('preset')}
@@ -141,7 +144,7 @@ export default function FrequencyEditor({
                 value={cronInput}
                 onChange={(e) => setCronInput(e.target.value)}
                 placeholder="*/15 * * * *"
-                className="w-full px-3 py-2 text-sm font-mono bg-secondary/40 border border-primary/15 rounded-lg text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20"
+                className="w-full px-3 py-2 text-sm font-mono bg-secondary/40 border border-primary/15 rounded-lg text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30 focus-visible:ring-1 focus-visible:ring-primary/20"
               />
               {/* Preview */}
               {previewLoading && (
@@ -158,10 +161,15 @@ export default function FrequencyEditor({
                       <p className="font-medium">{preview.description}</p>
                       {preview.next_runs.length > 0 && (
                         <div className="mt-1 space-y-0.5">
-                          <p className="text-muted-foreground/50 text-[10px] uppercase tracking-wider">Next runs (local time)</p>
+                          <p className="text-muted-foreground/50 text-[10px] uppercase tracking-wider">Next runs ({tzLabel})</p>
                           {preview.next_runs.slice(0, 3).map((run, i) => (
                             <p key={i} className="font-mono text-[11px] text-muted-foreground/70">
-                              {new Date(run).toLocaleString()}
+                              {timezone === 'utc'
+                                ? new Date(run).toLocaleString(undefined, { timeZone: 'UTC' })
+                                : timezone !== 'local'
+                                  ? new Date(run).toLocaleString(undefined, { timeZone: timezone })
+                                  : new Date(run).toLocaleString()
+                              }
                             </p>
                           ))}
                         </div>
@@ -180,13 +188,13 @@ export default function FrequencyEditor({
               onChange={(e) => setIntervalInput(e.target.value)}
               placeholder="300"
               min={10}
-              className="w-full px-3 py-2 text-sm font-mono bg-secondary/40 border border-primary/15 rounded-lg text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20"
+              className="w-full px-3 py-2 text-sm font-mono bg-secondary/40 border border-primary/15 rounded-lg text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30 focus-visible:ring-1 focus-visible:ring-primary/20"
             />
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10 bg-primary/[0.03]">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-primary/10 bg-primary/[0.03]">
           <button
             onClick={onCancel}
             className="px-3 py-1.5 text-xs rounded-lg border border-primary/10 bg-secondary/30 text-muted-foreground/70 hover:bg-secondary/50 transition-colors"

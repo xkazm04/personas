@@ -6,7 +6,7 @@ import {
   ArrowLeftRight, ThumbsDown, ThumbsUp, Trash2, ChevronLeft, ChevronRight, HelpCircle,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { useSystemStore } from '@/stores/systemStore';
+import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { AGENT_CATEGORIES } from '../constants/scanAgents';
 
 // ---------------------------------------------------------------------------
@@ -171,9 +171,7 @@ function SwipeCard({
 // ---------------------------------------------------------------------------
 
 export default function IdeaTriagePage() {
-  const store = useSystemStore.getState();
-  const triageIdea = (store as any).triageIdea as ((id: string, decision: 'accepted' | 'rejected') => Promise<void>) | undefined;
-  const deleteIdea = (store as any).deleteIdea as ((id: string) => Promise<void>) | undefined;
+  const { triageIdea, deleteIdea } = useDevToolsActions();
 
   const [ideas, setIdeas] = useState<TriageIdea[]>([]);
   const [filterCategory, setFilterCategory] = useState<CategoryKey | 'all'>('all');
@@ -193,14 +191,14 @@ export default function IdeaTriagePage() {
     const decision = direction === 'right' ? 'accepted' : 'rejected';
 
     setIdeas((prev) => prev.map((i) => i.id === idea.id ? { ...i, status: decision } : i));
-    triageIdea?.(idea.id, decision);
+    triageIdea(idea.id, decision);
   }, [pendingIdeas, triageIdea]);
 
   const handleDelete = useCallback(() => {
     const idea = pendingIdeas[0];
     if (!idea) return;
     setIdeas((prev) => prev.filter((i) => i.id !== idea.id));
-    deleteIdea?.(idea.id);
+    deleteIdea(idea.id);
   }, [pendingIdeas, deleteIdea]);
 
   // Keyboard shortcuts

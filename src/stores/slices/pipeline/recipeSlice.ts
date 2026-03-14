@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { PipelineStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import type { RecipeDefinition } from "@/lib/bindings/RecipeDefinition";
 import type { CreateRecipeInput } from "@/lib/bindings/CreateRecipeInput";
 import type { UpdateRecipeInput } from "@/lib/bindings/UpdateRecipeInput";
@@ -29,7 +29,7 @@ export const createRecipeSlice: StateCreator<PipelineStore, [], [], RecipeSlice>
       const recipes = await listRecipes();
       set({ recipes, error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch recipes") });
+      reportError(err, "Failed to fetch recipes", set);
       throw err;
     }
   },
@@ -41,7 +41,7 @@ export const createRecipeSlice: StateCreator<PipelineStore, [], [], RecipeSlice>
       set({ error: null });
       return created.id;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create recipe") });
+      reportError(err, "Failed to create recipe", set);
       throw err;
     }
   },
@@ -52,7 +52,7 @@ export const createRecipeSlice: StateCreator<PipelineStore, [], [], RecipeSlice>
       await get().fetchRecipes();
       set({ error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update recipe") });
+      reportError(err, "Failed to update recipe", set);
       throw err;
     }
   },
@@ -63,7 +63,7 @@ export const createRecipeSlice: StateCreator<PipelineStore, [], [], RecipeSlice>
       await get().fetchRecipes();
       set({ error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete recipe") });
+      reportError(err, "Failed to delete recipe", set);
       throw err;
     }
   },
@@ -73,7 +73,7 @@ export const createRecipeSlice: StateCreator<PipelineStore, [], [], RecipeSlice>
       await linkRecipeToPersona({ persona_id: personaId, recipe_id: recipeId, sort_order: null, config: null });
       set({ error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to link recipe") });
+      reportError(err, "Failed to link recipe", set);
       throw err;
     }
   },
@@ -83,7 +83,7 @@ export const createRecipeSlice: StateCreator<PipelineStore, [], [], RecipeSlice>
       await unlinkRecipeFromPersona(personaId, recipeId);
       set({ error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to unlink recipe") });
+      reportError(err, "Failed to unlink recipe", set);
       throw err;
     }
   },
@@ -93,7 +93,7 @@ export const createRecipeSlice: StateCreator<PipelineStore, [], [], RecipeSlice>
       const recipes = await getPersonaRecipes(personaId);
       return recipes;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch persona recipes") });
+      reportError(err, "Failed to fetch persona recipes", set);
       throw err;
     }
   },

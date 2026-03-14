@@ -67,7 +67,7 @@ fn get_foreground_window_windows() -> Option<ForegroundWindow> {
         // Get window title
         let mut title_buf = [0u16; 512];
         let title_len = GetWindowTextW(hwnd, &mut title_buf);
-        let window_title = if title_len > 0 {
+        let window_title = if title_len > 0 && (title_len as usize) <= title_buf.len() {
             String::from_utf16_lossy(&title_buf[..title_len as usize])
         } else {
             String::new()
@@ -82,7 +82,7 @@ fn get_foreground_window_windows() -> Option<ForegroundWindow> {
                 let mut name_buf = [0u16; 512];
                 let name_len = GetProcessImageFileNameW(process, &mut name_buf);
                 let _ = CloseHandle(process);
-                if name_len > 0 {
+                if name_len > 0 && (name_len as usize) <= name_buf.len() {
                     let full_path = String::from_utf16_lossy(&name_buf[..name_len as usize]);
                     // Extract just the executable name
                     full_path

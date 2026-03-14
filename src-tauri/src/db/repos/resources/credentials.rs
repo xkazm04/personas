@@ -234,6 +234,83 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     Ok(rows > 0)
 }
 
+/// Returns a summary of resources affected by deleting this credential.
+pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, AppError> {
+    let conn = pool.get()?;
+    let mut impacts: Vec<(String, String)> = Vec::new();
+
+    // Event triggers that will be removed
+    let event_count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM credential_events WHERE credential_id = ?1",
+            params![id],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    if event_count > 0 {
+        impacts.push(("event".into(), format!("{event_count} event trigger(s) will be removed")));
+    }
+
+    // Rotation policies
+    let rotation_count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM credential_rotation_policies WHERE credential_id = ?1",
+            params![id],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    if rotation_count > 0 {
+        impacts.push(("rotation".into(), format!("{rotation_count} rotation policy/policies will be removed")));
+    }
+
+    // Dependent personas (structural: personas whose tools use connectors matching this credential)
+    let service_type: Option<String> = conn
+        .query_row(
+            "SELECT service_type FROM persona_credentials WHERE id = ?1",
+            params![id],
+            |r| r.get(0),
+        )
+        .ok();
+
+    if let Some(ref svc) = service_type {
+        let mut stmt = conn.prepare(
+            "SELECT DISTINCT p.name FROM personas p
+             INNER JOIN persona_tools pt ON pt.persona_id = p.id
+             INNER JOIN persona_tool_definitions ptd ON ptd.id = pt.tool_id
+             INNER JOIN connector_definitions cd ON cd.name = ?1
+             WHERE cd.services LIKE '%' || ptd.name || '%'",
+        )?;
+        let names: Vec<String> = stmt
+            .query_map(params![svc], |row| row.get::<_, String>(0))?
+            .filter_map(|r| r.ok())
+            .collect();
+        if !names.is_empty() {
+            impacts.push((
+                "persona".into(),
+                format!(
+                    "Agent(s) {} may lose {} access",
+                    names.join(", "),
+                    svc
+                ),
+            ));
+        }
+    }
+
+    // Active automations using this credential
+    let auto_count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM persona_automations WHERE platform_credential_id = ?1 AND deployment_status = 'active'",
+            params![id],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    if auto_count > 0 {
+        impacts.push(("automation".into(), format!("{auto_count} active automation(s) will lose their credential")));
+    }
+
+    Ok(impacts)
+}
+
 /// Update only the metadata column for a credential.
 /// Used by the anomaly scoring engine to persist healthcheck ring buffer data
 /// without touching encrypted fields.

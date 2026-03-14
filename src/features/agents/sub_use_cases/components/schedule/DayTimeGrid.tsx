@@ -89,7 +89,7 @@ export function DayTimeGrid({
             <select
               value={hour}
               onChange={(e) => onHourChange(parseInt(e.target.value))}
-              className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-primary/20 bg-secondary/25 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/30 cursor-pointer"
+              className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-primary/20 bg-secondary/25 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 cursor-pointer"
             >
               {HOURS.map((h) => (
                 <option key={h} value={h}>
@@ -107,7 +107,7 @@ export function DayTimeGrid({
             <select
               value={minute}
               onChange={(e) => onMinuteChange(parseInt(e.target.value))}
-              className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-primary/20 bg-secondary/25 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/30 cursor-pointer"
+              className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-primary/20 bg-secondary/25 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 cursor-pointer"
             >
               {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
                 <option key={m} value={m}>

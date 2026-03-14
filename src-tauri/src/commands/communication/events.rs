@@ -148,3 +148,77 @@ pub fn test_event_flow(
     }
     Ok(event)
 }
+
+// -- Dev seed: mock event -------------------------------------------------------
+
+const MOCK_EVENT_TYPES: &[&str] = &[
+    "webhook_received", "execution_completed", "trigger_fired",
+    "credential_rotated", "health_check_failed", "deployment_started",
+    "memory_created", "review_submitted",
+];
+
+const MOCK_EVENT_SOURCES: &[&str] = &[
+    "webhook", "scheduler", "trigger_engine", "vault",
+    "health_monitor", "cloud_deploy", "memory_engine", "review_pipeline",
+];
+
+const MOCK_EVENT_STATUSES: &[&str] = &[
+    "completed", "completed", "processing", "completed",
+    "failed", "processing", "completed", "pending",
+];
+
+#[tauri::command]
+pub fn seed_mock_event(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+) -> Result<PersonaEvent, AppError> {
+    require_auth_sync(&state)?;
+
+    let personas = crate::db::repos::core::personas::get_all(&state.db)?;
+    let t = chrono::Utc::now().timestamp_millis() as usize;
+    let idx = t % std::cmp::max(personas.len(), 1);
+    let target_persona_id = personas.get(idx).map(|p| p.id.clone());
+
+    let event_type = MOCK_EVENT_TYPES[t % MOCK_EVENT_TYPES.len()].to_string();
+    let source_type = MOCK_EVENT_SOURCES[t % MOCK_EVENT_SOURCES.len()].to_string();
+    let status = MOCK_EVENT_STATUSES[t % MOCK_EVENT_STATUSES.len()].to_string();
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    let payload = serde_json::json!({
+        "mock": true,
+        "timestamp": now,
+        "detail": format!("Mock {} event from {}", event_type, source_type),
+    }).to_string();
+
+    let conn = state.db.get()?;
+    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
+    conn.execute(
+        "INSERT INTO persona_events
+         (id, event_type, source_type, source_id, target_persona_id, payload, status, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        rusqlite::params![id, event_type, source_type, Option::<String>::None, target_persona_id, payload, status, now],
+    )?;
+    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+
+    let event = PersonaEvent {
+        id,
+        event_type,
+        source_type,
+        source_id: None,
+        project_id: String::new(),
+        target_persona_id,
+        payload: Some(payload),
+        status,
+        error_message: None,
+        processed_at: None,
+        use_case_id: None,
+        created_at: now,
+    };
+
+    if let Err(e) = app.emit("event-bus", event.clone()) {
+        tracing::warn!(error = %e, "Failed to emit mock event-bus event");
+    }
+
+    Ok(event)
+}

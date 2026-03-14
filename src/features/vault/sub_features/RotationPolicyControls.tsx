@@ -112,7 +112,7 @@ export function RotationPolicyControls({
                 onChange={(e) => setRotationDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
                 min={1}
                 data-testid="rotation-days-input"
-                className={`w-16 px-2 py-0.5 bg-background/50 border rounded-xl text-sm text-foreground text-center focus:outline-none focus:ring-1 ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.ringColor!}`}
+                className={`w-16 px-2 py-0.5 bg-background/50 border rounded-xl text-sm text-foreground text-center focus-visible:outline-none focus-visible:ring-1 ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.ringColor!}`}
               />
               <span className="text-sm text-muted-foreground/80">days</span>
               <Button
@@ -195,7 +195,7 @@ export function RotationPolicyControls({
             onChange={(e) => setRotationDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
             min={1}
             data-testid="rotation-custom-days-input"
-            className={`w-16 px-2 py-0.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground text-center focus:outline-none focus:ring-1 ${ROTATION_STATUS.ringColor!}`}
+            className={`w-16 px-2 py-0.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground text-center focus-visible:outline-none focus-visible:ring-1 ${ROTATION_STATUS.ringColor!}`}
           />
           <span className="text-sm text-muted-foreground/60">days</span>
         </div>

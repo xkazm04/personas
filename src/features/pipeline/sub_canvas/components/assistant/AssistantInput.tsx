@@ -44,7 +44,7 @@ export default function AssistantInput({
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onSubmit()}
           placeholder="Describe your pipeline..."
-          className="flex-1 px-3 py-2 rounded-xl bg-secondary/60 border border-primary/15 text-sm text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:border-indigo-500/40 transition-colors"
+          className="flex-1 px-3 py-2 rounded-xl bg-secondary/60 border border-primary/15 text-sm text-foreground placeholder:text-muted-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         />
         <button
           onClick={onSubmit}

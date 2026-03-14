@@ -9,8 +9,10 @@ import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MemoryFilterBar } from './MemoryFilterBar';
 import { MemoryConflictReview } from './MemoryConflictReview';
 import ReviewResultsModal from './ReviewResultsModal';
+import MemoryDetailModal from './MemoryDetailModal';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import type { MemoryReviewResult } from '@/api/overview/memories';
+import type { PersonaMemory } from '@/lib/types/types';
 import { seedMockMemory } from '@/api/overview/memories';
 
 type SortColumn = 'importance' | 'created_at';
@@ -32,6 +34,7 @@ export default function MemoriesPage() {
   const [sort, setSort] = useState<SortState>({ column: 'created_at', direction: 'desc' });
   const [showAddForm, setShowAddForm] = useState(false);
 
+  const [selectedMemory, setSelectedMemory] = useState<PersonaMemory | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewResult, setReviewResult] = useState<MemoryReviewResult | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -101,7 +104,7 @@ export default function MemoriesPage() {
                 <Plus className="w-3.5 h-3.5" /> Mock Memory
               </button>
             )}
-            <button onClick={handleReview} disabled={isReviewing || memoriesTotal === 0} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
+            <button onClick={handleReview} disabled={isReviewing || memoriesTotal === 0} title={isReviewing ? 'Review in progress...' : memoriesTotal === 0 ? 'No memories to review' : undefined} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
               {isReviewing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
               {isReviewing ? 'Reviewing...' : 'Review with AI'}
             </button>
@@ -156,7 +159,7 @@ export default function MemoriesPage() {
                   const persona = personaMap.get(memory.persona_id);
                   return (
                     <div key={memory.id} style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}>
-                      <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} personaColor={persona?.color || '#6B7280'} onDelete={() => deleteMemory(memory.id)} />
+                      <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} personaColor={persona?.color || '#6B7280'} onDelete={() => deleteMemory(memory.id)} onSelect={() => setSelectedMemory(memory)} />
                     </div>
                   );
                 })}
@@ -168,6 +171,21 @@ export default function MemoriesPage() {
 
       <AnimatePresence>
         <ReviewResultsModal reviewResult={reviewResult} reviewError={reviewError} onClose={closeReviewModal} />
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedMemory && (() => {
+          const persona = personaMap.get(selectedMemory.persona_id);
+          return (
+            <MemoryDetailModal
+              memory={selectedMemory}
+              personaName={persona?.name || 'Unknown'}
+              personaColor={persona?.color || '#6B7280'}
+              onClose={() => setSelectedMemory(null)}
+              onDelete={() => deleteMemory(selectedMemory.id)}
+            />
+          );
+        })()}
       </AnimatePresence>
     </ContentBox>
   );
@@ -192,10 +210,8 @@ function MemoryTableHeader({ sort, onToggleSort }: { sort: SortState; onToggleSo
       <span className="flex-1 text-sm font-mono uppercase text-muted-foreground/80">Title</span>
       <span className="w-[70px] text-sm font-mono uppercase text-muted-foreground/80 flex-shrink-0">Category</span>
       <button onClick={() => onToggleSort('importance')} className={`w-[60px] ${sortBtnCls('importance')}`}>Priority<SortIcon col="importance" /></button>
-      <span className="w-[120px] text-sm font-mono uppercase text-muted-foreground/80 flex-shrink-0">Tags</span>
-      <button onClick={() => onToggleSort('created_at')} className={`w-[60px] justify-end ${sortBtnCls('created_at')}`}>Created<SortIcon col="created_at" /></button>
+      <span className="w-[60px] text-sm font-mono uppercase text-muted-foreground/80 flex-shrink-0 text-right">Created</span>
       <span className="w-[32px] flex-shrink-0" />
-      <span className="w-[14px] flex-shrink-0" />
     </div>
   );
 }

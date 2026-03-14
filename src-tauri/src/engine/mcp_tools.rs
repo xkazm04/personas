@@ -14,6 +14,7 @@ use std::time::Instant;
 
 use ts_rs::TS;
 
+use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::repos::resources::tool_audit_log;
 use crate::db::DbPool;
@@ -301,6 +302,7 @@ pub async fn list_tools(
 
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
+    let _ = audit_log::log_decrypt(pool, credential_id, &credential.name, "mcp_tools:list_tools", None, None);
 
     let connection_type = fields
         .get("connection_type")
@@ -353,6 +355,7 @@ pub async fn execute_tool(
 
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
+    let _ = audit_log::log_decrypt(pool, credential_id, &credential.name, "mcp_tools:execute_tool", persona_id, persona_name);
 
     let connection_type = fields
         .get("connection_type")

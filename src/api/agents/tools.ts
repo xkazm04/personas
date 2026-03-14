@@ -36,7 +36,7 @@ export const assignTool = (
   invoke<PersonaTool>("assign_tool", {
     personaId,
     toolId,
-    toolConfig: toolConfig ?? null,
+    toolConfig: toolConfig,
   });
 
 export const unassignTool = (personaId: string, toolId: string) =>
@@ -51,10 +51,10 @@ export const bulkUnassignTools = (personaId: string, toolIds: string[]) =>
 // -- Tool Usage Analytics --------------------------------------------------
 
 export const getToolUsageSummary = (since: string, personaId?: string) =>
-  invoke<ToolUsageSummary[]>("get_tool_usage_summary", { since, personaId: personaId ?? null });
+  invoke<ToolUsageSummary[]>("get_tool_usage_summary", { since, personaId: personaId });
 
 export const getToolUsageOverTime = (since: string, personaId?: string) =>
-  invoke<ToolUsageOverTime[]>("get_tool_usage_over_time", { since, personaId: personaId ?? null });
+  invoke<ToolUsageOverTime[]>("get_tool_usage_over_time", { since, personaId: personaId });
 
 export const getToolUsageByPersona = (since: string) =>
   invoke<PersonaUsageSummary[]>("get_tool_usage_by_persona", { since });

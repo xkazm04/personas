@@ -56,7 +56,7 @@ export function AddSubscriptionForm({
             value={newEventType}
             onChange={(e) => onEventTypeChange(e.target.value)}
             placeholder="e.g. file_changed"
-            className="w-full px-2.5 py-1.5 text-sm bg-background/60 border border-border/40 rounded-xl text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+            className="w-full px-2.5 py-1.5 text-sm bg-background/60 border border-border/40 rounded-xl text-foreground/90 placeholder:text-muted-foreground/50 focus-ring"
           />
           <datalist id="event-type-suggestions">
             {COMMON_EVENT_TYPES.map((t) => (
@@ -74,7 +74,7 @@ export function AddSubscriptionForm({
             value={newSourceFilter}
             onChange={(e) => onSourceFilterChange(e.target.value)}
             placeholder="e.g. src/**"
-            className="w-full px-2.5 py-1.5 text-sm bg-background/60 border border-border/40 rounded-xl text-foreground/90 placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+            className="w-full px-2.5 py-1.5 text-sm bg-background/60 border border-border/40 rounded-xl text-foreground/90 placeholder:text-muted-foreground/50 focus-ring"
           />
         </div>
       </div>

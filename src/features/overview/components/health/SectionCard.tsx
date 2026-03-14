@@ -44,7 +44,7 @@ export function SectionCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: stubIdx * 0.1, duration: 0.25 }}
-      className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col min-h-[160px] group"
+      className="rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 hover:shadow-elevation-2 transition-all overflow-hidden flex flex-col min-h-[160px] group"
     >
       <div className="flex items-center gap-3 px-4 py-4 border-b border-primary/5 bg-background/30 group-hover:bg-background/50 transition-colors">
         <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>

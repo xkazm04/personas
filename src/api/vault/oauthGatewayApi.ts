@@ -24,7 +24,7 @@ export const startGoogleCredentialOAuth = (
     clientId: clientId ?? '',
     clientSecret: clientSecret ?? '',
     connectorName,
-    extraScopes: extraScopes ?? null,
+    extraScopes: extraScopes,
   });
 };
 
@@ -44,13 +44,13 @@ export const startOAuth = (params: StartOAuthParams) =>
   invoke<OAuthStartResult>("start_oauth", {
     providerId: params.providerId,
     clientId: params.clientId,
-    clientSecret: params.clientSecret ?? null,
-    scopes: params.scopes ?? null,
-    authorizeUrl: params.authorizeUrl ?? null,
-    tokenUrl: params.tokenUrl ?? null,
-    oidcIssuer: params.oidcIssuer ?? null,
-    usePkce: params.usePkce ?? null,
-    extraParams: params.extraParams ?? null,
+    clientSecret: params.clientSecret,
+    scopes: params.scopes,
+    authorizeUrl: params.authorizeUrl,
+    tokenUrl: params.tokenUrl,
+    oidcIssuer: params.oidcIssuer,
+    usePkce: params.usePkce,
+    extraParams: params.extraParams,
   });
 
 export const getOAuthStatus = (sessionId: string) =>
@@ -67,8 +67,8 @@ export const refreshOAuthToken = (params: {
   invoke<OAuthRefreshResult>("refresh_oauth_token", {
     providerId: params.providerId,
     clientId: params.clientId,
-    clientSecret: params.clientSecret ?? null,
+    clientSecret: params.clientSecret,
     refreshToken: params.refreshToken,
-    tokenUrl: params.tokenUrl ?? null,
-    oidcIssuer: params.oidcIssuer ?? null,
+    tokenUrl: params.tokenUrl,
+    oidcIssuer: params.oidcIssuer,
   });

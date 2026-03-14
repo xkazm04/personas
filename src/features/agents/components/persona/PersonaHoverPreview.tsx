@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Zap, CheckCircle2, XCircle, TrendingUp, EyeOff, Eye } from 'lucide-react';
@@ -13,20 +13,25 @@ interface PersonaHoverPreviewProps {
 }
 
 /** Tiny inline sparkline drawn as an SVG path */
-function Sparkline({ data }: { data: number[] }) {
+const Sparkline = memo(function Sparkline({ data }: { data: number[] }) {
+  const { linePath, areaPath, w, h } = useMemo(() => {
+    if (data.length === 0) return { linePath: '', areaPath: '', w: 84, h: 20 };
+    const max = Math.max(...data, 1);
+    const w = 84;
+    const h = 20;
+    const step = w / (data.length - 1 || 1);
+
+    const points = data.map((v, i) => ({
+      x: i * step,
+      y: h - (v / max) * (h - 2) - 1,
+    }));
+
+    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+    const areaPath = `${linePath} L${w},${h} L0,${h} Z`;
+    return { linePath, areaPath, w, h };
+  }, [data]);
+
   if (data.length === 0) return null;
-  const max = Math.max(...data, 1);
-  const w = 84;
-  const h = 20;
-  const step = w / (data.length - 1 || 1);
-
-  const points = data.map((v, i) => ({
-    x: i * step,
-    y: h - (v / max) * (h - 2) - 1,
-  }));
-
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
-  const areaPath = `${linePath} L${w},${h} L0,${h} Z`;
 
   return (
     <svg width={w} height={h} className="flex-shrink-0" viewBox={`0 0 ${w} ${h}`}>
@@ -40,7 +45,7 @@ function Sparkline({ data }: { data: number[] }) {
       </defs>
     </svg>
   );
-}
+});
 
 export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef, visible }: PersonaHoverPreviewProps) {
   const healthMap = useAgentStore(s => s.personaHealthMap);
@@ -50,6 +55,7 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [isRevealed, setIsRevealed] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
   const isSensitive = Boolean(persona?.sensitive);
 
   useEffect(() => {
@@ -91,8 +97,8 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
       }
       return parsed.model ?? 'Custom';
     } catch {
-      // intentional: non-critical -- hover preview JSON parse fallback
-      return raw;
+      // intentional: non-critical -- return generic label instead of raw JSON which may contain auth_token
+      return 'Custom';
     }
   }, [persona?.model_profile]);
 
@@ -121,16 +127,28 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
     setPos({ top, left });
   }, [anchorRef]);
 
+  const throttledUpdatePosition = useCallback(() => {
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0;
+      updatePosition();
+    });
+  }, [updatePosition]);
+
   useEffect(() => {
     if (!visible) return;
     updatePosition();
-    window.addEventListener('scroll', updatePosition, true);
-    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', throttledUpdatePosition, true);
+    window.addEventListener('resize', throttledUpdatePosition);
     return () => {
-      window.removeEventListener('scroll', updatePosition, true);
-      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', throttledUpdatePosition, true);
+      window.removeEventListener('resize', throttledUpdatePosition);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
+      }
     };
-  }, [visible, updatePosition]);
+  }, [visible, updatePosition, throttledUpdatePosition]);
 
   // Derive stats from the unified health model
   const successCount = health
@@ -150,7 +168,7 @@ export default function PersonaHoverPreview({ personaId, triggerCount, anchorRef
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 4 }}
           transition={{ duration: 0.15 }}
-          className="fixed z-[9999] w-[260px] p-3.5 rounded-xl bg-background/95 backdrop-blur-xl border border-primary/20 shadow-xl shadow-black/20 pointer-events-none"
+          className="fixed z-[9999] w-[260px] p-3.5 rounded-xl bg-background/95 backdrop-blur-xl border border-primary/20 shadow-elevation-3 pointer-events-none"
           style={{ top: pos.top, left: pos.left }}
           data-testid={`persona-hover-preview-${personaId}`}
         >

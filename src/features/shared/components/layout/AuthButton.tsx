@@ -82,7 +82,7 @@ export default function AuthButton() {
             exit={{ opacity: 0, y: 4, scale: 0.95 }}
             transition={{ duration: 0.15 }}
             className="absolute bottom-full left-full ml-2 mb-0 w-56 rounded-xl
-              bg-secondary border border-primary/15 shadow-xl z-50 py-1 overflow-hidden"
+              bg-secondary border border-primary/15 shadow-elevation-3 z-50 py-1 overflow-hidden"
           >
             {/* User info */}
             <div className="px-3 py-2.5 border-b border-primary/10">

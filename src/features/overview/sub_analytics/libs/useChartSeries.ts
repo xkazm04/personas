@@ -3,7 +3,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/libs/periodComparison';
 import { pivotToolUsageOverTime } from '@/features/overview/sub_usage/libs/pivotToolUsage';
-import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { formatToolName } from './analyticsHelpers';
 import type { PieDataPoint } from '@/features/overview/sub_observability/components/MetricsCharts';
 
@@ -19,7 +19,8 @@ export function useChartSeries() {
   const personas = useAgentStore((s) => s.personas);
   const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
-  const { effectiveDays, compareEnabled, setFailureDrilldownDate } = useOverviewFilters();
+  const { effectiveDays, compareEnabled } = useOverviewFilterValues();
+  const { setFailureDrilldownDate } = useOverviewFilterActions();
 
   const backendChartData = observabilityMetrics?.chartData;
   const rawChartData = backendChartData?.chart_points ?? [];

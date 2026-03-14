@@ -8,7 +8,10 @@ import { useMemo, useState, useCallback, type Dispatch } from 'react';
 import { PersonaMatrix } from '@/features/templates/sub_generated/gallery/matrix/PersonaMatrix';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { getArchitectureComponent } from '@/lib/credentials/connectorRoles';
+import { toDesignContext, generateSystemPrompt } from './builder/builderReducer';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { RequiredConnector } from '@/features/templates/sub_generated/adoption/steps/connect/ConnectStep';
 import type { MatrixEditState, MatrixEditCallbacks } from '@/features/templates/sub_generated/gallery/matrix/matrixEditTypes';
@@ -38,9 +41,57 @@ function triggerToSuggested(preset: TriggerPreset) {
 export function MatrixCreator({ state, dispatch, onContinue, onCancel, draftPersonaId, setDraftPersonaId }: MatrixCreatorProps) {
   const credentials = useVaultStore((s) => s.credentials);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
+  const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const movePersonaToGroup = usePipelineStore((s) => s.movePersonaToGroup);
+  const groups = usePipelineStore((s) => s.groups);
 
   // -- AI orchestration ----------------------------------------------
   const orchestration = useMatrixOrchestration({ state, dispatch, draftPersonaId, setDraftPersonaId });
+
+  // Agent name for finalization (editable in command center)
+  const [agentName, setAgentName] = useState('');
+
+  // Derive initial name from intent when design result arrives
+  const derivedName = useMemo(() => {
+    const intent = state.intent.trim();
+    if (intent.length > 30) return intent.slice(0, 30);
+    return intent || 'New Agent';
+  }, [state.intent]);
+
+  // Finalize agent directly from matrix (bypasses IdentityStep)
+  const handleCreateFromMatrix = useCallback(async (name: string) => {
+    if (!draftPersonaId) return;
+    const finalName = name.trim() || derivedName;
+    try {
+      const designContext = toDesignContext(state);
+      const systemPrompt = generateSystemPrompt(state);
+
+      await applyPersonaOp(draftPersonaId, {
+        kind: 'ApplyDesignResult',
+        updates: {
+          name: finalName,
+          description: state.intent.trim().slice(0, 200) || undefined,
+          system_prompt: systemPrompt,
+          design_context: JSON.stringify(designContext),
+        },
+      });
+
+      // Move to appropriate group
+      const draftGroup = groups.find((g) => g.name === 'Draft');
+      if (draftGroup) {
+        await movePersonaToGroup(draftPersonaId, draftGroup.id);
+      }
+
+      selectPersona(draftPersonaId);
+      setEditorTab('use-cases');
+      setIsCreatingPersona(false);
+    } catch (err) {
+      console.error('Failed to create agent from matrix:', err);
+    }
+  }, [draftPersonaId, derivedName, state, applyPersonaOp, groups, movePersonaToGroup, selectPersona, setEditorTab, setIsCreatingPersona]);
 
   // -- Derive AgentIR from BuilderState -----------------------------
 
@@ -239,6 +290,14 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel, draftPers
           hasDesignResult={orchestration.hasDesignResult}
           onContinue={onContinue}
           onRefine={orchestration.handleRefine}
+          // Direct finalization from matrix
+          onCreateAgent={handleCreateFromMatrix}
+          agentName={agentName || derivedName}
+          onAgentNameChange={setAgentName}
+          // CLI stream + questions
+          cliOutputLines={orchestration.outputLines}
+          designQuestion={orchestration.designQuestion}
+          onAnswerQuestion={orchestration.answerQuestion}
         />
       </div>
 

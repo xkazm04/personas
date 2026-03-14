@@ -1,16 +1,20 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import { useScrollShadow } from '@/hooks/utility/interaction/useScrollShadow';
 import { getVersion } from '@tauri-apps/api/app';
 import { useSystemStore } from "@/stores/systemStore";
-import { useOverviewStore } from "@/stores/overviewStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useAuthStore } from '@/stores/authStore';
+import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
 import type { SidebarSection } from '@/lib/types/types';
 import OnboardingProgressBar from '@/features/onboarding/components/OnboardingProgressBar';
 import { IS_MOBILE, SIMPLE_SECTIONS, DEV_MODE_SECTIONS } from '@/lib/utils/platform/platform';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { useDevMode } from '@/hooks/utility/interaction/useDevMode';
+import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { sections } from './sidebarData';
+import { SIDEBAR_TOGGLE_EVENT } from '@/features/shared/components/layout/DesktopFooter';
 import SidebarLevel1 from './SidebarLevel1';
 import SidebarLevel2 from './SidebarLevel2';
 
@@ -27,20 +31,23 @@ export default function Sidebar() {
     });
   }, []);
 
+  // Listen for toggle requests from the footer collapse button
+  useEffect(() => {
+    const handler = () => toggleCollapsed();
+    window.addEventListener(SIDEBAR_TOGGLE_EVENT, handler);
+    return () => window.removeEventListener(SIDEBAR_TOGGLE_EVENT, handler);
+  }, [toggleCollapsed]);
+
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-  const sidebarSection = useSystemStore((s) => s.sidebarSection);
+  const { sidebarSection, settingsTab } = useSystemStore(
+    useShallow((s) => ({ sidebarSection: s.sidebarSection, settingsTab: s.settingsTab }))
+  );
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
-  const fetchPendingReviewCount = useOverviewStore((s) => s.fetchPendingReviewCount);
-  const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
-  const fetchUnreadMessageCount = useOverviewStore((s) => s.fetchUnreadMessageCount);
-  const pendingEventCount = useOverviewStore((s) => s.pendingEventCount);
-  const fetchRecentEvents = useOverviewStore((s) => s.fetchRecentEvents);
-  const selectPersona = useAgentStore((s) => s.selectPersona);
   const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
-  const settingsTab = useSystemStore((s) => s.settingsTab);
   const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
+  const { pendingReviewCount, unreadMessageCount, pendingEventCount } = useBadgeCounts();
+  const selectPersona = useAgentStore((s) => s.selectPersona);
   const fetchBudgetSpend = useAgentStore((s) => s.fetchBudgetSpend);
 
   const isDev = import.meta.env.DEV;
@@ -50,6 +57,7 @@ export default function Sidebar() {
   const scrollPositions = useRef(new Map<string, number>());
   const level2ScrollRef = useRef<HTMLDivElement>(null);
   const prevSectionRef = useRef(sidebarSection);
+  const { canScrollUp: l2ScrollUp, canScrollDown: l2ScrollDown } = useScrollShadow(level2ScrollRef);
 
   useEffect(() => {
     const el = level2ScrollRef.current;
@@ -105,19 +113,22 @@ export default function Sidebar() {
     }
   }, [isDev, settingsTab, setSettingsTab]);
 
+  // App version — one-time fetch on mount
   useEffect(() => {
-    fetchPendingReviewCount();
-    fetchUnreadMessageCount();
-    fetchRecentEvents();
-    fetchBudgetSpend();
     getVersion().then(setAppVersion).catch(() => {});
+  }, []);
 
-    const interval = setInterval(() => {
-      fetchPendingReviewCount();
-      fetchBudgetSpend();
-    }, 30_000);
-    return () => clearInterval(interval);
-  }, [fetchPendingReviewCount, fetchUnreadMessageCount, fetchRecentEvents, fetchBudgetSpend]);
+  // Centralized 30s polling for budget data.
+  // Badge counts (reviews, messages, events) are polled by useBadgeCounts.
+  const pollingFetch = useCallback(() => {
+    fetchBudgetSpend();
+  }, [fetchBudgetSpend]);
+
+  usePolling(pollingFetch, {
+    interval: POLLING_CONFIG.dashboardRefresh.interval,
+    enabled: true,
+    maxBackoff: POLLING_CONFIG.dashboardRefresh.maxBackoff,
+  });
 
   const handleCreatePersona = useCallback(() => {
     selectPersona(null);
@@ -145,7 +156,6 @@ export default function Sidebar() {
     <div className="flex h-full">
       <SidebarLevel1
         collapsed={collapsed}
-        onToggleCollapsed={toggleCollapsed}
         disabledSections={disabledSections}
         onMobileDrawerToggle={handleMobileDrawerToggle}
         appVersion={appVersion}
@@ -169,7 +179,7 @@ export default function Sidebar() {
           )}
           <div className={
             IS_MOBILE
-              ? 'fixed left-[52px] top-0 bottom-0 z-40 w-[calc(100vw-64px)] max-w-[240px] bg-secondary/95 backdrop-blur-sm border-r border-primary/15 flex flex-col overflow-hidden shadow-2xl'
+              ? 'fixed left-[52px] top-0 bottom-0 z-40 w-[calc(100vw-64px)] max-w-[240px] bg-secondary/95 backdrop-blur-sm border-r border-primary/15 flex flex-col overflow-hidden shadow-elevation-4'
               : 'w-[240px] bg-secondary/30 border-r border-primary/15 flex flex-col overflow-hidden'
           }>
             <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
@@ -177,18 +187,28 @@ export default function Sidebar() {
                 {sections.find((s) => s.id === sidebarSection)?.label || 'Overview'}
               </h2>
             </div>
-            <div ref={level2ScrollRef} className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={sidebarSection}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.15, ease: 'easeOut' }}
-                >
-                  <SidebarLevel2 onCreatePersona={handleCreatePersona} />
-                </motion.div>
-              </AnimatePresence>
+            <div className="relative flex-1 min-h-0">
+              <div ref={level2ScrollRef} className="h-full overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={sidebarSection}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                  >
+                    <SidebarLevel2 onCreatePersona={handleCreatePersona} />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+              <div
+                className={`absolute top-0 inset-x-0 h-6 pointer-events-none z-[1] transition-opacity duration-200 ${l2ScrollUp ? 'opacity-100' : 'opacity-0'}`}
+                style={{ background: 'linear-gradient(to bottom, hsl(var(--secondary) / 0.3), transparent)' }}
+              />
+              <div
+                className={`absolute bottom-0 inset-x-0 h-6 pointer-events-none z-[1] transition-opacity duration-200 ${l2ScrollDown ? 'opacity-100' : 'opacity-0'}`}
+                style={{ background: 'linear-gradient(to top, hsl(var(--secondary) / 0.3), transparent)' }}
+              />
             </div>
             {!IS_MOBILE && <OnboardingProgressBar />}
           </div>

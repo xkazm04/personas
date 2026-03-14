@@ -264,6 +264,18 @@ pub fn get_running(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
+/// Lightweight check: are any executions currently in-flight?
+/// Used by the adaptive polling system to decide between active/idle intervals.
+pub fn has_running_executions(pool: &DbPool) -> Result<bool, AppError> {
+    let conn = pool.get()?;
+    let exists: bool = conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM persona_executions WHERE status IN ('queued', 'running'))",
+        [],
+        |row| row.get(0),
+    )?;
+    Ok(exists)
+}
+
 pub fn get_running_count_for_persona(pool: &DbPool, persona_id: &str) -> Result<i64, AppError> {
     let conn = pool.get()?;
     let count: i64 = conn.query_row(
@@ -417,6 +429,78 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
     }
 
     Ok(zombie_ids)
+}
+
+/// Delete old terminal executions beyond the retention period, but always keep
+/// at least `min_keep_per_persona` most-recent records for each persona.
+///
+/// Only deletes executions with terminal status (completed, failed, incomplete,
+/// cancelled) -- queued/running executions are never cleaned up.
+///
+/// Returns the total number of rows deleted.
+pub fn cleanup_old_executions(
+    pool: &DbPool,
+    retention_days: i64,
+    min_keep_per_persona: usize,
+) -> Result<usize, AppError> {
+    let conn = pool.get()?;
+
+    // Two-phase approach:
+    // 1. Find all persona_ids that have terminal executions older than the cutoff.
+    // 2. For each persona, delete old terminal executions while preserving the
+    //    most recent `min_keep_per_persona` rows.
+
+    let cutoff = format!("-{retention_days} days");
+
+    // Get distinct persona_ids with old terminal executions
+    let mut persona_stmt = conn.prepare(
+        "SELECT DISTINCT persona_id FROM persona_executions
+         WHERE status IN ('completed', 'failed', 'incomplete', 'cancelled')
+           AND created_at < datetime('now', ?1)",
+    )?;
+    let persona_ids: Vec<String> = persona_stmt
+        .query_map(params![cutoff], |row| row.get::<_, String>(0))?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    let mut total_deleted: usize = 0;
+
+    for pid in &persona_ids {
+        // Find the created_at threshold: the min_keep_per_persona-th most recent
+        // terminal execution for this persona. Anything older AND beyond the
+        // retention cutoff gets deleted.
+        let keep_threshold: Option<String> = conn
+            .query_row(
+                "SELECT created_at FROM persona_executions
+                 WHERE persona_id = ?1
+                   AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
+                 ORDER BY created_at DESC
+                 LIMIT 1 OFFSET ?2",
+                params![pid, min_keep_per_persona as i64],
+                |row| row.get(0),
+            )
+            .ok();
+
+        // If there aren't enough rows to reach the offset, this persona has
+        // fewer than min_keep_per_persona terminal executions -- skip it.
+        let keep_threshold = match keep_threshold {
+            Some(t) => t,
+            None => continue,
+        };
+
+        let deleted = conn.execute(
+            "DELETE FROM persona_executions
+             WHERE persona_id = ?1
+               AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
+               AND created_at < datetime('now', ?2)
+               AND created_at <= ?3",
+            params![pid, cutoff, keep_threshold],
+        )?;
+
+        total_deleted += deleted;
+    }
+
+    Ok(total_deleted)
 }
 
 #[cfg(test)]

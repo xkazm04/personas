@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import { testDesignFeasibility } from "@/api/templates/design";
 import { parseJsonOrDefault } from "@/lib/utils/parseJson";
 import { computeHealthScore } from "@/features/agents/health/useHealthCheck";
@@ -149,7 +149,7 @@ export const createHealthCheckSlice: StateCreator<AgentStore, [], [], HealthChec
       set({ healthDigest: digest, healthDigestRunning: false, lastDigestAt: digest.generatedAt });
       return digest;
     } catch (err) {
-      set({ healthDigestRunning: false, error: errMsg(err, "Failed to run health digest") });
+      reportError(err, "Failed to run health digest", set, { stateUpdates: { healthDigestRunning: false } });
       return null;
     }
   },

@@ -47,7 +47,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
         setDependents(d);
         setAuditLog(a);
       })
-      .catch(() => {})
+      .catch((err) => { console.error('Failed to load credential intelligence:', err); })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });

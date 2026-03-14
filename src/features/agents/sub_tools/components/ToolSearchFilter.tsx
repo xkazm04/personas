@@ -41,7 +41,7 @@ export function ToolSearchFilter({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search tools..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-primary/20 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-primary/20 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
           />
         </div>
         <div className="flex gap-0.5 p-0.5 rounded-lg bg-secondary/40 border border-primary/10">

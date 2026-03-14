@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/types/types';
 import { useReplayTimeline } from '@/hooks/execution/useReplayTimeline';
 import { useSystemStore } from "@/stores/systemStore";
+import { useToastStore } from '@/stores/toastStore';
 import { getExecutionLog } from '@/api/agents/executions';
 
 import { TimelineScrubber } from './TimelineScrubber';
@@ -19,6 +20,7 @@ interface ReplaySandboxProps {
 
 export function ReplaySandbox({ execution }: ReplaySandboxProps) {
   const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
+  const addToast = useToastStore((s) => s.addToast);
 
   // Fetch log content
   const [logContent, setLogContent] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
       .then((content) => {
         if (!cancelled) setLogContent(content);
       })
-      .catch(() => {})
+      .catch((err) => { console.warn('[ReplaySandbox] Failed to load execution log:', err); })
       .finally(() => {
         if (!cancelled) setLogLoading(false);
       });
@@ -82,15 +84,22 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     const stepsUpToFork = state.toolSteps.filter((s) => s.step_index <= state.forkPoint!);
     const context = stepsUpToFork.map((s) => `[Tool: ${s.tool_name}]\nInput: ${s.input_preview}\nOutput: ${s.output_preview}`).join('\n\n');
 
+    let parsedInput: Record<string, unknown> = {};
+    try {
+      parsedInput = JSON.parse(execution.input_data || '{}');
+    } catch {
+      addToast('Original input data could not be parsed — using empty input', 'error');
+    }
+
     const forkInput = JSON.stringify({
-      ...JSON.parse(execution.input_data || '{}'),
+      ...parsedInput,
       __fork_context: `Continuing from step ${state.forkPoint! + 1}. Previous tool results:\n${context}`,
       __fork_source_execution: execution.id,
       __fork_step_index: state.forkPoint,
     }, null, 2);
 
     setRerunInputData(forkInput);
-  }, [state.forkPoint, state.toolSteps, execution, setRerunInputData]);
+  }, [state.forkPoint, state.toolSteps, execution, setRerunInputData, addToast]);
 
   if (logLoading) {
     return (

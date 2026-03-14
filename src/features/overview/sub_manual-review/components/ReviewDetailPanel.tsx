@@ -171,7 +171,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               onKeyDown={isCloud ? undefined : handleKeyDown}
               placeholder={isCloud ? "Response message (optional)..." : "Reply to this review..."}
               rows={1}
-              className="flex-1 text-sm bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-foreground/80 placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30 max-h-24"
+              className="flex-1 text-sm bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-foreground/80 placeholder:text-muted-foreground/50 resize-none focus-ring focus-visible:border-primary/30 max-h-24"
               style={{ minHeight: '36px' }}
             />
             {!isCloud && (

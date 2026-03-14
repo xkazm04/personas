@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { AnimatedCounter } from './AnimatedCounter';
 
 interface ConfidenceArcProps {
   /** Confidence value 0–100 */
@@ -97,9 +98,12 @@ export function ConfidenceArc({ value, width = 24, height = 14, showLabel = fals
         )}
       </svg>
       {showLabel && (
-        <span className="text-[9px] font-mono text-muted-foreground/70 leading-none mt-0.5">
-          {pct}%
-        </span>
+        <AnimatedCounter
+          value={pct}
+          duration={600}
+          formatFn={(v) => `${Math.round(v)}%`}
+          className="text-[9px] font-mono text-muted-foreground/70 leading-none mt-0.5"
+        />
       )}
       <style>{`
         @keyframes confidence-shimmer {

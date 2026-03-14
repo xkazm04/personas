@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
-import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { useParsedDesignContext } from '@/stores/selectors/personaSelectors';
 import type { DesignUseCase as UseCaseItem } from '@/lib/types/frontendTypes';
 
 export function useUseCasesTab() {
@@ -17,10 +17,7 @@ export function useUseCasesTab() {
 
   const personaId = selectedPersona?.id ?? '';
 
-  const contextData = useMemo(
-    () => parseDesignContext(selectedPersona?.design_context),
-    [selectedPersona?.design_context],
-  );
+  const contextData = useParsedDesignContext();
   const useCases: UseCaseItem[] = contextData.useCases ?? [];
 
   const selectedUseCase = useMemo(

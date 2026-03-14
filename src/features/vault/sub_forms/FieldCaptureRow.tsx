@@ -27,9 +27,9 @@ interface FieldCaptureRowProps {
 }
 
 const SOURCE_ACCENT: Record<FieldCaptureSource, string> = {
-  schema: 'focus:ring-primary/40',
-  negotiator: 'focus:ring-violet-500/40',
-  auto: 'focus:ring-emerald-500/35',
+  schema: 'focus-visible:ring-primary/40',
+  negotiator: 'focus-visible:ring-violet-500/40',
+  auto: 'focus-visible:ring-emerald-500/35',
 };
 
 export function FieldCaptureRow({
@@ -184,7 +184,7 @@ export function FieldCaptureRow({
           placeholder={placeholder}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          className={`w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-red-500/50' : valueClass}`}
+          className={`w-full px-3 py-2 border rounded-xl text-sm focus-visible:outline-none focus-visible:ring-2 transition-all placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-red-500/50' : valueClass}`}
           data-testid={testIdBase ? `${testIdBase}-input` : undefined}
         />
       )}

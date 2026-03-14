@@ -13,7 +13,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useContextScanBackground } from '../hooks/useContextScanBackground';
 
 // ---------------------------------------------------------------------------
-// Types (local until the devToolsSlice is wired)
+// Types – thin view-models mapped from store bindings
 // ---------------------------------------------------------------------------
 
 interface Project {
@@ -41,6 +41,39 @@ interface GoalSignal {
   message: string;
   timestamp: string;
   type: 'info' | 'warning' | 'success';
+}
+
+/** Map a DevProject from the store into the local Project view-model. */
+function toProject(dp: import("@/lib/bindings/DevProject").DevProject, goalCount: number): Project {
+  return {
+    id: dp.id,
+    name: dp.name,
+    path: dp.root_path,
+    description: dp.description ?? undefined,
+    techStack: dp.tech_stack ? dp.tech_stack.split(",").map((s) => s.trim()).filter(Boolean) : [],
+    goalCount,
+    status: (dp.status as Project["status"]) || "active",
+    createdAt: dp.created_at.slice(0, 10),
+  };
+}
+
+/** Map a DevGoal from the store into the local Goal view-model. */
+function toGoal(dg: import("@/lib/bindings/DevGoal").DevGoal, signals: import("@/lib/bindings/DevGoalSignal").DevGoalSignal[]): Goal {
+  return {
+    id: dg.id,
+    projectId: dg.project_id,
+    title: dg.title,
+    status: (dg.status as Goal["status"]) || "open",
+    progress: dg.progress,
+    signals: signals
+      .filter((s) => s.goal_id === dg.id)
+      .map((s) => ({
+        id: s.id,
+        message: s.message ?? s.signal_type,
+        timestamp: s.created_at,
+        type: (s.signal_type === "success" ? "success" : s.signal_type === "warning" ? "warning" : "info") as GoalSignal["type"],
+      })),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -235,7 +268,7 @@ function ProjectModal({
                       value={name}
                       onChange={(e) => handleNameChange(e.target.value)}
                       placeholder="My Awesome App"
-                      className="w-full px-3 py-2 pr-8 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/30"
+                      className="w-full px-3 py-2 pr-8 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
                     />
                     <Pencil className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/30" />
                   </div>
@@ -273,7 +306,7 @@ function ProjectModal({
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Brief description of the project..."
                     rows={2}
-                    className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/30 resize-none"
+                    className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30 resize-none"
                   />
                 </div>
               </div>
@@ -436,7 +469,7 @@ function GoalBoard({
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             placeholder="Add a goal..."
-            className="flex-1 px-3 py-2 text-sm bg-secondary/30 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+            className="flex-1 px-3 py-2 text-sm bg-secondary/30 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
           />
           <Button
             variant="accent"
@@ -492,6 +525,9 @@ function GoalBoard({
 export default function ProjectManagerPage() {
   // Store bindings
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
+  const storeProjects = useSystemStore((s) => s.projects);
+  const storeGoals = useSystemStore((s) => s.goals);
+  const storeGoalSignals = useSystemStore((s) => s.goalSignals);
   const storeCreateProject = useSystemStore((s) => s.createProject);
   const setActiveProject = useSystemStore((s) => s.setActiveProject);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
@@ -500,9 +536,12 @@ export default function ProjectManagerPage() {
   const deleteGoal = useSystemStore((s) => s.deleteGoal);
   const { startBackgroundScan } = useContextScanBackground();
 
-  // Local state (until slice provides it)
-  const [projects] = useState<Project[]>([]);
-  const [goals] = useState<Goal[]>([]);
+  // Map store data into view-models
+  const goals: Goal[] = storeGoals.map((g) => toGoal(g, storeGoalSignals));
+  const projects: Project[] = storeProjects.map((p) => {
+    const goalCount = storeGoals.filter((g) => g.project_id === p.id).length;
+    return toProject(p, goalCount);
+  });
   const [activeProjectId, setLocalActiveProject] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
@@ -518,13 +557,20 @@ export default function ProjectManagerPage() {
   }, [activeProjectId]);
 
   const handleCreateProject = useCallback(async (data: { name: string; path: string; description: string; projectType: ProjectType }) => {
+    // If a project with this path already exists, activate it instead of creating a duplicate
+    const existing = storeProjects.find((p) => p.root_path === data.path);
+    if (existing) {
+      setLocalActiveProject(existing.id);
+      setActiveProject?.(existing.id);
+      return { id: existing.id };
+    }
     try {
       const project = await storeCreateProject(data.name, data.path, data.description, data.projectType);
       return { id: project.id };
     } catch {
       return undefined;
     }
-  }, [storeCreateProject]);
+  }, [storeCreateProject, storeProjects, setActiveProject]);
 
   const handleSetActive = useCallback((id: string) => {
     setLocalActiveProject(id);

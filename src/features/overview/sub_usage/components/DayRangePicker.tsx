@@ -94,15 +94,15 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
         <div className="space-y-3">
           <div>
             <label className="block text-sm text-muted-foreground/70 mb-1">Start Date</label>
-            <input type="date" value={startDate} max={endDate || today} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-1.5 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50" />
+            <input type="date" value={startDate} max={endDate || today} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-1.5 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50" />
           </div>
           <div>
             <label className="block text-sm text-muted-foreground/70 mb-1">End Date</label>
-            <input type="date" value={endDate} min={startDate} max={today} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-1.5 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50" />
+            <input type="date" value={endDate} min={startDate} max={today} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-1.5 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50" />
           </div>
           {isValid && <p className="text-sm text-muted-foreground/60">{dayCount} day{dayCount !== 1 ? 's' : ''} selected</p>}
           <div className="flex items-center gap-2">
-            <button onClick={handleApply} disabled={!isValid} className="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Apply</button>
+            <button onClick={handleApply} disabled={!isValid} title={!isValid ? 'Select a valid date range to apply' : undefined} className="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Apply</button>
             {value && <button onClick={() => onChange(null)} className="px-3 py-1.5 text-sm font-medium rounded-lg text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/50 transition-colors">Clear</button>}
           </div>
         </div>

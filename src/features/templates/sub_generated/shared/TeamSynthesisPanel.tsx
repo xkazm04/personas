@@ -81,7 +81,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
                   placeholder="e.g., Content Pipeline Team"
-                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-primary/15 bg-background/40 text-foreground/80 placeholder-muted-foreground/30 focus:outline-none focus:border-violet-500/30"
+                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-primary/15 bg-background/40 text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/30"
                   disabled={loading}
                 />
               </div>
@@ -95,7 +95,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="e.g., Monitor social media mentions, analyze sentiment, generate reports, and send alerts to Slack when negative trends are detected"
                   rows={4}
-                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-primary/15 bg-background/40 text-foreground/80 placeholder-muted-foreground/30 resize-none focus:outline-none focus:border-violet-500/30"
+                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-primary/15 bg-background/40 text-foreground/80 placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-violet-500/30"
                   disabled={loading}
                 />
               </div>

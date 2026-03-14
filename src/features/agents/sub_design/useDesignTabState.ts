@@ -8,7 +8,7 @@ import { useToggleSet } from '@/hooks/utility/interaction/useToggleSet';
 import type { DesignAnalysisResult } from '@/lib/types/designTypes';
 import type { DesignFilesSection } from '@/lib/types/frontendTypes';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
-import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { useParsedDesignContext } from '@/stores/selectors/personaSelectors';
 import { mutateDesignFiles } from '@/hooks/design/core/useDesignContextMutator';
 import { parseConversationMessages } from '@/lib/types/designTypes';
 import { allIndices, buildChangeSummary } from './DesignTabHelpers';
@@ -154,9 +154,9 @@ export function useDesignTabState() {
     return parsed;
   }, [selectedPersona?.last_design_result]);
 
+  const parsedDesignCtx = useParsedDesignContext();
   useEffect(() => {
-    const ctx = parseDesignContext(selectedPersona?.design_context);
-    setDesignContext(ctx.designFiles ?? { files: [], references: [] });
+    setDesignContext(parsedDesignCtx.designFiles ?? { files: [], references: [] });
   }, [selectedPersona?.id]);
 
   useEffect(() => {

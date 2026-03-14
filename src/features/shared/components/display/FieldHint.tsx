@@ -35,7 +35,7 @@ export function FieldHint({ text, range, example }: FieldHintProps) {
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        className="text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 rounded-sm"
+        className="text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors focus-ring rounded-sm"
         aria-label="Field info"
       >
         <Info className="w-3.5 h-3.5" />
@@ -43,7 +43,7 @@ export function FieldHint({ text, range, example }: FieldHintProps) {
 
       {open && (
         <div
-          className={`absolute z-50 w-56 px-3 py-2 rounded-xl border border-primary/15 bg-background/95 backdrop-blur-md shadow-lg text-sm leading-relaxed ${
+          className={`absolute z-50 w-56 px-3 py-2 rounded-xl border border-primary/15 bg-background/95 backdrop-blur-md shadow-elevation-3 text-sm leading-relaxed ${
             above ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
           } left-1/2 -translate-x-1/2`}
         >

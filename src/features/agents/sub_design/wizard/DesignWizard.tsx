@@ -123,7 +123,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
                   onChange={(e) => setAdditionalContext(e.target.value)}
                   placeholder="Add any specific requirements, domain knowledge, or constraints..."
                   rows={4}
-                  className="w-full bg-background/50 border border-primary/20 rounded-xl px-3 py-2 text-sm text-foreground resize-y focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/30 transition-all placeholder-muted-foreground/30"
+                  className="w-full bg-background/50 border border-primary/20 rounded-xl px-3 py-2 text-sm text-foreground resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 focus-visible:border-violet-500/30 transition-all placeholder-muted-foreground/30"
                 />
               </div>
             </div>

@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
-import { listen } from "@tauri-apps/api/event";
 import type { AuthUser, AuthStateResponse } from "@/api/auth/auth";
 import { clearCryptoCache } from "@/lib/utils/platform/crypto";
 
@@ -111,7 +110,7 @@ export const useAuthStore = create<AuthState>()(
 export const AUTH_LOGIN_EVENT = "personas:auth-login";
 
 // ---------------------------------------------------------------------------
-// Event listener
+// Event listener (login timeout helper — listener itself lives in EventBridge)
 // ---------------------------------------------------------------------------
 
 let loginTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -121,37 +120,4 @@ function clearLoginTimeout() {
     clearTimeout(loginTimeoutId);
     loginTimeoutId = null;
   }
-}
-
-let authListenerAttached = false;
-let authDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-export function initAuthListener() {
-  if (authListenerAttached) return;
-  authListenerAttached = true;
-  listen<AuthStateResponse>("auth-state-changed", (event) => {
-    clearLoginTimeout();
-
-    // Debounce rapid auth-state-changed events (100ms trailing) to avoid
-    // inconsistent isAuthenticated/user state from interleaved updates.
-    if (authDebounceTimer !== null) clearTimeout(authDebounceTimer);
-    authDebounceTimer = setTimeout(() => {
-      authDebounceTimer = null;
-      const prev = useAuthStore.getState();
-      const state = event.payload;
-      useAuthStore.setState({
-        user: state.user,
-        isAuthenticated: state.is_authenticated,
-        isOffline: state.is_offline,
-        isLoading: false,
-      });
-
-      // When user becomes authenticated, notify persona store to initialize cloud connection.
-      if (state.is_authenticated && !prev.isAuthenticated) {
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent(AUTH_LOGIN_EVENT));
-        }
-      }
-    }, 100);
-  });
 }

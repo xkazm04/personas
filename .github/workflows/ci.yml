@@ -29,6 +29,12 @@ jobs:
       - name: Typecheck + build
         run: npm run build
 
+      - name: Check bundle size budget
+        # Budget: 850 KB per chunk (main index is ~778 KB: systemStore + agentStore + Sidebar).
+        # Further reduction requires splitting these stores into granular packages.
+        # Total: 5000 KB across all chunks.
+        run: node scripts/check-bundle-budget.mjs --max-chunk-kb=850 --max-total-kb=5000
+
       - name: Run frontend tests
         run: npm run test -- --run
 

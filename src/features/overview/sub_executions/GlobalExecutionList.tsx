@@ -10,7 +10,7 @@ import { PersonaSelect } from '@/features/overview/sub_usage/DashboardFilters';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { ExecutionDetail } from '@/features/agents/sub_executions/detail/ExecutionDetail';
 import type { GlobalExecution } from '@/lib/types/types';
-import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { ExecutionTable } from './ExecutionTable';
 import { ExecutionEmptyState } from './ExecutionEmptyStates';
 
@@ -29,7 +29,8 @@ export default function GlobalExecutionList() {
   const personas = useAgentStore((s) => s.personas);
 
   const [filter, setFilter] = useState<FilterStatus>('all');
-  const { selectedPersonaId, setSelectedPersonaId } = useOverviewFilters();
+  const { selectedPersonaId } = useOverviewFilterValues();
+  const { setSelectedPersonaId } = useOverviewFilterActions();
   const [selectedExec, setSelectedExec] = useState<GlobalExecution | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);

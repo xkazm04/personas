@@ -257,7 +257,7 @@ function UrlTab({
             onKeyDown={(e) => { if (e.key === 'Enter' && !urlFetching) void handleUrlFetch(); }}
             aria-label="Workflow URL"
             placeholder="https://raw.githubusercontent.com/.../workflow.json"
-            className="flex-1 px-3 py-2 rounded-xl bg-background/50 border border-primary/15 text-sm text-foreground/80 placeholder:text-muted-foreground/40 outline-none focus:border-violet-500/40 transition-colors"
+            className="flex-1 px-3 py-2 rounded-xl bg-background/50 border border-primary/15 text-sm text-foreground/80 placeholder:text-muted-foreground/40 outline-none focus-visible:border-violet-500/40 transition-colors"
             data-testid="url-input"
           />
           <button

@@ -110,7 +110,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
 
         <input
           ref={titleRef}
-          className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1 text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/30"
+          className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1 text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/30"
           value={editTitle}
           onChange={(e) => setEditTitle(e.target.value)}
           placeholder="Title..."
@@ -118,7 +118,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
         />
 
         <textarea
-          className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1 text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/30 resize-none"
+          className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1 text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/30 resize-none"
           value={editContent}
           onChange={(e) => setEditContent(e.target.value)}
           placeholder="Content..."
@@ -127,7 +127,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
 
         <div className="flex items-center gap-2">
           <select
-            className="text-sm bg-secondary/60 border border-primary/10 rounded-lg px-1.5 py-0.5 text-foreground/80 focus:outline-none"
+            className="text-sm bg-secondary/60 border border-primary/10 rounded-lg px-1.5 py-0.5 text-foreground/80 focus-visible:outline-none"
             value={editCategory}
             onChange={(e) => setEditCategory(e.target.value)}
           >

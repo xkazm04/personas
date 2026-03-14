@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { VaultStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import type {
   PersonaAutomation,
   AutomationRun,
@@ -9,7 +9,6 @@ import type {
 } from "@/lib/bindings/PersonaAutomation";
 import type { DeployAutomationInput, DeployAutomationResult, ZapierZap, ZapierWebhookResult } from "@/api/agents/automations";
 import * as api from "@/api/agents/automations";
-import { useToastStore } from "@/stores/toastStore";
 
 export interface AutomationSlice {
   // State
@@ -41,8 +40,8 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
     try {
       const automations = await api.listAutomations(personaId);
       set({ automations });
-    } catch {
-      useToastStore.getState().addToast('Failed to load automations', 'error');
+    } catch (err) {
+      reportError(err, "Failed to load automations", set);
     }
   },
 
@@ -52,7 +51,7 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
       set((state) => ({ automations: [...state.automations, automation] }));
       return automation;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create automation") });
+      reportError(err, "Failed to create automation", set);
       return null;
     }
   },
@@ -64,7 +63,7 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
         automations: state.automations.map((a) => (a.id === id ? updated : a)),
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update automation") });
+      reportError(err, "Failed to update automation", set);
     }
   },
 
@@ -82,7 +81,7 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
       if (personaId) {
         await get().fetchAutomations(personaId);
       }
-      set({ error: errMsg(err, "Failed to delete automation") });
+      reportError(err, "Failed to delete automation", set);
     }
   },
 
@@ -94,7 +93,7 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
       if (personaId) get().fetchAutomations(personaId);
       return run;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to trigger automation") });
+      reportError(err, "Failed to trigger automation", set);
       return null;
     }
   },
@@ -103,7 +102,7 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
     try {
       return await api.testAutomationWebhook(id);
     } catch (err) {
-      set({ error: errMsg(err, "Automation test failed") });
+      reportError(err, "Automation test failed", set);
       return null;
     }
   },
@@ -116,8 +115,8 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
         // Note: automationRuns uses get() intentionally -- runs are keyed by
         // automationId and concurrent fetches for different IDs are safe.
       });
-    } catch {
-      useToastStore.getState().addToast('Failed to load automation runs', 'error');
+    } catch (err) {
+      reportError(err, "Failed to load automation runs", set);
     }
   },
 
@@ -127,7 +126,7 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
       set((state) => ({ automations: [...state.automations, result.automation] }));
       return result;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to deploy automation") });
+      reportError(err, "Failed to deploy automation", set);
       return null;
     }
   },
@@ -137,9 +136,8 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
     try {
       const zaps = await api.zapierListZaps(credentialId);
       set({ zapierZaps: zaps, zapierZapsLoading: false });
-    } catch {
-      set({ zapierZapsLoading: false });
-      useToastStore.getState().addToast('Failed to load Zapier zaps', 'error');
+    } catch (err) {
+      reportError(err, "Failed to load Zapier zaps", set, { stateUpdates: { zapierZapsLoading: false } });
     }
   },
 
@@ -147,7 +145,7 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
     try {
       return await api.zapierTriggerWebhook(credentialId, webhookUrl, body);
     } catch (err) {
-      set({ error: errMsg(err, "Failed to trigger Zapier webhook") });
+      reportError(err, "Failed to trigger Zapier webhook", set);
       return null;
     }
   },

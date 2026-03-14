@@ -29,7 +29,8 @@ use crate::engine::ExecutionEngine;
 ///
 /// Each implementor defines:
 /// - `name()` -- human-readable label for logs
-/// - `interval()` -- how often to poll
+/// - `interval()` -- how often to poll when active
+/// - `idle_interval()` -- how often to poll when idle (default: same as interval)
 /// - `initial_delay()` -- optional startup delay (default 0)
 /// - `tick()` -- the combined source -> predicate -> action cycle
 #[async_trait::async_trait]
@@ -37,8 +38,14 @@ pub trait ReactiveSubscription: Send + Sync + 'static {
     /// Human-readable name for logging.
     fn name(&self) -> &'static str;
 
-    /// How often this subscription should be polled.
+    /// How often this subscription should be polled when the app is active.
     fn interval(&self) -> Duration;
+
+    /// How often to poll when idle (no running executions, app backgrounded).
+    /// Subscriptions that don't benefit from reduced cadence can leave the default.
+    fn idle_interval(&self) -> Duration {
+        self.interval()
+    }
 
     /// Optional delay before the first poll (e.g., let the app fully start).
     fn initial_delay(&self) -> Duration {
@@ -146,6 +153,10 @@ impl ReactiveSubscription for EventBusSubscription {
         Duration::from_secs(2)
     }
 
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(10)
+    }
+
     async fn tick(&self) {
         super::background::event_bus_tick(
             &self.scheduler,
@@ -167,6 +178,10 @@ impl ReactiveSubscription for TriggerSchedulerSubscription {
         Duration::from_secs(5)
     }
 
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(30)
+    }
+
     async fn tick(&self) {
         super::background::trigger_scheduler_tick(&self.scheduler, &self.pool);
     }
@@ -180,6 +195,10 @@ impl ReactiveSubscription for PollingSubscription {
 
     fn interval(&self) -> Duration {
         Duration::from_secs(10)
+    }
+
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(60)
     }
 
     fn initial_delay(&self) -> Duration {
@@ -297,6 +316,10 @@ impl ReactiveSubscription for CompositeSubscription {
         Duration::from_secs(2)
     }
 
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(15)
+    }
+
     fn initial_delay(&self) -> Duration {
         Duration::from_secs(3)
     }
@@ -371,23 +394,49 @@ impl ReactiveSubscription for ZombieExecutionSubscription {
 
 /// Run a single reactive subscription in its own task, respecting initial delay,
 /// interval, and the scheduler's running flag.
+///
+/// Adaptively switches between `interval()` and `idle_interval()` based on
+/// the scheduler's active flag, reducing CPU/IO when the system is idle.
 async fn run_single(
     sub: Box<dyn ReactiveSubscription>,
     scheduler: Arc<SchedulerState>,
 ) {
     let name = sub.name();
+    let active_interval = sub.interval();
+    let idle_interval = sub.idle_interval();
+    let has_idle_mode = active_interval != idle_interval;
+
     let delay = sub.initial_delay();
     if !delay.is_zero() {
         tracing::debug!(subscription = name, delay_secs = ?delay.as_secs(), "Delaying initial poll");
         tokio::time::sleep(delay).await;
     }
 
-    let mut interval = tokio::time::interval(sub.interval());
+    let mut was_active = true;
+    let mut interval = tokio::time::interval(active_interval);
     loop {
         interval.tick().await;
         if !scheduler.is_running() {
             break;
         }
+
+        // Switch interval when activity level changes
+        if has_idle_mode {
+            let is_active = scheduler.is_active();
+            if is_active != was_active {
+                let new_dur = if is_active { active_interval } else { idle_interval };
+                interval = tokio::time::interval(new_dur);
+                interval.tick().await; // consume the immediate first tick
+                was_active = is_active;
+                tracing::debug!(
+                    subscription = name,
+                    mode = if is_active { "active" } else { "idle" },
+                    interval_secs = new_dur.as_secs(),
+                    "Subscription interval adjusted"
+                );
+            }
+        }
+
         sub.tick().await;
     }
     tracing::info!(subscription = name, "Subscription loop exited");

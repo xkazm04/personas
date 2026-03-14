@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { MessageSquare, CheckCheck, RefreshCw, Send } from 'lucide-react';
+import { MessageSquare, CheckCheck, RefreshCw, Send, Plus } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
@@ -12,6 +12,7 @@ import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
+import { seedMockMessage } from '@/api/overview/messages';
 import { priorityConfig, FILTER_LABELS, GRID_TEMPLATE_COLUMNS, type FilterType } from '../libs/messageHelpers';
 import { MessageDetailModal } from './MessageDetailModal';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
@@ -82,6 +83,11 @@ export default function MessageList() {
     if (!msg.is_read) markMessageAsRead(msg.id);
   }, [markMessageAsRead]);
 
+  const handleSeedMessage = useCallback(async () => {
+    try { await seedMockMessage(); await fetchMessages(true); }
+    catch (err) { console.error('Failed to seed mock message:', err); }
+  }, [fetchMessages]);
+
   const remaining = messagesTotal - messages.length;
   const { parentRef, virtualizer } = useVirtualList(filteredMessages, 40);
 
@@ -100,6 +106,11 @@ export default function MessageList() {
         subtitle={`${messagesTotal} message${messagesTotal !== 1 ? 's' : ''} recorded`}
         actions={
           <>
+            {import.meta.env.DEV && (
+              <button onClick={handleSeedMessage} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock message (dev only)">
+                <Plus className="w-3.5 h-3.5" /> Mock Message
+              </button>
+            )}
             <button onClick={handleRefresh} disabled={isRefreshing} className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors" title="Refresh">
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>

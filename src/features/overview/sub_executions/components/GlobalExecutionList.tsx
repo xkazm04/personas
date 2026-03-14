@@ -12,7 +12,7 @@ import DetailModal from '@/features/overview/components/dashboard/widgets/Detail
 import { ExecutionDetail } from '@/features/agents/sub_executions';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import type { GlobalExecution } from '@/lib/types/types';
-import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
 
@@ -33,7 +33,8 @@ export default function GlobalExecutionList() {
   const personas = useAgentStore((s) => s.personas);
 
   const [filter, setFilter] = useState<FilterStatus>('all');
-  const { selectedPersonaId, setSelectedPersonaId } = useOverviewFilters();
+  const { selectedPersonaId } = useOverviewFilterValues();
+  const { setSelectedPersonaId } = useOverviewFilterActions();
   const [selectedExec, setSelectedExec] = useState<GlobalExecution | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);

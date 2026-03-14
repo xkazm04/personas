@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { AutomationPlatform } from '@/lib/bindings/PersonaAutomation';
 import type { DeployAutomationResult } from '@/api/agents/automations';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
 interface AutomationReviewStepProps {
   platform: AutomationPlatform;
@@ -49,9 +50,9 @@ export function AutomationReviewStep({
           <p className="text-sm font-medium text-foreground/90">Automation deployed successfully</p>
           <p className="text-sm text-muted-foreground mt-1">{deployResult.deploymentMessage}</p>
         </div>
-        {deployResult.platformUrl && (
+        {sanitizeExternalUrl(deployResult.platformUrl) && (
           <a
-            href={deployResult.platformUrl}
+            href={sanitizeExternalUrl(deployResult.platformUrl)!}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-accent/15 border border-accent/25 text-foreground/80 hover:bg-accent/25 transition-colors"

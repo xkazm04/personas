@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useCallback, useRef, useState } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useAgentStore } from "@/stores/agentStore";
-import { initHealingListener } from "@/stores/personaStore";
 import { DollarSign, Zap, CheckCircle, TrendingUp, RefreshCw, BarChart3 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import HealingIssueModal from '@/features/overview/sub_observability/components/HealingIssueModal';
@@ -67,7 +66,6 @@ export default function AnalyticsDashboard() {
     try { await run; } finally { if (refreshInFlightRef.current === run) refreshInFlightRef.current = null; }
   }, [refreshAll]);
 
-  useEffect(() => { initHealingListener(); }, []);
   useEffect(() => { void refreshAllSafe(); }, [refreshAllSafe]);
   useEffect(() => {
     if (!autoRefresh) return;

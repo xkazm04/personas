@@ -90,6 +90,7 @@ jsonschema = { version = "0.28", default-features = false }
 # Vector Knowledge Base (Phase 1: sqlite-vec + local embeddings)
 sqlite-vec = "0.1"
 fastembed = "4"
+ort = { version = "2.0.0-rc.9", features = ["load-dynamic"] }
 
 # P2P / Identity (Phase 1: Invisible Apps)
 ed25519-dalek = { version = "2", features = ["serde", "zeroize", "rand_core"] }
@@ -121,6 +122,13 @@ panic = "abort"
 
 [profile.dev]
 opt-level = 0
+
+# Fast local testing: `cargo build --profile dev-release`
+# ~3x faster compile than release, still optimized enough for perf testing
+[profile.dev-release]
+inherits = "dev"
+opt-level = 2
+lto = "thin"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [

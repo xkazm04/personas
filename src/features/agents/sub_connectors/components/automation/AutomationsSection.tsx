@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Zap } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Zap, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useVaultStore } from "@/stores/vaultStore";
 import type { PersonaAutomation, AutomationDeploymentStatus } from '@/lib/bindings/PersonaAutomation';
 import { AutomationCard } from './AutomationCard';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { TOOLS_BTN_COMPACT, TOOLS_INNER_SPACE } from '@/lib/utils/designTokens';
+import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
+import { BaseModal } from '@/lib/ui/BaseModal';
+import { BlastRadiusPanel, useBlastRadius } from '@/features/shared/components/display/BlastRadiusPanel';
+import { getAutomationBlastRadius } from '@/api/agents/automations';
 
 interface AutomationsSectionProps {
   automations: PersonaAutomation[];
@@ -51,8 +55,22 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
     void updateAutomation(id, { deploymentStatus: newStatus as AutomationDeploymentStatus });
   };
 
+  const [deleteTarget, setDeleteTarget] = useState<PersonaAutomation | null>(null);
+  const { items: blastItems, loading: blastLoading } = useBlastRadius(
+    () => getAutomationBlastRadius(deleteTarget!.id),
+    !!deleteTarget,
+  );
+
   const handleDelete = (id: string) => {
-    void deleteAutomation(id);
+    const target = automations.find((a) => a.id === id) ?? null;
+    setDeleteTarget(target);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteTarget) {
+      void deleteAutomation(deleteTarget.id);
+      setDeleteTarget(null);
+    }
   };
 
   const preview = automations.length > 0
@@ -113,18 +131,25 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
             className="overflow-hidden"
           >
             <div className={`${TOOLS_INNER_SPACE} pt-2`}>
-              {automations.map((auto) => (
-                <AutomationCard
-                  key={auto.id}
-                  automation={auto}
-                  onTest={handleTest}
-                  onEdit={onEdit}
-                  onToggleStatus={handleToggleStatus}
-                  onDelete={handleDelete}
-                  isTesting={testingId === auto.id}
-                  testResult={testResults[auto.id] ?? null}
-                />
-              ))}
+              {automations.length > 0 ? (
+                <AnimatedList
+                  className="space-y-2"
+                  keys={automations.map((a) => a.id)}
+                >
+                  {automations.map((auto) => (
+                    <AutomationCard
+                      key={auto.id}
+                      automation={auto}
+                      onTest={handleTest}
+                      onEdit={onEdit}
+                      onToggleStatus={handleToggleStatus}
+                      onDelete={handleDelete}
+                      isTesting={testingId === auto.id}
+                      testResult={testResults[auto.id] ?? null}
+                    />
+                  ))}
+                </AnimatedList>
+              ) : null}
 
               {automations.length === 0 && (
                 <button
@@ -139,6 +164,47 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
           </motion.div>
         )}
       </AnimatePresence>
+
+      <BaseModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        titleId="delete-automation-dialog"
+        maxWidthClass="max-w-sm"
+        panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden"
+      >
+        {deleteTarget && (
+          <div className="p-4 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 id="delete-automation-dialog" className="text-sm font-semibold text-foreground/90">Delete Automation</h3>
+                <p className="text-sm text-muted-foreground/90 mt-1">
+                  Permanently delete <span className="font-medium">{deleteTarget.name}</span>.
+                </p>
+              </div>
+            </div>
+
+            <BlastRadiusPanel items={blastItems} loading={blastLoading} />
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="px-4 py-2 text-sm text-muted-foreground/80 hover:text-foreground/95 rounded-xl hover:bg-secondary/40 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 text-sm font-medium rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        )}
+      </BaseModal>
     </div>
   );
 }

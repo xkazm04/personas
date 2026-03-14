@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, ExternalLink, Loader2 } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import type { GitLabJob } from '@/api/system/gitlab';
 import { StatusIcon, statusBg, formatDuration } from './pipelineHelpers';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
 // ---------------------------------------------------------------------------
 // Job log viewer
@@ -83,9 +84,9 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
         {job.duration != null && (
           <span className="text-xs text-muted-foreground/50">{formatDuration(job.duration)}</span>
         )}
-        {job.webUrl && (
+        {sanitizeExternalUrl(job.webUrl) && (
           <a
-            href={job.webUrl}
+            href={sanitizeExternalUrl(job.webUrl)!}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}

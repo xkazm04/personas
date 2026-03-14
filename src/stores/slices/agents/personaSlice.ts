@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { errMsg, reportError } from "../../storeTypes";
 import { useSystemStore } from "../../systemStore";
 import type {
   Persona,
@@ -9,11 +9,7 @@ import type {
 import type { PartialPersonaUpdate, PersonaOperation } from "@/api/agents/personas";
 import { buildUpdateInput, operationToPartial } from "@/api/agents/personas";
 import type { PersonaHealth } from "@/lib/bindings/PersonaHealth";
-import { listAutomations } from "@/api/agents/automations";
-import { createPersona, deletePersona, duplicatePersona, getPersona, getPersonaSummaries, listPersonas, updatePersona } from "@/api/agents/personas";
-import { listToolDefinitions } from "@/api/agents/tools";
-import { listSubscriptions } from "@/api/overview/events";
-import { listTriggers } from "@/api/pipeline/triggers";
+import { createPersona, deletePersona, duplicatePersona, getPersonaDetail, getPersonaSummaries, listPersonas, updatePersona } from "@/api/agents/personas";
 
 
 // -- Error categorization for structured degradation events ------------------
@@ -85,7 +81,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       // Fire-and-forget: load sidebar badge data
       get().fetchPersonaSummaries();
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch personas"), isLoading: false });
+      reportError(err, "Failed to fetch personas", set, { stateUpdates: { isLoading: false } });
       throw err;
     }
   },
@@ -126,35 +122,10 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     const seq = ++fetchDetailSeq;
     set({ isLoading: true, error: null });
     try {
-      const persona = await getPersona(id);
-      if (seq !== fetchDetailSeq) return; // superseded by a newer request
-      // Assemble PersonaWithDetails from multiple IPC calls.
-      // Triggers/subscriptions are non-critical and should not block editor load.
-      const [allToolsResult, triggersResult, subscriptionsResult, automationsResult] = await Promise.allSettled([
-        listToolDefinitions(),
-        listTriggers(id),
-        listSubscriptions(id),
-        listAutomations(id),
-      ]);
+      // Single IPC round trip: persona + tools + triggers + subscriptions + automations
+      const detail = await getPersonaDetail(id);
       if (seq !== fetchDetailSeq) return; // superseded by a newer request
 
-      if (allToolsResult.status !== 'fulfilled') {
-        throw allToolsResult.reason;
-      }
-
-      const triggers = triggersResult.status === 'fulfilled' ? triggersResult.value : [];
-      const subscriptions = subscriptionsResult.status === 'fulfilled' ? subscriptionsResult.value : [];
-      const automations = automationsResult.status === 'fulfilled' ? automationsResult.value : [];
-
-      // Find tools assigned to this persona (cross-reference with persona_tools)
-      // For now, use all tool definitions -- actual assignment filtering can be refined
-      const detail: PersonaWithDetails = {
-        ...persona,
-        tools: allToolsResult.value,
-        triggers,
-        subscriptions,
-        automations,
-      };
       set({
         selectedPersona: detail,
         selectedPersonaId: id,
@@ -206,7 +177,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       set((state) => ({ personas: [persona, ...state.personas] }));
       return persona;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create persona") });
+      reportError(err, "Failed to create persona", set);
       throw err;
     }
   },
@@ -218,7 +189,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       set((state) => ({ personas: [newPersona, ...state.personas] }));
       return newPersona;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to duplicate persona") });
+      reportError(err, "Failed to duplicate persona", set);
       throw err;
     }
   },
@@ -235,7 +206,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
             : state.selectedPersona,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update persona") });
+      reportError(err, "Failed to update persona", set);
       throw err;
     }
   },
@@ -257,7 +228,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         selectedPersona: state.selectedPersona?.id === id ? null : state.selectedPersona,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete persona") });
+      reportError(err, "Failed to delete persona", set);
     }
   },
 
@@ -266,7 +237,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     set({ selectedPersonaId: id, queuePosition: null, queueDepth: null });
     useSystemStore.getState().setEditorTab("use-cases");
     if (id) useSystemStore.setState({ sidebarSection: "personas" });
-    useSystemStore.setState({ isCreatingPersona: false });
+    useSystemStore.setState({ isCreatingPersona: false, resumeDraftId: null });
     if (id) get().fetchDetail(id);
     else set({ selectedPersona: null });
   },

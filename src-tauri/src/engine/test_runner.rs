@@ -889,9 +889,9 @@ struct LabVariant<'a> {
 /// Callbacks that abstract mode-specific persistence and summary building.
 struct LabCallbacks<'a> {
     event_name: &'a str,
-    update_status: Box<dyn Fn(&DbPool, &str, LabRunStatus, Option<i32>, Option<&str>, Option<&str>, Option<&str>) + 'a>,
-    persist_result: Box<dyn Fn(&DbPool, &str, &LabVariant<'_>, &TestScenario, &TestModelConfig, &str, &ScoreResult) + 'a>,
-    build_summary: Box<dyn Fn(&HashMap<String, Vec<(i32, i32, i32, f64, i64)>>, &[TestModelConfig]) -> serde_json::Value + 'a>,
+    update_status: Box<dyn Fn(&DbPool, &str, LabRunStatus, Option<i32>, Option<&str>, Option<&str>, Option<&str>) + Send + Sync + 'a>,
+    persist_result: Box<dyn Fn(&DbPool, &str, &LabVariant<'_>, &TestScenario, &TestModelConfig, &str, &ScoreResult) + Send + Sync + 'a>,
+    build_summary: Box<dyn Fn(&HashMap<String, Vec<(i32, i32, i32, f64, i64)>>, &[TestModelConfig]) -> serde_json::Value + Send + Sync + 'a>,
 }
 
 /// Generic lab execution loop shared by arena, A/B, eval, and matrix modes.

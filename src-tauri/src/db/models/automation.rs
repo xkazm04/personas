@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::engine::lifecycle::AutomationDeployStatus;
+
 // ============================================================================
 // Persona Automations (external workflow references)
 // ============================================================================
@@ -26,7 +28,7 @@ pub struct PersonaAutomation {
     pub timeout_ms: i64,
     pub retry_count: i32,
     pub fallback_mode: String,
-    pub deployment_status: String,
+    pub deployment_status: AutomationDeployStatus,
     pub last_triggered_at: Option<String>,
     pub last_result_status: Option<String>,
     pub error_message: Option<String>,
@@ -74,7 +76,7 @@ pub struct UpdateAutomationInput {
     pub timeout_ms: Option<i64>,
     pub retry_count: Option<i32>,
     pub fallback_mode: Option<String>,
-    pub deployment_status: Option<String>,
+    pub deployment_status: Option<AutomationDeployStatus>,
     pub error_message: Option<Option<String>>,
 }
 

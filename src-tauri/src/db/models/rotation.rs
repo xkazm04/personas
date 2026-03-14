@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::engine::lifecycle::RotationEntryStatus;
+
 // ============================================================================
 // Credential Rotation Policy
 // ============================================================================
@@ -45,7 +47,7 @@ pub struct CredentialRotationEntry {
     pub id: String,
     pub credential_id: String,
     pub rotation_type: String,
-    pub status: String,
+    pub status: RotationEntryStatus,
     pub detail: Option<String>,
     pub created_at: String,
 }

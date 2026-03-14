@@ -113,7 +113,7 @@ export function DesignQuestionPanel({
             value={questionAnswer}
             onChange={(e) => setQuestionAnswer(e.target.value)}
             placeholder="Type a custom answer..."
-            className="flex-1 min-h-[48px] max-h-[100px] bg-background/50 border border-primary/20 rounded-[var(--radius-interactive)] px-3 py-2 text-sm text-foreground font-sans resize-y focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/30 transition-all placeholder-muted-foreground/30"
+            className="flex-1 min-h-[48px] max-h-[100px] bg-background/50 border border-primary/20 rounded-[var(--radius-interactive)] px-3 py-2 text-sm text-foreground font-sans resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:border-accent/30 transition-all placeholder-muted-foreground/30"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && e.ctrlKey) {
                 e.preventDefault();

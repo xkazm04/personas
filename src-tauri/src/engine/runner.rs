@@ -535,8 +535,62 @@ pub async fn run_execution(
     }
 
     // Read stdout line by line (with per-line 64KB cap and 30s watchdog)
-    let mut stdout_reader = driver.take_stdout_reader().expect("stdout was piped");
-    let stderr = driver.take_stderr().expect("stderr was piped");
+    let Some(mut stdout_reader) = driver.take_stdout_reader() else {
+        let error_msg = "Failed to capture stdout pipe from child process".to_string();
+        logger.log(&format!("[ERROR] {error_msg}"));
+        logger.close();
+        driver.kill().await;
+        driver.unregister_pid(&child_pids, &execution_id).await;
+        let duration_ms = start_time.elapsed().as_millis() as u64;
+        let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
+        let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
+        let _ = app.emit(
+            "execution-status",
+            ExecutionStatusEvent {
+                execution_id: execution_id.clone(),
+                status: ExecutionState::Failed,
+                error: Some(error_msg.clone()),
+                duration_ms: Some(duration_ms),
+                cost_usd: None,
+            },
+        );
+        return ExecutionResult {
+            success: false,
+            error: Some(error_msg),
+            log_file_path: Some(log_file_path),
+            duration_ms,
+            trace_id: Some(final_trace.trace_id.clone()),
+            ..default_result()
+        };
+    };
+    let Some(stderr) = driver.take_stderr() else {
+        let error_msg = "Failed to capture stderr pipe from child process".to_string();
+        logger.log(&format!("[ERROR] {error_msg}"));
+        logger.close();
+        driver.kill().await;
+        driver.unregister_pid(&child_pids, &execution_id).await;
+        let duration_ms = start_time.elapsed().as_millis() as u64;
+        let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
+        let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
+        let _ = app.emit(
+            "execution-status",
+            ExecutionStatusEvent {
+                execution_id: execution_id.clone(),
+                status: ExecutionState::Failed,
+                error: Some(error_msg.clone()),
+                duration_ms: Some(duration_ms),
+                cost_usd: None,
+            },
+        );
+        return ExecutionResult {
+            success: false,
+            error: Some(error_msg),
+            log_file_path: Some(log_file_path),
+            duration_ms,
+            trace_id: Some(final_trace.trace_id.clone()),
+            ..default_result()
+        };
+    };
 
     let mut metrics = ExecutionMetrics::default();
     let mut assistant_text = String::new();

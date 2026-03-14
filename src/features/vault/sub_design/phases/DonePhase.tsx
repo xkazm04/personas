@@ -98,7 +98,7 @@ export function DonePhase({
                 }
               }}
               placeholder="e.g. add write scopes, add staging environment..."
-              className="flex-1 px-3 py-2 bg-secondary/40 border border-primary/10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30 transition-colors"
+              className="flex-1 px-3 py-2 bg-secondary/40 border border-primary/10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
             />
             <button
               onClick={handleRefineSubmit}

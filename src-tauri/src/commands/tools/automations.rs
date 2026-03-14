@@ -1,11 +1,15 @@
 use std::sync::Arc;
+use serde::Serialize;
 use tauri::State;
+use ts_rs::TS;
 
 use crate::db::models::{AutomationRun, CreateAutomationInput, PersonaAutomation, UpdateAutomationInput};
 use crate::db::repos::resources::automations as repo;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
+
+use crate::commands::core::personas::BlastRadiusItem;
 
 #[tauri::command]
 pub fn list_automations(
@@ -45,6 +49,19 @@ pub fn update_automation(
 }
 
 #[tauri::command]
+pub fn automation_blast_radius(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<Vec<BlastRadiusItem>, AppError> {
+    require_auth_sync(&state)?;
+    let items = repo::blast_radius(&state.db, &id)?;
+    Ok(items
+        .into_iter()
+        .map(|(category, description)| BlastRadiusItem { category, description })
+        .collect())
+}
+
+#[tauri::command]
 pub fn delete_automation(
     state: State<'_, Arc<AppState>>,
     id: String,
@@ -63,7 +80,7 @@ pub async fn trigger_automation(
     require_auth(&state).await?;
     let automation = repo::get_by_id(&state.db, &id)?;
 
-    if automation.deployment_status != "active" {
+    if !automation.deployment_status.is_runnable() {
         return Err(AppError::Validation(format!(
             "Automation '{}' is not active (status: {})",
             automation.name, automation.deployment_status

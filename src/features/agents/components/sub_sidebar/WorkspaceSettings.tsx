@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { X, DollarSign, RotateCcw, FileText } from 'lucide-react';
 import type { PersonaGroup } from '@/lib/types/types';
+import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
+import type { UnsavedGuardAction } from '@/hooks/utility/interaction/useUnsavedGuard';
 
 interface WorkspaceSettingsProps {
   group: PersonaGroup;
@@ -19,8 +21,19 @@ export function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSetting
   const [budget, setBudget] = useState(group.defaultMaxBudgetUsd?.toString() ?? '');
   const [turns, setTurns] = useState(group.defaultMaxTurns?.toString() ?? '');
   const [instructions, setInstructions] = useState(group.sharedInstructions ?? '');
+  const [showGuard, setShowGuard] = useState(false);
 
-  const handleSave = () => {
+  const isDirty = useMemo(() => {
+    if (description.trim() !== (group.description ?? '')) return true;
+    const bVal = budget.trim() ? parseFloat(budget) : undefined;
+    if (bVal !== (group.defaultMaxBudgetUsd ?? undefined)) return true;
+    const tVal = turns.trim() ? parseInt(turns, 10) : undefined;
+    if (tVal !== (group.defaultMaxTurns ?? undefined)) return true;
+    if (instructions.trim() !== (group.sharedInstructions ?? '')) return true;
+    return false;
+  }, [description, budget, turns, instructions, group]);
+
+  const applyChanges = useCallback(() => {
     const updates: Record<string, string | number | undefined> = {};
     const newDesc = description.trim();
     if (newDesc !== (group.description ?? '')) updates.description = newDesc || undefined;
@@ -34,16 +47,39 @@ export function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSetting
     if (Object.keys(updates).length > 0) {
       onUpdate(updates);
     }
+  }, [description, budget, turns, instructions, group, onUpdate]);
+
+  const handleSave = () => {
+    applyChanges();
     onClose();
   };
 
-  const inputClass = "w-full px-2 py-1 text-sm bg-background/60 border border-primary/20 rounded-xl outline-none focus:border-primary/30 text-foreground/90 placeholder:text-muted-foreground/40";
+  const handleCloseAttempt = () => {
+    if (isDirty) {
+      setShowGuard(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleGuardAction = (action: UnsavedGuardAction) => {
+    setShowGuard(false);
+    if (action === 'save') {
+      applyChanges();
+      onClose();
+    } else if (action === 'discard') {
+      onClose();
+    }
+    // 'stay' — just close the modal, keep editing
+  };
+
+  const inputClass = "w-full px-2 py-1 text-sm bg-background/60 border border-primary/20 rounded-xl outline-none focus-visible:border-primary/30 text-foreground/90 placeholder:text-muted-foreground/40";
 
   return (
     <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-2.5" data-testid="workspace-settings-panel">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider">Workspace Defaults</span>
-        <button onClick={onClose} className="p-0.5 hover:bg-secondary/60 rounded" data-testid="workspace-settings-close-btn">
+        <button onClick={handleCloseAttempt} className="p-0.5 hover:bg-secondary/60 rounded" data-testid="workspace-settings-close-btn">
           <X className="w-3 h-3 text-muted-foreground/60" />
         </button>
       </div>
@@ -56,7 +92,7 @@ export function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSetting
         <input
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Workspace purpose..."
+          placeholder="Workspace purpose — e.g. Customer support agents, Finance automation team"
           className={inputClass}
           data-testid="workspace-description-input"
         />
@@ -71,7 +107,7 @@ export function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSetting
           <input
             value={budget}
             onChange={(e) => setBudget(e.target.value)}
-            placeholder="e.g. 2.50"
+            placeholder="Budget in USD — e.g. 2.50"
             type="number"
             step="0.1"
             min="0"
@@ -86,7 +122,7 @@ export function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSetting
           <input
             value={turns}
             onChange={(e) => setTurns(e.target.value)}
-            placeholder="e.g. 25"
+            placeholder="Max round-trips — e.g. 25"
             type="number"
             step="1"
             min="1"
@@ -104,7 +140,7 @@ export function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSetting
         <textarea
           value={instructions}
           onChange={(e) => setInstructions(e.target.value)}
-          placeholder="Instructions appended to all agents in this workspace..."
+          placeholder="Instructions appended to all agents in this workspace — e.g. Always respond in formal English. Escalate billing issues to the finance team."
           rows={3}
           className={`${inputClass} resize-none`}
           data-testid="workspace-instructions-input"
@@ -121,6 +157,11 @@ export function WorkspaceSettings({ group, onUpdate, onClose }: WorkspaceSetting
           Save
         </button>
       </div>
+
+      <UnsavedChangesModal
+        isOpen={showGuard}
+        onAction={handleGuardAction}
+      />
     </div>
   );
 }

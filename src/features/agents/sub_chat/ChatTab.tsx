@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { Send, Plus, Trash2, Loader2, Bot, User } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import type { ChatMessage } from '@/lib/bindings/ChatMessage';
@@ -132,19 +131,17 @@ export function ChatTab() {
   const activeChatSessionId = useAgentStore((s) => s.activeChatSessionId);
   const chatStreaming = useAgentStore((s) => s.chatStreaming);
   const isExecuting = useAgentStore((s) => s.isExecuting);
-  const activeExecutionId = useAgentStore((s) => s.activeExecutionId);
   const executionOutput = useAgentStore((s) => s.executionOutput);
   const executionPersonaId = useAgentStore((s) => s.executionPersonaId);
   const fetchSessions = useAgentStore((s) => s.fetchChatSessions);
   const startNewSession = useAgentStore((s) => s.startNewChatSession);
   const sendMessage = useAgentStore((s) => s.sendChatMessage);
-  const finishStream = useAgentStore((s) => s.finishChatStream);
 
   const [inputValue, setInputValue] = useState('');
   const [streamLines, setStreamLines] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const prevExecutingRef = useRef(false);
+  const prevStreamingRef = useRef(false);
 
   const personaId = selectedPersona?.id ?? '';
 
@@ -154,8 +151,8 @@ export function ChatTab() {
   }, [personaId, fetchSessions]);
 
   // Auto-create a session if none active
-  const handleNewSession = useCallback(() => {
-    if (personaId) startNewSession(personaId);
+  const handleNewSession = useCallback(async () => {
+    if (personaId) await startNewSession(personaId);
     setStreamLines([]);
   }, [personaId, startNewSession]);
 
@@ -170,55 +167,23 @@ export function ChatTab() {
     setStreamLines(executionOutput);
   }, [chatStreaming, executionOutput, executionPersonaId, personaId]);
 
-  // When execution finishes and we were streaming for chat, save assistant message
+  // Clear local stream lines when chatStreaming ends.
+  // The store's finishExecution/cancelExecution handle calling finishChatStream
+  // so this works even if ChatTab was unmounted during the execution.
   useEffect(() => {
-    if (prevExecutingRef.current && !isExecuting && chatStreaming) {
-      const textLines = executionOutput.filter((l) => {
-        const cls = classifyLine(l);
-        return cls === 'text';
-      });
-      const fullResponse = textLines.join('\n').trim();
-      if (activeChatSessionId && personaId) {
-        finishStream(fullResponse, personaId, activeChatSessionId, activeExecutionId ?? undefined);
-      }
+    if (prevStreamingRef.current && !chatStreaming) {
       setStreamLines([]);
     }
-    prevExecutingRef.current = isExecuting;
-  }, [isExecuting, chatStreaming, executionOutput, activeChatSessionId, personaId, activeExecutionId, finishStream]);
+    prevStreamingRef.current = chatStreaming;
+  }, [chatStreaming]);
 
-  // Listen for execution-status events to detect completion while chatStreaming
-  useEffect(() => {
-    if (!chatStreaming) return;
-    let unlisten: UnlistenFn | null = null;
-    const setup = async () => {
-      unlisten = await listen<{ status: string; execution_id: string }>('execution-status', (event) => {
-        const { status } = event.payload;
-        if (['completed', 'failed', 'incomplete', 'cancelled'].includes(status)) {
-          const store = useAgentStore.getState();
-          const output = store.executionOutput;
-          const textLines = output.filter((l) => {
-            const cls = classifyLine(l);
-            return cls === 'text';
-          });
-          const fullResponse = textLines.join('\n').trim();
-          const sid = store.activeChatSessionId;
-          if (sid && personaId) {
-            store.finishChatStream(fullResponse, personaId, sid, event.payload.execution_id);
-          }
-          setStreamLines([]);
-        }
-      });
-    };
-    void setup();
-    return () => { unlisten?.(); };
-  }, [chatStreaming, personaId]);
-
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     const text = inputValue.trim();
     if (!text || chatStreaming || isExecuting) return;
     let sessionId = activeChatSessionId;
     if (!sessionId) {
-      sessionId = startNewSession(personaId);
+      sessionId = await startNewSession(personaId);
+      if (!sessionId) return; // session creation failed
     }
     setInputValue('');
     setStreamLines([]);
@@ -277,7 +242,7 @@ export function ChatTab() {
               placeholder={chatStreaming ? 'Waiting for response...' : 'Type a message...'}
               disabled={chatStreaming || isExecuting}
               rows={1}
-              className="flex-1 resize-none rounded-xl border border-primary/15 bg-muted/30 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50 min-h-[40px] max-h-[120px]"
+              className="flex-1 resize-none rounded-xl border border-primary/15 bg-muted/30 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus-ring disabled:opacity-50 min-h-[40px] max-h-[120px]"
               style={{ height: 'auto', overflow: 'auto' }}
               onInput={(e) => {
                 const el = e.currentTarget;

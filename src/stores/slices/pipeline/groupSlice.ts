@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { PipelineStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import { useAgentStore } from "../../agentStore";
 import type { PersonaGroup } from "@/lib/types/types";
 import type { UpdatePersonaGroupInput } from "@/lib/bindings/UpdatePersonaGroupInput";
@@ -37,7 +37,7 @@ export const createGroupSlice: StateCreator<PipelineStore, [], [], GroupSlice> =
       const groups = await listGroups();
       set({ groups });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch groups") });
+      reportError(err, "Failed to fetch groups", set);
     }
   },
 
@@ -52,7 +52,7 @@ export const createGroupSlice: StateCreator<PipelineStore, [], [], GroupSlice> =
       set((state) => ({ groups: [...state.groups, group] }));
       return group;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create group") });
+      reportError(err, "Failed to create group", set);
       return null;
     }
   },
@@ -75,7 +75,7 @@ export const createGroupSlice: StateCreator<PipelineStore, [], [], GroupSlice> =
         groups: state.groups.map((g) => (g.id === id ? group : g)),
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update group") });
+      reportError(err, "Failed to update group", set);
     }
   },
 
@@ -91,7 +91,7 @@ export const createGroupSlice: StateCreator<PipelineStore, [], [], GroupSlice> =
         ),
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete group") });
+      reportError(err, "Failed to delete group", set);
     }
   },
 
@@ -104,7 +104,7 @@ export const createGroupSlice: StateCreator<PipelineStore, [], [], GroupSlice> =
           .sort((a, b) => a.sortOrder - b.sortOrder),
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to reorder groups") });
+      reportError(err, "Failed to reorder groups", set);
     }
   },
 
@@ -112,7 +112,7 @@ export const createGroupSlice: StateCreator<PipelineStore, [], [], GroupSlice> =
     try {
       await useAgentStore.getState().applyPersonaOp(personaId, { kind: 'MoveToGroup', group_id: groupId });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to move persona") });
+      reportError(err, "Failed to move persona", set);
     }
   },
 });

@@ -137,7 +137,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
       connector: connector as unknown as CredentialDesignConnector,
       setup_instructions: '',
       summary: '',
-    }, 'negotiator').catch(() => {/* non-critical */});
+    }, 'negotiator').catch((err) => { console.warn('Failed to cache recipe from negotiator (non-critical):', err); });
 
     await flow.start(serviceName, connector, fieldKeys);
   }, [flow.start, flow.setResult, flow.setPhase, sp.reset]);

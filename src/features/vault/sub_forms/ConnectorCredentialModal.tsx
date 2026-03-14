@@ -6,6 +6,7 @@ import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditFor
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import type { SuggestedConnector } from '@/lib/types/designTypes';
 import type { ConnectorDefinition, CredentialMetadata, CredentialTemplateField } from '@/lib/types/types';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
 interface ConnectorCredentialModalProps {
   connector: SuggestedConnector;
@@ -94,9 +95,9 @@ export function ConnectorCredentialModal({
         )}
 
         {/* Setup URL -- prominent for first-time, subtle for updates */}
-        {connector.setup_url && !existingCredential && (
+        {sanitizeExternalUrl(connector.setup_url) && !existingCredential && (
           <a
-            href={connector.setup_url}
+            href={sanitizeExternalUrl(connector.setup_url)!}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-4 py-3 mb-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-xl text-sm text-foreground/80 hover:bg-amber-500/15 hover:border-amber-500/40 transition-colors group"
@@ -113,9 +114,9 @@ export function ConnectorCredentialModal({
             <ExternalLink className="w-4 h-4 text-amber-400/70 flex-shrink-0 group-hover:scale-110 transition-transform" />
           </a>
         )}
-        {connector.setup_url && existingCredential && (
+        {sanitizeExternalUrl(connector.setup_url) && existingCredential && (
           <a
-            href={connector.setup_url}
+            href={sanitizeExternalUrl(connector.setup_url)!}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2.5 px-3.5 py-2.5 mb-4 bg-primary/5 border border-primary/15 rounded-xl text-sm text-primary/80 hover:bg-primary/10 hover:text-primary transition-colors group"

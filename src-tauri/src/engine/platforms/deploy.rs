@@ -121,6 +121,7 @@ async fn deploy_n8n(
     let cred = crate::db::repos::resources::credentials::get_by_id(pool, &input.credential_id)?;
     let fields =
         crate::db::repos::resources::credentials::get_decrypted_fields(pool, &cred)?;
+    let _ = crate::db::repos::resources::audit_log::log_decrypt(pool, &cred.id, &cred.name, "platform:deploy", None, None);
     let base_url = fields.get("base_url").cloned().unwrap_or_default();
 
     let platform_url = if base_url.is_empty() {
@@ -439,7 +440,7 @@ fn create_and_activate(
 
     // Activate it immediately
     let update_input = UpdateAutomationInput {
-        deployment_status: Some("active".into()),
+        deployment_status: Some(crate::engine::lifecycle::AutomationDeployStatus::Active),
         name: None,
         description: None,
         use_case_id: None,

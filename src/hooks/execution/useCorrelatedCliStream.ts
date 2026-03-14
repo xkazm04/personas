@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import {
+  validatePayload,
+  CliOutputSchema,
+  ExecutionStatusSchema,
+} from '@/lib/validation/eventPayloads';
 
 export type CliRunPhase = 'idle' | 'running' | 'completed' | 'failed';
 
@@ -70,11 +75,14 @@ export function useCorrelatedCliStream({
       setPhase('running');
 
       const unlistenOutput = await listen<Record<string, unknown>>(outputEvent, (event) => {
-        const payload = event.payload ?? {};
-        if (String(payload[idField] ?? '') !== nextRunId) return;
+        const raw = event.payload ?? {};
+        if (String(raw[idField] ?? '') !== nextRunId) return;
 
-        const rawLine = payload['line'];
-        if (typeof rawLine === 'string' && rawLine.trim().length > 0) {
+        const validated = validatePayload(outputEvent, raw, CliOutputSchema);
+        if (!validated) return;
+
+        const rawLine = validated.line;
+        if (rawLine.trim().length > 0) {
           const line = rawLine.length > MAX_STREAM_LINE_LENGTH
             ? rawLine.slice(0, MAX_STREAM_LINE_LENGTH) + '...[truncated]'
             : rawLine;
@@ -96,20 +104,24 @@ export function useCorrelatedCliStream({
       });
 
       const unlistenStatus = await listen<Record<string, unknown>>(statusEvent, (event) => {
-        const payload = event.payload ?? {};
-        if (String(payload[idField] ?? '') !== nextRunId) return;
+        const raw = event.payload ?? {};
+        if (String(raw[idField] ?? '') !== nextRunId) return;
 
-        const nextStatus = payload['status'];
+        const validated = validatePayload(statusEvent, raw, ExecutionStatusSchema);
+        if (!validated) return;
+
+        const nextStatus = validated.status;
         if (nextStatus === 'running' || nextStatus === 'completed' || nextStatus === 'failed') {
           setPhase(nextStatus);
         }
 
         if (nextStatus === 'failed' && onFailedRef.current) {
-          const err = payload['error'];
-          onFailedRef.current(typeof err === 'string' ? err : 'CLI transformation failed.');
+          onFailedRef.current(validated.error ?? 'CLI transformation failed.');
         }
 
-        onStatusEventRef.current?.(payload);
+        // Pass the validated payload to the consumer as the original Record shape
+        // for backward compatibility with handleStatusEvent in usePersonaExecution
+        onStatusEventRef.current?.(raw);
       });
 
       unlistenersRef.current = [unlistenOutput, unlistenStatus];

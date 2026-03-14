@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import type { DevProject } from "@/lib/bindings/DevProject";
 import type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
 import type { DevGoal } from "@/lib/bindings/DevGoal";
@@ -138,7 +138,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       const projects = await devApi.listProjects(status);
       set({ projects, projectsLoading: false, error: null });
     } catch (err) {
-      set({ projectsLoading: false, error: errMsg(err, "Failed to fetch projects") });
+      reportError(err, "Failed to fetch projects", set, { stateUpdates: { projectsLoading: false } });
     }
   },
 
@@ -148,7 +148,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       set((state) => ({ projects: [...state.projects, project], error: null }));
       return project;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create project") });
+      reportError(err, "Failed to create project", set);
       throw err;
     }
   },
@@ -161,7 +161,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update project") });
+      reportError(err, "Failed to update project", set);
     }
   },
 
@@ -174,7 +174,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete project") });
+      reportError(err, "Failed to delete project", set);
     }
   },
 
@@ -183,7 +183,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       await devApi.setActiveProject(id);
       set({ activeProjectId: id, error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to set active project") });
+      reportError(err, "Failed to set active project", set);
     }
   },
 
@@ -192,7 +192,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       const result = await devApi.scanDirectory(path);
       return result;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to scan directory") });
+      reportError(err, "Failed to scan directory", set);
       throw err;
     }
   },
@@ -208,7 +208,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       const goals = await devApi.listGoals(projectId);
       set({ goals, goalsLoading: false, error: null });
     } catch (err) {
-      set({ goalsLoading: false, error: errMsg(err, "Failed to fetch goals") });
+      reportError(err, "Failed to fetch goals", set, { stateUpdates: { goalsLoading: false } });
     }
   },
 
@@ -218,7 +218,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       set((state) => ({ goals: [...state.goals, goal], error: null }));
       return goal;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create goal") });
+      reportError(err, "Failed to create goal", set);
       throw err;
     }
   },
@@ -231,7 +231,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update goal") });
+      reportError(err, "Failed to update goal", set);
     }
   },
 
@@ -243,7 +243,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete goal") });
+      reportError(err, "Failed to delete goal", set);
     }
   },
 
@@ -253,7 +253,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       // Re-fetch to get updated order_index values
       await get().fetchGoals(projectId);
     } catch (err) {
-      set({ error: errMsg(err, "Failed to reorder goals") });
+      reportError(err, "Failed to reorder goals", set);
     }
   },
 
@@ -263,7 +263,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       set((state) => ({ goalSignals: [...state.goalSignals, signal], error: null }));
       return signal;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to record goal signal") });
+      reportError(err, "Failed to record goal signal", set);
       throw err;
     }
   },
@@ -273,7 +273,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       const goalSignals = await devApi.listGoalSignals(goalId);
       set({ goalSignals, error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch goal signals") });
+      reportError(err, "Failed to fetch goal signals", set);
     }
   },
 
@@ -290,7 +290,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       const contextGroups = await devApi.listContextGroups(projectId);
       set({ contextGroups, contextMapLoading: false, error: null });
     } catch (err) {
-      set({ contextMapLoading: false, error: errMsg(err, "Failed to fetch context groups") });
+      reportError(err, "Failed to fetch context groups", set, { stateUpdates: { contextMapLoading: false } });
     }
   },
 
@@ -300,7 +300,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       set((state) => ({ contextGroups: [...state.contextGroups, group], error: null }));
       return group;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create context group") });
+      reportError(err, "Failed to create context group", set);
       throw err;
     }
   },
@@ -313,7 +313,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update context group") });
+      reportError(err, "Failed to update context group", set);
     }
   },
 
@@ -328,7 +328,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete context group") });
+      reportError(err, "Failed to delete context group", set);
     }
   },
 
@@ -337,7 +337,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       await devApi.reorderContextGroups(projectId, groupIds);
       await get().fetchContextGroups(projectId);
     } catch (err) {
-      set({ error: errMsg(err, "Failed to reorder context groups") });
+      reportError(err, "Failed to reorder context groups", set);
     }
   },
 
@@ -347,7 +347,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       const contexts = await devApi.listContexts(projectId, groupId);
       set({ contexts, contextMapLoading: false, error: null });
     } catch (err) {
-      set({ contextMapLoading: false, error: errMsg(err, "Failed to fetch contexts") });
+      reportError(err, "Failed to fetch contexts", set, { stateUpdates: { contextMapLoading: false } });
     }
   },
 
@@ -357,7 +357,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       set((state) => ({ contexts: [...state.contexts, ctx], error: null }));
       return ctx;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create context") });
+      reportError(err, "Failed to create context", set);
       throw err;
     }
   },
@@ -370,7 +370,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update context") });
+      reportError(err, "Failed to update context", set);
     }
   },
 
@@ -382,7 +382,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete context") });
+      reportError(err, "Failed to delete context", set);
     }
   },
 
@@ -394,7 +394,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to move context") });
+      reportError(err, "Failed to move context", set);
     }
   },
 
@@ -408,7 +408,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ codebaseScanPhase: "error", error: errMsg(err, "Failed to scan codebase") });
+      reportError(err, "Failed to scan codebase", set, { stateUpdates: { codebaseScanPhase: "error" } });
     }
   },
 
@@ -421,7 +421,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       }));
       return updated;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to generate context description") });
+      reportError(err, "Failed to generate context description", set);
       throw err;
     }
   },
@@ -431,7 +431,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       const contextGroupRelationships = await devApi.listContextGroupRelationships(projectId);
       set({ contextGroupRelationships, error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch context group relationships") });
+      reportError(err, "Failed to fetch context group relationships", set);
     }
   },
 
@@ -441,7 +441,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       set((state) => ({ contextGroupRelationships: [...state.contextGroupRelationships, rel], error: null }));
       return rel;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create context group relationship") });
+      reportError(err, "Failed to create context group relationship", set);
       throw err;
     }
   },
@@ -454,7 +454,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete context group relationship") });
+      reportError(err, "Failed to delete context group relationship", set);
     }
   },
 
@@ -489,7 +489,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       set({ scanPhase: "complete", currentScanId: scan.id, scanResults: ideas, error: null });
       return scan;
     } catch (err) {
-      set({ scanPhase: "error", error: errMsg(err, "Scan failed") });
+      reportError(err, "Scan failed", set, { stateUpdates: { scanPhase: "error" } });
       throw err;
     }
   },
@@ -499,7 +499,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       const scan = await devApi.getScan(id);
       return scan;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch scan") });
+      reportError(err, "Failed to fetch scan", set);
       throw err;
     }
   },
@@ -509,7 +509,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       const scans = await devApi.listScans(projectId, limit);
       return scans;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch scans") });
+      reportError(err, "Failed to fetch scans", set);
       throw err;
     }
   },
@@ -524,7 +524,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       const ideas = await devApi.listIdeas(projectId, status, category, scanType, limit, offset);
       set({ ideas, ideasLoading: false, error: null });
     } catch (err) {
-      set({ ideasLoading: false, error: errMsg(err, "Failed to fetch ideas") });
+      reportError(err, "Failed to fetch ideas", set, { stateUpdates: { ideasLoading: false } });
     }
   },
 
@@ -532,7 +532,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
     try {
       return await devApi.getIdea(id);
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch idea") });
+      reportError(err, "Failed to fetch idea", set);
       throw err;
     }
   },
@@ -546,7 +546,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update idea") });
+      reportError(err, "Failed to update idea", set);
     }
   },
 
@@ -559,7 +559,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete idea") });
+      reportError(err, "Failed to delete idea", set);
     }
   },
 
@@ -574,7 +574,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       }));
       return count;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to bulk delete ideas") });
+      reportError(err, "Failed to bulk delete ideas", set);
       throw err;
     }
   },
@@ -598,7 +598,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch triage ideas") });
+      reportError(err, "Failed to fetch triage ideas", set);
     }
   },
 
@@ -615,7 +615,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch more triage ideas") });
+      reportError(err, "Failed to fetch more triage ideas", set);
     }
   },
 
@@ -631,7 +631,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to accept idea") });
+      reportError(err, "Failed to accept idea", set);
     }
   },
 
@@ -647,7 +647,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to reject idea") });
+      reportError(err, "Failed to reject idea", set);
     }
   },
 
@@ -662,7 +662,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete triage idea") });
+      reportError(err, "Failed to delete triage idea", set);
     }
   },
 
@@ -682,7 +682,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       const triageRules = await devApi.listTriageRules(projectId);
       set({ triageRules, error: null });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch triage rules") });
+      reportError(err, "Failed to fetch triage rules", set);
     }
   },
 
@@ -692,7 +692,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       set((state) => ({ triageRules: [...state.triageRules, rule], error: null }));
       return rule;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create triage rule") });
+      reportError(err, "Failed to create triage rule", set);
       throw err;
     }
   },
@@ -705,7 +705,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update triage rule") });
+      reportError(err, "Failed to update triage rule", set);
     }
   },
 
@@ -717,7 +717,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete triage rule") });
+      reportError(err, "Failed to delete triage rule", set);
     }
   },
 
@@ -728,7 +728,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       await get().fetchTriageIdeas(projectId);
       return result;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to run triage rules") });
+      reportError(err, "Failed to run triage rules", set);
       throw err;
     }
   },
@@ -744,7 +744,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       const tasks = await devApi.listTasks(projectId, status, goalId);
       set({ tasks, tasksLoading: false, error: null });
     } catch (err) {
-      set({ tasksLoading: false, error: errMsg(err, "Failed to fetch tasks") });
+      reportError(err, "Failed to fetch tasks", set, { stateUpdates: { tasksLoading: false } });
     }
   },
 
@@ -754,7 +754,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       set((state) => ({ tasks: [...state.tasks, task], error: null }));
       return task;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create task") });
+      reportError(err, "Failed to create task", set);
       throw err;
     }
   },
@@ -765,7 +765,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       set((state) => ({ tasks: [...state.tasks, ...created], error: null }));
       return created;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to batch create tasks") });
+      reportError(err, "Failed to batch create tasks", set);
       throw err;
     }
   },
@@ -778,7 +778,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to start task") });
+      reportError(err, "Failed to start task", set);
     }
   },
 
@@ -790,7 +790,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
         error: null,
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to cancel task") });
+      reportError(err, "Failed to cancel task", set);
     }
   },
 
@@ -800,7 +800,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       set({ activeBatchId: result.batch_id, error: null });
       return result;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to start batch") });
+      reportError(err, "Failed to start batch", set);
       throw err;
     }
   },
@@ -817,7 +817,7 @@ export const createDevToolsSlice: StateCreator<SystemStore, [], [], DevToolsSlic
       }));
       return result;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to get batch status") });
+      reportError(err, "Failed to get batch status", set);
       throw err;
     }
   },

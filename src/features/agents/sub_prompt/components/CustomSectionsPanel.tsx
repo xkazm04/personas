@@ -77,7 +77,7 @@ export function CustomSectionsPanel({
                 type="text"
                 value={currentCustom.title}
                 onChange={(e) => onUpdate(selectedIndex, 'title', e.target.value)}
-                className="px-3 py-1.5 bg-background/50 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 flex-shrink-0"
+                className="px-3 py-1.5 bg-background/50 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring flex-shrink-0"
                 placeholder="Section title..."
               />
               <div className="flex-1 min-h-0">

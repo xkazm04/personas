@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { errMsg, reportError } from "../../storeTypes";
 import { useAgentStore } from "../../agentStore";
 import type { PeerIdentity, TrustedPeer } from "@/api/network/identity";
 import type { ExposedResource, ResourceProvenance } from "@/api/network/exposure";
@@ -100,7 +100,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       const identity = await identityApi.getLocalIdentity();
       set({ localIdentity: identity });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch identity") });
+      reportError(err, "Failed to fetch identity", set);
     }
   },
 
@@ -109,7 +109,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       const identity = await identityApi.setDisplayName(name);
       set({ localIdentity: identity });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update display name") });
+      reportError(err, "Failed to update display name", set);
       throw err;
     }
   },
@@ -118,7 +118,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
     try {
       return await identityApi.exportIdentityCard();
     } catch (err) {
-      set({ error: errMsg(err, "Failed to export identity card") });
+      reportError(err, "Failed to export identity card", set);
       throw err;
     }
   },
@@ -130,7 +130,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       const peers = await identityApi.listTrustedPeers();
       set({ trustedPeers: peers });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch trusted peers") });
+      reportError(err, "Failed to fetch trusted peers", set);
     }
   },
 
@@ -140,7 +140,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await get().fetchTrustedPeers();
       return peer;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to import trusted peer") });
+      reportError(err, "Failed to import trusted peer", set);
       throw err;
     }
   },
@@ -150,7 +150,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await identityApi.revokePeerTrust(peerId);
       await get().fetchTrustedPeers();
     } catch (err) {
-      set({ error: errMsg(err, "Failed to revoke peer trust") });
+      reportError(err, "Failed to revoke peer trust", set);
       throw err;
     }
   },
@@ -160,7 +160,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await identityApi.deleteTrustedPeer(peerId);
       await get().fetchTrustedPeers();
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete trusted peer") });
+      reportError(err, "Failed to delete trusted peer", set);
       throw err;
     }
   },
@@ -172,7 +172,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       const resources = await exposureApi.listExposedResources();
       set({ exposedResources: resources });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch exposed resources") });
+      reportError(err, "Failed to fetch exposed resources", set);
     }
   },
 
@@ -182,7 +182,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await get().fetchExposedResources();
       return resource;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to expose resource") });
+      reportError(err, "Failed to expose resource", set);
       throw err;
     }
   },
@@ -192,7 +192,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await exposureApi.updateExposedResource(id, input);
       await get().fetchExposedResources();
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update exposed resource") });
+      reportError(err, "Failed to update exposed resource", set);
       throw err;
     }
   },
@@ -202,7 +202,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await exposureApi.deleteExposedResource(id);
       await get().fetchExposedResources();
     } catch (err) {
-      set({ error: errMsg(err, "Failed to remove resource exposure") });
+      reportError(err, "Failed to remove resource exposure", set);
       throw err;
     }
   },
@@ -214,7 +214,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       const prov = await exposureApi.listProvenance();
       set({ provenance: prov });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch provenance") });
+      reportError(err, "Failed to fetch provenance", set);
     }
   },
 
@@ -227,7 +227,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       set({ networkLoading: false });
       return result;
     } catch (err) {
-      set({ networkLoading: false, error: errMsg(err, "Failed to export bundle") });
+      reportError(err, "Failed to export bundle", set, { stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -239,7 +239,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       set({ networkLoading: false });
       return preview;
     } catch (err) {
-      set({ networkLoading: false, error: errMsg(err, "Failed to preview bundle") });
+      reportError(err, "Failed to preview bundle", set, { stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -254,7 +254,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await get().fetchProvenance();
       return result;
     } catch (err) {
-      set({ networkLoading: false, error: errMsg(err, "Failed to import bundle") });
+      reportError(err, "Failed to import bundle", set, { stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -289,8 +289,8 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
     } catch (err) {
       set((s) => ({
         connectionStates: { ...s.connectionStates, [peerId]: "Failed" as const },
-        error: errMsg(err, "Failed to connect to peer"),
       }));
+      reportError(err, "Failed to connect to peer", set);
       throw err;
     }
   },
@@ -303,7 +303,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       }));
       await get().fetchDiscoveredPeers();
     } catch (err) {
-      set({ error: errMsg(err, "Failed to disconnect peer") });
+      reportError(err, "Failed to disconnect peer", set);
       throw err;
     }
   },
@@ -315,7 +315,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
         peerManifests: { ...s.peerManifests, [peerId]: manifest },
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch peer manifest") });
+      reportError(err, "Failed to fetch peer manifest", set);
     }
   },
 
@@ -324,7 +324,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await discoveryApi.syncPeerManifest(peerId);
       await get().fetchPeerManifest(peerId);
     } catch (err) {
-      set({ error: errMsg(err, "Failed to sync peer manifest") });
+      reportError(err, "Failed to sync peer manifest", set);
       throw err;
     }
   },

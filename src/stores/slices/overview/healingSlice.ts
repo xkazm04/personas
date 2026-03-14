@@ -6,7 +6,7 @@ import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 import type { HealingTimelineEvent } from "@/lib/bindings/HealingTimelineEvent";
 import { getHealingTimeline, getRetryChain, listHealingIssues, runHealingAnalysis, updateHealingStatus } from "@/api/overview/healing";
 
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 
 export interface HealingSlice {
   // State
@@ -36,7 +36,7 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
       const issues = await listHealingIssues();
       set({ healingIssues: issues });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch healing issues") });
+      reportError(err, "Failed to fetch healing issues", set);
     }
   },
 
@@ -49,7 +49,7 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
       set({ healingIssues: issues, healingRunning: false });
       return { failures_analyzed: result.failures_analyzed, issues_created: result.issues_created, auto_fixed: result.auto_fixed };
     } catch (err) {
-      set({ healingRunning: false, error: errMsg(err, "Failed to run healing analysis") });
+      reportError(err, "Failed to run healing analysis", set, { stateUpdates: { healingRunning: false } });
       return null;
     }
   },
@@ -63,7 +63,7 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
       await updateHealingStatus(id, "resolved", callerPersonaId);
       set((state) => ({ healingIssues: state.healingIssues.filter((i) => i.id !== id) }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to resolve healing issue") });
+      reportError(err, "Failed to resolve healing issue", set);
     }
   },
 
@@ -73,7 +73,7 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
       const chain = await getRetryChain(executionId, callerPersonaId);
       set({ retryChain: chain });
     } catch (err) {
-      set({ retryChain: [], error: errMsg(err, "Failed to fetch retry chain") });
+      reportError(err, "Failed to fetch retry chain", set, { stateUpdates: { retryChain: [] } });
     }
   },
 
@@ -83,7 +83,7 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
       const timeline = await getHealingTimeline(personaId);
       set({ healingTimeline: timeline, healingTimelineLoading: false });
     } catch (err) {
-      set({ healingTimeline: [], healingTimelineLoading: false, error: errMsg(err, "Failed to fetch healing timeline") });
+      reportError(err, "Failed to fetch healing timeline", set, { stateUpdates: { healingTimeline: [], healingTimelineLoading: false } });
     }
   },
 });

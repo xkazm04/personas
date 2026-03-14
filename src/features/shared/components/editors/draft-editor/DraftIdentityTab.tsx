@@ -62,7 +62,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
                 }}
                 disabled={disabled}
                 placeholder="Give your persona a name..."
-                className="w-full px-3 py-2.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                className="w-full px-3 py-2.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
               />
             </div>
 
@@ -79,7 +79,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
                 disabled={disabled}
                 rows={6}
                 placeholder="A brief description of what this persona does..."
-                className="w-full px-3 py-2.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all resize-y"
+                className="w-full px-3 py-2.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring transition-all resize-y"
               />
             </div>
           </div>

@@ -17,7 +17,7 @@ function InteractiveImportanceDots({ value, onChange }: { value: number; onChang
         {[1, 2, 3, 4, 5].map((i) => (
           <button
             key={i} type="button" onMouseEnter={() => setHovered(i)} onClick={() => onChange(i)}
-            className="group/dot p-0.5 rounded-full transition-transform hover:scale-125 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-400/50"
+            className="group/dot p-0.5 rounded-full transition-transform hover:scale-125 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-400/50"
             aria-label={`Set importance to ${i}`}
           >
             <div className={`w-2.5 h-2.5 rounded-full transition-colors ${i <= display ? 'bg-amber-400' : 'bg-muted-foreground/15 group-hover/dot:bg-amber-400/30'}`} />
@@ -108,12 +108,12 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
 
         <div>
           <label htmlFor={titleId} className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Title</label>
-          <input id={titleId} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Always use metric units" aria-required="true" className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-xl outline-none focus:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80" autoFocus />
+          <input id={titleId} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Always use metric units" aria-required="true" className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-xl outline-none focus-visible:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80" autoFocus />
         </div>
 
         <div>
           <label htmlFor={contentId} className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Content</label>
-          <textarea id={contentId} value={content} onChange={(e) => setContent(e.target.value)} placeholder="Describe what the agent should remember..." rows={3} aria-required="true" className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-xl outline-none focus:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80 resize-none" />
+          <textarea id={contentId} value={content} onChange={(e) => setContent(e.target.value)} placeholder="Describe what the agent should remember..." rows={3} aria-required="true" className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-xl outline-none focus-visible:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80 resize-none" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -123,13 +123,13 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
           </fieldset>
           <div>
             <label htmlFor={tagsId} className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Tags <span className="normal-case text-muted-foreground/80">(comma-separated)</span></label>
-            <input id={tagsId} value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder="e.g. units, formatting, output" className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-xl outline-none focus:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80" />
+            <input id={tagsId} value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder="e.g. units, formatting, output" className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-xl outline-none focus-visible:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80" />
           </div>
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
           <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm text-muted-foreground/80 hover:text-foreground/95 transition-colors">Cancel</button>
-          <button type="submit" disabled={!canSave || saving} className="px-4 py-1.5 text-sm font-medium rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all">{saving ? 'Saving...' : 'Save Memory'}</button>
+          <button type="submit" disabled={!canSave || saving} title={saving ? 'Saving memory...' : !canSave ? 'Fill in all required fields to save' : undefined} className="px-4 py-1.5 text-sm font-medium rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all">{saving ? 'Saving...' : 'Save Memory'}</button>
         </div>
       </form>
     </motion.div>

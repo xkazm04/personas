@@ -30,11 +30,12 @@ pub enum ExecutionPriority {
 #[derive(Debug, Clone)]
 pub struct QueuedExecution {
     pub execution_id: String,
-    #[allow(dead_code)]
     pub persona_id: String,
     pub priority: ExecutionPriority,
-    #[allow(dead_code)]
     pub enqueued_at: std::time::Instant,
+    /// Populated when the execution is promoted from the queue via `drain_next`.
+    /// Contains the number of milliseconds the execution waited in the queue.
+    pub wait_ms: Option<u64>,
 }
 
 // =============================================================================
@@ -172,6 +173,7 @@ impl ConcurrencyTracker {
             persona_id: persona_id.to_string(),
             priority,
             enqueued_at: std::time::Instant::now(),
+            wait_ms: None,
         };
 
         // Find insertion point: after all entries with >= priority (FIFO within same priority)
@@ -225,7 +227,7 @@ impl ConcurrencyTracker {
         }
 
         // Pop from queue in a limited scope to release the borrow on self.queues
-        let (next, is_empty) = {
+        let (mut next, is_empty) = {
             let queue = self.queues.get_mut(persona_id)?;
             let next = queue.pop_front()?;
             let is_empty = queue.is_empty();
@@ -236,6 +238,18 @@ impl ConcurrencyTracker {
         if is_empty {
             self.queues.remove(persona_id);
         }
+
+        // Compute and record queue wait duration
+        let wait_ms = next.enqueued_at.elapsed().as_millis() as u64;
+        next.wait_ms = Some(wait_ms);
+
+        tracing::info!(
+            wait_ms = wait_ms,
+            persona_id = persona_id,
+            execution_id = %next.execution_id,
+            priority = ?next.priority,
+            "Execution promoted from queue"
+        );
 
         // Register as running (now safe -- no outstanding borrow on self.queues)
         self.add_running(persona_id, &next.execution_id);
@@ -476,7 +490,9 @@ mod tests {
         // Drain should promote exec-q1
         let next = tracker.drain_next("p1", 1);
         assert!(next.is_some());
-        assert_eq!(next.unwrap().execution_id, "exec-q1");
+        let promoted = next.unwrap();
+        assert_eq!(promoted.execution_id, "exec-q1");
+        assert!(promoted.wait_ms.is_some(), "wait_ms should be populated on promotion");
         assert_eq!(tracker.running_count("p1"), 1);
         assert_eq!(tracker.queue_depth("p1"), 1);
     }

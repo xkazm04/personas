@@ -122,7 +122,7 @@ export default function IdentitySettings() {
                       value={nameInput}
                       onChange={(e) => setNameInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
-                      className="flex-1 px-2 py-1 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/40"
+                      className="flex-1 px-2 py-1 text-sm rounded-lg border border-border bg-background focus-ring"
                       maxLength={64}
                       autoFocus
                     />
@@ -172,14 +172,14 @@ export default function IdentitySettings() {
               value={importInput}
               onChange={(e) => setImportInput(e.target.value)}
               placeholder="Paste the base64 identity card here..."
-              className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/40 font-mono resize-none"
+              className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus-ring font-mono resize-none"
               rows={3}
             />
             <input
               value={importNotes}
               onChange={(e) => setImportNotes(e.target.value)}
               placeholder="Notes (optional)"
-              className="w-full px-3 py-1.5 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/40"
+              className="w-full px-3 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
             />
             <div className="flex gap-2 pt-1">
               <button

@@ -41,7 +41,7 @@ export function InputExecuteCard({
           ) : (
             <ChevronRight className="w-4 h-4" />
           )}
-          Input Data (Optional)
+          Sample Input (Optional)
         </button>
 
         <AnimatePresence>
@@ -57,7 +57,7 @@ export function InputExecuteCard({
                   onInputChange(v);
                   if (jsonError) onClearJsonError();
                 }}
-                placeholder='{"key": "value"}'
+                placeholder='e.g. {"name": "Jane", "email": "jane@example.com"}'
               />
               {jsonError && (
                 <p className="text-red-400/80 text-sm mt-1">{jsonError}</p>

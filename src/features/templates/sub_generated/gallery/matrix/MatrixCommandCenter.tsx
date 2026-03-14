@@ -18,14 +18,14 @@
  *
  * View mode: expandable prompt section chips.
  */
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   FileText, Play, X, User, Wrench, BookOpen, Shield,
   Globe, Search, Loader2, HelpCircle, CheckCircle2, Sparkles, ArrowRight, Send,
 } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
-import type { AgentIR } from '@/lib/types/designTypes';
+import type { AgentIR, DesignQuestion } from '@/lib/types/designTypes';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { BuildQuestionnaireModal } from './BuildQuestionnaireModal';
 
@@ -169,17 +169,41 @@ function CompletenessRing({ value, size = 56 }: { value: number; size?: number }
 
 /** Post-generation state for creation mode. */
 function CreationPostGeneration({
-  completeness, onContinue, onRefine,
+  completeness, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange,
 }: {
   completeness: number;
   onContinue?: () => void;
   onRefine?: (feedback: string) => void;
+  onCreateAgent?: (name: string) => void;
+  agentName?: string;
+  onAgentNameChange?: (name: string) => void;
 }) {
   const [refineText, setRefineText] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const nameValue = agentName ?? '';
+
+  const handleCreate = async () => {
+    if (!onCreateAgent || isCreating) return;
+    setIsCreating(true);
+    try {
+      await onCreateAgent(nameValue);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center gap-3 w-full h-full">
       <CompletenessRing value={completeness} />
-      <span className="text-xs text-muted-foreground/50 font-medium">Agent Completeness</span>
+
+      {/* Agent name input */}
+      <input
+        type="text"
+        value={nameValue}
+        onChange={(e) => onAgentNameChange?.(e.target.value)}
+        placeholder="Agent name..."
+        className="w-full px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm font-medium text-foreground/90 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors text-center"
+      />
 
       {/* Refine input */}
       {onRefine && (
@@ -189,7 +213,7 @@ function CreationPostGeneration({
             value={refineText}
             onChange={(e) => setRefineText(e.target.value)}
             placeholder="Adjust anything..."
-            className="flex-1 px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
+            className="flex-1 px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
             onKeyDown={(e) => { if (e.key === 'Enter' && refineText.trim()) { onRefine(refineText.trim()); setRefineText(''); } }}
           />
           <button
@@ -203,8 +227,27 @@ function CreationPostGeneration({
         </div>
       )}
 
-      {/* Continue button */}
-      {onContinue && (
+      {/* Create Agent button (direct finalization) */}
+      {onCreateAgent && (
+        <button
+          type="button"
+          onClick={handleCreate}
+          disabled={completeness < 20 || isCreating || !nameValue.trim()}
+          className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+            completeness >= 80
+              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30'
+              : completeness >= 20
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'bg-primary/30 text-primary-foreground/50 cursor-not-allowed'
+          }`}
+        >
+          {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+          {isCreating ? 'Creating...' : 'Create Agent'}
+        </button>
+      )}
+
+      {/* Fallback Continue button when no onCreateAgent */}
+      {!onCreateAgent && onContinue && (
         <button
           type="button"
           onClick={onContinue}
@@ -219,6 +262,59 @@ function CreationPostGeneration({
         >
           Continue <ArrowRight className="w-3.5 h-3.5" />
         </button>
+      )}
+    </div>
+  );
+}
+
+/** CLI output viewer during generation (scrolls to bottom). */
+function CliOutputStream({ lines }: { lines: string[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+  }, [lines.length]);
+  if (lines.length === 0) return null;
+  return (
+    <div ref={containerRef} className="w-full max-h-16 overflow-y-auto rounded-lg bg-black/20 border border-primary/10 px-2 py-1.5 font-mono text-[11px] text-muted-foreground/60 leading-relaxed">
+      {lines.slice(-20).map((line, i) => (
+        <div key={i} className="truncate">{line}</div>
+      ))}
+    </div>
+  );
+}
+
+/** Design question prompt for creation mode. */
+function DesignQuestionPrompt({ question, onAnswer }: { question: DesignQuestion; onAnswer: (answer: string) => void }) {
+  const [answer, setAnswer] = useState('');
+  return (
+    <div className="flex flex-col items-center gap-3 py-2 w-full">
+      <div className="relative w-12 h-12 flex items-center justify-center">
+        <span className="absolute inset-0 rounded-full border-2 border-primary/25" />
+        <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
+        <HelpCircle className="w-5 h-5 text-primary relative z-10" />
+      </div>
+      <p className="text-sm text-foreground/80 text-center leading-snug">{question.question}</p>
+      {question.options && question.options.length > 0 ? (
+        <div className="w-full space-y-1.5">
+          {question.options.map((opt, i) => (
+            <button key={i} type="button" onClick={() => onAnswer(opt)}
+              className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 hover:bg-primary/5 hover:border-primary/25 transition-colors text-left">
+              {opt}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="w-full flex gap-1.5">
+          <input type="text" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Your answer..."
+            className="flex-1 px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+            onKeyDown={(e) => { if (e.key === 'Enter' && answer.trim()) { onAnswer(answer.trim()); setAnswer(''); } }} />
+          <button type="button" onClick={() => { if (answer.trim()) { onAnswer(answer.trim()); setAnswer(''); } }}
+            disabled={!answer.trim()} className="p-1.5 rounded-lg text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors">
+            <Send className="w-3.5 h-3.5" />
+          </button>
+        </div>
       )}
     </div>
   );
@@ -251,6 +347,17 @@ interface MatrixCommandCenterProps {
   onContinue?: () => void;
   /** Creation mode: refine design with feedback */
   onRefine?: (feedback: string) => void;
+  /** Creation mode: directly create agent from matrix */
+  onCreateAgent?: (name: string) => void;
+  /** Creation mode: controlled agent name */
+  agentName?: string;
+  onAgentNameChange?: (name: string) => void;
+  /** CLI output lines from design stream */
+  cliOutputLines?: string[];
+  /** Design question awaiting user answer */
+  designQuestion?: DesignQuestion | null;
+  /** Answer a design question */
+  onAnswerQuestion?: (answer: string) => void;
 }
 
 export function MatrixCommandCenter({
@@ -262,6 +369,8 @@ export function MatrixCommandCenter({
   buildCompleted = false, phaseLabel = 'Generating persona...',
   intentText, onIntentChange,
   completeness = 0, hasDesignResult = false, onContinue, onRefine,
+  onCreateAgent, agentName, onAgentNameChange,
+  cliOutputLines = [], designQuestion, onAnswerQuestion,
 }: MatrixCommandCenterProps) {
   const [openSection, setOpenSection] = useState<PromptSection | null>(null);
   const [localPromptText, setLocalPromptText] = useState('');
@@ -298,6 +407,19 @@ export function MatrixCommandCenter({
             phaseLabel={isCreation ? 'Designing agent...' : phaseLabel}
             hint={isCreation ? undefined : 'You can close this dialog -- processing continues in the background.'}
           />
+          {/* Show CLI output during generation for creation mode */}
+          {isCreation && cliOutputLines.length > 0 && (
+            <CliOutputStream lines={cliOutputLines} />
+          )}
+        </div>
+      );
+    }
+
+    // --- Creation: Design question awaiting answer ------------------
+    if (isCreation && designQuestion && onAnswerQuestion) {
+      return (
+        <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
+          <DesignQuestionPrompt question={designQuestion} onAnswer={onAnswerQuestion} />
         </div>
       );
     }
@@ -328,7 +450,7 @@ export function MatrixCommandCenter({
     if (isCreation && hasDesignResult) {
       return (
         <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
-          <CreationPostGeneration completeness={completeness} onContinue={onContinue} onRefine={onRefine} />
+          <CreationPostGeneration completeness={completeness} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} />
         </div>
       );
     }
@@ -341,7 +463,7 @@ export function MatrixCommandCenter({
           onChange={(e) => handleTextChange(e.target.value)}
           placeholder={isCreation ? "Describe what your agent should do..." : "Additional instructions..."}
           rows={isCreation ? 3 : 2}
-          className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 resize-none focus:outline-none focus:border-primary/30 transition-colors"
+          className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
         />
 
         {!isCreation && (

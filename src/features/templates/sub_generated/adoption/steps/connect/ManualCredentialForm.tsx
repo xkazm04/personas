@@ -11,6 +11,7 @@ import { useCredentialHealth } from '@/features/vault/hooks/health/useCredential
 import { useVaultStore } from '@/stores/vaultStore';
 import type { ConnectorDefinition, CredentialTemplateField } from '@/lib/types/types';
 import type { RequiredConnector } from './ConnectStep';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
 export function ManualForm({
   connectorName,
@@ -158,9 +159,9 @@ export function ManualForm({
         </button>
       )}
 
-      {effectiveSetupUrl && (
+      {sanitizeExternalUrl(effectiveSetupUrl) && (
         <a
-          href={effectiveSetupUrl}
+          href={sanitizeExternalUrl(effectiveSetupUrl)!}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 px-3 py-2 mb-3 bg-amber-500/10 border border-amber-500/25 rounded-xl text-sm text-foreground/80 hover:bg-amber-500/15 transition-colors"

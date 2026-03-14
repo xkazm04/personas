@@ -89,7 +89,7 @@ export function ReferencesTextarea({ references, onChange, disabled }: Reference
         disabled={disabled}
         placeholder="Paste URLs, connection strings, API keys, or any reference info (one per line)"
         rows={3}
-        className="w-full bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-sm text-foreground font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30"
+        className="w-full bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-sm text-foreground font-mono resize-y focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
       />
     </div>
   );

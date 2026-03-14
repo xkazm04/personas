@@ -53,7 +53,7 @@ export function ConnectorPicker({ selected, onToggle }: ConnectorPickerProps) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search connectors..."
-          className="w-full pl-8 pr-3 py-1.5 bg-secondary/40 border border-primary/10 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
+          className="w-full pl-8 pr-3 py-1.5 bg-secondary/40 border border-primary/10 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring"
         />
       </div>
 

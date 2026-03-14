@@ -1,9 +1,8 @@
+import { useCallback, useEffect, useState } from 'react';
 import { Key, Zap, Users, Sparkles } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
-import { useVaultStore } from "@/stores/vaultStore";
-import { useOverviewStore } from "@/stores/overviewStore";
-import { usePipelineStore } from "@/stores/pipelineStore";
+import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
 import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
@@ -24,19 +23,46 @@ interface SidebarLevel2Props {
 export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
   const { currentKey: credentialView, navigate } = useCredentialNav();
-  const credentials = useVaultStore((s) => s.credentials);
-  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  // Vault and pipeline stores loaded lazily to keep them out of the main bundle.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [credentials, setCredentials] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [connectorDefinitions, setConnectorDefinitions] = useState<any[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [overviewTab, setOverviewTabState] = useState<OverviewTab>("home" as OverviewTab);
+  useEffect(() => {
+    let vaultUnsub: (() => void) | undefined;
+    let pipelineUnsub: (() => void) | undefined;
+    let overviewUnsub: (() => void) | undefined;
+    void import("@/stores/vaultStore").then(({ useVaultStore }) => {
+      const s = useVaultStore.getState();
+      setCredentials(s.credentials);
+      setConnectorDefinitions(s.connectorDefinitions);
+      vaultUnsub = useVaultStore.subscribe((s) => {
+        setCredentials(s.credentials);
+        setConnectorDefinitions(s.connectorDefinitions);
+      });
+    });
+    void import("@/stores/pipelineStore").then(({ usePipelineStore }) => {
+      setSelectedTeamId(usePipelineStore.getState().selectedTeamId);
+      pipelineUnsub = usePipelineStore.subscribe((s) => setSelectedTeamId(s.selectedTeamId));
+    });
+    void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+      setOverviewTabState(useOverviewStore.getState().overviewTab);
+      overviewUnsub = useOverviewStore.subscribe((s) => setOverviewTabState(s.overviewTab));
+    });
+    return () => { vaultUnsub?.(); pipelineUnsub?.(); overviewUnsub?.(); };
+  }, []);
+  const setOverviewTab = useCallback((tab: OverviewTab) => {
+    setOverviewTabState(tab);
+    void import("@/stores/overviewStore").then(({ useOverviewStore }) => useOverviewStore.getState().setOverviewTab(tab));
+  }, []);
   const homeTab = useSystemStore((s) => s.homeTab);
   const setHomeTab = useSystemStore((s) => s.setHomeTab);
-  const overviewTab = useOverviewStore((s) => s.overviewTab);
-  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
   const templateTab = useSystemStore((s) => s.templateTab);
   const setTemplateTab = useSystemStore((s) => s.setTemplateTab);
-  const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
-  const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
-  const pendingEventCount = useOverviewStore((s) => s.pendingEventCount);
+  const { pendingReviewCount, unreadMessageCount, pendingEventCount } = useBadgeCounts();
   const templateGalleryTotal = useSystemStore((s) => s.templateGalleryTotal);
-  const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
   const cloudTab = useSystemStore((s) => s.cloudTab);
   const setCloudTab = useSystemStore((s) => s.setCloudTab);
   const settingsTab = useSystemStore((s) => s.settingsTab);

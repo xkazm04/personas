@@ -71,10 +71,10 @@ export function IntervalConfig({
             placeholder="Seconds (min 60)"
             aria-invalid={!!validationError}
             aria-describedby={validationError ? 'interval-error' : undefined}
-            className={`w-full px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm focus:outline-none focus:ring-2 transition-all ${
+            className={`w-full px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm focus-visible:outline-none focus-visible:ring-2 transition-all ${
               validationError
-                ? 'border-red-500/30 ring-1 ring-red-500/30 focus:ring-red-500/40 focus:border-red-500/40'
-                : 'border-primary/15 focus:ring-primary/40 focus:border-primary/40'
+                ? 'border-red-500/30 ring-1 ring-red-500/30 focus-visible:ring-red-500/40 focus-visible:border-red-500/40'
+                : 'border-primary/15 focus-visible:ring-primary/40 focus-visible:border-primary/40'
             }`}
           />
           {validationError && (
@@ -177,10 +177,10 @@ export function CronConfig({
             placeholder="* * * * *  (min hour dom mon dow)"
             aria-invalid={!!(hasError || validationError)}
             aria-describedby={validationError ? 'cron-validation-error' : hasError ? 'cron-preview-error' : undefined}
-            className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 transition-all ${
+            className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 transition-all ${
               hasError || validationError
-                ? 'border-red-500/30 ring-1 ring-red-500/30 focus:ring-red-500/40 focus:border-red-500/40'
-                : 'border-primary/15 focus:ring-amber-500/40 focus:border-amber-500/40'
+                ? 'border-red-500/30 ring-1 ring-red-500/30 focus-visible:ring-red-500/40 focus-visible:border-red-500/40'
+                : 'border-primary/15 focus-visible:ring-amber-500/40 focus-visible:border-amber-500/40'
             }`}
           />
           {cronLoading && (

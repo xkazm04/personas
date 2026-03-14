@@ -1,4 +1,5 @@
 import { Activity, Zap, AlertCircle, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
+import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
 
 interface Execution {
   id: string;
@@ -30,31 +31,36 @@ export function RecentActivityList({ recentExecs, onViewAll }: RecentActivityLis
 
       <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden divide-y divide-primary/5">
         {recentExecs.length > 0 ? (
-          recentExecs.map((exec) => (
-            <div key={exec.id} className="px-3 py-1.5 flex items-center gap-2.5 hover:bg-white/[0.03] transition-colors group cursor-pointer" onClick={onViewAll}>
-              <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                exec.status === 'completed' ? 'text-emerald-400' :
-                exec.status === 'failed' ? 'text-rose-400' :
-                'text-blue-400'
-              }`}>
-                {exec.status === 'completed' ? <CheckCircle2 className="w-3.5 h-3.5" /> :
-                 exec.status === 'failed' ? <AlertCircle className="w-3.5 h-3.5" /> :
-                 <Activity className="w-3.5 h-3.5 animate-pulse" />}
+          <AnimatedList
+            className="divide-y divide-primary/5"
+            keys={recentExecs.map((e) => e.id)}
+          >
+            {recentExecs.map((exec) => (
+              <div key={exec.id} className="px-3 py-1.5 flex items-center gap-2.5 hover:bg-white/[0.03] transition-colors group cursor-pointer" onClick={onViewAll}>
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  exec.status === 'completed' ? 'text-emerald-400' :
+                  exec.status === 'failed' ? 'text-rose-400' :
+                  'text-blue-400'
+                }`}>
+                  {exec.status === 'completed' ? <CheckCircle2 className="w-3.5 h-3.5" /> :
+                   exec.status === 'failed' ? <AlertCircle className="w-3.5 h-3.5" /> :
+                   <Activity className="w-3.5 h-3.5 animate-pulse" />}
+                </div>
+                <span className="text-sm font-medium text-foreground/90 truncate min-w-0">{exec.persona_name || 'Agent'}</span>
+                <span className={`text-sm px-1.5 py-0.5 rounded-lg font-medium flex-shrink-0 ${
+                  exec.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :
+                  exec.status === 'failed' ? 'bg-rose-500/10 text-rose-400' :
+                  'bg-blue-500/10 text-blue-400'
+                }`}>
+                  {exec.status}
+                </span>
+                <span className="flex-1" />
+                <span className="text-sm text-muted-foreground/60 flex-shrink-0 hidden sm:inline">
+                  {new Date(exec.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
               </div>
-              <span className="text-sm font-medium text-foreground/90 truncate min-w-0">{exec.persona_name || 'Agent'}</span>
-              <span className={`text-sm px-1.5 py-0.5 rounded-lg font-medium flex-shrink-0 ${
-                exec.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :
-                exec.status === 'failed' ? 'bg-rose-500/10 text-rose-400' :
-                'bg-blue-500/10 text-blue-400'
-              }`}>
-                {exec.status}
-              </span>
-              <span className="flex-1" />
-              <span className="text-sm text-muted-foreground/60 flex-shrink-0 hidden sm:inline">
-                {new Date(exec.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-          ))
+            ))}
+          </AnimatedList>
         ) : (
           <div className="p-8 text-center flex flex-col items-center justify-center">
             <div className="w-14 h-14 rounded-xl bg-secondary/50 border border-primary/10 shadow-inner flex items-center justify-center mb-4 opacity-70">

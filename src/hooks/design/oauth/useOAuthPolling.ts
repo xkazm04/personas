@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { openExternalUrl } from "@/api/system/system";
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
 
 /** Result returned by the generic start function. */
@@ -202,9 +203,14 @@ export function useOAuthPolling<
     withTimeout
       .then(async (oauthStart) => {
         clearStartTimeout();
+        const safeAuthUrl = sanitizeExternalUrl(oauthStart.auth_url);
+        if (!safeAuthUrl) {
+          throw new Error(`Blocked unsafe ${configRef.current.label} authorization URL.`);
+        }
+
         let opened = false;
         try {
-          await openExternalUrl(oauthStart.auth_url);
+          await openExternalUrl(safeAuthUrl);
           opened = true;
         } catch {
           // intentional: non-critical -- fallback to window.open below
@@ -212,7 +218,7 @@ export function useOAuthPolling<
 
         if (!opened) {
           try {
-            const popup = window.open(oauthStart.auth_url, '_blank', 'noopener,noreferrer');
+            const popup = window.open(safeAuthUrl, '_blank', 'noopener,noreferrer');
             opened = popup !== null;
           } catch {
             // intentional: non-critical -- both open methods failed, handled below

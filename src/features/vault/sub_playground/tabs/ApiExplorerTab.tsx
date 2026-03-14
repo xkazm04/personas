@@ -42,7 +42,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
               value={state.search}
               onChange={(e) => state.setSearch(e.target.value)}
               placeholder="Filter..."
-              className="pl-6 pr-2 py-1.5 w-[180px] rounded text-sm bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/25"
+              className="pl-6 pr-2 py-1.5 w-[180px] rounded text-sm bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/25"
             />
           </div>
         )}

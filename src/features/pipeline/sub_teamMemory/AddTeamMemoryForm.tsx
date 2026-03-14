@@ -62,14 +62,14 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
       </div>
 
       <input
-        className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1.5 text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
+        className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1.5 text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
         placeholder="Title..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
 
       <textarea
-        className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1.5 text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30 resize-none"
+        className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1.5 text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30 resize-none"
         placeholder="Content..."
         rows={3}
         value={content}
@@ -78,7 +78,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
 
       <div className="flex items-center gap-2">
         <select
-          className="text-sm bg-secondary/60 border border-primary/10 rounded-lg px-1.5 py-1 text-foreground/80 focus:outline-none"
+          className="text-sm bg-secondary/60 border border-primary/10 rounded-lg px-1.5 py-1 text-foreground/80 focus-visible:outline-none"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         >

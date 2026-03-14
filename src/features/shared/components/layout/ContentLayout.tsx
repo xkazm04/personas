@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
+import { useScrollShadow } from '@/hooks/utility/interaction/useScrollShadow';
 
 // ---------------------------------------------------------------------------
 // Icon color palette
@@ -127,28 +128,52 @@ export function ContentBody({
   noPadding = false,
   flex = false,
 }: ContentBodyProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { canScrollUp, canScrollDown } = useScrollShadow(scrollRef);
+
+  const shadowTop = (
+    <div
+      className={`absolute top-0 inset-x-0 h-6 pointer-events-none z-[1] transition-opacity duration-200 ${canScrollUp ? 'opacity-100' : 'opacity-0'}`}
+      style={{ background: 'linear-gradient(to bottom, var(--background), transparent)' }}
+    />
+  );
+  const shadowBottom = (
+    <div
+      className={`absolute bottom-0 inset-x-0 h-6 pointer-events-none z-[1] transition-opacity duration-200 ${canScrollDown ? 'opacity-100' : 'opacity-0'}`}
+      style={{ background: 'linear-gradient(to top, var(--background), transparent)' }}
+    />
+  );
+
   if (flex) {
     return (
-      <div className="flex-1 overflow-y-auto flex flex-col w-full">
-        {children}
+      <div className="relative flex-1 min-h-0">
+        <div ref={scrollRef} className="h-full overflow-y-auto flex flex-col w-full">
+          {children}
+        </div>
+        {shadowTop}
+        {shadowBottom}
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div
-        className={[
-          'min-h-full w-full',
-          !noPadding && (IS_MOBILE ? 'p-2.5' : 'p-4 md:p-6 xl:p-8'),
-          centered && 'mx-auto',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        style={centered ? { maxWidth: 'clamp(1200px, 90%, 2600px)' } : undefined}
-      >
-        {children}
+    <div className="relative flex-1 min-h-0">
+      <div ref={scrollRef} className="h-full overflow-y-auto">
+        <div
+          className={[
+            'min-h-full w-full',
+            !noPadding && (IS_MOBILE ? 'p-2.5' : 'p-4 md:p-6 xl:p-8'),
+            centered && 'mx-auto',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          style={centered ? { maxWidth: 'clamp(1200px, 90%, 2600px)' } : undefined}
+        >
+          {children}
+        </div>
       </div>
+      {shadowTop}
+      {shadowBottom}
     </div>
   );
 }

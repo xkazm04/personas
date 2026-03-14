@@ -2,12 +2,17 @@
 //!
 //! Proxies arbitrary HTTP requests through a credential's auth strategy,
 //! resolving base URLs and applying authentication automatically.
+//! Enforces per-credential token-bucket rate limiting to prevent runaway
+//! API consumption from compromised or misconfigured automations.
 
 use std::collections::HashMap;
+use std::sync::LazyLock;
 use std::time::Instant;
 
+use tokio::sync::Mutex;
 use ts_rs::TS;
 
+use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::connectors as connector_repo;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::DbPool;
@@ -15,6 +20,96 @@ use crate::error::AppError;
 
 use super::connector_strategy;
 use super::healthcheck::{validate_field_values, validate_healthcheck_url};
+
+// ---------------------------------------------------------------------------
+// Per-credential token-bucket rate limiter
+// ---------------------------------------------------------------------------
+
+/// Default rate limit: 60 requests per 60 seconds (1 req/sec sustained).
+const DEFAULT_RATE_LIMIT: u32 = 60;
+/// Window size in seconds for the token bucket refill.
+const RATE_LIMIT_WINDOW_SECS: f64 = 60.0;
+
+/// A simple token-bucket that refills linearly over a 60-second window.
+struct TokenBucket {
+    tokens: f64,
+    max_tokens: f64,
+    last_refill: Instant,
+    refill_rate: f64, // tokens per second
+}
+
+impl TokenBucket {
+    fn new(max_tokens: u32) -> Self {
+        let max = max_tokens as f64;
+        Self {
+            tokens: max,
+            max_tokens: max,
+            last_refill: Instant::now(),
+            refill_rate: max / RATE_LIMIT_WINDOW_SECS,
+        }
+    }
+
+    /// Try to consume one token. Returns `Ok(())` on success, or
+    /// `Err(retry_after_secs)` if the bucket is empty.
+    fn try_acquire(&mut self) -> Result<(), u64> {
+        let now = Instant::now();
+        let elapsed = now.duration_since(self.last_refill).as_secs_f64();
+        self.tokens = (self.tokens + elapsed * self.refill_rate).min(self.max_tokens);
+        self.last_refill = now;
+
+        if self.tokens >= 1.0 {
+            self.tokens -= 1.0;
+            Ok(())
+        } else {
+            // How long until 1 token is available
+            let wait = (1.0 - self.tokens) / self.refill_rate;
+            Err(wait.ceil() as u64)
+        }
+    }
+}
+
+/// Global registry of per-credential token buckets.
+static RATE_LIMITERS: LazyLock<Mutex<HashMap<String, TokenBucket>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// Extract `rate_limit_rpm` from connector metadata JSON, if present.
+fn parse_rate_limit_from_metadata(metadata_json: Option<&str>) -> u32 {
+    metadata_json
+        .and_then(|m| serde_json::from_str::<serde_json::Value>(m).ok())
+        .and_then(|v| v.get("rate_limit_rpm")?.as_u64())
+        .map(|v| v.clamp(1, 10_000) as u32)
+        .unwrap_or(DEFAULT_RATE_LIMIT)
+}
+
+/// Check the per-credential rate limit. Returns `Ok(())` if allowed, or an
+/// `AppError::RateLimited` with retry-after information when the bucket is empty.
+async fn check_rate_limit(
+    credential_id: &str,
+    connector_metadata: Option<&str>,
+) -> Result<(), AppError> {
+    let limit = parse_rate_limit_from_metadata(connector_metadata);
+    let mut buckets = RATE_LIMITERS.lock().await;
+    let bucket = buckets
+        .entry(credential_id.to_string())
+        .or_insert_with(|| TokenBucket::new(limit));
+
+    // If the configured limit changed (e.g. connector metadata was updated),
+    // adjust the bucket capacity without resetting current tokens.
+    let new_max = limit as f64;
+    if (bucket.max_tokens - new_max).abs() > f64::EPSILON {
+        bucket.max_tokens = new_max;
+        bucket.refill_rate = new_max / RATE_LIMIT_WINDOW_SECS;
+        bucket.tokens = bucket.tokens.min(new_max);
+    }
+
+    match bucket.try_acquire() {
+        Ok(()) => Ok(()),
+        Err(retry_after) => Err(AppError::RateLimited(format!(
+            "Credential {} exceeded rate limit ({} req/min). Retry after {} second(s).",
+            credential_id, limit, retry_after
+        ))),
+    }
+}
 
 /// Well-known API base URLs for connectors that have fixed endpoints.
 fn well_known_base_url(service_type: &str) -> Option<&'static str> {
@@ -81,6 +176,42 @@ const MAX_REQUEST_BODY_BYTES: usize = 10 * 1024 * 1024;
 /// Auth headers are applied exclusively through the connector strategy.
 const BLOCKED_HEADERS: &[&str] = &["authorization", "cookie", "host", "proxy-authorization"];
 
+/// Validate that a header name conforms to RFC 7230 §3.2.6 token syntax.
+///
+/// ```text
+/// token  = 1*tchar
+/// tchar  = "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+"
+///         / "-" / "." / "^" / "_" / "`" / "|" / "~"
+///         / DIGIT / ALPHA
+/// ```
+///
+/// Rejects empty names and any character outside the allowed set, including
+/// CRLF sequences, null bytes, colons, and other delimiters that could enable
+/// HTTP request smuggling or response splitting.
+fn validate_header_name(name: &str) -> Result<(), AppError> {
+    if name.is_empty() {
+        return Err(AppError::Validation(
+            "Invalid header name: must not be empty".into(),
+        ));
+    }
+    for byte in name.bytes() {
+        let valid = matches!(byte,
+            b'!' | b'#' | b'$' | b'%' | b'&' | b'\'' | b'*' | b'+' |
+            b'-' | b'.' | b'^' | b'_' | b'`' | b'|' | b'~' |
+            b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z'
+        );
+        if !valid {
+            return Err(AppError::Validation(format!(
+                "Invalid header name '{}': contains character 0x{:02X} which is not \
+                 permitted by RFC 7230. Header names may only contain letters, digits, \
+                 and the tokens !#$%&'*+-.^_`|~",
+                name, byte,
+            )));
+        }
+    }
+    Ok(())
+}
+
 /// Result of a proxied API request.
 #[derive(Debug, serde::Serialize, TS)]
 #[ts(export)]
@@ -110,6 +241,8 @@ pub async fn execute_api_request(
 ) -> Result<ApiProxyResponse, AppError> {
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
+
+    let _ = audit_log::log_decrypt(pool, &credential.id, &credential.name, "api_proxy", None, None);
 
     // Resolve base URL from credential fields, dynamic domain fields, or well-known defaults
     let base_url_resolved: String = if let Some(url) = fields
@@ -167,6 +300,9 @@ pub async fn execute_api_request(
         .find(|c| c.name == credential.service_type);
     let connector_metadata = connector.and_then(|c| c.metadata.as_deref());
 
+    // Per-credential rate limiting (token-bucket, default 60 req/min)
+    check_rate_limit(credential_id, connector_metadata).await?;
+
     let strategy =
         connector_strategy::registry()?.get(&credential.service_type, connector_metadata);
     let token = strategy
@@ -188,8 +324,9 @@ pub async fn execute_api_request(
         _ => client.get(&full_url),
     };
 
-    // Apply custom headers, blocking sensitive names to prevent auth injection
+    // Apply custom headers, validating names and blocking sensitive ones
     for (k, v) in &custom_headers {
+        validate_header_name(k)?;
         if BLOCKED_HEADERS.contains(&k.to_lowercase().as_str()) {
             tracing::warn!(header = %k, "Blocked sensitive header from custom_headers");
             continue;

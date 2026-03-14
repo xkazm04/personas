@@ -244,8 +244,9 @@ export function useN8nTransform(
   // -- Push-based section events (instant delivery) --
 
   useEffect(() => {
+    let cancelled = false;
     let unlisten: UnlistenFn | null = null;
-    void listen<{ transformId: string; section: Record<string, unknown> }>(
+    listen<{ transformId: string; section: Record<string, unknown> }>(
       'n8n-transform-section',
       (event) => {
         const { transformId: tid, section: s } = event.payload;
@@ -262,8 +263,19 @@ export function useN8nTransform(
         };
         dispatch({ type: 'TRANSFORM_SECTION_PUSH', section: mapped });
       },
-    ).then((fn) => { unlisten = fn; });
-    return () => { unlisten?.(); };
+    ).then((fn) => {
+      if (cancelled) {
+        fn();
+      } else {
+        unlisten = fn;
+      }
+    }).catch((err) => {
+      console.warn('[useN8nTransform] Failed to listen for section events:', err);
+    });
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
   }, [dispatch]);
 
   // -- Background snapshot polling (fallback for session restoration) --

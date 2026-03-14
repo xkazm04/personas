@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Play, Square, ChevronDown, Filter } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useAgentStore } from "@/stores/agentStore";
-import { DiffViewer } from '@/features/agents/sub_lab_shared';
+import { DiffViewer } from '@/features/agents/sub_lab/shared';
 import { LabProgress } from '../shared/LabProgress';
 import { AbHistory } from './AbHistory';
-import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { ANTHROPIC_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
@@ -20,6 +21,9 @@ export function AbPanel() {
   const cancelAb = useAgentStore((s) => s.cancelAb);
   const fetchAbResults = useAgentStore((s) => s.fetchAbResults);
   const deleteAbRun = useAgentStore((s) => s.deleteAbRun);
+  const abPreselectedA = useAgentStore((s) => s.abPreselectedA);
+  const abPreselectedB = useAgentStore((s) => s.abPreselectedB);
+  const setAbPreselect = useAgentStore((s) => s.setAbPreselect);
 
   const {
     selectedPersona, selectedModels, toggleModel,
@@ -33,14 +37,23 @@ export function AbPanel() {
     cancelRun: cancelAb,
   });
 
-  const [versionAId, setVersionAId] = useState<string | null>(null);
-  const [versionBId, setVersionBId] = useState<string | null>(null);
+  const [versionAId, setVersionAId] = useState<string | null>(abPreselectedA);
+  const [versionBId, setVersionBId] = useState<string | null>(abPreselectedB);
   const [testInput, setTestInput] = useState('');
+
+  // Consume pre-selected versions from deep-links
+  useEffect(() => {
+    if (abPreselectedA || abPreselectedB) {
+      if (abPreselectedA) setVersionAId(abPreselectedA);
+      if (abPreselectedB) setVersionBId(abPreselectedB);
+      setAbPreselect(null, null);
+    }
+  }, [abPreselectedA, abPreselectedB, setAbPreselect]);
 
   const versionA = useMemo(() => promptVersions.find((v) => v.id === versionAId) ?? null, [promptVersions, versionAId]);
   const versionB = useMemo(() => promptVersions.find((v) => v.id === versionBId) ?? null, [promptVersions, versionBId]);
 
-  const useCases = useMemo(() => parseDesignContext(selectedPersona?.design_context).useCases ?? [], [selectedPersona?.design_context]);
+  const useCases = useSelectedUseCases();
   const useCaseOptions = useMemo(() => [{ value: '__all__', label: 'All Use Cases' }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))], [useCases]);
   const versionOptions = useMemo(() => promptVersions.map((v) => ({ value: v.id, label: `v${v.version_number} -- ${v.tag}` })), [promptVersions]);
 
@@ -58,6 +71,7 @@ export function AbPanel() {
       <Listbox itemCount={versionOptions.length} onSelectFocused={(idx) => { const opt = versionOptions[idx]; if (opt) onChange(opt.value); }} ariaLabel={`Select ${label}`}
         renderTrigger={({ isOpen, toggle }) => (
           <button onClick={toggle} disabled={isLabRunning}
+            title={isLabRunning ? 'Cannot change while test is running' : undefined}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? `bg-${color}-500/10 border-${color}-500/30` : 'bg-background/30 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
             <span className="text-foreground/80">{versionOptions.find((o) => o.value === value)?.label ?? 'Select version'}</span>
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -97,6 +111,7 @@ export function AbPanel() {
             <div className="flex flex-wrap gap-2">
               {ANTHROPIC_MODELS.map((m) => (
                 <button key={m.id} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
+                  title={isLabRunning ? 'Cannot change while test is running' : undefined}
                   className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                   {m.label}
                 </button>
@@ -109,7 +124,7 @@ export function AbPanel() {
               <label className="text-sm font-medium text-muted-foreground/80 flex items-center gap-1.5"><Filter className="w-3.5 h-3.5" />Focus</label>
               <Listbox itemCount={useCaseOptions.length} onSelectFocused={(idx) => { const opt = useCaseOptions[idx]; if (opt) setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); }} ariaLabel="Filter by use case"
                 renderTrigger={({ isOpen, toggle }) => (
-                  <button onClick={toggle} disabled={isLabRunning} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30' : 'bg-background/30 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                  <button onClick={toggle} disabled={isLabRunning} title={isLabRunning ? 'Cannot change while test is running' : undefined} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30' : 'bg-background/30 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                     <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? 'All Use Cases'}</span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                   </button>
@@ -131,7 +146,7 @@ export function AbPanel() {
           <div className="space-y-1">
             <label className="text-sm text-muted-foreground/70">Test Input (optional JSON)</label>
             <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder='{"task": "Summarize the latest sales report"}' disabled={isLabRunning}
-              className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono disabled:opacity-50" />
+              className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring resize-none font-mono disabled:opacity-50" />
           </div>
 
           {isLabRunning ? (
@@ -139,10 +154,21 @@ export function AbPanel() {
               <Square className="w-4 h-4" />Cancel A/B Test
             </button>
           ) : (
-            <button onClick={() => void handleStart()} disabled={!versionAId || !versionBId || selectedModels.size === 0}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
-              <Play className="w-4 h-4" />Run A/B Test
-            </button>
+            <Tooltip
+              content={
+                !versionAId ? 'Select Version A to continue'
+                  : !versionBId ? 'Select Version B to continue'
+                  : selectedModels.size === 0 ? 'Select at least one model'
+                  : ''
+              }
+              placement="top"
+              delay={200}
+            >
+              <button onClick={() => void handleStart()} disabled={!versionAId || !versionBId || selectedModels.size === 0}
+                className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
+                <Play className="w-4 h-4" />Run A/B Test
+              </button>
+            </Tooltip>
           )}
 
           <LabProgress />

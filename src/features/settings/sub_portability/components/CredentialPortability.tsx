@@ -83,7 +83,7 @@ export function CredentialPortability({
                 onKeyDown={(e) => e.key === 'Enter' && onCredExport()}
                 className="px-3 py-2 rounded-lg border border-primary/15 bg-secondary/20 text-sm
                   text-foreground/90 placeholder:text-muted-foreground/40 outline-none
-                  focus:border-amber-500/30 w-56"
+                  focus-visible:border-amber-500/30 w-56"
                 autoFocus
               />
               <button
@@ -137,7 +137,7 @@ export function CredentialPortability({
                 onKeyDown={(e) => e.key === 'Enter' && onCredImport()}
                 className="px-3 py-2 rounded-lg border border-primary/15 bg-secondary/20 text-sm
                   text-foreground/90 placeholder:text-muted-foreground/40 outline-none
-                  focus:border-blue-500/30 w-56"
+                  focus-visible:border-blue-500/30 w-56"
                 autoFocus
               />
               <button

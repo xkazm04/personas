@@ -1,3 +1,6 @@
+import { STATUS_PALETTE, STATUS_PALETTE_EXTENDED, SEVERITY_ACCENTS } from '@/lib/design/statusTokens';
+import type { SeverityAccent } from '@/lib/design/statusTokens';
+
 /**
  * 4px-grid spacing scale.
  * Maps to CSS custom properties --spacing-1 ... --spacing-16.
@@ -32,11 +35,11 @@ export interface ButtonVariantToken {
 }
 
 export const INPUT_FIELD =
-  'w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-1 ring-offset-background transition-all';
+  'w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:ring-offset-1 ring-offset-background transition-all';
 
 /** INPUT_FIELD with a red error border — use when `aria-invalid` is true. */
 export const INPUT_FIELD_ERROR =
-  'w-full px-3 py-2 bg-background/50 border border-red-500/50 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:ring-offset-1 ring-offset-background transition-all';
+  'w-full px-3 py-2 bg-background/50 border border-red-500/50 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 focus-visible:ring-offset-1 ring-offset-background transition-all';
 
 /** Returns INPUT_FIELD or INPUT_FIELD_ERROR based on the error flag. */
 export function inputFieldClass(hasError?: boolean): string {
@@ -64,68 +67,35 @@ export const BUTTON_VARIANTS: Record<'tryIt' | 'adopt' | 'delete', ButtonVariant
   },
 };
 
-/** Review status colors: pending, approved, rejected */
-export const STATUS_COLORS: Record<string, StatusColorToken> = {
-  info: {
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/10',
-    borderColor: 'border-blue-500/20',
-    ringColor: 'focus:ring-blue-500/40',
-  },
-  ai: {
-    color: 'text-violet-400',
-    bgColor: 'bg-violet-500/10',
-    borderColor: 'border-violet-500/20',
-    ringColor: 'focus:ring-violet-500/40',
-  },
-  rotation: {
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/10',
-    borderColor: 'border-cyan-500/20',
-    ringColor: 'focus:ring-cyan-500/40',
-  },
-  success: {
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/10',
-    borderColor: 'border-emerald-500/30',
-    ringColor: 'focus:ring-emerald-500/40',
-  },
-  warning: {
-    color: 'text-amber-400',
-    bgColor: 'bg-amber-500/10',
-    borderColor: 'border-amber-500/30',
-    ringColor: 'focus:ring-amber-500/40',
-  },
-  error: {
-    color: 'text-red-400',
-    bgColor: 'bg-red-500/10',
-    borderColor: 'border-red-500/30',
-    ringColor: 'focus:ring-red-500/40',
-  },
-  pending: { color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
-  approved: { color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30' },
-  rejected: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
-};
-
-/** Standardised severity accent styles -- left border + subtle background */
-export interface SeverityStyleToken {
-  border: string;
-  bg: string;
-  text: string;
+/** Map a StatusToken → legacy StatusColorToken shape */
+function toStatusColor(t: { text: string; bg: string; border: string; ring: string }): StatusColorToken {
+  return { color: t.text, bgColor: t.bg, borderColor: t.border, ringColor: t.ring };
 }
 
-export const SEVERITY_STYLES: Record<'error' | 'warning' | 'info' | 'success', SeverityStyleToken> = {
-  error:   { border: 'border-l-[3px] border-l-red-500',     bg: 'bg-red-500/5',     text: 'text-red-400' },
-  warning: { border: 'border-l-[3px] border-l-amber-500',   bg: 'bg-amber-500/5',   text: 'text-amber-400' },
-  info:    { border: 'border-l-[3px] border-l-blue-500',    bg: 'bg-blue-500/5',    text: 'text-blue-400' },
-  success: { border: 'border-l-[3px] border-l-emerald-500', bg: 'bg-emerald-500/5', text: 'text-emerald-400' },
+/** Review status colors -- derived from the unified STATUS_PALETTE. */
+export const STATUS_COLORS: Record<string, StatusColorToken> = {
+  info:     toStatusColor(STATUS_PALETTE_EXTENDED.info),
+  ai:       toStatusColor(STATUS_PALETTE_EXTENDED.ai),
+  rotation: toStatusColor(STATUS_PALETTE_EXTENDED.rotation),
+  success:  toStatusColor(STATUS_PALETTE.success),
+  warning:  toStatusColor(STATUS_PALETTE.warning),
+  error:    toStatusColor(STATUS_PALETTE.error),
+  pending:  toStatusColor(STATUS_PALETTE.warning),
+  approved: toStatusColor(STATUS_PALETTE.success),
+  rejected: toStatusColor(STATUS_PALETTE.error),
 };
 
-/** Feasibility assessment colors: ready, partial, blocked */
+/** Standardised severity accent styles -- left border + subtle background.
+ *  Derived from the unified STATUS_PALETTE via SEVERITY_ACCENTS. */
+export type SeverityStyleToken = SeverityAccent;
+
+export const SEVERITY_STYLES: Record<'error' | 'warning' | 'info' | 'success', SeverityStyleToken> = SEVERITY_ACCENTS;
+
+/** Feasibility assessment colors -- derived from STATUS_PALETTE */
 export const FEASIBILITY_COLORS: Record<string, StatusColorToken> = {
-  ready: { color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30' },
-  partial: { color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
-  blocked: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
+  ready:   toStatusColor(STATUS_PALETTE.success),
+  partial: toStatusColor(STATUS_PALETTE.warning),
+  blocked: toStatusColor(STATUS_PALETTE.error),
 };
 
 // -- Tools UI tokens ----------------------------------------------------
@@ -157,11 +127,11 @@ export interface SimpleStatusToken {
 }
 
 export const SIMPLE_MODE = {
-  /** Reduced three-level status palette for simple mode */
+  /** Reduced three-level status palette for simple mode -- derived from STATUS_PALETTE */
   STATUS: {
-    good:    { label: 'Good',      color: 'text-emerald-400', bg: 'bg-emerald-500/10', dot: 'bg-emerald-400' },
-    warning: { label: 'Attention', color: 'text-amber-400',   bg: 'bg-amber-500/10',   dot: 'bg-amber-400' },
-    problem: { label: 'Problem',   color: 'text-red-400',     bg: 'bg-red-500/10',     dot: 'bg-red-400' },
+    good:    { label: 'Good',      color: STATUS_PALETTE.success.text, bg: STATUS_PALETTE.success.bg, dot: STATUS_PALETTE.success.icon },
+    warning: { label: 'Attention', color: STATUS_PALETTE.warning.text, bg: STATUS_PALETTE.warning.bg, dot: STATUS_PALETTE.warning.icon },
+    problem: { label: 'Problem',   color: STATUS_PALETTE.error.text,   bg: STATUS_PALETTE.error.bg,   dot: STATUS_PALETTE.error.icon },
   } satisfies Record<SimpleStatus, SimpleStatusToken>,
   /** Card style for simple mode -- larger, rounder, more breathing room */
   CARD: 'rounded-xl border border-primary/10 bg-background/60 p-5 shadow-sm',

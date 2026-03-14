@@ -63,7 +63,7 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute top-full mt-1 left-0 bg-background border border-primary/15 rounded-xl shadow-lg z-50 p-3 min-w-[260px]"
+            className="absolute top-full mt-1 left-0 glass-sm rounded-xl shadow-elevation-3 z-50 p-3 min-w-[260px]"
             style={{ transform: clampStyle.transform }}
           >
             <IconSelector

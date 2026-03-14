@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot, Plus } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AnimatePresence } from 'framer-motion';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
 import type { PersonaEvent } from '@/lib/types/types';
+import { seedMockEvent } from '@/api/overview/events';
 import { useEventLog } from '../libs/useEventLog';
 import { EventDetailContent } from './EventLogItem';
 
@@ -34,6 +35,11 @@ export default function EventLogList() {
   } = useEventLog();
 
   const [copiedPayload, setCopiedPayload] = useState(false);
+
+  const handleSeedEvent = useCallback(async () => {
+    try { await seedMockEvent(); await handleRefresh(); }
+    catch (err) { console.error('Failed to seed mock event:', err); }
+  }, [handleRefresh]);
 
   const typeOptions = [
     { value: 'all', label: 'All types' },
@@ -140,14 +146,21 @@ export default function EventLogList() {
         title="Events"
         subtitle={`${filteredEvents.length} of ${recentEvents.length} event${recentEvents.length !== 1 ? 's' : ''}`}
         actions={
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="p-1.5 rounded-lg text-foreground/70 hover:text-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
-            title="Refresh"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            {import.meta.env.DEV && (
+              <button onClick={handleSeedEvent} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock event (dev only)">
+                <Plus className="w-3.5 h-3.5" /> Mock Event
+              </button>
+            )}
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="p-1.5 rounded-lg text-foreground/70 hover:text-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         }
       />
 

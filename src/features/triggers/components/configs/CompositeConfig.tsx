@@ -36,8 +36,8 @@ export function CompositeConfig({
               placeholder="Event type (e.g. file_changed)"
               aria-invalid={!!validationError}
               aria-describedby={validationError ? 'composite-conditions-error' : undefined}
-              className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 transition-all ${
-                validationError ? 'border-red-500/30' : 'border-primary/15 focus:ring-rose-400/40'
+              className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 transition-all ${
+                validationError ? 'border-red-500/30' : 'border-primary/15 focus-visible:ring-rose-400/40'
               }`}
             />
             <input
@@ -50,7 +50,7 @@ export function CompositeConfig({
                 setCompositeConditions(updated);
               }}
               placeholder="Source filter (optional)"
-              className="w-40 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-rose-400/40 transition-all"
+              className="w-40 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40 transition-all"
             />
             {compositeConditions.length > 1 && (
               <button type="button" onClick={() => setCompositeConditions(compositeConditions.filter((_, j) => j !== i))} className="p-1.5 text-muted-foreground/60 hover:text-red-400 transition-colors">
@@ -98,7 +98,7 @@ export function CompositeConfig({
           onChange={(e) => { setWindowSeconds(e.target.value); if (validationError) setValidationError(null); }}
           min="5"
           placeholder="300"
-          className="w-32 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus:outline-none focus:ring-2 focus:ring-rose-400/40 transition-all"
+          className="w-32 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40 transition-all"
         />
         <p className="text-sm text-muted-foreground/80 mt-1">All conditions must be met within this time window</p>
       </div>

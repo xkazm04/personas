@@ -128,7 +128,7 @@ export function DesignQueryInput({
         placeholder="e.g. Zendesk API, Intercom, Freshdesk..."
         rows={2}
         autoFocus
-        className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+        className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring resize-none"
       />
       <div className="flex justify-end">
         <button

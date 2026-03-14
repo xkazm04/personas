@@ -2,15 +2,17 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Bot, Home, BarChart3, Zap, Key, FlaskConical, Users,
-  Cloud, Settings, Plus, Power,
+  Cloud, Settings, Plus, Power, Workflow, Link2,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
 import type { SidebarSection } from '@/lib/types/types';
 import {
   type PaletteItem, type ResultKind,
-  fuzzyMatch, fuzzyScore, trackRecent, getRecentAgentIds, agentItem,
+  fuzzyMatch, fuzzyScore, trackRecent, getRecentAgentIds,
+  agentItem, credentialItem, templateItem, automationItem, triggerItem,
 } from './commandPaletteUtils';
 import { CommandPaletteResults } from './CommandPaletteResults';
 
@@ -37,6 +39,10 @@ export default function CommandPalette() {
 
   const personas = useAgentStore((s) => s.personas);
   const groups = usePipelineStore((s) => s.groups);
+  const recipes = usePipelineStore((s) => s.recipes);
+  const triggerChains = usePipelineStore((s) => s.triggerChains);
+  const credentials = useVaultStore((s) => s.credentials);
+  const automations = useVaultStore((s) => s.automations);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const selectPersona = useAgentStore((s) => s.selectPersona);
   const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
@@ -73,6 +79,10 @@ export default function CommandPalette() {
 
   const botIcon = <Bot className="w-4 h-4" />;
   const powerIcon = <Power className="w-4 h-4 text-muted-foreground/40" />;
+  const keyIcon = <Key className="w-4 h-4" />;
+  const flaskIcon = <FlaskConical className="w-4 h-4" />;
+  const workflowIcon = <Workflow className="w-4 h-4" />;
+  const linkIcon = <Link2 className="w-4 h-4" />;
 
   const items = useMemo((): PaletteItem[] => {
     const results: PaletteItem[] = [];
@@ -96,6 +106,7 @@ export default function CommandPalette() {
         .sort((a, b) => fuzzyScore(searchQuery, b.label) - fuzzyScore(searchQuery, a.label));
     }
 
+    // -- Agents --
     if (!searchQuery && recentAgentIds.length > 0) {
       const personaMap = new Map(personas.map(p => [p.id, p]));
       for (const id of recentAgentIds) {
@@ -106,7 +117,7 @@ export default function CommandPalette() {
     }
 
     if (searchQuery) {
-      const scored = personas
+      const scoredAgents = personas
         .map(p => ({
           persona: p,
           score: Math.max(
@@ -119,13 +130,61 @@ export default function CommandPalette() {
         .sort((a, b) => b.score - a.score)
         .slice(0, 20);
 
-      for (const { persona } of scored) {
+      for (const { persona } of scoredAgents) {
         if (!results.some(r => r.id === `agent:${persona.id}`)) {
           results.push(agentItem(persona, groupMap, selectPersona, setSidebarSection, botIcon, powerIcon));
         }
       }
+
+      // -- Credentials --
+      const scoredCreds = credentials
+        .map(c => ({ cred: c, score: Math.max(fuzzyScore(searchQuery, c.name), fuzzyScore(searchQuery, c.service_type) * 0.7) }))
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      for (const { cred } of scoredCreds) {
+        results.push(credentialItem(cred, setSidebarSection, keyIcon));
+      }
+
+      // -- Templates --
+      const scoredTemplates = recipes
+        .map(r => ({ recipe: r, score: Math.max(fuzzyScore(searchQuery, r.name), fuzzyScore(searchQuery, r.category ?? '') * 0.6) }))
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      for (const { recipe } of scoredTemplates) {
+        results.push(templateItem(recipe, setSidebarSection, flaskIcon));
+      }
+
+      // -- Automations --
+      const scoredAutomations = automations
+        .map(a => ({ auto: a, score: Math.max(fuzzyScore(searchQuery, a.name), fuzzyScore(searchQuery, a.platform) * 0.5) }))
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      for (const { auto: a } of scoredAutomations) {
+        results.push(automationItem(a, setSidebarSection, workflowIcon));
+      }
+
+      // -- Triggers --
+      const scoredTriggers = triggerChains
+        .map(t => ({
+          trigger: t,
+          score: Math.max(
+            fuzzyScore(searchQuery, t.source_persona_name),
+            fuzzyScore(searchQuery, t.target_persona_name),
+            fuzzyScore(searchQuery, t.condition_type) * 0.5,
+          ),
+        }))
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      for (const { trigger } of scoredTriggers) {
+        results.push(triggerItem(trigger, setSidebarSection, linkIcon));
+      }
     }
 
+    // -- Navigation --
     const navItems = NAV_ITEMS.map(nav => ({
       id: `nav:${nav.id}`, kind: 'navigation' as const, label: nav.label,
       icon: nav.icon, onSelect: () => setSidebarSection(nav.id),
@@ -139,7 +198,7 @@ export default function CommandPalette() {
     }
 
     return results;
-  }, [personas, groups, groupMap, searchQuery, isCommandMode, selectPersona, setSidebarSection, setIsCreatingPersona, botIcon, powerIcon]);
+  }, [personas, groups, groupMap, credentials, recipes, automations, triggerChains, searchQuery, isCommandMode, selectPersona, setSidebarSection, setIsCreatingPersona, botIcon, powerIcon, keyIcon, flaskIcon, workflowIcon, linkIcon]);
 
   useEffect(() => {
     setSelectedIndex(i => Math.min(i, Math.max(0, items.length - 1)));
@@ -191,6 +250,10 @@ export default function CommandPalette() {
       addSection('action', 'Commands');
     } else {
       addSection('agent', !searchQuery && recentAgentIds.length > 0 ? 'Recent Agents' : 'Agents');
+      addSection('credential', 'Credentials');
+      addSection('template', 'Templates');
+      addSection('automation', 'Automations');
+      addSection('trigger', 'Triggers');
       addSection('navigation', 'Navigation');
     }
     return grouped;
@@ -203,7 +266,7 @@ export default function CommandPalette() {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.12 }}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/50 backdrop-blur-md"
             onClick={close}
           />
           <motion.div
@@ -211,7 +274,7 @@ export default function CommandPalette() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full max-w-lg bg-background border border-primary/15 rounded-xl shadow-2xl overflow-hidden"
+            className="relative w-full max-w-lg glass-md rounded-xl shadow-elevation-4 overflow-hidden"
           >
             <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10">
               <Search className="w-4 h-4 text-muted-foreground/60 shrink-0" />
@@ -220,7 +283,7 @@ export default function CommandPalette() {
                 value={query}
                 onChange={e => { setQuery(e.target.value); setSelectedIndex(0); }}
                 onKeyDown={handleKeyDown}
-                placeholder='Search agents, navigate... (type ">" for commands)'
+                placeholder='Search agents, credentials, templates... (type ">" for commands)'
                 className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 outline-none"
                 spellCheck={false}
               />

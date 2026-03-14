@@ -1,7 +1,7 @@
-import type { DesignContextData, DesignUseCase } from '@/lib/types/frontendTypes';
+import type { DesignContextData, DesignUseCase, BuilderMeta } from '@/lib/types/frontendTypes';
 import type { ConnectorPipelineStep } from '@/lib/types/designTypes';
 import type { BuilderState, TriggerPreset, BuilderComponent, ComponentRole, CredentialCoverage, CoverageStatus } from './types';
-import { ERROR_STRATEGIES, REVIEW_POLICIES } from './types';
+import { INITIAL_BUILDER_STATE, TRIGGER_PRESETS, ERROR_STRATEGIES, REVIEW_POLICIES } from './types';
 
 // -- Trigger -> design context helper --
 
@@ -54,12 +54,27 @@ export function toDesignContext(state: BuilderState): DesignContextData {
     }
   }
 
+  // Preserve builder metadata for round-trip reconstruction
+  const componentRoles: Record<string, string> = {};
+  for (const comp of state.components) {
+    componentRoles[comp.connectorName] = comp.role;
+  }
+
+  const builderMeta: BuilderMeta = {
+    errorStrategy: state.errorStrategy,
+    reviewPolicy: state.reviewPolicy,
+    channels: state.channels.length > 0 ? state.channels : undefined,
+    globalTrigger: state.globalTrigger,
+    componentRoles,
+  };
+
   return {
     useCases: useCases.length > 0 ? useCases : undefined,
     connectorPipeline: connectorPipeline.length > 0 ? connectorPipeline : undefined,
     credentialLinks: Object.keys(credentialLinks).length > 0 ? credentialLinks : undefined,
     watchedTables: Object.keys(watchedTables).length > 0 ? watchedTables : undefined,
     summary: state.intent.trim() || generateSummary(state) || undefined,
+    builderMeta,
   };
 }
 
@@ -123,6 +138,73 @@ export function generateSummary(state: BuilderState): string {
   }
 
   return parts.join(' \u00b7 ');
+}
+
+// -- Round-trip: reconstruct BuilderState from design_context --------
+
+let _ucSeq = 0;
+let _compSeq = 0;
+
+function suggestedToTrigger(suggested: { type?: string; cron?: string; description?: string } | undefined): TriggerPreset | null {
+  if (!suggested) return null;
+  // Try to match an existing preset
+  if (suggested.cron) {
+    const match = TRIGGER_PRESETS.find((p) => p.cron === suggested.cron);
+    if (match) return match;
+    return { label: suggested.description || suggested.cron, type: (suggested.type as TriggerPreset['type']) || 'schedule', cron: suggested.cron };
+  }
+  if (suggested.type === 'webhook') return TRIGGER_PRESETS.find((p) => p.type === 'webhook') ?? { label: 'On webhook', type: 'webhook' };
+  return null;
+}
+
+/**
+ * Reconstruct a BuilderState from a stored DesignContextData.
+ * Recovers as much state as possible; fields not stored in builderMeta
+ * fall back to defaults.
+ */
+export function fromDesignContext(data: DesignContextData): BuilderState {
+  const meta = data.builderMeta;
+
+  const useCases = (data.useCases ?? []).map((uc) => ({
+    id: uc.id || `uc_resume_${++_ucSeq}`,
+    title: uc.title,
+    description: uc.description || '',
+    category: uc.category || 'automation',
+    executionMode: (uc.execution_mode as 'e2e' | 'mock' | 'non_executable') || 'e2e',
+    trigger: suggestedToTrigger(uc.suggested_trigger),
+  }));
+
+  const components: BuilderComponent[] = (data.connectorPipeline ?? []).map((pipe) => {
+    const roleStr = meta?.componentRoles?.[pipe.connector_name];
+    // action_label format is "[role] connectorName" — fallback parse
+    const parsedRole = !roleStr && pipe.action_label
+      ? (pipe.action_label.match(/^\[(\w+)\]/)?.[1] as ComponentRole | undefined)
+      : undefined;
+    const role: ComponentRole = (roleStr as ComponentRole) || parsedRole || 'act';
+
+    return {
+      id: `comp_resume_${++_compSeq}`,
+      role,
+      connectorName: pipe.connector_name,
+      credentialId: data.credentialLinks?.[pipe.connector_name] ?? null,
+      watchedTables: data.watchedTables?.[pipe.connector_name],
+    };
+  });
+
+  // Ensure default notify component exists
+  if (!components.some((c) => c.connectorName === 'in-app-messaging')) {
+    components.unshift({ id: 'default_notify', role: 'notify', connectorName: 'in-app-messaging', credentialId: null });
+  }
+
+  return {
+    intent: data.summary ?? '',
+    useCases,
+    components,
+    globalTrigger: meta?.globalTrigger ? suggestedToTrigger(meta.globalTrigger) : null,
+    channels: meta?.channels ?? [],
+    errorStrategy: meta?.errorStrategy ?? INITIAL_BUILDER_STATE.errorStrategy,
+    reviewPolicy: meta?.reviewPolicy ?? INITIAL_BUILDER_STATE.reviewPolicy,
+  };
 }
 
 // -- Credential Coverage --

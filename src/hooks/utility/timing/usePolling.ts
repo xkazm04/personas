@@ -93,6 +93,8 @@ export function usePolling(
     };
 
     document.addEventListener('visibilitychange', onVisibility);
+    // Fire immediately on enable so callers don't need a separate mount effect.
+    if (visible) void runFetch();
     schedule();
 
     return () => {

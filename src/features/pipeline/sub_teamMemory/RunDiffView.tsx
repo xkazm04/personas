@@ -83,7 +83,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
         <select
           value={runA}
           onChange={(e) => setRunA(e.target.value)}
-          className="flex-1 text-xs bg-primary/5 border border-primary/10 rounded-lg px-1.5 py-1 text-foreground/80 focus:outline-none focus:border-violet-500/30 truncate"
+          className="flex-1 text-xs bg-primary/5 border border-primary/10 rounded-lg px-1.5 py-1 text-foreground/80 focus-visible:outline-none focus-visible:border-violet-500/30 truncate"
         >
           <option value="" disabled>Base run...</option>
           {runs.map(([id, count]) => (
@@ -96,7 +96,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
         <select
           value={runB}
           onChange={(e) => setRunB(e.target.value)}
-          className="flex-1 text-xs bg-primary/5 border border-primary/10 rounded-lg px-1.5 py-1 text-foreground/80 focus:outline-none focus:border-violet-500/30 truncate"
+          className="flex-1 text-xs bg-primary/5 border border-primary/10 rounded-lg px-1.5 py-1 text-foreground/80 focus-visible:outline-none focus-visible:border-violet-500/30 truncate"
         >
           <option value="" disabled>Compare run...</option>
           {runs.map(([id, count]) => (

@@ -51,36 +51,36 @@ export type { TriageRule } from "@/lib/bindings/TriageRule";
 // ============================================================================
 
 export const listProjects = (status?: string) =>
-  safeInvoke<DevProject[]>([], "dev_tools_list_projects", { status: status ?? null });
+  safeInvoke<DevProject[]>([], "dev_tools_list_projects", { status: status });
 
 export const createProject = (name: string, rootPath: string, description?: string, techStack?: string) =>
   invoke<DevProject>("dev_tools_create_project", {
     name,
     rootPath,
-    description: description ?? null,
-    techStack: techStack ?? null,
+    description: description,
+    techStack: techStack,
   });
 
 export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string }) =>
   invoke<DevProject>("dev_tools_update_project", {
     id,
-    name: updates.name ?? null,
-    description: updates.description ?? null,
-    status: updates.status ?? null,
-    techStack: updates.techStack ?? null,
+    name: updates.name,
+    description: updates.description,
+    status: updates.status,
+    techStack: updates.techStack,
   });
 
 export const deleteProject = (id: string) =>
   invoke<boolean>("dev_tools_delete_project", { id });
 
 export const scanDirectory = (path: string) =>
-  invoke<DirectoryScanResult>("dev_tools_scan_directory", { path });
+  safeInvoke<DirectoryScanResult>({} as DirectoryScanResult, "dev_tools_scan_directory", { path });
 
 export const getActiveProject = () =>
   safeInvoke<DevProject | null>(null, "dev_tools_get_active_project");
 
 export const setActiveProject = (id: string | null) =>
-  safeInvoke<void>(undefined, "dev_tools_set_active_project", { id: id ?? null });
+  safeInvoke<void>(undefined, "dev_tools_set_active_project", { id: id });
 
 // ============================================================================
 // Goals
@@ -93,20 +93,20 @@ export const createGoal = (projectId: string, title: string, description?: strin
   invoke<DevGoal>("dev_tools_create_goal", {
     projectId,
     title,
-    description: description ?? null,
-    contextId: contextId ?? null,
-    targetDate: targetDate ?? null,
+    description: description,
+    contextId: contextId,
+    targetDate: targetDate,
   });
 
 export const updateGoal = (id: string, updates: { title?: string; description?: string; status?: string; progress?: number; targetDate?: string; contextId?: string }) =>
   invoke<DevGoal>("dev_tools_update_goal", {
     id,
-    title: updates.title ?? null,
-    description: updates.description ?? null,
-    status: updates.status ?? null,
-    progress: updates.progress ?? null,
-    targetDate: updates.targetDate ?? null,
-    contextId: updates.contextId ?? null,
+    title: updates.title,
+    description: updates.description,
+    status: updates.status,
+    progress: updates.progress,
+    targetDate: updates.targetDate,
+    contextId: updates.contextId,
   });
 
 export const deleteGoal = (id: string) =>
@@ -116,12 +116,12 @@ export const reorderGoals = (projectId: string, goalIds: string[]) =>
   invoke<void>("dev_tools_reorder_goals", { projectId, goalIds });
 
 export const recordGoalSignal = (goalId: string, signalType: string, delta?: number, message?: string, sourceId?: string) =>
-  invoke<DevGoalSignal>("dev_tools_record_goal_signal", {
+  safeInvoke<DevGoalSignal>({} as DevGoalSignal, "dev_tools_record_goal_signal", {
     goalId,
     signalType,
-    delta: delta ?? null,
-    message: message ?? null,
-    sourceId: sourceId ?? null,
+    delta: delta,
+    message: message,
+    sourceId: sourceId,
   });
 
 export const listGoalSignals = (goalId: string) =>
@@ -139,18 +139,18 @@ export const createContextGroup = (projectId: string, name: string, color: strin
     projectId,
     name,
     color,
-    icon: icon ?? null,
-    groupType: groupType ?? null,
+    icon: icon,
+    groupType: groupType,
   });
 
 export const updateContextGroup = (id: string, updates: { name?: string; color?: string; icon?: string; groupType?: string; healthScore?: number }) =>
   invoke<DevContextGroup>("dev_tools_update_context_group", {
     id,
-    name: updates.name ?? null,
-    color: updates.color ?? null,
-    icon: updates.icon ?? null,
-    groupType: updates.groupType ?? null,
-    healthScore: updates.healthScore ?? null,
+    name: updates.name,
+    color: updates.color,
+    icon: updates.icon,
+    groupType: updates.groupType,
+    healthScore: updates.healthScore,
   });
 
 export const deleteContextGroup = (id: string) =>
@@ -166,7 +166,7 @@ export const reorderContextGroups = (projectId: string, groupIds: string[]) =>
 export const listContexts = (projectId: string, groupId?: string) =>
   safeInvoke<DevContext[]>([], "dev_tools_list_contexts", {
     projectId,
-    groupId: groupId ?? null,
+    groupId: groupId,
   });
 
 export const createContext = (
@@ -186,14 +186,14 @@ export const createContext = (
     projectId,
     name,
     filePaths,
-    groupId: groupId ?? null,
-    description: description ?? null,
-    entryPoints: entryPoints ?? null,
-    dbTables: dbTables ?? null,
-    keywords: keywords ?? null,
-    apiSurface: apiSurface ?? null,
-    crossRefs: crossRefs ?? null,
-    techStack: techStack ?? null,
+    groupId: groupId,
+    description: description,
+    entryPoints: entryPoints,
+    dbTables: dbTables,
+    keywords: keywords,
+    apiSurface: apiSurface,
+    crossRefs: crossRefs,
+    techStack: techStack,
   });
 
 export const updateContext = (id: string, updates: {
@@ -210,29 +210,29 @@ export const updateContext = (id: string, updates: {
 }) =>
   invoke<DevContext>("dev_tools_update_context", {
     id,
-    name: updates.name ?? null,
-    description: updates.description ?? null,
-    filePaths: updates.filePaths ?? null,
-    entryPoints: updates.entryPoints ?? null,
-    dbTables: updates.dbTables ?? null,
-    keywords: updates.keywords ?? null,
-    apiSurface: updates.apiSurface ?? null,
-    crossRefs: updates.crossRefs ?? null,
-    techStack: updates.techStack ?? null,
-    groupId: updates.groupId ?? null,
+    name: updates.name,
+    description: updates.description,
+    filePaths: updates.filePaths,
+    entryPoints: updates.entryPoints,
+    dbTables: updates.dbTables,
+    keywords: updates.keywords,
+    apiSurface: updates.apiSurface,
+    crossRefs: updates.crossRefs,
+    techStack: updates.techStack,
+    groupId: updates.groupId,
   });
 
 export const deleteContext = (id: string) =>
   invoke<boolean>("dev_tools_delete_context", { id });
 
 export const moveContext = (id: string, targetGroupId: string | null) =>
-  invoke<DevContext>("dev_tools_move_context", { id, targetGroupId });
+  safeInvoke<DevContext>({} as DevContext, "dev_tools_move_context", { id, targetGroupId });
 
 export const scanCodebase = (projectId: string, rootPath: string) =>
-  invoke<DevContext[]>("dev_tools_scan_codebase", { projectId, rootPath }, undefined, 120_000);
+  safeInvoke<DevContext[]>([], "dev_tools_scan_codebase", { projectId, rootPath }, undefined, 120_000);
 
 export const generateContextDescription = (contextId: string) =>
-  invoke<DevContext>("dev_tools_generate_context_description", { contextId }, undefined, 60_000);
+  safeInvoke<DevContext>({} as DevContext, "dev_tools_generate_context_description", { contextId }, undefined, 60_000);
 
 // ============================================================================
 // Context Group Relationships
@@ -257,12 +257,12 @@ export const deleteContextGroupRelationship = (id: string) =>
 
 export const listIdeas = (projectId?: string, status?: string, category?: string, scanType?: string, limit?: number, offset?: number) =>
   safeInvoke<DevIdea[]>([], "dev_tools_list_ideas", {
-    projectId: projectId ?? null,
-    status: status ?? null,
-    category: category ?? null,
-    scanType: scanType ?? null,
-    limit: limit ?? null,
-    offset: offset ?? null,
+    projectId: projectId,
+    status: status,
+    category: category,
+    scanType: scanType,
+    limit: limit,
+    offset: offset,
   });
 
 export const getIdea = (id: string) =>
@@ -271,14 +271,14 @@ export const getIdea = (id: string) =>
 export const updateIdea = (id: string, updates: { status?: string; title?: string; description?: string; category?: string; effort?: number; impact?: number; risk?: number; rejectionReason?: string }) =>
   invoke<DevIdea>("dev_tools_update_idea", {
     id,
-    status: updates.status ?? null,
-    title: updates.title ?? null,
-    description: updates.description ?? null,
-    category: updates.category ?? null,
-    effort: updates.effort ?? null,
-    impact: updates.impact ?? null,
-    risk: updates.risk ?? null,
-    rejectionReason: updates.rejectionReason ?? null,
+    status: updates.status,
+    title: updates.title,
+    description: updates.description,
+    category: updates.category,
+    effort: updates.effort,
+    impact: updates.impact,
+    risk: updates.risk,
+    rejectionReason: updates.rejectionReason,
   });
 
 export const deleteIdea = (id: string) =>
@@ -295,19 +295,19 @@ export const listScanAgents = () =>
   safeInvoke<ScanAgentMeta[]>([], "dev_tools_list_scan_agents");
 
 export const runScan = (projectId: string, scanTypes: string[], contextId?: string) =>
-  invoke<DevScan>("dev_tools_run_scan", {
+  safeInvoke<DevScan>({} as DevScan, "dev_tools_run_scan", {
     projectId,
     scanTypes,
-    contextId: contextId ?? null,
+    contextId: contextId,
   }, undefined, 300_000);
 
 export const getScan = (id: string) =>
-  invoke<DevScan>("dev_tools_get_scan", { id });
+  safeInvoke<DevScan>({} as DevScan, "dev_tools_get_scan", { id });
 
 export const listScans = (projectId?: string, limit?: number) =>
   safeInvoke<DevScan[]>([], "dev_tools_list_scans", {
-    projectId: projectId ?? null,
-    limit: limit ?? null,
+    projectId: projectId,
+    limit: limit,
   });
 
 // ============================================================================
@@ -319,48 +319,48 @@ const EMPTY_TRIAGE = { ideas: [] as DevIdea[], cursor: null, has_more: false, co
 export const triageIdeas = (projectId: string, limit?: number, cursor?: string) =>
   safeInvoke<typeof EMPTY_TRIAGE>(EMPTY_TRIAGE, "dev_tools_triage_ideas", {
     projectId,
-    limit: limit ?? null,
-    cursor: cursor ?? null,
+    limit: limit,
+    cursor: cursor,
   });
 
 export const acceptIdea = (id: string) =>
-  invoke<DevIdea>("dev_tools_accept_idea", { id });
+  safeInvoke<DevIdea>({} as DevIdea, "dev_tools_accept_idea", { id });
 
 export const rejectIdea = (id: string, reason?: string) =>
-  invoke<DevIdea>("dev_tools_reject_idea", { id, reason: reason ?? null });
+  safeInvoke<DevIdea>({} as DevIdea, "dev_tools_reject_idea", { id, reason: reason });
 
 export const deleteTriageIdea = (id: string) =>
-  invoke<boolean>("dev_tools_delete_triage_idea", { id });
+  safeInvoke<boolean>(false, "dev_tools_delete_triage_idea", { id });
 
 // ============================================================================
 // Triage Rules
 // ============================================================================
 
 export const listTriageRules = (projectId?: string) =>
-  safeInvoke<TriageRule[]>([], "dev_tools_list_triage_rules", { projectId: projectId ?? null });
+  safeInvoke<TriageRule[]>([], "dev_tools_list_triage_rules", { projectId: projectId });
 
 export const createTriageRule = (name: string, conditions: string, action: string, projectId?: string) =>
   invoke<TriageRule>("dev_tools_create_triage_rule", {
     name,
     conditions,
     action,
-    projectId: projectId ?? null,
+    projectId: projectId,
   });
 
 export const updateTriageRule = (id: string, updates: { name?: string; conditions?: string; action?: string; enabled?: boolean }) =>
   invoke<TriageRule>("dev_tools_update_triage_rule", {
     id,
-    name: updates.name ?? null,
-    conditions: updates.conditions ?? null,
-    action: updates.action ?? null,
-    enabled: updates.enabled ?? null,
+    name: updates.name,
+    conditions: updates.conditions,
+    action: updates.action,
+    enabled: updates.enabled,
   });
 
 export const deleteTriageRule = (id: string) =>
   invoke<boolean>("dev_tools_delete_triage_rule", { id });
 
 export const runTriageRules = (projectId: string) =>
-  invoke<{ applied: number; ideas_affected: number }>("dev_tools_run_triage_rules", { projectId });
+  safeInvoke<{ applied: number; ideas_affected: number }>({ applied: 0, ideas_affected: 0 }, "dev_tools_run_triage_rules", { projectId });
 
 // ============================================================================
 // Tasks
@@ -368,42 +368,43 @@ export const runTriageRules = (projectId: string) =>
 
 export const listTasks = (projectId?: string, status?: string, goalId?: string) =>
   safeInvoke<DevTask[]>([], "dev_tools_list_tasks", {
-    projectId: projectId ?? null,
-    status: status ?? null,
-    goalId: goalId ?? null,
+    projectId: projectId,
+    status: status,
+    goalId: goalId,
   });
 
 export const createTask = (title: string, projectId?: string, description?: string, sourceIdeaId?: string, goalId?: string) =>
   invoke<DevTask>("dev_tools_create_task", {
     title,
-    projectId: projectId ?? null,
-    description: description ?? null,
-    sourceIdeaId: sourceIdeaId ?? null,
-    goalId: goalId ?? null,
+    projectId: projectId,
+    description: description,
+    sourceIdeaId: sourceIdeaId,
+    goalId: goalId,
   });
 
 export const batchCreateTasks = (tasks: { title: string; description?: string; sourceIdeaId?: string; goalId?: string }[], projectId?: string) =>
-  invoke<DevTask[]>("dev_tools_batch_create_tasks", {
+  safeInvoke<DevTask[]>([], "dev_tools_batch_create_tasks", {
     tasks: tasks.map((t) => ({
       title: t.title,
-      description: t.description ?? null,
-      sourceIdeaId: t.sourceIdeaId ?? null,
-      goalId: t.goalId ?? null,
+      description: t.description,
+      sourceIdeaId: t.sourceIdeaId,
+      goalId: t.goalId,
     })),
-    projectId: projectId ?? null,
+    projectId: projectId,
   });
 
 export const startTask = (id: string) =>
-  invoke<DevTask>("dev_tools_start_task", { id });
+  safeInvoke<DevTask>({} as DevTask, "dev_tools_start_task", { id });
 
 export const cancelTask = (id: string) =>
-  invoke<DevTask>("dev_tools_cancel_task", { id });
+  safeInvoke<DevTask>({} as DevTask, "dev_tools_cancel_task", { id });
 
 export const startBatch = (taskIds: string[]) =>
-  invoke<{ batch_id: string; started: number }>("dev_tools_start_batch", { taskIds });
+  safeInvoke<{ batch_id: string; started: number }>({ batch_id: "", started: 0 }, "dev_tools_start_batch", { taskIds });
 
 export const getBatchStatus = (batchId: string) =>
-  invoke<{ batch_id: string; total: number; completed: number; failed: number; running: number; pending: number; tasks: DevTask[] }>(
+  safeInvoke<{ batch_id: string; total: number; completed: number; failed: number; running: number; pending: number; tasks: DevTask[] }>(
+    { batch_id: "", total: 0, completed: 0, failed: 0, running: 0, pending: 0, tasks: [] },
     "dev_tools_get_batch_status",
     { batchId },
   );

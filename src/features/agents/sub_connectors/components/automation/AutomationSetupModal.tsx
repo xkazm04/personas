@@ -1,6 +1,7 @@
 import { X, Zap, Rocket } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useAutomationSetup } from '../../libs/useAutomationSetup';
 import { AutomationTriggerStep } from './AutomationTriggerStep';
 import { AutomationActionStep } from './AutomationActionStep';
@@ -111,14 +112,26 @@ export function AutomationSetupModal({
           >Start over</button>
           <div className="flex items-center gap-2">
             <button onClick={handleClose} className="btn-md border border-border text-muted-foreground hover:bg-secondary/50 transition-colors">Cancel</button>
-            <button
-              onClick={() => void s.handleDeploy()}
-              disabled={!s.name.trim() || (!s.hasPlatformCredential && s.needsCredential)}
-              className="btn-md flex items-center gap-1.5 font-medium bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40"
+            <Tooltip
+              content={
+                !s.name.trim()
+                  ? 'Enter a name to continue'
+                  : !s.hasPlatformCredential && s.needsCredential
+                    ? 'Select a credential before deploying'
+                    : ''
+              }
+              placement="top"
+              delay={200}
             >
-              <Rocket className="w-3.5 h-3.5" />
-              Deploy & Save
-            </button>
+              <button
+                onClick={() => void s.handleDeploy()}
+                disabled={!s.name.trim() || (!s.hasPlatformCredential && s.needsCredential)}
+                className="btn-md flex items-center gap-1.5 font-medium bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Rocket className="w-3.5 h-3.5" />
+                Deploy & Save
+              </button>
+            </Tooltip>
           </div>
         </div>
       )}

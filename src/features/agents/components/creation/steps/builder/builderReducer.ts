@@ -5,7 +5,7 @@ import { INITIAL_BUILDER_STATE } from './types';
 import { applyDesignResult } from './designResultMapper';
 
 // Re-export helpers so existing imports continue to work
-export { toDesignContext, generateSystemPrompt, generateSummary, computeCredentialCoverage, computeRoleCoverage } from './builderHelpers';
+export { toDesignContext, fromDesignContext, generateSystemPrompt, generateSummary, computeCredentialCoverage, computeRoleCoverage } from './builderHelpers';
 
 // -- Actions --
 

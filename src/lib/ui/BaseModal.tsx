@@ -110,7 +110,7 @@ export function BaseModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.15 }}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={onClose}
       />
       <motion.div
@@ -121,7 +121,7 @@ export function BaseModal({
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-        className={`relative w-full ${IS_MOBILE ? 'max-w-full' : resolvedMaxWidth} ${panelClassName ?? (IS_MOBILE ? 'h-full bg-background overflow-hidden' : 'max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden')}`}
+        className={`relative w-full ${IS_MOBILE ? 'max-w-full' : resolvedMaxWidth} ${panelClassName ?? (IS_MOBILE ? 'h-full bg-background overflow-hidden' : 'max-h-[85vh] glass-md rounded-2xl shadow-elevation-4 overflow-hidden')}`}
       >
         {children}
       </motion.div>

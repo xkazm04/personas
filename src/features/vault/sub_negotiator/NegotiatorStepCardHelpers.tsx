@@ -157,7 +157,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
                 onChange={(e) => setHelpQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAskHelp()}
                 placeholder="Ask a question about this step..."
-                className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 ${AI_STATUS.ringColor!} transition-all`}
+                className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ringColor!} transition-all`}
                 data-testid={`negotiator-step-${stepIndex}-help-input`}
               />
               <button

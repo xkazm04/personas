@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { usePersonaStore } from "../personaStore";
+import { useAgentStore } from "../agentStore";
+import { useSystemStore } from "../systemStore";
 import { mockInvokeMap, resetInvokeMocks } from "@/test/tauriMock";
 import type { Persona } from "@/lib/bindings/Persona";
 
@@ -33,12 +34,15 @@ function makePersona(overrides: Partial<Persona> = {}): Persona {
 
 describe("personaStore", () => {
   beforeEach(() => {
-    // Reset Zustand store to initial state between tests
-    usePersonaStore.setState({
+    // Reset Zustand stores to initial state between tests
+    useAgentStore.setState({
       personas: [],
       selectedPersonaId: null,
       selectedPersona: null,
       isLoading: false,
+      error: null,
+    });
+    useSystemStore.setState({
       error: null,
     });
     resetInvokeMocks();
@@ -46,18 +50,19 @@ describe("personaStore", () => {
 
   describe("initial state", () => {
     it("has empty personas list", () => {
-      const state = usePersonaStore.getState();
+      const state = useAgentStore.getState();
       expect(state.personas).toEqual([]);
       expect(state.selectedPersonaId).toBeNull();
       expect(state.selectedPersona).toBeNull();
     });
 
     it("has default UI state", () => {
-      const state = usePersonaStore.getState();
-      expect(state.isLoading).toBe(false);
-      expect(state.isExecuting).toBe(false);
-      expect(state.error).toBeNull();
-      expect(state.editorTab).toBe("use-cases");
+      const agentState = useAgentStore.getState();
+      const systemState = useSystemStore.getState();
+      expect(agentState.isLoading).toBe(false);
+      expect(agentState.isExecuting).toBe(false);
+      expect(agentState.error).toBeNull();
+      expect(systemState.editorTab).toBe("use-cases");
     });
   });
 
@@ -72,7 +77,7 @@ describe("personaStore", () => {
 
       await useAgentStore.getState().fetchPersonas();
 
-      const state = usePersonaStore.getState();
+      const state = useAgentStore.getState();
       expect(state.personas).toHaveLength(2);
       expect(state.personas[0]?.id).toBe("p-1");
       expect(state.isLoading).toBe(false);
@@ -84,7 +89,7 @@ describe("personaStore", () => {
 
       await expect(useAgentStore.getState().fetchPersonas()).rejects.toThrow("DB connection failed");
 
-      const state = usePersonaStore.getState();
+      const state = useAgentStore.getState();
       expect(state.error).toBe("DB connection failed");
       expect(state.isLoading).toBe(false);
     });
@@ -101,17 +106,17 @@ describe("personaStore", () => {
 
       useAgentStore.getState().selectPersona("p-1");
 
-      const state = usePersonaStore.getState();
+      const state = useAgentStore.getState();
       expect(state.selectedPersonaId).toBe("p-1");
-      expect(state.editorTab).toBe("use-cases");
+      expect(useSystemStore.getState().editorTab).toBe("use-cases");
     });
 
     it("clears selection when null", () => {
-      usePersonaStore.setState({ selectedPersonaId: "p-1" });
+      useAgentStore.setState({ selectedPersonaId: "p-1" });
 
       useAgentStore.getState().selectPersona(null);
 
-      const state = usePersonaStore.getState();
+      const state = useAgentStore.getState();
       expect(state.selectedPersonaId).toBeNull();
       expect(state.selectedPersona).toBeNull();
     });
@@ -130,10 +135,10 @@ describe("personaStore", () => {
 
     it("setError updates and clears error", () => {
       useSystemStore.getState().setError("Something went wrong");
-      expect(usePersonaStore.getState().error).toBe("Something went wrong");
+      expect(useSystemStore.getState().error).toBe("Something went wrong");
 
       useSystemStore.getState().setError(null);
-      expect(usePersonaStore.getState().error).toBeNull();
+      expect(useSystemStore.getState().error).toBeNull();
     });
 
   });
@@ -149,7 +154,7 @@ describe("personaStore", () => {
     });
 
     it("clearExecutionOutput resets state", () => {
-      usePersonaStore.setState({
+      useAgentStore.setState({
         executionOutput: ["Line 1"],
         activeExecutionId: "exec-1",
         isExecuting: true,
@@ -157,14 +162,14 @@ describe("personaStore", () => {
 
       useAgentStore.getState().clearExecutionOutput();
 
-      const state = usePersonaStore.getState();
+      const state = useAgentStore.getState();
       expect(state.executionOutput).toEqual([]);
       expect(state.activeExecutionId).toBeNull();
       expect(state.isExecuting).toBe(false);
     });
 
     it("finishExecution sets isExecuting to false", () => {
-      usePersonaStore.setState({ isExecuting: true });
+      useAgentStore.setState({ isExecuting: true });
 
       useAgentStore.getState().finishExecution();
 
@@ -176,7 +181,7 @@ describe("personaStore", () => {
     it("removes persona from list and clears selection if selected", async () => {
       mockInvokeMap({ delete_persona: undefined });
 
-      usePersonaStore.setState({
+      useAgentStore.setState({
         personas: [makePersona({ id: "p-1" }), makePersona({ id: "p-2" })],
         selectedPersonaId: "p-1",
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -185,7 +190,7 @@ describe("personaStore", () => {
 
       await useAgentStore.getState().deletePersona("p-1");
 
-      const state = usePersonaStore.getState();
+      const state = useAgentStore.getState();
       expect(state.personas).toHaveLength(1);
       expect(state.personas[0]?.id).toBe("p-2");
       expect(state.selectedPersonaId).toBeNull();

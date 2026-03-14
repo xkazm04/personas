@@ -69,7 +69,7 @@ export function SearchChipInput({
             : aiSearchMode ? 'Describe what you need, then press Enter...'
             : 'Search templates... (try category:monitoring)'
         }
-        className="flex-1 min-w-[120px] py-2 pr-10 text-sm bg-transparent text-foreground/90 placeholder:text-muted-foreground/40 focus:outline-none"
+        className="flex-1 min-w-[120px] py-2 pr-10 text-sm bg-transparent text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none"
       />
 
       <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">

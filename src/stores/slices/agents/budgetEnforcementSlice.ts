@@ -2,6 +2,7 @@ import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import type { PersonaMonthlySpend } from "@/lib/bindings/PersonaMonthlySpend";
 import { getAllMonthlySpend } from "@/api/overview/observability";
+import { deduplicateFetch } from "@/lib/utils/deduplicateFetch";
 
 // -- Budget enforcement lifecycle ---------------------------------------
 //
@@ -59,7 +60,7 @@ export interface BudgetEnforcementSlice {
   overrideStaleBudget: (personaId: string) => void;
   /** Clear all overrides (e.g. on budget refresh) */
   clearBudgetOverrides: () => void;
-  /** Invalidate cached budget for a single persona, triggering a re-fetch. */
+  /** Invalidate cached budget data, triggering a re-fetch. Data is marked stale (fail-closed) until refresh completes. */
   invalidateBudgetCache: (personaId?: string) => void;
 }
 
@@ -95,7 +96,7 @@ export const createBudgetEnforcementSlice: StateCreator<AgentStore, [], [], Budg
   budgetOverrides: new Set(),
   budgetStaleOverrides: new Set(),
 
-  fetchBudgetSpend: async () => {
+  fetchBudgetSpend: deduplicateFetch('budgetSpend', async () => {
     set({ budgetEnforcementLoading: true });
     try {
       const rows = await getAllMonthlySpend();
@@ -104,16 +105,26 @@ export const createBudgetEnforcementSlice: StateCreator<AgentStore, [], [], Budg
       console.warn('[budget] fetchBudgetSpend failed — budget enforcement active (fail-closed)', { error: String(err) });
       set({ budgetEnforcementLoading: false, budgetStale: true });
     }
-  },
+  }),
 
   getBudgetStatus: (personaId: string) => {
     const state = get();
-    if (state.budgetStale) return 'stale';
+    if (state.budgetStale) {
+      // Passive refresh: kick off a background fetch so the next check has fresh data
+      void get().fetchBudgetSpend();
+      return 'stale';
+    }
     // Treat cache as stale if it's older than the TTL
     if (state.budgetLastFetchedAt !== null && Date.now() - state.budgetLastFetchedAt > BUDGET_TTL_MS) {
+      // Passive refresh on TTL expiry
+      void get().fetchBudgetSpend();
       return 'stale';
     }
     const entry = state.budgetSpendMap.get(personaId);
+    // Fail-closed: if budget data has been fetched before but this persona
+    // has no entry, treat as stale rather than ok to prevent a fail-open window
+    // (e.g. during cache invalidation re-fetch).
+    if (!entry && state.budgetLastFetchedAt !== null) return 'stale';
     return entry?.status ?? 'ok';
   },
 
@@ -121,13 +132,23 @@ export const createBudgetEnforcementSlice: StateCreator<AgentStore, [], [], Budg
     const state = get();
     // Fail closed: if budget data is stale, block unless user explicitly overrode
     if (state.budgetStale) {
+      // Passive refresh so stale state resolves automatically
+      void get().fetchBudgetSpend();
       return !state.budgetStaleOverrides.has(personaId);
     }
     if (state.budgetLastFetchedAt !== null && Date.now() - state.budgetLastFetchedAt > BUDGET_TTL_MS) {
+      // Passive refresh on TTL expiry
+      void get().fetchBudgetSpend();
       return !state.budgetStaleOverrides.has(personaId);
     }
     const entry = state.budgetSpendMap.get(personaId);
-    if (!entry || entry.status !== 'exceeded') return false;
+    // Fail-closed: missing entry after initial fetch means data is in-flight
+    // (e.g. during invalidation re-fetch) — block unless user overrode stale
+    if (!entry) {
+      if (state.budgetLastFetchedAt !== null) return !state.budgetStaleOverrides.has(personaId);
+      return false;
+    }
+    if (entry.status !== 'exceeded') return false;
     return !state.budgetOverrides.has(personaId);
   },
 
@@ -151,18 +172,10 @@ export const createBudgetEnforcementSlice: StateCreator<AgentStore, [], [], Budg
     set({ budgetOverrides: new Set(), budgetStaleOverrides: new Set() });
   },
 
-  invalidateBudgetCache: (personaId?: string) => {
-    if (personaId) {
-      // Remove the single entry so next access returns 'ok' until re-fetched
-      set((state) => {
-        const next = new Map(state.budgetSpendMap);
-        next.delete(personaId);
-        return { budgetSpendMap: next, budgetLastFetchedAt: null };
-      });
-    } else {
-      // Full invalidation
-      set({ budgetSpendMap: new Map(), budgetLastFetchedAt: null });
-    }
+  invalidateBudgetCache: (_personaId?: string) => {
+    // Mark data as stale but preserve existing entries so enforcement
+    // remains fail-closed until the re-fetch completes.
+    set({ budgetStale: true });
     // Fire-and-forget re-fetch so fresh data arrives quickly
     void get().fetchBudgetSpend();
   },

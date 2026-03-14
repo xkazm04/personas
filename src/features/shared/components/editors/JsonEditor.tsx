@@ -229,7 +229,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder=""
-          className="relative w-full px-4 py-3 font-mono text-sm leading-[1.625] bg-transparent text-transparent caret-foreground resize-none focus:outline-none"
+          className="relative w-full px-4 py-3 font-mono text-sm leading-[1.625] bg-transparent text-transparent caret-foreground resize-none focus-visible:outline-none"
           style={{ minHeight: 128 }}
           spellCheck={false}
           autoComplete="off"

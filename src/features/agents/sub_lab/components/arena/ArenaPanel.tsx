@@ -1,9 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import { Play, Square, ChevronDown, Filter, AlertCircle } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useAgentStore } from "@/stores/agentStore";
 import { LabProgress } from '../shared/LabProgress';
 import { ArenaHistory } from './ArenaHistory';
-import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { ANTHROPIC_MODELS, OLLAMA_MODELS, ALL_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
@@ -31,7 +32,7 @@ export function ArenaPanel() {
     defaultModels: new Set(['haiku', 'sonnet']),
   });
 
-  const useCases = useMemo(() => parseDesignContext(selectedPersona?.design_context).useCases ?? [], [selectedPersona?.design_context]);
+  const useCases = useSelectedUseCases();
   const selectedUseCase = useMemo(() => useCases.find((uc) => uc.id === selectedUseCaseId) ?? null, [useCases, selectedUseCaseId]);
   const useCaseOptions = useMemo(() => [{ value: '__all__', label: 'All Use Cases' }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))], [useCases]);
 
@@ -75,7 +76,7 @@ export function ArenaPanel() {
               <label className="text-sm font-medium text-muted-foreground/80 flex items-center gap-1.5"><Filter className="w-3.5 h-3.5" />Focus on Use Case</label>
               <Listbox itemCount={useCaseOptions.length} onSelectFocused={(idx) => { const opt = useCaseOptions[idx]; if (opt) setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); }} ariaLabel="Filter by use case"
                 renderTrigger={({ isOpen, toggle }) => (
-                  <button onClick={toggle} disabled={isLabRunning} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30 text-foreground/90' : 'bg-background/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                  <button onClick={toggle} disabled={isLabRunning} title={isLabRunning ? 'Cannot change while test is running' : undefined} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30 text-foreground/90' : 'bg-background/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                     <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? 'All Use Cases'}</span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                   </button>
@@ -102,6 +103,7 @@ export function ArenaPanel() {
                 <div className="flex flex-wrap gap-2">
                   {ANTHROPIC_MODELS.map((m) => (
                     <button key={m.id} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
+                      title={isLabRunning ? 'Cannot change while test is running' : undefined}
                       className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                       {m.label}
                     </button>
@@ -114,6 +116,7 @@ export function ArenaPanel() {
                   <div className="flex flex-wrap gap-2">
                     {OLLAMA_MODELS.map((m) => (
                       <button key={m.id} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
+                        title={isLabRunning ? 'Cannot change while test is running' : undefined}
                         className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                         {m.label}
                       </button>
@@ -129,10 +132,20 @@ export function ArenaPanel() {
               <Square className="w-4 h-4" />Cancel Test
             </button>
           ) : (
-            <button onClick={() => void handleStart()} disabled={selectedModels.size === 0 || !hasPrompt}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
-              <Play className="w-4 h-4" />Run Arena ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` -- ${selectedUseCase.title}` : ''})
-            </button>
+            <Tooltip
+              content={
+                !hasPrompt ? 'Add a prompt to this persona first'
+                  : selectedModels.size === 0 ? 'Select at least one model'
+                  : ''
+              }
+              placement="top"
+              delay={200}
+            >
+              <button onClick={() => void handleStart()} disabled={selectedModels.size === 0 || !hasPrompt}
+                className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
+                <Play className="w-4 h-4" />Run Arena ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` -- ${selectedUseCase.title}` : ''})
+              </button>
+            </Tooltip>
           )}
 
           <LabProgress />

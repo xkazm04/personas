@@ -95,7 +95,7 @@ export function CloudDeploymentsPanel({
               className="w-full px-3 py-2 text-sm rounded-xl
                          bg-secondary/40 border border-primary/15
                          text-foreground/80 placeholder:text-muted-foreground/80
-                         focus:outline-none focus:border-indigo-500/40
+                         focus-visible:outline-none focus-visible:border-indigo-500/40
                          disabled:opacity-40 disabled:cursor-not-allowed
                          transition-colors"
             >
@@ -120,7 +120,7 @@ export function CloudDeploymentsPanel({
               className="w-full px-3 py-2 text-sm rounded-xl
                          bg-secondary/40 border border-primary/15
                          text-foreground/80
-                         focus:outline-none focus:border-indigo-500/40
+                         focus-visible:outline-none focus-visible:border-indigo-500/40
                          disabled:opacity-40 disabled:cursor-not-allowed
                          transition-colors"
             >

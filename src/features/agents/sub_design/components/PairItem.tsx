@@ -48,9 +48,9 @@ export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse,
               value={pair.input}
               onChange={(e) => onUpdate(pair.id, 'input', e.target.value)}
               disabled={disabled}
-              placeholder={'Paste a real input...\n\ne.g. an email body, a Slack message, a webhook JSON payload, a CSV row'}
+              placeholder={'Paste a real input...\n\ne.g. an email body, a Slack message, an incoming request, a CSV row'}
               rows={4}
-              className="w-full bg-background/50 border border-emerald-500/10 rounded-lg px-3 py-2 text-sm text-foreground font-mono resize-y focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
+              className="w-full bg-background/50 border border-emerald-500/10 rounded-lg px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
             />
           </div>
           <div className="flex justify-center">
@@ -67,7 +67,7 @@ export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse,
               disabled={disabled}
               placeholder={'Describe or paste the desired output...\n\ne.g. "Create a Jira ticket with title from subject, priority P2, assigned to backend team"'}
               rows={4}
-              className="w-full bg-background/50 border border-emerald-500/10 rounded-lg px-3 py-2 text-sm text-foreground font-mono resize-y focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
+              className="w-full bg-background/50 border border-emerald-500/10 rounded-lg px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
             />
           </div>
         </div>

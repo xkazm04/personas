@@ -1,5 +1,6 @@
 import { DollarSign, AlertTriangle } from 'lucide-react';
 import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
+import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { fmtCost, fmtDate } from '../libs/executionMetricsHelpers';
 
 // -- Summary Card -----------------------------------------------------
@@ -9,9 +10,13 @@ interface SummaryCardProps {
   label: string;
   value: string;
   color: string;
+  /** Raw numeric value — when provided, the card animates from previous to current */
+  numericValue?: number;
+  /** Formatter for the animated number (required when numericValue is set) */
+  formatFn?: (v: number) => string;
 }
 
-export function SummaryCard({ icon: Icon, label, value, color }: SummaryCardProps) {
+export function SummaryCard({ icon: Icon, label, value, color, numericValue, formatFn }: SummaryCardProps) {
   const colorMap: Record<string, string> = {
     blue: 'text-blue-400 bg-blue-500/15 border-blue-500/25',
     emerald: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/25',
@@ -29,7 +34,11 @@ export function SummaryCard({ icon: Icon, label, value, color }: SummaryCardProp
       <Icon className={`w-4 h-4 ${textColor}`} />
       <div className="min-w-0">
         <p className="text-sm text-muted-foreground/70 truncate">{label}</p>
-        <p className={`text-sm font-semibold ${textColor}`}>{value}</p>
+        <p className={`text-sm font-semibold ${textColor}`}>
+          {numericValue != null && formatFn
+            ? <AnimatedCounter value={numericValue} formatFn={formatFn} />
+            : value}
+        </p>
       </div>
     </div>
   );

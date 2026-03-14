@@ -45,8 +45,14 @@ fn sentry_options() -> sentry::ClientOptions {
                 if let Some(ref mut msg) = breadcrumb.message {
                     *msg = pii::scrub(msg);
                 }
-                // Remove structured data that may contain PII
+                // Remove structured data that may contain PII or credential metadata
                 breadcrumb.data.retain(|k, _| !pii::is_sensitive_field(k));
+                // Scrub values of remaining data entries for credential content
+                for val in breadcrumb.data.values_mut() {
+                    if let sentry::protocol::Value::String(ref mut s) = val {
+                        *s = pii::scrub(s);
+                    }
+                }
             }
             Some(event)
         })),
@@ -56,6 +62,11 @@ fn sentry_options() -> sentry::ClientOptions {
                 *msg = pii::scrub(msg);
             }
             breadcrumb.data.retain(|k, _| !pii::is_sensitive_field(k));
+            for val in breadcrumb.data.values_mut() {
+                if let sentry::protocol::Value::String(ref mut s) = val {
+                    *s = pii::scrub(s);
+                }
+            }
             Some(breadcrumb)
         })),
         ..Default::default()
@@ -68,6 +79,8 @@ fn sentry_options() -> sentry::ClientOptions {
 /// - UUIDs (execution_id, persona_id, trigger_id, etc.) -> short hash prefix
 /// - Quoted names (credential names, persona names) -> `[redacted]`
 /// - Full URLs -> domain-only
+/// - Credential-sensitive key-value pairs (password, token, secret, api_key, bearer, etc.)
+/// - Long base64-encoded strings that could be encrypted credential blobs
 mod pii {
     use std::sync::OnceLock;
     use regex::Regex;
@@ -93,6 +106,42 @@ mod pii {
         })
     }
 
+    /// Matches sensitive key-value pairs like `password: foo`, `api_key=bar`, `token is xyz`.
+    /// Mirrors the patterns from utils/sanitization.rs for consistency.
+    fn credential_kv_re() -> &'static Regex {
+        static RE: OnceLock<Regex> = OnceLock::new();
+        RE.get_or_init(|| {
+            Regex::new(
+                r"(?i)\b(api[-_ ]?key|apikey|secret|token|password|passwd|credential|private[-_ ]?key|client[-_ ]?secret|access[-_ ]?key|access[-_ ]?token|refresh[-_ ]?token|dsn|connection[-_ ]?string|cookie|session[-_ ]?id)\b\s*([:= ]|is[: ]?)\s*(\S+)"
+            ).unwrap()
+        })
+    }
+
+    /// Matches `Authorization: bearer <token>` or `bearer <token>` patterns.
+    fn bearer_re() -> &'static Regex {
+        static RE: OnceLock<Regex> = OnceLock::new();
+        RE.get_or_init(|| {
+            Regex::new(r"(?i)\b(bearer|basic)\b\s+([a-zA-Z0-9\-_.~+/=]+)").unwrap()
+        })
+    }
+
+    /// Matches well-known service token prefixes (GitHub PATs, AWS keys, Stripe keys, etc.).
+    fn prefixed_token_re() -> &'static Regex {
+        static RE: OnceLock<Regex> = OnceLock::new();
+        RE.get_or_init(|| {
+            Regex::new(r"\b(PMR?S|gh[pous]|AKIA|sk_live_|xox[baprs]-)[a-zA-Z0-9]{16,}\b").unwrap()
+        })
+    }
+
+    /// Matches base64-encoded strings longer than 32 characters that could be encrypted
+    /// credential blobs leaking from mid-decryption failures.
+    fn base64_blob_re() -> &'static Regex {
+        static RE: OnceLock<Regex> = OnceLock::new();
+        RE.get_or_init(|| {
+            Regex::new(r"(?<![a-zA-Z0-9/+])[A-Za-z0-9+/]{32,}={0,2}(?![a-zA-Z0-9/+=])").unwrap()
+        })
+    }
+
     /// Scrub PII from a log message string.
     pub fn scrub(input: &str) -> String {
         // 1. Replace UUIDs with a short prefix for correlation
@@ -107,7 +156,23 @@ mod pii {
             redact_url(url)
         }).into_owned();
 
-        // 3. Redact quoted strings (credential names, persona names, etc.)
+        // 3. Redact credential-sensitive key-value pairs
+        result = credential_kv_re().replace_all(&result, |caps: &regex::Captures| {
+            format!("{}: [credential-redacted]", &caps[1])
+        }).into_owned();
+
+        // 4. Redact bearer/basic auth tokens
+        result = bearer_re().replace_all(&result, |caps: &regex::Captures| {
+            format!("{} [credential-redacted]", &caps[1])
+        }).into_owned();
+
+        // 5. Redact well-known service token prefixes
+        result = prefixed_token_re().replace_all(&result, "[credential-redacted]").into_owned();
+
+        // 6. Redact long base64-encoded strings (potential encrypted blobs)
+        result = base64_blob_re().replace_all(&result, "[encrypted-blob-redacted]").into_owned();
+
+        // 7. Redact quoted strings (credential names, persona names, etc.)
         result = quoted_re().replace_all(&result, "[redacted]").into_owned();
 
         result
@@ -131,9 +196,11 @@ mod pii {
         }
     }
 
-    /// Fields in breadcrumb `data` map that may contain PII.
+    /// Fields in breadcrumb `data` map that may contain PII or credential metadata.
     pub fn is_sensitive_field(key: &str) -> bool {
-        matches!(
+        let k = key.to_lowercase();
+        // Check exact matches for known PII fields
+        if matches!(
             key,
             "execution_id"
                 | "persona_id"
@@ -148,6 +215,25 @@ mod pii {
                 | "endpoint"
                 | "connector_name"
                 | "user_name"
-        )
+        ) {
+            return true;
+        }
+        // Check credential-sensitive field name patterns
+        k.contains("password")
+            || k.contains("passwd")
+            || k.contains("secret")
+            || k.contains("token")
+            || k.contains("api_key")
+            || k.contains("apikey")
+            || k.contains("bearer")
+            || k.contains("credential")
+            || k.contains("private_key")
+            || k.contains("client_secret")
+            || k.contains("access_key")
+            || k.contains("refresh_token")
+            || k.contains("connection_string")
+            || k.contains("encrypted")
+            || k.contains("ciphertext")
+            || k.contains("decrypted")
     }
 }

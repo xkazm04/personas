@@ -16,6 +16,7 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { startAutomationDesign, deployAutomation } from '@/api/agents/automations';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import type { DeployAutomationResult } from '@/api/agents/automations';
 
 // ---------------------------------------------------------------------------
@@ -158,9 +159,9 @@ export default function DeployFirstAutomationCard() {
         <p className="text-sm text-muted-foreground/80">
           {deployResult.deploymentMessage}
         </p>
-        {deployResult.platformUrl && (
+        {sanitizeExternalUrl(deployResult.platformUrl) && (
           <a
-            href={deployResult.platformUrl}
+            href={sanitizeExternalUrl(deployResult.platformUrl)!}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"

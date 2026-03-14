@@ -24,6 +24,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
   const [channels, setChannelsInternal] = useState<NotificationChannel[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const effectiveChannels = isDraftMode ? draftChannels : channels;
@@ -76,12 +77,17 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
 
   const handleSave = async () => {
     if (isDraftMode || !personaId) return;
+    setSaveError(null);
     const errors = validateChannels();
     setValidationErrors(errors);
     if (errors.length > 0) return;
     setIsSaving(true);
     try { await applyPersonaOp(personaId, { kind: 'UpdateNotifications', notification_channels: JSON.stringify(effectiveChannels) }); setIsDirty(false); }
-    catch (error) { console.error('Failed to save notification channels:', error); }
+    catch (error) {
+      console.error('Failed to save notification channels:', error);
+      setSaveError(error instanceof Error ? error.message : 'Failed to save channels');
+      setIsDirty(true);
+    }
     finally { setIsSaving(false); }
   };
 
@@ -104,9 +110,15 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
       />
       {!isDraftMode && isDirty && (
         <button onClick={handleSave} disabled={isSaving}
+          title={isSaving ? 'Saving channels...' : undefined}
           className="flex items-center gap-2 px-4 py-2 mt-3 rounded-xl font-medium text-sm bg-primary hover:bg-primary/90 text-foreground shadow-lg shadow-primary/20 transition-all">
           {isSaving ? 'Saving...' : 'Save Channels'}
         </button>
+      )}
+      {saveError && (
+        <div className="px-3 py-2 mt-2 rounded-xl border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
+          {saveError}
+        </div>
       )}
     </div>
   );

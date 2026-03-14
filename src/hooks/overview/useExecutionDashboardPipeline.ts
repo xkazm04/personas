@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
-import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { useOverviewFilterValues } from '@/features/overview/components/dashboard/OverviewFilterContext';
 
 /**
  * Single canonical fetch lifecycle for the execution dashboard.
@@ -12,7 +12,7 @@ import { useOverviewFilters } from '@/features/overview/components/dashboard/Ove
  * the store without triggering their own independent fetches.
  */
 export function useExecutionDashboardPipeline() {
-  const { effectiveDays, compareEnabled, previousPeriodDays } = useOverviewFilters();
+  const { effectiveDays, compareEnabled, previousPeriodDays } = useOverviewFilterValues();
   const fetchExecutionDashboard = useOverviewStore((s) => s.fetchExecutionDashboard);
 
   const fetchDays = compareEnabled ? previousPeriodDays : effectiveDays;

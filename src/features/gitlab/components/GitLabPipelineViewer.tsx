@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Play, RefreshCw, ExternalLink, FileText, Loader2 } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { Button } from '@/features/shared/components/buttons';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { StatusIcon, statusColor } from './pipelineHelpers';
 import { PipelineRow } from './PipelineRow';
 import { JobRow } from './JobRow';
@@ -139,9 +140,9 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  {activePipeline.webUrl && (
+                  {sanitizeExternalUrl(activePipeline.webUrl) && (
                     <a
-                      href={activePipeline.webUrl}
+                      href={sanitizeExternalUrl(activePipeline.webUrl)!}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"

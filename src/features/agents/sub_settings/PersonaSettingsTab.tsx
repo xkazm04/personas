@@ -1,5 +1,5 @@
 import { Trash2, AlertTriangle, Loader2, Check } from 'lucide-react';
-import type { PersonaDraft } from '@/features/agents/sub_editor/PersonaDraft';
+import type { PersonaDraft } from '@/features/agents/sub_editor';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { PopupIconSelector } from '@/features/shared/components/forms/PopupIconSelector';
 import { PopupColorPicker } from '@/features/shared/components/forms/PopupColorPicker';
@@ -45,6 +45,7 @@ export function PersonaSettingsTab({
               type="text"
               value={draft.name}
               onChange={(e) => patch({ name: e.target.value })}
+              placeholder="Name your agent — e.g. Invoice Processor, Weekly Report Bot"
               className={INPUT_FIELD}
             />
           </div>
@@ -53,6 +54,7 @@ export function PersonaSettingsTab({
             <textarea
               value={draft.description}
               onChange={(e) => patch({ description: e.target.value })}
+              placeholder="What does this agent do? — e.g. Monitors Slack for support questions and drafts replies"
               rows={4}
               className={`${INPUT_FIELD} resize-none`}
             />
@@ -100,6 +102,7 @@ export function PersonaSettingsTab({
                 type="number"
                 value={draft.maxConcurrent}
                 onChange={(e) => patch({ maxConcurrent: parseInt(e.target.value, 10) || 1 })}
+                placeholder="Parallel runs — e.g. 3"
                 min={1}
                 max={10}
                 className={INPUT_FIELD}
@@ -118,6 +121,7 @@ export function PersonaSettingsTab({
                 type="number"
                 value={Math.round(draft.timeout / 1000)}
                 onChange={(e) => patch({ timeout: (parseInt(e.target.value, 10) || 1000) * 1000 })}
+                placeholder="Seconds — e.g. 120"
                 min={10}
                 step={10}
                 className={INPUT_FIELD}

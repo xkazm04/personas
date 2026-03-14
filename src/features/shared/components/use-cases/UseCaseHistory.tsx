@@ -42,7 +42,8 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
         if (fetchSeqRef.current !== seq) return; // stale
         setExecutions(data);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.warn('[UseCaseHistory] Failed to load executions:', err);
         if (fetchSeqRef.current !== seq) return;
         setExecutions([]);
       })

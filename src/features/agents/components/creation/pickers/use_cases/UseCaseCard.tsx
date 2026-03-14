@@ -41,8 +41,8 @@ export function UseCaseCardContent({
           type="text"
           value={useCase.title}
           onChange={(e) => onUpdate({ title: e.target.value })}
-          placeholder="Use case title..."
-          className="flex-1 min-w-0 bg-transparent text-sm font-medium text-foreground placeholder-muted-foreground/40 focus:outline-none"
+          placeholder="Use case title — e.g. Handle refund requests, Summarize daily tickets"
+          className="flex-1 min-w-0 bg-transparent text-sm font-medium text-foreground placeholder-muted-foreground/40 focus-visible:outline-none"
         />
         <button
           type="button"
@@ -64,9 +64,9 @@ export function UseCaseCardContent({
         <textarea
           value={useCase.description}
           onChange={(e) => onUpdate({ description: e.target.value })}
-          placeholder="What does this use case do?"
+          placeholder="Describe the steps — e.g. When a refund request arrives, verify the order, check policy, and send approval or denial"
           rows={1}
-          className="flex-1 min-w-0 px-2 py-1.5 bg-secondary/30 border border-primary/10 rounded-lg text-sm text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none"
+          className="flex-1 min-w-0 px-2 py-1.5 bg-secondary/30 border border-primary/10 rounded-lg text-sm text-foreground placeholder-muted-foreground/40 focus-ring resize-none"
         />
       </div>
     </div>

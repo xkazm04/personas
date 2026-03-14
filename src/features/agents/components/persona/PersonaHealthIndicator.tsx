@@ -2,22 +2,23 @@ import { Bot, Check, Minus, X } from 'lucide-react';
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import type { Persona } from '@/lib/types/types';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
+import { STATUS_PALETTE } from '@/lib/design/statusTokens';
 
 type HealthLevel = 'healthy' | 'degraded' | 'failing' | 'dormant';
 
 const HEALTH_RING_CLASS: Record<HealthLevel, string> = {
-  healthy: 'ring-2 ring-emerald-400/40',
-  degraded: 'border-2 border-dashed border-amber-400/40',
-  failing: 'ring-2 ring-red-400/50',
-  dormant: 'border-2 border-dashed border-muted-foreground/15',
+  healthy: `ring-2 ring-emerald-400/40`,
+  degraded: `border-2 border-dashed border-amber-400/40`,
+  failing: `ring-2 ring-red-400/50`,
+  dormant: `border-2 border-dashed border-muted-foreground/15`,
 };
 
 const HEALTH_DOT_COLOR: Record<string, string> = {
-  completed: 'bg-emerald-400',
-  failed: 'bg-red-400',
-  error: 'bg-red-400',
-  cancelled: 'bg-amber-400',
-  running: 'bg-blue-400',
+  completed: STATUS_PALETTE.success.icon,
+  failed: STATUS_PALETTE.error.icon,
+  error: STATUS_PALETTE.error.icon,
+  cancelled: STATUS_PALETTE.warning.icon,
+  running: STATUS_PALETTE.info.icon,
 };
 
 const HEALTH_LABEL: Record<HealthLevel, string> = {

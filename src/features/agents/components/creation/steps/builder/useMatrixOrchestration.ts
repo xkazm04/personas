@@ -178,5 +178,13 @@ export function useMatrixOrchestration({
     design,
     handleGenerate,
     handleRefine,
+    /** CLI output lines from the design stream */
+    outputLines: design.outputLines,
+    /** Design question awaiting user input */
+    designQuestion: design.question,
+    /** Current design phase (analyzing, awaiting-input, preview, etc.) */
+    designPhase: design.phase,
+    /** Answer a design question and continue generation */
+    answerQuestion: design.answerQuestion,
   };
 }

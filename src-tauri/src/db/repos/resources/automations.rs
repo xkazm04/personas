@@ -1,9 +1,12 @@
 use rusqlite::{params, Row};
 
+use std::str::FromStr;
+
 use crate::db::models::{
     AutomationRun, CreateAutomationInput, PersonaAutomation, UpdateAutomationInput,
 };
 use crate::db::DbPool;
+use crate::engine::lifecycle::AutomationDeployStatus;
 use crate::error::AppError;
 
 fn row_to_automation(row: &Row) -> rusqlite::Result<PersonaAutomation> {
@@ -25,7 +28,10 @@ fn row_to_automation(row: &Row) -> rusqlite::Result<PersonaAutomation> {
         timeout_ms: row.get::<_, Option<i64>>("timeout_ms")?.unwrap_or(30000),
         retry_count: row.get::<_, Option<i32>>("retry_count")?.unwrap_or(1),
         fallback_mode: row.get::<_, Option<String>>("fallback_mode")?.unwrap_or_else(|| "connector".into()),
-        deployment_status: row.get::<_, Option<String>>("deployment_status")?.unwrap_or_else(|| "draft".into()),
+        deployment_status: AutomationDeployStatus::from_str(
+            &row.get::<_, Option<String>>("deployment_status")?.unwrap_or_else(|| "draft".into()),
+        )
+        .unwrap_or(AutomationDeployStatus::Draft),
         last_triggered_at: row.get("last_triggered_at")?,
         last_result_status: row.get("last_result_status")?,
         error_message: row.get("error_message")?,
@@ -130,10 +136,16 @@ pub fn update(
             return Err(AppError::Validation("Name cannot be empty".into()));
         }
     }
-    if let Some(ref status) = input.deployment_status {
-        let valid = ["draft", "active", "paused", "error"];
-        if !valid.contains(&status.as_str()) {
-            return Err(AppError::Validation(format!("Invalid deployment_status '{status}'")));
+    // Validate transition if both current and new status are known
+    if let Some(ref new_status) = input.deployment_status {
+        let current = get_by_id(pool, id)?;
+        if !current.deployment_status.can_transition_to(*new_status)
+            && current.deployment_status != *new_status
+        {
+            return Err(AppError::Validation(format!(
+                "Invalid automation transition: '{}' -> '{}'",
+                current.deployment_status, new_status
+            )));
         }
     }
 
@@ -184,7 +196,7 @@ pub fn update(
     if let Some(ref v) = input.timeout_ms { param_values.push(Box::new(*v)); }
     if let Some(ref v) = input.retry_count { param_values.push(Box::new(*v)); }
     if let Some(ref v) = input.fallback_mode { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.deployment_status { param_values.push(Box::new(v.clone())); }
+    if let Some(ref v) = input.deployment_status { param_values.push(Box::new(v.as_str().to_string())); }
     if let Some(ref v) = input.error_message { param_values.push(Box::new(v.clone())); }
     param_values.push(Box::new(id.to_string()));
 
@@ -199,6 +211,50 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let rows = conn.execute("DELETE FROM persona_automations WHERE id = ?1", params![id])?;
     Ok(rows > 0)
+}
+
+/// Returns a summary of resources affected by deleting this automation.
+pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, AppError> {
+    let conn = pool.get()?;
+    let mut impacts: Vec<(String, String)> = Vec::new();
+
+    // Check if automation is active
+    let status: Option<String> = conn
+        .query_row(
+            "SELECT deployment_status FROM persona_automations WHERE id = ?1",
+            params![id],
+            |r| r.get(0),
+        )
+        .ok();
+    if status.as_deref() == Some("active") {
+        impacts.push(("status".into(), "This automation is currently active and will stop running".into()));
+    }
+
+    // Running automation runs
+    let running_runs: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM automation_runs WHERE automation_id = ?1 AND status IN ('running', 'pending')",
+            params![id],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    if running_runs > 0 {
+        impacts.push(("run".into(), format!("{running_runs} in-progress run(s) will be orphaned")));
+    }
+
+    // Historical runs that will be deleted
+    let total_runs: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM automation_runs WHERE automation_id = ?1",
+            params![id],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    if total_runs > 0 {
+        impacts.push(("history".into(), format!("{total_runs} historical run(s) will be deleted")));
+    }
+
+    Ok(impacts)
 }
 
 /// Update last_triggered_at and last_result_status after a run completes.

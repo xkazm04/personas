@@ -54,7 +54,7 @@ export function TableListSidebar({
               value={filter}
               onChange={(e) => onFilterChange(e.target.value)}
               placeholder={isRedis ? 'Filter keys...' : 'Filter tables...'}
-              className="w-full pl-7 pr-2 py-1.5 rounded-xl bg-secondary/30 border border-primary/10 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
+              className="w-full pl-7 pr-2 py-1.5 rounded-xl bg-secondary/30 border border-primary/10 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
             />
           </div>
           <button

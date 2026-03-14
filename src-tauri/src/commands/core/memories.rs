@@ -401,11 +401,9 @@ pub fn seed_mock_memory(
     require_auth_sync(&state)?;
 
     let personas = crate::db::repos::core::personas::get_all(&state.db)?;
-    if personas.is_empty() {
-        return Err(AppError::Validation("No personas exist. Create an agent first.".into()));
-    }
-    let idx = (chrono::Utc::now().timestamp_millis() as usize) % personas.len();
-    let persona_id = personas[idx].id.clone();
+    let idx = (chrono::Utc::now().timestamp_millis() as usize) % std::cmp::max(personas.len(), 1);
+    let persona_id = personas.get(idx).map(|p| p.id.clone())
+        .unwrap_or_else(|| "mock-persona".to_string());
 
     let t = (chrono::Utc::now().timestamp_millis() as usize) / 7; // vary selection
     let input = CreatePersonaMemoryInput {
@@ -418,7 +416,12 @@ pub fn seed_mock_memory(
         tags: Some(MOCK_MEMORY_TAGS[t % MOCK_MEMORY_TAGS.len()].to_string()),
     };
 
-    repo::create(&state.db, input)
+    // Disable FK checks for dev seed (persona may not exist)
+    let conn = state.db.get()?;
+    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
+    let result = repo::create(&state.db, input);
+    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+    result
 }
 
 /// Extract the first top-level JSON array from mixed text output.

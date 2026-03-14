@@ -1,4 +1,5 @@
 import { Loader2, Lock, Save, Info } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { VaultStatus } from "@/api/vault/credentials";
 
 import type { CredentialTemplateField } from '@/lib/types/types';
@@ -45,18 +46,20 @@ export function FormActions({
           >
             Cancel
           </button>
-          <button
-            onClick={onSave}
-            disabled={saveDisabled}
-            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-lg shadow-primary/20 disabled:opacity-45 disabled:cursor-not-allowed"
-          >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            {isSaving ? 'Saving...' : 'Save Credential'}
-          </button>
+          <Tooltip content={saveDisabled && saveDisabledReason ? saveDisabledReason : ''} placement="top" delay={200}>
+            <button
+              onClick={onSave}
+              disabled={saveDisabled}
+              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-lg shadow-primary/20 disabled:opacity-45 disabled:cursor-not-allowed"
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {isSaving ? 'Saving...' : 'Save Credential'}
+            </button>
+          </Tooltip>
         </div>
       </div>
 

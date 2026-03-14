@@ -4,6 +4,7 @@ import {
 import type { UnifiedDeployment, SortKey, SortDir } from './deploymentTypes';
 import { statusBadge, targetBadge, timeAgo } from './deploymentTypes';
 import { statusIcon, SortHeader, ActionButton } from './DeploymentSubComponents';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
 interface DeploymentTableProps {
   displayRows: UnifiedDeployment[];
@@ -113,9 +114,9 @@ export function DeploymentTable({
                       onClick={() => handleAction(row.id, () => gitlabUndeployAgent(row._gitlabProjectId!, row._gitlab!.id))}
                     />
                   )}
-                  {row.webUrl && (
+                  {sanitizeExternalUrl(row.webUrl) && (
                     <a
-                      href={row.webUrl}
+                      href={sanitizeExternalUrl(row.webUrl)!}
                       target="_blank"
                       rel="noopener noreferrer"
                       title={row.target === 'gitlab' ? 'Open in GitLab' : 'Open endpoint'}

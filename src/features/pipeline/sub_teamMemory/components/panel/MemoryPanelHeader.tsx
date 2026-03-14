@@ -1,6 +1,5 @@
 import { Brain, ChevronDown, List, GitCommitVertical, GitCompareArrows } from 'lucide-react';
-
-type ViewMode = 'list' | 'timeline' | 'diff';
+import type { TeamMemoryViewMode as ViewMode } from '@/lib/constants/uiModes';
 
 interface MemoryPanelHeaderProps {
   total: number;

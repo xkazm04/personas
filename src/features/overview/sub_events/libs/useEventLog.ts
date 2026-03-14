@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
-import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import type { PersonaEvent } from '@/lib/types/types';
 
 export type SortDirection = 'desc' | 'asc';
@@ -21,7 +21,8 @@ export function useEventLog() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [page, setPage] = useState(1);
   const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
-  const { selectedPersonaId, setSelectedPersonaId: setPersonaId } = useOverviewFilters();
+  const { selectedPersonaId } = useOverviewFilterValues();
+  const { setSelectedPersonaId: setPersonaId } = useOverviewFilterActions();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 

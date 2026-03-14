@@ -137,7 +137,7 @@ export const executeDesktopBridge = (
   invoke<BridgeActionResult>("execute_desktop_bridge", {
     bridge,
     action,
-    config: config ?? null,
+    config: config,
   });
 
 /** Execute a multi-step desktop plan. */
@@ -147,7 +147,7 @@ export const executeDesktopPlan = (
 ) =>
   invoke<PlanExecutionResult>("execute_desktop_plan", {
     plan,
-    config: config ?? null,
+    config: config,
   });
 
 /** Get the current runtime execution status. */

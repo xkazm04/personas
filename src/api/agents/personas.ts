@@ -2,8 +2,20 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaSummary } from "@/lib/bindings/PersonaSummary";
+import type { PersonaToolDefinition } from "@/lib/bindings/PersonaToolDefinition";
+import type { PersonaTrigger } from "@/lib/bindings/PersonaTrigger";
+import type { PersonaEventSubscription } from "@/lib/bindings/PersonaEventSubscription";
+import type { PersonaAutomation } from "@/lib/bindings/PersonaAutomation";
 import type { CreatePersonaInput } from "@/lib/bindings/CreatePersonaInput";
 import type { UpdatePersonaInput } from "@/lib/bindings/UpdatePersonaInput";
+
+/** Batched persona detail returned by the single `get_persona_detail` IPC command. */
+export interface PersonaDetailResponse extends Persona {
+  tools: PersonaToolDefinition[];
+  triggers: PersonaTrigger[];
+  subscriptions: PersonaEventSubscription[];
+  automations: PersonaAutomation[];
+}
 
 // ============================================================================
 // Personas
@@ -27,8 +39,20 @@ export const duplicatePersona = (sourceId: string) =>
 export const deletePersona = (id: string) =>
   invoke<boolean>("delete_persona", { id });
 
+export interface BlastRadiusItem {
+  category: string;
+  description: string;
+}
+
+export const getPersonaBlastRadius = (id: string) =>
+  invoke<BlastRadiusItem[]>("persona_blast_radius", { id });
+
 export const getPersonaSummaries = () =>
   invoke<PersonaSummary[]>("get_persona_summaries");
+
+/** Single IPC call that returns the persona with all sub-resources. */
+export const getPersonaDetail = (id: string) =>
+  invoke<PersonaDetailResponse>("get_persona_detail", { id });
 
 // ============================================================================
 // Import / Export

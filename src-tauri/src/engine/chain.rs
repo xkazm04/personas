@@ -63,13 +63,28 @@ pub fn evaluate_chain_triggers(
     }
 
     for trigger in chain_triggers {
-        let config: serde_json::Value = match trigger
-            .config
-            .as_deref()
-            .and_then(|c| serde_json::from_str(c).ok())
-        {
-            Some(c) => c,
-            None => continue,
+        let config: serde_json::Value = match trigger.config.as_deref() {
+            Some(raw) => match serde_json::from_str(raw) {
+                Ok(c) => c,
+                Err(parse_err) => {
+                    tracing::warn!(
+                        trigger_id = %trigger.id,
+                        persona_id = %trigger.persona_id,
+                        raw_config = %raw,
+                        error = %parse_err,
+                        "Chain trigger skipped: config contains malformed JSON"
+                    );
+                    continue;
+                }
+            },
+            None => {
+                tracing::warn!(
+                    trigger_id = %trigger.id,
+                    persona_id = %trigger.persona_id,
+                    "Chain trigger skipped: config is empty"
+                );
+                continue;
+            }
         };
 
         // Cycle detection: skip if target persona was already visited in this chain

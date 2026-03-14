@@ -142,7 +142,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Summarize PR Changes"
-            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/50"
           />
         </div>
 
@@ -154,7 +154,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What does this recipe do?"
             rows={2}
-            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 resize-none"
+            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/50 resize-none"
           />
         </div>
 
@@ -164,7 +164,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
+            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:border-primary/50"
           >
             <option value="">None</option>
             {CATEGORIES.map((c) => (
@@ -186,7 +186,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
             onChange={(e) => setPromptTemplate(e.target.value)}
             placeholder={'You are a helpful assistant.\n\nAnalyze the following: {{input}}'}
             rows={10}
-            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 resize-y"
+            className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/50 resize-y"
           />
         </div>
 

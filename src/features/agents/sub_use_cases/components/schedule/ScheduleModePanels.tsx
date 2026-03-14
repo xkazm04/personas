@@ -80,10 +80,10 @@ export function CronPanel({ cronExpression, onCronChange, cronPreview, cronLoadi
           value={cronExpression}
           onChange={(e) => onCronChange(e.target.value)}
           placeholder="* * * * *  (min hour dom mon dow)"
-          className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 transition-all ${
+          className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 transition-all ${
             cronPreview && !cronPreview.valid
-              ? 'border-red-500/30 ring-1 ring-red-500/20 focus:ring-red-500/30'
-              : 'border-primary/20 focus:ring-amber-500/30'
+              ? 'border-red-500/30 ring-1 ring-red-500/20 focus-visible:ring-red-500/30'
+              : 'border-primary/20 focus-visible:ring-amber-500/30'
           }`}
         />
         {cronLoading && <Loader2 className="w-4 h-4 text-amber-400/60 animate-spin flex-shrink-0" />}

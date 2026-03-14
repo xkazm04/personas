@@ -62,7 +62,7 @@ export function RecipeCreateFlow({
               placeholder="e.g., List all open pull requests for a repository and summarize the changes..."
               rows={3}
               autoFocus
-              className="w-full rounded-xl border border-border/50 bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 resize-none"
+              className="w-full rounded-xl border border-border/50 bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50 resize-none"
             />
           </div>
 

@@ -2,6 +2,17 @@
 @import "highlight.js/styles/github-dark-dimmed.min.css";
 @import "./typography.css";
 
+/* -- Focus Ring Utility --
+   Standard focus-visible ring applied to all interactive elements.
+   Usage: class="focus-ring" on any button, input, link, or card action. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 1px var(--background),
+      0 0 0 3px color-mix(in srgb, var(--primary) 40%, transparent);
+  }
+}
 
 /* -- Custom Title Bar -- */
 .titlebar {
@@ -121,6 +132,13 @@
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
   --radius-pill: 9999px;
+
+  /* Elevation shadow tiers — 4-level depth hierarchy */
+  --shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.15);
+  --shadow-elevation-2: 0 2px 4px rgba(0, 0, 0, 0.35), 0 4px 8px rgba(0, 0, 0, 0.2);
+  --shadow-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.4), 0 8px 16px rgba(0, 0, 0, 0.25);
+  --shadow-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.5), 0 16px 32px rgba(0, 0, 0, 0.3);
+
   --duration-instant: 50ms;
   --duration-fast: 150ms;
   --duration-normal: 250ms;
@@ -183,6 +201,12 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 
+  /* Elevation shadow tiers */
+  --shadow-elevation-1: var(--shadow-elevation-1);
+  --shadow-elevation-2: var(--shadow-elevation-2);
+  --shadow-elevation-3: var(--shadow-elevation-3);
+  --shadow-elevation-4: var(--shadow-elevation-4);
+
   /* Ultra-wide breakpoints */
   --breakpoint-3xl: 1920px;
   --breakpoint-4xl: 2560px;
@@ -232,6 +256,30 @@ input[type="number"] {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
+}
+
+/* z-10 overlays: dropdowns, tooltips, popups */
+.glass-sm {
+  background: color-mix(in srgb, var(--background) 70%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+/* z-20 overlays: modals, command palette, context menus */
+.glass-md {
+  background: color-mix(in srgb, var(--background) 80%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--primary) 15%, transparent);
+}
+
+/* z-30 overlays: critical dialogs, blocking overlays */
+.glass-lg {
+  background: color-mix(in srgb, var(--background) 85%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
 /* -- Button Size Presets --
@@ -470,6 +518,10 @@ input[type="number"] {
   --status-pending: #b45309;
   --status-processing: #2563eb;
   --status-neutral: #44444f;
+  --shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-elevation-2: 0 2px 4px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.08);
+  --shadow-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.12), 0 16px 32px rgba(0, 0, 0, 0.1);
 }
 
 /* Light: Ice -- icy blue-white palette with cold linear feel */
@@ -506,6 +558,10 @@ input[type="number"] {
   --ice-shadow-lg: 0 8px 30px rgba(37, 99, 235, 0.10), 0 4px 8px rgba(37, 99, 235, 0.05);
   --ice-shadow-xl: 0 16px 50px rgba(37, 99, 235, 0.12), 0 8px 16px rgba(37, 99, 235, 0.06);
   --ice-glow: 0 0 20px rgba(56, 189, 248, 0.15), 0 0 60px rgba(37, 99, 235, 0.08);
+  --shadow-elevation-1: 0 1px 2px rgba(37, 99, 235, 0.05), 0 1px 3px rgba(37, 99, 235, 0.06);
+  --shadow-elevation-2: 0 2px 4px rgba(37, 99, 235, 0.06), 0 4px 8px rgba(37, 99, 235, 0.05);
+  --shadow-elevation-3: 0 4px 8px rgba(37, 99, 235, 0.08), 0 8px 16px rgba(37, 99, 235, 0.06);
+  --shadow-elevation-4: 0 8px 16px rgba(37, 99, 235, 0.1), 0 16px 32px rgba(37, 99, 235, 0.08);
 }
 
 [data-theme="light"] * {
@@ -588,6 +644,10 @@ input[type="number"] {
   --status-pending: #555555;
   --status-processing: #333333;
   --status-neutral: #555555;
+  --shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-elevation-2: 0 2px 4px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08);
+  --shadow-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.14), 0 16px 32px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="light-news"] * {

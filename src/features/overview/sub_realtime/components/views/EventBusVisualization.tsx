@@ -112,13 +112,16 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
     }
   }, [activeEvents, clearTimeouts, getSrc, getTgt, innerNodes]);
 
+  // Only run the cleanup timer when there are active return flows to expire.
+  const hasReturnFlows = returnFlows.length > 0;
   useEffect(() => {
+    if (!hasReturnFlows) return;
     const t = setInterval(() => {
       const now = Date.now();
       setReturnFlows(prev => { const next = prev.filter(f => now - f.startedAt < RETURN_FLOW_MS); return next.length !== prev.length ? next : prev; });
     }, 300);
     return () => clearInterval(t);
-  }, []);
+  }, [hasReturnFlows]);
 
   const hasTraffic = activeEvents.length > 0 || returnFlows.length > 0 || processingSet.size > 0;
 

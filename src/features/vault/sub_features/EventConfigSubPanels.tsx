@@ -86,7 +86,7 @@ export function CronScheduleConfig({
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="0 0 * * *"
-              className="flex-1 px-2 py-1 bg-background/50 border border-border/30 rounded-lg text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+              className="flex-1 px-2 py-1 bg-background/50 border border-border/30 rounded-lg text-sm font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/30"
             />
             <button
               onClick={() => { onUpdate({ cronExpression: draft }); setEditing(false); }}

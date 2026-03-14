@@ -44,7 +44,6 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   { id: 'events', icon: Zap, label: 'Events', simpleHidden: true },
   { id: 'knowledge', icon: Brain, label: 'Knowledge', simpleHidden: true },
   { id: 'sla', icon: Shield, label: 'SLA', simpleHidden: true },
-  { id: 'cron-agents', icon: Cpu, label: 'Cron Agents', simpleHidden: true },
   { id: 'schedules', icon: CalendarClock, label: 'Schedules', simpleHidden: true },
 ];
 

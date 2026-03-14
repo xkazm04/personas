@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { ChevronDown, Radio } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
-import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { UseCaseSubscriptions } from '@/features/agents/sub_use_cases/components/schedule/UseCaseSubscriptions';
@@ -12,10 +12,7 @@ export function UseCaseSubscriptionsSection() {
 
   const manager = useSubscriptionManager(selectedPersona);
 
-  const useCases = useMemo(
-    () => parseDesignContext(selectedPersona?.design_context).useCases ?? [],
-    [selectedPersona?.design_context],
-  );
+  const useCases = useSelectedUseCases();
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
 

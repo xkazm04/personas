@@ -32,7 +32,7 @@ impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for SqlitePragma
             "PRAGMA foreign_keys = ON;
              PRAGMA busy_timeout = 5000;
              PRAGMA synchronous = NORMAL;
-             PRAGMA cache_size = -8000;",
+             PRAGMA cache_size = -2000;",
         )?;
         Ok(())
     }
@@ -48,7 +48,7 @@ pub fn init_db(app_data_dir: &PathBuf) -> Result<DbPool, AppError> {
 
     let manager = SqliteConnectionManager::file(&db_path);
     let pool = Pool::builder()
-        .max_size(8)
+        .max_size(4)
         .connection_customizer(Box::new(SqlitePragmaCustomizer))
         .build(manager)?;
 
@@ -89,7 +89,7 @@ pub fn init_user_db(app_data_dir: &PathBuf) -> Result<UserDbPool, AppError> {
 
     let manager = SqliteConnectionManager::file(&db_path);
     let pool = Pool::builder()
-        .max_size(4)
+        .max_size(2)
         .connection_customizer(Box::new(SqlitePragmaCustomizer))
         .build(manager)?;
 

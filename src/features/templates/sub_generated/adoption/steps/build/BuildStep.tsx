@@ -122,7 +122,7 @@ function BuildQuestionnaire({
                     value={userAnswers[q.id] ?? q.default ?? ''}
                     onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
                     placeholder={q.default ?? 'Type your answer...'}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-primary/15 bg-background/60 text-foreground placeholder-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-primary/15 bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring transition-all"
                   />
                 )}
                 {q.type === 'boolean' && (

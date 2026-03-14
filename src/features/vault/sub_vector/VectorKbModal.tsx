@@ -131,17 +131,17 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
         {!loading && kb && (
           <>
             {visited.has('documents') && (
-              <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'documents' ? '' : 'hidden'}`}>
+              <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'documents' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
                 <DocumentsTab kb={kb} onRefresh={refreshKb} />
               </div>
             )}
             {visited.has('search') && (
-              <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'search' ? '' : 'hidden'}`}>
+              <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'search' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
                 <SearchTab kb={kb} />
               </div>
             )}
             {visited.has('settings') && (
-              <div className={`absolute inset-0 overflow-y-auto ${activeTab === 'settings' ? '' : 'hidden'}`}>
+              <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'settings' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
                 <SettingsTab kb={kb} />
               </div>
             )}

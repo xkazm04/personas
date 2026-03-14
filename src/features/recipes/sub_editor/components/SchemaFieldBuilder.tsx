@@ -58,13 +58,13 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
                   value={field.key}
                   onChange={(e) => updateField(index, { key: e.target.value })}
                   placeholder="key"
-                  className="w-full rounded-lg border border-border/60 bg-background/50 px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 font-mono"
+                  className="w-full rounded-lg border border-border/60 bg-background/50 px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50 font-mono"
                 />
 
                 <select
                   value={field.type}
                   onChange={(e) => updateField(index, { type: e.target.value })}
-                  className="w-full rounded-lg border border-border/60 bg-background/50 px-2 py-1.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                  className="w-full rounded-lg border border-border/60 bg-background/50 px-2 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:border-primary/50"
                 >
                   {FIELD_TYPES.map((t) => (
                     <option key={t} value={t}>{t}</option>
@@ -76,7 +76,7 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
                   value={field.label}
                   onChange={(e) => updateField(index, { label: e.target.value })}
                   placeholder="Label"
-                  className="w-full rounded-lg border border-border/60 bg-background/50 px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50"
+                  className="w-full rounded-lg border border-border/60 bg-background/50 px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50"
                 />
               </div>
 

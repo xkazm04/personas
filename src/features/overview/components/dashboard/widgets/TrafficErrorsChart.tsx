@@ -1,4 +1,5 @@
 import { TrendingUp } from 'lucide-react';
+import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
@@ -30,11 +31,11 @@ export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: Tra
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-cyan-400" />
-            <span className="text-sm text-muted-foreground/60">{totalTraffic}</span>
+            <AnimatedCounter value={totalTraffic} className="text-sm text-muted-foreground/60" formatFn={(v) => Math.round(v).toLocaleString()} />
           </div>
           <div className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-rose-400" />
-            <span className="text-sm text-muted-foreground/60">{totalErrors}</span>
+            <AnimatedCounter value={totalErrors} className="text-sm text-muted-foreground/60" formatFn={(v) => Math.round(v).toLocaleString()} />
           </div>
         </div>
       </div>

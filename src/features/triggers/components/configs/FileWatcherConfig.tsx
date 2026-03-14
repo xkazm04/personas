@@ -38,8 +38,8 @@ export function FileWatcherConfig({
               placeholder="C:\Users\me\projects or /home/me/src"
               aria-invalid={!!validationError}
               aria-describedby={validationError ? 'watch-paths-error' : undefined}
-              className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 transition-all ${
-                validationError ? 'border-red-500/30' : 'border-primary/15 focus:ring-orange-400/40'
+              className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 transition-all ${
+                validationError ? 'border-red-500/30' : 'border-primary/15 focus-visible:ring-orange-400/40'
               }`}
             />
             {watchPaths.length > 1 && (
@@ -88,7 +88,7 @@ export function FileWatcherConfig({
           value={globFilter}
           onChange={(e) => setGlobFilter(e.target.value)}
           placeholder="e.g. *.py, *.{ts,tsx}, Dockerfile"
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-orange-400/40 transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/40 transition-all"
         />
       </div>
     </div>

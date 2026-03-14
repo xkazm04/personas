@@ -51,7 +51,7 @@ export function AutomationTriggerStep({
         onChange={(e) => setDescription(e.target.value)}
         rows={4}
         autoFocus
-        className="w-full px-3.5 py-3 text-sm rounded-xl border border-border bg-secondary/20 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none"
+        className="w-full px-3.5 py-3 text-sm rounded-xl border border-border bg-secondary/20 text-foreground placeholder:text-muted-foreground/50 focus-ring resize-none"
         onKeyDown={(e) => {
           if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && canDesign) {
             e.preventDefault();

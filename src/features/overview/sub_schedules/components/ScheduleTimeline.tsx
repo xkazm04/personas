@@ -21,7 +21,7 @@ import SkippedRecoveryPanel from './SkippedRecoveryPanel';
 
 const ScheduleCalendar = lazy(() => import('./ScheduleCalendar'));
 
-type ViewMode = 'timeline' | 'grouped' | 'calendar';
+import type { ScheduleViewMode as ViewMode } from '@/lib/constants/uiModes';
 
 export default function ScheduleTimeline() {
   const cronAgents = useOverviewStore((s) => s.cronAgents);

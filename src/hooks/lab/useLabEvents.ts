@@ -33,9 +33,9 @@ const MODE_LABELS: Record<LabMode, string> = {
 function notifyTerminal(mode: LabMode, phase: string) {
   const label = MODE_LABELS[mode] ?? mode;
   if (phase === "completed") {
-    sendAppNotification(`Lab ${label} Complete`, `${label} test finished successfully.`).catch(() => {});
+    sendAppNotification(`Lab ${label} Complete`, `${label} test finished successfully.`).catch((err) => { console.warn('[lab] notification failed:', err); });
   } else if (phase === "failed") {
-    sendAppNotification(`Lab ${label} Failed`, `${label} test encountered an error.`).catch(() => {});
+    sendAppNotification(`Lab ${label} Failed`, `${label} test encountered an error.`).catch((err) => { console.warn('[lab] notification failed:', err); });
   }
 }
 

@@ -12,13 +12,13 @@ import type { ExecutionTrace } from "@/lib/bindings/ExecutionTrace";
 export const listExecutions = (personaId: string, limit?: number) =>
   invoke<PersonaExecution[]>("list_executions", {
     personaId,
-    limit: limit ?? null,
+    limit: limit,
   });
 
 export const listAllExecutions = (limit?: number, status?: string) =>
   invoke<GlobalExecutionRow[]>("list_all_executions", {
-    limit: limit ?? null,
-    status: status ?? null,
+    limit: limit,
+    status: status,
   });
 
 export const getExecution = (id: string, callerPersonaId: string) =>
@@ -36,10 +36,10 @@ export const executePersona = (
 ) =>
   invoke<PersonaExecution>("execute_persona", {
     personaId,
-    triggerId: triggerId ?? null,
-    inputData: inputData ?? null,
-    useCaseId: useCaseId ?? null,
-    continuation: continuation ?? null,
+    triggerId: triggerId,
+    inputData: inputData,
+    useCaseId: useCaseId,
+    continuation: continuation,
   });
 
 export const listExecutionsForUseCase = (
@@ -50,7 +50,7 @@ export const listExecutionsForUseCase = (
   invoke<PersonaExecution[]>("list_executions_for_use_case", {
     personaId,
     useCaseId,
-    limit: limit ?? null,
+    limit: limit,
   });
 
 export const getExecutionLog = (id: string, callerPersonaId: string) =>

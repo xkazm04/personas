@@ -13,6 +13,7 @@ use ts_rs::TS;
 
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::repos::resources::rotation as rotation_repo;
+use crate::engine::lifecycle::RotationEntryStatus;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -399,7 +400,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                     pool,
                     &policy.credential_id,
                     &policy.policy_type,
-                    "skipped",
+                    RotationEntryStatus::Skipped,
                     Some("Credential not found"),
                 );
                 continue;
@@ -423,7 +424,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                     pool,
                     &policy.credential_id,
                     &policy.policy_type,
-                    "success",
+                    RotationEntryStatus::Success,
                     Some(&detail),
                 );
                 let _ = rotation_repo::mark_rotated(pool, &policy.id);
@@ -466,7 +467,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                     pool,
                     &policy.credential_id,
                     &policy.policy_type,
-                    "failed",
+                    RotationEntryStatus::Failed,
                     Some(&msg),
                 );
 
@@ -504,7 +505,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                             pool,
                             &policy.credential_id,
                             "anomaly",
-                            "failed",
+                            RotationEntryStatus::Failed,
                             Some(&format!(
                                 "Policy disabled: permanent failure rate {:.0}% over 1h ({} samples). Last: {}",
                                 score.permanent_failure_rate_1h * 100.0,
@@ -526,7 +527,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                             pool,
                             &policy.credential_id,
                             "anomaly",
-                            "failed",
+                            RotationEntryStatus::Failed,
                             Some(&format!(
                                 "Permanent errors detected (rate {:.0}%). Scheduling rotation attempt.",
                                 score.permanent_failure_rate_1h * 100.0
@@ -559,7 +560,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                             pool,
                             &policy.credential_id,
                             "anomaly",
-                            "failed",
+                            RotationEntryStatus::Failed,
                             Some(&format!(
                                 "Sustained degradation: failure rate {:.0}% over 1h exceeds {:.0}% tolerance. Pre-emptive rotation scheduled.",
                                 score.failure_rate_1h * 100.0,
@@ -642,7 +643,7 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
                             pool,
                             &cred.id,
                             "anomaly",
-                            "failed",
+                            RotationEntryStatus::Failed,
                             Some("Credential suddenly failing after previous success -- possible revocation"),
                         );
                         tracing::warn!(
@@ -705,7 +706,7 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
                     pool,
                     &cred.id,
                     "anomaly",
-                    "failed",
+                    RotationEntryStatus::Failed,
                     Some(&detail),
                 );
                 tracing::warn!(
@@ -751,7 +752,7 @@ pub async fn rotate_now(
                 pool,
                 credential_id,
                 rotation_type,
-                "success",
+                RotationEntryStatus::Success,
                 Some(detail),
             );
             // Update all enabled policies for this credential
@@ -768,7 +769,7 @@ pub async fn rotate_now(
                 pool,
                 credential_id,
                 rotation_type,
-                "failed",
+                RotationEntryStatus::Failed,
                 Some(&e.to_string()),
             );
         }
@@ -837,7 +838,7 @@ pub struct RotationStatus {
     pub rotation_interval_days: Option<i32>,
     pub next_rotation_at: Option<String>,
     pub last_rotated_at: Option<String>,
-    pub last_status: Option<String>,
+    pub last_status: Option<RotationEntryStatus>,
     pub anomaly_detected: bool,
     pub consecutive_failures: u32,
     pub recent_history: Vec<crate::db::models::CredentialRotationEntry>,

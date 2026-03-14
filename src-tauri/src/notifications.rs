@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 use tauri_plugin_notification::NotificationExt;
 
+use crate::engine::crypto::SecureString;
+
 /// Per-persona notification preferences parsed from `notification_channels` JSON.
 #[derive(Debug, Deserialize)]
 struct NotificationPrefs {
@@ -103,11 +105,13 @@ async fn deliver_slack(
     title: &str,
     body: &str,
 ) -> Result<(), String> {
-    let webhook_url = ch
-        .config
-        .get("webhook_url")
-        .filter(|u| !u.is_empty())
-        .ok_or("Slack webhook_url not configured")?;
+    let webhook_url = SecureString::new(
+        ch.config
+            .get("webhook_url")
+            .filter(|u| !u.is_empty())
+            .ok_or("Slack webhook_url not configured")?
+            .clone(),
+    );
 
     let channel = ch.config.get("channel").cloned().unwrap_or_default();
     let text = if channel.is_empty() {
@@ -119,12 +123,13 @@ async fn deliver_slack(
     let payload = serde_json::json!({ "text": text });
 
     let resp = crate::SHARED_HTTP
-        .post(webhook_url)
+        .post(webhook_url.expose_secret())
         .json(&payload)
         .timeout(std::time::Duration::from_secs(10))
         .send()
         .await
         .map_err(|e| format!("Slack request failed: {e}"))?;
+    // `webhook_url` (SecureString) drops here -- memory is zeroized
 
     if !resp.status().is_success() {
         let status = resp.status();
@@ -140,11 +145,13 @@ async fn deliver_telegram(
     title: &str,
     body: &str,
 ) -> Result<(), String> {
-    let bot_token = ch
-        .config
-        .get("bot_token")
-        .filter(|t| !t.is_empty())
-        .ok_or("Telegram bot_token not configured")?;
+    let bot_token = SecureString::new(
+        ch.config
+            .get("bot_token")
+            .filter(|t| !t.is_empty())
+            .ok_or("Telegram bot_token not configured")?
+            .clone(),
+    );
     let chat_id = ch
         .config
         .get("chat_id")
@@ -152,7 +159,11 @@ async fn deliver_telegram(
         .ok_or("Telegram chat_id not configured")?;
 
     let text = format!("*{}*\n{}", title, body);
-    let url = format!("https://api.telegram.org/bot{bot_token}/sendMessage");
+    let url = format!(
+        "https://api.telegram.org/bot{}/sendMessage",
+        bot_token.expose_secret()
+    );
+    drop(bot_token); // zeroize token immediately after building the URL
 
     let resp = crate::SHARED_HTTP
         .post(&url)
@@ -196,17 +207,19 @@ async fn deliver_email(
         .unwrap_or_else(|| "noreply@personas.app".to_string());
 
     if let Some(api_key) = ch.config.get("sendgrid_api_key").filter(|k| !k.is_empty()) {
-        return send_via_sendgrid(api_key, &from, to, title, body).await;
+        let secret = SecureString::new(api_key.clone());
+        return send_via_sendgrid(&secret, &from, to, title, body).await;
     }
     if let Some(api_key) = ch.config.get("resend_api_key").filter(|k| !k.is_empty()) {
-        return send_via_resend(api_key, &from, to, title, body).await;
+        let secret = SecureString::new(api_key.clone());
+        return send_via_resend(&secret, &from, to, title, body).await;
     }
 
     Err("No email provider configured (set sendgrid_api_key or resend_api_key)".into())
 }
 
 async fn send_via_sendgrid(
-    api_key: &str,
+    api_key: &SecureString,
     from: &str,
     to: &str,
     subject: &str,
@@ -221,12 +234,13 @@ async fn send_via_sendgrid(
 
     let resp = crate::SHARED_HTTP
         .post("https://api.sendgrid.com/v3/mail/send")
-        .bearer_auth(api_key)
+        .bearer_auth(api_key.expose_secret())
         .json(&payload)
         .timeout(std::time::Duration::from_secs(10))
         .send()
         .await
         .map_err(|e| format!("SendGrid request failed: {e}"))?;
+    // `api_key` borrow ends here; caller's SecureString drops after return
 
     if !resp.status().is_success() {
         let status = resp.status();
@@ -237,7 +251,7 @@ async fn send_via_sendgrid(
 }
 
 async fn send_via_resend(
-    api_key: &str,
+    api_key: &SecureString,
     from: &str,
     to: &str,
     subject: &str,
@@ -252,12 +266,13 @@ async fn send_via_resend(
 
     let resp = crate::SHARED_HTTP
         .post("https://api.resend.com/emails")
-        .bearer_auth(api_key)
+        .bearer_auth(api_key.expose_secret())
         .json(&payload)
         .timeout(std::time::Duration::from_secs(10))
         .send()
         .await
         .map_err(|e| format!("Resend request failed: {e}"))?;
+    // `api_key` borrow ends here; caller's SecureString drops after return
 
     if !resp.status().is_success() {
         let status = resp.status();

@@ -6,6 +6,7 @@ use ts_rs::TS;
 use crate::db::models::{CreateTriggerInput, PersonaTrigger, UpdateTriggerInput};
 use crate::db::models::webhook_log::WebhookRequestLog;
 use crate::db::repos::resources::triggers as repo;
+use crate::db::repos::resources::tools as tool_repo;
 use crate::db::repos::resources::webhook_log as webhook_log_repo;
 use crate::db::repos::communication::events as event_repo;
 use crate::engine::chain;
@@ -1164,12 +1165,17 @@ pub fn seed_mock_cron_agent(
     require_auth_sync(&state)?;
 
     let personas = crate::db::repos::core::personas::get_all(&state.db)?;
-    if personas.is_empty() {
-        return Err(AppError::Validation("No personas exist. Create an agent first.".into()));
-    }
     let t = chrono::Utc::now().timestamp_millis() as usize;
-    let idx = t % personas.len();
-    let persona = &personas[idx];
+    let idx = t % std::cmp::max(personas.len(), 1);
+
+    // Fallback persona info when no real personas exist
+    let fallback_id = "mock-persona".to_string();
+    let fallback_name = "Mock Agent".to_string();
+    let (p_id, p_name, p_icon, p_color, p_enabled, p_headless) = if let Some(p) = personas.get(idx) {
+        (p.id.clone(), p.name.clone(), p.icon.clone(), p.color.clone(), p.enabled, p.headless)
+    } else {
+        (fallback_id, fallback_name, Some("\u{1F916}".to_string()), Some("#6366f1".to_string()), true, false)
+    };
 
     let cron_expr = MOCK_CRON_EXPRESSIONS[t % MOCK_CRON_EXPRESSIONS.len()];
     let config = serde_json::json!({ "cron": cron_expr }).to_string();
@@ -1179,22 +1185,24 @@ pub fn seed_mock_cron_agent(
     let next = (now + chrono::Duration::minutes(((t % 60) + 5) as i64)).to_rfc3339();
 
     let conn = state.db.get()?;
+    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
     conn.execute(
         "INSERT INTO persona_triggers
          (id, persona_id, trigger_type, config, enabled, last_triggered_at, next_trigger_at, created_at, updated_at)
          VALUES (?1, ?2, 'schedule', ?3, 1, ?4, ?5, ?4, ?4)",
-        rusqlite::params![trigger_id, persona.id, config, now_str, next],
+        rusqlite::params![trigger_id, p_id, config, now_str, next],
     )?;
+    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
 
     let description = cron_to_human(cron_expr);
 
     Ok(CronAgent {
-        persona_id: persona.id.clone(),
-        persona_name: persona.name.clone(),
-        persona_icon: persona.icon.clone(),
-        persona_color: persona.color.clone(),
-        persona_enabled: persona.enabled,
-        headless: persona.headless,
+        persona_id: p_id,
+        persona_name: p_name,
+        persona_icon: p_icon,
+        persona_color: p_color,
+        persona_enabled: p_enabled,
+        headless: p_headless,
         trigger_id,
         cron_expression: Some(cron_expr.to_string()),
         interval_seconds: None,
@@ -1328,4 +1336,96 @@ pub fn webhook_request_to_curl(
     }
 
     Ok(parts.join(" \\\n"))
+}
+
+// =============================================================================
+// Config warnings (chain triggers + tool kind ambiguity)
+// =============================================================================
+
+/// A config-level warning surfaced to the frontend health check system.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct ConfigWarning {
+    pub id: String,
+    pub severity: String,
+    pub category: String,
+    pub description: String,
+}
+
+/// Validate chain trigger configs and tool kind for a persona, returning
+/// any warnings. Used by the frontend health check to surface silent failures.
+#[tauri::command]
+pub fn get_persona_config_warnings(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<Vec<ConfigWarning>, AppError> {
+    require_auth_sync(&state)?;
+    let mut warnings: Vec<ConfigWarning> = Vec::new();
+
+    // 1. Check chain trigger configs for malformed JSON
+    let triggers = repo::get_by_persona_id(&state.db, &persona_id)?;
+    for trigger in &triggers {
+        if trigger.trigger_type != "chain" {
+            continue;
+        }
+        match trigger.config.as_deref() {
+            Some(raw) => {
+                if let Err(e) = serde_json::from_str::<serde_json::Value>(raw) {
+                    warnings.push(ConfigWarning {
+                        id: format!("chain_parse_{}", trigger.id),
+                        severity: "warning".into(),
+                        category: "chain_trigger".into(),
+                        description: format!(
+                            "Chain trigger '{}' has malformed config JSON: {}",
+                            trigger.id, e
+                        ),
+                    });
+                }
+            }
+            None => {
+                warnings.push(ConfigWarning {
+                    id: format!("chain_empty_{}", trigger.id),
+                    severity: "warning".into(),
+                    category: "chain_trigger".into(),
+                    description: format!(
+                        "Chain trigger '{}' has no config — it will be silently skipped at runtime",
+                        trigger.id
+                    ),
+                });
+            }
+        }
+    }
+
+    // 2. Check tool kind ambiguity (both script_path and implementation_guide set)
+    let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
+    for tool in &tools {
+        if tool.category == "automation" {
+            continue;
+        }
+        let has_script = !tool.script_path.is_empty();
+        let has_api = tool.implementation_guide.as_ref().is_some_and(|g| !g.is_empty());
+        if has_script && has_api {
+            warnings.push(ConfigWarning {
+                id: format!("tool_conflict_{}", tool.id),
+                severity: "warning".into(),
+                category: "tool_config".into(),
+                description: format!(
+                    "Tool '{}' has both script_path and implementation_guide set. Remove one to resolve the ambiguity.",
+                    tool.name
+                ),
+            });
+        } else if !has_script && !has_api {
+            warnings.push(ConfigWarning {
+                id: format!("tool_no_strategy_{}", tool.id),
+                severity: "warning".into(),
+                category: "tool_config".into(),
+                description: format!(
+                    "Tool '{}' has no execution strategy: no script_path and no implementation_guide",
+                    tool.name
+                ),
+            });
+        }
+    }
+
+    Ok(warnings)
 }

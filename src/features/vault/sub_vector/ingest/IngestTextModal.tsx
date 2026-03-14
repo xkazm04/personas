@@ -64,7 +64,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Product Requirements, Meeting Notes..."
-            className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/40 transition-colors"
+            className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
             autoFocus
           />
         </div>
@@ -81,7 +81,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
             onChange={(e) => setText(e.target.value)}
             placeholder="Paste your text content here..."
             rows={12}
-            className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/40 transition-colors resize-none font-mono"
+            className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors resize-none font-mono"
           />
         </div>
 

@@ -102,6 +102,40 @@ pub fn get_usage_stats(
     Ok(row)
 }
 
+/// Convenience wrapper to log a credential decryption event.
+///
+/// `caller` identifies the subsystem that triggered the decryption
+/// (e.g. "api_proxy", "healthcheck", "db_query").
+pub fn log_decrypt(
+    pool: &DbPool,
+    credential_id: &str,
+    credential_name: &str,
+    caller: &str,
+    persona_id: Option<&str>,
+    persona_name: Option<&str>,
+) -> Result<(), AppError> {
+    insert(
+        pool,
+        credential_id,
+        credential_name,
+        "decrypt",
+        persona_id,
+        persona_name,
+        Some(caller),
+    )
+}
+
+/// Delete audit log entries older than the given number of days.
+/// Returns the number of rows deleted.
+pub fn cleanup_old_entries(pool: &DbPool, retention_days: i64) -> Result<usize, AppError> {
+    let conn = pool.get()?;
+    let deleted = conn.execute(
+        "DELETE FROM credential_audit_log WHERE created_at < datetime('now', ?1)",
+        params![format!("-{retention_days} days")],
+    )?;
+    Ok(deleted)
+}
+
 /// Get all audit log entries across all credentials, newest first.
 pub fn get_all(
     pool: &DbPool,

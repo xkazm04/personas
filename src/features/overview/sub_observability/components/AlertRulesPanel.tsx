@@ -54,7 +54,7 @@ function RuleForm({
         value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
         placeholder="Rule name (e.g. High error rate)"
-        className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
+        className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
       />
 
       {/* Metric + Operator + Threshold */}
@@ -62,7 +62,7 @@ function RuleForm({
         <select
           value={form.metric}
           onChange={(e) => setForm({ ...form, metric: e.target.value as AlertMetric })}
-          className="px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus:outline-none"
+          className="px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none"
         >
           {ALERT_METRIC_OPTIONS.map(m => (
             <option key={m.value} value={m.value}>{m.label}</option>
@@ -72,7 +72,7 @@ function RuleForm({
         <select
           value={form.operator}
           onChange={(e) => setForm({ ...form, operator: e.target.value as AlertOperator })}
-          className="px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus:outline-none w-16"
+          className="px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none w-16"
         >
           <option value=">">&gt;</option>
           <option value="<">&lt;</option>
@@ -85,7 +85,7 @@ function RuleForm({
             type="number"
             value={form.threshold}
             onChange={(e) => setForm({ ...form, threshold: e.target.value })}
-            className="w-24 px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus:outline-none pr-6"
+            className="w-24 px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none pr-6"
             step="any"
           />
           {metricInfo?.unit && (
@@ -101,7 +101,7 @@ function RuleForm({
         <select
           value={form.severity}
           onChange={(e) => setForm({ ...form, severity: e.target.value as AlertSeverity })}
-          className="px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus:outline-none"
+          className="px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none"
         >
           {ALERT_SEVERITY_OPTIONS.map(s => (
             <option key={s.value} value={s.value}>{s.label}</option>
@@ -111,7 +111,7 @@ function RuleForm({
         <select
           value={form.personaId ?? '__global__'}
           onChange={(e) => setForm({ ...form, personaId: e.target.value === '__global__' ? null : e.target.value })}
-          className="px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus:outline-none flex-1 min-w-[120px]"
+          className="px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none flex-1 min-w-[120px]"
         >
           <option value="__global__">All agents (global)</option>
           {personas.map(p => (

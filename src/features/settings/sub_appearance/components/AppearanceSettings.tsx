@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback } from 'react';
-import { Check, Palette, Type } from 'lucide-react';
-import { useThemeStore, THEMES, TEXT_SCALES } from '@/stores/themeStore';
-import type { ThemeId, ThemeDefinition, TextScale } from '@/stores/themeStore';
+import { Check, Globe, Palette, Type } from 'lucide-react';
+import { useThemeStore, THEMES, TEXT_SCALES, customThemeDef } from '@/stores/themeStore';
+import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode } from '@/stores/themeStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
+import CustomThemeCreator from './CustomThemeCreator';
 
 function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
   const { backgroundSample, foregroundSample, primaryColor, accentColor } = theme;
@@ -81,14 +82,33 @@ function ThemeSwatch({ theme, active, onSelect }: { theme: ThemeDefinition; acti
   );
 }
 
+const TIMEZONE_OPTIONS: Array<{ value: string; label: string; description: string }> = [
+  { value: 'local', label: 'Local', description: 'Browser timezone' },
+  { value: 'utc', label: 'UTC', description: 'Coordinated Universal Time' },
+  { value: 'America/New_York', label: 'US Eastern', description: 'ET (UTC-5/-4)' },
+  { value: 'America/Chicago', label: 'US Central', description: 'CT (UTC-6/-5)' },
+  { value: 'America/Los_Angeles', label: 'US Pacific', description: 'PT (UTC-8/-7)' },
+  { value: 'Europe/London', label: 'London', description: 'GMT/BST (UTC+0/+1)' },
+  { value: 'Europe/Prague', label: 'Prague', description: 'CET (UTC+1/+2)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo', description: 'JST (UTC+9)' },
+];
+
 export default function AppearanceSettings() {
   const themeId = useThemeStore((s) => s.themeId);
   const setTheme = useThemeStore((s) => s.setTheme);
   const textScale = useThemeStore((s) => s.textScale);
   const setTextScale = useThemeStore((s) => s.setTextScale);
+  const timezone = useThemeStore((s) => s.timezone);
+  const setTimezone = useThemeStore((s) => s.setTimezone);
 
+  const customTheme = useThemeStore((s) => s.customTheme);
+
+  const customDef = customTheme ? customThemeDef(customTheme) : null;
   const darkThemes = THEMES.filter((t) => !t.isLight);
   const lightThemes = THEMES.filter((t) => t.isLight);
+  // Append custom theme swatch to the appropriate group
+  const darkWithCustom = customDef && !customDef.isLight ? [...darkThemes, customDef] : darkThemes;
+  const lightWithCustom = customDef && customDef.isLight ? [...lightThemes, customDef] : lightThemes;
 
   return (
     <ContentBox>
@@ -105,7 +125,7 @@ export default function AppearanceSettings() {
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
             <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Dark</h2>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
-              {darkThemes.map((t) => (
+              {darkWithCustom.map((t) => (
                 <ThemeSwatch
                   key={t.id}
                   theme={t}
@@ -120,7 +140,7 @@ export default function AppearanceSettings() {
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
             <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Light</h2>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
-              {lightThemes.map((t) => (
+              {lightWithCustom.map((t) => (
                 <ThemeSwatch
                   key={t.id}
                   theme={t}
@@ -130,6 +150,9 @@ export default function AppearanceSettings() {
               ))}
             </div>
           </div>
+
+          {/* Custom theme creator */}
+          <CustomThemeCreator />
 
           {/* Text sizing */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
@@ -165,6 +188,46 @@ export default function AppearanceSettings() {
                     </span>
                     <span className="text-[11px] text-muted-foreground/50">
                       {scale.description}
+                    </span>
+                    {isActive && (
+                      <div className="absolute top-2 right-2">
+                        <Check className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                    )}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Timezone */}
+          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+            <div className="flex items-center gap-2.5">
+              <Globe className="w-4 h-4 text-muted-foreground/70" />
+              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Timezone</h2>
+            </div>
+            <p className="text-xs text-muted-foreground/60">
+              Controls how schedule times and cron expressions are displayed throughout the app.
+            </p>
+            <div className="grid grid-cols-2 2xl:grid-cols-3 gap-3">
+              {TIMEZONE_OPTIONS.map((tz) => {
+                const isActive = timezone === tz.value;
+                return (
+                  <Button
+                    variant="ghost"
+                    key={tz.value}
+                    onClick={() => setTimezone(tz.value as TimezoneMode)}
+                    className={`relative flex flex-col items-center gap-1.5 p-4 rounded-xl border ${
+                      isActive
+                        ? 'border-primary/30 bg-primary/5'
+                        : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                    }`}
+                  >
+                    <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>
+                      {tz.label}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground/50">
+                      {tz.description}
                     </span>
                     {isActive && (
                       <div className="absolute top-2 right-2">

@@ -9,8 +9,7 @@ import MemoryPanelList from './MemoryPanelList';
 import AddTeamMemoryForm from './AddTeamMemoryForm';
 import MemoryTimeline from '../timeline/MemoryTimeline';
 import RunDiffView from '../diff/RunDiffView';
-
-type ViewMode = 'list' | 'timeline' | 'diff';
+import type { TeamMemoryViewMode as ViewMode } from '@/lib/constants/uiModes';
 
 interface TeamMemoryPanelProps {
   teamId: string;

@@ -78,8 +78,8 @@ const knowledgeInjectionMiddleware: PipelineMiddleware<'validate'> = async (
         };
       }
     }
-  } catch {
-    // intentional: non-critical -- knowledge query failure, continue without injection
+  } catch (err) {
+    console.warn('[knowledgeMiddleware] Knowledge injection failed, continuing without:', err);
   }
 
   return payload;

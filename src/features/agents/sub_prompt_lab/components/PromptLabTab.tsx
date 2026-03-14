@@ -3,8 +3,7 @@ import {
   Shield, ArrowLeftRight, TrendingUp,
   ArrowUpDown, ChevronDown, ChevronRight,
 } from 'lucide-react';
-import { VersionItem, DiffViewer } from '@/features/agents/sub_lab_shared';
-import { AbTestPanel } from './AbTestPanel';
+import { VersionItem, DiffViewer } from '@/features/agents/sub_lab/shared';
 import { AutoRollbackSettings } from './AutoRollbackSettings';
 import { PromptPerformanceDashboard } from './performance/PromptPerformanceDashboard';
 import { usePromptVersions } from '../libs/usePromptVersions';
@@ -12,10 +11,21 @@ import { useState } from 'react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { Button } from '@/features/shared/components/buttons';
+import { useAgentStore } from '@/stores/agentStore';
+import { useSystemStore } from '@/stores/systemStore';
 
 export function PromptLabTab() {
   const pv = usePromptVersions();
-  const [activePanel, setActivePanel] = useState<'diff' | 'ab-test' | 'rollback' | 'performance'>('diff');
+  const [activePanel, setActivePanel] = useState<'diff' | 'rollback' | 'performance'>('diff');
+  const setLabMode = useAgentStore((s) => s.setLabMode);
+  const setAbPreselect = useAgentStore((s) => s.setAbPreselect);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+
+  const handleOpenLabAb = () => {
+    setAbPreselect(pv.compareAId, pv.compareBId);
+    setEditorTab('lab');
+    setLabMode('ab');
+  };
 
   if (!pv.personaId) {
     return <div className="text-sm text-muted-foreground/60 text-center py-8">No persona selected</div>;
@@ -142,7 +152,6 @@ export function PromptLabTab() {
         <div className="flex items-center gap-1 mb-3 flex-shrink-0">
           {[
             { id: 'diff' as const, label: 'Compare', icon: ArrowLeftRight },
-            { id: 'ab-test' as const, label: 'A/B Test', icon: FlaskConical },
             { id: 'rollback' as const, label: 'Health', icon: Shield },
             { id: 'performance' as const, label: 'Performance', icon: TrendingUp },
           ].map((tab) => (
@@ -167,7 +176,18 @@ export function PromptLabTab() {
         <div className="flex-1 overflow-y-auto">
           {activePanel === 'diff' && (
             pv.compareA && pv.compareB ? (
-              <DiffViewer versionA={pv.compareA} versionB={pv.compareB} />
+              <div className="space-y-3">
+                <DiffViewer versionA={pv.compareA} versionB={pv.compareB} />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<FlaskConical className="w-3.5 h-3.5" />}
+                  onClick={handleOpenLabAb}
+                  className="bg-primary/10 text-primary/80 hover:bg-primary/15"
+                >
+                  Run in Lab A/B Test
+                </Button>
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-16 space-y-3">
                 <div className="w-12 h-12 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center">
@@ -200,7 +220,6 @@ export function PromptLabTab() {
               </div>
             )
           )}
-          {activePanel === 'ab-test' && <AbTestPanel personaId={pv.personaId} compareA={pv.compareA} compareB={pv.compareB} />}
           {activePanel === 'rollback' && <AutoRollbackSettings personaId={pv.personaId} />}
           {activePanel === 'performance' && <PromptPerformanceDashboard personaId={pv.personaId} />}
         </div>

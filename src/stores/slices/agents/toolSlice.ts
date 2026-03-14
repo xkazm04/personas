@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import type {
   PersonaToolDefinition,
   ToolUsageSummary,
@@ -9,6 +9,7 @@ import type {
 } from "@/lib/types/types";
 import { assignTool, bulkAssignTools, bulkUnassignTools, getToolUsageByPersona, getToolUsageOverTime, getToolUsageSummary, listToolDefinitions, unassignTool } from "@/api/agents/tools";
 
+const TOOL_DEFS_TTL_MS = 60_000; // 60 seconds
 
 export interface ToolSlice {
   // State
@@ -16,9 +17,15 @@ export interface ToolSlice {
   toolUsageSummary: ToolUsageSummary[];
   toolUsageOverTime: ToolUsageOverTime[];
   toolUsageByPersona: PersonaUsageSummary[];
+  /** @internal Timestamp of last successful tool definitions fetch */
+  _toolDefsCachedAt: number;
 
   // Actions
   fetchToolDefinitions: () => Promise<void>;
+  /** Returns cached tool definitions if fresh (<60s), otherwise fetches. */
+  getToolDefinitions: () => Promise<PersonaToolDefinition[]>;
+  /** Marks the tool definitions cache as stale so the next read re-fetches. */
+  invalidateToolDefCache: () => void;
   assignTool: (personaId: string, toolId: string) => Promise<void>;
   removeTool: (personaId: string, toolId: string) => Promise<void>;
   bulkAssignTools: (personaId: string, toolIds: string[]) => Promise<void>;
@@ -31,32 +38,48 @@ export const createToolSlice: StateCreator<AgentStore, [], [], ToolSlice> = (set
   toolUsageSummary: [],
   toolUsageOverTime: [],
   toolUsageByPersona: [],
+  _toolDefsCachedAt: 0,
 
   fetchToolDefinitions: async () => {
     try {
       const toolDefinitions = await listToolDefinitions();
-      set({ toolDefinitions });
+      set({ toolDefinitions, _toolDefsCachedAt: Date.now() });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch tools") });
+      reportError(err, "Failed to fetch tools", set);
       throw err;
     }
+  },
+
+  getToolDefinitions: async () => {
+    const { toolDefinitions, _toolDefsCachedAt } = get();
+    if (toolDefinitions.length > 0 && Date.now() - _toolDefsCachedAt < TOOL_DEFS_TTL_MS) {
+      return toolDefinitions;
+    }
+    await get().fetchToolDefinitions();
+    return get().toolDefinitions;
+  },
+
+  invalidateToolDefCache: () => {
+    set({ _toolDefsCachedAt: 0 });
   },
 
   assignTool: async (personaId, toolId) => {
     try {
       await assignTool(personaId, toolId);
-      get().fetchDetail(personaId);
+      get().invalidateToolDefCache();
+      get().fetchDetail(personaId).catch(() => {});
     } catch (err) {
-      set({ error: errMsg(err, "Failed to assign tool") });
+      reportError(err, "Failed to assign tool", set);
     }
   },
 
   removeTool: async (personaId, toolId) => {
     try {
       await unassignTool(personaId, toolId);
-      get().fetchDetail(personaId);
+      get().invalidateToolDefCache();
+      get().fetchDetail(personaId).catch(() => {});
     } catch (err) {
-      set({ error: errMsg(err, "Failed to remove tool") });
+      reportError(err, "Failed to remove tool", set);
     }
   },
 
@@ -64,9 +87,10 @@ export const createToolSlice: StateCreator<AgentStore, [], [], ToolSlice> = (set
     try {
       await bulkAssignTools(personaId, toolIds);
     } catch (err) {
-      set({ error: errMsg(err, "Failed to assign tools") });
+      reportError(err, "Failed to assign tools", set);
     } finally {
-      get().fetchDetail(personaId);
+      get().invalidateToolDefCache();
+      get().fetchDetail(personaId).catch(() => {});
     }
   },
 
@@ -74,9 +98,10 @@ export const createToolSlice: StateCreator<AgentStore, [], [], ToolSlice> = (set
     try {
       await bulkUnassignTools(personaId, toolIds);
     } catch (err) {
-      set({ error: errMsg(err, "Failed to remove tools") });
+      reportError(err, "Failed to remove tools", set);
     } finally {
-      get().fetchDetail(personaId);
+      get().invalidateToolDefCache();
+      get().fetchDetail(personaId).catch(() => {});
     }
   },
 
@@ -93,9 +118,9 @@ export const createToolSlice: StateCreator<AgentStore, [], [], ToolSlice> = (set
         toolUsageOverTime: overTime,
         toolUsageByPersona: byPersona,
       });
-    } catch {
-      // intentional: error state handled by store -- resets to empty arrays for graceful degradation
-      set({ toolUsageSummary: [], toolUsageOverTime: [], toolUsageByPersona: [] });
+    } catch (err) {
+      console.warn("[toolSlice] fetchToolUsage failed:", err);
+      reportError(err, "Failed to load tool usage", set, { stateUpdates: { toolUsageSummary: [], toolUsageOverTime: [], toolUsageByPersona: [] } });
     }
   },
 });

@@ -114,7 +114,7 @@ export function SQLPreview({
         <textarea
           value={sql}
           onChange={(e) => onChange?.(e.target.value)}
-          className="w-full h-48 p-3 bg-transparent text-sm text-foreground/80 font-mono resize-y focus:outline-none"
+          className="w-full h-48 p-3 bg-transparent text-sm text-foreground/80 font-mono resize-y focus-visible:outline-none"
           spellCheck={false}
         />
       ) : (

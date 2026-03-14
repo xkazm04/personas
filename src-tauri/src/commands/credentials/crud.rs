@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::collections::HashMap;
 use tauri::State;
 
+use crate::commands::core::personas::BlastRadiusItem;
 use crate::db::models::{
     CreateCredentialEventInput, CreateCredentialInput, CredentialEvent, PersonaCredential,
     UpdateCredentialEventInput, UpdateCredentialInput,
@@ -130,6 +131,19 @@ pub fn patch_credential_metadata(
         .ok_or_else(|| AppError::Validation("metadata patch must be a JSON object".into()))?;
 
     repo::patch_metadata_atomic(&state.db, &id, patch_obj)
+}
+
+#[tauri::command]
+pub fn credential_blast_radius(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<Vec<BlastRadiusItem>, AppError> {
+    require_privileged_sync(&state, "credential_blast_radius")?;
+    let items = repo::blast_radius(&state.db, &id)?;
+    Ok(items
+        .into_iter()
+        .map(|(category, description)| BlastRadiusItem { category, description })
+        .collect())
 }
 
 #[tauri::command]

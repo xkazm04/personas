@@ -1,7 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { useSystemStore } from "../../systemStore";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import type { PersonaExecution } from "@/lib/types/types";
 import type { PipelineTrace } from "@/lib/execution/pipeline";
 import {
@@ -23,6 +23,7 @@ import type { AgentIR } from "@/lib/types/designTypes";
 import { cancelExecution, executePersona, listExecutions } from "@/api/agents/executions";
 
 import { executionSink } from "@/lib/execution/executionSink";
+import { classifyLine } from "@/lib/utils/terminalColors";
 
 /** Queue status event emitted from the engine when an execution is queued/promoted. */
 export interface QueueStatusPayload {
@@ -154,7 +155,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     } catch (err) {
       trace = traceStage(trace, 'validate', undefined, String(err));
       trace = completeTrace(trace);
-      set({ error: errMsg(err, "Failed to execute persona"), isExecuting: false, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: trace });
+      reportError(err, "Failed to execute persona", set, { stateUpdates: { isExecuting: false, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: trace } });
       return null;
     }
   },
@@ -168,8 +169,16 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         set({ pipelineTrace: completeTrace(traceStage(trace, 'finalize_status', { cancelled: true })) });
       }
     } catch (err) {
-      set({ error: errMsg(err, "Failed to cancel execution") });
+      reportError(err, "Failed to cancel execution", set);
     } finally {
+      // If a chat stream is active, finalize it before clearing state.
+      const { chatStreaming: streaming, activeChatSessionId: sid, executionPersonaId: pid, executionOutput: out } = get();
+      if (streaming && sid && pid) {
+        const textLines = out.filter((l) => classifyLine(l) === 'text');
+        const fullResponse = textLines.join('\n').trim();
+        void get().finishChatStream(fullResponse, pid, sid, get().activeExecutionId ?? undefined);
+      }
+
       // Preserve the execution ID for Resume before clearing active state.
       const lastId = get().activeExecutionId;
       // Always reset execution state regardless of API success/failure.
@@ -183,6 +192,15 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     // Force-flush any pending batch so the final output is visible before
     // we reset execution state.
     executionSink.forceFlush();
+
+    // If a chat stream is active, finalize it now -- this runs at the store
+    // level so it works even when ChatTab is unmounted (e.g. user switched tabs).
+    const { chatStreaming, executionOutput: output, activeChatSessionId, executionPersonaId: chatPersonaId } = get();
+    if (chatStreaming && activeChatSessionId && chatPersonaId) {
+      const textLines = output.filter((l) => classifyLine(l) === 'text');
+      const fullResponse = textLines.join('\n').trim();
+      void get().finishChatStream(fullResponse, chatPersonaId, activeChatSessionId, get().activeExecutionId ?? undefined);
+    }
 
     // Capture context for drift detection before resetting state
     const execPersonaId = get().executionPersonaId;
@@ -201,35 +219,41 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         console.warn('[execution] frontend_complete middleware failed', { executionId: execId, personaId: execPersonaId, error: String(err) });
       });
     }
+    // Snapshot executions before fetchExecutions can overwrite store state,
+    // so drift detection uses a consistent view of pre-refresh data.
+    const snapshotExecutions = get().executions;
+
     set({ isExecuting: false, activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
     const personaId = get().selectedPersona?.id;
-    const fetchPromise = personaId ? get().fetchExecutions(personaId) : Promise.resolve();
+    if (personaId) get().fetchExecutions(personaId);
     // Notify guided tour that an execution completed
     useSystemStore.getState().emitTourEvent('tour:execution-complete');
 
     // Invalidate budget cache so spend data refreshes after execution
     get().invalidateBudgetCache(execPersonaId ?? undefined);
 
-    // Design drift detection -- runs after fetchExecutions resolves so
-    // state.executions includes the execution that just finished.
+    // Design drift detection uses the snapshotted executions to avoid a race
+    // where a concurrent fetchExecutions overwrites get().executions.
     if (execPersonaId && execId && _status) {
-      const durationMs = statusData?.durationMs ?? null;
-      const costUsd = statusData?.costUsd ?? 0;
-      const errorMessage = statusData?.errorMessage ?? null;
+      try {
+        const persona = get().personas.find(p => p.id === execPersonaId);
+        if (persona) {
+          const durationMs = statusData?.durationMs ?? null;
+          const costUsd = statusData?.costUsd ?? 0;
+          const errorMessage = statusData?.errorMessage ?? null;
 
-      void fetchPromise.then(() => {
-        try {
-          const state = get();
-          const persona = state.personas.find(p => p.id === execPersonaId);
-          if (!persona) return;
-
-          // Count recent consecutive failures for this persona
-          const recentExecs = state.executions
+          // Count recent consecutive failures from the pre-refresh executions
+          // snapshot, then prepend the just-finished status to account for it.
+          const recentStatuses: string[] = [_status];
+          const existingExecs = snapshotExecutions
             .filter(e => e.persona_id === execPersonaId)
-            .slice(0, 5);
+            .slice(0, 4); // 4 + 1 current = 5 total window
+          for (const e of existingExecs) {
+            recentStatuses.push(e.status);
+          }
           let recentFailureCount = 0;
-          for (const e of recentExecs) {
-            if (e.status === 'failed') recentFailureCount++;
+          for (const s of recentStatuses) {
+            if (s === 'failed') recentFailureCount++;
             else break;
           }
 
@@ -262,10 +286,10 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
             saveDriftEvents(all);
             set({ designDriftEvents: all });
           }
-        } catch (err) {
-          console.warn('[execution] drift detection failed', { executionId: execId, personaId: execPersonaId, error: String(err) });
         }
-      });
+      } catch (err) {
+        console.warn('[execution] drift detection failed', { executionId: execId, personaId: execPersonaId, error: String(err) });
+      }
     }
   },
 
@@ -274,7 +298,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       const executions = await listExecutions(personaId);
       set({ executions });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch executions") });
+      reportError(err, "Failed to fetch executions", set);
     }
   },
 

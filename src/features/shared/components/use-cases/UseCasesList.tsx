@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { ListChecks } from 'lucide-react';
+import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
 import type {
   DesignContextData,
   DesignFilesSection,
@@ -107,13 +108,15 @@ export function mergeCredentialLink(
 
 // -- Component -------------------------------------------------------
 
+import { STATUS_PALETTE_EXTENDED } from '@/lib/design/statusTokens';
+
 const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
-  notification:   { bg: 'bg-rose-500/10 border-rose-500/15',   text: 'text-rose-400/70' },
-  'data-sync':    { bg: 'bg-cyan-500/10 border-cyan-500/15',   text: 'text-cyan-400/70' },
-  monitoring:     { bg: 'bg-amber-500/10 border-amber-500/15', text: 'text-amber-400/70' },
-  automation:     { bg: 'bg-violet-500/10 border-violet-500/15', text: 'text-violet-400/70' },
-  communication:  { bg: 'bg-blue-500/10 border-blue-500/15',   text: 'text-blue-400/70' },
-  reporting:      { bg: 'bg-emerald-500/10 border-emerald-500/15', text: 'text-emerald-400/70' },
+  notification:   { bg: `${STATUS_PALETTE_EXTENDED.critical.bg} ${STATUS_PALETTE_EXTENDED.critical.border}`, text: `${STATUS_PALETTE_EXTENDED.critical.text}/70` },
+  'data-sync':    { bg: `${STATUS_PALETTE_EXTENDED.rotation.bg} ${STATUS_PALETTE_EXTENDED.rotation.border}`, text: `${STATUS_PALETTE_EXTENDED.rotation.text}/70` },
+  monitoring:     { bg: `${STATUS_PALETTE_EXTENDED.warning.bg} ${STATUS_PALETTE_EXTENDED.warning.border}`,   text: `${STATUS_PALETTE_EXTENDED.warning.text}/70` },
+  automation:     { bg: `${STATUS_PALETTE_EXTENDED.ai.bg} ${STATUS_PALETTE_EXTENDED.ai.border}`,             text: `${STATUS_PALETTE_EXTENDED.ai.text}/70` },
+  communication:  { bg: `${STATUS_PALETTE_EXTENDED.info.bg} ${STATUS_PALETTE_EXTENDED.info.border}`,         text: `${STATUS_PALETTE_EXTENDED.info.text}/70` },
+  reporting:      { bg: `${STATUS_PALETTE_EXTENDED.success.bg} ${STATUS_PALETTE_EXTENDED.success.border}`,   text: `${STATUS_PALETTE_EXTENDED.success.text}/70` },
 };
 
 interface UseCasesListProps {
@@ -151,7 +154,10 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
         </p>
       </div>
 
-      <div className="space-y-2">
+      <AnimatedList
+        className="space-y-2"
+        keys={useCases.map((uc, i) => uc.id || String(i))}
+      >
         {useCases.map((uc, i) => {
           const catStyle = uc.category ? CATEGORY_STYLES[uc.category] : null;
           return (
@@ -180,7 +186,7 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
             </div>
           );
         })}
-      </div>
+      </AnimatedList>
 
       {contextData.summary && (
         <div className="px-1 mt-2">

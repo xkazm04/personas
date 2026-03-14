@@ -102,7 +102,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
         {recipe.sample_inputs && onQuickTest && (
           <button
             onClick={() => onQuickTest(recipe.id)}
-            className="min-w-8 min-h-8 flex items-center justify-center gap-1 rounded-lg text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="min-w-8 min-h-8 flex items-center justify-center gap-1 rounded-lg text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors focus-ring"
             title="Run quick test"
           >
             <Play className="w-3.5 h-3.5" />
@@ -110,14 +110,14 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
         )}
         <button
           onClick={() => onEdit(recipe.id)}
-          className="min-w-8 min-h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          className="min-w-8 min-h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
           title="Edit recipe"
         >
           <Pencil className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => onPlayground(recipe.id)}
-          className="min-w-8 min-h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          className="min-w-8 min-h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
           title="Open settings"
         >
           <Settings className="w-3.5 h-3.5" />
@@ -129,7 +129,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
         <div className="relative">
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="min-w-8 min-h-8 flex items-center justify-center rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="min-w-8 min-h-8 flex items-center justify-center rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 focus-ring"
             title="Delete recipe"
           >
             <Trash2 className="w-3.5 h-3.5" />

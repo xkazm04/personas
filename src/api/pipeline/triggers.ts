@@ -54,7 +54,7 @@ export interface CronPreview {
 }
 
 export const previewCronSchedule = (cronExpression: string, count?: number) =>
-  invoke<CronPreview>("preview_cron_schedule", { cronExpression, count: count ?? null });
+  invoke<CronPreview>("preview_cron_schedule", { cronExpression, count: count });
 
 // ============================================================================
 // Chain Triggers

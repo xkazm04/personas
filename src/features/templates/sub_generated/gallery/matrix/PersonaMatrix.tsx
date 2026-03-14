@@ -8,6 +8,7 @@ import type { AgentIR, SuggestedTrigger, SuggestedEventSubscription, ProtocolCap
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
+import type { DesignQuestion } from '@/lib/types/designTypes';
 import type { RequiredConnector } from '../../adoption/steps/connect/ConnectStep';
 import type { MatrixEditState, MatrixEditCallbacks } from './EditableMatrixCells';
 import { ConnectorEditCell, TriggerEditCell, ReviewEditCell, MemoryEditCell, MessagesEditCell, ErrorEditCell, UseCaseEditCell } from './EditableMatrixCells';
@@ -67,6 +68,17 @@ interface PersonaMatrixBaseProps {
   onContinue?: () => void;
   /** Creation mode: refine with feedback */
   onRefine?: (feedback: string) => void;
+  /** Creation mode: directly create agent from matrix (bypasses IdentityStep) */
+  onCreateAgent?: (name: string) => void;
+  /** Creation mode: controlled agent name for finalization */
+  agentName?: string;
+  onAgentNameChange?: (name: string) => void;
+  /** CLI output lines from design stream (shown during generation) */
+  cliOutputLines?: string[];
+  /** Design question awaiting user input */
+  designQuestion?: DesignQuestion | null;
+  /** Answer a design question */
+  onAnswerQuestion?: (answer: string) => void;
 }
 
 interface PersonaMatrixViewProps extends PersonaMatrixBaseProps { mode?: 'view'; }
@@ -206,7 +218,7 @@ function MatrixCellRenderer({ cell, isEditMode, buildLocked }: { cell: MatrixCel
 // -- Main Component ---------------------------------------------------
 
 export function PersonaMatrix(props: PersonaMatrixProps) {
-  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine } = props;
+  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion } = props;
   const isEditMode = props.mode === 'edit';
 
   const cells = useMemo<MatrixCell[]>(() => {
@@ -256,7 +268,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   }, [designResult, flows, isEditMode, onNavigateCatalog,
     ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
 
-  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={isEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} />);
+  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={isEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} />);
 
   if (!designResult || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
 

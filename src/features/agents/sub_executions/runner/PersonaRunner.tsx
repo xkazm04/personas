@@ -83,12 +83,18 @@ export function PersonaRunner() {
         durations.sort((a, b) => a - b);
         setTypicalDurationMs(durations[Math.floor(durations.length / 2)] ?? null);
       } else { setTypicalDurationMs(null); }
-    } catch { setTypicalDurationMs(null); }
+    } catch (err) { console.warn('[PersonaRunner] Failed to fetch typical duration:', err); setTypicalDurationMs(null); }
   }, []);
 
   const { handleExecute, handleStop, handleResume } = useRunnerActions({
     personaId, inputData, outputLines, setOutputLines, setJsonError, elapsedMs, executionSummary, fetchTypicalDuration,
   });
+
+  // Pre-warm budget data when persona is selected so it's fresh before user clicks Run
+  const fetchBudgetSpend = useAgentStore((s) => s.fetchBudgetSpend);
+  useEffect(() => {
+    if (personaId) void fetchBudgetSpend();
+  }, [personaId, fetchBudgetSpend]);
 
   // Sync store output to local lines
   useEffect(() => {
@@ -104,7 +110,8 @@ export function PersonaRunner() {
       if (cancelled) return;
       if (event.payload.persona_id !== personaId) return;
       setHealingNotification(event.payload);
-    }).then((fn) => { if (cancelled) fn(); else unlistenFn = fn; });
+    }).then((fn) => { if (cancelled) fn(); else unlistenFn = fn; })
+      .catch((err) => { console.warn('[PersonaRunner] Failed to listen for healing events:', err); });
     return () => { cancelled = true; unlistenFn?.(); };
   }, [personaId]);
 

@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
+import { motion, type Variants } from 'framer-motion';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 
 /* -- Types ----------------------------------------------------------- */
 
@@ -49,6 +51,26 @@ export interface DataGridProps<T> {
   simplified?: boolean;
 }
 
+/* -- Stagger animation variants --------------------------------------- */
+
+const EASE_CURVE = [0.22, 1, 0.36, 1] as [number, number, number, number];
+const STAGGER_CAP = 10;
+
+const gridContainerVariants: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.04 } },
+};
+
+const gridRowVariants: Variants = {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.15, ease: EASE_CURVE } },
+};
+
+const gridRowReduced: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.01 } },
+};
+
 /* -- Component ------------------------------------------------------- */
 
 export function DataGrid<T>({
@@ -83,6 +105,9 @@ export function DataGrid<T>({
     const start = (page - 1) * effectivePageSize;
     return data.slice(start, start + effectivePageSize);
   }, [data, page, effectivePageSize]);
+
+  const { shouldAnimate } = useMotion();
+  const rowVariants = shouldAnimate ? gridRowVariants : gridRowReduced;
 
   const Icon = EmptyIcon || Inbox;
 
@@ -173,12 +198,20 @@ export function DataGrid<T>({
       </div>
 
       {/* Rows */}
-      <div className="flex-1 overflow-y-auto">
+      <motion.div
+        className="flex-1 overflow-y-auto"
+        variants={gridContainerVariants}
+        initial="hidden"
+        animate="show"
+        key={`page-${page}`}
+      >
         {pageData.map((row, idx) => {
           const accent = getRowAccent?.(row) ?? '';
           return (
-            <div
+            <motion.div
               key={getRowKey(row)}
+              variants={rowVariants}
+              {...(idx >= STAGGER_CAP ? { transition: { duration: 0.01 } } : {})}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               className={`grid gap-0 transition-colors border-b border-primary/5 border-l-2 border-l-transparent hover:bg-white/[0.05] ${accent} ${
                 onRowClick ? 'cursor-pointer' : ''
@@ -195,10 +228,10 @@ export function DataGrid<T>({
                   {col.render(row, idx)}
                 </div>
               ))}
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
 
       {/* Pagination */}
       {effectivePageSize > 0 && totalPages > 1 && (

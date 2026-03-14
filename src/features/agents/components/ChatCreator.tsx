@@ -113,7 +113,7 @@ export function ChatCreator({ onCancel, onCreated, onActivated }: ChatCreatorPro
                       : 'Refine the design...'
                 }
                 disabled={isThinking}
-                className="flex-1 min-h-[44px] max-h-[100px] bg-secondary/30 border border-primary/20 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground/50 resize-y focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all disabled:opacity-50"
+                className="flex-1 min-h-[44px] max-h-[100px] bg-secondary/30 border border-primary/20 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground/50 resize-y focus-ring transition-all disabled:opacity-50"
                 autoFocus
               />
               <Button

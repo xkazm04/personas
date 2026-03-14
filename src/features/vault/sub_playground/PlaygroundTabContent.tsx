@@ -1,3 +1,4 @@
+import { TabTransition } from '@/features/templates/sub_generated/shared/TabTransition';
 import { OverviewTab } from './tabs/OverviewTab';
 import { ApiExplorerTab } from './tabs/ApiExplorerTab';
 import { McpToolsTab } from './tabs/McpToolsTab';
@@ -48,55 +49,57 @@ export function PlaygroundTabContent({
 }: PlaygroundTabContentProps) {
   return (
     <div className="flex-1 min-h-0 overflow-y-auto">
-      {activeTab === 'overview' && connector && (
-        <OverviewTab
-          credential={credential}
-          connector={connector}
-          isGoogleOAuthFlow={isGoogleOAuthFlow}
-          googleOAuth={googleOAuth}
-          effectiveHealthcheckResult={effectiveHealthcheckResult}
-          isHealthchecking={isHealthchecking}
-          health={health}
-          rotationStatus={rotationStatus}
-          rotationCountdown={rotationCountdown}
-          fetchRotationStatus={fetchRotationStatus}
-          editError={editError}
-          setEditError={setEditError}
-          onOAuthConsent={onOAuthConsent}
-          onDelete={onDelete}
-        />
-      )}
-      {activeTab === 'overview' && !connector && (
-        <div className="p-6 text-sm text-muted-foreground/80">
-          No connector definition available for this credential type.
-        </div>
-      )}
-      {activeTab === 'executions' && (
-        <ExecutionsTab credentialId={credential.id} createdAt={credential.created_at} />
-      )}
-      {activeTab === 'api-explorer' && (
-        <ApiExplorerTab
-          credentialId={credential.id}
-          catalogEndpoints={connector ? CATALOG_API_ENDPOINTS[connector.name] : undefined}
-        />
-      )}
-      {activeTab === 'recipes' && (
-        <CredentialRecipesTab credentialId={credential.id} />
-      )}
-      {activeTab === 'mcp-tools' && (
-        <McpToolsTab credentialId={credential.id} />
-      )}
-      {activeTab === 'rotation' && (
-        <div className="p-6">
-          <CredentialRotationSection
-            credentialId={credential.id}
+      <TabTransition tabKey={activeTab}>
+        {activeTab === 'overview' && connector && (
+          <OverviewTab
+            credential={credential}
+            connector={connector}
+            isGoogleOAuthFlow={isGoogleOAuthFlow}
+            googleOAuth={googleOAuth}
+            effectiveHealthcheckResult={effectiveHealthcheckResult}
+            isHealthchecking={isHealthchecking}
+            health={health}
             rotationStatus={rotationStatus}
             rotationCountdown={rotationCountdown}
-            onRefresh={fetchRotationStatus}
-            onHealthcheck={() => health.checkStored()}
+            fetchRotationStatus={fetchRotationStatus}
+            editError={editError}
+            setEditError={setEditError}
+            onOAuthConsent={onOAuthConsent}
+            onDelete={onDelete}
           />
-        </div>
-      )}
+        )}
+        {activeTab === 'overview' && !connector && (
+          <div className="p-6 text-sm text-muted-foreground/80">
+            No connector definition available for this credential type.
+          </div>
+        )}
+        {activeTab === 'executions' && (
+          <ExecutionsTab credentialId={credential.id} createdAt={credential.created_at} />
+        )}
+        {activeTab === 'api-explorer' && (
+          <ApiExplorerTab
+            credentialId={credential.id}
+            catalogEndpoints={connector ? CATALOG_API_ENDPOINTS[connector.name] : undefined}
+          />
+        )}
+        {activeTab === 'recipes' && (
+          <CredentialRecipesTab credentialId={credential.id} />
+        )}
+        {activeTab === 'mcp-tools' && (
+          <McpToolsTab credentialId={credential.id} />
+        )}
+        {activeTab === 'rotation' && (
+          <div className="p-6">
+            <CredentialRotationSection
+              credentialId={credential.id}
+              rotationStatus={rotationStatus}
+              rotationCountdown={rotationCountdown}
+              onRefresh={fetchRotationStatus}
+              onHealthcheck={() => health.checkStored()}
+            />
+          </div>
+        )}
+      </TabTransition>
     </div>
   );
 }

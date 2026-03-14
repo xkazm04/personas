@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { readFile } from "fs/promises";
+import { visualizer } from "rollup-plugin-visualizer";
 import {
   needsTransform,
   transformForWebView2,
@@ -31,6 +32,12 @@ export default defineConfig(async () => ({
   plugins: [
     react(),
     tailwindcss(),
+    // Bundle analysis: run `ANALYZE=true npm run build` then open dist/bundle-report.html
+    ...(process.env.ANALYZE ? [visualizer({
+      filename: "dist/bundle-report.html",
+      gzipSize: true,
+      template: "treemap",
+    })] : []),
     // Remove crossorigin attribute and type="module" from built HTML.
     // Android WebView's shouldInterceptRequest has issues with ES module
     // loading via custom protocols -- IIFE format + regular script tags work.
@@ -64,7 +71,7 @@ export default defineConfig(async () => ({
 
   build: {
     sourcemap: "hidden",
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 500,
     // Disable module preload polyfill -- injects crossorigin links at runtime
     // which breaks Tauri Android WebView's custom protocol
     modulePreload: false,

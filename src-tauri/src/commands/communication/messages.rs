@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{PersonaMessage, PersonaMessageDelivery};
+use crate::db::models::{CreateMessageInput, PersonaMessage, PersonaMessageDelivery};
 use crate::db::repos::communication::messages as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -76,4 +76,62 @@ pub fn get_message_deliveries(
 ) -> Result<Vec<PersonaMessageDelivery>, AppError> {
     require_auth_sync(&state)?;
     repo::get_deliveries_by_message(&state.db, &message_id)
+}
+
+// -- Dev seed: mock message -------------------------------------------------------
+
+const MOCK_MESSAGE_TITLES: &[&str] = &[
+    "Build completed successfully",
+    "API rate limit warning",
+    "New deployment ready for review",
+    "Database migration completed",
+    "Scheduled report generated",
+    "Error threshold exceeded",
+    "Customer feedback received",
+    "Security scan completed",
+];
+
+const MOCK_MESSAGE_CONTENTS: &[&str] = &[
+    "The CI pipeline completed in 3m 42s with all 127 tests passing. No warnings detected.",
+    "API endpoint /v2/users is approaching the rate limit (85/100 req/min). Consider implementing caching.",
+    "Version 2.4.1 has been deployed to staging. Please review the changes before promoting to production.",
+    "Migration #047 applied successfully. Added indexes on created_at columns for improved query performance.",
+    "Weekly analytics report for March 2026 has been generated and is ready for download.",
+    "Error rate for the payment service has exceeded 5% threshold over the last 15 minutes.",
+    "New feedback from enterprise customer: 'The API response times have improved significantly since the last update.'",
+    "Security scan found 0 critical, 2 moderate, and 5 low severity issues. Moderate issues require attention within 30 days.",
+];
+
+const MOCK_MESSAGE_PRIORITIES: &[&str] = &[
+    "normal", "high", "normal", "normal", "low", "high", "normal", "high",
+];
+
+#[tauri::command]
+pub fn seed_mock_message(
+    state: State<'_, Arc<AppState>>,
+) -> Result<PersonaMessage, AppError> {
+    require_auth_sync(&state)?;
+
+    let personas = crate::db::repos::core::personas::get_all(&state.db)?;
+    let t = chrono::Utc::now().timestamp_millis() as usize;
+    let idx = t % std::cmp::max(personas.len(), 1);
+    let persona_id = personas.get(idx).map(|p| p.id.clone())
+        .unwrap_or_else(|| "mock-persona".to_string());
+
+    let input = CreateMessageInput {
+        persona_id,
+        execution_id: None,
+        title: Some(MOCK_MESSAGE_TITLES[t % MOCK_MESSAGE_TITLES.len()].to_string()),
+        content: MOCK_MESSAGE_CONTENTS[t % MOCK_MESSAGE_CONTENTS.len()].to_string(),
+        content_type: None,
+        priority: Some(MOCK_MESSAGE_PRIORITIES[t % MOCK_MESSAGE_PRIORITIES.len()].to_string()),
+        metadata: None,
+    };
+
+    // Disable FK checks for dev seed (persona may not exist)
+    let conn = state.db.get()?;
+    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
+    let result = repo::create(&state.db, input);
+    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+    result
 }

@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import { useAgentStore } from "../../agentStore";
 import { useSystemStore } from "../../systemStore";
 import type {
@@ -20,6 +20,7 @@ import { getPendingReviewCount, listManualReviews, updateManualReviewStatus } fr
 import { cloudListPendingReviews, cloudRespondToReview } from "@/api/system/cloud";
 import { log } from "@/lib/log";
 import { classifyError, ApiError, withRetry } from "@/lib/utils/apiError";
+import { deduplicateFetch } from "@/lib/utils/deduplicateFetch";
 
 export interface OverviewSlice {
   // State -- navigation
@@ -153,7 +154,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       });
     } catch (err) {
       if (seq !== fetchGlobalSeq) return; // superseded by a newer request
-      set({ error: errMsg(err, "Failed to fetch global executions") });
+      reportError(err, "Failed to fetch global executions", set);
     }
   },
 
@@ -180,7 +181,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       const pendingCount = await getPendingReviewCount();
       set({ manualReviews: items, manualReviewsTotal: items.length, pendingReviewCount: pendingCount });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch manual reviews") });
+      reportError(err, "Failed to fetch manual reviews", set);
     }
   },
 
@@ -190,11 +191,11 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       // Re-fetch to get updated list
       await get().fetchManualReviews();
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update manual review") });
+      reportError(err, "Failed to update manual review", set);
     }
   },
 
-  fetchPendingReviewCount: async () => {
+  fetchPendingReviewCount: deduplicateFetch('pendingReviewCount', async () => {
     try {
       const count = await getPendingReviewCount();
       set({ pendingReviewCount: count });
@@ -202,7 +203,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       log.warn('overviewSlice', 'fetchPendingReviewCount failed, defaulting to 0', { operation: 'getPendingReviewCount', error: String(err) });
       set({ pendingReviewCount: 0 });
     }
-  },
+  }),
 
   fetchCloudReviews: async () => {
     const { cloudConfig } = useSystemStore.getState();
@@ -245,7 +246,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       // Re-fetch cloud reviews to reflect the update
       await get().fetchCloudReviews();
     } catch (err) {
-      set({ error: errMsg(err, "Failed to respond to cloud review") });
+      reportError(err, "Failed to respond to cloud review", set);
     }
   },
 

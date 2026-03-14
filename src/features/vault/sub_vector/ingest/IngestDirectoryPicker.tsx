@@ -95,7 +95,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
               value={dirPath}
               onChange={(e) => setDirPath(e.target.value)}
               placeholder="C:\Users\...\my-docs"
-              className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-lg text-foreground font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/40 transition-colors"
+              className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-lg text-foreground font-mono placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
               autoFocus
             />
           </div>
@@ -135,7 +135,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 onChange={(e) => setCustomPattern(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addPattern(); } }}
                 placeholder="*.pdf"
-                className="flex-1 px-2.5 py-1.5 text-xs bg-secondary/30 border border-primary/15 rounded-lg text-foreground font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/40 transition-colors"
+                className="flex-1 px-2.5 py-1.5 text-xs bg-secondary/30 border border-primary/15 rounded-lg text-foreground font-mono placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
               />
               <button
                 onClick={addPattern}

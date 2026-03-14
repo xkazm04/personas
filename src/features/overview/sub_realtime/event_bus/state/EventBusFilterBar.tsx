@@ -76,7 +76,7 @@ export default function EventBusFilterBar({
           type="text" value={filter.searchText}
           onChange={(e) => onFilterChange({ ...filter, searchText: e.target.value })}
           placeholder="Search events..."
-          className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-primary/10 bg-background/40 text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/20"
+          className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-primary/10 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/20"
         />
       </div>
 

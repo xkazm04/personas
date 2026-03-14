@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { Square, ChevronDown, Filter, Wand2, AlertCircle } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useAgentStore } from "@/stores/agentStore";
 import { LabProgress } from '../shared/LabProgress';
 import { MatrixHistory } from './MatrixHistory';
-import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
+import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { ANTHROPIC_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
@@ -33,7 +34,7 @@ export function MatrixPanel() {
 
   const [instruction, setInstruction] = useState('');
 
-  const useCases: UseCaseItem[] = useMemo(() => parseDesignContext(selectedPersona?.design_context).useCases ?? [], [selectedPersona?.design_context]);
+  const useCases = useSelectedUseCases();
   const useCaseOptions = useMemo(() => [{ value: '__all__', label: 'All Use Cases' }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))], [useCases]);
 
   const handleStart = async () => {
@@ -62,7 +63,7 @@ export function MatrixPanel() {
             <textarea value={instruction} onChange={(e) => setInstruction(e.target.value)}
               placeholder="e.g. Make the greeting more formal and add multi-language support for German and French"
               disabled={isLabRunning}
-              className="w-full h-28 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none disabled:opacity-50" />
+              className="w-full h-28 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring resize-none disabled:opacity-50" />
             <p className="text-sm text-muted-foreground/50">
               Claude will generate a draft persona based on your instructions, then test both current and draft versions side by side.
             </p>
@@ -73,6 +74,7 @@ export function MatrixPanel() {
             <div className="flex flex-wrap gap-2">
               {ANTHROPIC_MODELS.map((m) => (
                 <button key={m.id} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
+                  title={isLabRunning ? 'Cannot change while test is running' : undefined}
                   className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                   {m.label}
                 </button>
@@ -86,6 +88,7 @@ export function MatrixPanel() {
               <Listbox itemCount={useCaseOptions.length} onSelectFocused={(idx) => { const opt = useCaseOptions[idx]; if (opt) setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); }} ariaLabel="Filter by use case"
                 renderTrigger={({ isOpen, toggle }) => (
                   <button onClick={toggle} disabled={isLabRunning}
+                    title={isLabRunning ? 'Cannot change while test is running' : undefined}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30' : 'bg-background/30 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                     <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? 'All Use Cases'}</span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -110,10 +113,21 @@ export function MatrixPanel() {
               <Square className="w-4 h-4" />Cancel Matrix Test
             </button>
           ) : (
-            <button onClick={() => void handleStart()} disabled={!instruction.trim() || selectedModels.size === 0 || !hasPrompt}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-500/90 hover:to-purple-500/90 text-foreground shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
-              <Wand2 className="w-4 h-4" />Generate & Test Draft
-            </button>
+            <Tooltip
+              content={
+                !hasPrompt ? 'Add a prompt to this persona first'
+                  : !instruction.trim() ? 'Describe your desired changes above'
+                  : selectedModels.size === 0 ? 'Select at least one model'
+                  : ''
+              }
+              placement="top"
+              delay={200}
+            >
+              <button onClick={() => void handleStart()} disabled={!instruction.trim() || selectedModels.size === 0 || !hasPrompt}
+                className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-500/90 hover:to-purple-500/90 text-foreground shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
+                <Wand2 className="w-4 h-4" />Generate & Test Draft
+              </button>
+            </Tooltip>
           )}
 
           <LabProgress />

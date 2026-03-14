@@ -63,6 +63,9 @@ export function DesignInput({
         setShowTypeSelector(true);
       }
     };
+    reader.onerror = () => {
+      console.error('Failed to read file:', file.name, reader.error);
+    };
     reader.readAsText(file);
   }, []);
 
@@ -164,7 +167,7 @@ export function DesignInput({
           onKeyDown={handleKeyDown}
           disabled={disabled}
           placeholder={`Describe what this persona should do...\n\nExamples:\n  - Monitor my Gmail for invoices and extract amounts into a spreadsheet\n  - Watch GitHub webhooks and post summaries to Slack\n  - Analyze our API logs daily and flag anomalies`}
-          className="w-full min-h-[200px] bg-background/50 border border-primary/15 rounded-xl p-4 pb-12 text-sm text-foreground font-sans resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all placeholder-muted-foreground/30"
+          className="w-full min-h-[200px] bg-background/50 border border-primary/15 rounded-xl p-4 pb-12 text-sm text-foreground font-sans resize-none focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
           spellCheck
           style={{ overflow: 'hidden' }}
         />

@@ -1,20 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, Bot, Tag, ChevronDown, ExternalLink } from 'lucide-react';
+import { Trash2, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
-import { parseJsonOrDefault } from '@/lib/utils/parseJson';
-import { useAgentStore } from '@/stores/agentStore';
-import { useSystemStore } from '@/stores/systemStore';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
-
-function parseTags(tagsJson: string | null): string[] {
-  if (!tagsJson) return [];
-  const parsed = parseJsonOrDefault<string[]>(tagsJson, null as unknown as string[]);
-  if (Array.isArray(parsed)) return parsed;
-  // Fallback for legacy comma-separated format
-  return tagsJson.split(',').map((s) => s.trim()).filter(Boolean);
-}
 
 // -- Importance dots ----------------------------------------------------------
 export function ImportanceDots({ value }: { value: number }) {
@@ -33,16 +22,14 @@ export function ImportanceDots({ value }: { value: number }) {
 
 // -- Memory Row ---------------------------------------------------------------
 export function MemoryRow({
-  memory, personaName, personaColor, onDelete,
+  memory, personaName, personaColor, onDelete, onSelect,
 }: {
-  memory: PersonaMemory; personaName: string; personaColor: string; onDelete: () => void;
+  memory: PersonaMemory; personaName: string; personaColor: string; onDelete: () => void; onSelect: () => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const defaultCat = { label: 'Fact', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' };
   const cat = MEMORY_CATEGORY_COLORS[memory.category] ?? defaultCat;
-  const tags = parseTags(memory.tags);
 
   useEffect(() => {
     if (!confirmDelete) return;
@@ -80,64 +67,28 @@ export function MemoryRow({
   return (
     <motion.div layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="border-b border-primary/10 hover:bg-secondary/20 transition-colors">
       {/* Desktop row */}
-      <div className="hidden md:flex items-center gap-4 px-6 py-3 cursor-pointer" onClick={() => setExpanded(!expanded)}>
+      <div className="hidden md:flex items-center gap-4 px-6 py-3 cursor-pointer" onClick={onSelect}>
         <div className="w-[140px] flex items-center gap-2 flex-shrink-0">{agentAvatar}<span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
         <div className="flex-1 min-w-0"><span className="text-sm text-foreground/80 truncate block">{stripHtml(memory.title)}</span></div>
         {categoryBadge}
         <div className="w-[60px] flex-shrink-0"><ImportanceDots value={memory.importance} /></div>
-        <div className="w-[120px] flex items-center gap-1 flex-shrink-0 overflow-hidden">
-          {tags.slice(0, 2).map((tag) => (<span key={tag} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-sm font-mono bg-secondary/40 text-muted-foreground/90 rounded border border-primary/10 truncate max-w-[55px]">{tag}</span>))}
-          {tags.length > 2 && <span className="text-sm text-muted-foreground/80">+{tags.length - 2}</span>}
-        </div>
         <span className="text-sm text-muted-foreground/80 w-[60px] text-right flex-shrink-0">{formatRelativeTime(memory.created_at)}</span>
         <div className="w-[32px] flex-shrink-0">{deleteButton}</div>
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </div>
 
       {/* Mobile card */}
-      <div className="flex md:hidden flex-col gap-2 px-4 py-3 cursor-pointer" onClick={() => setExpanded(!expanded)}>
+      <div className="flex md:hidden flex-col gap-2 px-4 py-3 cursor-pointer" onClick={onSelect}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">{agentAvatar}<span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
-          <div className="flex items-center gap-2 flex-shrink-0">{deleteButton}<ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/80 transition-transform ${expanded ? 'rotate-180' : ''}`} /></div>
+          <div className="flex items-center gap-2 flex-shrink-0">{deleteButton}</div>
         </div>
         <span className="text-sm text-foreground/80 line-clamp-2">{stripHtml(memory.title)}</span>
         <div className="flex items-center gap-2 flex-wrap">
           {categoryBadge}
           <ImportanceDots value={memory.importance} />
-          {tags.slice(0, 2).map((tag) => (<span key={tag} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-sm font-mono bg-secondary/40 text-muted-foreground/90 rounded border border-primary/10 truncate max-w-[80px]">{tag}</span>))}
-          {tags.length > 2 && <span className="text-sm text-muted-foreground/80">+{tags.length - 2}</span>}
           <span className="text-sm text-muted-foreground/80 ml-auto">{formatRelativeTime(memory.created_at)}</span>
         </div>
       </div>
-
-      {/* Expanded content */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-            <div className="px-4 pb-4 md:px-6 md:pl-[172px]">
-              <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{stripHtml(memory.content)}</p>
-              {tags.length > 0 && (
-                <div className="flex items-center gap-1.5 mt-2">
-                  <Tag className="w-3 h-3 text-muted-foreground/80" />
-                  {tags.map((tag) => (<span key={tag} className="px-2 py-0.5 text-sm font-mono bg-secondary/40 text-muted-foreground/90 rounded border border-primary/10">{tag}</span>))}
-                </div>
-              )}
-              {memory.source_execution_id && (
-                <div className="mt-2">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); useAgentStore.getState().selectPersona(memory.persona_id); useSystemStore.getState().setEditorTab('use-cases'); }}
-                    className="inline-flex items-center gap-1 text-sm text-blue-400/70 hover:text-blue-400 transition-colors"
-                    title={`Execution: ${memory.source_execution_id}`}
-                  >
-                    View Source Execution
-                    <ExternalLink className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 }

@@ -195,10 +195,12 @@ function truncate(s: string, maxLen: number): string {
 
 // -- Drift kind metadata -----------------------------------------
 
+import { STATUS_PALETTE_EXTENDED } from './statusTokens';
+
 export const DRIFT_KIND_META: Record<DriftKind, { label: string; bgClass: string; borderClass: string; textClass: string }> = {
-  error_pattern: { label: 'Error Pattern', bgClass: 'bg-rose-500/10', borderClass: 'border-rose-500/20', textClass: 'text-rose-400' },
-  tool_mismatch: { label: 'Tool Issue', bgClass: 'bg-amber-500/10', borderClass: 'border-amber-500/20', textClass: 'text-amber-400' },
-  timeout: { label: 'Timeout Risk', bgClass: 'bg-orange-500/10', borderClass: 'border-orange-500/20', textClass: 'text-orange-400' },
-  cost_overrun: { label: 'Cost Alert', bgClass: 'bg-violet-500/10', borderClass: 'border-violet-500/20', textClass: 'text-violet-400' },
-  repeated_failure: { label: 'Repeated Failure', bgClass: 'bg-red-500/10', borderClass: 'border-red-500/20', textClass: 'text-red-400' },
+  error_pattern:    { label: 'Error Pattern',    bgClass: STATUS_PALETTE_EXTENDED.critical.bg, borderClass: STATUS_PALETTE_EXTENDED.critical.border, textClass: STATUS_PALETTE_EXTENDED.critical.text },
+  tool_mismatch:    { label: 'Tool Issue',       bgClass: STATUS_PALETTE_EXTENDED.warning.bg,  borderClass: STATUS_PALETTE_EXTENDED.warning.border,  textClass: STATUS_PALETTE_EXTENDED.warning.text },
+  timeout:          { label: 'Timeout Risk',     bgClass: STATUS_PALETTE_EXTENDED.caution.bg,  borderClass: STATUS_PALETTE_EXTENDED.caution.border,  textClass: STATUS_PALETTE_EXTENDED.caution.text },
+  cost_overrun:     { label: 'Cost Alert',       bgClass: STATUS_PALETTE_EXTENDED.ai.bg,       borderClass: STATUS_PALETTE_EXTENDED.ai.border,       textClass: STATUS_PALETTE_EXTENDED.ai.text },
+  repeated_failure: { label: 'Repeated Failure', bgClass: STATUS_PALETTE_EXTENDED.error.bg,    borderClass: STATUS_PALETTE_EXTENDED.error.border,    textClass: STATUS_PALETTE_EXTENDED.error.text },
 };

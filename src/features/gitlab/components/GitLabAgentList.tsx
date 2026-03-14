@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Bot, Trash2, ExternalLink, RefreshCw, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
 import type { GitLabAgent } from '@/api/system/gitlab';
 import { useSystemStore } from "@/stores/systemStore";
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
 interface GitLabAgentListProps {
   projectId: number | null;
@@ -78,9 +79,9 @@ export function GitLabAgentList({
           </div>
           <div className="flex items-center gap-1.5">
             <PipelineStatusBadge projectId={projectId} />
-            {agent.webUrl && (
+            {sanitizeExternalUrl(agent.webUrl) && (
               <a
-                href={agent.webUrl}
+                href={sanitizeExternalUrl(agent.webUrl)!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors"

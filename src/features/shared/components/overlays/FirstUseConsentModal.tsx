@@ -106,7 +106,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
       titleId="first-use-consent-title"
       containerClassName="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       maxWidthClass="max-w-2xl"
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
+      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden max-h-[90vh]"
     >
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b border-primary/10">

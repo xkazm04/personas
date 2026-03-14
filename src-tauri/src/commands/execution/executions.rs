@@ -141,7 +141,7 @@ pub async fn execute_persona(
     let mut tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
     if let Ok(automations) = automation_repo::get_by_persona(&state.db, &persona_id) {
         for auto in &automations {
-            if auto.deployment_status == "active" {
+            if auto.deployment_status.is_runnable() {
                 tools.push(automation_to_virtual_tool(auto));
             }
         }

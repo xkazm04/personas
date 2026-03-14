@@ -135,7 +135,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                             onNavigateToPersona?.(persona.id);
                           }
                         }}
-                        className="p-3 bg-secondary/40 backdrop-blur-sm border border-border/30 rounded-xl cursor-pointer hover:border-primary/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="p-3 bg-secondary/40 backdrop-blur-sm border border-border/30 rounded-xl cursor-pointer hover:border-primary/20 transition-all focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       >
                         <div className="flex items-start gap-2.5">
                           <Icon className={`w-4 h-4 mt-0.5 ${colorClass}`} />

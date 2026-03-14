@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use crate::db::models::{CreatePersonaEventInput, PersonaEvent, UpdateExecutionStatus};
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::{personas as persona_repo, settings};
+use crate::db::repos::resources::audit_log;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::resources::{tools as tool_repo, triggers as trigger_repo};
 use crate::db::settings_keys;
@@ -31,6 +32,9 @@ use crate::engine::ExecutionEngine;
 pub struct SchedulerState {
     running: AtomicBool,
     webhook_alive: AtomicBool,
+    /// True when at least one execution is in-flight. Subscriptions use this
+    /// to choose between active and idle polling intervals.
+    active: AtomicBool,
     events_processed: AtomicU64,
     events_delivered: AtomicU64,
     events_failed: AtomicU64,
@@ -48,6 +52,7 @@ impl SchedulerState {
         Self {
             running: AtomicBool::new(false),
             webhook_alive: AtomicBool::new(false),
+            active: AtomicBool::new(false),
             events_processed: AtomicU64::new(0),
             events_delivered: AtomicU64::new(0),
             events_failed: AtomicU64::new(0),
@@ -57,6 +62,18 @@ impl SchedulerState {
 
     pub fn is_running(&self) -> bool {
         self.running.load(Ordering::Relaxed)
+    }
+
+    /// Whether the system has active work (executions running, events pending).
+    /// Used by subscriptions to choose between active and idle intervals.
+    pub fn is_active(&self) -> bool {
+        self.active.load(Ordering::Relaxed)
+    }
+
+    /// Mark the system as active or idle. Called by the execution engine
+    /// when executions start/finish.
+    pub fn set_active(&self, active: bool) {
+        self.active.store(active, Ordering::Relaxed);
     }
 
     pub fn is_webhook_alive(&self) -> bool {
@@ -221,8 +238,14 @@ pub(crate) async fn event_bus_tick(
     };
 
     if events.is_empty() {
+        // No pending events — check if any executions are running to set idle mode.
+        // This is a cheap query that lets subscriptions reduce their polling cadence.
+        let has_running = exec_repo::has_running_executions(pool).unwrap_or(false);
+        scheduler.set_active(has_running);
         return;
     }
+    // Events are pending — system is definitely active
+    scheduler.set_active(true);
 
     // 2. Collect unique event types for batch queries
     let event_types: Vec<String> = {
@@ -525,6 +548,20 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         Ok(_) => {}
         Err(e) => tracing::error!("Event cleanup error: {}", e),
     }
+
+    // Credential audit log: 90-day retention
+    match audit_log::cleanup_old_entries(pool, 90) {
+        Ok(n) if n > 0 => tracing::info!("Cleaned up {} old credential audit log entries (retention=90d)", n),
+        Ok(_) => {}
+        Err(e) => tracing::error!("Credential audit log cleanup error: {}", e),
+    }
+
+    // Execution log: 90-day retention, keep at least 50 per persona
+    match exec_repo::cleanup_old_executions(pool, 90, 50) {
+        Ok(n) if n > 0 => tracing::info!("Cleaned up {} old execution records (retention=90d, min_keep=50/persona)", n),
+        Ok(_) => {}
+        Err(e) => tracing::error!("Execution log cleanup error: {}", e),
+    }
 }
 
 /// Emit event update to frontend for realtime visualization.
@@ -584,6 +621,7 @@ mod tests {
     fn test_scheduler_state_initial() {
         let state = SchedulerState::new();
         assert!(!state.is_running());
+        assert!(!state.is_active());
         let stats = state.stats();
         assert!(!stats.running);
         assert_eq!(stats.events_processed, 0);
@@ -597,6 +635,16 @@ mod tests {
         assert!(state.is_running());
         state.running.store(false, Ordering::Relaxed);
         assert!(!state.is_running());
+    }
+
+    #[test]
+    fn test_scheduler_active_flag() {
+        let state = SchedulerState::new();
+        assert!(!state.is_active());
+        state.set_active(true);
+        assert!(state.is_active());
+        state.set_active(false);
+        assert!(!state.is_active());
     }
 
     #[test]

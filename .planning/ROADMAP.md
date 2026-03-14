@@ -12,7 +12,7 @@ This roadmap transforms the existing three-mode persona creation experience (Cha
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Session Infrastructure** - Rust build session manager, Tauri Channel streaming, Zustand build state slice, and CLI per-dimension event emission
+- [x] **Phase 1: Session Infrastructure** - Rust build session manager, Tauri Channel streaming, Zustand build state slice, and CLI per-dimension event emission
 - [ ] **Phase 2: Unified Matrix Build Surface** - Single matrix-first entry point with cell state machine, live cell-by-cell animation, click-to-answer Q&A, and feature parity with retired modes
 - [ ] **Phase 3: Build Lifecycle and Approval** - Command center lifecycle orb, mandatory test run, explicit approve/reject gate, refinement loop, and draft-to-production promotion
 - [ ] **Phase 4: Visual Polish and Performance** - Futuristic dark control-room aesthetic, state-driven glow system, GPU-accelerated decorative animations, and 60fps performance validation
@@ -35,8 +35,8 @@ Plans:
 - [x] 01-01-PLAN.md — Rust data models, SQLite migration, BuildSessionManager engine, and Tauri commands
 - [x] 01-02-PLAN.md — Frontend TypeScript types, dimension mapping, Zustand matrixBuildSlice, and API wrappers
 - [x] 01-03-PLAN.md — useBuildSession hook with Channel streaming, 16ms event batching, and Channel vs EventBridge evaluation
-- [ ] 01-04-PLAN.md — Gap closure: multi-turn stdin delivery (answer forwarding to CLI subprocess)
-- [ ] 01-05-PLAN.md — Gap closure: Channel vs EventBridge benchmark implementation
+- [x] 01-04-PLAN.md — Gap closure: multi-turn stdin delivery (answer forwarding to CLI subprocess)
+- [x] 01-05-PLAN.md — Gap closure: Channel vs EventBridge benchmark implementation
 
 ### Phase 2: Unified Matrix Build Surface
 **Goal**: Users build AI agents through a single interactive matrix where cells animate to life as the CLI resolves persona dimensions, questions appear spatially on relevant cells, and all capabilities from the retired Chat/Build/Matrix modes are preserved

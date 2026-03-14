@@ -19,10 +19,10 @@ export const createTestSuite = (
   invoke<PersonaTestSuite>("create_test_suite", {
     personaId,
     name,
-    description: description ?? null,
+    description: description,
     scenarios,
     scenarioCount,
-    sourceRunId: sourceRunId ?? null,
+    sourceRunId: sourceRunId,
   });
 
 export const updateTestSuite = (
@@ -34,10 +34,10 @@ export const updateTestSuite = (
 ) =>
   invoke<PersonaTestSuite>("update_test_suite", {
     id,
-    name: name ?? null,
-    description: description ?? null,
-    scenarios: scenarios ?? null,
-    scenarioCount: scenarioCount ?? null,
+    name: name,
+    description: description,
+    scenarios: scenarios,
+    scenarioCount: scenarioCount,
   });
 
 export const deleteTestSuite = (id: string) =>

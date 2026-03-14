@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
-import { errMsg } from "../../storeTypes";
+import { reportError } from "../../storeTypes";
 import type { PersonaTestRun } from "@/lib/bindings/PersonaTestRun";
 import type { PersonaTestResult } from "@/lib/bindings/PersonaTestResult";
 import type { PersonaTestSuite } from "@/lib/bindings/PersonaTestSuite";
@@ -62,7 +62,7 @@ export const createTestSlice: StateCreator<AgentStore, [], [], TestSlice> = (set
       const runs = await listTestRuns(personaId);
       set({ testRuns: runs });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch test runs") });
+      reportError(err, "Failed to fetch test runs", set);
     }
   },
 
@@ -80,7 +80,7 @@ export const createTestSlice: StateCreator<AgentStore, [], [], TestSlice> = (set
       return run.id;
     } catch (err) {
       testLifecycle.markFailed(set);
-      set({ error: errMsg(err, "Failed to start test run") });
+      reportError(err, "Failed to start test run", set);
       return null;
     }
   },
@@ -89,7 +89,7 @@ export const createTestSlice: StateCreator<AgentStore, [], [], TestSlice> = (set
     try {
       await cancelTestRun(runId);
     } catch (err) {
-      set({ error: errMsg(err, "Failed to cancel test run") });
+      reportError(err, "Failed to cancel test run", set);
     } finally {
       testLifecycle.markCancelled(set);
     }
@@ -105,7 +105,7 @@ export const createTestSlice: StateCreator<AgentStore, [], [], TestSlice> = (set
           : {}
       ));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch test results") });
+      reportError(err, "Failed to fetch test results", set);
     }
   },
 
@@ -116,7 +116,7 @@ export const createTestSlice: StateCreator<AgentStore, [], [], TestSlice> = (set
         testRuns: state.testRuns.filter((r) => r.id !== runId),
       }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete test run") });
+      reportError(err, "Failed to delete test run", set);
     }
   },
 
@@ -135,7 +135,7 @@ export const createTestSlice: StateCreator<AgentStore, [], [], TestSlice> = (set
       const suites = await listTestSuites(personaId);
       set({ testSuites: suites });
     } catch (err) {
-      set({ error: errMsg(err, "Failed to fetch test suites") });
+      reportError(err, "Failed to fetch test suites", set);
     }
   },
 
@@ -145,7 +145,7 @@ export const createTestSlice: StateCreator<AgentStore, [], [], TestSlice> = (set
       set((state) => ({ testSuites: [suite, ...state.testSuites] }));
       return suite;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to create test suite") });
+      reportError(err, "Failed to create test suite", set);
       return null;
     }
   },
@@ -155,7 +155,7 @@ export const createTestSlice: StateCreator<AgentStore, [], [], TestSlice> = (set
       await deleteTestSuite(id);
       set((state) => ({ testSuites: state.testSuites.filter((s) => s.id !== id) }));
     } catch (err) {
-      set({ error: errMsg(err, "Failed to delete test suite") });
+      reportError(err, "Failed to delete test suite", set);
     }
   },
 
@@ -165,7 +165,7 @@ export const createTestSlice: StateCreator<AgentStore, [], [], TestSlice> = (set
       set((state) => ({ testSuites: state.testSuites.map((s) => (s.id === updated.id ? updated : s)) }));
       return updated;
     } catch (err) {
-      set({ error: errMsg(err, "Failed to update test suite") });
+      reportError(err, "Failed to update test suite", set);
       return null;
     }
   },

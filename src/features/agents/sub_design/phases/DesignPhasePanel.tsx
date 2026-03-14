@@ -129,7 +129,7 @@ export function DesignPhasePanel({
                 value={instruction}
                 onChange={(e) => onInstructionChange(e.target.value)}
                 placeholder="Optional: add context or constraints (e.g. &quot;always prioritize P1 tickets&quot;, &quot;post to #alerts channel&quot;)"
-                className="w-full min-h-[60px] max-h-[120px] bg-background/50 border border-emerald-500/10 rounded-xl px-3 py-2 text-sm text-foreground font-sans resize-y focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
+                className="w-full min-h-[60px] max-h-[120px] bg-background/50 border border-emerald-500/10 rounded-xl px-3 py-2 text-sm text-foreground font-sans resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
                 disabled={phase !== 'idle'}
               />
 
@@ -154,7 +154,7 @@ export function DesignPhasePanel({
                   value={instruction}
                   onChange={(e) => onInstructionChange(e.target.value)}
                   placeholder="Describe what you want this agent to do in plain language...&#10;&#10;e.g. &quot;Monitor our Stripe account for failed payments over $100 and notify the finance team on Slack with a summary&quot;"
-                  className="w-full min-h-[100px] max-h-[200px] bg-background/50 border border-violet-500/15 rounded-xl px-3 py-2.5 text-sm text-foreground font-sans resize-y focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40 transition-all placeholder-muted-foreground/30"
+                  className="w-full min-h-[100px] max-h-[200px] bg-background/50 border border-violet-500/15 rounded-xl px-3 py-2.5 text-sm text-foreground font-sans resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:border-violet-500/40 transition-all placeholder-muted-foreground/30"
                   disabled={phase !== 'idle'}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {

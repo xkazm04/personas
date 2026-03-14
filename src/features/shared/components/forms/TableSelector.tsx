@@ -66,7 +66,7 @@ export function TableSelector({
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filter tables..."
-            className="w-full pl-6 pr-2 py-1 rounded-xl bg-background/50 border border-primary/8 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/25 transition-colors"
+            className="w-full pl-6 pr-2 py-1 rounded-xl bg-background/50 border border-primary/8 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/25 transition-colors"
           />
         </div>
         {onRefresh && (

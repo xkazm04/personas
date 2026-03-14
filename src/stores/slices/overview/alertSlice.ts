@@ -1,6 +1,5 @@
 import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
-import { log } from "@/lib/log";
 
 // -- Alert Rule Types --------------------------------------------------
 
@@ -51,39 +50,7 @@ export const ALERT_SEVERITY_OPTIONS: { value: AlertSeverity; label: string; colo
   { value: 'critical', label: 'Critical', color: '#ef4444' },
 ];
 
-// -- Persistence -------------------------------------------------------
-
-const RULES_KEY = '__personas_alert_rules';
-const HISTORY_KEY = '__personas_alert_history';
-const MAX_HISTORY = 200;
-
-function loadRules(): AlertRule[] {
-  try {
-    const raw = localStorage.getItem(RULES_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (err) {
-    log.warn('alertSlice', 'Failed to parse alert rules from localStorage', { key: RULES_KEY, error: String(err) });
-    return [];
-  }
-}
-
-function saveRules(rules: AlertRule[]) {
-  try { localStorage.setItem(RULES_KEY, JSON.stringify(rules)); } catch (err) { log.warn('alertSlice', 'Failed to persist alert rules', { key: RULES_KEY, error: String(err) }); }
-}
-
-function loadHistory(): FiredAlert[] {
-  try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (err) {
-    log.warn('alertSlice', 'Failed to parse alert history from localStorage', { key: HISTORY_KEY, error: String(err) });
-    return [];
-  }
-}
-
-function saveHistory(history: FiredAlert[]) {
-  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY))); } catch (err) { log.warn('alertSlice', 'Failed to persist alert history', { key: HISTORY_KEY, error: String(err) }); }
-}
+export const MAX_ALERT_HISTORY = 200;
 
 // -- Evaluation Engine -------------------------------------------------
 
@@ -163,6 +130,8 @@ export interface AlertSlice {
   // State
   alertRules: AlertRule[];
   alertHistory: FiredAlert[];
+  /** Cooldown map: ruleId -> timestamp of last fire (persisted via Zustand) */
+  alertFiredCooldowns: Record<string, number>;
   /** Alerts that are currently showing as toasts */
   activeToasts: FiredAlert[];
   /** Health telemetry for the alert evaluation pipeline */
@@ -183,56 +152,13 @@ export interface AlertSlice {
   evaluateAlertRules: () => void;
 }
 
-/** Track which rules already fired with a cooldown window to avoid repeat alerts.
- *  Persisted to localStorage so cooldowns survive page reloads. */
-const FIRED_KEY = '__personas_alert_fired';
+/** Cooldown window to avoid repeat alerts for the same rule. */
 const FIRED_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 
-function loadFiredMap(): Map<string, number> {
-  try {
-    const raw = localStorage.getItem(FIRED_KEY);
-    if (!raw) return new Map();
-    const entries: [string, number][] = JSON.parse(raw);
-    const now = Date.now();
-    // Prune expired entries on load
-    return new Map(entries.filter(([, ts]) => now - ts < FIRED_COOLDOWN_MS));
-  } catch {
-    return new Map();
-  }
-}
-
-function saveFiredMap(map: Map<string, number>) {
-  try {
-    localStorage.setItem(FIRED_KEY, JSON.stringify([...map.entries()]));
-  } catch { /* best-effort */ }
-}
-
-const firedRuleMap = loadFiredMap();
-
-function hasFired(ruleId: string): boolean {
-  const ts = firedRuleMap.get(ruleId);
-  if (ts == null) return false;
-  if (Date.now() - ts >= FIRED_COOLDOWN_MS) {
-    firedRuleMap.delete(ruleId);
-    saveFiredMap(firedRuleMap);
-    return false;
-  }
-  return true;
-}
-
-function markFired(ruleId: string) {
-  firedRuleMap.set(ruleId, Date.now());
-  saveFiredMap(firedRuleMap);
-}
-
-function clearFired(ruleId: string) {
-  firedRuleMap.delete(ruleId);
-  saveFiredMap(firedRuleMap);
-}
-
 export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> = (set, get) => ({
-  alertRules: loadRules(),
-  alertHistory: loadHistory(),
+  alertRules: [],
+  alertHistory: [],
+  alertFiredCooldowns: {},
   activeToasts: [],
   alertEvalHealth: {
     lastEvalAt: null,
@@ -249,51 +175,44 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
     };
-    set((state) => {
-      const rules = [...state.alertRules, newRule];
-      saveRules(rules);
-      return { alertRules: rules };
-    });
+    set((state) => ({ alertRules: [...state.alertRules, newRule] }));
   },
 
   updateAlertRule: (id, updates) => {
     set((state) => {
       const rules = state.alertRules.map(r => r.id === id ? { ...r, ...updates } : r);
-      saveRules(rules);
-      // Reset fired state so updated rule can fire again
-      clearFired(id);
-      return { alertRules: rules };
+      const { [id]: _, ...rest } = state.alertFiredCooldowns;
+      return { alertRules: rules, alertFiredCooldowns: rest };
     });
   },
 
   deleteAlertRule: (id) => {
     set((state) => {
       const rules = state.alertRules.filter(r => r.id !== id);
-      saveRules(rules);
-      clearFired(id);
-      return { alertRules: rules };
+      const { [id]: _, ...rest } = state.alertFiredCooldowns;
+      return { alertRules: rules, alertFiredCooldowns: rest };
     });
   },
 
   toggleAlertRule: (id) => {
     set((state) => {
       const rules = state.alertRules.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r);
-      saveRules(rules);
-      if (!rules.find(r => r.id === id)?.enabled) clearFired(id);
+      const toggled = rules.find(r => r.id === id);
+      if (toggled && !toggled.enabled) {
+        const { [id]: _, ...rest } = state.alertFiredCooldowns;
+        return { alertRules: rules, alertFiredCooldowns: rest };
+      }
       return { alertRules: rules };
     });
   },
 
   dismissAlert: (alertId) => {
-    set((state) => {
-      const history = state.alertHistory.map(a => a.id === alertId ? { ...a, dismissed: true } : a);
-      saveHistory(history);
-      return { alertHistory: history };
-    });
+    set((state) => ({
+      alertHistory: state.alertHistory.map(a => a.id === alertId ? { ...a, dismissed: true } : a),
+    }));
   },
 
   clearAlertHistory: () => {
-    saveHistory([]);
     set({ alertHistory: [] });
   },
 
@@ -331,10 +250,19 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       };
 
       const newAlerts: FiredAlert[] = [];
+      const now = Date.now();
+      const cooldowns = { ...state.alertFiredCooldowns };
 
       for (const rule of state.alertRules) {
         if (!rule.enabled) continue;
-        if (hasFired(rule.id)) continue;
+
+        // Check cooldown
+        const firedTs = cooldowns[rule.id];
+        if (firedTs != null) {
+          if (now - firedTs < FIRED_COOLDOWN_MS) continue;
+          delete cooldowns[rule.id];
+        }
+
         rulesEvaluated++;
 
         // For cost_spike, override snapshot to use today vs average
@@ -345,7 +273,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
         const { triggered, value } = evaluateRule(rule, evalSnapshot);
         if (triggered) {
           rulesTriggered++;
-          markFired(rule.id);
+          cooldowns[rule.id] = now;
           const alert: FiredAlert = {
             id: crypto.randomUUID(),
             ruleId: rule.id,
@@ -367,10 +295,10 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
 
       if (newAlerts.length > 0) {
         set((state) => {
-          const history = [...newAlerts, ...state.alertHistory].slice(0, MAX_HISTORY);
-          saveHistory(history);
+          const history = [...newAlerts, ...state.alertHistory].slice(0, MAX_ALERT_HISTORY);
           return {
             alertHistory: history,
+            alertFiredCooldowns: cooldowns,
             activeToasts: [...state.activeToasts, ...newAlerts],
             alertEvalHealth: {
               lastEvalAt: new Date().toISOString(),
@@ -384,6 +312,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
         });
       } else {
         set((state) => ({
+          alertFiredCooldowns: cooldowns,
           alertEvalHealth: {
             lastEvalAt: new Date().toISOString(),
             lastEvalDurationMs: durationMs,
@@ -397,7 +326,6 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
     } catch (err) {
       const durationMs = Math.round(performance.now() - startMs);
       const errorMsg = err instanceof Error ? err.message : String(err);
-      log.warn('alertSlice', 'evaluateAlertRules failed', { error: errorMsg, durationMs });
       set((state) => ({
         alertEvalHealth: {
           lastEvalAt: new Date().toISOString(),

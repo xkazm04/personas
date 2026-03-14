@@ -1,23 +1,23 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
-import { useVaultStore } from "@/stores/vaultStore";
-import { usePipelineStore } from "@/stores/pipelineStore";
-import { useOverviewStore } from "@/stores/overviewStore";
 import Sidebar from '@/features/shared/components/layout/sidebar/Sidebar';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
-import HomePage from '@/features/home/components/HomePage';
-import { PersonaEditor } from '@/features/agents/sub_editor';
-import PersonaOverviewPage from '@/features/agents/components/persona/PersonaOverviewPage';
-import CreationWizard from '@/features/agents/components/CreationWizard';
 import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
 import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
+import DesktopFooter from '@/features/shared/components/layout/DesktopFooter';
 
+// Lazy-load all section content — only Sidebar stays eager (always visible)
+const HomePage = lazy(() => import('@/features/home/components/HomePage'));
+const PersonaEditor = lazy(() => import('@/features/agents/sub_editor').then(m => ({ default: m.PersonaEditor })));
+const PersonaOverviewPage = lazy(() => import('@/features/agents/components/persona/PersonaOverviewPage'));
+const CreationWizard = lazy(() => import('@/features/agents/components/CreationWizard'));
 const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
@@ -34,21 +34,21 @@ const SectionFallback = <PanelSkeleton variant="section" />;
 
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
-  const sidebarSection = useSystemStore((s) => s.sidebarSection);
-  const cloudTab = useSystemStore((s) => s.cloudTab);
-  const selectedPersonaId = useAgentStore((s) => s.selectedPersonaId);
-  const isCreatingPersona = useSystemStore((s) => s.isCreatingPersona);
-  const personas = useAgentStore((s) => s.personas);
-  const isLoading = useSystemStore((s) => s.isLoading);
-  const error = useSystemStore((s) => s.error);
+  const { sidebarSection, cloudTab, isCreatingPersona, isLoading, error } = useSystemStore(
+    useShallow((s) => ({
+      sidebarSection: s.sidebarSection,
+      cloudTab: s.cloudTab,
+      isCreatingPersona: s.isCreatingPersona,
+      isLoading: s.isLoading,
+      error: s.error,
+    }))
+  );
   const setError = useSystemStore((s) => s.setError);
+  const { selectedPersonaId, personas } = useAgentStore(
+    useShallow((s) => ({ selectedPersonaId: s.selectedPersonaId, personas: s.personas }))
+  );
   const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
   const fetchToolDefinitions = useAgentStore((s) => s.fetchToolDefinitions);
-  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
-  const fetchRecipes = usePipelineStore((s) => s.fetchRecipes);
-  const fetchPendingReviewCount = useOverviewStore((s) => s.fetchPendingReviewCount);
-  const fetchGroups = usePipelineStore((s) => s.fetchGroups);
-
   const fetchDetail = useAgentStore((s) => s.fetchDetail);
 
 
@@ -58,17 +58,15 @@ export default function PersonasPage() {
 
   const runStartup = useCallback(() => {
     // Run all startup fetches in parallel and collect failures.
-    // Using Promise.allSettled prevents any single call's error from overwriting
-    // the others -- the final store.error is the aggregate of all failures.
+    // Vault and pipeline stores are dynamically imported to keep them out of the main bundle.
     setError(null);
-    const STARTUP_LABELS = ['personas', 'tools', 'credentials', 'recipes', 'pending review', 'groups'] as const;
+    const STARTUP_LABELS = ['personas', 'tools', 'credentials', 'recipes', 'groups'] as const;
     Promise.allSettled([
       fetchPersonas(),
       fetchToolDefinitions(),
-      fetchCredentials(),
-      fetchRecipes(),
-      fetchPendingReviewCount(),
-      fetchGroups(),
+      import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
+      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes()),
+      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchGroups()),
     ]).then((results) => {
       setPersonasFetched(true);
       const failed = (results as PromiseSettledResult<void>[])
@@ -80,7 +78,7 @@ export default function PersonasPage() {
     }).catch(() => {
       setPersonasFetched(true);
     });
-  }, [fetchPersonas, fetchToolDefinitions, fetchCredentials, fetchRecipes, fetchPendingReviewCount, fetchGroups, setError]);
+  }, [fetchPersonas, fetchToolDefinitions, setError]);
 
   useEffect(() => {
     runStartup();
@@ -119,14 +117,14 @@ export default function PersonasPage() {
     // Show unified wizard when no personas exist OR when explicitly creating
     if (sidebarSection === 'personas') {
       if (personasFetched && !isLoading && !error && personas.length === 0) {
-        return <ErrorBoundary name="CreationWizard"><CreationWizard /></ErrorBoundary>;
+        return <ErrorBoundary name="CreationWizard"><Suspense fallback={SectionFallback}><CreationWizard /></Suspense></ErrorBoundary>;
       }
       if (isCreatingPersona) {
-        return <ErrorBoundary name="CreationWizard"><CreationWizard canCancel /></ErrorBoundary>;
+        return <ErrorBoundary name="CreationWizard"><Suspense fallback={SectionFallback}><CreationWizard canCancel /></Suspense></ErrorBoundary>;
       }
     }
 
-    if (sidebarSection === 'home') return <ErrorBoundary name="Home"><HomePage /></ErrorBoundary>;
+    if (sidebarSection === 'home') return <ErrorBoundary name="Home"><Suspense fallback={SectionFallback}><HomePage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'team') {
       return <ErrorBoundary name="Teams"><Suspense fallback={SectionFallback}><TeamCanvas /></Suspense></ErrorBoundary>;
     }
@@ -164,8 +162,8 @@ export default function PersonasPage() {
     if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={SectionFallback}><DesignReviewsPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'dev-tools') return <ErrorBoundary name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'settings') return <ErrorBoundary name="Settings"><Suspense fallback={SectionFallback}><SettingsPage /></Suspense></ErrorBoundary>;
-    if (selectedPersonaId) return <ErrorBoundary name="Agent Editor"><PersonaEditor /></ErrorBoundary>;
-    return <ErrorBoundary name="Agent Overview"><PersonaOverviewPage /></ErrorBoundary>;
+    if (selectedPersonaId) return <ErrorBoundary name="Agent Editor"><Suspense fallback={SectionFallback}><PersonaEditor /></Suspense></ErrorBoundary>;
+    return <ErrorBoundary name="Agent Overview"><Suspense fallback={SectionFallback}><PersonaOverviewPage /></Suspense></ErrorBoundary>;
   };
 
   return (
@@ -183,7 +181,7 @@ export default function PersonasPage() {
         <Sidebar />
 
         {/* Content area */}
-        <div className={`flex-1 flex flex-col ${IS_MOBILE ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-hidden`}>
+        <div className={`flex-1 flex flex-col ${IS_MOBILE ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-hidden ${IS_MOBILE ? '' : 'pb-8'}`}>
           {error && (
             <ErrorBanner
               message={error}
@@ -203,6 +201,9 @@ export default function PersonasPage() {
           </motion.div>
         </div>
       </div>
+
+      {/* Desktop footer bar */}
+      <DesktopFooter />
       </div>
     </CredentialNavProvider>
     </CanvasDragProvider>
