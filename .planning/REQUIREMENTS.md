@@ -32,9 +32,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Build Lifecycle
 
 - [x] **LIFE-01**: Command center orb reflects full lifecycle: idle → generating → Q&A → testing → promoting
-- [ ] **LIFE-02**: Mandatory real test run — CLI executes persona against user's use case with actual results
-- [ ] **LIFE-03**: Explicit approval gate — user accepts test results before draft becomes real persona
-- [ ] **LIFE-04**: Reject action returns to matrix for refinement (not a dead end)
+- [x] **LIFE-02**: Mandatory real test run — CLI executes persona against user's use case with actual results
+- [x] **LIFE-03**: Explicit approval gate — user accepts test results before draft becomes real persona
+- [x] **LIFE-04**: Reject action returns to matrix for refinement (not a dead end)
 - [ ] **LIFE-05**: Refine-in-place via command center — user types refinement feedback, CLI adjusts specific cells
 - [ ] **LIFE-06**: Draft-to-production promotion preserves all configured tools, triggers, and credentials
 
@@ -108,9 +108,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | MTRX-09 | Phase 2 | Complete |
 | MTRX-10 | Phase 2 | Complete |
 | LIFE-01 | Phase 3 | Complete |
-| LIFE-02 | Phase 3 | Pending |
-| LIFE-03 | Phase 3 | Pending |
-| LIFE-04 | Phase 3 | Pending |
+| LIFE-02 | Phase 3 | Complete |
+| LIFE-03 | Phase 3 | Complete |
+| LIFE-04 | Phase 3 | Complete |
 | LIFE-05 | Phase 3 | Pending |
 | LIFE-06 | Phase 3 | Pending |
 | VISL-01 | Phase 4 | Pending |
