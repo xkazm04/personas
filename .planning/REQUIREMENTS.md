@@ -31,7 +31,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Build Lifecycle
 
-- [ ] **LIFE-01**: Command center orb reflects full lifecycle: idle → generating → Q&A → testing → promoting
+- [x] **LIFE-01**: Command center orb reflects full lifecycle: idle → generating → Q&A → testing → promoting
 - [ ] **LIFE-02**: Mandatory real test run — CLI executes persona against user's use case with actual results
 - [ ] **LIFE-03**: Explicit approval gate — user accepts test results before draft becomes real persona
 - [ ] **LIFE-04**: Reject action returns to matrix for refinement (not a dead end)
@@ -53,7 +53,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **INTG-01**: Existing personas created via old modes remain fully functional (no migration required)
 - [ ] **INTG-02**: All existing connector, trigger, and credential edit cell capabilities preserved in unified mode
 - [ ] **INTG-03**: Feature parity audit completed — no capabilities lost from retiring Chat, Build, or Matrix modes
-- [ ] **INTG-04**: Build validation logic from Build mode (computeCredentialCoverage) ported to unified matrix
+- [x] **INTG-04**: Build validation logic from Build mode (computeCredentialCoverage) ported to unified matrix
 
 ## v2 Requirements
 
@@ -107,7 +107,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | MTRX-08 | Phase 2 | Complete |
 | MTRX-09 | Phase 2 | Complete |
 | MTRX-10 | Phase 2 | Complete |
-| LIFE-01 | Phase 3 | Pending |
+| LIFE-01 | Phase 3 | Complete |
 | LIFE-02 | Phase 3 | Pending |
 | LIFE-03 | Phase 3 | Pending |
 | LIFE-04 | Phase 3 | Pending |
@@ -123,7 +123,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | INTG-01 | Phase 2 | Pending |
 | INTG-02 | Phase 2 | Pending |
 | INTG-03 | Phase 2 | Pending |
-| INTG-04 | Phase 3 | Pending |
+| INTG-04 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 33 total

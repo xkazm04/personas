@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: 02-05 Tasks 1-3 complete, checkpoint at Task 4 (human-verify)
-last_updated: "2026-03-14T11:55:22.983Z"
-last_activity: 2026-03-14 -- Completed Plan 04 (Spatial Q&A Popover)
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-14T15:23:08.276Z"
+last_activity: 2026-03-14 -- Completed Plan 01 (Build Lifecycle Data Layer)
 progress:
   total_phases: 4
-  completed_phases: 1
-  total_plans: 10
-  completed_plans: 9
+  completed_phases: 2
+  total_plans: 13
+  completed_plans: 11
   percent: 45
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-14)
 
 **Core value:** Any person can build a working AI agent by answering questions in a visual matrix, watch it come alive cell-by-cell, verify it works, and promote it to production.
-**Current focus:** Phase 2: Unified Matrix Build Surface
+**Current focus:** Phase 3: Build Lifecycle and Approval
 
 ## Current Position
 
-Phase: 2 of 4 (Unified Matrix Build Surface)
-Plan: 4 of 5 in current phase
-Status: Phase 2 in progress
-Last activity: 2026-03-14 -- Completed Plan 04 (Spatial Q&A Popover)
+Phase: 3 of 4 (Build Lifecycle and Approval)
+Plan: 1 of 3 in current phase
+Status: Phase 3 in progress
+Last activity: 2026-03-14 -- Completed Plan 01 (Build Lifecycle Data Layer)
 
 Progress: [████▌░░░░░] 45%
 
@@ -51,6 +51,7 @@ Progress: [████▌░░░░░] 45%
 - Trend: consistent (spatial Q&A popover straightforward with @floating-ui/react)
 
 *Updated after each plan completion*
+| Phase 03 P01 | 7 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,9 @@ Recent decisions affecting current work:
 - [02-04]: @floating-ui/react for popover positioning: offset(12), flip(), shift(padding:16) middleware chain with right placement default
 - [02-04]: FloatingPortal renders to document.body to escape grid overflow-hidden rounded-xl clipping
 - [02-04]: isPrimaryQuestion adds border-primary/40 with subtle pulse animation for visual priority hint
+- [Phase 03]: Promoted is terminal state in is_terminal() -- build lifecycle completes at promotion
+- [Phase 03]: handleTestComplete stores output preview as single-element array for consistent test output rendering
+- [Phase 03]: handleRejectTest resets phase to draft_ready enabling refinement re-entry loop per LIFE-04
 
 ### Pending Todos
 
@@ -99,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T11:55:22.980Z
-Stopped at: 02-05 Tasks 1-3 complete, checkpoint at Task 4 (human-verify)
+Last session: 2026-03-14T15:23:08.273Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None
