@@ -27,8 +27,43 @@ vi.mock("@/api/agents/tests", () => ({
   validateN8nDraft: (...args: unknown[]) => mockValidateN8nDraft(...args),
 }));
 
+const mockUpdatePersona = vi.fn().mockResolvedValue({ id: "persona-1", name: "Test Agent", enabled: true });
+const mockBuildUpdateInput = vi.fn((partial: Record<string, unknown>) => ({
+  name: partial.name ?? null,
+  description: partial.description ?? null,
+  system_prompt: null,
+  structured_prompt: null,
+  icon: null,
+  color: null,
+  enabled: partial.enabled !== undefined ? partial.enabled : null,
+  sensitive: null,
+  headless: null,
+  max_concurrent: null,
+  timeout_ms: null,
+  notification_channels: null,
+  last_design_result: null,
+  model_profile: null,
+  max_budget_usd: null,
+  max_turns: null,
+  design_context: partial.design_context !== undefined ? partial.design_context : null,
+  group_id: null,
+}));
+
 vi.mock("@/api/agents/personas", () => ({
   getPersonaDetail: (...args: unknown[]) => mockGetPersonaDetail(...args),
+  updatePersona: (...args: unknown[]) => mockUpdatePersona(...args),
+  buildUpdateInput: (...args: unknown[]) => mockBuildUpdateInput(...args),
+}));
+
+const mockComputeCredentialCoverage = vi.fn().mockReturnValue({
+  covered: true,
+  missing: [],
+  total: 1,
+  linked: 1,
+});
+
+vi.mock("@/lib/validation/credentialCoverage", () => ({
+  computeCredentialCoverage: (...args: unknown[]) => mockComputeCredentialCoverage(...args),
 }));
 
 // Mock Tauri event listeners
@@ -50,6 +85,7 @@ const mockHandleTestComplete = vi.fn();
 const mockHandleTestFailed = vi.fn();
 const mockHandleRejectTest = vi.fn();
 const mockAppendTestOutput = vi.fn();
+const mockHandleBuildSessionStatus = vi.fn();
 
 vi.mock("@/stores/agentStore", () => {
   const getState = () => ({
@@ -59,6 +95,7 @@ vi.mock("@/stores/agentStore", () => {
     handleTestFailed: mockHandleTestFailed,
     handleRejectTest: mockHandleRejectTest,
     appendTestOutput: mockAppendTestOutput,
+    handleBuildSessionStatus: mockHandleBuildSessionStatus,
   });
 
   const useAgentStore = vi.fn(
@@ -88,6 +125,8 @@ function setStoreState(overrides: Partial<Record<string, unknown>> = {}) {
     buildTestPassed: null,
     buildTestOutputLines: [],
     buildTestError: null,
+    buildDraft: null,
+    buildSessionId: null,
     ...overrides,
   };
 }
@@ -330,46 +369,286 @@ describe("useMatrixLifecycle", () => {
     });
   });
 
-  // -- handleApproveTest -------------------------------------------------
+  // -- handleRefine ------------------------------------------------------
 
-  describe("handleApproveTest", () => {
-    it("returns true when buildTestPassed is true", () => {
+  describe("handleRefine", () => {
+    const mockHandleGenerate = vi.fn().mockResolvedValue(undefined);
+
+    it("starts a new build session with refinement text and previous agent_ir context", async () => {
+      const draftIR = { name: "My Bot", description: "A helper", credential_links: {} };
+      setStoreState({
+        buildPhase: "draft_ready",
+        buildDraft: draftIR,
+      });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1", handleGenerate: mockHandleGenerate }),
+      );
+
+      await act(async () => {
+        await result.current.handleRefine("Please update the Slack integration");
+      });
+
+      expect(mockHandleGenerate).toHaveBeenCalledWith(
+        expect.stringContaining("[REFINEMENT]"),
+        "persona-1",
+      );
+      expect(mockHandleGenerate).toHaveBeenCalledWith(
+        expect.stringContaining("Please update the Slack integration"),
+        "persona-1",
+      );
+    });
+
+    it("includes previous buildDraft as JSON context in the intent string", async () => {
+      const draftIR = { name: "My Bot", tools: ["slack"] };
+      setStoreState({
+        buildPhase: "draft_ready",
+        buildDraft: draftIR,
+      });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1", handleGenerate: mockHandleGenerate }),
+      );
+
+      await act(async () => {
+        await result.current.handleRefine("Add email support");
+      });
+
+      const intent = mockHandleGenerate.mock.calls[0]![0] as string;
+      expect(intent).toContain(JSON.stringify(draftIR));
+    });
+
+    it("resets test state by calling handleRejectTest before starting new session", async () => {
+      setStoreState({
+        buildPhase: "draft_ready",
+        buildDraft: { name: "Bot" },
+      });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1", handleGenerate: mockHandleGenerate }),
+      );
+
+      await act(async () => {
+        await result.current.handleRefine("Fix the tools");
+      });
+
+      // handleRejectTest resets test state (test ID, passed, output, error)
+      expect(mockHandleRejectTest).toHaveBeenCalled();
+    });
+
+    it("only callable when buildPhase is draft_ready", async () => {
+      setStoreState({
+        buildPhase: "testing",
+        buildDraft: { name: "Bot" },
+      });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1", handleGenerate: mockHandleGenerate }),
+      );
+
+      await act(async () => {
+        await result.current.handleRefine("some feedback");
+      });
+
+      expect(mockHandleGenerate).not.toHaveBeenCalled();
+    });
+  });
+
+  // -- handlePromote ----------------------------------------------------
+
+  describe("handlePromote", () => {
+    it("calls updatePersona with enabled=true on the draft persona", async () => {
+      const draftIR = { name: "Production Bot", description: "Does things", credential_links: { slack: "cred-1" } };
       setStoreState({
         buildPhase: "test_complete",
         buildTestPassed: true,
+        buildDraft: draftIR,
+        buildSessionId: "session-123",
       });
 
       const { result } = renderHook(() =>
         useMatrixLifecycle({ personaId: "persona-1" }),
       );
 
-      expect(result.current.handleApproveTest()).toBe(true);
+      await act(async () => {
+        await result.current.handlePromote();
+      });
+
+      expect(mockUpdatePersona).toHaveBeenCalledWith(
+        "persona-1",
+        expect.objectContaining({ enabled: true }),
+      );
     });
 
-    it("returns false when buildTestPassed is not true", () => {
+    it("sets design_context with credential_links from buildDraft", async () => {
+      const draftIR = { name: "Bot", description: "Desc", credential_links: { slack: "cred-1", github: "cred-2" } };
+      setStoreState({
+        buildPhase: "test_complete",
+        buildTestPassed: true,
+        buildDraft: draftIR,
+        buildSessionId: "session-123",
+      });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1" }),
+      );
+
+      await act(async () => {
+        await result.current.handlePromote();
+      });
+
+      expect(mockBuildUpdateInput).toHaveBeenCalledWith(
+        expect.objectContaining({
+          design_context: expect.stringContaining("credential_links"),
+        }),
+      );
+    });
+
+    it("checks credential coverage and rejects if missing credentials", async () => {
+      mockComputeCredentialCoverage.mockReturnValueOnce({
+        covered: false,
+        missing: ["github_token"],
+        total: 2,
+        linked: 1,
+      });
+
+      const draftIR = { name: "Bot", description: "Desc", credential_links: { slack: "cred-1" } };
+      setStoreState({
+        buildPhase: "test_complete",
+        buildTestPassed: true,
+        buildDraft: draftIR,
+        buildSessionId: "session-123",
+      });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1" }),
+      );
+
+      let promoteResult: { success: boolean; coverage: { covered: boolean; missing: string[] } } | undefined;
+      await act(async () => {
+        promoteResult = await result.current.handlePromote();
+      });
+
+      expect(promoteResult!.success).toBe(false);
+      expect(promoteResult!.coverage.missing).toEqual(["github_token"]);
+      expect(mockUpdatePersona).not.toHaveBeenCalled();
+    });
+
+    it("returns CoverageResult with missing list when coverage fails", async () => {
+      mockComputeCredentialCoverage.mockReturnValueOnce({
+        covered: false,
+        missing: ["slack_token", "github_token"],
+        total: 3,
+        linked: 1,
+      });
+
+      const draftIR = { name: "Bot", credential_links: {} };
+      setStoreState({
+        buildPhase: "test_complete",
+        buildTestPassed: true,
+        buildDraft: draftIR,
+        buildSessionId: "session-123",
+      });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1" }),
+      );
+
+      let promoteResult: { success: boolean; coverage: { missing: string[] } } | undefined;
+      await act(async () => {
+        promoteResult = await result.current.handlePromote();
+      });
+
+      expect(promoteResult!.success).toBe(false);
+      expect(promoteResult!.coverage.missing).toContain("slack_token");
+      expect(promoteResult!.coverage.missing).toContain("github_token");
+    });
+
+    it("transitions to promoted phase on success", async () => {
+      const draftIR = { name: "Bot", description: "Desc", credential_links: { slack: "cred-1" } };
+      setStoreState({
+        buildPhase: "test_complete",
+        buildTestPassed: true,
+        buildDraft: draftIR,
+        buildSessionId: "session-123",
+      });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1" }),
+      );
+
+      await act(async () => {
+        await result.current.handlePromote();
+      });
+
+      expect(mockHandleBuildSessionStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "session_status",
+          phase: "promoted",
+        }),
+      );
+    });
+
+    it("returns success true with coverage when promotion succeeds", async () => {
+      const draftIR = { name: "Bot", description: "Desc", credential_links: { slack: "cred-1" } };
+      setStoreState({
+        buildPhase: "test_complete",
+        buildTestPassed: true,
+        buildDraft: draftIR,
+        buildSessionId: "session-123",
+      });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1" }),
+      );
+
+      let promoteResult: { success: boolean; coverage: { covered: boolean } } | undefined;
+      await act(async () => {
+        promoteResult = await result.current.handlePromote();
+      });
+
+      expect(promoteResult!.success).toBe(true);
+      expect(promoteResult!.coverage.covered).toBe(true);
+    });
+
+    it("guards against non-test_complete phase", async () => {
+      setStoreState({
+        buildPhase: "draft_ready",
+        buildTestPassed: true,
+        buildDraft: { name: "Bot" },
+      });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1" }),
+      );
+
+      let promoteResult: { success: boolean } | undefined;
+      await act(async () => {
+        promoteResult = await result.current.handlePromote();
+      });
+
+      expect(promoteResult!.success).toBe(false);
+      expect(mockUpdatePersona).not.toHaveBeenCalled();
+    });
+
+    it("guards against buildTestPassed not being true", async () => {
       setStoreState({
         buildPhase: "test_complete",
         buildTestPassed: false,
+        buildDraft: { name: "Bot" },
       });
 
       const { result } = renderHook(() =>
         useMatrixLifecycle({ personaId: "persona-1" }),
       );
 
-      expect(result.current.handleApproveTest()).toBe(false);
-    });
-
-    it("returns false when buildPhase is not test_complete", () => {
-      setStoreState({
-        buildPhase: "testing",
-        buildTestPassed: true,
+      let promoteResult: { success: boolean } | undefined;
+      await act(async () => {
+        promoteResult = await result.current.handlePromote();
       });
 
-      const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
-      );
-
-      expect(result.current.handleApproveTest()).toBe(false);
+      expect(promoteResult!.success).toBe(false);
+      expect(mockUpdatePersona).not.toHaveBeenCalled();
     });
   });
 
