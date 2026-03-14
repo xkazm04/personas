@@ -35,6 +35,7 @@ mod exposure;
 mod knowledge_base;
 pub mod webhook_log;
 mod chat;
+mod build_session;
 
 pub use persona::*;
 pub use tool::*;
@@ -72,3 +73,4 @@ pub use identity::*;
 pub use exposure::*;
 pub use knowledge_base::*;
 pub use chat::*;
+pub use build_session::*;

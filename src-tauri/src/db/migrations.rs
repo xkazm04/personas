@@ -1346,6 +1346,25 @@ CREATE INDEX IF NOT EXISTS idx_chat_persona   ON chat_messages(persona_id);
 CREATE INDEX IF NOT EXISTS idx_chat_session   ON chat_messages(session_id);
 CREATE INDEX IF NOT EXISTS idx_chat_created   ON chat_messages(created_at);
 
+-- ============================================================================
+-- Build Sessions (multi-turn agent builder sessions)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS build_sessions (
+    id              TEXT PRIMARY KEY,
+    persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+    phase           TEXT NOT NULL DEFAULT 'initializing',
+    resolved_cells  TEXT NOT NULL DEFAULT '{}',
+    pending_question TEXT,
+    agent_ir        TEXT,
+    intent          TEXT NOT NULL,
+    error_message   TEXT,
+    cli_pid         INTEGER,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_build_sessions_persona ON build_sessions(persona_id);
+CREATE INDEX IF NOT EXISTS idx_build_sessions_phase ON build_sessions(phase);
+
 "#;
 
 /// Incremental migrations for columns added after the initial schema.
@@ -2220,6 +2239,8 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
          CREATE INDEX IF NOT EXISTS idx_pe_persona_created  ON persona_executions(persona_id, created_at DESC);
          -- WHERE persona_id = ? AND status IN (...) (concurrent count, failed listing)
          CREATE INDEX IF NOT EXISTS idx_pe_persona_status   ON persona_executions(persona_id, status);
+         -- WHERE status IN (...) AND created_at >= ... (dashboard: get_execution_dashboard, duration percentiles)
+         CREATE INDEX IF NOT EXISTS idx_pe_status_created   ON persona_executions(status, created_at DESC);
          -- WHERE retry_of_execution_id = ? (retry lineage lookup)
          CREATE INDEX IF NOT EXISTS idx_pe_retry_of         ON persona_executions(retry_of_execution_id);
 
