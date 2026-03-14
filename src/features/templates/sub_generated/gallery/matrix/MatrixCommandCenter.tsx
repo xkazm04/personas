@@ -20,9 +20,10 @@
  */
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   FileText, Play, X, User, Wrench, BookOpen, Shield,
-  Globe, Search, Loader2, HelpCircle, CheckCircle2, Sparkles, ArrowRight, Send,
+  Globe, Search, Loader2, HelpCircle, CheckCircle2, Sparkles, Send,
   XCircle, Eye, RotateCcw,
 } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
@@ -66,7 +67,8 @@ function CapabilityToggle({ icon: Icon, label, active, onToggle }: { icon: React
 }
 
 /** Radial launch orb -- the visual centerpiece of the matrix. */
-function LaunchOrb({ onClick, disabled, isRunning, label, icon }: { onClick?: () => void; disabled: boolean; isRunning: boolean; label: string; icon?: React.ReactNode }) {
+function LaunchOrb({ onClick, disabled, isRunning, label, icon, buildPhase }: { onClick?: () => void; disabled: boolean; isRunning: boolean; label: string; icon?: React.ReactNode; buildPhase?: BuildPhase }) {
+  const orbGlow = buildPhase ? (ORB_GLOW_CLASSES[buildPhase] ?? '') : '';
   const blocked = disabled && !isRunning;
   return (
     <div className="flex flex-col items-center gap-2">
@@ -81,7 +83,7 @@ function LaunchOrb({ onClick, disabled, isRunning, label, icon }: { onClick?: ()
           blocked
             ? 'border-orange-500/30 dark:border-amber-500/25 shadow-[0_0_12px_rgba(234,88,12,0.2)] dark:shadow-[0_0_12px_rgba(245,158,11,0.15)]'
             : 'border-primary/25 group-hover:border-primary/50 group-disabled:border-primary/10 shadow-[0_0_16px_var(--glass-bg)]'
-        }`} />
+        } ${orbGlow}`} />
         {isRunning && <span className="absolute inset-[-4px] rounded-full border border-primary/20 animate-ping" />}
         <span className={`absolute inset-[3px] rounded-full transition-colors ${
           blocked
@@ -103,6 +105,31 @@ function LaunchOrb({ onClick, disabled, isRunning, label, icon }: { onClick?: ()
   );
 }
 
+/** Human-readable labels for build phases. */
+const BUILD_PHASE_LABELS: Record<string, string> = {
+  initializing: 'Preparing build...',
+  analyzing: 'Analyzing your intent...',
+  resolving: 'Building agent dimensions...',
+  awaiting_input: 'Waiting for your input...',
+  draft_ready: 'Draft ready for review',
+  testing: 'Testing agent...',
+  test_complete: 'Test complete',
+  promoted: 'Agent promoted',
+  failed: 'Build failed',
+};
+
+/** Human-readable cell key labels. */
+const CELL_FRIENDLY_NAMES: Record<string, string> = {
+  'use-cases': 'Tasks',
+  'connectors': 'Apps & Services',
+  'triggers': 'When It Runs',
+  'human-review': 'Human Review',
+  'memory': 'Memory',
+  'error-handling': 'Error Handling',
+  'messages': 'Messages',
+  'events': 'Events',
+};
+
 /** Clean status indicator during build/generation. */
 function BuildStatusIndicator({ phaseLabel, hint }: { phaseLabel: string; hint?: string }) {
   return (
@@ -114,6 +141,78 @@ function BuildStatusIndicator({ phaseLabel, hint }: { phaseLabel: string; hint?:
       </div>
       <span className="text-sm text-foreground/60 font-medium">{phaseLabel}</span>
       {hint && <p className="text-xs text-muted-foreground/40 text-center leading-relaxed">{hint}</p>}
+    </div>
+  );
+}
+
+/** Active build progress — shows phase, completeness ring, active cells, and CLI output. */
+function ActiveBuildProgress({
+  buildPhase, completeness, cellStates, cliOutputLines,
+}: {
+  buildPhase?: BuildPhase;
+  completeness: number;
+  cellStates?: Record<string, string>;
+  cliOutputLines: string[];
+}) {
+  const phaseLabel = BUILD_PHASE_LABELS[buildPhase ?? 'analyzing'] ?? 'Building...';
+  const isAwaitingInput = buildPhase === 'awaiting_input';
+
+  // Derive which cells are actively being processed (filling/pending/highlighted)
+  const highlightedCells = cellStates
+    ? Object.entries(cellStates)
+        .filter(([, status]) => status === 'highlighted')
+        .map(([key]) => CELL_FRIENDLY_NAMES[key] ?? key)
+    : [];
+  const activeCells = cellStates
+    ? Object.entries(cellStates)
+        .filter(([, status]) => status === 'filling' || status === 'pending' || status === 'highlighted')
+        .map(([key]) => CELL_FRIENDLY_NAMES[key] ?? key)
+    : [];
+  const resolvedCells = cellStates
+    ? Object.values(cellStates).filter((s) => s === 'resolved').length
+    : 0;
+  const totalCells = 8;
+
+  return (
+    <div className="flex flex-col items-center gap-2 w-full h-full justify-center">
+      {/* Completeness ring with phase-appropriate icon */}
+      <div className="relative">
+        <CompletenessRing value={completeness} size={52} />
+        <div className="absolute inset-0 flex items-center justify-center">
+          {isAwaitingInput
+            ? <HelpCircle className="w-3.5 h-3.5 text-primary/60 relative z-10" />
+            : <Loader2 className="w-3.5 h-3.5 text-primary/40 animate-spin" />}
+        </div>
+      </div>
+
+      {/* Phase label */}
+      <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">
+        {phaseLabel}
+      </span>
+
+      {/* Cell progress */}
+      <span className="text-[10px] text-muted-foreground/50">
+        {resolvedCells}/{totalCells} dimensions resolved
+      </span>
+
+      {/* Awaiting input: tell user to click highlighted cells */}
+      {isAwaitingInput && highlightedCells.length > 0 && (
+        <p className="text-[11px] text-primary/70 text-center leading-relaxed font-medium">
+          Click the highlighted cell{highlightedCells.length > 1 ? 's' : ''} to answer
+        </p>
+      )}
+
+      {/* Active cell indicator (during analyzing/resolving) */}
+      {!isAwaitingInput && activeCells.length > 0 && (
+        <p className="text-[10px] text-primary/60 text-center leading-relaxed animate-pulse">
+          Working on: {activeCells.join(', ')}
+        </p>
+      )}
+
+      {/* CLI output — meaningful size for transparency */}
+      {cliOutputLines.length > 0 && (
+        <CliOutputStream lines={cliOutputLines} />
+      )}
     </div>
   );
 }
@@ -170,33 +269,21 @@ function CompletenessRing({ value, size = 56 }: { value: number; size?: number }
   );
 }
 
-/** Post-generation state for creation mode. */
+/** Post-generation state for creation mode.
+ *
+ * Flow: completeness ring + "Test Agent" primary action + optional refine input.
+ * Agent name was already derived from intent at draft creation — no name input here.
+ */
 function CreationPostGeneration({
-  completeness, onContinue, onRefine, onCreateAgent, onStartTest, agentName, onAgentNameChange,
+  completeness, onRefine, onStartTest,
 }: {
   completeness: number;
-  onContinue?: () => void;
   onRefine?: (feedback: string) => void;
-  onCreateAgent?: (name: string) => void;
-  /** When provided, shows "Test Agent" button instead of "Create Agent" (mandatory test per LIFE-02) */
+  /** Mandatory test run (LIFE-02) */
   onStartTest?: () => void;
-  agentName?: string;
-  onAgentNameChange?: (name: string) => void;
 }) {
   const [refineText, setRefineText] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
-  const nameValue = agentName ?? '';
-
-  const handleCreate = async () => {
-    if (!onCreateAgent || isCreating) return;
-    setIsCreating(true);
-    try {
-      await onCreateAgent(nameValue);
-    } finally {
-      setIsCreating(false);
-    }
-  };
 
   const handleTest = async () => {
     if (!onStartTest || isTesting) return;
@@ -208,24 +295,29 @@ function CreationPostGeneration({
     }
   };
 
-  // When onStartTest is provided, use "Test Agent" as the primary action
-  const showTestButton = !!onStartTest;
-
   return (
-    <div className="flex flex-col items-center gap-3 w-full h-full">
+    <div className="flex flex-col items-center gap-3 w-full h-full justify-center">
       <CompletenessRing value={completeness} />
 
-      {/* Agent name input */}
-      <input
-        type="text"
-        value={nameValue}
-        onChange={(e) => onAgentNameChange?.(e.target.value)}
-        placeholder="Agent name..."
-        data-testid="agent-name-input"
-        className="w-full px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm font-medium text-foreground/90 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors text-center"
-      />
+      <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">
+        Draft Ready
+      </span>
 
-      {/* Refine input */}
+      {/* Test Agent button — primary action */}
+      {onStartTest && (
+        <button
+          type="button"
+          onClick={handleTest}
+          disabled={isTesting}
+          data-testid="agent-test-btn"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30"
+        >
+          {isTesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+          {isTesting ? 'Starting Test...' : 'Test Agent'}
+        </button>
+      )}
+
+      {/* Refine input — adjust design before testing */}
       {onRefine && (
         <div className="w-full flex gap-1.5">
           <input
@@ -246,63 +338,6 @@ function CreationPostGeneration({
           </button>
         </div>
       )}
-
-      {/* Test Agent button (mandatory test per LIFE-02) */}
-      {showTestButton && (
-        <button
-          type="button"
-          onClick={handleTest}
-          disabled={completeness < 20 || isTesting}
-          data-testid="agent-test-btn"
-          className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-            completeness >= 80
-              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30'
-              : completeness >= 20
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                : 'bg-primary/30 text-primary-foreground/50 cursor-not-allowed'
-          }`}
-        >
-          {isTesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-          {isTesting ? 'Starting Test...' : 'Test Agent'}
-        </button>
-      )}
-
-      {/* Create Agent button (only shown when no onStartTest -- legacy fallback) */}
-      {!showTestButton && onCreateAgent && (
-        <button
-          type="button"
-          onClick={handleCreate}
-          disabled={completeness < 20 || isCreating || !nameValue.trim()}
-          className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-            completeness >= 80
-              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30'
-              : completeness >= 20
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                : 'bg-primary/30 text-primary-foreground/50 cursor-not-allowed'
-          }`}
-        >
-          {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-          {isCreating ? 'Creating...' : 'Create Agent'}
-        </button>
-      )}
-
-      {/* Fallback Continue button when no onCreateAgent and no onStartTest */}
-      {!showTestButton && !onCreateAgent && onContinue && (
-        <button
-          type="button"
-          onClick={onContinue}
-          disabled={completeness < 20}
-          className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-            completeness >= 80
-              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30'
-              : completeness >= 20
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                : 'bg-primary/30 text-primary-foreground/50 cursor-not-allowed'
-          }`}
-        >
-          Continue <ArrowRight className="w-3.5 h-3.5" />
-        </button>
-      )}
     </div>
   );
 }
@@ -317,8 +352,8 @@ function CliOutputStream({ lines }: { lines: string[] }) {
   }, [lines.length]);
   if (lines.length === 0) return null;
   return (
-    <div ref={containerRef} className="w-full max-h-16 overflow-y-auto rounded-lg bg-black/20 border border-primary/10 px-2 py-1.5 font-mono text-[11px] text-muted-foreground/60 leading-relaxed">
-      {lines.slice(-20).map((line, i) => (
+    <div ref={containerRef} className="w-full max-h-28 overflow-y-auto rounded-lg bg-black/20 border border-primary/10 px-2 py-1.5 font-mono text-[11px] text-muted-foreground/60 leading-relaxed">
+      {lines.slice(-30).map((line, i) => (
         <div key={i} className="truncate">{line}</div>
       ))}
     </div>
@@ -457,7 +492,7 @@ function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () => void }
   return (
     <div className="flex flex-col items-center gap-3 py-2">
       <div className="relative w-12 h-12 flex items-center justify-center">
-        <span className="absolute inset-0 rounded-full border-2 border-emerald-400/30 shadow-[0_0_16px_rgba(52,211,153,0.2)]" />
+        <span className="absolute inset-0 rounded-full border-2 border-emerald-400/30 shadow-[0_0_16px_rgba(52,211,153,0.2)] animate-emerald-flash" />
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-teal-400/15" />
         <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
       </div>
@@ -473,6 +508,60 @@ function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () => void }
         </button>
       )}
     </div>
+  );
+}
+
+// -- LaunchOrb lifecycle glow mapping -----------------------------------------
+
+const ORB_GLOW_CLASSES: Record<string, string> = {
+  idle: '',
+  initializing: '',
+  analyzing: '',
+  resolving: '',
+  generating: 'shadow-[0_0_24px_var(--primary)]',
+  awaiting_input: 'shadow-[0_0_16px_var(--primary)] animate-glow-breathe',
+  draft_ready: 'shadow-[0_0_20px_theme(colors.emerald.400)]',
+  testing: '',
+  test_complete: 'shadow-[0_0_16px_theme(colors.emerald.400)]',
+  promoted: 'shadow-[0_0_20px_theme(colors.emerald.400)] animate-emerald-flash',
+  failed: '',
+};
+
+/**
+ * TypewriterBullets -- line-by-line content reveal for cell content entrance (VISL-04).
+ *
+ * Shows items one at a time with a fade-in effect per line, simulating
+ * a typewriter/terminal output feel when cell transitions to resolved.
+ */
+export function TypewriterBullets({ items, speed = 150 }: { items: string[]; speed?: number }) {
+  const prefersReducedMotion = useReducedMotion();
+  const [visibleCount, setVisibleCount] = useState(prefersReducedMotion ? items.length : 0);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setVisibleCount(items.length);
+      return;
+    }
+    if (visibleCount >= items.length) return;
+    const timer = setTimeout(() => setVisibleCount((c) => c + 1), speed);
+    return () => clearTimeout(timer);
+  }, [visibleCount, items.length, speed, prefersReducedMotion]);
+
+  return (
+    <ul className="space-y-1.5">
+      {items.slice(0, visibleCount).map((item, i) => (
+        <motion.li
+          key={i}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
+          className="flex items-start gap-2 leading-tight"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-40 mt-[7px] flex-shrink-0" />
+          <span className="text-sm text-foreground/70 leading-snug">{item}</span>
+        </motion.li>
+      ))}
+    </ul>
   );
 }
 
@@ -530,6 +619,8 @@ interface MatrixCommandCenterProps {
   testError?: string | null;
   /** Lifecycle: navigate to promoted agent */
   onViewAgent?: () => void;
+  /** Build cell states for transparent progress display */
+  cellBuildStates?: Record<string, string>;
 }
 
 export function MatrixCommandCenter({
@@ -540,11 +631,11 @@ export function MatrixCommandCenter({
   questions, userAnswers = {}, onAnswerUpdated, onSubmitAnswers,
   buildCompleted = false, phaseLabel = 'Generating persona...',
   intentText, onIntentChange,
-  completeness = 0, hasDesignResult = false, onContinue, onRefine,
-  onCreateAgent, agentName, onAgentNameChange,
+  completeness = 0, hasDesignResult = false, onRefine,
   cliOutputLines = [], designQuestion, onAnswerQuestion,
   buildPhase, onStartTest, onApproveTest, onRejectTest,
   testOutputLines = [], testPassed, testError, onViewAgent,
+  cellBuildStates,
 }: MatrixCommandCenterProps) {
   const [openSection, setOpenSection] = useState<PromptSection | null>(null);
   const [localPromptText, setLocalPromptText] = useState('');
@@ -575,16 +666,40 @@ export function MatrixCommandCenter({
   if (isEditMode) {
     // --- Shared: Building/Generating --------------------------------
     if (isRunning) {
+      // Creation mode: transparent progress with phase, completeness, active cells
+      if (isCreation) {
+        return (
+          <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
+            <ActiveBuildProgress
+              buildPhase={buildPhase}
+              completeness={completeness}
+              cellStates={cellBuildStates}
+              cliOutputLines={cliOutputLines}
+            />
+          </div>
+        );
+      }
+      // Adoption mode: original indicator
       return (
         <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
           <BuildStatusIndicator
-            phaseLabel={isCreation ? 'Designing agent...' : phaseLabel}
-            hint={isCreation ? undefined : 'You can close this dialog -- processing continues in the background.'}
+            phaseLabel={phaseLabel}
+            hint="You can close this dialog -- processing continues in the background."
           />
-          {/* Show CLI output during generation for creation mode */}
-          {isCreation && cliOutputLines.length > 0 && (
-            <CliOutputStream lines={cliOutputLines} />
-          )}
+        </div>
+      );
+    }
+
+    // --- Creation: Awaiting user input on cells ----------------------
+    if (isCreation && buildPhase === 'awaiting_input') {
+      return (
+        <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
+          <ActiveBuildProgress
+            buildPhase={buildPhase}
+            completeness={completeness}
+            cellStates={cellBuildStates}
+            cliOutputLines={cliOutputLines}
+          />
         </div>
       );
     }
@@ -649,7 +764,7 @@ export function MatrixCommandCenter({
     if (isCreation && hasDesignResult) {
       return (
         <div className="flex flex-col gap-3 w-full h-full items-center justify-center">
-          <CreationPostGeneration completeness={completeness} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} onStartTest={onStartTest} agentName={agentName} onAgentNameChange={onAgentNameChange} />
+          <CreationPostGeneration completeness={completeness} onRefine={onRefine} onStartTest={onStartTest} />
         </div>
       );
     }
@@ -681,6 +796,7 @@ export function MatrixCommandCenter({
               isRunning={false}
               label={isCreation ? 'Generate' : launchLabel}
               icon={isCreation ? <Sparkles className="w-6 h-6 relative z-10 text-primary/80 group-hover:text-primary transition-colors" /> : undefined}
+              buildPhase={buildPhase}
             />
           )}
         </div>

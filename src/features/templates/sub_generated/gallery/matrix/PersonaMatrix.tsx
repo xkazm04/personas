@@ -1,5 +1,11 @@
-import { useMemo, useRef } from 'react';
+import { createContext, useContext, useMemo, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+
+/**
+ * Context for passing typewriter mode to CellBullets inside cell render closures.
+ * When true, CellBullets delegates to TypewriterBullets for line-by-line reveal.
+ */
+const TypewriterContext = createContext(false);
 import { deriveArchCategories, type ArchCategory } from './architecturalCategories';
 import {
   UseCasesIcon, ConnectorsIcon, TriggersIcon, HumanReviewIcon,
@@ -14,7 +20,7 @@ import type { CellBuildStatus, BuildQuestion, BuildPhase } from '@/lib/types/bui
 import type { RequiredConnector } from '../../adoption/steps/connect/ConnectStep';
 import type { MatrixEditState, MatrixEditCallbacks } from './EditableMatrixCells';
 import { ConnectorEditCell, TriggerEditCell, ReviewEditCell, MemoryEditCell, MessagesEditCell, ErrorEditCell, UseCaseEditCell } from './EditableMatrixCells';
-import { MatrixCommandCenter } from './MatrixCommandCenter';
+import { MatrixCommandCenter, TypewriterBullets } from './MatrixCommandCenter';
 import { CELL_LABELS } from '@/features/agents/components/matrix/cellVocabulary';
 import { getCellStateClasses } from '@/features/agents/components/matrix/cellStateClasses';
 import { getCellGlowColorClass } from '@/features/agents/components/matrix/cellGlowColors';
@@ -192,6 +198,11 @@ function extractErrorStrategies(errorHandling: string): string[] {
 }
 
 function CellBullets({ items, color = 'text-foreground/70' }: { items: string[]; color?: string }) {
+  const typewriter = useContext(TypewriterContext);
+  // When typewriter is active, delegate to TypewriterBullets for line-by-line reveal
+  if (typewriter) {
+    return <TypewriterBullets items={items} />;
+  }
   return (
     <ul className="space-y-1.5">
       {items.map((item, i) => (
@@ -277,6 +288,17 @@ function MatrixCellRenderer({
   const useEditRender = isEditMode && cell.editRender && !effectiveBuildLocked;
   const filledGlow = isEditMode && cell.filled;
 
+  // Track previous status to detect filling->resolved transition for typewriter effect
+  const prevStatusRef = useRef<CellBuildStatus | undefined>(undefined);
+  const justResolved = prevStatusRef.current === 'filling' && cellBuildStatus === 'resolved';
+  const typewriterActiveRef = useRef(false);
+  if (justResolved) {
+    typewriterActiveRef.current = true;
+  } else if (cellBuildStatus !== 'resolved') {
+    typewriterActiveRef.current = false;
+  }
+  prevStatusRef.current = cellBuildStatus;
+
   // Whether content should be visible (not hidden/revealed)
   const statusStr = cellBuildStatus as string;
   const hasContent = !cellBuildStatus || (statusStr !== 'hidden' && statusStr !== 'revealed');
@@ -334,7 +356,9 @@ function MatrixCellRenderer({
               transition={{ duration: 0.3, ease: 'easeOut' }}
               className="w-full"
             >
-              {useEditRender ? cell.editRender!() : cell.render()}
+              <TypewriterContext.Provider value={typewriterActiveRef.current}>
+                {useEditRender ? cell.editRender!() : cell.render()}
+              </TypewriterContext.Provider>
             </motion.div>
           )}
         </AnimatePresence>
