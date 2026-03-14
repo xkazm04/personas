@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Session Infrastructure** - Rust build session manager, Tauri Channel streaming, Zustand build state slice, and CLI per-dimension event emission
 - [ ] **Phase 2: Unified Matrix Build Surface** - Single matrix-first entry point with cell state machine, live cell-by-cell animation, click-to-answer Q&A, and feature parity with retired modes
-- [ ] **Phase 3: Build Lifecycle and Approval** - Command center lifecycle orb, mandatory test run, explicit approve/reject gate, refinement loop, and draft-to-production promotion
+- [x] **Phase 3: Build Lifecycle and Approval** - Command center lifecycle orb, mandatory test run, explicit approve/reject gate, refinement loop, and draft-to-production promotion (completed 2026-03-14)
 - [ ] **Phase 4: Visual Polish and Performance** - Futuristic dark control-room aesthetic, state-driven glow system, GPU-accelerated decorative animations, and 60fps performance validation
 
 ## Phase Details
@@ -64,7 +64,7 @@ Plans:
   3. User can explicitly approve test results to promote the draft to a real persona, or reject to return to the matrix for refinement -- rejection is not a dead end
   4. User can type refinement feedback in the command center and the CLI adjusts specific cells without starting over
   5. Promoted personas retain all configured tools, triggers, and credentials, and build validation logic (credential coverage checks) prevents incomplete agents from being promoted
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 03-01-PLAN.md — BuildPhase enum extension (Rust + TS), matrixBuildSlice test lifecycle state, credential coverage utility
@@ -80,11 +80,12 @@ Plans:
   2. Cell enter/exit/reveal animations use Framer Motion with stagger orchestration, while glow pulse, shimmer, and breathing effects use CSS @property keyframes with zero JS cost
   3. Animation performance holds 60fps with 8+ simultaneous cell animations at minimum viewport (900x600), verified by profiling at 4x CPU throttle
   4. All text meets WCAG AA contrast minimums (4.5:1 normal, 3:1 large) and glow/particle effects are layered only on non-content elements
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md — CSS glow foundation: keyframes, pseudo-element glow system, theme-tinted color classes, cellStateClasses extension
+- [ ] 04-02-PLAN.md — Component integration: cell glow wiring, stagger reveal, typewriter content, glass panel command center, orb lifecycle glow
+- [ ] 04-03-PLAN.md — Performance hardening: will-change optimization, animation audit, 60fps validation checkpoint
 
 ## Progress
 
@@ -95,5 +96,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Session Infrastructure | 3/5 | Gap closure | - |
 | 2. Unified Matrix Build Surface | 2/5 | In Progress|  |
-| 3. Build Lifecycle and Approval | 2/3 | In Progress|  |
-| 4. Visual Polish and Performance | 0/? | Not started | - |
+| 3. Build Lifecycle and Approval | 3/3 | Complete   | 2026-03-14 |
+| 4. Visual Polish and Performance | 0/3 | Planned | - |

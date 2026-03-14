@@ -1596,4 +1596,119 @@ input[type="number"] {
   .animate-spin-slow {
     animation: none !important;
   }
+
+  /* Glow system: keep static opacity, disable animation timing */
+  .animate-glow-pulse,
+  .animate-glow-breathe,
+  .animate-emerald-flash,
+  .cell-glow-filling::before,
+  .cell-edge-shimmer::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
 }
+
+/* ==========================================================================
+   Glow System -- CSS keyframes, pseudo-element glow, edge shimmer, colors
+   ========================================================================== */
+
+/* -- Keyframes ------------------------------------------------------------ */
+
+@keyframes glow-pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.15; }
+  100% { opacity: 0.4; }
+}
+
+@keyframes glow-breathe {
+  0% { opacity: 0.05; }
+  50% { opacity: 0.12; }
+  100% { opacity: 0.05; }
+}
+
+@keyframes emerald-flash {
+  0% { opacity: 0.8; }
+  100% { opacity: 0.25; }
+}
+
+@keyframes spin-glow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* -- Pseudo-element glow base class --------------------------------------- */
+
+.cell-glow {
+  position: relative;
+}
+
+.cell-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+  box-shadow: 0 0 20px 4px var(--cell-glow-color, transparent);
+}
+
+/* -- State glow classes --------------------------------------------------- */
+
+.cell-glow-filling::before {
+  opacity: 0.4;
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.cell-glow-resolved::before {
+  opacity: 0.15;
+}
+
+.cell-glow-pending::before {
+  opacity: 0.1;
+}
+
+.cell-glow-error::before {
+  box-shadow: 0 0 20px 4px #ef4444;
+  opacity: 0.25;
+}
+
+/* -- Edge shimmer class --------------------------------------------------- */
+
+.cell-edge-shimmer {
+  position: relative;
+}
+
+.cell-edge-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg, transparent 0%, var(--cell-glow-color) 10%, transparent 20%, transparent 100%);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  padding: 1.5px;
+  animation: spin-glow 3s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* -- Glow color classes (theme-tinted via color-mix) ---------------------- */
+
+.cell-glow-violet { --cell-glow-color: color-mix(in srgb, #8b5cf6 70%, var(--primary) 30%); }
+.cell-glow-cyan { --cell-glow-color: color-mix(in srgb, #22d3ee 70%, var(--primary) 30%); }
+.cell-glow-amber { --cell-glow-color: color-mix(in srgb, #fbbf24 70%, var(--primary) 30%); }
+.cell-glow-rose { --cell-glow-color: color-mix(in srgb, #fb7185 70%, var(--primary) 30%); }
+.cell-glow-blue { --cell-glow-color: color-mix(in srgb, #60a5fa 70%, var(--primary) 30%); }
+.cell-glow-purple { --cell-glow-color: color-mix(in srgb, #a855f7 70%, var(--primary) 30%); }
+.cell-glow-orange { --cell-glow-color: color-mix(in srgb, #fb923c 70%, var(--primary) 30%); }
+.cell-glow-teal { --cell-glow-color: color-mix(in srgb, #2dd4bf 70%, var(--primary) 30%); }
+
+/* -- Utility animation classes -------------------------------------------- */
+
+.animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
+.animate-glow-breathe { animation: glow-breathe 5s ease-in-out infinite; }
+.animate-emerald-flash { animation: emerald-flash 0.6s ease-out forwards; }
