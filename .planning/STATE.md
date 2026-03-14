@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-03-14T03:15:26Z"
-last_activity: 2026-03-14 -- Completed plan 01-01 (Rust build session infrastructure)
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-03-14T03:38:56Z"
+last_activity: 2026-03-14 -- Completed plan 01-02 (Frontend build state infrastructure)
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 8
+  completed_plans: 2
+  percent: 16
 ---
 
 # Project State
@@ -26,28 +26,28 @@ See: .planning/PROJECT.md (updated 2026-03-14)
 ## Current Position
 
 Phase: 1 of 4 (Session Infrastructure)
-Plan: 2 of 3 in current phase
+Plan: 3 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-14 -- Completed plan 01-01 (Rust build session infrastructure)
+Last activity: 2026-03-14 -- Completed plan 01-02 (Frontend build state infrastructure)
 
-Progress: [█░░░░░░░░░] 8%
+Progress: [██░░░░░░░░] 16%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 114 min
-- Total execution time: 1.9 hours
+- Total plans completed: 2
+- Average duration: 66 min
+- Total execution time: 2.2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-session-infrastructure | 1/3 | 114 min | 114 min |
+| 01-session-infrastructure | 2/3 | 131 min | 66 min |
 
 **Recent Trend:**
-- Last 5 plans: 114 min
-- Trend: establishing baseline
+- Last 5 plans: 114 min, 17 min
+- Trend: improving (types/slice work faster than Rust infrastructure)
 
 *Updated after each plan completion*
 
@@ -64,6 +64,9 @@ Recent decisions affecting current work:
 - [01-01]: BuildEvent uses serde discriminated union with tag=type for clean frontend pattern matching
 - [01-01]: UpdateBuildSession uses Option<Option<T>> pattern for nullable fields to distinguish 'not updating' from 'set to NULL'
 - [01-01]: std::sync::Mutex (not tokio) for session handle map since all operations are fast key lookups
+- [01-02]: Build state excluded from localStorage partialize -- SQLite is persistence source of truth, hydration via hydrateBuildSession()
+- [01-02]: Used invokeWithTimeout for API wrappers to match codebase convention (timeout + IPC metrics)
+- [01-02]: Build session commands registered in commandNames.overrides.ts as forward-references
 
 ### Pending Todos
 
@@ -76,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T03:15:26Z
-Stopped at: Completed 01-01-PLAN.md
-Resume file: .planning/phases/01-session-infrastructure/01-02-PLAN.md
+Last session: 2026-03-14T03:38:56Z
+Stopped at: Completed 01-02-PLAN.md
+Resume file: .planning/phases/01-session-infrastructure/01-03-PLAN.md

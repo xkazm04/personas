@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Rust data models, SQLite migration, BuildSessionManager engine, and Tauri commands
-- [ ] 01-02-PLAN.md — Frontend TypeScript types, dimension mapping, Zustand matrixBuildSlice, and API wrappers
+- [x] 01-02-PLAN.md — Frontend TypeScript types, dimension mapping, Zustand matrixBuildSlice, and API wrappers
 - [ ] 01-03-PLAN.md — useBuildSession hook with Channel streaming, 16ms event batching, and Channel vs EventBridge evaluation
 
 ### Phase 2: Unified Matrix Build Surface
@@ -90,7 +90,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Session Infrastructure | 0/3 | Planned | - |
+| 1. Session Infrastructure | 2/3 | In progress | - |
 | 2. Unified Matrix Build Surface | 0/? | Not started | - |
 | 3. Build Lifecycle and Approval | 0/? | Not started | - |
 | 4. Visual Polish and Performance | 0/? | Not started | - |
