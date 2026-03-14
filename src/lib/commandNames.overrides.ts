@@ -40,9 +40,4 @@ export type UnregisteredCommand =
   | "seed_mock_message"
   | "zapier_create_zap"
   | "zapier_list_zaps"
-  | "zapier_trigger_webhook"
-  | "start_build_session"
-  | "answer_build_question"
-  | "cancel_build_session"
-  | "get_active_build_session"
-  | "list_build_sessions";
+  | "zapier_trigger_webhook";
