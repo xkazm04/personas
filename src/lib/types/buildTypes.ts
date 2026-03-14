@@ -14,7 +14,10 @@ export type BuildPhase =
   | "draft_ready"
   | "completed"
   | "failed"
-  | "cancelled";
+  | "cancelled"
+  | "testing"
+  | "test_complete"
+  | "promoted";
 
 /** Visual status of a single matrix cell during the build flow. */
 export type CellBuildStatus =

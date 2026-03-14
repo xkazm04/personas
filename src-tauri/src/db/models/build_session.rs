@@ -17,6 +17,9 @@ pub enum BuildPhase {
     Completed,
     Failed,
     Cancelled,
+    Testing,
+    TestComplete,
+    Promoted,
 }
 
 impl BuildPhase {
@@ -30,11 +33,14 @@ impl BuildPhase {
             Self::Completed => "completed",
             Self::Failed => "failed",
             Self::Cancelled => "cancelled",
+            Self::Testing => "testing",
+            Self::TestComplete => "test_complete",
+            Self::Promoted => "promoted",
         }
     }
 
     pub fn is_terminal(&self) -> bool {
-        matches!(self, Self::Completed | Self::Failed | Self::Cancelled)
+        matches!(self, Self::Completed | Self::Failed | Self::Cancelled | Self::Promoted)
     }
 
     /// Parse a phase string (as stored in SQLite) back into a `BuildPhase`.
@@ -48,6 +54,9 @@ impl BuildPhase {
             "completed" => Self::Completed,
             "failed" => Self::Failed,
             "cancelled" => Self::Cancelled,
+            "testing" => Self::Testing,
+            "test_complete" => Self::TestComplete,
+            "promoted" => Self::Promoted,
             _ => Self::Failed, // unknown phases treated as failed
         }
     }

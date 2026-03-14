@@ -28,6 +28,12 @@ export interface MatrixBuildSlice {
   buildError: string | null;
   buildDraft: unknown | null;
 
+  // Test lifecycle state
+  buildTestId: string | null;
+  buildTestPassed: boolean | null;
+  buildTestOutputLines: string[];
+  buildTestError: string | null;
+
   // Actions -- event handlers
   handleBuildCellUpdate: (event: Extract<BuildEvent, { type: "cell_update" }>) => void;
   handleBuildQuestion: (event: Extract<BuildEvent, { type: "question" }>) => void;
@@ -37,6 +43,12 @@ export interface MatrixBuildSlice {
 
   // Actions -- question management
   clearBuildQuestion: (cellKey: string) => void;
+
+  // Actions -- test lifecycle
+  handleStartTest: (testId: string) => void;
+  handleTestComplete: (passed: boolean, outputPreview: string) => void;
+  handleTestFailed: (error: string) => void;
+  handleRejectTest: () => void;
 
   // Actions -- lifecycle
   resetBuildSession: () => void;
@@ -64,6 +76,12 @@ export const createMatrixBuildSlice: StateCreator<
   buildOutputLines: [],
   buildError: null,
   buildDraft: null,
+
+  // Test lifecycle initial state
+  buildTestId: null,
+  buildTestPassed: null,
+  buildTestOutputLines: [],
+  buildTestError: null,
 
   // -- Event handlers -------------------------------------------------------
 
@@ -128,6 +146,44 @@ export const createMatrixBuildSlice: StateCreator<
     });
   },
 
+  // -- Test lifecycle actions ------------------------------------------------
+
+  handleStartTest: (testId) => {
+    set({
+      buildPhase: "testing",
+      buildTestId: testId,
+      buildTestPassed: null,
+      buildTestOutputLines: [],
+      buildTestError: null,
+    });
+  },
+
+  handleTestComplete: (passed, outputPreview) => {
+    set({
+      buildPhase: "test_complete",
+      buildTestPassed: passed,
+      buildTestOutputLines: [outputPreview],
+    });
+  },
+
+  handleTestFailed: (error) => {
+    set({
+      buildPhase: "test_complete",
+      buildTestPassed: false,
+      buildTestError: error,
+    });
+  },
+
+  handleRejectTest: () => {
+    set({
+      buildPhase: "draft_ready",
+      buildTestId: null,
+      buildTestPassed: null,
+      buildTestOutputLines: [],
+      buildTestError: null,
+    });
+  },
+
   // -- Question management --------------------------------------------------
 
   clearBuildQuestion: (cellKey) => {
@@ -150,6 +206,10 @@ export const createMatrixBuildSlice: StateCreator<
       buildOutputLines: [],
       buildError: null,
       buildDraft: null,
+      buildTestId: null,
+      buildTestPassed: null,
+      buildTestOutputLines: [],
+      buildTestError: null,
     });
   },
 
