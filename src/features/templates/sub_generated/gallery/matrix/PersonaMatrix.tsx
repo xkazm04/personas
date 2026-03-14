@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { deriveArchCategories, type ArchCategory } from './architecturalCategories';
 import {
   UseCasesIcon, ConnectorsIcon, TriggersIcon, HumanReviewIcon,
@@ -17,6 +17,7 @@ import { ConnectorEditCell, TriggerEditCell, ReviewEditCell, MemoryEditCell, Mes
 import { MatrixCommandCenter } from './MatrixCommandCenter';
 import { CELL_LABELS } from '@/features/agents/components/matrix/cellVocabulary';
 import { getCellStateClasses } from '@/features/agents/components/matrix/cellStateClasses';
+import { getCellGlowColorClass } from '@/features/agents/components/matrix/cellGlowColors';
 import { GhostedCellRenderer } from '@/features/agents/components/matrix/GhostedCellRenderer';
 import { SpatialQuestionPopover } from '@/features/agents/components/matrix/SpatialQuestionPopover';
 
@@ -208,6 +209,34 @@ const TRIGGER_LABELS: Record<string, string> = {
   manual: 'Manually triggered', event: 'Reacts to events',
 };
 
+// -- Stagger reveal variants ------------------------------------------
+
+const REVEAL_DELAYS: Record<string, number> = {
+  // Adjacent to center cell (share grid edge)
+  'connectors': 0.12,
+  'human-review': 0.12,
+  'messages': 0.12,
+  'memory': 0.12,
+  // Corner/far cells
+  'use-cases': 0.24,
+  'triggers': 0.24,
+  'error-handling': 0.24,
+  'events': 0.24,
+};
+
+const cellRevealVariants = {
+  hidden: { opacity: 0, scale: 0.92 },
+  visible: (cellKey: string) => ({
+    opacity: 1,
+    scale: 1,
+    transition: {
+      delay: REVEAL_DELAYS[cellKey] ?? 0.24,
+      duration: 0.36,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  }),
+};
+
 // -- Cell renderer (Neon, dark+light aware) ---------------------------
 
 function MatrixCellRenderer({
@@ -239,6 +268,9 @@ function MatrixCellRenderer({
   // Determine if we should use state-machine classes (only when cellBuildStatus is provided)
   const stateClasses = cellBuildStatus ? getCellStateClasses(cellBuildStatus) : null;
 
+  // Glow color class based on cell key (e.g. 'cell-glow-violet' for 'use-cases')
+  const glowColorClass = getCellGlowColorClass(cell.key);
+
   // When filling, the cell is locked regardless of buildLocked prop
   const effectiveBuildLocked = buildLocked || cellBuildStatus === 'filling';
 
@@ -249,13 +281,20 @@ function MatrixCellRenderer({
   const statusStr = cellBuildStatus as string;
   const hasContent = !cellBuildStatus || (statusStr !== 'hidden' && statusStr !== 'revealed');
 
+  // Watermark opacity: state-aware when build status present, otherwise hardcoded defaults
+  const watermarkOpacity = stateClasses
+    ? stateClasses.watermarkOpacity
+    : useEditRender ? 'opacity-[0.15]' : 'opacity-[0.25]';
+
   // Build outer class list -- state-machine classes override defaults when present
   const outerClasses = stateClasses
     ? [
-        'relative rounded-xl border p-4 transition-[opacity,transform,border-color,background-color] duration-300 shadow-md',
+        'relative rounded-xl border p-4 transition-[opacity,transform,border-color,background-color,box-shadow] duration-300 shadow-md',
         stateClasses.bg,
         stateClasses.border,
         stateClasses.opacity,
+        stateClasses.glow,
+        glowColorClass,
         useEditRender ? 'ring-1 ring-inset ring-primary/10' : '',
       ].filter(Boolean).join(' ')
     : [
@@ -274,7 +313,7 @@ function MatrixCellRenderer({
       className={outerClasses}
     >
       <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
-        <div className={`absolute -right-1 -top-1 ${useEditRender ? 'opacity-[0.15]' : 'opacity-[0.25]'} transition-opacity duration-300`}>
+        <div className={`absolute -right-1 -top-1 ${watermarkOpacity} transition-opacity duration-300`}>
           <Watermark className={`w-22 h-22 ${cell.watermarkColor}`} />
         </div>
       </div>
@@ -319,6 +358,14 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   // When cellBuildStates is provided (build mode), we create skeleton cells even without designResult
   const hasBuildStates = cellBuildStates && Object.keys(cellBuildStates).length > 0;
   const isCreationMode = variant === 'creation';
+
+  // Stagger reveal: animate cells in ripple order from center on first build start
+  const hasRevealedRef = useRef(false);
+  const prefersReducedMotion = useReducedMotion();
+  const shouldAnimate = variant === 'creation' && hasBuildStates && !hasRevealedRef.current && !prefersReducedMotion;
+  if (shouldAnimate) {
+    hasRevealedRef.current = true;
+  }
 
   const cells = useMemo<MatrixCell[]>(() => {
     // In creation mode or build mode with cellBuildStates, return skeleton cells
@@ -384,7 +431,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
 
   // Creation mode is interactive (textarea + launch orb) even without mode="edit"
   const commandCenterEditMode = isEditMode || isCreationMode;
-  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onRejectTest={onRejectTest} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} onViewAgent={onViewAgent} />);
+  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onRejectTest={onRejectTest} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} onViewAgent={onViewAgent} cellBuildStates={cellBuildStates} />);
 
   // When cellBuildStates are provided or in creation mode, render even without designResult (ghosted outlines)
   if ((!designResult && !hasBuildStates && !isCreationMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
@@ -402,15 +449,25 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
           <h4 className="text-base font-bold text-foreground/80 uppercase tracking-wider">Persona Matrix</h4>
         </div>
       )}
-      <div className="grid grid-cols-[1fr_1.3fr_1fr] grid-rows-3 gap-2.5 flex-1 min-h-0 w-full">
-        {firstFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} onCellRef={handleCellRef} />))}
-        <div className="relative rounded-xl border border-primary/30 p-5 ring-1 ring-primary/10 shadow-2xl shadow-primary/5 overflow-hidden">
+      <div className="grid grid-cols-[2fr_2.6fr_2fr] grid-rows-3 gap-2.5 flex-1 min-h-0 w-full min-w-[1100px]">
+        {firstFour.map((cell) => (
+          <motion.div key={cell.key} custom={cell.key} variants={cellRevealVariants} initial={shouldAnimate ? "hidden" : false} animate="visible">
+            <MatrixCellRenderer cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} onCellRef={handleCellRef} />
+          </motion.div>
+        ))}
+        <div className="relative rounded-xl border border-primary/40 p-5 ring-1 ring-primary/15 shadow-2xl shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden">
+          {/* Breathing ambient glow behind content */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_60%)] animate-glow-breathe pointer-events-none" />
           {/* Neon background -- theme-colored radial glow */}
           <div className="absolute inset-0 bg-card-bg" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_70%)] opacity-[0.07]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_70%)] opacity-[0.12]" />
           <div className="relative z-10 h-full">{commandCenter}</div>
         </div>
-        {lastFour.map((cell) => (<MatrixCellRenderer key={cell.key} cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} onCellRef={handleCellRef} />))}
+        {lastFour.map((cell) => (
+          <motion.div key={cell.key} custom={cell.key} variants={cellRevealVariants} initial={shouldAnimate ? "hidden" : false} animate="visible">
+            <MatrixCellRenderer cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} onCellRef={handleCellRef} />
+          </motion.div>
+        ))}
       </div>
 
       {/* Spatial Q&A popovers anchored to cells with pending questions */}
