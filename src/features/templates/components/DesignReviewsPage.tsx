@@ -7,7 +7,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { GeneratedReviewsTab, TeamSynthesisPanel } from '@/features/templates/sub_generated';
 import N8nImportTab from '@/features/templates/sub_n8n/steps/N8nImportTab';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
-import ActivityDiagramModal from '@/features/triggers/components/display/ActivityDiagramModal';
+import ActivityDiagramModal from '@/features/triggers/sub_diagrams/ActivityDiagramModal';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
@@ -32,7 +32,7 @@ export default function DesignReviewsPage() {
   const setGalleryTotal = useSystemStore((s) => s.setTemplateGalleryTotal);
 
   return (
-    <ContentBox>
+    <ContentBox data-testid="templates-page">
       <ContentHeader
         icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
         iconColor="violet"

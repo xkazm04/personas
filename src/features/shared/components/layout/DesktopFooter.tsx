@@ -44,6 +44,7 @@ function AccountFooterIcon() {
           }
         }}
         disabled={isLoading}
+        data-testid="footer-account"
         className={`relative w-7 h-7 rounded-lg flex items-center justify-center transition-colors group ${
           isAuthenticated
             ? 'text-emerald-400/80 hover:bg-emerald-500/10'
@@ -114,6 +115,7 @@ function ThemeFooterIcon() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
+        data-testid="footer-theme"
         className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors group"
         title={`Theme: ${currentTheme?.label ?? 'Default'}`}
       >
@@ -223,6 +225,7 @@ function NetworkFooterIcon() {
   return (
     <button
       onClick={handleClick}
+      data-testid="footer-network"
       className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
         isDevMode
           ? 'text-amber-400/80 bg-amber-500/8 ring-1 ring-amber-500/30 hover:bg-amber-500/15'
@@ -262,6 +265,7 @@ function CollapseFooterIcon() {
   return (
     <button
       onClick={handleClick}
+      data-testid="footer-collapse"
       className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
       title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
     >

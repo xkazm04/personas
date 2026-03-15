@@ -73,6 +73,7 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
 
         {/* AI design path */}
         <button
+          data-testid="create-credential-btn"
           onClick={() => onGoToAddNew?.()}
           className="group text-left p-4 rounded-xl border border-primary/15 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 transition-all"
         >

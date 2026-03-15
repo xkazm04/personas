@@ -542,7 +542,8 @@ export default function ProjectManagerPage() {
     const goalCount = storeGoals.filter((g) => g.project_id === p.id).length;
     return toProject(p, goalCount);
   });
-  const [activeProjectId, setLocalActiveProject] = useState<string | null>(null);
+  const storeActiveProjectId = useSystemStore((s) => s.activeProjectId);
+  const [activeProjectId, setLocalActiveProject] = useState<string | null>(storeActiveProjectId);
   const [showModal, setShowModal] = useState(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
 
@@ -551,6 +552,13 @@ export default function ProjectManagerPage() {
   useEffect(() => {
     fetchProjects?.();
   }, []);
+
+  // Sync local active with store (e.g., when project selector changes it)
+  useEffect(() => {
+    if (storeActiveProjectId && storeActiveProjectId !== activeProjectId) {
+      setLocalActiveProject(storeActiveProjectId);
+    }
+  }, [storeActiveProjectId]);
 
   useEffect(() => {
     if (activeProjectId) fetchGoals?.(activeProjectId);

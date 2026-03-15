@@ -46,7 +46,9 @@ function OverviewContent() {
 export default function OverviewPage() {
   return (
     <OverviewFilterProvider>
-      <OverviewContent />
+      <div data-testid="overview-page" className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
+        <OverviewContent />
+      </div>
     </OverviewFilterProvider>
   );
 }

@@ -30,6 +30,11 @@ export default function App() {
     void import("@/lib/eventBridge").then(m => m.initAllListeners());
     void import("@/lib/execution/knowledgeMiddleware").then(m => m.registerKnowledgeMiddleware());
     void useAuthStore.getState().initialize();
+    // Test automation bridge — exposes window.__TEST__ for MCP-driven testing.
+    // Only loaded in dev builds; tree-shaken from production.
+    if (import.meta.env.DEV) {
+      void import("@/test/automation/bridge");
+    }
   }, []);
 
   // Dev-mode mobile preview toggle: Ctrl+Shift+M

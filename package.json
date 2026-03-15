@@ -21,7 +21,10 @@
     "analyze": "ANALYZE=true vite build",
     "check:budget": "node scripts/check-bundle-budget.mjs",
     "check:assets": "node scripts/optimize-assets.mjs --dry-run",
-    "audit:security": "bash scripts/security-audit.sh"
+    "audit:security": "bash scripts/security-audit.sh",
+    "build:starter": "VITE_APP_TIER=starter npm run build",
+    "build:team": "VITE_APP_TIER=team npm run build",
+    "build:builder": "VITE_APP_TIER=builder npm run build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

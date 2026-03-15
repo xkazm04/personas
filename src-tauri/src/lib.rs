@@ -8,6 +8,8 @@ mod gitlab;
 pub mod ipc_auth;
 mod logging;
 mod notifications;
+#[cfg(feature = "test-automation")]
+pub mod test_automation;
 #[cfg(feature = "desktop")]
 mod tray;
 mod utils;
@@ -18,7 +20,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 
 use db::DbPool;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 /// Shared HTTP client for all general-purpose HTTP callsites.
 ///
@@ -475,6 +477,15 @@ pub fn run() {
             });
             app.manage(state_arc.clone());
 
+            // Test automation HTTP server (feature-gated)
+            #[cfg(feature = "test-automation")]
+            {
+                let pending: test_automation::PendingResponses =
+                    Arc::new(tokio::sync::Mutex::new(HashMap::new()));
+                app.manage(pending.clone());
+                test_automation::start_server(app.handle().clone(), pending);
+            }
+
             // Load desktop connector approvals from database
             #[cfg(feature = "desktop")]
             if let Err(e) = state_arc.desktop_approvals.load_from_db(&state_arc.db) {
@@ -504,14 +515,18 @@ pub fn run() {
                                     commands::infrastructure::auth::handle_auth_callback(&handle, &url_str).await
                                 {
                                     tracing::error!("Auth callback failed: {}", e);
+                                    let _ = handle.emit("auth-error", serde_json::json!({
+                                        "error": format!("{}", e)
+                                    }));
                                 }
                             });
                         }
                     }
                 });
 
-                // Register protocol during development (desktop only)
-                #[cfg(all(debug_assertions, feature = "desktop"))]
+                // Register the personas:// protocol handler.
+                // Required for OAuth callback deep links in both dev and production.
+                #[cfg(feature = "desktop")]
                 {
                     match app.deep_link().register_all() {
                         Ok(_) => tracing::info!("Deep-link protocol registered successfully"),
@@ -524,6 +539,7 @@ pub fn run() {
             let app_handle = app.handle().clone();
             let restore_handle = app.handle().clone();
             let restore_state = state_arc.clone();
+            let startup_cloud_client = state_arc.cloud_client.clone();
             let startup_rate_limiter = state_arc.rate_limiter.clone();
             let startup_tier_config = state_arc.tier_config.clone();
             tauri::async_runtime::spawn(async move {
@@ -535,6 +551,7 @@ pub fn run() {
                     engine,
                     startup_rate_limiter,
                     startup_tier_config,
+                    startup_cloud_client,
                 );
                 tracing::info!("Scheduler auto-started");
                 #[cfg(feature = "desktop")]
@@ -570,6 +587,9 @@ pub fn run() {
             // Phase 1
             greet,
             log_frontend_error,
+            // Test automation (feature-gated)
+            #[cfg(feature = "test-automation")]
+            test_automation::__test_respond,
             // Core -- Personas
             commands::core::personas::list_personas,
             commands::core::personas::get_persona,
@@ -703,6 +723,7 @@ pub fn run() {
             commands::design::build_sessions::cancel_build_session,
             commands::design::build_sessions::get_active_build_session,
             commands::design::build_sessions::list_build_sessions,
+            // commands::design::build_sessions::promote_build_draft, // TODO: not yet implemented
             // Design -- Conversations
             commands::design::conversations::list_design_conversations,
             commands::design::conversations::get_design_conversation,
@@ -1109,8 +1130,13 @@ pub fn run() {
             commands::infrastructure::cloud::cloud_update_trigger,
             commands::infrastructure::cloud::cloud_delete_trigger,
             commands::infrastructure::cloud::cloud_list_trigger_firings,
+            commands::infrastructure::cloud::cloud_webhook_relay_status,
+            commands::infrastructure::cloud::smee_get_channel_url,
+            commands::infrastructure::cloud::smee_set_channel_url,
+            commands::infrastructure::cloud::smee_disconnect,
             // Infrastructure -- GitLab
             commands::infrastructure::gitlab::gitlab_connect,
+            commands::infrastructure::gitlab::gitlab_connect_from_vault,
             commands::infrastructure::gitlab::gitlab_disconnect,
             commands::infrastructure::gitlab::gitlab_get_config,
             commands::infrastructure::gitlab::gitlab_list_projects,
@@ -1130,6 +1156,8 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_create_project,
             commands::infrastructure::dev_tools::dev_tools_update_project,
             commands::infrastructure::dev_tools::dev_tools_delete_project,
+            commands::infrastructure::dev_tools::dev_tools_get_active_project,
+            commands::infrastructure::dev_tools::dev_tools_set_active_project,
             // Dev Tools -- Goals
             commands::infrastructure::dev_tools::dev_tools_list_goals,
             commands::infrastructure::dev_tools::dev_tools_get_goal,
@@ -1153,6 +1181,10 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_context,
             commands::infrastructure::dev_tools::dev_tools_delete_context,
             commands::infrastructure::dev_tools::dev_tools_move_context_to_group,
+            // Dev Tools -- Context Generation (LLM-powered codebase scan)
+            commands::infrastructure::context_generation::dev_tools_scan_codebase,
+            commands::infrastructure::context_generation::dev_tools_cancel_scan_codebase,
+            commands::infrastructure::context_generation::dev_tools_get_scan_codebase_status,
             // Dev Tools -- Context Group Relationships
             commands::infrastructure::dev_tools::dev_tools_list_context_group_relationships,
             commands::infrastructure::dev_tools::dev_tools_create_context_group_relationship,
@@ -1169,6 +1201,10 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_get_scan,
             commands::infrastructure::dev_tools::dev_tools_create_scan,
             commands::infrastructure::dev_tools::dev_tools_update_scan,
+            // Dev Tools -- Idea Scanner (LLM-powered)
+            commands::infrastructure::idea_scanner::dev_tools_list_scan_agents,
+            commands::infrastructure::idea_scanner::dev_tools_run_scan,
+            commands::infrastructure::idea_scanner::dev_tools_cancel_scan,
             // Dev Tools -- Tasks
             commands::infrastructure::dev_tools::dev_tools_list_tasks,
             commands::infrastructure::dev_tools::dev_tools_get_task,

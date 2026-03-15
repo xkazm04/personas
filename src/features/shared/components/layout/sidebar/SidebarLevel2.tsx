@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Key, Zap, Users, Sparkles } from 'lucide-react';
+import { Key, Radio, Users, Sparkles, Plus, List, Loader2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
 import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
-import GroupedAgentSidebar from '@/features/agents/components/sidebar/GroupedAgentSidebar';
+// GroupedAgentSidebar replaced by inline AgentsSidebarNav (persona list moved to table view)
 import TeamDragPanel from '@/features/pipeline/components/TeamDragPanel';
 import SidebarSubNav from './SidebarSubNav';
 import type { SubNavBadge } from './SidebarSubNav';
@@ -14,7 +15,8 @@ import {
   homeItems, overviewItems, credentialItems, templateItems,
   cloudItems, devToolsItems, getSettingsItems,
 } from './sidebarData';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
+import { filterByTier } from './sidebarData';
 
 interface SidebarLevel2Props {
   onCreatePersona: () => void;
@@ -73,10 +75,10 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
   const projects = useSystemStore((s) => s.projects);
 
   const isDev = import.meta.env.DEV;
-  const isSimple = useSimpleMode();
+  const tier = useTier();
 
   const filterSimple = <T extends { simpleHidden?: boolean }>(items: T[]): T[] =>
-    isSimple ? items.filter((i) => !i.simpleHidden) : items;
+    filterByTier(items, tier.current);
 
   const templateCount = connectorDefinitions.filter((conn) => {
     const metadata = conn.metadata as Record<string, unknown> | null;
@@ -100,7 +102,7 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
     'from-template': { count: templateCount, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' },
   };
 
-  const settingsItems = getSettingsItems(isDev, isSimple);
+  const settingsItems = getSettingsItems(isDev, tier.current);
 
   switch (sidebarSection) {
     case 'home':
@@ -135,16 +137,16 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
       );
 
     case 'personas':
-      return <GroupedAgentSidebar onCreatePersona={onCreatePersona} />;
+      return <AgentsSidebarNav onCreatePersona={onCreatePersona} />;
 
     case 'events':
       return (
         <div className="text-center py-12">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-            <Zap className="w-6 h-6 text-amber-400/60" />
+          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+            <Radio className="w-6 h-6 text-cyan-400/60" />
           </div>
-          <p className="text-sm text-muted-foreground/80">Event triggers</p>
-          <p className="text-sm text-muted-foreground/80 mt-1">Configure in persona settings</p>
+          <p className="text-sm text-muted-foreground/80">Event Bus</p>
+          <p className="text-sm text-muted-foreground/80 mt-1">Central event hub</p>
         </div>
       );
 
@@ -240,11 +242,80 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
           items={settingsItems}
           activeId={settingsTab}
           onSelect={(id) => setSettingsTab(id as SettingsTab)}
-          devItems={isDev ? new Set(['engine', 'byom']) : undefined}
+          devItems={isDev ? new Set(['engine', 'byom', 'network', 'admin']) : undefined}
         />
       );
 
     default:
       return null;
   }
+}
+
+// -- Simplified agents sidebar (persona list removed, lives in table view now) --
+
+function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) {
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const personas = useAgentStore((s) => s.personas);
+  const agentTab = useSystemStore((s) => s.agentTab);
+  const setAgentTab = useSystemStore((s) => s.setAgentTab);
+  const isCreatingPersona = useSystemStore((s) => s.isCreatingPersona);
+  const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
+  const buildPhase = useAgentStore((s) => s.buildPhase);
+
+  const hasActiveBuild = !!buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted';
+  const buildingPersona = hasActiveBuild ? personas.find((p) => p.id === buildPersonaId) : null;
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="px-3 py-3 border-b border-primary/10">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/50">Agents</span>
+          <button
+            onClick={onCreatePersona}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
+          >
+            <Plus className="w-3 h-3" />
+            Create
+          </button>
+        </div>
+      </div>
+
+      {/* Nav items */}
+      <div className="flex-1 px-2 py-2 space-y-1">
+        {/* All Agents */}
+        <button
+          onClick={() => { selectPersona(null); setAgentTab('all'); useSystemStore.getState().setIsCreatingPersona(false); }}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+            agentTab === 'all' && !isCreatingPersona
+              ? 'bg-primary/10 text-foreground/90 font-medium'
+              : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+          }`}
+        >
+          <List className="w-4 h-4 flex-shrink-0" />
+          All Agents
+          <span className="ml-auto text-[11px] text-muted-foreground/40">{personas.length}</span>
+        </button>
+
+        {/* Active build indicator */}
+        {hasActiveBuild && buildingPersona && (
+          <button
+            onClick={() => {
+              useAgentStore.setState({ buildPersonaId: buildingPersona.id });
+              useSystemStore.getState().setIsCreatingPersona(true);
+            }}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+              isCreatingPersona
+                ? 'bg-violet-500/10 text-violet-300 font-medium border border-violet-500/15'
+                : 'text-muted-foreground/70 hover:bg-violet-500/5 hover:text-violet-300'
+            }`}
+          >
+            <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin text-violet-400" />
+            <span className="truncate">{buildingPersona.name}</span>
+            <span className="ml-auto text-[10px] text-violet-400/60 capitalize">{buildPhase}</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }

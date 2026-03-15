@@ -191,7 +191,7 @@ pub fn get_recent_error_rate(
 ) -> Result<f64, AppError> {
     let conn = pool.get()?;
     let (total, failed): (i64, i64) = conn.query_row(
-        "SELECT COUNT(*), SUM(CASE WHEN status IN ('failed','error') THEN 1 ELSE 0 END)
+        "SELECT COUNT(*), COALESCE(SUM(CASE WHEN status IN ('failed','error') THEN 1 ELSE 0 END), 0)
          FROM (SELECT status FROM persona_executions WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT ?2)",
         params![persona_id, window],
         |row| Ok((row.get(0)?, row.get(1)?)),

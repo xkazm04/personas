@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, Bot, Home, BarChart3, Zap, Key, FlaskConical, Users,
-  Cloud, Settings, Plus, Power, Workflow, Link2,
+  Search, Bot, Home, BarChart3, Radio, Key, FlaskConical, Users,
+  Cloud, Settings, Plus, Power, Workflow,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
@@ -12,7 +12,7 @@ import type { SidebarSection } from '@/lib/types/types';
 import {
   type PaletteItem, type ResultKind,
   fuzzyMatch, fuzzyScore, trackRecent, getRecentAgentIds,
-  agentItem, credentialItem, templateItem, automationItem, triggerItem,
+  agentItem, credentialItem, templateItem, automationItem,
 } from './commandPaletteUtils';
 import { CommandPaletteResults } from './CommandPaletteResults';
 
@@ -22,7 +22,7 @@ const NAV_ITEMS: { id: SidebarSection; label: string; icon: React.ReactNode }[] 
   { id: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },
   { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
   { id: 'personas', label: 'Agents', icon: <Bot className="w-4 h-4" /> },
-  { id: 'events', label: 'Events', icon: <Zap className="w-4 h-4" /> },
+  { id: 'events', label: 'Event Bus', icon: <Radio className="w-4 h-4" /> },
   { id: 'credentials', label: 'Keys', icon: <Key className="w-4 h-4" /> },
   { id: 'design-reviews', label: 'Templates', icon: <FlaskConical className="w-4 h-4" /> },
   { id: 'team', label: 'Teams', icon: <Users className="w-4 h-4" /> },
@@ -40,7 +40,6 @@ export default function CommandPalette() {
   const personas = useAgentStore((s) => s.personas);
   const groups = usePipelineStore((s) => s.groups);
   const recipes = usePipelineStore((s) => s.recipes);
-  const triggerChains = usePipelineStore((s) => s.triggerChains);
   const credentials = useVaultStore((s) => s.credentials);
   const automations = useVaultStore((s) => s.automations);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
@@ -82,7 +81,6 @@ export default function CommandPalette() {
   const keyIcon = <Key className="w-4 h-4" />;
   const flaskIcon = <FlaskConical className="w-4 h-4" />;
   const workflowIcon = <Workflow className="w-4 h-4" />;
-  const linkIcon = <Link2 className="w-4 h-4" />;
 
   const items = useMemo((): PaletteItem[] => {
     const results: PaletteItem[] = [];
@@ -166,22 +164,6 @@ export default function CommandPalette() {
         results.push(automationItem(a, setSidebarSection, workflowIcon));
       }
 
-      // -- Triggers --
-      const scoredTriggers = triggerChains
-        .map(t => ({
-          trigger: t,
-          score: Math.max(
-            fuzzyScore(searchQuery, t.source_persona_name),
-            fuzzyScore(searchQuery, t.target_persona_name),
-            fuzzyScore(searchQuery, t.condition_type) * 0.5,
-          ),
-        }))
-        .filter(s => s.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10);
-      for (const { trigger } of scoredTriggers) {
-        results.push(triggerItem(trigger, setSidebarSection, linkIcon));
-      }
     }
 
     // -- Navigation --
@@ -198,7 +180,7 @@ export default function CommandPalette() {
     }
 
     return results;
-  }, [personas, groups, groupMap, credentials, recipes, automations, triggerChains, searchQuery, isCommandMode, selectPersona, setSidebarSection, setIsCreatingPersona, botIcon, powerIcon, keyIcon, flaskIcon, workflowIcon, linkIcon]);
+  }, [personas, groups, groupMap, credentials, recipes, automations, searchQuery, isCommandMode, selectPersona, setSidebarSection, setIsCreatingPersona, botIcon, powerIcon, keyIcon, flaskIcon, workflowIcon]);
 
   useEffect(() => {
     setSelectedIndex(i => Math.min(i, Math.max(0, items.length - 1)));
@@ -253,7 +235,6 @@ export default function CommandPalette() {
       addSection('credential', 'Credentials');
       addSection('template', 'Templates');
       addSection('automation', 'Automations');
-      addSection('trigger', 'Triggers');
       addSection('navigation', 'Navigation');
     }
     return grouped;

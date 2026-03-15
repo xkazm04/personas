@@ -225,7 +225,7 @@ npm install
 # 3. (optional) Preflight check only
 .\scripts\desktop-dev.ps1 -CheckOnly
 
-# 4. Build for production
+# 4. Build for production (all features)
 npm run tauri build
 ```
 
@@ -246,15 +246,51 @@ npm run tauri dev
 
 > **Note:** The first run will compile all Rust dependencies, which can take several minutes. Subsequent builds are incremental and much faster.
 
+### Build Tiers
+
+The app supports three audience tiers. Each tier is a strict superset of the previous one, so a Team build includes everything in Starter, and Builder includes everything in Team.
+
+| Tier | Audience | What's included |
+|------|----------|----------------|
+| **Starter** | Non-technical users | Agents, credentials, messages, templates — clean, focused UI |
+| **Team** | Teams & enterprises | + events, pipelines, deployment, analytics, scheduling, databases |
+| **Builder** | Developers | + dev tools, lab, design system, raw JSON editing |
+
+Users can switch tiers at runtime via **Settings > Account > Interface Mode**. The default tier is **Team**.
+
+To build a tier-locked variant (higher-tier features are tree-shaken from the bundle):
+
+```bash
+npm run build:starter    # Starter-only features
+npm run build:team       # Starter + Team features
+npm run build:builder    # All features (default)
+```
+
+For Tauri desktop builds with a specific tier:
+
+```bash
+VITE_APP_TIER=starter npm run tauri build   # Starter installer
+VITE_APP_TIER=team npm run tauri build      # Team installer
+npm run tauri build                         # Builder installer (default)
+```
+
+When `VITE_APP_TIER` is not set, the build includes all tiers and users can switch freely at runtime.
+
 ### Available Scripts
 
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start Vite dev server |
-| `npm run build` | TypeScript check + Vite production build |
+| `npm run build` | TypeScript check + Vite production build (all tiers) |
+| `npm run build:starter` | Build with only Starter features |
+| `npm run build:team` | Build with Starter + Team features |
+| `npm run build:builder` | Build with all features |
 | `npm run lint` | Run ESLint on `src/` |
 | `npm run tauri dev` | Launch Tauri in development mode |
 | `npm run tauri build` | Build distributable desktop app |
+| `npm run analyze` | Generate bundle treemap (`dist/bundle-report.html`) |
+| `npm run check:budget` | Check JS chunk sizes against budget limits |
+| `npm run check:assets` | Show potential image optimization savings |
 
 ## Project Structure
 

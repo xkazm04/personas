@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Shield, Map, RotateCcw, Play, Trash2, Check, AlertTriangle } from 'lucide-react';
+import { Shield, Map, RotateCcw, Play, Trash2, Check, AlertTriangle, ScrollText } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useSystemStore } from "@/stores/systemStore";
 import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
+import { hasUserConsented, resetUserConsent } from '@/features/shared/components/overlays/FirstUseConsentModal';
 
 export default function AdminSettings() {
   const tourActive = useSystemStore((s) => s.tourActive);
@@ -16,6 +17,8 @@ export default function AdminSettings() {
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   const [confirmReset, setConfirmReset] = useState(false);
+  const [consentStatus, setConsentStatus] = useState(hasUserConsented);
+  const [confirmConsentReset, setConfirmConsentReset] = useState(false);
 
   const completedCount = TOUR_STEPS.filter((s) => tourStepCompleted[s.id]).length;
 
@@ -181,6 +184,76 @@ export default function AdminSettings() {
                       Force Dismiss
                     </button>
                   </>
+                )}
+              </div>
+            </div>
+          </div>
+          {/* Section: User Consent */}
+          <div className="rounded-xl border border-primary/10 bg-secondary/10 overflow-hidden">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-primary/8">
+              <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                <ScrollText className="w-4.5 h-4.5 text-cyan-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-foreground/90">User Consent</h3>
+                <p className="text-sm text-muted-foreground/50">Reset the first-use consent modal to test onboarding</p>
+              </div>
+              <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${
+                consentStatus
+                  ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                  : 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+              }`}>
+                {consentStatus ? 'Accepted' : 'Not accepted'}
+              </span>
+            </div>
+
+            <div className="px-5 py-4 space-y-4">
+              <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">Storage Key</p>
+                <p className="text-sm font-mono text-foreground/80">__personas_user_consent_accepted</p>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  onClick={() => {
+                    if (!confirmConsentReset) {
+                      setConfirmConsentReset(true);
+                      setTimeout(() => setConfirmConsentReset(false), 3000);
+                      return;
+                    }
+                    resetUserConsent();
+                    setConsentStatus(false);
+                    setConfirmConsentReset(false);
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border transition-colors ${
+                    confirmConsentReset
+                      ? 'bg-red-500/15 text-red-300 border-red-500/25 hover:bg-red-500/25'
+                      : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20'
+                  }`}
+                >
+                  {confirmConsentReset ? (
+                    <>
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      Confirm Reset
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Reset Consent
+                    </>
+                  )}
+                </button>
+
+                {!consentStatus && (
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl
+                      bg-amber-500/10 text-amber-400 border border-amber-500/20
+                      hover:bg-amber-500/20 transition-colors"
+                  >
+                    <Play className="w-3.5 h-3.5" />
+                    Reload to Show Modal
+                  </button>
                 )}
               </div>
             </div>

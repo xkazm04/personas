@@ -93,6 +93,25 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- Auth error (callback failures surfaced from Rust) --------------------
+  {
+    event: "auth-error",
+    setup: async () => {
+      const unlisten = await listen<{ error: string }>(
+        "auth-error",
+        (event) => {
+          const msg = event.payload?.error ?? "Authentication failed";
+          console.error("[auth-error]", msg);
+          useAuthStore.setState({
+            isLoading: false,
+            error: msg,
+          });
+        },
+      );
+      return [unlisten];
+    },
+  },
+
   // -- Healing event -------------------------------------------------------
   {
     event: "healing-event",
@@ -152,6 +171,43 @@ const registry: EventRegistration[] = [
           }
         },
       );
+      return [unlisten];
+    },
+  },
+
+  // -- Build session events (background resilience) -------------------------
+  {
+    event: "build-session-event",
+    setup: async () => {
+      const unlisten = await listen<{
+        type: string;
+        session_id: string;
+        [key: string]: unknown;
+      }>("build-session-event", (event) => {
+        const store = useAgentStore.getState();
+        const e = event.payload;
+
+        // Only process events for the active build session
+        if (!store.buildSessionId || e.session_id !== store.buildSessionId) return;
+
+        switch (e.type) {
+          case "cell_update":
+            store.handleBuildCellUpdate(e as Parameters<typeof store.handleBuildCellUpdate>[0]);
+            break;
+          case "question":
+            store.handleBuildQuestion(e as Parameters<typeof store.handleBuildQuestion>[0]);
+            break;
+          case "progress":
+            store.handleBuildProgress(e as Parameters<typeof store.handleBuildProgress>[0]);
+            break;
+          case "error":
+            store.handleBuildError(e as Parameters<typeof store.handleBuildError>[0]);
+            break;
+          case "session_status":
+            store.handleBuildSessionStatus(e as Parameters<typeof store.handleBuildSessionStatus>[0]);
+            break;
+        }
+      });
       return [unlisten];
     },
   },

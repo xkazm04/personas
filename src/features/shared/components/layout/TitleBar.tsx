@@ -40,6 +40,7 @@ export default function TitleBar() {
       <div className="titlebar-controls">
         <button
           className="titlebar-btn titlebar-btn-minimize"
+          data-testid="titlebar-minimize"
           onClick={() => void appWindow?.minimize()}
           aria-label="Minimize"
         >
@@ -47,6 +48,7 @@ export default function TitleBar() {
         </button>
         <button
           className="titlebar-btn titlebar-btn-maximize"
+          data-testid="titlebar-maximize"
           onClick={() => void appWindow?.toggleMaximize()}
           aria-label={maximized ? 'Restore' : 'Maximize'}
         >
@@ -57,6 +59,7 @@ export default function TitleBar() {
         </button>
         <button
           className="titlebar-btn titlebar-btn-close"
+          data-testid="titlebar-close"
           onClick={() => void appWindow?.close()}
           aria-label="Close"
         >

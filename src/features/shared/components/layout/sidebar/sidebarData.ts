@@ -4,17 +4,26 @@ import {
   List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu,
   Network, Database, Home, Compass, Shield, CalendarClock, HardDriveDownload,
   Wrench, FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
+  Radio,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
 import type { SubNavItem } from './SidebarSubNav';
+import { type Tier, TIERS, isTierVisible } from '@/lib/constants/uiModes';
 
 export interface SectionDef {
   id: SidebarSection;
   icon: LucideIcon;
   label: string;
+  /** Minimum tier required to show this section. Default: starter (always visible). */
+  minTier?: Tier;
+  /** Only visible in import.meta.env.DEV builds (regardless of tier). */
   devOnly?: boolean;
+
+  // Backward-compatible aliases — computed from minTier by filterByTier()
+  /** @deprecated Read-only compat flag derived from minTier */
   simpleHidden?: boolean;
+  /** @deprecated Read-only compat flag derived from minTier */
   devModeOnly?: boolean;
 }
 
@@ -22,40 +31,52 @@ export const sections: SectionDef[] = [
   { id: 'home', icon: Home, label: 'Home' },
   { id: 'overview', icon: BarChart3, label: 'Overview' },
   { id: 'personas', icon: Bot, label: 'Agents' },
-  { id: 'events', icon: Zap, label: 'Events', simpleHidden: true },
+  { id: 'events', icon: Radio, label: 'Event Bus', minTier: TIERS.TEAM },
   { id: 'credentials', icon: Key, label: 'Keys' },
   { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
-  { id: 'team', icon: Users, label: 'Teams', devOnly: true, simpleHidden: true },
-  { id: 'cloud', icon: Cloud, label: 'Cloud', devOnly: true, simpleHidden: true },
-  { id: 'dev-tools', icon: Wrench, label: 'Dev Tools', devModeOnly: true },
+  { id: 'team', icon: Users, label: 'Teams', minTier: TIERS.TEAM, devOnly: true },
+  { id: 'cloud', icon: Cloud, label: 'Cloud', minTier: TIERS.TEAM, devOnly: true },
+  { id: 'dev-tools', icon: Wrench, label: 'Dev Tools', minTier: TIERS.BUILDER },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
+
+/** Filter any item array by tier visibility. */
+export function filterByTier<T extends { minTier?: Tier; simpleHidden?: boolean }>(
+  items: T[],
+  activeTier: Tier,
+): T[] {
+  return items.filter((item) => {
+    const minTier = item.minTier ?? TIERS.STARTER;
+    return isTierVisible(minTier, activeTier);
+  });
+}
 
 export const homeItems: Array<{ id: HomeTab; icon: LucideIcon; label: string }> = [
   { id: 'welcome', icon: Compass, label: 'Welcome' },
   ...(import.meta.env.DEV ? [{ id: 'system-check' as HomeTab, icon: Monitor, label: 'System Check' }] : []),
 ];
 
-export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: string; simpleHidden?: boolean }> = [
+export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: string; minTier?: Tier; simpleHidden?: boolean }> = [
   { id: 'home', icon: LayoutDashboard, label: 'Dashboard' },
-  { id: 'executions', icon: Activity, label: 'Executions', simpleHidden: true },
-  { id: 'manual-review', icon: ClipboardCheck, label: 'Manual Review', simpleHidden: true },
+  { id: 'executions', icon: Activity, label: 'Executions', minTier: TIERS.TEAM },
+  { id: 'manual-review', icon: ClipboardCheck, label: 'Manual Review', minTier: TIERS.TEAM },
   { id: 'messages', icon: MessageSquare, label: 'Messages' },
-  { id: 'events', icon: Zap, label: 'Events', simpleHidden: true },
-  { id: 'knowledge', icon: Brain, label: 'Knowledge', simpleHidden: true },
-  { id: 'sla', icon: Shield, label: 'SLA', simpleHidden: true },
-  { id: 'schedules', icon: CalendarClock, label: 'Schedules', simpleHidden: true },
+  { id: 'events', icon: Zap, label: 'Events', minTier: TIERS.TEAM },
+  { id: 'knowledge', icon: Brain, label: 'Knowledge', minTier: TIERS.TEAM },
+  { id: 'sla', icon: Shield, label: 'SLA', minTier: TIERS.TEAM },
+  { id: 'schedules', icon: CalendarClock, label: 'Schedules', minTier: TIERS.TEAM },
 ];
 
 export const credentialItems: SubNavItem[] = [
   { id: 'credentials', label: 'Credentials', icon: Key },
-  { id: 'databases', label: 'Databases', icon: Database, simpleHidden: true },
-  { id: 'from-template', label: 'Catalog', icon: LayoutTemplate, simpleHidden: true },
+  { id: 'databases', label: 'Databases', icon: Database, minTier: TIERS.TEAM },
+  { id: 'from-template', label: 'Catalog', icon: LayoutTemplate, minTier: TIERS.TEAM },
+  { id: 'graph', label: 'Graph', icon: Network },
   { id: 'add-new', label: 'Add new', icon: Plus },
 ];
 
 export const templateItems: SubNavItem[] = [
-  { id: 'n8n', label: 'n8n Import', icon: Upload, simpleHidden: true },
+  { id: 'n8n', label: 'n8n Import', icon: Upload, minTier: TIERS.TEAM },
   { id: 'generated', label: 'Generated', icon: List },
 ];
 
@@ -73,15 +94,20 @@ export const cloudItems: SubNavItem[] = [
   { id: 'gitlab', label: 'GitLab', icon: GitBranch },
 ];
 
-export function getSettingsItems(isDev: boolean, isSimple = false): SubNavItem[] {
+export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[] {
+  const tier = activeTier ?? TIERS.TEAM;
   return [
     { id: 'account', label: 'Account', icon: Chrome },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'engine', label: 'Engine', icon: Cpu, devOnly: true },
     { id: 'byom', label: 'BYOM', icon: Network, devOnly: true },
-    { id: 'portability', label: 'Data', icon: HardDriveDownload, simpleHidden: true },
-    { id: 'network', label: 'Network', icon: Share2 },
+    { id: 'portability', label: 'Data', icon: HardDriveDownload, minTier: TIERS.TEAM },
+    { id: 'network', label: 'Network', icon: Share2, devOnly: true },
     { id: 'admin', label: 'Admin', icon: Shield, devOnly: true },
-  ].filter((item) => (!item.devOnly || isDev) && (!isSimple || !item.simpleHidden));
+  ].filter((item) => {
+    if (item.devOnly && !isDev) return false;
+    const minTier = item.minTier ?? TIERS.STARTER;
+    return isTierVisible(minTier, tier);
+  });
 }

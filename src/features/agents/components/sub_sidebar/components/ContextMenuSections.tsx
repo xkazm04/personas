@@ -118,6 +118,7 @@ export function MenuItems({
         className="w-full px-3 py-1.5 text-sm text-left hover:bg-secondary/60 flex items-center gap-2 text-foreground/90"
         role="menuitem"
         data-menuitem="true"
+        data-testid="ctx-toggle-enabled"
       >
         {persona.enabled ? (
           <>
@@ -138,6 +139,7 @@ export function MenuItems({
         className="w-full px-3 py-1.5 text-sm text-left hover:bg-secondary/60 flex items-center gap-2 text-foreground/90"
         role="menuitem"
         data-menuitem="true"
+        data-testid="ctx-duplicate"
       >
         <Copy className="w-3.5 h-3.5 text-muted-foreground/80" />
         <span>Duplicate</span>
@@ -149,6 +151,7 @@ export function MenuItems({
         className="w-full px-3 py-1.5 text-sm text-left hover:bg-secondary/60 flex items-center gap-2 text-foreground/90"
         role="menuitem"
         data-menuitem="true"
+        data-testid="ctx-export"
       >
         <Share2 className="w-3.5 h-3.5 text-muted-foreground/80" />
         <span>Export .persona</span>
@@ -164,6 +167,7 @@ export function MenuItems({
           className="w-full px-3 py-1.5 text-sm text-left hover:bg-red-500/10 flex items-center gap-2 text-red-400/80 hover:text-red-400"
           role="menuitem"
           data-menuitem="true"
+          data-testid="ctx-delete"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Delete</span>

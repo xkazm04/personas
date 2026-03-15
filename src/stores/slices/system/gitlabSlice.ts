@@ -4,6 +4,7 @@ import { translateGitLabError } from "./deployTarget";
 import { emitDeploymentEvent } from "@/hooks/realtime/emitDeploymentEvent";
 import {
   gitlabConnect,
+  gitlabConnectFromVault,
   gitlabDisconnect,
   gitlabGetConfig,
   gitlabListProjects,
@@ -44,6 +45,7 @@ export interface GitLabSlice {
   // Actions
   gitlabInitialize: () => Promise<void>;
   gitlabConnectAction: (token: string) => Promise<void>;
+  gitlabConnectFromVaultAction: (credentialId: string) => Promise<void>;
   gitlabDisconnectAction: () => Promise<void>;
   gitlabFetchProjects: () => Promise<void>;
   gitlabDeployPersona: (
@@ -95,6 +97,18 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     set({ gitlabIsConnecting: true, gitlabError: null });
     try {
       await gitlabConnect(token);
+      const config = await gitlabGetConfig();
+      set({ gitlabConfig: config, gitlabIsConnecting: false });
+    } catch (err) {
+      set({ gitlabIsConnecting: false, gitlabError: translateGitLabError(err) });
+      throw err;
+    }
+  },
+
+  gitlabConnectFromVaultAction: async (credentialId: string) => {
+    set({ gitlabIsConnecting: true, gitlabError: null });
+    try {
+      await gitlabConnectFromVault(credentialId);
       const config = await gitlabGetConfig();
       set({ gitlabConfig: config, gitlabIsConnecting: false });
     } catch (err) {

@@ -14,6 +14,7 @@ crate-type = ["cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
+dotenvy = "0.15"
 
 [features]
 default = []
@@ -29,6 +30,8 @@ desktop = [
 ]
 # mobile feature is activated automatically by Tauri v2 when targeting Android/iOS
 mobile = []
+# Enables test automation HTTP server on localhost:17320 for MCP-driven UI testing
+test-automation = []
 
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
@@ -129,6 +132,14 @@ opt-level = 0
 inherits = "dev"
 opt-level = 2
 lto = "thin"
+
+# CI profile: faster than release but catches optimization bugs.
+# Used by CI for test + clippy runs — avoids full LTO cost.
+[profile.ci]
+inherits = "release"
+lto = "thin"
+codegen-units = 4
+strip = false
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [

@@ -459,8 +459,34 @@ fn resolve_google_oauth_client_credentials(
         return Ok((id, SecureString::new(secret), "user_provided".into()));
     }
 
-    let (id, secret) = crate::engine::google_oauth::resolve_google_oauth_env_credentials()?;
+    // Use Desktop-type client credentials for connector OAuth (loopback redirect).
+    let (id, secret) = crate::engine::google_oauth::resolve_google_desktop_oauth_credentials()?;
     Ok((id, SecureString::new(secret), "app_managed".into()))
+}
+
+/// Resolve OAuth client credentials for the universal OAuth gateway.
+/// If the user provides a client_id, use it. Otherwise, try to resolve
+/// app-managed credentials from environment variables for known providers.
+fn resolve_universal_oauth_credentials(
+    provider_id: &str,
+    provided_client_id: String,
+    provided_client_secret: Option<String>,
+) -> Result<(String, Option<String>), AppError> {
+    let has_id = !provided_client_id.trim().is_empty();
+    if has_id {
+        return Ok((provided_client_id, provided_client_secret));
+    }
+
+    // Try app-managed credentials for known providers
+    match provider_id {
+        "microsoft" => {
+            let (id, secret) = crate::engine::google_oauth::resolve_microsoft_oauth_credentials()?;
+            Ok((id, Some(secret)))
+        }
+        _ => Err(AppError::Validation(format!(
+            "No client_id provided and no app-managed credentials configured for provider '{provider_id}'."
+        ))),
+    }
 }
 
 struct GoogleTokenExchangeResult {
@@ -887,7 +913,11 @@ pub async fn start_oauth(
     extra_params: Option<HashMap<String, String>>,
 ) -> Result<serde_json::Value, AppError> {
     require_privileged(&state, "start_oauth").await?;
-    // Wrap secret immediately so the bare String is dropped
+
+    // Resolve app-managed credentials when user doesn't provide their own.
+    let (client_id, client_secret) = resolve_universal_oauth_credentials(
+        &provider_id, client_id, client_secret,
+    )?;
     let client_secret: Option<SecureString> = client_secret.map(SecureString::new);
 
     cleanup_oauth_sessions();

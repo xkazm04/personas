@@ -139,6 +139,7 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
                     state.engine.clone(),
                     state.rate_limiter.clone(),
                     state.tier_config.clone(),
+                    state.cloud_client.clone(),
                 );
             }
             refresh_tray(app);

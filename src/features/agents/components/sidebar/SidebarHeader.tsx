@@ -89,7 +89,7 @@ export function SidebarHeader({
       <div className="flex gap-1.5 mb-3">
         <button
           onClick={onCreatePersona}
-          data-testid="sidebar-create-agent-btn"
+          data-testid="create-agent-btn"
           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/30 hover:border-primary/50 bg-primary/5 hover:bg-primary/10 transition-all group"
         >
           <Plus className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform" />

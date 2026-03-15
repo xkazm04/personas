@@ -76,8 +76,9 @@ export function reportError(
   }
   if (severity !== "state") {
     // Lazy import to avoid circular dependency at module load time
-    const { useToastStore } = require("@/stores/toastStore");
-    useToastStore.getState().addToast(message, "error");
+    import("@/stores/toastStore").then(({ useToastStore }) => {
+      useToastStore.getState().addToast(message, "error");
+    }).catch(() => {});
   }
   return message;
 }

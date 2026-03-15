@@ -18,6 +18,8 @@ fn row_to_build_session(row: &Row) -> rusqlite::Result<BuildSession> {
         intent: row.get("intent")?,
         error_message: row.get("error_message")?,
         cli_pid: cli_pid.map(|p| p as u32),
+        workflow_json: row.get("workflow_json").unwrap_or(None),
+        parser_result_json: row.get("parser_result_json").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -29,8 +31,9 @@ pub fn create(pool: &DbPool, session: &BuildSession) -> Result<(), AppError> {
     conn.execute(
         "INSERT INTO build_sessions
          (id, persona_id, phase, resolved_cells, pending_question, agent_ir,
-          intent, error_message, cli_pid, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+          intent, error_message, cli_pid, workflow_json, parser_result_json,
+          created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
         params![
             session.id,
             session.persona_id,
@@ -41,6 +44,8 @@ pub fn create(pool: &DbPool, session: &BuildSession) -> Result<(), AppError> {
             session.intent,
             session.error_message,
             session.cli_pid.map(|p| p as i64),
+            session.workflow_json,
+            session.parser_result_json,
             session.created_at,
             session.updated_at,
         ],

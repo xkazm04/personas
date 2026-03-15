@@ -20,14 +20,15 @@ export type ViewName =
   | 'add-wizard'
   | 'workspace-connect'
   | 'foraging'
-  | 'databases';
+  | 'databases'
+  | 'graph';
 
 // -- Discriminated union: each state carries exactly the data it needs --
 
 export type CredentialViewState =
   | { view: 'list' }
   | { view: 'catalog-browse'; search: string }
-  | { view: 'catalog-form'; connector: ConnectorDefinition; credentialName: string; parentSearch: string }
+  | { view: 'catalog-form'; connector: ConnectorDefinition; credentialName: string; parentSearch: string; oauthValues?: Record<string, string> }
   | { view: 'catalog-auto-setup'; connector: ConnectorDefinition; parentSearch: string }
   | { view: 'add-new' }
   | { view: 'add-api-tool' }
@@ -38,7 +39,8 @@ export type CredentialViewState =
   | { view: 'add-wizard' }
   | { view: 'workspace-connect' }
   | { view: 'foraging' }
-  | { view: 'databases' };
+  | { view: 'databases' }
+  | { view: 'graph' };
 
 // -- Typed actions --
 
@@ -59,7 +61,9 @@ export type CredentialViewAction =
   | { type: 'GO_ADD_WIZARD' }
   | { type: 'GO_WORKSPACE_CONNECT' }
   | { type: 'GO_FORAGING' }
-  | { type: 'GO_DATABASES' };
+  | { type: 'GO_DATABASES' }
+  | { type: 'GO_GRAPH' }
+  | { type: 'SET_OAUTH_VALUES'; values: Record<string, string> };
 
 // -- Transition Table ------------------------------------------------
 //
@@ -74,13 +78,13 @@ type ActionType = CredentialViewAction['type'];
  * Actions not listed for a given view are silently ignored (no-op).
  */
 // Sidebar navigation actions are valid from any view
-const GLOBAL_ACTIONS: ActionType[] = ['GO_LIST', 'GO_CATALOG', 'GO_ADD_NEW', 'GO_ADD_WIZARD', 'GO_WORKSPACE_CONNECT', 'GO_DATABASES'];
+const GLOBAL_ACTIONS: ActionType[] = ['GO_LIST', 'GO_CATALOG', 'GO_ADD_NEW', 'GO_ADD_WIZARD', 'GO_WORKSPACE_CONNECT', 'GO_DATABASES', 'GO_GRAPH'];
 
 /** View-specific transitions (in addition to global actions). */
 const VIEW_TRANSITIONS: Record<ViewName, readonly ActionType[]> = {
   'list':               [],
   'catalog-browse':     ['PICK_CONNECTOR', 'SET_CATALOG_SEARCH'],
-  'catalog-form':       ['CANCEL_FORM', 'GO_AUTO_SETUP', 'GO_ADD_DESKTOP', 'SET_CREDENTIAL_NAME'],
+  'catalog-form':       ['CANCEL_FORM', 'GO_AUTO_SETUP', 'GO_ADD_DESKTOP', 'SET_CREDENTIAL_NAME', 'SET_OAUTH_VALUES'],
   'catalog-auto-setup': ['CANCEL_FORM'],
   'add-new':            ['GO_ADD_API_TOOL', 'GO_ADD_MCP', 'GO_ADD_CUSTOM', 'GO_ADD_DATABASE', 'GO_ADD_DESKTOP', 'GO_ADD_WIZARD', 'GO_WORKSPACE_CONNECT', 'GO_FORAGING'],
   'add-api-tool':       [],
@@ -92,6 +96,7 @@ const VIEW_TRANSITIONS: Record<ViewName, readonly ActionType[]> = {
   'workspace-connect':  [],
   'foraging':           [],
   'databases':          [],
+  'graph':              [],
 };
 
 function buildTransitionTable(): Record<ViewName, ReadonlySet<ActionType>> {
@@ -126,6 +131,7 @@ const NAV_KEY_MAP: Record<ViewName, CredentialNavKey> = {
   'workspace-connect':  'add-new',
   'foraging':           'add-new',
   'databases':          'databases',
+  'graph':              'graph',
 };
 
 export function getNavKey(state: CredentialViewState): CredentialNavKey {
@@ -152,6 +158,7 @@ const GO_ADD_WIZARD: ActionHandler = () => ({ view: 'add-wizard' });
 const GO_WORKSPACE_CONNECT: ActionHandler = () => ({ view: 'workspace-connect' });
 const GO_FORAGING: ActionHandler = () => ({ view: 'foraging' });
 const GO_DATABASES: ActionHandler = () => ({ view: 'databases' });
+const GO_GRAPH: ActionHandler = () => ({ view: 'graph' });
 
 const PICK_CONNECTOR: ActionHandler<Extract<CredentialViewAction, { type: 'PICK_CONNECTOR' }>> =
   (_state, action) => {
@@ -189,6 +196,14 @@ const SET_CATALOG_SEARCH: ActionHandler<Extract<CredentialViewAction, { type: 'S
     return state;
   };
 
+const SET_OAUTH_VALUES: ActionHandler<Extract<CredentialViewAction, { type: 'SET_OAUTH_VALUES' }>> =
+  (state, action) => {
+    if (state.view === 'catalog-form') {
+      return { ...state, oauthValues: action.values };
+    }
+    return state;
+  };
+
 const CANCEL_FORM: ActionHandler = (state) => {
   if (state.view === 'catalog-form' || state.view === 'catalog-auto-setup') {
     return { view: 'catalog-browse', search: state.parentSearch || '' };
@@ -215,6 +230,8 @@ const ACTION_HANDLERS: Record<ActionType, ActionHandler<never>> = {
   GO_WORKSPACE_CONNECT: GO_WORKSPACE_CONNECT as ActionHandler<never>,
   GO_FORAGING: GO_FORAGING as ActionHandler<never>,
   GO_DATABASES: GO_DATABASES as ActionHandler<never>,
+  GO_GRAPH: GO_GRAPH as ActionHandler<never>,
+  SET_OAUTH_VALUES: SET_OAUTH_VALUES as ActionHandler<never>,
 };
 
 // -- Reducer ---------------------------------------------------------
@@ -253,6 +270,9 @@ export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]
         break;
       case 'databases':
         dispatch({ type: 'GO_DATABASES' });
+        break;
+      case 'graph':
+        dispatch({ type: 'GO_GRAPH' });
         break;
     }
   }, []);

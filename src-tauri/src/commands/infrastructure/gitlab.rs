@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::repos::core::personas;
-use crate::db::repos::resources::tools;
+use crate::db::repos::resources::{credentials as cred_repo, tools};
 use crate::error::AppError;
 use crate::gitlab;
 use crate::gitlab::client::GitLabClient;
@@ -40,6 +40,7 @@ pub async fn gitlab_connect(
         return Err(AppError::GitLab("GitLab token must not be empty".into()));
     }
 
+    // TODO: accept optional gitlab_url parameter to support self-hosted GitLab instances
     let client = Arc::new(GitLabClient::new(
         "https://gitlab.com".to_string(),
         token.trim().to_string(),
@@ -55,6 +56,46 @@ pub async fn gitlab_connect(
     *state.gitlab_client.lock().await = Some(client);
 
     tracing::info!(username = %user.username, "Connected to GitLab");
+    Ok(user)
+}
+
+/// Connect to GitLab using a credential stored in the Vault.
+/// Decrypts the `personal_access_token` field and delegates to the same connect flow.
+#[tauri::command]
+pub async fn gitlab_connect_from_vault(
+    state: State<'_, Arc<AppState>>,
+    credential_id: String,
+) -> Result<GitLabUser, AppError> {
+    require_cloud_auth(&state, "gitlab_connect_from_vault").await?;
+
+    let credential = cred_repo::get_by_id(&state.db, &credential_id)?;
+    let fields = cred_repo::get_decrypted_fields(&state.db, &credential)?;
+
+    let token = fields
+        .get("personal_access_token")
+        .ok_or_else(|| {
+            AppError::GitLab("Vault credential missing personal_access_token field".into())
+        })?;
+
+    if token.trim().is_empty() {
+        return Err(AppError::GitLab("GitLab token in vault is empty".into()));
+    }
+
+    let client = Arc::new(GitLabClient::new(
+        "https://gitlab.com".to_string(),
+        token.trim().to_string(),
+    )?);
+
+    let user = client.validate_token().await.map_err(|e| {
+        AppError::GitLab(format!("Failed to validate GitLab token: {e}"))
+    })?;
+
+    gitlab::config::store_gitlab_config(token.trim())
+        .map_err(|e| AppError::GitLab(format!("Failed to store GitLab config: {e}")))?;
+
+    *state.gitlab_client.lock().await = Some(client);
+
+    tracing::info!(username = %user.username, credential_id = %credential_id, "Connected to GitLab via vault credential");
     Ok(user)
 }
 

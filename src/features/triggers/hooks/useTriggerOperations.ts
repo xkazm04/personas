@@ -32,7 +32,6 @@ export function useTriggerOperations(personaId: string) {
   const storeCreate = usePipelineStore((s) => s.createTrigger);
   const storeUpdate = usePipelineStore((s) => s.updateTrigger);
   const storeDelete = usePipelineStore((s) => s.deleteTrigger);
-  const fetchTriggerChains = usePipelineStore((s) => s.fetchTriggerChains);
 
   // -- Create -------------------------------------------------------------
 
@@ -83,49 +82,6 @@ export function useTriggerOperations(personaId: string) {
       }
     },
     [personaId, storeDelete],
-  );
-
-  // -- Delete chain (also refreshes chain list) ---------------------------
-
-  const removeChain = useCallback(
-    async (triggerId: string, targetPersonaId: string): Promise<TriggerOpResult> => {
-      try {
-        await storeDelete(targetPersonaId, triggerId);
-        await fetchTriggerChains();
-        return { ok: true };
-      } catch (err) {
-        return { ok: false, error: errStr(err) };
-      }
-    },
-    [storeDelete, fetchTriggerChains],
-  );
-
-  // -- Create chain (also refreshes chain list) --------------------------
-
-  const createChain = useCallback(
-    async (
-      sourcePersonaId: string,
-      targetPersonaId: string,
-      conditionType: string,
-    ): Promise<TriggerOpResult> => {
-      try {
-        await storeCreate(targetPersonaId, {
-          trigger_type: "chain",
-          config: {
-            source_persona_id: sourcePersonaId,
-            event_type: "chain_triggered",
-            condition: { type: conditionType },
-            payload_forward: true,
-          },
-          enabled: true,
-        });
-        await fetchTriggerChains();
-        return { ok: true };
-      } catch (err) {
-        return { ok: false, error: errStr(err) };
-      }
-    },
-    [storeCreate, fetchTriggerChains],
   );
 
   // -- Validate -----------------------------------------------------------
@@ -206,8 +162,6 @@ export function useTriggerOperations(personaId: string) {
     create,
     toggle,
     remove,
-    createChain,
-    removeChain,
     validate,
     testFire,
     dryRun,

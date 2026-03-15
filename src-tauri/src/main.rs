@@ -2,6 +2,12 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
+    // Install the rustls CryptoProvider before any TLS connections are made.
+    // Required since rustls 0.23 when no single default feature is enabled.
+    if let Err(_) = rustls::crypto::ring::default_provider().install_default() {
+        // Already installed by a dependency — safe to continue
+    }
+
     // Initialize Sentry before anything else so panics during startup are captured.
     // Returns a no-op guard when SENTRY_DSN is absent (local dev).
     let _sentry_guard = sentry::init(sentry_options());

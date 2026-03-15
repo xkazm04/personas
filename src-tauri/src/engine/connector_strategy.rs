@@ -156,16 +156,23 @@ impl StrategyRegistry {
         if let Some(meta_json) = connector_metadata {
             if let Ok(val) = serde_json::from_str::<serde_json::Value>(meta_json) {
                 let oauth_type = val.get("oauth_type").and_then(|v| v.as_str());
-                if oauth_type.is_some_and(|v| v == "google") {
-                    if let Some(s) = self.strategies.get("google-oauth") {
-                        tracing::debug!(
-                            service_type = %service_type,
-                            oauth_type = "google",
-                            resolution = "metadata_override",
-                            ?registered,
-                            "Connector strategy selected via metadata oauth_type override"
-                        );
-                        return s.as_ref();
+                if let Some(ot) = oauth_type {
+                    let strategy_key = match ot {
+                        "google" => Some("google-oauth"),
+                        "microsoft" => Some("microsoft-oauth"),
+                        _ => None,
+                    };
+                    if let Some(key) = strategy_key {
+                        if let Some(s) = self.strategies.get(key) {
+                            tracing::debug!(
+                                service_type = %service_type,
+                                oauth_type = ot,
+                                resolution = "metadata_override",
+                                ?registered,
+                                "Connector strategy selected via metadata oauth_type override"
+                            );
+                            return s.as_ref();
+                        }
                     }
                 }
             }
@@ -214,6 +221,7 @@ pub fn init_registry() {
     REGISTRY.get_or_init(|| {
         let mut reg = StrategyRegistry::new();
         reg.register("google-oauth", Box::new(GoogleOAuthStrategy));
+        reg.register("microsoft-oauth", Box::new(MicrosoftOAuthStrategy));
         reg.register("buffer", Box::new(BufferStrategy));
         reg.register("circleci", Box::new(CircleCIStrategy));
         reg.register("clickup", Box::new(ClickUpStrategy));
@@ -353,7 +361,7 @@ impl ConnectorStrategy for GoogleOAuthStrategy {
             .ok_or_else(|| AppError::Validation("Google credential is missing refresh_token".into()))?;
 
         let (client_id, client_secret) =
-            super::google_oauth::resolve_google_oauth_env_credentials()?;
+            super::google_oauth::resolve_google_desktop_oauth_credentials()?;
         let resolved =
             exchange_google_refresh_token(&client_id, &client_secret, &refresh_token).await?;
         Ok(Some(resolved))
@@ -414,6 +422,95 @@ async fn exchange_google_refresh_token(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
         .ok_or_else(|| AppError::Internal("Google token refresh did not return access_token".into()))?;
+
+    let expires_in = value.get("expires_in").and_then(|v| v.as_u64());
+
+    Ok(match expires_in {
+        Some(secs) => ResolvedToken::with_expiry(token, secs),
+        None => ResolvedToken::plain(token),
+    })
+}
+
+// -- Microsoft OAuth ------------------------------------------------
+
+pub struct MicrosoftOAuthStrategy;
+
+#[async_trait]
+impl ConnectorStrategy for MicrosoftOAuthStrategy {
+    fn is_oauth(&self, _fields: &HashMap<String, String>) -> bool {
+        true
+    }
+
+    async fn resolve_auth_token(
+        &self,
+        _connector_metadata: Option<&str>,
+        fields: &HashMap<String, String>,
+    ) -> Result<Option<ResolvedToken>, AppError> {
+        if let Some(token) = find_nonempty(fields, &["access_token", "accessToken"]) {
+            return Ok(Some(ResolvedToken::plain(token)));
+        }
+
+        let refresh_token = find_nonempty(fields, &["refresh_token", "refreshToken"])
+            .ok_or_else(|| AppError::Validation("Microsoft credential is missing refresh_token".into()))?;
+
+        let (client_id, client_secret) =
+            super::google_oauth::resolve_microsoft_oauth_credentials()?;
+        let resolved =
+            exchange_microsoft_refresh_token(&client_id, &client_secret, &refresh_token).await?;
+        Ok(Some(resolved))
+    }
+
+    async fn rotate(
+        &self,
+        pool: &DbPool,
+        credential: &PersonaCredential,
+    ) -> Result<String, AppError> {
+        let refresh_msg = super::oauth_refresh::refresh_single_credential(pool, credential).await?;
+        match super::healthcheck::run_healthcheck(pool, &credential.id).await {
+            Ok(hc) if hc.success => Ok(format!("{refresh_msg} -- verified: {}", hc.message)),
+            Ok(hc) => Ok(format!("{refresh_msg} -- healthcheck warning: {}", hc.message)),
+            Err(_) => Ok(format!("{refresh_msg} -- healthcheck skipped")),
+        }
+    }
+}
+
+/// Exchange a Microsoft refresh token for a fresh access token via Azure AD.
+async fn exchange_microsoft_refresh_token(
+    client_id: &str,
+    client_secret: &str,
+    refresh_token: &str,
+) -> Result<ResolvedToken, AppError> {
+    let response = crate::SHARED_HTTP
+        .post("https://login.microsoftonline.com/common/oauth2/v2.0/token")
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .form(&[
+            ("client_id", client_id),
+            ("client_secret", client_secret),
+            ("refresh_token", refresh_token),
+            ("grant_type", "refresh_token"),
+        ])
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Microsoft token refresh request failed: {e}")))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
+        return Err(AppError::Internal(format!(
+            "Microsoft token refresh failed ({status}): {body}"
+        )));
+    }
+
+    let value = response
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|e| AppError::Internal(format!("Invalid Microsoft token response JSON: {e}")))?;
+
+    let token = value
+        .get("access_token")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .ok_or_else(|| AppError::Internal("Microsoft token refresh did not return access_token".into()))?;
 
     let expires_in = value.get("expires_in").and_then(|v| v.as_u64());
 

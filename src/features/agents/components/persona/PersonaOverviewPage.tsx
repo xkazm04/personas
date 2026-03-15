@@ -1,44 +1,51 @@
-import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Bot, Zap, Clock, AlertTriangle, Activity, Moon } from 'lucide-react';
-import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
+import { useState, useMemo, useCallback } from 'react';
+import { Bot, Zap, Clock, Loader2 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
-import { usePipelineStore } from "@/stores/pipelineStore";
 import { useSystemStore } from "@/stores/systemStore";
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
+import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { extractConnectorNames } from '@/lib/personas/utils';
+import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
-import { IS_MOBILE } from '@/lib/utils/platform/platform';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
-import { PersonaHealthIndicator } from './PersonaHealthIndicator';
-import { WeeklyPerformanceReport } from '@/features/agents/sub_prompt_lab';
-import { useRelevanceSort, type ScoredPersona } from '../sidebar/useRelevanceSort';
 
-const SECTION_META = {
-  attention: {
-    label: 'Needs Attention',
-    icon: AlertTriangle,
-    color: 'text-amber-400',
-    border: 'border-amber-500/20',
-    bg: 'bg-amber-500/5',
-  },
-  active: {
-    label: 'Active',
-    icon: Activity,
-    color: 'text-emerald-400',
-    border: 'border-emerald-500/20',
-    bg: 'bg-emerald-500/5',
-  },
-  idle: {
-    label: 'Idle',
-    icon: Moon,
-    color: 'text-muted-foreground/60',
-    border: 'border-primary/10',
-    bg: 'bg-secondary/20',
-  },
-} as const;
+// -- Status helpers --
+
+const HEALTH_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  healthy:  { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Healthy' },
+  degraded: { bg: 'bg-amber-500/10',   text: 'text-amber-400',   label: 'Degraded' },
+  failing:  { bg: 'bg-red-500/10',     text: 'text-red-400',     label: 'Failing' },
+};
+
+function StatusBadge({ enabled, health }: { enabled: boolean; health?: PersonaHealth }) {
+  if (!enabled) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-500/15">
+        Disabled
+      </span>
+    );
+  }
+  const healthStatus = health?.status ?? 'healthy';
+  const style = (HEALTH_STYLES[healthStatus] ?? HEALTH_STYLES.healthy)!;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${style.bg} ${style.text} border border-current/15`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current" />
+      {style.label}
+    </span>
+  );
+}
+
+function BuildingBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15">
+      <Loader2 className="w-3 h-3 animate-spin" />
+      Building
+    </span>
+  );
+}
+
+// -- Main component --
 
 export default function PersonaOverviewPage() {
   const personas = useAgentStore((s) => s.personas);
@@ -46,246 +53,202 @@ export default function PersonaOverviewPage() {
   const triggerCounts = useAgentStore((s) => s.personaTriggerCounts);
   const lastRunMap = useAgentStore((s) => s.personaLastRun);
   const healthMap = useAgentStore((s) => s.personaHealthMap);
-  const groups = usePipelineStore((s) => s.groups);
+  const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
+  const buildPhase = useAgentStore((s) => s.buildPhase);
   const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
-  const setResumeDraftId = useSystemStore((s) => s.setResumeDraftId);
 
-  const scored = useRelevanceSort(personas, healthMap, lastRunMap, triggerCounts);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortKey, setSortKey] = useState<string | null>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
-  // Detect Draft group ID for draft re-entry
-  const draftGroupId = useMemo(() => {
-    const draftGroup = groups.find((g) => g.name === 'Draft');
-    return draftGroup?.id ?? null;
-  }, [groups]);
+  // Check if a persona has an active build session
+  const isBuilding = useCallback((id: string) => {
+    return id === buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted';
+  }, [buildPersonaId, buildPhase]);
 
-  const groupColorMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    for (const g of groups) map[g.id] = g.color;
-    return map;
-  }, [groups]);
-
-  const handleCardClick = useCallback((personaId: string, groupId: string | null) => {
-    // If persona is in Draft group, resume creation in the matrix
-    if (draftGroupId && groupId === draftGroupId) {
-      setResumeDraftId(personaId);
+  const handleRowClick = useCallback((persona: Persona) => {
+    if (isBuilding(persona.id)) {
+      // In-progress persona: open its PersonaMatrix
+      useAgentStore.setState({ buildPersonaId: persona.id });
       setIsCreatingPersona(true);
-      return;
+    } else {
+      // Completed persona: open PersonaEditor
+      selectPersona(persona.id);
     }
-    selectPersona(personaId);
-  }, [draftGroupId, selectPersona, setIsCreatingPersona, setResumeDraftId]);
+  }, [isBuilding, selectPersona, setIsCreatingPersona]);
 
-  // Group scored personas into sections
-  const sections = useMemo(() => {
-    const result: { key: 'attention' | 'active' | 'idle'; items: ScoredPersona[] }[] = [];
-    const buckets = { attention: [] as ScoredPersona[], active: [] as ScoredPersona[], idle: [] as ScoredPersona[] };
-    for (const sp of scored) {
-      buckets[sp.section].push(sp);
+  const handleSort = useCallback((key: string) => {
+    if (sortKey === key) {
+      setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
     }
-    for (const key of ['attention', 'active', 'idle'] as const) {
-      if (buckets[key].length > 0) {
-        result.push({ key, items: buckets[key] });
-      }
+  }, [sortKey]);
+
+  // Filter + sort
+  const filteredData = useMemo(() => {
+    let data = [...personas];
+
+    // Filter
+    if (statusFilter === 'enabled') data = data.filter((p) => p.enabled);
+    else if (statusFilter === 'disabled') data = data.filter((p) => !p.enabled);
+    else if (statusFilter === 'building') data = data.filter((p) => isBuilding(p.id));
+
+    // Sort
+    if (sortKey) {
+      data.sort((a, b) => {
+        let cmp = 0;
+        switch (sortKey) {
+          case 'name': cmp = a.name.localeCompare(b.name); break;
+          case 'status': cmp = (a.enabled ? 1 : 0) - (b.enabled ? 1 : 0); break;
+          case 'triggers': cmp = (triggerCounts[a.id] ?? 0) - (triggerCounts[b.id] ?? 0); break;
+          case 'lastRun': {
+            const ta = lastRunMap[a.id] ?? '';
+            const tb = lastRunMap[b.id] ?? '';
+            cmp = ta.localeCompare(tb);
+            break;
+          }
+        }
+        return sortDir === 'desc' ? -cmp : cmp;
+      });
     }
-    return result;
-  }, [scored]);
 
-  const isSimple = useSimpleMode();
-  const cardRefs = useRef<Record<string, HTMLElement | null>>({});
-  const [activeIndex, setActiveIndex] = useState(0);
+    return data;
+  }, [personas, statusFilter, sortKey, sortDir, isBuilding, triggerCounts, lastRunMap]);
 
-  // Flat list for keyboard navigation
-  const flatList = useMemo(() => scored.map(s => s.persona), [scored]);
+  const statusOptions = [
+    { value: 'all', label: 'All' },
+    { value: 'enabled', label: 'Active' },
+    { value: 'disabled', label: 'Disabled' },
+    { value: 'building', label: 'Building' },
+  ];
 
-  useEffect(() => {
-    const validIds = new Set(personas.map((p) => p.id));
-    Object.keys(cardRefs.current).forEach((id) => {
-      if (!validIds.has(id)) delete cardRefs.current[id];
-    });
-    setActiveIndex((prev) => (flatList.length === 0 ? 0 : Math.min(prev, flatList.length - 1)));
-  }, [personas, flatList.length]);
-
-  const focusCardAt = useCallback((index: number) => {
-    const persona = flatList[index];
-    if (!persona) return;
-    setActiveIndex(index);
-    cardRefs.current[persona.id]?.focus();
-  }, [flatList]);
-
-  const handleCardKeyDown = useCallback((e: React.KeyboardEvent, flatIndex: number) => {
-    if (flatList.length === 0) return;
-    let nextIndex: number;
-    switch (e.key) {
-      case 'ArrowRight':
-      case 'ArrowDown':
-        nextIndex = Math.min(flatList.length - 1, flatIndex + 1);
-        break;
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        nextIndex = Math.max(0, flatIndex - 1);
-        break;
-      case 'Home':
-        nextIndex = 0;
-        break;
-      case 'End':
-        nextIndex = flatList.length - 1;
-        break;
-      default:
-        return;
-    }
-    e.preventDefault();
-    focusCardAt(nextIndex);
-  }, [flatList, focusCardAt]);
-
-  // Track flat index across sections
-  let flatIndex = 0;
+  const columns: DataGridColumn<Persona>[] = [
+    {
+      key: 'name',
+      label: 'Agent',
+      width: '2fr',
+      sortable: true,
+      render: (persona) => {
+        const connectors = extractConnectorNames(persona);
+        return (
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Icon */}
+            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/15 flex items-center justify-center flex-shrink-0"
+              style={persona.color ? { borderColor: `${persona.color}30`, backgroundColor: `${persona.color}15` } : undefined}
+            >
+              <Bot className="w-4 h-4 text-primary/70" style={persona.color ? { color: persona.color } : undefined} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-foreground/90 truncate">{persona.name}</div>
+              {persona.description && (
+                <div className="text-[11px] text-muted-foreground/50 truncate max-w-[300px]">{persona.description}</div>
+              )}
+            </div>
+            {/* Connector pills */}
+            {connectors.length > 0 && (
+              <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                {connectors.slice(0, 3).map((name) => {
+                  const meta = getConnectorMeta(name);
+                  return (
+                    <div key={name} className="w-5 h-5 rounded bg-secondary/30 flex items-center justify-center" title={meta.label}>
+                      <ConnectorIcon meta={meta} size="w-3 h-3" />
+                    </div>
+                  );
+                })}
+                {connectors.length > 3 && (
+                  <span className="text-[10px] text-muted-foreground/40">+{connectors.length - 3}</span>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      width: '120px',
+      sortable: true,
+      filterOptions: statusOptions,
+      filterValue: statusFilter,
+      onFilterChange: setStatusFilter,
+      render: (persona) => {
+        if (isBuilding(persona.id)) return <BuildingBadge />;
+        return <StatusBadge enabled={persona.enabled} health={healthMap[persona.id]} />;
+      },
+    },
+    {
+      key: 'triggers',
+      label: 'Triggers',
+      width: '80px',
+      sortable: true,
+      align: 'right',
+      render: (persona) => {
+        const count = triggerCounts[persona.id] ?? 0;
+        return (
+          <span className="flex items-center justify-end gap-1 text-sm text-muted-foreground/60">
+            <Zap className="w-3 h-3" />
+            {count}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'lastRun',
+      label: 'Last Run',
+      width: '120px',
+      sortable: true,
+      align: 'right',
+      render: (persona) => {
+        const lastRun = lastRunMap[persona.id];
+        if (!lastRun) return <span className="text-sm text-muted-foreground/30">Never</span>;
+        return (
+          <span className="flex items-center justify-end gap-1 text-sm text-muted-foreground/60">
+            <Clock className="w-3 h-3" />
+            {formatRelativeTime(lastRun)}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'model',
+      label: 'Model',
+      width: '100px',
+      render: (persona) => (
+        <span className="text-[11px] text-muted-foreground/50 font-mono truncate">
+          {persona.model_profile ?? 'default'}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <ContentBox>
       <ContentHeader
         icon={<Bot className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title={isSimple ? 'My Agents' : 'Agent Surface'}
-        subtitle={isSimple ? `${personas.length} agent${personas.length !== 1 ? 's' : ''}` : `${personas.length} agent${personas.length !== 1 ? 's' : ''} \u2014 sorted by relevance`}
+        title="All Agents"
+        subtitle={`${personas.length} agent${personas.length !== 1 ? 's' : ''}`}
       />
-
       <ContentBody>
-      {/* Weekly Performance Report (hidden in simple mode) */}
-      {!isSimple && (
-      <div className="mb-4">
-        <WeeklyPerformanceReport onNavigateToAgent={(id) => selectPersona(id)} />
-      </div>
-      )}
-
-      {sections.map(({ key, items }) => {
-        const meta = SECTION_META[key];
-        const Icon = meta.icon;
-
-        const sectionContent = (
-          <div key={key} className="mb-6">
-            {/* Section header */}
-            <div className={`flex items-center gap-2 mb-3 px-1`}>
-              <Icon className={`w-4 h-4 ${meta.color}`} />
-              <h2 className={`text-sm font-semibold ${meta.color}`}>{meta.label}</h2>
-              <span className="text-sm text-muted-foreground/80">({items.length})</span>
-            </div>
-
-            <AnimatedList
-              role="listbox"
-              aria-label={`${meta.label} agents`}
-              className={`grid gap-3 ${IS_MOBILE ? '[grid-template-columns:1fr]' : '[grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] 3xl:[grid-template-columns:repeat(auto-fill,minmax(320px,1fr))] 4xl:[grid-template-columns:repeat(auto-fill,minmax(360px,1fr))]'}`}
-              keys={items.map((sp) => sp.persona.id)}
-              staggerCap={12}
-            >
-              {items.map((sp) => {
-                const persona = sp.persona;
-                const i = flatIndex++;
-                const connectors = extractConnectorNames(persona);
-                const triggerCount = triggerCounts[persona.id];
-                const lastRun = lastRunMap[persona.id];
-                const groupColor = persona.group_id ? groupColorMap[persona.group_id] : undefined;
-                const health: PersonaHealth | undefined = healthMap[persona.id];
-                const isIdle = key === 'idle';
-
-                return (
-                  <motion.button
-                    key={persona.id}
-                    ref={(el) => { cardRefs.current[persona.id] = el; }}
-                    whileHover={{ y: -2, opacity: 1, transition: { duration: 0.15 } }}
-                    onClick={() => handleCardClick(persona.id, persona.group_id ?? null)}
-                    onFocus={() => setActiveIndex(i)}
-                    onKeyDown={(e) => handleCardKeyDown(e, i)}
-                    tabIndex={i === activeIndex ? 0 : -1}
-                    role="option"
-                    aria-selected={i === activeIndex}
-                    aria-label={`${persona.name}, ${persona.enabled ? 'active' : 'inactive'}${lastRun ? `, last run ${formatRelativeTime(lastRun)}` : ''}${triggerCount ? `, ${triggerCount} trigger${triggerCount !== 1 ? 's' : ''}` : ''}`}
-                    data-testid={`persona-card-${persona.id}`}
-                    className={`text-left p-4 rounded-xl border ${
-                      key === 'attention'
-                        ? 'border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/30'
-                        : key === 'active'
-                        ? 'border-emerald-500/10 bg-secondary/30 hover:bg-secondary/50 hover:border-emerald-500/20'
-                        : 'border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20'
-                    } transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background`}
-                    style={{
-                      ...(isIdle ? { opacity: 0.6 } : {}),
-                      ...(groupColor ? {
-                        borderLeftWidth: 3,
-                        borderImage: `linear-gradient(to bottom, ${groupColor}, transparent) 1`,
-                      } : {}),
-                    }}
-                  >
-                    {/* Connector icons (hidden in simple mode) */}
-                    {!isSimple && connectors.length > 0 && (
-                      <div className="flex items-center gap-1 mb-2">
-                        {connectors.map((name) => {
-                          const meta = getConnectorMeta(name);
-                          return (
-                            <div
-                              key={name}
-                              className="w-5 h-5 rounded flex items-center justify-center"
-                              style={{ backgroundColor: `${meta.color}15` }}
-                              title={name}
-                            >
-                              <ConnectorIcon meta={meta} size="w-3 h-3" />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-3 mb-2">
-                      {!isSimple && <PersonaHealthIndicator persona={persona} health={health} />}
-                      <div className="flex items-center gap-1.5">
-                        <div className={`w-2 h-2 rounded-full ${persona.enabled ? 'bg-emerald-400' : 'bg-muted-foreground/20'}`} />
-                        <span className={`text-sm font-medium px-1.5 py-0.5 rounded-lg ${persona.enabled ? 'text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground/80 bg-muted-foreground/10'}`}>
-                          {persona.enabled ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                    </div>
-                    <h3 className="text-sm font-medium text-foreground/90 truncate" title={persona.name}>{persona.name}</h3>
-                    {persona.description && (
-                      <p className="text-sm text-muted-foreground/90 mt-1 line-clamp-2">{persona.description}</p>
-                    )}
-
-                    {/* Metadata row: triggers, last run, model (hidden in simple mode) */}
-                    {!isSimple && (
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      {triggerCount != null && triggerCount > 0 && (
-                        <span className="flex items-center gap-1 text-sm font-mono text-muted-foreground/80">
-                          <Zap className="w-3 h-3" />
-                          {triggerCount}
-                        </span>
-                      )}
-                      {lastRun && (
-                        <span className="flex items-center gap-1 text-sm text-muted-foreground/80">
-                          <Clock className="w-3 h-3" />
-                          {formatRelativeTime(lastRun)}
-                        </span>
-                      )}
-                      {persona.model_profile && (() => {
-                        let label = persona.model_profile;
-                        try {
-                          const parsed = JSON.parse(persona.model_profile) as { model?: string; provider?: string };
-                          label = parsed.model && parsed.provider ? `${parsed.provider}:${parsed.model}` : (parsed.model ?? 'Custom');
-                        } catch { /* non-critical: display raw if not JSON */ }
-                        return (
-                          <span className="text-sm font-mono px-1.5 py-0.5 rounded-lg bg-primary/5 text-muted-foreground/80 truncate max-w-[100px]" title={label}>
-                            {label}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                    )}
-                  </motion.button>
-                );
-              })}
-            </AnimatedList>
-          </div>
-        );
-
-        return sectionContent;
-      })}
-
+        <DataGrid
+          columns={columns}
+          data={filteredData}
+          getRowKey={(p) => p.id}
+          onRowClick={handleRowClick}
+          getRowAccent={(p) =>
+            isBuilding(p.id) ? 'hover:border-l-violet-400' :
+            healthMap[p.id]?.status === 'failing' ? 'hover:border-l-red-400' :
+            healthMap[p.id]?.status === 'degraded' ? 'hover:border-l-amber-400' :
+            'hover:border-l-emerald-400'
+          }
+          sortKey={sortKey}
+          sortDirection={sortDir}
+          onSort={handleSort}
+          pageSize={25}
+        />
       </ContentBody>
     </ContentBox>
   );

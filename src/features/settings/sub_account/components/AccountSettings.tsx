@@ -1,7 +1,7 @@
-import { Chrome, LogOut, User, Check, Sparkles, LayoutGrid, Wrench } from 'lucide-react';
+import { Chrome, LogOut, User, Check, Sparkles, LayoutGrid, Wrench, AlertCircle, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { VIEW_MODES } from '@/lib/constants/uiModes';
+import { TIERS, TIER_CYCLE } from '@/lib/constants/uiModes';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 
 export default function AccountSettings() {
@@ -9,10 +9,13 @@ export default function AccountSettings() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isOffline = useAuthStore((s) => s.isOffline);
   const isLoading = useAuthStore((s) => s.isLoading);
+  const error = useAuthStore((s) => s.error);
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const logout = useAuthStore((s) => s.logout);
   const viewMode = useSystemStore((s) => s.viewMode);
   const setViewMode = useSystemStore((s) => s.setViewMode);
+
+  const clearError = () => useAuthStore.setState({ error: null });
 
   return (
     <ContentBox>
@@ -33,10 +36,10 @@ export default function AccountSettings() {
           </div>
           <div className="grid grid-cols-3 gap-3">
             {([
-              { mode: VIEW_MODES.SIMPLE, icon: Sparkles, label: 'Simple', desc: 'Streamlined view', color: 'violet' },
-              { mode: VIEW_MODES.FULL, icon: LayoutGrid, label: 'Full', desc: 'All features', color: 'primary' },
-              { mode: VIEW_MODES.DEV, icon: Wrench, label: 'Dev', desc: 'Full + Dev Tools', color: 'amber' },
-            ] as const).map(({ mode, icon: Icon, label, desc, color }) => {
+              { mode: TIERS.STARTER, icon: Sparkles, label: 'Starter', desc: 'Clean, focused UI', color: 'violet' },
+              { mode: TIERS.TEAM, icon: LayoutGrid, label: 'Team', desc: 'Pipelines & analytics', color: 'primary' },
+              { mode: TIERS.BUILDER, icon: Wrench, label: 'Builder', desc: 'Dev tools & lab', color: 'amber' },
+            ] as const).filter(({ mode }) => TIER_CYCLE.includes(mode)).map(({ mode, icon: Icon, label, desc, color }) => {
               const isActive = viewMode === mode;
               return (
                 <button
@@ -107,16 +110,49 @@ export default function AccountSettings() {
                 <Chrome className="w-7 h-7 text-primary/60" />
               </div>
               <p className="text-sm text-muted-foreground/80 mb-4">Sign in to sync your data across devices</p>
-              <button
-                onClick={loginWithGoogle}
-                disabled={isLoading}
-                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium
-                  bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15
-                  transition-colors disabled:opacity-50"
-              >
-                <Chrome className={`w-4 h-4 ${isLoading ? 'animate-pulse' : ''}`} />
-                Sign in with Google
-              </button>
+
+              {/* Error display */}
+              {error && (
+                <div className="max-w-sm mx-auto mb-4 flex items-start gap-2.5 p-3 rounded-xl border border-red-500/20 bg-red-500/5 text-left">
+                  <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-red-300/90">{error}</p>
+                    <button
+                      onClick={clearError}
+                      className="text-xs text-muted-foreground/50 hover:text-muted-foreground/80 mt-1 transition-colors"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {isLoading ? (
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium
+                    bg-primary/10 text-primary border border-primary/20">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Waiting for sign-in...
+                  </div>
+                  <p className="text-[11px] text-muted-foreground/50">Complete sign-in in the popup window</p>
+                  <button
+                    onClick={() => useAuthStore.setState({ isLoading: false, error: null })}
+                    className="text-xs text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={loginWithGoogle}
+                  className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium
+                    bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15
+                    transition-colors"
+                >
+                  <Chrome className="w-4 h-4" />
+                  Sign in with Google
+                </button>
+              )}
             </div>
           )}
         </div>

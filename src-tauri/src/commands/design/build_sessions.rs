@@ -11,12 +11,16 @@ use crate::AppState;
 
 /// Start a new build session for a persona. Returns the session ID.
 /// Events are streamed back via the Channel parameter.
+/// Optional workflow_json + parser_result_json enable workflow import mode.
 #[tauri::command]
 pub async fn start_build_session(
+    app: tauri::AppHandle,
     state: State<'_, Arc<AppState>>,
     channel: Channel<BuildEvent>,
     persona_id: String,
     intent: String,
+    workflow_json: Option<String>,
+    parser_result_json: Option<String>,
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
 
@@ -29,6 +33,9 @@ pub async fn start_build_session(
         channel,
         state.db.clone(),
         state.process_registry.clone(),
+        workflow_json,
+        parser_result_json,
+        app,
     )?;
 
     Ok(session_id)

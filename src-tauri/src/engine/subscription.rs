@@ -139,6 +139,15 @@ pub struct ZombieExecutionSubscription {
     pub app: AppHandle,
 }
 
+/// Cloud webhook relay: polls cloud trigger firings and injects them into
+/// the local event bus so 3rd-party webhooks reach the desktop app.
+pub struct CloudWebhookRelaySubscription {
+    pub cloud_client: Arc<tokio::sync::Mutex<Option<Arc<crate::cloud::client::CloudClient>>>>,
+    pub pool: DbPool,
+    pub app: AppHandle,
+    pub state: Arc<tokio::sync::Mutex<super::cloud_webhook_relay::CloudWebhookRelayState>>,
+}
+
 // ---------------------------------------------------------------------------
 // Implementations
 // ---------------------------------------------------------------------------
@@ -385,6 +394,41 @@ impl ReactiveSubscription for ZombieExecutionSubscription {
 
     async fn tick(&self) {
         super::background::zombie_execution_tick(&self.pool, &self.app);
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for CloudWebhookRelaySubscription {
+    fn name(&self) -> &'static str {
+        "cloud_webhook_relay"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(15)
+    }
+
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(60)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(10)
+    }
+
+    async fn tick(&self) {
+        let client_guard = self.cloud_client.lock().await;
+        if let Some(ref client) = *client_guard {
+            let client = client.clone();
+            drop(client_guard); // Release lock before async work
+            super::cloud_webhook_relay::cloud_webhook_relay_tick(
+                &client,
+                &self.pool,
+                &self.app,
+                &self.state,
+            )
+            .await;
+        }
+        // Not connected — silently skip
     }
 }
 

@@ -8,6 +8,7 @@ use url::Url;
 
 use crate::cloud;
 use crate::cloud::client::CloudClient;
+use crate::db::repos::core::settings;
 use crate::db::models::UpdateExecutionStatus;
 use crate::db::repos::core::personas;
 use crate::db::repos::execution::executions;
@@ -667,6 +668,22 @@ pub async fn cloud_delete_trigger(
     client.delete_trigger(&trigger_id).await
 }
 
+/// Get the current cloud webhook relay status.
+#[tauri::command]
+pub async fn cloud_webhook_relay_status(
+    state: State<'_, Arc<AppState>>,
+) -> Result<engine::cloud_webhook_relay::CloudWebhookRelayStatus, AppError> {
+    require_cloud_auth(&state, "cloud_webhook_relay_status").await?;
+    let connected = state.cloud_client.lock().await.is_some();
+    Ok(engine::cloud_webhook_relay::CloudWebhookRelayStatus {
+        connected,
+        last_poll_at: None,
+        active_webhook_triggers: 0,
+        total_relayed: 0,
+        error: if connected { None } else { Some("Not connected to cloud orchestrator".into()) },
+    })
+}
+
 /// List recent firings for a cloud trigger.
 #[tauri::command]
 pub async fn cloud_list_trigger_firings(
@@ -677,4 +694,46 @@ pub async fn cloud_list_trigger_firings(
     require_cloud_auth(&state, "cloud_list_trigger_firings").await?;
     let client = get_cloud_client(&state).await?;
     client.list_trigger_firings(&trigger_id, limit).await
+}
+
+// ---------------------------------------------------------------------------
+// Smee.io Webhook Relay
+// ---------------------------------------------------------------------------
+
+/// Get the currently configured Smee channel URL.
+#[tauri::command]
+pub async fn smee_get_channel_url(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Option<String>, AppError> {
+    require_cloud_auth(&state, "smee_get_channel_url").await?;
+    settings::get(&state.db, engine::smee_relay::SETTINGS_KEY)
+}
+
+/// Set the Smee channel URL and trigger reconnection.
+#[tauri::command]
+pub async fn smee_set_channel_url(
+    state: State<'_, Arc<AppState>>,
+    url: String,
+) -> Result<(), AppError> {
+    require_cloud_auth(&state, "smee_set_channel_url").await?;
+    // Validate host is exactly smee.io (not a subdomain spoof like smee.io.evil.com)
+    let stripped = url.strip_prefix("https://smee.io/")
+        .ok_or_else(|| AppError::Validation("Smee URL must be https://smee.io/<channel>".into()))?;
+    if stripped.is_empty() || stripped.contains('/') {
+        return Err(AppError::Validation("Smee URL must be https://smee.io/<channel>".into()));
+    }
+    settings::set(&state.db, engine::smee_relay::SETTINGS_KEY, &url)?;
+    tracing::info!(url = %url, "Smee channel URL configured");
+    Ok(())
+}
+
+/// Disconnect from Smee relay by clearing the channel URL.
+#[tauri::command]
+pub async fn smee_disconnect(
+    state: State<'_, Arc<AppState>>,
+) -> Result<(), AppError> {
+    require_cloud_auth(&state, "smee_disconnect").await?;
+    settings::delete(&state.db, engine::smee_relay::SETTINGS_KEY)?;
+    tracing::info!("Smee relay disconnected");
+    Ok(())
 }

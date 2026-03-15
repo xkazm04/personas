@@ -143,3 +143,31 @@ export const cloudListTriggerFirings = (triggerId: string, limit?: number) =>
     triggerId,
     limit: limit,
   });
+
+// ============================================================================
+// Cloud Webhook Relay
+// ============================================================================
+
+export interface CloudWebhookRelayStatus {
+  connected: boolean;
+  last_poll_at: string | null;
+  active_webhook_triggers: number;
+  total_relayed: number;
+  error: string | null;
+}
+
+export const cloudWebhookRelayStatus = () =>
+  invoke<CloudWebhookRelayStatus>("cloud_webhook_relay_status");
+
+// ============================================================================
+// Smee.io Webhook Relay
+// ============================================================================
+
+export const smeeGetChannelUrl = () =>
+  invoke<string | null>("smee_get_channel_url");
+
+export const smeeSetChannelUrl = (url: string) =>
+  invoke<void>("smee_set_channel_url", { url });
+
+export const smeeDisconnect = () =>
+  invoke<void>("smee_disconnect");

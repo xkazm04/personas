@@ -32,6 +32,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
   return (
     <motion.button
       key={card.id}
+      data-testid={`home-card-${card.id}`}
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.15 + i * 0.06, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}

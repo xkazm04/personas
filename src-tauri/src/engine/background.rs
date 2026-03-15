@@ -18,8 +18,8 @@ use crate::db::DbPool;
 use crate::engine::bus;
 use crate::engine::scheduler as sched_logic;
 use crate::engine::subscription::{
-    self, CleanupSubscription, EventBusSubscription, PollingSubscription,
-    RotationSubscription, TriggerSchedulerSubscription,
+    self, CleanupSubscription, CloudWebhookRelaySubscription, EventBusSubscription,
+    PollingSubscription, RotationSubscription, TriggerSchedulerSubscription,
     CompositeSubscription, OAuthRefreshSubscription,
 };
 #[cfg(feature = "desktop")]
@@ -111,6 +111,7 @@ pub fn start_loops(
     engine: Arc<ExecutionEngine>,
     rate_limiter: Arc<super::rate_limiter::RateLimiter>,
     tier_config: Arc<std::sync::Mutex<super::tier::TierConfig>>,
+    cloud_client: Arc<tokio::sync::Mutex<Option<Arc<crate::cloud::client::CloudClient>>>>,
 ) -> tokio::sync::watch::Sender<bool> {
     scheduler.running.store(true, Ordering::Relaxed);
     tracing::info!("Scheduler starting via unified subscription model");
@@ -159,6 +160,14 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
         }),
+        Box::new(CloudWebhookRelaySubscription {
+            cloud_client,
+            pool: pool.clone(),
+            app: app.clone(),
+            state: Arc::new(tokio::sync::Mutex::new(
+                super::cloud_webhook_relay::CloudWebhookRelayState::new(),
+            )),
+        }),
     ];
 
     // Desktop-only subscriptions: file watcher, clipboard monitor, app focus
@@ -187,6 +196,22 @@ pub fn start_loops(
 
     // Spawn all subscriptions through the unified scheduler
     subscription::spawn_subscriptions(subscriptions, scheduler.clone());
+
+    // Smee.io relay (long-lived SSE connection, not a reactive subscription)
+    tokio::spawn({
+        let pool = pool.clone();
+        let app = app.clone();
+        async move {
+            super::smee_relay::run_smee_relay(
+                pool,
+                app,
+                Arc::new(tokio::sync::Mutex::new(
+                    super::smee_relay::SmeeRelayState::new(),
+                )),
+            )
+            .await;
+        }
+    });
 
     // Webhook HTTP server (not a reactive subscription -- it's a long-lived server)
     let (webhook_shutdown_tx, webhook_shutdown_rx) = tokio::sync::watch::channel(false);

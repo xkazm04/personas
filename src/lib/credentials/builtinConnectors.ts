@@ -14,6 +14,7 @@ import azureDevops from '../../../scripts/connectors/builtin/azure-devops.json';
 import notion from '../../../scripts/connectors/builtin/notion.json';
 import clickup from '../../../scripts/connectors/builtin/clickup.json';
 import github from '../../../scripts/connectors/builtin/github.json';
+import gitlab from '../../../scripts/connectors/builtin/gitlab.json';
 import calCom from '../../../scripts/connectors/builtin/cal-com.json';
 import calendly from '../../../scripts/connectors/builtin/calendly.json';
 import supabase from '../../../scripts/connectors/builtin/supabase.json';
@@ -90,6 +91,7 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   notion,
   clickup,
   github,
+  gitlab,
   calCom,
   calendly,
   supabase,

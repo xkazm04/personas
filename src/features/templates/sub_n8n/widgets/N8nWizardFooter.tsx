@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Check, AlertCircle, FlaskConical, CheckCircle2, Wand2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Check, AlertCircle, FlaskConical, CheckCircle2, Wand2, Grid3X3 } from 'lucide-react';
 import type { N8nWizardStep, TransformSubPhase } from '../hooks/useN8nImportReducer';
 
 interface N8nWizardFooterProps {
@@ -21,6 +21,8 @@ interface N8nWizardFooterProps {
   onTest?: () => void;
   /** Called to trigger re-generation with the pre-filled adjustment request */
   onApplyAdjustment?: () => void;
+  /** Called to process the workflow through the PersonaMatrix instead of n8n transform */
+  onProcessWithMatrix?: () => void;
 }
 
 export function N8nWizardFooter({
@@ -40,6 +42,7 @@ export function N8nWizardFooter({
   testError,
   onTest,
   onApplyAdjustment,
+  onProcessWithMatrix,
 }: N8nWizardFooterProps) {
   // No footer on upload step
   if (step === 'upload') return null;
@@ -162,6 +165,17 @@ export function N8nWizardFooter({
           >
             <Wand2 className="w-4 h-4" />
             Fix & Regenerate
+          </button>
+        )}
+
+        {/* Process with Matrix -- alternative path on analyze step */}
+        {step === 'analyze' && !analyzing && onProcessWithMatrix && hasParseResult && (
+          <button
+            onClick={onProcessWithMatrix}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 transition-colors"
+          >
+            <Grid3X3 className="w-4 h-4" />
+            Process with Matrix
           </button>
         )}
 

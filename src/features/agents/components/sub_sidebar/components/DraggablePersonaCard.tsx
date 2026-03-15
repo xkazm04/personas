@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { extractConnectorNames } from '@/lib/personas/utils';
 import { useOnboardingScore } from '@/features/agents/components/onboarding/useOnboardingChecklist';
@@ -25,6 +26,16 @@ export function SidebarPersonaCard({
   const health = useAgentStore((s) => s.personaHealthMap[persona.id]);
   const connectors = useMemo(() => extractConnectorNames(persona), [persona]);
   const onboardingScore = useOnboardingScore(persona.id);
+  const isBuilding = useAgentStore((s) => s.buildPersonaId === persona.id && s.buildPhase !== 'initializing' && s.buildPhase !== 'promoted');
+
+  // When clicking a building persona, resume the build view instead of opening editor
+  const handleClick = useCallback(() => {
+    if (isBuilding) {
+      useSystemStore.getState().setIsCreatingPersona(true);
+      return;
+    }
+    onClick();
+  }, [isBuilding, onClick]);
 
   // Health indicator color
   const healthColor = health?.status === 'failing' ? 'bg-red-400'
@@ -34,7 +45,7 @@ export function SidebarPersonaCard({
 
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       onContextMenu={onContextMenu}
       className={`w-full text-left px-3 py-1.5 rounded-xl transition-all mb-0.5 ${
         isSelected
@@ -76,6 +87,16 @@ export function SidebarPersonaCard({
         />
         <span className="sr-only">{persona.enabled ? 'Active' : 'Inactive'}</span>
       </div>
+
+      {/* Building badge */}
+      {isBuilding && (
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded-full animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
+            Building...
+          </span>
+        </div>
+      )}
 
       {/* Trigger count + last run badges */}
       {(triggerCount != null && triggerCount > 0 || lastRun) && (
@@ -123,6 +144,7 @@ export function DraggablePersonaCard({
       style={style}
       {...listeners}
       {...attributes}
+      data-testid={`agent-card-${persona.id}`}
       className={isDragging ? 'opacity-30' : ''}
     >
       <SidebarPersonaCard persona={persona} isSelected={isSelected} onClick={onClick} onContextMenu={onContextMenu} />

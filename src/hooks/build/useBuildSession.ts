@@ -58,7 +58,12 @@ interface UseBuildSessionOptions {
 }
 
 interface UseBuildSessionReturn {
-  startSession: (intent: string) => Promise<string>;
+  startSession: (
+    intent: string,
+    overridePersonaId?: string,
+    workflowJson?: string,
+    parserResultJson?: string,
+  ) => Promise<string>;
   answerQuestion: (cellKey: string, answer: string) => Promise<void>;
   cancelSession: () => Promise<void>;
   // State is read from useAgentStore selectors, not returned here
@@ -151,7 +156,12 @@ export function useBuildSession(
   // -- Session control functions --------------------------------------------
 
   const startSession = useCallback(
-    async (intent: string, overridePersonaId?: string): Promise<string> => {
+    async (
+      intent: string,
+      overridePersonaId?: string,
+      workflowJson?: string,
+      parserResultJson?: string,
+    ): Promise<string> => {
       // Prevent double-start
       if (channelRef.current && sessionIdRef.current) {
         console.warn(
@@ -171,7 +181,13 @@ export function useBuildSession(
       channel.onmessage = handleChannelMessage;
 
       // Invoke the Tauri command -- backend starts the CLI process
-      const sessionId = await startBuildSession(channel, effectivePersonaId, intent);
+      const sessionId = await startBuildSession(
+        channel,
+        effectivePersonaId,
+        intent,
+        workflowJson,
+        parserResultJson,
+      );
 
       // Store refs
       channelRef.current = channel;

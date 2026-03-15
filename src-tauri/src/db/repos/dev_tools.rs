@@ -796,6 +796,105 @@ pub fn move_context_to_group(
     get_context_by_id(pool, id)
 }
 
+/// Walk `root_path`, discover top-level directories containing source files,
+/// and create one `DevContext` per directory.  Returns all newly-created contexts.
+pub fn scan_codebase(
+    pool: &DbPool,
+    project_id: &str,
+    root_path: &str,
+) -> Result<Vec<DevContext>, AppError> {
+    use std::collections::BTreeMap;
+    use std::path::Path;
+
+    let root = Path::new(root_path).canonicalize().map_err(|e| {
+        AppError::Validation(format!("Cannot resolve root path '{}': {}", root_path, e))
+    })?;
+
+    // Collect files grouped by their first sub-directory under root.
+    let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
+
+    let source_exts: &[&str] = &[
+        "rs", "ts", "tsx", "js", "jsx", "py", "go", "java", "rb", "css", "scss",
+        "html", "vue", "svelte", "json", "toml", "yaml", "yml", "sql", "sh",
+    ];
+
+    fn visit_dir(
+        dir: &Path,
+        root: &Path,
+        source_exts: &[&str],
+        groups: &mut BTreeMap<String, Vec<String>>,
+    ) {
+        let entries = match std::fs::read_dir(dir) {
+            Ok(e) => e,
+            Err(_) => return,
+        };
+
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let name = entry.file_name().to_string_lossy().to_string();
+
+            // Skip hidden dirs and common non-source directories.
+            if name.starts_with('.') || name == "node_modules" || name == "target" || name == "dist" || name == "build" {
+                continue;
+            }
+
+            if path.is_dir() {
+                visit_dir(&path, root, source_exts, groups);
+            } else if path.is_file() {
+                let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+                if source_exts.contains(&ext) {
+                    // Key = first sub-directory under root, or "_root" for files directly in root.
+                    let rel = path.strip_prefix(root).unwrap_or(&path);
+                    let key = rel
+                        .components()
+                        .next()
+                        .and_then(|c| {
+                            let s = c.as_os_str().to_string_lossy().to_string();
+                            // If the first component IS the file itself, it's a root-level file.
+                            if rel.components().count() <= 1 { None } else { Some(s) }
+                        })
+                        .unwrap_or_else(|| "_root".to_string());
+
+                    let rel_str = rel.to_string_lossy().replace('\\', "/");
+                    groups.entry(key).or_default().push(rel_str);
+                }
+            }
+        }
+    }
+
+    visit_dir(&root, &root, source_exts, &mut groups);
+
+    let mut created: Vec<DevContext> = Vec::new();
+    for (dir_name, files) in &groups {
+        let context_name = if dir_name == "_root" {
+            "Root Files".to_string()
+        } else {
+            dir_name.clone()
+        };
+
+        let file_paths_json = serde_json::to_string(files).unwrap_or_else(|_| "[]".into());
+        let description = Some(format!("{} source files", files.len()));
+
+        let ctx = create_context(
+            pool,
+            project_id,
+            &context_name,
+            None,
+            description.as_deref(),
+            Some(&file_paths_json),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        created.push(ctx);
+    }
+
+    Ok(created)
+}
+
 // ============================================================================
 // Context Group Relationships
 // ============================================================================

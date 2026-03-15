@@ -15,6 +15,10 @@ import { createViewModeSlice } from "./slices/system/viewModeSlice";
 import { createDevToolsSlice } from "./slices/system/devToolsSlice";
 import { createNetworkSlice } from "./slices/network/networkSlice";
 import { createSetupSlice } from "./slices/system/setupSlice";
+import { TIER_RANK, DEFAULT_TIER } from "@/lib/constants/uiModes";
+
+/** Migrate legacy viewMode values ('simple'|'full'|'dev') persisted before the tier rename. */
+const LEGACY_MAP: Record<string, string> = { simple: 'starter', full: 'team', dev: 'builder' };
 
 export const useSystemStore = create<SystemStore>()(
   persist(
@@ -46,6 +50,14 @@ export const useSystemStore = create<SystemStore>()(
         setupGoal: state.setupGoal,
         setupCompleted: state.setupCompleted,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        const raw = state.viewMode;
+        if (typeof raw === 'string' && !(raw in TIER_RANK)) {
+          // Migrate legacy value
+          state.viewMode = (LEGACY_MAP[raw] ?? DEFAULT_TIER) as typeof state.viewMode;
+        }
+      },
     },
   ),
 );

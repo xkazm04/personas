@@ -878,14 +878,13 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
         let mut stmt = conn.prepare(
             "SELECT trigger_type, name FROM persona_triggers WHERE persona_id = ?1",
         )?;
-        stmt.query_map(params![id], |row| {
+        let rows = stmt.query_map(params![id], |row| {
             Ok((
                 row.get::<_, String>(0)?,
                 row.get::<_, Option<String>>(1)?.unwrap_or_default(),
             ))
-        })?
-        .filter_map(|r| r.ok())
-        .collect()
+        })?;
+        rows.filter_map(|r| r.ok()).collect()
     };
     let scheduled = triggers.iter().filter(|(t, _)| t == "schedule").count();
     let webhook = triggers.iter().filter(|(t, _)| t == "webhook").count();
@@ -932,9 +931,8 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
              WHERE pt.trigger_type = 'chain' AND pt.config LIKE ?1 AND pt.persona_id != ?2",
         )?;
         let pattern = format!("%{}%", id);
-        stmt.query_map(params![pattern, id], |row| row.get::<_, String>(0))?
-            .filter_map(|r| r.ok())
-            .collect()
+        let rows = stmt.query_map(params![pattern, id], |row| row.get::<_, String>(0))?;
+        rows.filter_map(|r| r.ok()).collect()
     };
     if !chain_dependents.is_empty() {
         impacts.push((

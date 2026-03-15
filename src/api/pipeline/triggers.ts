@@ -3,7 +3,6 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { PersonaTrigger } from "@/lib/bindings/PersonaTrigger";
 import type { CreateTriggerInput } from "@/lib/bindings/CreateTriggerInput";
 import type { UpdateTriggerInput } from "@/lib/bindings/UpdateTriggerInput";
-import type { TriggerChainLink } from "@/lib/bindings/TriggerChainLink";
 import type { TriggerValidationResult } from "@/lib/bindings/TriggerValidationResult";
 import type { WebhookStatus } from "@/lib/bindings/WebhookStatus";
 import type { CronAgent } from "@/lib/bindings/CronAgent";
@@ -57,13 +56,6 @@ export const previewCronSchedule = (cronExpression: string, count?: number) =>
   invoke<CronPreview>("preview_cron_schedule", { cronExpression, count: count });
 
 // ============================================================================
-// Chain Triggers
-// ============================================================================
-
-export const listTriggerChains = () =>
-  invoke<TriggerChainLink[]>("list_trigger_chains");
-
-// ============================================================================
 // Webhook Server
 // ============================================================================
 
@@ -91,20 +83,11 @@ export interface DryRunMatchedSubscription {
   source_filter: string | null;
 }
 
-export interface DryRunChainTarget {
-  trigger_id: string;
-  target_persona_id: string;
-  target_persona_name: string;
-  condition_type: string;
-  enabled: boolean;
-}
-
 export interface DryRunResult {
   valid: boolean;
   validation: import("@/lib/bindings/TriggerValidationResult").TriggerValidationResult;
   simulated_event: DryRunSimulatedEvent | null;
   matched_subscriptions: DryRunMatchedSubscription[];
-  chain_targets: DryRunChainTarget[];
 }
 
 export const dryRunTrigger = (id: string) =>

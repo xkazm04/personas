@@ -28,6 +28,14 @@ export function hasUserConsented(): boolean {
   }
 }
 
+export function resetUserConsent(): void {
+  try {
+    localStorage.removeItem(CONSENT_KEY);
+  } catch {
+    // no-op
+  }
+}
+
 function persistConsent() {
   try {
     localStorage.setItem(CONSENT_KEY, CONSENT_VERSION);

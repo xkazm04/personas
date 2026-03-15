@@ -90,7 +90,7 @@ export default function TeamCanvas() {
   }
 
   return (
-    <ContentBox minWidth={0}>
+    <ContentBox minWidth={0} data-testid="team-canvas">
       <div className="relative z-10">
         <TeamToolbar
           teamName={handlers.selectedTeam?.name || 'Team'}

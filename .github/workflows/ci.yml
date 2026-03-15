@@ -9,9 +9,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ─── Job 0: Conventional commit lint ──────────────────────────
+  commit-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate conventional commit format
+        run: |
+          PATTERN='^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)(\(.+\))?(!)?\: .+'
+
+          # Get all commits in this PR that are not on the base branch
+          COMMITS=$(git log --oneline origin/${{ github.base_ref }}..HEAD --format="%s")
+
+          FAILED=0
+          while IFS= read -r MSG; do
+            [ -z "$MSG" ] && continue
+            if ! echo "$MSG" | grep -qE "$PATTERN"; then
+              echo "::error::Bad commit message: \"$MSG\""
+              FAILED=1
+            fi
+          done <<< "$COMMITS"
+
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "All commits must follow the Conventional Commits format:"
+            echo "  <type>(<optional scope>): <description>"
+            echo ""
+            echo "Allowed types: feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert"
+            echo ""
+            echo "Examples:"
+            echo "  feat: add tiered feature gate system"
+            echo "  fix(crypto): handle empty key gracefully"
+            echo "  chore!: drop Node 18 support"
+            exit 1
+          fi
+
+          echo "All commit messages follow conventional commit format."
+
   # ─── Job A: Frontend lint, typecheck, and tests ─────────────
   frontend-checks:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -35,6 +78,17 @@ jobs:
         # Total: 5000 KB across all chunks.
         run: node scripts/check-bundle-budget.mjs --max-chunk-kb=850 --max-total-kb=5000
 
+      - name: Save bundle baseline
+        run: node scripts/bundle-size-report.mjs --save-baseline
+
+      - name: Comment bundle size on PR
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/bundle-comment.mjs
+
       - name: Run frontend tests
         run: npm run test -- --run
 
@@ -51,14 +105,22 @@ jobs:
           - os: ubuntu-22.04
             label: linux
     runs-on: ${{ matrix.os }}
+    env:
+      # sccache: shared compilation cache backed by GitHub Actions cache.
+      # Skips recompiling unchanged crates — typical speedup: 50-70%.
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - uses: mozilla-actions/sccache-action@v0.0.7
+
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
+          key: ${{ matrix.label }}
 
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-22.04'
@@ -79,17 +141,27 @@ jobs:
       - name: Run Clippy
         run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 
+      - name: Show sccache stats
+        if: always()
+        run: sccache --show-stats
+
   # ─── Job C: Check TypeScript bindings are up to date ────────
   binding-drift:
     runs-on: ubuntu-22.04
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - uses: mozilla-actions/sccache-action@v0.0.7
+
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
+          key: binding-drift
 
       - name: Install Linux dependencies
         run: |

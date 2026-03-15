@@ -25,6 +25,7 @@ export interface CredentialTemplateFormProps {
   isOAuthTemplate?: boolean;
   isAuthorizingOAuth: boolean;
   oauthCompletedAt: string | null;
+  oauthValues?: Record<string, string>;
   oauthConsentLabel?: string;
   onCreateCredential: (values: Record<string, string>) => void;
   onOAuthConsent: (values: Record<string, string>) => void;
@@ -48,6 +49,7 @@ export function CredentialTemplateForm({
   isOAuthTemplate,
   isAuthorizingOAuth,
   oauthCompletedAt,
+  oauthValues,
   oauthConsentLabel,
   onCreateCredential,
   onOAuthConsent,
@@ -106,9 +108,12 @@ export function CredentialTemplateForm({
 
   const guide = typeof metadata.setup_guide === 'string' ? metadata.setup_guide : null;
   const isAnyOAuth = isGoogleTemplate || isOAuthTemplate;
-  const requiresHealthcheck = onHealthcheck != null && !isAnyOAuth;
-  const saveDisabled = isAnyOAuth || (requiresHealthcheck && !healthcheckResult?.success);
-  const saveDisabledReason = isAnyOAuth
+  const oauthDone = isAnyOAuth && !!oauthCompletedAt;
+  const requiresHealthcheck = onHealthcheck != null;
+  const saveDisabled = isAnyOAuth
+    ? !oauthDone || (requiresHealthcheck && !healthcheckResult?.success)
+    : requiresHealthcheck && !healthcheckResult?.success;
+  const saveDisabledReason = isAnyOAuth && !oauthDone
     ? 'Use the authorize button below to connect this credential.'
     : requiresHealthcheck && !healthcheckResult?.success ? 'Run a successful connection test before saving.' : undefined;
 
@@ -166,6 +171,7 @@ export function CredentialTemplateForm({
 
           <CredentialEditForm
             fields={variantFields}
+            initialValues={oauthValues}
             onSave={onCreateCredential}
             onOAuthConsent={isAnyOAuth ? onOAuthConsent : undefined}
             oauthConsentLabel={isAuthorizingOAuth

@@ -82,6 +82,38 @@ pub fn dev_tools_delete_project(
 }
 
 // ============================================================================
+// Active Project (in-memory session state)
+// ============================================================================
+
+static ACTIVE_PROJECT_ID: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+
+#[tauri::command]
+pub fn dev_tools_get_active_project(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Option<DevProject>, AppError> {
+    require_auth_sync(&state)?;
+    let guard = ACTIVE_PROJECT_ID.lock().unwrap_or_else(|e| e.into_inner());
+    match guard.as_deref() {
+        Some(id) => match repo::get_project_by_id(&state.db, id) {
+            Ok(p) => Ok(Some(p)),
+            Err(_) => Ok(None),
+        },
+        None => Ok(None),
+    }
+}
+
+#[tauri::command]
+pub fn dev_tools_set_active_project(
+    state: State<'_, Arc<AppState>>,
+    id: Option<String>,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    let mut guard = ACTIVE_PROJECT_ID.lock().unwrap_or_else(|e| e.into_inner());
+    *guard = id;
+    Ok(())
+}
+
+// ============================================================================
 // Goals
 // ============================================================================
 

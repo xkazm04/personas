@@ -22,6 +22,9 @@ export type { GitLabJob } from "@/lib/bindings/GitLabJob";
 export const gitlabConnect = (token: string) =>
   invoke<GitLabUser>("gitlab_connect", { token });
 
+export const gitlabConnectFromVault = (credentialId: string) =>
+  invoke<GitLabUser>("gitlab_connect_from_vault", { credentialId });
+
 export const gitlabDisconnect = () =>
   invoke<void>("gitlab_disconnect");
 

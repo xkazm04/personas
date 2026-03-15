@@ -45,6 +45,7 @@ export function PersonaSettingsTab({
               type="text"
               value={draft.name}
               onChange={(e) => patch({ name: e.target.value })}
+              data-testid="agent-name"
               className={INPUT_FIELD}
             />
           </div>
@@ -54,6 +55,7 @@ export function PersonaSettingsTab({
               value={draft.description}
               onChange={(e) => patch({ description: e.target.value })}
               rows={4}
+              data-testid="agent-description"
               className={`${INPUT_FIELD} resize-none`}
             />
           </div>
@@ -131,6 +133,7 @@ export function PersonaSettingsTab({
               checked={draft.enabled}
               onChange={() => patch({ enabled: !draft.enabled })}
               label="Persona Enabled"
+              data-testid="agent-enabled"
               size="md"
             />
           </div>

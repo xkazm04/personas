@@ -2,9 +2,8 @@ import type { StateCreator } from "zustand";
 import type { PipelineStore } from "../../storeTypes";
 import { errMsg, reportError } from "../../storeTypes";
 import { useAgentStore } from "../../agentStore";
-import type { TriggerChainLink } from "@/lib/bindings/TriggerChainLink";
 import type { WebhookStatus } from "@/lib/bindings/WebhookStatus";
-import { createTrigger, deleteTrigger, getWebhookStatus, listTriggerChains, updateTrigger } from "@/api/pipeline/triggers";
+import { createTrigger, deleteTrigger, getWebhookStatus, updateTrigger } from "@/api/pipeline/triggers";
 import type { TriggerRateLimitConfig } from "@/lib/utils/platform/triggerConstants";
 
 /** Discriminated trigger error -- `kind` tells UI whether to render inline or toast. */
@@ -39,7 +38,6 @@ const EMPTY_RATE_LIMIT_STATE: TriggerRateLimitState = {
 
 export interface TriggerSlice {
   // State
-  triggerChains: TriggerChainLink[];
   webhookStatus: WebhookStatus | null;
   triggerError: TriggerError | null;
   /** Per-trigger rate limit runtime state, keyed by trigger ID. */
@@ -49,7 +47,6 @@ export interface TriggerSlice {
   createTrigger: (personaId: string, input: { trigger_type: string; config?: object; enabled?: boolean; use_case_id?: string | null }) => Promise<void>;
   updateTrigger: (personaId: string, triggerId: string, updates: Record<string, unknown>) => Promise<void>;
   deleteTrigger: (personaId: string, triggerId: string) => Promise<void>;
-  fetchTriggerChains: () => Promise<void>;
   fetchWebhookStatus: () => Promise<void>;
   clearTriggerError: () => void;
   /** Record a trigger firing -- enforces rate limits and returns whether the firing is allowed. */
@@ -61,7 +58,6 @@ export interface TriggerSlice {
 }
 
 export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlice> = (set, get) => ({
-  triggerChains: [],
   webhookStatus: null,
   triggerError: null,
   triggerRateLimits: {},
@@ -104,15 +100,6 @@ export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlic
       useAgentStore.getState().fetchDetail(personaId);
     } catch (err) {
       set({ triggerError: { kind: 'crud', message: errMsg(err, "Failed to delete trigger") } });
-    }
-  },
-
-  fetchTriggerChains: async () => {
-    try {
-      const chains = await listTriggerChains();
-      set({ triggerChains: chains });
-    } catch (err) {
-      reportError(err, "Failed to load trigger chains", set, { stateUpdates: { triggerError: { kind: 'fetch', message: errMsg(err, "Failed to load trigger chains") } } });
     }
   },
 

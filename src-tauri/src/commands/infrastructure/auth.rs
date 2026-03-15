@@ -281,13 +281,29 @@ async fn refresh_access_token(
         .map_err(|e| AppError::Auth(format!("Failed to parse token response: {e}")))
 }
 
-fn parse_url_fragment(url_str: &str) -> HashMap<String, String> {
+/// Parse both query parameters and fragment parameters from a callback URL.
+///
+/// Supabase puts tokens in the fragment (`#access_token=...`) while our CSRF
+/// state nonce is embedded in the query string (`?app_state=...`).
+fn parse_callback_params(url_str: &str) -> HashMap<String, String> {
     let mut params = HashMap::new();
+
+    // Parse query parameters (contains app_state for CSRF validation)
+    if let Some(after_question) = url_str.split('?').nth(1) {
+        // Query part is everything between ? and # (or end of string)
+        let query_part = after_question.split('#').next().unwrap_or(after_question);
+        for (key, value) in url::form_urlencoded::parse(query_part.as_bytes()) {
+            params.insert(key.to_string(), value.to_string());
+        }
+    }
+
+    // Parse fragment parameters (contains tokens from Supabase)
     if let Some(fragment) = url_str.split('#').nth(1) {
         for (key, value) in url::form_urlencoded::parse(fragment.as_bytes()) {
             params.insert(key.to_string(), value.to_string());
         }
     }
+
     params
 }
 
@@ -324,11 +340,18 @@ pub async fn login_with_google(
 
     let base_url = supabase_url()?;
     let anon_key = supabase_anon_key()?;
-    let oauth_url = format!(
-        "{}/auth/v1/authorize?provider=google&redirect_to={}&state={}&apikey={}",
-        base_url,
-        urlencoding::encode("personas://auth/callback"),
+
+    // Embed our CSRF state nonce in the redirect URL as a query parameter.
+    // Supabase does not forward the top-level `state` param to custom-scheme
+    // redirects, so we pass it through `redirect_to` instead.
+    let redirect_to = format!(
+        "personas://auth/callback?app_state={}",
         urlencoding::encode(&oauth_state),
+    );
+    let oauth_url = format!(
+        "{}/auth/v1/authorize?provider=google&redirect_to={}&apikey={}",
+        base_url,
+        urlencoding::encode(&redirect_to),
         urlencoding::encode(&anon_key),
     );
 
@@ -341,7 +364,7 @@ pub async fn login_with_google(
     WebviewWindowBuilder::new(&app, "oauth", tauri::WebviewUrl::External(
         oauth_url.parse().map_err(|e| AppError::Auth(format!("Invalid OAuth URL: {e}")))?,
     ))
-    .title("Personas -- Sign in with Google")
+    .title("Personas \u{2014} Sign in with Google")
     .inner_size(480.0, 680.0)
     .center()
     .resizable(false)
@@ -361,6 +384,10 @@ pub async fn login_with_google(
                 }
                 if let Err(e) = handle_auth_callback(&handle, &callback_url).await {
                     tracing::error!("OAuth callback failed: {}", e);
+                    // Surface the error to the frontend so the user sees what went wrong
+                    let _ = handle.emit("auth-error", serde_json::json!({
+                        "error": format!("{}", e)
+                    }));
                 }
             });
 
@@ -498,23 +525,25 @@ pub async fn refresh_session(
 
 /// Handle the OAuth callback deep link. Called by the deep-link event handler.
 ///
-/// Validates the `state` parameter against the nonce stored by
+/// Validates the `app_state` query parameter against the nonce stored by
 /// `login_with_google` to prevent token injection via crafted deep links
 /// (RFC 6749 §10.12).
 pub async fn handle_auth_callback(
     app: &AppHandle,
     url_str: &str,
 ) -> Result<(), AppError> {
-    tracing::info!("Auth callback received");
+    // Log only the non-fragment portion to avoid leaking tokens in logs
+    tracing::info!("Auth callback received from: {}", url_str.split('#').next().unwrap_or("unknown"));
 
-    let params = parse_url_fragment(url_str);
+    let params = parse_callback_params(url_str);
 
     // -- State parameter validation (RFC 6749 §10.12) --------------------
+    // Our CSRF nonce is in the query string as `app_state` (embedded in redirect_to).
     let state: &Arc<AppState> = &app.state::<Arc<AppState>>();
     {
         let mut auth = state.auth.lock().await;
         let expected_state = auth.pending_oauth_state.take();
-        let received_state = params.get("state");
+        let received_state = params.get("app_state");
 
         match (expected_state, received_state) {
             (Some(expected), Some(received)) if expected == *received => {
@@ -669,9 +698,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_url_fragment_basic() {
+    fn test_parse_callback_params_basic() {
         let url = "personas://auth/callback#access_token=abc123&refresh_token=def456&expires_in=3600&token_type=bearer";
-        let params = parse_url_fragment(url);
+        let params = parse_callback_params(url);
         assert_eq!(params.get("access_token").unwrap(), "abc123");
         assert_eq!(params.get("refresh_token").unwrap(), "def456");
         assert_eq!(params.get("expires_in").unwrap(), "3600");
@@ -679,16 +708,16 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_url_fragment_empty() {
+    fn test_parse_callback_params_empty() {
         let url = "personas://auth/callback";
-        let params = parse_url_fragment(url);
+        let params = parse_callback_params(url);
         assert!(params.is_empty());
     }
 
     #[test]
-    fn test_parse_url_fragment_encoded() {
+    fn test_parse_callback_params_encoded() {
         let url = "personas://auth/callback#name=hello+world&key=a%26b";
-        let params = parse_url_fragment(url);
+        let params = parse_callback_params(url);
         assert_eq!(params.get("name").unwrap(), "hello world");
         assert_eq!(params.get("key").unwrap(), "a&b");
     }
@@ -801,11 +830,23 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_url_fragment_with_state() {
-        let url = "personas://auth/callback#access_token=abc&refresh_token=def&state=my-nonce-123";
-        let params = parse_url_fragment(url);
-        assert_eq!(params.get("state").unwrap(), "my-nonce-123");
+    fn test_parse_callback_params_with_app_state() {
+        let url = "personas://auth/callback?app_state=my-nonce-123#access_token=abc&refresh_token=def";
+        let params = parse_callback_params(url);
+        assert_eq!(params.get("app_state").unwrap(), "my-nonce-123");
         assert_eq!(params.get("access_token").unwrap(), "abc");
+        assert_eq!(params.get("refresh_token").unwrap(), "def");
+    }
+
+    #[test]
+    fn test_parse_callback_params_query_and_fragment() {
+        // Realistic callback URL: app_state in query, tokens in fragment
+        let url = "personas://auth/callback?app_state=abc123#access_token=tok&refresh_token=ref&expires_in=3600&token_type=bearer";
+        let params = parse_callback_params(url);
+        assert_eq!(params.get("app_state").unwrap(), "abc123");
+        assert_eq!(params.get("access_token").unwrap(), "tok");
+        assert_eq!(params.get("refresh_token").unwrap(), "ref");
+        assert_eq!(params.get("expires_in").unwrap(), "3600");
     }
 
     #[test]

@@ -20,6 +20,7 @@ jobs:
     if: github.event.pull_request.merged == true
     outputs:
       new_version: ${{ steps.bump.outputs.new_version }}
+      changelog: ${{ steps.changelog.outputs.body }}
     steps:
       - name: Checkout master
         uses: actions/checkout@v4
@@ -39,6 +40,16 @@ jobs:
           NEW_VERSION=$(node scripts/bump-version.mjs)
           echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
           echo "Bumped to $NEW_VERSION"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          BODY=$(node scripts/generate-changelog.mjs)
+          # Use a delimiter to safely pass multi-line output
+          EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "body<<${EOF_MARKER}" >> "$GITHUB_OUTPUT"
+          echo "$BODY" >> "$GITHUB_OUTPUT"
+          echo "${EOF_MARKER}" >> "$GITHUB_OUTPUT"
 
       - name: Commit and tag
         run: |
@@ -77,6 +88,9 @@ jobs:
             label: linux-x64
 
     runs-on: ${{ matrix.platform }}
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
 
     steps:
       - name: Checkout at tag
@@ -93,6 +107,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.rust_target }}
+
+      - uses: mozilla-actions/sccache-action@v0.0.7
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -134,7 +150,7 @@ jobs:
         with:
           tagName: v${{ needs.bump-version.outputs.new_version }}
           releaseName: "Personas v${{ needs.bump-version.outputs.new_version }}"
-          releaseBody: "See the assets below to download and install this version."
+          releaseBody: ${{ needs.bump-version.outputs.changelog }}
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

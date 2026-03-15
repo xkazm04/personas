@@ -41,6 +41,7 @@ export function SettingsStatusBar({
       {!showDeleteConfirm ? (
         <button
           onClick={() => setShowDeleteConfirm(true)}
+          data-testid="agent-delete-btn"
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
@@ -54,6 +55,7 @@ export function SettingsStatusBar({
           </span>
           <button
             onClick={onDelete}
+            data-testid="agent-delete-confirm"
             className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-xl text-sm font-medium transition-colors"
           >
             Confirm

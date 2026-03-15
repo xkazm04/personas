@@ -104,3 +104,16 @@ export interface BuildSessionSummary {
   intent: string;
   created_at: string;
 }
+
+/** Result returned by the promote_build_draft Tauri command. */
+export interface PromoteBuildResult {
+  persona: unknown;
+  triggers_created: number;
+  tools_created: number;
+  connectors_needing_setup: string[];
+  entity_errors: Array<{
+    entity_type: string;
+    entity_name: string;
+    error: string;
+  }>;
+}

@@ -48,6 +48,7 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   azure_devops:                    'personal',
   kubernetes:                      'personal',
   github:                          'personal',
+  gitlab:                          'personal',
   github_actions:                  'personal',
   slack:                           'personal',
   discord:                         'personal',

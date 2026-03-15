@@ -65,6 +65,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps
             <button
               key={tab.id}
               onClick={() => setEditorTab(tab.id)}
+              data-testid={`editor-tab-${tab.id}`}
               title={tab.label}
               className={`relative flex items-center gap-1.5 ${IS_MOBILE ? 'px-2.5 py-3' : 'px-3 py-2.5'} text-sm font-medium transition-colors whitespace-nowrap ${
                 isActive ? 'text-primary' : 'text-muted-foreground/90 hover:text-foreground/95'

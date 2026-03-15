@@ -23,7 +23,7 @@ const CredentialManager = lazy(() => import('@/features/vault/sub_manager/Creden
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
 const DesignReviewsPage = lazy(() => import('@/features/templates/components/DesignReviewsPage'));
 const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage'));
-const EventsPage = lazy(() => import('@/features/triggers/components/display/event/EventsPage').then(m => ({ default: m.EventsPage })));
+const EventsPage = lazy(() => import('@/features/triggers/sub_eventbus/EventsPage').then(m => ({ default: m.EventsPage })));
 const CloudDeployPanel = lazy(() => import('@/features/deployment/components/cloud/CloudDeployPanel'));
 const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
@@ -105,13 +105,24 @@ export default function PersonasPage() {
     const id2 = requestIdleCallback(() => {
       import('@/features/deployment/components/cloud/CloudDeployPanel').catch(() => {});
       import('@/features/templates/components/DesignReviewsPage').catch(() => {});
-      import('@/features/triggers/components/display/event/EventsPage').catch(() => {});
+      import('@/features/triggers/sub_eventbus/EventsPage').catch(() => {});
     });
     return () => {
       cancelIdleCallback(id);
       cancelIdleCallback(id2);
     };
   }, [personasFetched]);
+
+  // Auto-resume: if there's an in-progress build, re-enter creation mode
+  const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
+  const buildPhase = useAgentStore((s) => s.buildPhase);
+  const hasActiveBuild = !!buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted';
+
+  useEffect(() => {
+    if (sidebarSection === 'personas' && hasActiveBuild && !isCreatingPersona) {
+      useSystemStore.getState().setIsCreatingPersona(true);
+    }
+  }, [sidebarSection, hasActiveBuild, isCreatingPersona]);
 
   const renderContent = () => {
     // Show unified wizard when no personas exist OR when explicitly creating
@@ -163,6 +174,7 @@ export default function PersonasPage() {
     if (sidebarSection === 'dev-tools') return <ErrorBoundary name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'settings') return <ErrorBoundary name="Settings"><Suspense fallback={SectionFallback}><SettingsPage /></Suspense></ErrorBoundary>;
     if (selectedPersonaId) return <ErrorBoundary name="Agent Editor"><Suspense fallback={SectionFallback}><PersonaEditor /></Suspense></ErrorBoundary>;
+    // Default: All Agents table view
     return <ErrorBoundary name="Agent Overview"><Suspense fallback={SectionFallback}><PersonaOverviewPage /></Suspense></ErrorBoundary>;
   };
 

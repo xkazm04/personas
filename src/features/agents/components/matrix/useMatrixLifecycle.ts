@@ -13,14 +13,12 @@
  */
 import { useCallback, useEffect, useRef } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { testN8nDraft, validateN8nDraft } from "@/api/agents/tests";
+import { answerBuildQuestion, promoteBuildDraft } from "@/api/agents/buildSession";
 import {
-  getPersonaDetail,
   updatePersona,
   buildUpdateInput,
 } from "@/api/agents/personas";
-import { computeCredentialCoverage } from "@/lib/validation/credentialCoverage";
-import type { CoverageResult } from "@/lib/validation/credentialCoverage";
+import type { PromoteBuildResult } from "@/lib/types/buildTypes";
 import { useAgentStore } from "@/stores/agentStore";
 
 // ---------------------------------------------------------------------------
@@ -47,7 +45,10 @@ interface TestOutputPayload {
 
 export interface PromoteResult {
   success: boolean;
-  coverage: CoverageResult;
+  triggersCreated: number;
+  toolsCreated: number;
+  connectorsNeedingSetup: string[];
+  entityErrors: Array<{ entity_type: string; entity_name: string; error: string }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -56,7 +57,6 @@ export interface PromoteResult {
 
 export function useMatrixLifecycle({
   personaId,
-  handleGenerate,
 }: UseMatrixLifecycleOptions) {
   // -- Read build slice state from Zustand selectors -------------------------
 
@@ -119,144 +119,123 @@ export function useMatrixLifecycle({
   }, []);
 
   // -- handleStartTest -------------------------------------------------------
+  // Sends a _test message through the build session conversation
 
   const handleStartTest = useCallback(async () => {
-    const currentPhase = useAgentStore.getState().buildPhase;
-    if (currentPhase !== "draft_ready") return;
-    if (!personaId) return;
+    const state = useAgentStore.getState();
+    if (state.buildPhase !== "draft_ready") return;
 
-    // Generate unique test ID
-    const testId = `build-test-${crypto.randomUUID()}`;
-
-    // Transition phase to testing
-    useAgentStore.getState().handleStartTest(testId);
+    const sessionId = state.buildSessionId;
+    if (!sessionId) return;
 
     try {
-      // Load persona detail to construct draft JSON
-      const detail = await getPersonaDetail(personaId);
-
-      // Serialize as draft JSON for the test
-      const draftJson = JSON.stringify({
-        name: detail.name,
-        system_prompt: detail.system_prompt,
-        tools: detail.tools,
-        triggers: detail.triggers,
-      });
-
-      // Validate first
-      const validation = await validateN8nDraft(draftJson);
-      if (!validation.passed) {
-        useAgentStore
-          .getState()
-          .handleTestFailed(
-            validation.error ?? "Draft validation failed",
-          );
-        return;
-      }
-
-      // Start the streaming test
-      await testN8nDraft(testId, draftJson);
+      // Send test request through the build session conversation
+      await answerBuildQuestion(sessionId, "_test", "Run test");
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to start test";
+      const message = err instanceof Error ? err.message : "Failed to start test";
       useAgentStore.getState().handleTestFailed(message);
     }
-  }, [personaId]);
+  }, []);
 
   // -- handleRefine -----------------------------------------------------------
+  // Sends a _refine message through the build session conversation
 
   const handleRefine = useCallback(
     async (feedback: string) => {
       const state = useAgentStore.getState();
       if (state.buildPhase !== "draft_ready") return;
-      if (!personaId || !handleGenerate) return;
 
-      // Read the previous agent_ir (buildDraft) for context
-      const buildDraft = state.buildDraft;
+      const sessionId = state.buildSessionId;
+      if (!sessionId) return;
 
-      // Reset test state since we're going back to building
-      state.handleRejectTest();
-
-      // Construct refinement intent with previous context
-      const refinementIntent =
-        "[REFINEMENT] Previous build context: " +
-        JSON.stringify(buildDraft) +
-        "\n\nUser refinement: " +
-        feedback;
-
-      // Start a NEW build session with the refinement intent
-      await handleGenerate(refinementIntent, personaId);
+      try {
+        // Send refinement through the build session conversation
+        await answerBuildQuestion(sessionId, "_refine", feedback);
+      } catch (err) {
+        console.error("Refinement failed:", err);
+      }
     },
-    [personaId, handleGenerate],
+    [],
   );
 
   // -- handlePromote ----------------------------------------------------------
 
   const handlePromote = useCallback(async (): Promise<PromoteResult> => {
     const state = useAgentStore.getState();
+    const emptyResult: PromoteResult = {
+      success: false,
+      triggersCreated: 0,
+      toolsCreated: 0,
+      connectorsNeedingSetup: [],
+      entityErrors: [],
+    };
 
     // Guard: only callable when test_complete and test passed
     if (state.buildPhase !== "test_complete" || state.buildTestPassed !== true) {
-      return {
-        success: false,
-        coverage: { covered: false, missing: [], total: 0, linked: 0 },
-      };
+      return emptyResult;
     }
 
     if (!personaId) {
-      return {
-        success: false,
-        coverage: { covered: false, missing: [], total: 0, linked: 0 },
-      };
+      return emptyResult;
+    }
+
+    const sessionId = state.buildSessionId;
+    if (!sessionId) {
+      return emptyResult;
     }
 
     try {
-      // Load persona detail to get current tools
-      const detail = await getPersonaDetail(personaId);
-
-      // Parse credential_links from buildDraft (agent_ir)
       const agentIR = state.buildDraft as Record<string, unknown> | null;
-      const credentialLinks =
-        (agentIR?.credential_links as Record<string, string> | undefined) ?? null;
+      const hasRichDraft = agentIR?.system_prompt || agentIR?.tools || agentIR?.triggers;
 
-      // Run credential coverage check
-      const coverage = computeCredentialCoverage(detail.tools, credentialLinks);
+      if (hasRichDraft) {
+        // New path: use atomic promote that creates entities from agent_ir
+        const result: PromoteBuildResult = await promoteBuildDraft(sessionId, personaId);
 
-      if (!coverage.covered) {
-        return { success: false, coverage };
+        // Transition to promoted
+        useAgentStore.getState().handleBuildSessionStatus({
+          type: "session_status",
+          session_id: sessionId,
+          phase: "promoted",
+          resolved_count: 8,
+          total_count: 8,
+        });
+
+        return {
+          success: true,
+          triggersCreated: result.triggers_created,
+          toolsCreated: result.tools_created,
+          connectorsNeedingSetup: result.connectors_needing_setup,
+          entityErrors: result.entity_errors,
+        };
+      } else {
+        // Fallback: old-format agent_ir without entities — just enable the persona
+        const input = buildUpdateInput({
+          enabled: true,
+          design_context: JSON.stringify({
+            credential_links: state.buildConnectorLinks,
+          }),
+          name: (agentIR?.name as string) ?? undefined,
+          description: (agentIR?.description as string) ?? undefined,
+        });
+
+        await updatePersona(personaId, input);
+
+        useAgentStore.getState().handleBuildSessionStatus({
+          type: "session_status",
+          session_id: sessionId,
+          phase: "promoted",
+          resolved_count: 8,
+          total_count: 8,
+        });
+
+        return { ...emptyResult, success: true };
       }
-
-      // Promote: update persona with enabled=true and design_context
-      const input = buildUpdateInput({
-        enabled: true,
-        design_context: JSON.stringify({
-          credential_links: credentialLinks,
-        }),
-        name: (agentIR?.name as string) ?? undefined,
-        description: (agentIR?.description as string) ?? undefined,
-      });
-
-      await updatePersona(personaId, input);
-
-      // Transition to promoted via session status update
-      const sessionId = state.buildSessionId as string;
-      useAgentStore.getState().handleBuildSessionStatus({
-        type: "session_status",
-        session_id: sessionId,
-        phase: "promoted",
-        resolved_count: 8,
-        total_count: 8,
-      });
-
-      return { success: true, coverage };
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Promotion failed";
       console.error("handlePromote failed:", message);
-      return {
-        success: false,
-        coverage: { covered: false, missing: [], total: 0, linked: 0 },
-      };
+      return emptyResult;
     }
   }, [personaId]);
 

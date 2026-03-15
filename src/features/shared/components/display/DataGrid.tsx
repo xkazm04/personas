@@ -121,25 +121,10 @@ export function DataGrid<T>({
     );
   }
 
-  /* -- Empty -------------------------------------------------------- */
-  if (data.length === 0) {
-    return (
-      <div className={`flex flex-col items-center justify-center py-12 text-center ${className ?? ''}`}>
-        <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
-          <Icon className="w-5 h-5 text-muted-foreground/40" />
-        </div>
-        <p className="text-sm font-medium text-foreground/70">{emptyTitle}</p>
-        {emptyDescription && (
-          <p className="text-sm text-muted-foreground/50 mt-1 max-w-xs">{emptyDescription}</p>
-        )}
-      </div>
-    );
-  }
-
   /* -- Grid --------------------------------------------------------- */
   return (
     <div className={`flex flex-col min-h-0 ${className ?? ''}`}>
-      {/* Header */}
+      {/* Header — always visible so filter controls remain accessible */}
       <div
         className="grid gap-0 border-b border-primary/10 bg-background sticky top-0 z-20"
         style={{ gridTemplateColumns: gridTemplate }}
@@ -197,7 +182,18 @@ export function DataGrid<T>({
         })}
       </div>
 
-      {/* Rows */}
+      {/* Rows (or empty state) */}
+      {data.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
+            <Icon className="w-5 h-5 text-muted-foreground/40" />
+          </div>
+          <p className="text-sm font-medium text-foreground/70">{emptyTitle}</p>
+          {emptyDescription && (
+            <p className="text-sm text-muted-foreground/50 mt-1 max-w-xs">{emptyDescription}</p>
+          )}
+        </div>
+      ) : (
       <motion.div
         className="flex-1 overflow-y-auto"
         variants={gridContainerVariants}
@@ -215,7 +211,7 @@ export function DataGrid<T>({
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               className={`grid gap-0 transition-colors border-b border-primary/5 border-l-2 border-l-transparent hover:bg-white/[0.05] ${accent} ${
                 onRowClick ? 'cursor-pointer' : ''
-              } ${idx % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
+              } ${idx % 2 === 0 ? 'bg-white/[0.04]' : ''}`}
               style={{ gridTemplateColumns: gridTemplate }}
             >
               {columns.map((col) => (
@@ -232,6 +228,7 @@ export function DataGrid<T>({
           );
         })}
       </motion.div>
+      )}
 
       {/* Pagination */}
       {effectivePageSize > 0 && totalPages > 1 && (

@@ -64,7 +64,7 @@ export const CELL_STATE_CLASSES: Record<CellBuildStatus, CellStateConfig> = {
     watermarkOpacity: "opacity-[0.15]",
   },
   resolved: {
-    border: "border-card-border",
+    border: "border-emerald-500/30",
     bg: "bg-card-bg",
     opacity: "opacity-100",
     interactive: true,
@@ -76,7 +76,7 @@ export const CELL_STATE_CLASSES: Record<CellBuildStatus, CellStateConfig> = {
     bg: "bg-card-bg",
     opacity: "opacity-100",
     interactive: true,
-    glow: "cell-glow cell-edge-shimmer",
+    glow: "cell-glow cell-glow-highlighted",
     watermarkOpacity: "opacity-[0.20]",
   },
   error: {

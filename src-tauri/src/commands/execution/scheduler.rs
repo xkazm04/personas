@@ -31,6 +31,7 @@ pub async fn start_scheduler(
         state.engine.clone(),
         state.rate_limiter.clone(),
         state.tier_config.clone(),
+        state.cloud_client.clone(),
     );
 
     Ok(state.scheduler.stats())

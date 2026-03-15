@@ -450,6 +450,17 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             metadata: Some(r#"{"template_enabled":true,"summary":"GitHub for repositories, issues, pull requests, and CI/CD.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://github.com/settings/tokens","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@modelcontextprotocol/server-github","transport":"stdio","suggested_env":{"GITHUB_PERSONAL_ACCESS_TOKEN":""}}]}"#),
         },
         BuiltinConnector {
+            id: "builtin-gitlab",
+            name: "gitlab",
+            label: "GitLab",
+            color: "#FC6D26",
+            icon_url: "/icons/connectors/gitlab.svg",
+            category: "development",
+            fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"glpat-...","helpText":"Generate at GitLab > Settings > Access Tokens with api scope"}]"#,
+            healthcheck_config: Some(r#"{"endpoint":"https://gitlab.com/api/v4/user","method":"GET","headers":{"PRIVATE-TOKEN":"{{personal_access_token}}"},"description":"Validates PAT via GitLab user endpoint"}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"GitLab for repositories, CI/CD pipelines, issues, and merge requests.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://docs.gitlab.com/ee/api/rest/","setup_guide":"1. Go to GitLab > User Settings > Access Tokens\n2. Click 'Add new token', set a name and expiration\n3. Select the 'api' scope for full API access\n4. Click 'Create personal access token' and copy the glpat-... value","pricing_tier":"free","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
             id: "builtin-cal-com",
             name: "cal_com",
             label: "Cal.com",
@@ -469,7 +480,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "productivity",
             fields: r#"[{"key":"api_key","label":"Personal Access Token","type":"password","required":true,"placeholder":"eyJ...","helpText":"Generate at calendly.com/integrations/api_webhooks"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.calendly.com/users/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates token via Calendly users/me endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"Calendly scheduling for meetings and appointment automation.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://developer.calendly.com/api-docs/","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":false,"summary":"Calendly scheduling for meetings and appointment automation.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://developer.calendly.com/api-docs/","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-supabase",
@@ -568,7 +579,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "development",
             fields: r#"[{"key":"personal_token","label":"Personal API Token","type":"password","required":true,"placeholder":"CCIPAT_...","helpText":"From CircleCI -> User Settings -> Personal API Tokens"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://circleci.com/api/v2/me","method":"GET","headers":{"Circle-Token":"{{personal_token}}"},"description":"Validates token via CircleCI me endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"CircleCI continuous integration and delivery platform.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://circleci.com/docs/managing-api-tokens/","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":false,"summary":"CircleCI continuous integration and delivery platform.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://circleci.com/docs/managing-api-tokens/","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-convex",
@@ -844,7 +855,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "database",
             fields: r#"[{"key":"database_path","label":"Database Path","type":"text","required":true,"placeholder":"/path/to/data.duckdb","helpText":"File path to the DuckDB database (or :memory: for in-memory)"},{"key":"motherduck_token","label":"MotherDuck Token","type":"password","required":false,"placeholder":"eyJ...","helpText":"Optional: MotherDuck service token for cloud-hosted DuckDB"}]"#,
             healthcheck_config: None,
-            metadata: Some(r#"{"template_enabled":true,"summary":"DuckDB embedded analytical database for OLAP workloads, Parquet, CSV, and JSON.","auth_type":"file_path","auth_type_label":"Database Path","docs_url":"https://duckdb.org/docs/connect/overview","auth_variants":[{"id":"local","label":"Local File","fields":["database_path"],"auth_type_label":"Database Path"},{"id":"motherduck","label":"MotherDuck Cloud","fields":["database_path","motherduck_token"],"auth_type_label":"MotherDuck Token"}],"auth_methods":[{"id":"file_path","label":"Database Path","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":false,"summary":"DuckDB embedded analytical database for OLAP workloads, Parquet, CSV, and JSON.","auth_type":"file_path","auth_type_label":"Database Path","docs_url":"https://duckdb.org/docs/connect/overview","auth_variants":[{"id":"local","label":"Local File","fields":["database_path"],"auth_type_label":"Database Path"},{"id":"motherduck","label":"MotherDuck Cloud","fields":["database_path","motherduck_token"],"auth_type_label":"MotherDuck Token"}],"auth_methods":[{"id":"file_path","label":"Database Path","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-twilio-sms",
@@ -959,6 +970,17 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
         },
         // -- Microsoft 365 --
         BuiltinConnector {
+            id: "builtin-microsoft-outlook",
+            name: "microsoft_outlook",
+            label: "Microsoft Outlook",
+            color: "#0078D4",
+            icon_url: "/icons/connectors/microsoft-outlook.svg",
+            category: "messaging",
+            fields: "[]",
+            healthcheck_config: Some(r#"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"#),
+            metadata: Some(r#"{"template_enabled":false,"summary":"Microsoft Outlook email automation for reading, sending, and managing messages and attachments via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","oauth_provider_id":"microsoft","oauth_scopes":["openid","profile","email","offline_access","Mail.Read","Mail.ReadWrite","Mail.Send"],"docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/mail-api-overview","setup_guide":"1. In Personas, click Authorize with Microsoft.\n2. Sign in with your Microsoft account.\n3. Grant the requested permissions.\n4. Return to Personas; token is saved automatically.","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
+        },
+        BuiltinConnector {
             id: "builtin-microsoft-excel",
             name: "microsoft_excel",
             label: "Microsoft Excel",
@@ -967,7 +989,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "database",
             fields: "[]",
             healthcheck_config: Some(r#"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"Microsoft Excel spreadsheet automation for reading, writing, and managing workbook data via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/excel","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":false,"summary":"Microsoft Excel spreadsheet automation for reading, writing, and managing workbook data via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","oauth_provider_id":"microsoft","oauth_scopes":["openid","profile","offline_access","Files.ReadWrite"],"docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/excel","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-microsoft-calendar",
@@ -978,7 +1000,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "scheduling",
             fields: "[]",
             healthcheck_config: Some(r#"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"Microsoft Outlook Calendar scheduling for creating, reading, and managing calendar events via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/calendar","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":false,"summary":"Microsoft Outlook Calendar scheduling for creating, reading, and managing calendar events via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","oauth_provider_id":"microsoft","oauth_scopes":["openid","profile","offline_access","Calendars.ReadWrite"],"docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/calendar","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-microsoft-teams",
@@ -989,7 +1011,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "messaging",
             fields: "[]",
             healthcheck_config: Some(r#"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"Microsoft Teams messaging for sending messages, managing channels, and team collaboration via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/teams-api-overview","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":false,"summary":"Microsoft Teams messaging for sending messages, managing channels, and team collaboration via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","oauth_provider_id":"microsoft","oauth_scopes":["openid","profile","offline_access","Chat.ReadWrite","ChannelMessage.Send","Team.ReadBasic.All"],"docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/teams-api-overview","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-onedrive",
@@ -1000,7 +1022,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "productivity",
             fields: "[]",
             healthcheck_config: Some(r#"{"endpoint":"https://graph.microsoft.com/v1.0/me/drive","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me/drive endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"OneDrive file storage and document management for uploading, downloading, and organizing files via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/onedrive","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"OneDrive file storage and document management for uploading, downloading, and organizing files via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","oauth_provider_id":"microsoft","oauth_scopes":["openid","profile","offline_access","Files.ReadWrite"],"docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/onedrive","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-sharepoint",
@@ -1011,7 +1033,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "productivity",
             fields: "[]",
             healthcheck_config: Some(r#"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"SharePoint document management and team sites for storing, organizing, and collaborating on content via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/sharepoint","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"SharePoint document management and team sites for storing, organizing, and collaborating on content via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","oauth_provider_id":"microsoft","oauth_scopes":["openid","profile","offline_access","Sites.Read.All","Files.ReadWrite"],"docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/sharepoint","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
         },
         // -- Google Calendar --
         BuiltinConnector {
@@ -1035,7 +1057,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "design",
             fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"CNV...","helpText":"Generate at canva.com/developers -> Your Apps -> Generate Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.canva.com/rest/v1/users/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Canva /users/me endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"Canva design platform for creating, managing, and exporting designs via the Canva Connect API.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://www.canva.dev/docs/connect/","pricing_tier":"freemium","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":false,"summary":"Canva design platform for creating, managing, and exporting designs via the Canva Connect API.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://www.canva.dev/docs/connect/","pricing_tier":"freemium","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: "builtin-penpot",
@@ -1081,7 +1103,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "support",
             fields: r#"[{"key":"token_id","label":"Token ID","type":"text","required":true,"placeholder":"","helpText":"From Crisp -> Settings -> API Tokens -> Token Identifier"},{"key":"token_key","label":"Token Key","type":"password","required":true,"placeholder":"","helpText":"From Crisp -> Settings -> API Tokens -> Token Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.crisp.chat/v1/website","method":"GET","headers":{"Authorization":"Basic {{base64(token_id:token_key)}}","X-Crisp-Tier":"plugin"},"description":"Validates API token via Crisp website list endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"Crisp customer messaging platform for live chat, helpdesk, and knowledge base via the Crisp REST API.","auth_type":"basic","auth_type_label":"Token Pair","docs_url":"https://docs.crisp.chat/references/rest-api/v1/","pricing_tier":"freemium","auth_methods":[{"id":"basic","label":"Token Pair","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":false,"summary":"Crisp customer messaging platform for live chat, helpdesk, and knowledge base via the Crisp REST API.","auth_type":"basic","auth_type_label":"Token Pair","docs_url":"https://docs.crisp.chat/references/rest-api/v1/","pricing_tier":"freemium","auth_methods":[{"id":"basic","label":"Token Pair","type":"credential","is_default":true}]}"#),
         },
         // -- E-Commerce --
         BuiltinConnector {
@@ -1104,7 +1126,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "commerce",
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Go to app.lemonsqueezy.com -> Settings -> API -> Create API Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.lemonsqueezy.com/v1/users/me","method":"GET","headers":{"Accept":"application/vnd.api+json","Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Lemon Squeezy /users/me endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"Lemon Squeezy digital commerce platform for selling digital products, subscriptions, and SaaS via the Lemon Squeezy API v1.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.lemonsqueezy.com/api","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":false,"summary":"Lemon Squeezy digital commerce platform for selling digital products, subscriptions, and SaaS via the Lemon Squeezy API v1.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.lemonsqueezy.com/api","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
         // -- Storage --
         BuiltinConnector {
@@ -1138,7 +1160,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "storage",
             fields: r#"[{"key":"application_key_id","label":"Application Key ID","type":"text","required":true,"placeholder":"","helpText":"From Backblaze -> App Keys -> Add a New Application Key"},{"key":"application_key","label":"Application Key","type":"password","required":true,"placeholder":"","helpText":"Shown once when creating the key -- copy immediately"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.backblazeb2.com/b2api/v3/b2_authorize_account","method":"GET","headers":{"Authorization":"Basic {{base64(application_key_id:application_key)}}"},"description":"Validates credentials via B2 authorize_account endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"Backblaze B2 affordable S3-compatible cloud object storage for backups, archives, and media.","auth_type":"basic","auth_type_label":"Application Key","docs_url":"https://www.backblaze.com/docs/cloud-storage","pricing_tier":"freemium","auth_methods":[{"id":"basic","label":"Application Key","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":false,"summary":"Backblaze B2 affordable S3-compatible cloud object storage for backups, archives, and media.","auth_type":"basic","auth_type_label":"Application Key","docs_url":"https://www.backblaze.com/docs/cloud-storage","pricing_tier":"freemium","auth_methods":[{"id":"basic","label":"Application Key","type":"credential","is_default":true}]}"#),
         },
         // -- Forms --
         BuiltinConnector {
@@ -1161,7 +1183,7 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             category: "forms",
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Go to Formbricks -> Settings -> API Keys -> Add API Key"},{"key":"base_url","label":"Instance URL","type":"url","required":false,"placeholder":"https://app.formbricks.com","helpText":"Your Formbricks instance URL (defaults to formbricks.com cloud)"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{base_url|https://app.formbricks.com}}/api/v1/me","method":"GET","headers":{"x-api-key":"{{api_key}}"},"description":"Validates API key via Formbricks /me endpoint"}"#),
-            metadata: Some(r#"{"template_enabled":true,"summary":"Formbricks open-source survey and feedback platform for in-app surveys, links, and website pop-ups.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://formbricks.com/docs/api/overview","pricing_tier":"free","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
+            metadata: Some(r#"{"template_enabled":false,"summary":"Formbricks open-source survey and feedback platform for in-app surveys, links, and website pop-ups.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://formbricks.com/docs/api/overview","pricing_tier":"free","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
         // -- Notifications --
         BuiltinConnector {

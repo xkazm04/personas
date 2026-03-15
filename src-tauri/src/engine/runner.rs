@@ -1336,13 +1336,19 @@ pub(crate) async fn inject_credential(
         }
 
         let override_client = if fields.get("client_id").map_or(true, |v| v.is_empty()) {
-            // Resolve platform-managed client credentials for Google connectors
+            // Resolve platform-managed client credentials for OAuth connectors
             let is_google = connector_name.starts_with("google")
                 || connector_name == "gmail"
                 || connector_name == "google_calendar"
                 || connector_name == "google_drive";
+            let is_microsoft = connector_name.starts_with("microsoft")
+                || connector_name == "onedrive"
+                || connector_name == "sharepoint";
             if is_google {
-                super::google_oauth::resolve_google_oauth_env_credentials()
+                super::google_oauth::resolve_google_desktop_oauth_credentials()
+                    .ok()
+            } else if is_microsoft {
+                super::google_oauth::resolve_microsoft_oauth_credentials()
                     .ok()
             } else {
                 None

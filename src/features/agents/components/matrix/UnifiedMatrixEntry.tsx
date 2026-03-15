@@ -39,9 +39,16 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
   const createPersona = useAgentStore((s) => s.createPersona);
   const deletePersona = useAgentStore((s) => s.deletePersona);
 
+  // -- Draft persona from Zustand (survives navigation) ------------------
+
+  const draftPersonaId = useAgentStore((s) => s.buildPersonaId);
+  const setDraftPersonaId = useCallback(
+    (id: string | null) => useAgentStore.setState({ buildPersonaId: id }),
+    [],
+  );
+
   // -- Local state --------------------------------------------------------
 
-  const [draftPersonaId, setDraftPersonaId] = useState<string | null>(null);
   const [intentText, setIntentText] = useState("");
   const [agentName, setAgentName] = useState("");
   const [launchError, setLaunchError] = useState<string | null>(null);
@@ -51,7 +58,6 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
   const build = useMatrixBuild({ personaId: draftPersonaId });
   const lifecycle = useMatrixLifecycle({
     personaId: draftPersonaId,
-    handleGenerate: build.handleGenerate,
   });
 
   // -- Handlers -----------------------------------------------------------
@@ -61,14 +67,21 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
    * the persona if the session fails to start (CLI unavailable, etc.).
    */
   const handleLaunch = useCallback(async () => {
-    const trimmed = intentText.trim();
+    // Check if we have a workflow import to use
+    const store = useAgentStore.getState();
+    const workflowJson = store.buildWorkflowJson;
+    const parserResultJson = store.buildParserResultJson;
+    const workflowName = store.buildWorkflowName;
+
+    // For intent: use text input or fall back to workflow name
+    const trimmed = intentText.trim() || (workflowName ? `Import and transform: ${workflowName}` : "");
     if (!trimmed || build.isBuilding) return;
     setLaunchError(null);
 
     let personaId = draftPersonaId;
     if (!personaId) {
       try {
-        const name = trimmed.slice(0, 30) || "Draft Agent";
+        const name = (workflowName ?? trimmed).slice(0, 30) || "Draft Agent";
         const persona = await createPersona({
           name,
           description: trimmed.slice(0, 200) || undefined,
@@ -84,9 +97,13 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
     }
 
     try {
-      await build.handleGenerate(trimmed, personaId);
+      await build.handleGenerate(
+        trimmed,
+        personaId,
+        workflowJson ?? undefined,
+        parserResultJson ?? undefined,
+      );
     } catch (err) {
-      // Build session failed to start — roll back the draft persona
       console.error("Build session failed to start:", err);
       setLaunchError(
         err instanceof Error ? err.message : "Build failed to start. Check CLI configuration.",
@@ -108,13 +125,15 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
 
   // -- Derived props for PersonaMatrix ------------------------------------
 
-  const launchDisabled = !intentText.trim() || build.isBuilding;
+  const isActivelyBuilding = build.isBuilding || build.buildPhase === "awaiting_input";
+  const hasWorkflowImport = !!useAgentStore((s) => s.buildWorkflowJson);
+  const launchDisabled = (!intentText.trim() && !hasWorkflowImport) || isActivelyBuilding;
   const hasDesignResult = build.buildPhase === "draft_ready" || build.buildPhase === "testing" || build.buildPhase === "test_complete" || build.buildPhase === "promoted";
 
   // -- Render -------------------------------------------------------------
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden px-4 md:px-6 xl:px-8 pt-4">
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden px-4 md:px-6 xl:px-8 pt-4">
       <div className="flex-1 min-h-0 w-full">
         <PersonaMatrix
           designResult={null}
@@ -127,7 +146,7 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
           isRunning={build.isBuilding}
           completeness={build.completeness}
           cliOutputLines={build.outputLines}
-          buildLocked={build.isBuilding}
+          buildLocked={isActivelyBuilding}
           cellBuildStates={build.cellStates}
           pendingQuestions={build.pendingQuestions}
           onAnswerBuildQuestion={build.handleAnswer}
@@ -138,6 +157,7 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
           onStartTest={lifecycle.handleStartTest}
           onApproveTest={lifecycle.handlePromote}
           onRejectTest={lifecycle.handleRejectTest}
+          onRefine={lifecycle.handleRefine}
           testOutputLines={build.buildTestOutputLines}
           testPassed={build.buildTestPassed}
           testError={build.buildTestError}

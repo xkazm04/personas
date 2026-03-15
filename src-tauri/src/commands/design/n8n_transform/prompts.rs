@@ -69,7 +69,7 @@ fn format_credential_section(credentials_json: Option<&str>) -> String {
 // -- Shared prompt builder functions --------------------------------
 
 /// Rules for adapting tools to the user's actual credentials.
-fn build_credential_adaptation_rules() -> &'static str {
+pub(crate) fn build_credential_adaptation_rules() -> &'static str {
     r#"IMPORTANT -- Adapt tools to the user's ACTUAL credentials:
 1. Check "User's Available Credentials" below. If the user has a credential with
    service_type matching a connector (e.g., service_type "google"), set has_credential=true
@@ -85,7 +85,7 @@ fn build_credential_adaptation_rules() -> &'static str {
 }
 
 /// Persona protocol system documentation (user_message, agent_memory, manual_review, events).
-fn build_protocol_docs() -> &'static str {
+pub(crate) fn build_protocol_docs() -> &'static str {
     r#"## Persona Protocol System (CRITICAL -- use these in the system prompt)
 
 During execution, the persona can output special JSON protocol messages to communicate
@@ -155,7 +155,7 @@ to other workflows."#
 }
 
 /// n8n -> Persona pattern mapping rules.
-fn build_pattern_mapping() -> &'static str {
+pub(crate) fn build_pattern_mapping() -> &'static str {
     r#"## n8n -> Persona Pattern Mapping
 
 Apply these patterns when analyzing the n8n workflow:
@@ -211,7 +211,7 @@ Composition philosophy:
 }
 
 /// JSON output schema for persona generation, including all field notes.
-fn build_output_schema() -> &'static str {
+pub(crate) fn build_output_schema() -> &'static str {
     r##"Return ONLY valid JSON (no markdown fences, no commentary), with this exact shape:
 {
   "persona": {

@@ -6,8 +6,8 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
 import type { SidebarSection } from '@/lib/types/types';
 import { IS_MOBILE, MOBILE_SECTIONS } from '@/lib/utils/platform/platform';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
-import { useDevMode } from '@/hooks/utility/interaction/useDevMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
+import { TIERS, isTierVisible } from '@/lib/constants/uiModes';
 import { sections } from './sidebarData';
 
 interface SidebarLevel1Props {
@@ -49,15 +49,14 @@ export default function SidebarLevel1({
   const { pendingReviewCount } = useBadgeCounts();
   const isLabRunning = useAgentStore((s) => s.isLabRunning);
   const isDev = import.meta.env.DEV;
-  const isSimple = useSimpleMode();
-  const isDevMode = useDevMode();
+  const tier = useTier();
 
   return (
     <>
       <SidebarIconStyles />
       <div className={`${collapsed ? 'w-[52px]' : 'w-[88px]'} bg-secondary/40 border-r border-primary/15 flex flex-col items-center py-3 gap-1 transition-all duration-200`}>
         {sections
-          .filter((s) => (!s.devOnly || isDev) && (!s.devModeOnly || isDevMode) && (!IS_MOBILE || MOBILE_SECTIONS.has(s.id)) && (!isSimple || !s.simpleHidden))
+          .filter((s) => (!s.devOnly || isDev) && (!IS_MOBILE || MOBILE_SECTIONS.has(s.id)) && isTierVisible(s.minTier ?? TIERS.STARTER, tier.current))
           .map((section) => {
           const CustomIcon = SIDEBAR_ICONS[section.id];
           const FallbackIcon = section.icon;
@@ -69,6 +68,7 @@ export default function SidebarLevel1({
           return (
             <button
               key={section.id}
+              data-testid={`sidebar-${section.id}`}
               onClick={() => {
                 if (isDisabled) return;
                 // Clear context scan complete indicator when navigating to dev-tools

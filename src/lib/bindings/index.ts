@@ -142,7 +142,6 @@ export type { TopologyBlueprint } from "./TopologyBlueprint";
 export type { TopologySuggestion } from "./TopologySuggestion";
 export type { TraceSpan } from "./TraceSpan";
 export type { TriageRule } from "./TriageRule";
-export type { TriggerChainLink } from "./TriggerChainLink";
 export type { TriggerValidationCheck } from "./TriggerValidationCheck";
 export type { TriggerValidationResult } from "./TriggerValidationResult";
 export type { UpdateConnectorDefinitionInput } from "./UpdateConnectorDefinitionInput";

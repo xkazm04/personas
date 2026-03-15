@@ -22,8 +22,11 @@ export function useDevToolsActions() {
     },
     createContextGroup: (data: { name: string; color: string }) =>
       store.createContextGroup(pid(), data.name, data.color),
-    scanCodebase: (rootPath?: string) =>
-      store.scanCodebase(pid(), rootPath ?? '.'),
+    scanCodebase: (rootPath?: string) => {
+      const id = pid();
+      if (!id) return Promise.resolve();
+      return store.scanCodebase(id, rootPath ?? '.');
+    },
 
     // Scanner
     runScan: (agentKeys: string[]) => {

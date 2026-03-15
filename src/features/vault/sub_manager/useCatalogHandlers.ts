@@ -43,20 +43,9 @@ export function useCatalogHandlers({
 
   const handleOAuthSuccess = useCallback(async ({ credentialData }: { credentialData: Record<string, string> }) => {
     if (!catalogFormData) return;
-    const name = catalogFormData.credentialName.trim() || `${catalogFormData.connector.label} Credential`;
-    try {
-      await createCredential({
-        name,
-        service_type: catalogFormData.connector.name,
-        data: credentialData,
-      });
-      await fetchCredentials();
-      dispatch({ type: 'GO_LIST' });
-      setCredentialSearch('');
-    } catch {
-      setError('Failed to save OAuth credential');
-    }
-  }, [catalogFormData, createCredential, fetchCredentials, dispatch, setCredentialSearch, setError]);
+    // Populate the form with OAuth tokens so the user can test and confirm before saving.
+    dispatch({ type: 'SET_OAUTH_VALUES', values: credentialData });
+  }, [catalogFormData, dispatch]);
 
   const handleOAuthError = useCallback((message: string) => {
     setError(message);
@@ -69,27 +58,12 @@ export function useCatalogHandlers({
 
   const universalOAuth = useUniversalOAuth();
 
-  // Save credential once universal OAuth completes
+  // Populate form with universal OAuth tokens for healthcheck/confirmation
   useEffect(() => {
     if (!universalOAuth.completedAt || !catalogFormData) return;
     const values = universalOAuth.getValues();
     if (!values.access_token) return;
-    const name = catalogFormData.credentialName.trim() || `${catalogFormData.connector.label} Credential`;
-    (async () => {
-      try {
-        await createCredential({
-          name,
-          service_type: catalogFormData.connector.name,
-          data: values,
-        });
-        await fetchCredentials();
-        universalOAuth.reset();
-        dispatch({ type: 'GO_LIST' });
-        setCredentialSearch('');
-      } catch {
-        setError('Failed to save OAuth credential');
-      }
-    })();
+    dispatch({ type: 'SET_OAUTH_VALUES', values });
   }, [universalOAuth.completedAt]);
 
   const handlePickType = useCallback((connector: ConnectorDefinition) => {

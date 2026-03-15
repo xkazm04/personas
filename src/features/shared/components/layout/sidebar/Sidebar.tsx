@@ -9,9 +9,8 @@ import { useAuthStore } from '@/stores/authStore';
 import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
 import type { SidebarSection } from '@/lib/types/types';
 import OnboardingProgressBar from '@/features/onboarding/components/OnboardingProgressBar';
-import { IS_MOBILE, SIMPLE_SECTIONS, DEV_MODE_SECTIONS } from '@/lib/utils/platform/platform';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
-import { useDevMode } from '@/hooks/utility/interaction/useDevMode';
+import { IS_MOBILE } from '@/lib/utils/platform/platform';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { sections } from './sidebarData';
 import { SIDEBAR_TOGGLE_EVENT } from '@/features/shared/components/layout/DesktopFooter';
@@ -79,8 +78,7 @@ export default function Sidebar() {
     return disabled;
   }, [isAuthenticated]);
 
-  const isSimple = useSimpleMode();
-  const isDevMode = useDevMode();
+  const tier = useTier();
 
   // Redirect away from dev-only sections/tabs when not in dev mode
   useEffect(() => {
@@ -90,21 +88,13 @@ export default function Sidebar() {
     }
   }, [isDev, sidebarSection, setSidebarSection]);
 
-  // Redirect away from simple-hidden sections when switching to simple mode
+  // Redirect away from sections the current tier doesn't include
   useEffect(() => {
-    if (!isSimple) return;
-    if (!SIMPLE_SECTIONS.has(sidebarSection)) {
+    const currentSection = sections.find((s) => s.id === sidebarSection);
+    if (currentSection?.minTier && !tier.isVisible(currentSection.minTier)) {
       setSidebarSection('home');
     }
-  }, [isSimple, sidebarSection, setSidebarSection]);
-
-  // Redirect away from dev-mode-only sections when not in dev mode
-  useEffect(() => {
-    if (isDevMode) return;
-    if (DEV_MODE_SECTIONS.has(sidebarSection)) {
-      setSidebarSection('home');
-    }
-  }, [isDevMode, sidebarSection, setSidebarSection]);
+  }, [tier.current, sidebarSection, setSidebarSection]);
 
   useEffect(() => {
     if (isDev) return;

@@ -85,6 +85,39 @@ const github: EP[] = [
   ], ['Actions']),
 ];
 
+// -- GitLab ---------------------------------------------------------------
+
+const gitlab: EP[] = [
+  ep('GET', '/user', 'Get authenticated user', [], ['Users']),
+  ep('GET', '/projects', 'List projects accessible by the authenticated user', [
+    queryP('membership', false, 'true to limit to member projects'),
+    queryP('per_page', false, 'Results per page (max 100)'),
+  ], ['Projects']),
+  ep('GET', '/projects/{id}', 'Get a single project', [
+    pathP('id', 'Project ID or URL-encoded path'),
+  ], ['Projects']),
+  ep('GET', '/projects/{id}/issues', 'List project issues', [
+    pathP('id', 'Project ID or URL-encoded path'),
+    queryP('state', false, 'opened, closed, all'),
+    queryP('per_page'),
+  ], ['Issues']),
+  ep('GET', '/projects/{id}/merge_requests', 'List merge requests', [
+    pathP('id', 'Project ID or URL-encoded path'),
+    queryP('state', false, 'opened, closed, merged, all'),
+    queryP('per_page'),
+  ], ['Merge Requests']),
+  ep('GET', '/projects/{id}/pipelines', 'List project pipelines', [
+    pathP('id', 'Project ID or URL-encoded path'),
+    queryP('per_page'),
+  ], ['CI/CD']),
+  ep('GET', '/projects/{id}/repository/branches', 'List branches', [
+    pathP('id', 'Project ID or URL-encoded path'),
+  ], ['Repositories']),
+  ep('POST', '/projects/{id}/issues', 'Create an issue', [
+    pathP('id', 'Project ID or URL-encoded path'),
+  ], ['Issues'], jsonBody(), 'Body: { "title": "...", "description": "...", "labels": "..." }'),
+];
+
 // -- Slack ------------------------------------------------------------
 
 const slack: EP[] = [
@@ -1039,6 +1072,7 @@ const knock: EP[] = [
 export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   azure_devops,
   github,
+  gitlab,
   slack,
   discord,
   cloudflare,

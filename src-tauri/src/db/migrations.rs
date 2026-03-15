@@ -2495,6 +2495,21 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
          CREATE INDEX IF NOT EXISTS idx_lab_eval_runs_persona_created ON lab_eval_runs(persona_id, created_at DESC);"
     )?;
 
+    // Add workflow import context columns to build_sessions (Phase 2: matrix import)
+    let has_workflow_json: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('build_sessions') WHERE name = 'workflow_json'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_workflow_json {
+        conn.execute_batch(
+            "ALTER TABLE build_sessions ADD COLUMN workflow_json TEXT;
+             ALTER TABLE build_sessions ADD COLUMN parser_result_json TEXT;"
+        )?;
+        tracing::info!("Added workflow_json and parser_result_json columns to build_sessions");
+    }
+
     Ok(())
 }
 

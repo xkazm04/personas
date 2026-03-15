@@ -8,6 +8,7 @@ interface AccessibleToggleProps {
   /** Size variant: 'sm' = w-8 h-5, 'md' = w-9 h-5, 'lg' = w-11 h-6 */
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  'data-testid'?: string;
 }
 
 export function AccessibleToggle({
@@ -17,6 +18,7 @@ export function AccessibleToggle({
   disabled = false,
   size = 'md',
   className = '',
+  'data-testid': dataTestId,
 }: AccessibleToggleProps) {
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -41,6 +43,7 @@ export function AccessibleToggle({
       disabled={disabled}
       onClick={onChange}
       onKeyDown={handleKeyDown}
+      data-testid={dataTestId}
       className={`${trackSize} rounded-full relative transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
         checked ? 'bg-emerald-500/80' : 'bg-muted-foreground/20'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className}`}

@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
-import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab } from "@/lib/types/types";
 import type { AdoptWizardStep } from "@/features/templates/sub_generated/adoption/hooks/useAdoptReducer";
 
 /** Snapshot of adoption wizard state saved when the user closes mid-adoption. */
@@ -31,6 +31,7 @@ export interface UiSlice {
   sidebarSection: SidebarSection;
   homeTab: HomeTab;
   templateTab: TemplateTab;
+  agentTab: AgentTab;
   editorTab: EditorTab;
   cloudTab: CloudTab;
   settingsTab: SettingsTab;
@@ -58,6 +59,7 @@ export interface UiSlice {
   setSidebarSection: (section: SidebarSection) => void;
   setHomeTab: (tab: HomeTab) => void;
   setTemplateTab: (tab: TemplateTab) => void;
+  setAgentTab: (tab: AgentTab) => void;
   setEditorTab: (tab: EditorTab) => void;
   setCloudTab: (tab: CloudTab) => void;
   setSettingsTab: (tab: SettingsTab) => void;
@@ -84,6 +86,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   sidebarSection: "home" as SidebarSection,
   homeTab: "welcome" as HomeTab,
   templateTab: "generated" as TemplateTab,
+  agentTab: "all" as AgentTab,
   editorTab: "use-cases" as EditorTab,
   cloudTab: "unified" as CloudTab,
   settingsTab: "account" as SettingsTab,
@@ -109,6 +112,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setSidebarSection: (section) => set({ sidebarSection: section }),
   setHomeTab: (tab) => set({ homeTab: tab }),
   setTemplateTab: (tab) => set({ templateTab: tab }),
+  setAgentTab: (tab) => set({ agentTab: tab }),
   setEditorTab: (tab) => set({ editorTab: tab }),
   setCloudTab: (tab) => set({ cloudTab: tab }),
   setSettingsTab: (tab) => set({ settingsTab: tab }),

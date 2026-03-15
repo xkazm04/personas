@@ -31,15 +31,17 @@ interface ContentBoxProps {
   children: ReactNode;
   /** Override the default min-width. Set to 0 to disable. */
   minWidth?: number;
+  'data-testid'?: string;
 }
 
-export function ContentBox({ children, minWidth }: ContentBoxProps) {
+export function ContentBox({ children, minWidth, 'data-testid': testId }: ContentBoxProps) {
   // Custom override -- used by TeamCanvas etc. to opt out of min-width
   if (minWidth !== undefined) {
     return (
       <div
         className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
         style={minWidth > 0 ? { minWidth: `${minWidth}px` } : undefined}
+        data-testid={testId}
       >
         {children}
       </div>
@@ -49,7 +51,7 @@ export function ContentBox({ children, minWidth }: ContentBoxProps) {
   // Default: responsive min-width adjusted for 328px sidebar
   // xl 1280->952 available, 2xl 1536->1208, 3xl 1920->1592, 4xl 2560->2232
   return (
-    <div className={`flex-1 min-h-0 flex flex-col w-full overflow-hidden ${IS_MOBILE ? '' : 'min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]'}`}>
+    <div data-testid={testId} className={`flex-1 min-h-0 flex flex-col w-full overflow-hidden ${IS_MOBILE ? '' : 'min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]'}`}>
       {children}
     </div>
   );

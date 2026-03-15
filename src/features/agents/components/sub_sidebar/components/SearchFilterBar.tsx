@@ -49,6 +49,7 @@ export function SearchFilterBar({
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search agents..."
+            data-testid="agent-search"
             className="flex-1 min-w-0 text-sm bg-transparent border-none outline-none text-foreground/90 placeholder:text-muted-foreground/40"
           />
           {localSearch && (

@@ -229,7 +229,17 @@ export const moveContext = (id: string, targetGroupId: string | null) =>
   safeInvoke<DevContext>({} as DevContext, "dev_tools_move_context", { id, targetGroupId });
 
 export const scanCodebase = (projectId: string, rootPath: string) =>
-  safeInvoke<DevContext[]>([], "dev_tools_scan_codebase", { projectId, rootPath }, undefined, 120_000);
+  invoke<{ scan_id: string }>("dev_tools_scan_codebase", { projectId, rootPath });
+
+export const cancelScanCodebase = (scanId: string) =>
+  safeInvoke<boolean>(false, "dev_tools_cancel_scan_codebase", { scanId });
+
+export const getScanCodebaseStatus = (scanId: string) =>
+  safeInvoke<{ scan_id: string; status: string; error: string | null; lines: string[] }>(
+    { scan_id: scanId, status: "not_found", error: null, lines: [] },
+    "dev_tools_get_scan_codebase_status",
+    { scanId },
+  );
 
 export const generateContextDescription = (contextId: string) =>
   safeInvoke<DevContext>({} as DevContext, "dev_tools_generate_context_description", { contextId }, undefined, 60_000);
@@ -295,11 +305,14 @@ export const listScanAgents = () =>
   safeInvoke<ScanAgentMeta[]>([], "dev_tools_list_scan_agents");
 
 export const runScan = (projectId: string, scanTypes: string[], contextId?: string) =>
-  safeInvoke<DevScan>({} as DevScan, "dev_tools_run_scan", {
+  invoke<{ scan_id: string; scan_type: string }>("dev_tools_run_scan", {
     projectId,
     scanTypes,
     contextId: contextId,
-  }, undefined, 300_000);
+  });
+
+export const cancelScan = (scanId: string) =>
+  safeInvoke<boolean>(false, "dev_tools_cancel_scan", { scanId });
 
 export const getScan = (id: string) =>
   safeInvoke<DevScan>({} as DevScan, "dev_tools_get_scan", { id });

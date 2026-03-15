@@ -418,7 +418,7 @@ pub async fn test_notification_channel(
 // Low-level OS send
 // ---------------------------------------------------------------------------
 
-fn send(app: &AppHandle, title: &str, body: &str) {
+pub(crate) fn send(app: &AppHandle, title: &str, body: &str) {
     if let Err(e) = app.notification().builder().title(title).body(body).show() {
         tracing::warn!("Failed to send OS notification: {}", e);
     }

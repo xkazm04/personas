@@ -7,26 +7,74 @@
  */
 
 // ---------------------------------------------------------------------------
-// Global view mode  (simple | full | dev)
+// Tiered feature gate system
 // ---------------------------------------------------------------------------
+//
+// Three audience tiers control feature visibility at both compile-time and
+// runtime. Each tier is a strict superset of the previous one:
+//
+//   starter (1)  → clean UI for non-technical users
+//   team    (2)  → + pipelines, templates, deployment, analytics
+//   builder (3)  → + dev tools, lab, design system, raw JSON
+//
+// Runtime: users can switch tiers via Settings → Account.
+// Compile-time: set APP_TIER env var to tree-shake higher-tier code entirely.
 
-export const VIEW_MODES = {
-  SIMPLE: 'simple',
-  FULL: 'full',
-  DEV: 'dev',
+export const TIERS = {
+  STARTER: 'starter',
+  TEAM: 'team',
+  BUILDER: 'builder',
 } as const;
 
-export type ViewMode = (typeof VIEW_MODES)[keyof typeof VIEW_MODES];
+export type Tier = (typeof TIERS)[keyof typeof TIERS];
 
-/** Ordered cycle used by toggleViewMode: simple → full → dev → simple */
-export const VIEW_MODE_CYCLE: readonly ViewMode[] = [
-  VIEW_MODES.SIMPLE,
-  VIEW_MODES.FULL,
-  VIEW_MODES.DEV,
-] as const;
+/** Numeric rank for comparison: is the user's tier >= a feature's minTier? */
+export const TIER_RANK: Record<Tier, number> = {
+  [TIERS.STARTER]: 1,
+  [TIERS.TEAM]: 2,
+  [TIERS.BUILDER]: 3,
+};
 
-/** Default view mode for fresh installs / reset. */
-export const DEFAULT_VIEW_MODE: ViewMode = VIEW_MODES.FULL;
+/** Maximum tier allowed by this build. Set via APP_TIER env var at build time. */
+export const BUILD_MAX_TIER: Tier =
+  (import.meta.env.VITE_APP_TIER as Tier | undefined) ?? TIERS.BUILDER;
+
+/** Whether a given tier is available in this build. */
+export function isTierAvailable(tier: Tier): boolean {
+  return TIER_RANK[tier] <= TIER_RANK[BUILD_MAX_TIER];
+}
+
+/** Whether a feature at `minTier` is visible for the given `activeTier`. */
+export function isTierVisible(minTier: Tier, activeTier: Tier): boolean {
+  return TIER_RANK[activeTier] >= TIER_RANK[minTier];
+}
+
+/** Ordered cycle for toggling, filtered to tiers available in this build. */
+export const TIER_CYCLE: readonly Tier[] =
+  ([TIERS.STARTER, TIERS.TEAM, TIERS.BUILDER] as const).filter(isTierAvailable);
+
+/** Default tier for fresh installs. */
+export const DEFAULT_TIER: Tier = TIERS.TEAM;
+
+// ---------------------------------------------------------------------------
+// Backward-compatible aliases (VIEW_MODES → TIERS mapping)
+// ---------------------------------------------------------------------------
+
+/** @deprecated Use TIERS instead */
+export const VIEW_MODES = {
+  SIMPLE: TIERS.STARTER,
+  FULL: TIERS.TEAM,
+  DEV: TIERS.BUILDER,
+} as const;
+
+/** @deprecated Use Tier instead */
+export type ViewMode = Tier;
+
+/** @deprecated Use TIER_CYCLE instead */
+export const VIEW_MODE_CYCLE = TIER_CYCLE;
+
+/** @deprecated Use DEFAULT_TIER instead */
+export const DEFAULT_VIEW_MODE = DEFAULT_TIER;
 
 // ---------------------------------------------------------------------------
 // Component-level view modes

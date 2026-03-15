@@ -149,6 +149,7 @@ export function CredentialRelationshipGraph() {
               <div className="space-y-1">
                 {graph.nodes
                   .filter((n) => n.kind === 'credential')
+                  .sort((a, b) => a.label.localeCompare(b.label))
                   .map((node) => (
                     <NodeChip
                       key={node.id}
@@ -175,7 +176,7 @@ export function CredentialRelationshipGraph() {
                 {KIND_LABELS[filterKind]} ({filteredNodes.length})
               </div>
               <div className="space-y-1">
-                {filteredNodes.map((node) => (
+                {[...filteredNodes].sort((a, b) => a.label.localeCompare(b.label)).map((node) => (
                   <NodeChip
                     key={node.id}
                     node={node}

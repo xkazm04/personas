@@ -25,6 +25,7 @@ pub struct GitLabUser {
     pub id: i64,
     pub username: String,
     pub name: String,
+    #[serde(alias = "avatar_url")]
     pub avatar_url: Option<String>,
 }
 
@@ -35,8 +36,11 @@ pub struct GitLabProject {
     pub id: i64,
     #[serde(alias = "name")]
     pub name: String,
+    #[serde(alias = "path_with_namespace")]
     pub path_with_namespace: String,
+    #[serde(alias = "web_url")]
     pub web_url: String,
+    #[serde(alias = "default_branch")]
     pub default_branch: Option<String>,
 }
 
@@ -74,7 +78,9 @@ pub struct GitLabAgent {
     pub id: String,
     pub name: String,
     pub description: Option<String>,
+    #[serde(alias = "created_at")]
     pub created_at: Option<String>,
+    #[serde(alias = "web_url")]
     pub web_url: Option<String>,
 }
 

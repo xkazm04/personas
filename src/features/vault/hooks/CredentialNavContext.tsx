@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 
-export type CredentialNavKey = 'credentials' | 'from-template' | 'add-new' | 'databases';
+export type CredentialNavKey = 'credentials' | 'from-template' | 'add-new' | 'databases' | 'graph';
 
 type NavigateHandler = ((key: CredentialNavKey) => void) | null;
 

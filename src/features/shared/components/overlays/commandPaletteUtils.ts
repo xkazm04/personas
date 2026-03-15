@@ -2,11 +2,10 @@ import type { SidebarSection, CredentialMetadata } from '@/lib/types/types';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
-import type { TriggerChainLink } from '@/lib/bindings/TriggerChainLink';
 
 // -- Types -------------------------------------------------------------
 
-export type ResultKind = 'agent' | 'credential' | 'template' | 'trigger' | 'automation' | 'navigation' | 'action';
+export type ResultKind = 'agent' | 'credential' | 'template' | 'automation' | 'navigation' | 'action';
 
 export interface PaletteItem {
   id: string;
@@ -123,17 +122,3 @@ export function automationItem(
   };
 }
 
-export function triggerItem(
-  t: TriggerChainLink,
-  setSidebarSection: (s: SidebarSection) => void,
-  icon: React.ReactNode,
-): PaletteItem {
-  return {
-    id: `trigger:${t.trigger_id}`,
-    kind: 'trigger',
-    label: `${t.source_persona_name} → ${t.target_persona_name}`,
-    description: t.condition_type,
-    icon,
-    onSelect: () => setSidebarSection('events'),
-  };
-}

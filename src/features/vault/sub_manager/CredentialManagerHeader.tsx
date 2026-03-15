@@ -1,5 +1,5 @@
 import { useMemo, type RefObject } from 'react';
-import { Search, Key, X, RotateCw, Loader2, CheckCircle2, Network, HeartPulse, AlertCircle, HelpCircle } from 'lucide-react';
+import { Search, Key, X, RotateCw, Loader2, CheckCircle2, HeartPulse, AlertCircle, HelpCircle } from 'lucide-react';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { VaultStatusBadge } from '@/features/vault/sub_card/badges/VaultStatusBadge';
@@ -28,8 +28,6 @@ export function CredentialManagerHeader({ credentialCount }: CredentialManagerHe
 
 interface CredentialToolbarProps {
   credentialCount: number;
-  showGraph: boolean;
-  onToggleGraph: () => void;
   isRotatingAll: boolean;
   rotateAllResult: { rotated: number; failed: number; skipped: number } | null;
   rotatableCount: number;
@@ -48,8 +46,6 @@ interface CredentialToolbarProps {
 
 export function CredentialToolbar({
   credentialCount,
-  showGraph,
-  onToggleGraph,
   isRotatingAll,
   rotateAllResult,
   rotatableCount,
@@ -91,6 +87,7 @@ export function CredentialToolbar({
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/60" />
           <input
             ref={searchInputRef}
+            data-testid="credential-search"
             type="text"
             value={credentialSearch}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -149,19 +146,6 @@ export function CredentialToolbar({
       {/* Action buttons (hidden in simple mode except vault badge) */}
       {!isSimple && (
       <div className="flex items-center gap-1.5 shrink-0">
-        <button
-          onClick={onToggleGraph}
-          className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-            showGraph
-              ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/25'
-              : 'border-primary/15 text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
-          }`}
-          title="View credential dependency graph"
-        >
-          <Network className="w-3 h-3" />
-          Graph
-        </button>
-
         {credentialCount > 0 && (
           <RotateAllButton
             isRotatingAll={isRotatingAll}

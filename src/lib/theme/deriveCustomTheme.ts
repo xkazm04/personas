@@ -10,6 +10,15 @@ export interface CustomThemeConfig {
   primaryColor: string;
   accentColor: string | null;
   label: string;
+  /** Optional color overrides — null/undefined = auto-derived from primary */
+  backgroundColor?: string | null;
+  backgroundEndColor?: string | null;
+  backgroundAngle?: number;
+  foregroundColor?: string | null;
+  secondaryColor?: string | null;
+  borderColor?: string | null;
+  cardBgColor?: string | null;
+  mutedFgColor?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -113,8 +122,10 @@ export function deriveCustomThemeVars(config: CustomThemeConfig): Record<string,
   const accent = config.accentColor ?? lighten(primaryColor, 15);
   const [r, g, b] = hexToRgb(primaryColor);
 
+  let vars: Record<string, string>;
+
   if (baseMode === 'dark') {
-    return {
+    vars = {
       '--primary': primaryColor,
       '--accent': accent,
       '--background': hslToHex(h, 8, 5),
@@ -136,33 +147,52 @@ export function deriveCustomThemeVars(config: CustomThemeConfig): Record<string,
       '--brand-rose': '#fb7185',
       ...DARK_STATUS,
     };
+  } else {
+    // Light mode
+    vars = {
+      '--primary': primaryColor,
+      '--primary-rgb': `${r}, ${g}, ${b}`,
+      '--accent': accent,
+      '--background': hslToHex(h, 10, 94),
+      '--foreground': hslToHex(h, 10, 10),
+      '--secondary': hslToHex(h, 8, 86),
+      '--border': hslToHex(h, 10, 74),
+      '--muted': hslToHex(h, 6, 36),
+      '--muted-dark': hslToHex(h, 5, 26),
+      '--muted-foreground': hslToHex(h, 6, 30),
+      '--btn-primary': darken(primaryColor, 15),
+      '--card-bg': 'rgba(0, 0, 0, 0.04)',
+      '--card-border': 'rgba(0, 0, 0, 0.10)',
+      '--glass-bg': 'rgba(0, 0, 0, 0.03)',
+      '--glass-border': 'rgba(0, 0, 0, 0.08)',
+      '--brand-cyan': darken(accent, 10),
+      '--brand-purple': rotateHue(primaryColor, -40),
+      '--brand-emerald': '#059669',
+      '--brand-amber': '#b45309',
+      '--brand-rose': '#be123c',
+      ...LIGHT_STATUS,
+      ...LIGHT_SHADOWS,
+    };
   }
 
-  // Light mode
-  return {
-    '--primary': primaryColor,
-    '--primary-rgb': `${r}, ${g}, ${b}`,
-    '--accent': accent,
-    '--background': hslToHex(h, 10, 94),
-    '--foreground': hslToHex(h, 10, 10),
-    '--secondary': hslToHex(h, 8, 86),
-    '--border': hslToHex(h, 10, 74),
-    '--muted': hslToHex(h, 6, 36),
-    '--muted-dark': hslToHex(h, 5, 26),
-    '--muted-foreground': hslToHex(h, 6, 30),
-    '--btn-primary': darken(primaryColor, 15),
-    '--card-bg': 'rgba(0, 0, 0, 0.04)',
-    '--card-border': 'rgba(0, 0, 0, 0.10)',
-    '--glass-bg': 'rgba(0, 0, 0, 0.03)',
-    '--glass-border': 'rgba(0, 0, 0, 0.08)',
-    '--brand-cyan': darken(accent, 10),
-    '--brand-purple': rotateHue(primaryColor, -40),
-    '--brand-emerald': '#059669',
-    '--brand-amber': '#b45309',
-    '--brand-rose': '#be123c',
-    ...LIGHT_STATUS,
-    ...LIGHT_SHADOWS,
-  };
+  // Apply optional color overrides
+  if (config.backgroundColor) vars['--background'] = config.backgroundColor;
+  if (config.foregroundColor) vars['--foreground'] = config.foregroundColor;
+  if (config.secondaryColor) vars['--secondary'] = config.secondaryColor;
+  if (config.borderColor) vars['--border'] = config.borderColor;
+  if (config.mutedFgColor) vars['--muted-foreground'] = config.mutedFgColor;
+  if (config.cardBgColor) {
+    vars['--card-bg'] = config.cardBgColor;
+    vars['--glass-bg'] = config.cardBgColor;
+  }
+
+  // Background gradient
+  if (config.backgroundColor && config.backgroundEndColor) {
+    const angle = config.backgroundAngle ?? 135;
+    vars['--background-gradient'] = `linear-gradient(${angle}deg, ${config.backgroundColor}, ${config.backgroundEndColor})`;
+  }
+
+  return vars;
 }
 
 // ---------------------------------------------------------------------------
@@ -172,9 +202,18 @@ export function deriveCustomThemeVars(config: CustomThemeConfig): Record<string,
 const STYLE_ID = 'persona-custom-theme';
 
 export function injectCustomThemeStyle(vars: Record<string, string>): void {
-  const cssText = Object.entries(vars)
+  const gradient = vars['--background-gradient'];
+  const cssVars = { ...vars };
+  delete cssVars['--background-gradient'];
+
+  const cssText = Object.entries(cssVars)
     .map(([key, val]) => `  ${key}: ${val};`)
     .join('\n');
+
+  let extraRules = '';
+  if (gradient) {
+    extraRules = `\nhtml[data-theme="custom"] {\n  background-image: ${gradient};\n  min-height: 100vh;\n}`;
+  }
 
   let el = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
   if (!el) {
@@ -182,7 +221,7 @@ export function injectCustomThemeStyle(vars: Record<string, string>): void {
     el.id = STYLE_ID;
     document.head.appendChild(el);
   }
-  el.textContent = `[data-theme="custom"] {\n${cssText}\n}`;
+  el.textContent = `[data-theme="custom"] {\n${cssText}\n}${extraRules}`;
 }
 
 export function removeCustomThemeStyle(): void {

@@ -278,6 +278,7 @@ export function CredentialList({
   return (
     <motion.div
       key="list"
+      data-testid="credential-list"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

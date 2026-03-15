@@ -1,17 +1,12 @@
-import { createContext, useContext, useMemo, useRef } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { useMemo, useRef } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 
-/**
- * Context for passing typewriter mode to CellBullets inside cell render closures.
- * When true, CellBullets delegates to TypewriterBullets for line-by-line reveal.
- */
-const TypewriterContext = createContext(false);
 import { deriveArchCategories, type ArchCategory } from './architecturalCategories';
 import {
   UseCasesIcon, ConnectorsIcon, TriggersIcon, HumanReviewIcon,
   MessagesIcon, MemoryIcon, ErrorsIcon, EventsIcon,
 } from './MatrixIcons';
-import type { AgentIR, SuggestedTrigger, SuggestedEventSubscription, ProtocolCapability } from '@/lib/types/designTypes';
+import type { AgentIR, SuggestedEventSubscription } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
@@ -20,28 +15,24 @@ import type { CellBuildStatus, BuildQuestion, BuildPhase } from '@/lib/types/bui
 import type { RequiredConnector } from '../../adoption/steps/connect/ConnectStep';
 import type { MatrixEditState, MatrixEditCallbacks } from './EditableMatrixCells';
 import { ConnectorEditCell, TriggerEditCell, ReviewEditCell, MemoryEditCell, MessagesEditCell, ErrorEditCell, UseCaseEditCell } from './EditableMatrixCells';
-import { MatrixCommandCenter, TypewriterBullets } from './MatrixCommandCenter';
+import { MatrixCommandCenter } from './MatrixCommandCenter';
 import { CELL_LABELS } from '@/features/agents/components/matrix/cellVocabulary';
-import { getCellStateClasses } from '@/features/agents/components/matrix/cellStateClasses';
-import { getCellGlowColorClass } from '@/features/agents/components/matrix/cellGlowColors';
-import { GhostedCellRenderer } from '@/features/agents/components/matrix/GhostedCellRenderer';
 import { SpatialQuestionPopover } from '@/features/agents/components/matrix/SpatialQuestionPopover';
+import { ConnectorsCellContent } from '@/features/agents/components/matrix/ConnectorsCellContent';
+import { useMatrixCredentialGap } from '@/features/agents/components/matrix/useMatrixCredentialGap';
+import { extractProtocolCapabilities } from '@/features/templates/sub_n8n/edit/protocolParser';
+import { useAgentStore } from '@/stores/agentStore';
+
+import { MatrixCellRenderer, CellBullets, type MatrixCell } from './MatrixCellRenderer';
+import {
+  extractTriggers, extractHumanReview, extractMemory, extractErrorStrategies,
+  cellRevealVariants,
+} from './personaMatrixHelpers';
 
 /** @deprecated Single theme -- kept for backward compatibility */
 export type MatrixTheme = 'neon';
 /** @deprecated */
 export type MatrixLayout = 'orbit';
-
-interface MatrixCell {
-  key: string;
-  label: string;
-  watermark: React.ComponentType<{ className?: string }>;
-  watermarkColor: string;
-  render: () => React.ReactNode;
-  editRender?: () => React.ReactNode;
-  /** Whether this cell has meaningful content (for state indicator) */
-  filled?: boolean;
-}
 
 interface PersonaMatrixBaseProps {
   designResult: AgentIR | null;
@@ -127,246 +118,6 @@ interface PersonaMatrixEditProps extends PersonaMatrixBaseProps {
 
 export type PersonaMatrixProps = PersonaMatrixViewProps | PersonaMatrixEditProps;
 
-// -- Extraction helpers -----------------------------------------------
-
-function describeCron(cron: string): string {
-  const p = cron.trim().split(/\s+/);
-  if (p.length < 5) return cron;
-  const [min, hour, , , dow] = p as [string, string, string, string, string];
-  if (min === '*' && hour === '*') return 'Every minute';
-  if (min !== '*' && hour === '*') return `Every hour at :${min.padStart(2, '0')}`;
-  if (min === '0' && hour === '0') return 'Daily at midnight';
-  if (min === '0' && /^\d+$/.test(hour)) return `Daily at ${hour}:00`;
-  if (min === '*/5') return 'Every 5 minutes';
-  if (min === '*/10') return 'Every 10 minutes';
-  if (min === '*/15') return 'Every 15 minutes';
-  if (min === '*/30') return 'Every 30 minutes';
-  if (dow === '1-5') return `Weekdays at ${hour}:${min.padStart(2, '0')}`;
-  return cron;
-}
-
-function extractTriggers(triggers: SuggestedTrigger[]): { type: string; label: string }[] {
-  return triggers.map((t) => {
-    const cfg = t.config as Record<string, unknown> | undefined;
-    if (t.trigger_type === 'schedule' && cfg) {
-      const cron = typeof cfg.cron === 'string' ? cfg.cron : null;
-      if (cron) return { type: t.trigger_type, label: describeCron(cron) };
-      const interval = cfg.interval ?? cfg.every ?? cfg.frequency;
-      if (typeof interval === 'string') return { type: t.trigger_type, label: `Every ${interval}` };
-      if (typeof interval === 'number') return { type: t.trigger_type, label: `Every ${interval}m` };
-    }
-    if (t.trigger_type === 'polling' && cfg) {
-      const interval = cfg.interval ?? cfg.every ?? cfg.frequency ?? cfg.poll_interval;
-      if (typeof interval === 'string') return { type: t.trigger_type, label: `Poll every ${interval}` };
-      if (typeof interval === 'number') return { type: t.trigger_type, label: `Poll every ${interval}m` };
-    }
-    if (t.description.length > 3 && t.description.length <= 45) return { type: t.trigger_type, label: t.description };
-    return { type: t.trigger_type, label: TRIGGER_LABELS[t.trigger_type] ?? t.trigger_type };
-  });
-}
-
-function extractHumanReview(capabilities: ProtocolCapability[] | undefined) {
-  const review = capabilities?.find((c) => c.type === 'manual_review');
-  if (!review) return { level: 'none' as const, label: 'Autonomous', context: 'No human approval gates' };
-  const ctx = review.context?.toLowerCase() ?? '';
-  if (ctx.includes('always') || ctx.includes('required'))
-    return { level: 'required' as const, label: 'Required', context: review.context || 'Approval before every action' };
-  return { level: 'optional' as const, label: 'Conditional', context: review.context || 'Review on flagged items' };
-}
-
-function extractMemory(capabilities: ProtocolCapability[] | undefined) {
-  const memory = capabilities?.find((c) => c.type === 'agent_memory');
-  if (!memory) return { active: false, label: 'Stateless', context: 'No cross-run memory' };
-  return { active: true, label: 'Persistent', context: memory.context || 'Retains context across runs' };
-}
-
-function extractErrorStrategies(errorHandling: string): string[] {
-  if (!errorHandling) return ['Default error handling'];
-  const s: string[] = [];
-  const t = errorHandling.toLowerCase();
-  if (t.includes('retry') || t.includes('backoff')) s.push('Retry with backoff');
-  if (t.includes('timeout')) s.push('Timeout protection');
-  if (t.includes('fallback') || t.includes('graceful')) s.push('Graceful fallback');
-  if (t.includes('rate') && t.includes('limit')) s.push('Rate limit handling');
-  if (t.includes('auth') || t.includes('credential') || t.includes('401')) s.push('Auth recovery');
-  if (t.includes('log') || t.includes('report')) s.push('Error logging');
-  if (t.includes('escalat') || t.includes('notify')) s.push('Escalation alerts');
-  if (t.includes('skip') || t.includes('ignore')) s.push('Skip & continue');
-  if (t.includes('circuit') && t.includes('break')) s.push('Circuit breaker');
-  if (t.includes('idempoten')) s.push('Idempotent retries');
-  return s.length > 0 ? s.slice(0, 3) : ['Default error handling'];
-}
-
-function CellBullets({ items, color = 'text-foreground/70' }: { items: string[]; color?: string }) {
-  const typewriter = useContext(TypewriterContext);
-  // When typewriter is active, delegate to TypewriterBullets for line-by-line reveal
-  if (typewriter) {
-    return <TypewriterBullets items={items} />;
-  }
-  return (
-    <ul className="space-y-1.5">
-      {items.map((item, i) => (
-        <li key={i} className="flex items-start gap-2 leading-tight">
-          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-40 mt-[7px] flex-shrink-0" />
-          <span className={`text-sm ${color} leading-snug`}>{item}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-const TRIGGER_LABELS: Record<string, string> = {
-  schedule: 'Runs on a schedule', polling: 'Polls for changes', webhook: 'Listens for webhooks',
-  manual: 'Manually triggered', event: 'Reacts to events',
-};
-
-// -- Stagger reveal variants ------------------------------------------
-
-const REVEAL_DELAYS: Record<string, number> = {
-  // Adjacent to center cell (share grid edge)
-  'connectors': 0.12,
-  'human-review': 0.12,
-  'messages': 0.12,
-  'memory': 0.12,
-  // Corner/far cells
-  'use-cases': 0.24,
-  'triggers': 0.24,
-  'error-handling': 0.24,
-  'events': 0.24,
-};
-
-const cellRevealVariants = {
-  hidden: { opacity: 0, scale: 0.92 },
-  visible: (cellKey: string) => ({
-    opacity: 1,
-    scale: 1,
-    transition: {
-      delay: REVEAL_DELAYS[cellKey] ?? 0.24,
-      duration: 0.36,
-      ease: [0.22, 1, 0.36, 1],
-    },
-  }),
-};
-
-// -- Cell renderer (Neon, dark+light aware) ---------------------------
-
-function MatrixCellRenderer({
-  cell,
-  isEditMode,
-  buildLocked,
-  cellBuildStatus,
-  onCellRef,
-}: {
-  cell: MatrixCell;
-  isEditMode: boolean;
-  buildLocked?: boolean;
-  cellBuildStatus?: CellBuildStatus;
-  onCellRef?: (key: string, el: HTMLElement | null) => void;
-}) {
-  // When cellBuildStatus is 'hidden' or 'revealed', render the ghosted outline
-  if (cellBuildStatus === 'hidden' || cellBuildStatus === 'revealed') {
-    return (
-      <GhostedCellRenderer
-        label={cell.label}
-        watermark={cell.watermark}
-        watermarkColor={cell.watermarkColor}
-      />
-    );
-  }
-
-  const Watermark = cell.watermark;
-
-  // Determine if we should use state-machine classes (only when cellBuildStatus is provided)
-  const stateClasses = cellBuildStatus ? getCellStateClasses(cellBuildStatus) : null;
-
-  // Glow color class based on cell key (e.g. 'cell-glow-violet' for 'use-cases')
-  const glowColorClass = getCellGlowColorClass(cell.key);
-
-  // When filling, the cell is locked regardless of buildLocked prop
-  const effectiveBuildLocked = buildLocked || cellBuildStatus === 'filling';
-
-  const useEditRender = isEditMode && cell.editRender && !effectiveBuildLocked;
-  const filledGlow = isEditMode && cell.filled;
-
-  // Track previous status to detect filling->resolved transition for typewriter effect
-  const prevStatusRef = useRef<CellBuildStatus | undefined>(undefined);
-  const justResolved = prevStatusRef.current === 'filling' && cellBuildStatus === 'resolved';
-  const typewriterActiveRef = useRef(false);
-  if (justResolved) {
-    typewriterActiveRef.current = true;
-  } else if (cellBuildStatus !== 'resolved') {
-    typewriterActiveRef.current = false;
-  }
-  prevStatusRef.current = cellBuildStatus;
-
-  // Whether content should be visible (not hidden/revealed)
-  const statusStr = cellBuildStatus as string;
-  const hasContent = !cellBuildStatus || (statusStr !== 'hidden' && statusStr !== 'revealed');
-
-  // Watermark opacity: state-aware when build status present, otherwise hardcoded defaults
-  const watermarkOpacity = stateClasses
-    ? stateClasses.watermarkOpacity
-    : useEditRender ? 'opacity-[0.15]' : 'opacity-[0.25]';
-
-  // Build outer class list -- state-machine classes override defaults when present
-  const outerClasses = stateClasses
-    ? [
-        'relative rounded-xl border p-4 transition-[opacity,transform,border-color,background-color,box-shadow] duration-300 shadow-md',
-        stateClasses.bg,
-        stateClasses.border,
-        stateClasses.opacity,
-        stateClasses.glow,
-        glowColorClass,
-        useEditRender ? 'ring-1 ring-inset ring-primary/10' : '',
-      ].filter(Boolean).join(' ')
-    : [
-        'relative rounded-xl border p-4 transition-[opacity,transform,border-color,background-color] duration-300 shadow-md',
-        useEditRender
-          ? 'bg-card-bg ring-1 ring-inset ring-primary/10'
-          : 'bg-card-bg',
-        filledGlow
-          ? 'border-primary/20 shadow-lg shadow-primary/[0.03]'
-          : 'border-card-border',
-      ].join(' ');
-
-  return (
-    <div
-      ref={(el) => onCellRef?.(cell.key, el)}
-      className={outerClasses}
-    >
-      <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
-        <div className={`absolute -right-1 -top-1 ${watermarkOpacity} transition-opacity duration-300`}>
-          <Watermark className={`w-22 h-22 ${cell.watermarkColor}`} />
-        </div>
-      </div>
-      <div className="mb-2.5 flex items-center gap-2">
-        <span className="text-[13px] font-bold uppercase tracking-[0.15em] text-foreground/60">{cell.label}</span>
-        {cell.filled !== undefined && (
-          <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${cell.filled ? 'bg-emerald-400' : 'bg-muted-foreground/20'}`} />
-        )}
-      </div>
-      <div className="relative min-h-[52px] flex items-start">
-        <AnimatePresence mode="wait">
-          {hasContent && (
-            <motion.div
-              key="cell-content"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="w-full"
-            >
-              <TypewriterContext.Provider value={typewriterActiveRef.current}>
-                {useEditRender ? cell.editRender!() : cell.render()}
-              </TypewriterContext.Provider>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-}
-
 // -- Main Component ---------------------------------------------------
 
 export function PersonaMatrix(props: PersonaMatrixProps) {
@@ -383,6 +134,32 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   const hasBuildStates = cellBuildStates && Object.keys(cellBuildStates).length > 0;
   const isCreationMode = variant === 'creation';
 
+  // Build draft data for enhanced cell rendering (connectors, protocol badges)
+  const buildDraft = useAgentStore((s) => s.buildDraft) as Record<string, unknown> | null;
+  const { draftConnectors } = useMatrixCredentialGap();
+
+  // Extract protocol capabilities from build draft for cell badges
+  const protocolCapabilities = useMemo(() => {
+    if (!buildDraft) return [];
+    const systemPrompt = (buildDraft.system_prompt as string) ?? '';
+    const structuredPrompt = buildDraft.structured_prompt as Record<string, unknown> | undefined;
+    return extractProtocolCapabilities(systemPrompt, structuredPrompt ?? null);
+  }, [buildDraft]);
+
+  // Map protocol types to cell keys for protocol active badges
+  const protocolByCellKey: Record<string, string[]> = {};
+  for (const cap of protocolCapabilities) {
+    const cellKey =
+      cap.type === 'manual_review' ? 'human-review' :
+      cap.type === 'agent_memory' ? 'memory' :
+      cap.type === 'user_message' ? 'messages' :
+      cap.type === 'emit_event' ? 'events' : null;
+    if (cellKey) {
+      if (!protocolByCellKey[cellKey]) protocolByCellKey[cellKey] = [];
+      protocolByCellKey[cellKey].push(cap.label);
+    }
+  }
+
   // Stagger reveal: animate cells in ripple order from center on first build start
   const hasRevealedRef = useRef(false);
   const prefersReducedMotion = useReducedMotion();
@@ -395,15 +172,29 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     // In creation mode or build mode with cellBuildStates, return skeleton cells
     // so the ghosted outlines are visible before CLI produces content
     if (!designResult && (hasBuildStates || isCreationMode)) {
+      // Helper: render protocol badge if protocol capabilities are active for a cell
+      const badge = (cellKey: string) => {
+        const labels = protocolByCellKey[cellKey];
+        if (!labels || labels.length === 0) return null;
+        return (
+          <div className="mt-1.5">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              Protocol Active
+            </span>
+          </div>
+        );
+      };
+
       return [
         { key: 'use-cases', label: CELL_LABELS['use-cases'] ?? 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400', render: () => null },
-        { key: 'connectors', label: CELL_LABELS['connectors'] ?? 'Connectors', watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', render: () => null },
+        { key: 'connectors', label: CELL_LABELS['connectors'] ?? 'Connectors', watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400',
+          render: () => draftConnectors.length > 0 ? <ConnectorsCellContent connectors={draftConnectors} /> : null },
         { key: 'triggers', label: CELL_LABELS['triggers'] ?? 'Triggers', watermark: TriggersIcon, watermarkColor: 'text-amber-400', render: () => null },
-        { key: 'human-review', label: CELL_LABELS['human-review'] ?? 'Human Review', watermark: HumanReviewIcon, watermarkColor: 'text-rose-400', render: () => null },
-        { key: 'messages', label: CELL_LABELS['messages'] ?? 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400', render: () => null },
-        { key: 'memory', label: CELL_LABELS['memory'] ?? 'Memory', watermark: MemoryIcon, watermarkColor: 'text-purple-400', render: () => null },
+        { key: 'human-review', label: CELL_LABELS['human-review'] ?? 'Human Review', watermark: HumanReviewIcon, watermarkColor: 'text-rose-400', render: () => badge('human-review') },
+        { key: 'messages', label: CELL_LABELS['messages'] ?? 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400', render: () => badge('messages') },
+        { key: 'memory', label: CELL_LABELS['memory'] ?? 'Memory', watermark: MemoryIcon, watermarkColor: 'text-purple-400', render: () => badge('memory') },
         { key: 'error-handling', label: CELL_LABELS['error-handling'] ?? 'Error Handling', watermark: ErrorsIcon, watermarkColor: 'text-orange-400', render: () => null },
-        { key: 'events', label: CELL_LABELS['events'] ?? 'Events', watermark: EventsIcon, watermarkColor: 'text-teal-400', render: () => null },
+        { key: 'events', label: CELL_LABELS['events'] ?? 'Events', watermark: EventsIcon, watermarkColor: 'text-teal-400', render: () => badge('events') },
       ];
     }
 
@@ -450,7 +241,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [designResult, flows, isEditMode, onNavigateCatalog, hasBuildStates, isCreationMode,
+  }, [designResult, flows, isEditMode, onNavigateCatalog, hasBuildStates, isCreationMode, draftConnectors, protocolByCellKey,
     ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
 
   // Creation mode is interactive (textarea + launch orb) even without mode="edit"
@@ -473,18 +264,18 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
           <h4 className="text-base font-bold text-foreground/80 uppercase tracking-wider">Persona Matrix</h4>
         </div>
       )}
-      <div className="grid grid-cols-[2fr_2.6fr_2fr] grid-rows-3 gap-2.5 flex-1 min-h-0 w-full min-w-[1100px]">
+      <div className="grid grid-cols-[2fr_2.6fr_2fr] grid-rows-[1fr_1fr_1fr] gap-2.5 flex-1 min-h-0 w-full min-w-[1100px]">
         {firstFour.map((cell) => (
           <motion.div key={cell.key} custom={cell.key} variants={cellRevealVariants} initial={shouldAnimate ? "hidden" : false} animate="visible">
             <MatrixCellRenderer cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} onCellRef={handleCellRef} />
           </motion.div>
         ))}
-        <div className="relative rounded-xl border border-primary/40 p-5 ring-1 ring-primary/15 shadow-2xl shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden">
-          {/* Breathing ambient glow behind content */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_60%)] animate-glow-breathe pointer-events-none" />
-          {/* Neon background -- theme-colored radial glow */}
+        <div className={`relative rounded-xl border border-primary/40 p-5 min-h-[200px] ring-1 ring-primary/15 shadow-2xl shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
+          {/* Corner glows -- stronger at corners, thinner mid-lanes */}
+          <div className="absolute inset-0 pointer-events-none matrix-center-corner-glow" />
+          {/* Subtle mid-lane fill */}
           <div className="absolute inset-0 bg-card-bg" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--primary)_0%,transparent_70%)] opacity-[0.12]" />
+          <div className="absolute inset-0 opacity-[0.04] pointer-events-none matrix-center-midlane-fill" />
           <div className="relative z-10 h-full">{commandCenter}</div>
         </div>
         {lastFour.map((cell) => (
@@ -495,13 +286,12 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
       </div>
 
       {/* Spatial Q&A popovers anchored to cells with pending questions */}
-      {pendingQuestions?.map((q, i) => (
+      {pendingQuestions?.map((q) => (
         <SpatialQuestionPopover
           key={q.cellKey}
           referenceElement={cellRefsRef.current[q.cellKey] ?? null}
           question={q}
           onAnswer={onAnswerBuildQuestion!}
-          isPrimaryQuestion={i === 0}
         />
       ))}
     </div>

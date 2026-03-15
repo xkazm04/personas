@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
@@ -12,6 +13,8 @@ import { N8nConfirmStep } from './confirm/N8nConfirmStep';
 import { N8nSessionList } from './N8nSessionList';
 import { CredentialGapPanel } from '../widgets/CredentialGapPanel';
 import { useVaultStore } from "@/stores/vaultStore";
+import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 
 // -- Slide animation variants --
 
@@ -54,6 +57,26 @@ export default function N8nImportTab() {
   } = useN8nWizard();
 
   const credentials = useVaultStore((s) => s.credentials);
+  const setWorkflowImport = useAgentStore((s) => s.setWorkflowImport);
+  const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+
+  /** Send the parsed workflow to the PersonaMatrix for processing. */
+  const handleProcessWithMatrix = useCallback(() => {
+    if (!state.parsedResult || !state.rawWorkflowJson) return;
+
+    // Store workflow data in the matrix build slice
+    setWorkflowImport({
+      workflowJson: state.rawWorkflowJson,
+      parserResultJson: JSON.stringify(state.parsedResult),
+      name: state.workflowName || 'Imported Workflow',
+      platform: state.platform || 'unknown',
+    });
+
+    // Navigate to personas page in creation mode — the matrix will pick up the workflow
+    setSidebarSection('personas');
+    setIsCreatingPersona(true);
+  }, [state.parsedResult, state.rawWorkflowJson, state.workflowName, state.platform, setWorkflowImport, setSidebarSection, setIsCreatingPersona]);
 
   return (
     <div className="flex flex-col h-full">
@@ -260,6 +283,7 @@ export default function N8nImportTab() {
         testError={state.testError}
         onTest={() => void handleTestDraft()}
         onApplyAdjustment={() => void handleTransform()}
+        onProcessWithMatrix={handleProcessWithMatrix}
       />
     </div>
   );

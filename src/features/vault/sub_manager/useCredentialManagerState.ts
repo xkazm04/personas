@@ -28,7 +28,6 @@ export function useCredentialManagerState() {
 
   const [credentialSearch, setCredentialSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [showGraph, setShowGraph] = useState(false);
 
   // Bulk Healthcheck
   const bulk = useBulkHealthcheck();
@@ -143,8 +142,6 @@ export function useCredentialManagerState() {
     credentialSearch,
     setCredentialSearch,
     searchInputRef,
-    showGraph,
-    setShowGraph,
     isRotatingAll,
     rotateAllResult,
     rotatableCount,

@@ -1,13 +1,15 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Lightbulb, Play, CheckSquare, Square, Clock,
   BarChart3,
 } from 'lucide-react';
+import { listen } from '@tauri-apps/api/event';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
+import { useSystemStore } from '@/stores/systemStore';
 import {
   SCAN_AGENTS, AGENT_CATEGORIES,
   type ScanAgentDef,
@@ -218,13 +220,71 @@ function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
 export default function IdeaScannerPage() {
   const { runScan } = useDevToolsActions();
 
+  // Wire to store for real idea data — survives navigation
+  const storeIdeas = useSystemStore((s) => s.scanResults);
+  const currentScanId = useSystemStore((s) => s.currentScanId);
+  const scanPhase = useSystemStore((s) => s.scanPhase);
+  const isRunning = scanPhase === 'running';
+
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
-  const [isRunning, setIsRunning] = useState(false);
-  const [scanProgress, setScanProgress] = useState(0);
+  const [scanProgress, setScanProgress] = useState(isRunning ? 50 : 0);
   const [currentAgentKey, setCurrentAgentKey] = useState<string | null>(null);
-  const [ideas] = useState<ScanIdea[]>([]);
-  const [history] = useState<ScanHistoryEntry[]>([]);
   const [filterCategory, setFilterCategory] = useState<CategoryKey | 'all'>('all');
+
+  // Map store ideas to display format
+  const ideas: ScanIdea[] = useMemo(() =>
+    storeIdeas.map((i) => ({
+      id: i.id,
+      title: i.title,
+      description: i.description ?? '',
+      category: (i.category as CategoryKey) || 'technical',
+      agentKey: i.scan_type,
+      effort: i.effort != null && i.effort <= 2 ? 'low' : i.effort != null && i.effort >= 4 ? 'high' : 'medium',
+      impact: i.impact != null && i.impact <= 2 ? 'low' : i.impact != null && i.impact >= 4 ? 'high' : 'medium',
+      risk: i.risk != null && i.risk <= 2 ? 'low' : i.risk != null && i.risk >= 4 ? 'high' : 'medium',
+    })),
+  [storeIdeas]);
+
+  const history: ScanHistoryEntry[] = [];
+
+  // Listen for streaming events — works even when navigating back to a running scan
+  useEffect(() => {
+    const outputPromise = listen<{ job_id: string; line: string }>('idea-scan-output', (event) => {
+      if (currentScanId && event.payload.job_id === currentScanId) {
+        if (event.payload.line.startsWith('[Idea')) {
+          setScanProgress((p) => Math.min(p + 3, 95));
+        }
+      }
+    });
+
+    const statusPromise = listen<{ job_id: string; status: string }>('idea-scan-status', (event) => {
+      if (currentScanId && event.payload.job_id === currentScanId) {
+        const { status } = event.payload;
+        if (status === 'completed' || status === 'failed' || status === 'cancelled') {
+          // Fetch ideas after completion
+          if (status === 'completed') {
+            const pid = useSystemStore.getState().activeProjectId;
+            if (pid) useSystemStore.getState().fetchIdeas(pid);
+          }
+          setScanProgress(100);
+          setCurrentAgentKey(null);
+          // Update store phase — this drives isRunning via scanPhase
+          setTimeout(() => {
+            useSystemStore.setState({
+              scanPhase: status === 'completed' ? 'complete' : 'error',
+              currentScanId: null,
+            });
+            setScanProgress(0);
+          }, 1000);
+        }
+      }
+    });
+
+    return () => {
+      outputPromise.then((fn) => fn());
+      statusPromise.then((fn) => fn());
+    };
+  }, [currentScanId]);
 
   const toggleAgent = (key: string) => {
     setSelectedAgents((prev) => {
@@ -245,29 +305,14 @@ export default function IdeaScannerPage() {
 
   const handleRunScan = useCallback(async () => {
     if (selectedAgents.size === 0) return;
-    setIsRunning(true);
-    setScanProgress(0);
-
-    const agentList = SCAN_AGENTS.filter((a) => selectedAgents.has(a.key));
-    const step = 100 / agentList.length;
-
-    for (let i = 0; i < agentList.length; i++) {
-      setCurrentAgentKey(agentList[i]!.key);
-      for (let p = 0; p < step; p += step / 5) {
-        await new Promise((r) => setTimeout(r, 200));
-        setScanProgress(Math.min(i * step + p, 99));
-      }
-    }
+    setScanProgress(5);
+    setCurrentAgentKey([...selectedAgents][0] ?? null);
 
     try {
       await runScan([...selectedAgents]);
-    } finally {
-      setScanProgress(100);
-      setCurrentAgentKey(null);
-      setTimeout(() => {
-        setIsRunning(false);
-        setScanProgress(0);
-      }, 400);
+      // scanPhase is now "running" in the store → isRunning becomes true
+    } catch {
+      setScanProgress(0);
     }
   }, [selectedAgents, runScan]);
 

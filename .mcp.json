@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "command": "C:/Users/mkdol/AppData/Roaming/Python/Python314/Scripts/uvx.exe",
+      "args": ["windows-mcp"],
+      "env": {
+        "ANONYMIZED_TELEMETRY": "false"
+      }
+    },
+    "personas-test": {
+      "command": "C:/Users/mkdol/AppData/Roaming/Python/Python314/Scripts/uvx.exe",
+      "args": [
+        "--from", "mcp[cli]",
+        "--with", "httpx",
+        "mcp", "run", "tools/test-mcp/server.py"
+      ],
+      "cwd": "C:/Users/mkdol/dolla/personas"
+    }
+  }
+}

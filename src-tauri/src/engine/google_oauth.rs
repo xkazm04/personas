@@ -102,3 +102,61 @@ pub fn resolve_google_oauth_env_credentials(
         )),
     }
 }
+
+/// Resolve Google OAuth **Desktop** client credentials for connector OAuth flows.
+///
+/// Desktop-type clients allow loopback redirect URIs (`http://127.0.0.1:{port}`)
+/// which are required for the local callback server used during credential setup.
+///
+/// Falls back to the standard Web client credentials if no Desktop-specific
+/// credentials are configured — this preserves backward compatibility but will
+/// fail with `redirect_uri_mismatch` unless the Web client also permits
+/// loopback redirects.
+pub fn resolve_google_desktop_oauth_credentials(
+) -> Result<(String, String), crate::error::AppError> {
+    // Try Desktop-specific credentials first
+    let desktop_id = option_env!("GCP_DESKTOP_CLIENT_ID")
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+        .or_else(|| env_var_first_nonempty(&["GCP_DESKTOP_CLIENT_ID"]))
+        .or_else(|| dotenv_var_first_nonempty(&["GCP_DESKTOP_CLIENT_ID"]));
+
+    let desktop_secret = option_env!("GCP_DESKTOP_CLIENT_SECRET")
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+        .or_else(|| env_var_first_nonempty(&["GCP_DESKTOP_CLIENT_SECRET"]))
+        .or_else(|| dotenv_var_first_nonempty(&["GCP_DESKTOP_CLIENT_SECRET"]));
+
+    if let (Some(id), Some(secret)) = (desktop_id, desktop_secret) {
+        return Ok((id, secret));
+    }
+
+    // Fall back to standard credentials
+    resolve_google_oauth_env_credentials()
+}
+
+/// Resolve Microsoft OAuth client credentials from compile-time env, runtime env,
+/// or `.env` files.
+///
+/// Returns `(client_id, client_secret)` on success.
+pub fn resolve_microsoft_oauth_credentials(
+) -> Result<(String, String), crate::error::AppError> {
+    let client_id = option_env!("MICROSOFT_CLIENT_ID")
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+        .or_else(|| env_var_first_nonempty(&["MICROSOFT_CLIENT_ID"]))
+        .or_else(|| dotenv_var_first_nonempty(&["MICROSOFT_CLIENT_ID"]));
+
+    let client_secret = option_env!("MICROSOFT_CLIENT_SECRET")
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+        .or_else(|| env_var_first_nonempty(&["MICROSOFT_CLIENT_SECRET"]))
+        .or_else(|| dotenv_var_first_nonempty(&["MICROSOFT_CLIENT_SECRET"]));
+
+    match (client_id, client_secret) {
+        (Some(id), Some(secret)) => Ok((id, secret)),
+        _ => Err(crate::error::AppError::Validation(
+            "Microsoft OAuth client credentials are missing. Set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET.".into(),
+        )),
+    }
+}

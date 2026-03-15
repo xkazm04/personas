@@ -33,6 +33,7 @@ export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
 
   const buildPhase = useAgentStore((s) => s.buildPhase);
   const cellStates = useAgentStore((s) => s.buildCellStates);
+  const cellData = useAgentStore((s) => s.buildCellData);
   const pendingQuestions = useAgentStore((s) => s.buildPendingQuestions);
   const outputLines = useAgentStore((s) => s.buildOutputLines);
   const buildError = useAgentStore((s) => s.buildError);
@@ -69,8 +70,13 @@ export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
   // -- Action wrappers ----------------------------------------------------
 
   const handleGenerate = useCallback(
-    async (intent: string, overridePersonaId?: string) => {
-      await session.startSession(intent, overridePersonaId);
+    async (
+      intent: string,
+      overridePersonaId?: string,
+      workflowJson?: string,
+      parserResultJson?: string,
+    ) => {
+      await session.startSession(intent, overridePersonaId, workflowJson, parserResultJson);
     },
     [session],
   );
@@ -92,6 +98,7 @@ export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
     // State
     buildPhase,
     cellStates,
+    cellData,
     pendingQuestions,
     completeness,
     outputLines,

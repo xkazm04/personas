@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { GitBranch } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
+import { useVaultStore } from '@/stores/vaultStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ConnectionStatusBadge } from '@/features/shared/components/feedback/ConnectionStatusBadge';
 import { PanelTabBar } from '@/features/shared/components/layout/PanelTabBar';
@@ -37,7 +38,6 @@ const TABS: TabDef[] = [
 
 export default function GitLabPanel() {
   const [activeTab, setActiveTab] = useState<TabId>('connection');
-  const [token, setToken] = useState('');
 
   const config = useSystemStore((s) => s.gitlabConfig);
   const isConnecting = useSystemStore((s) => s.gitlabIsConnecting);
@@ -46,9 +46,10 @@ export default function GitLabPanel() {
   const error = useSystemStore((s) => s.gitlabError);
   const selectedProjectId = useSystemStore((s) => s.gitlabSelectedProjectId);
   const personas = useAgentStore((s) => s.personas);
+  const credentials = useVaultStore((s) => s.credentials);
 
   const initialize = useSystemStore((s) => s.gitlabInitialize);
-  const connect = useSystemStore((s) => s.gitlabConnectAction);
+  const connectFromVault = useSystemStore((s) => s.gitlabConnectFromVaultAction);
   const disconnect = useSystemStore((s) => s.gitlabDisconnectAction);
   const fetchProjects = useSystemStore((s) => s.gitlabFetchProjects);
   const deployPersona = useSystemStore((s) => s.gitlabDeployPersona);
@@ -59,14 +60,19 @@ export default function GitLabPanel() {
 
   const isConnected = config?.isConnected ?? false;
 
+  const gitlabCredential = useMemo(
+    () => credentials.find((c) => c.service_type === 'gitlab'),
+    [credentials],
+  );
+
   useEffect(() => {
     initialize();
   }, [initialize]);
 
   const handleConnect = async () => {
-    if (!token.trim()) return;
+    if (!gitlabCredential) return;
     try {
-      await connect(token.trim());
+      await connectFromVault(gitlabCredential.id);
     } catch {
       // intentional: error state handled locally via store + ErrorBanner
     }
@@ -74,7 +80,6 @@ export default function GitLabPanel() {
 
   const handleDisconnect = async () => {
     await disconnect();
-    setToken('');
     setActiveTab('connection');
   };
 
@@ -129,8 +134,6 @@ export default function GitLabPanel() {
             <GitLabConnectionForm
               isConnected={isConnected}
               username={config?.username ?? ''}
-              token={token}
-              setToken={setToken}
               isConnecting={isConnecting}
               onConnect={handleConnect}
               onDisconnect={handleDisconnect}

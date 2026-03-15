@@ -120,6 +120,10 @@ pub struct BuildSession {
     pub intent: String,
     pub error_message: Option<String>,
     pub cli_pid: Option<u32>,
+    /// Original workflow JSON for import mode (null for pure intent mode).
+    pub workflow_json: Option<String>,
+    /// Pre-parsed AgentIR from frontend parser for import mode.
+    pub parser_result_json: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

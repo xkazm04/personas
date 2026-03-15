@@ -10,6 +10,7 @@ import type {
   BuildEvent,
   PersistedBuildSession,
   BuildSessionSummary,
+  PromoteBuildResult,
 } from "@/lib/types/buildTypes";
 
 /**
@@ -20,11 +21,15 @@ export async function startBuildSession(
   channel: Channel<BuildEvent>,
   personaId: string,
   intent: string,
+  workflowJson?: string | null,
+  parserResultJson?: string | null,
 ): Promise<string> {
   return invokeWithTimeout<string>("start_build_session", {
     channel,
     personaId,
     intent,
+    workflowJson: workflowJson ?? null,
+    parserResultJson: parserResultJson ?? null,
   });
 }
 
@@ -62,5 +67,19 @@ export async function listBuildSessions(
 ): Promise<BuildSessionSummary[]> {
   return invokeWithTimeout<BuildSessionSummary[]>("list_build_sessions", {
     personaId: personaId ?? null,
+  });
+}
+
+/**
+ * Promote a build draft to production: updates the persona with enriched
+ * prompt data and atomically creates tools, triggers, and connectors.
+ */
+export async function promoteBuildDraft(
+  sessionId: string,
+  personaId: string,
+): Promise<PromoteBuildResult> {
+  return invokeWithTimeout<PromoteBuildResult>("promote_build_draft", {
+    sessionId,
+    personaId,
   });
 }

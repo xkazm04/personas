@@ -34,7 +34,7 @@ const bulkSummaryCache = createModuleCache<'latest', BulkSummary>();
 
 // -- Hook -------------------------------------------------------------
 
-const CONCURRENCY = 5;
+const CONCURRENCY = 3;
 
 export function useBulkHealthcheck() {
   const [isRunning, setIsRunning] = useState(false);
