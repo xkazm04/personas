@@ -26,7 +26,9 @@ use crate::ActiveProcessRegistry;
 
 use super::cli_process::{read_line_limited, CliProcessDriver};
 use super::prompt;
+use super::tool_runner;
 use super::types::CliArgs;
+use crate::notifications;
 
 // =============================================================================
 // SessionHandle -- in-memory handle for an active build session
@@ -120,8 +122,11 @@ impl BuildSessionManager {
             .map(|c| format!("- {} (category: {})", c.name, c.category))
             .collect();
 
+        // Find similar templates for reference context
+        let template_context = build_template_context(&intent);
+
         // Build the system prompt that wraps the user intent with dimension framework
-        let system_prompt = build_session_prompt(&intent, &cred_summary, &connector_summary);
+        let system_prompt = build_session_prompt(&intent, &cred_summary, &connector_summary, &template_context);
 
         // Spawn the session task
         let sessions_map = self.sessions.clone();
@@ -231,311 +236,892 @@ async fn run_session(
     let _ = update_phase(&pool, &session_id, BuildPhase::Analyzing);
     emit_session_status(&channel, &app_handle, &session_id, BuildPhase::Analyzing, 0, 0);
 
-    // Spawn CLI process
-    let mut driver = match CliProcessDriver::spawn_temp(&cli_args, "build-session") {
-        Ok(d) => d,
-        Err(e) => {
-            tracing::error!(session_id = %session_id, error = %e, "Failed to spawn CLI for build session");
-            let _ = update_phase_with_error(&pool, &session_id, &format!("CLI spawn failed: {e}"));
-            emit_error(&channel, &app_handle, &session_id, &format!("Failed to start build: {e}"), false);
-            cleanup_session(&sessions_map, &registry, &session_id);
-            return;
-        }
-    };
-
-    // Register PID
-    if let Some(pid) = driver.pid() {
-        registry.set_run_pid("build_session", &session_id, pid);
-        let _ = build_session_repo::update(
-            &pool,
-            &session_id,
-            &UpdateBuildSession {
-                cli_pid: Some(Some(pid)),
-                ..Default::default()
-            },
-        );
-    }
-
-    // Build the full prompt: intent + optional workflow context
-    let full_prompt = if let (Some(ref wf_json), Some(ref parser_json)) = (&workflow_json, &parser_result_json) {
-        // Workflow import mode: enrich intent with parsed workflow data
+    // Build initial prompt with optional workflow context
+    let initial_prompt = if let (Some(ref wf_json), Some(ref parser_json)) = (&workflow_json, &parser_result_json) {
         let wf_preview = if wf_json.len() > 8000 { &wf_json[..8000] } else { wf_json.as_str() };
         format!(
-            "{intent}\n\n\
-             ## Workflow Import Context\n\
-             This agent is being created from an imported workflow. Use the parsed analysis below \
-             as a structural baseline — auto-resolve dimensions that are clearly defined in the workflow, \
-             but still ask questions for connectors (check credentials), human-review, and memory strategy.\n\n\
-             ### Parsed Workflow Analysis (AgentIR)\n\
-             {parser_json}\n\n\
-             ### Original Workflow JSON (preview)\n\
-             {wf_preview}\n"
+            "{intent}\n\n## Workflow Import Context\n\
+             Use the parsed analysis below as a structural baseline.\n\n\
+             ### Parsed Workflow Analysis\n{parser_json}\n\n\
+             ### Original Workflow JSON (preview)\n{wf_preview}\n"
         )
     } else {
         intent.clone()
     };
 
-    // Write prompt to stdin (keep stdin open for subsequent Q&A writes)
-    if let Err(e) = driver.write_stdin_line(full_prompt.as_bytes()).await {
-        tracing::error!(session_id = %session_id, error = %e, "Failed to write intent to CLI stdin");
-        let _ = update_phase_with_error(&pool, &session_id, &format!("Failed to send intent: {e}"));
-        emit_error(&channel, &app_handle, &session_id, &format!("Failed to send intent to build process: {e}"), false);
-        let _ = driver.kill().await;
+    // Multi-turn conversation history: (role, content) pairs
+    let mut conversation: Vec<(String, String)> = Vec::new();
+    conversation.push(("user".to_string(), initial_prompt.clone()));
+
+    let mut resolved_cells = serde_json::Map::new();
+    let mut resolved_count: usize = 0;
+    let mut last_answered_cells: Vec<String> = Vec::new();
+
+    const MAX_TURNS: usize = 12;
+
+    // Create a persistent temp dir shared across all turns so `--continue`
+    // can find the previous session's conversation state.
+    let session_exec_dir = std::env::temp_dir().join(format!(
+        "build-session-{}",
+        uuid::Uuid::new_v4()
+    ));
+    if let Err(e) = std::fs::create_dir_all(&session_exec_dir) {
+        tracing::error!(session_id = %session_id, error = %e, "Failed to create session temp dir");
+        let _ = update_phase_with_error(&pool, &session_id, &format!("Temp dir creation failed: {e}"));
+        emit_error(&channel, &app_handle, &session_id, &format!("Failed to start build: {e}"), false);
         cleanup_session(&sessions_map, &registry, &session_id);
         return;
     }
 
-    // Stream stdout line by line
-    let mut reader = match driver.take_stdout_reader() {
-        Some(r) => r,
-        None => {
-            tracing::error!(session_id = %session_id, "No stdout from CLI process");
-            let _ = update_phase_with_error(&pool, &session_id, "No output from CLI process");
-            emit_error(&channel, &app_handle, &session_id, "Build process produced no output", false);
-            let _ = driver.kill().await;
-            cleanup_session(&sessions_map, &registry, &session_id);
-            return;
-        }
-    };
-
-    let mut resolved_cells = serde_json::Map::new();
-    let mut resolved_count: usize = 0;
-    let mut total_count: usize = 0;
-    let mut last_output = String::new();
-
-    loop {
+    for turn in 0..MAX_TURNS {
         // Check cancellation
         if cancel_flag.load(Ordering::Acquire) {
             tracing::info!(session_id = %session_id, "Build session cancelled");
-            let _ = driver.kill().await;
+            let _ = std::fs::remove_dir_all(&session_exec_dir);
             cleanup_session(&sessions_map, &registry, &session_id);
             return;
         }
 
-        match read_line_limited(&mut reader).await {
-            Ok(Some(line)) => {
-                last_output.push_str(&line);
-                last_output.push('\n');
+        // Build the prompt for this turn.
+        // Turn 0: send the full system prompt.
+        // Turn 1+: send only a concise follow-up — session context is preserved via --continue.
+        let turn_prompt = if turn == 0 {
+            initial_prompt.clone()
+        } else {
+            let resolved_dims: Vec<&str> = resolved_cells.keys().map(|k| k.as_str()).collect();
+            let mut follow_up = String::new();
 
-                // Parse line into events (handles CLI envelope unwrapping)
-                let events = parse_build_line(&line, &session_id);
+            // Include the user's answer if one was given
+            if let Some((_, last_content)) = conversation.last() {
+                follow_up.push_str(last_content);
+                follow_up.push('\n');
+            }
 
-                // Process events: first handle all CellUpdates, then Question (which blocks)
-                let mut pending_question_event: Option<BuildEvent> = None;
+            let all_dims = ["use-cases", "connectors", "triggers", "messages", "human-review", "memory", "error-handling", "events"];
+            let remaining: Vec<&&str> = all_dims.iter().filter(|d| !resolved_dims.contains(*d)).collect();
+            follow_up.push_str(&format!(
+                "Resolved: [{}]. Still needed: [{}]. Resolve ALL {} remaining dimensions NOW in this response. Output raw JSON only — one {{\"dimension\": ...}} per dimension.",
+                if resolved_dims.is_empty() { "none yet".to_string() } else { resolved_dims.join(", ") },
+                remaining.iter().map(|d| **d).collect::<Vec<&str>>().join(", "),
+                remaining.len(),
+            ));
+            follow_up
+        };
 
-                for event in events {
-                    match &event {
-                        BuildEvent::CellUpdate { cell_key, data, .. } => {
-                            if cell_key == "agent_ir" {
-                                // Store agent_ir in DB
-                                let ir_str = serde_json::to_string(data).ok();
-                                let _ = build_session_repo::update(
-                                    &pool,
-                                    &session_id,
-                                    &UpdateBuildSession {
-                                        agent_ir: Some(ir_str),
-                                        ..Default::default()
-                                    },
-                                );
-                            } else if cell_key == "_test_report" {
-                                // Test report handling
-                                let passed = data.get("status")
-                                    .and_then(|v| v.as_str())
-                                    .map(|s| s == "ready")
-                                    .unwrap_or(false);
-                                let summary = data.get("summary")
-                                    .and_then(|v| v.as_str())
-                                    .unwrap_or("Test completed")
-                                    .to_string();
-                                let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
-                                    phase: Some(BuildPhase::TestComplete.as_str().to_string()),
-                                    ..Default::default()
-                                });
-                                emit_session_status(&channel, &app_handle, &session_id, BuildPhase::TestComplete, resolved_count, 8);
-                                let progress_event = BuildEvent::Progress {
-                                    session_id: session_id.clone(),
-                                    dimension: None,
-                                    message: summary,
-                                    percent: None,
-                                };
-                                dual_emit(&channel, &app_handle, &progress_event);
-                            } else {
-                                resolved_cells.insert(cell_key.clone(), data.clone());
-                                resolved_count += 1;
+        // Emit progress
+        let progress = BuildEvent::Progress {
+            session_id: session_id.clone(),
+            dimension: None,
+            message: format!("Processing turn {}...", turn + 1),
+            percent: None,
+            activity: Some(if turn == 0 {
+                "Analyzing intent and matching templates...".to_string()
+            } else {
+                format!("Processing answer for {}...", last_answered_cells.first().map(|s| s.as_str()).unwrap_or("dimension"))
+            }),
+        };
+        dual_emit(&channel, &app_handle, &progress);
 
-                                // Checkpoint after each resolved cell
-                                let resolved_json = serde_json::to_string(
-                                    &serde_json::Value::Object(resolved_cells.clone()),
-                                )
-                                .unwrap_or_else(|_| "{}".to_string());
-                                let _ = build_session_repo::update(
-                                    &pool,
-                                    &session_id,
-                                    &UpdateBuildSession {
-                                        phase: Some(BuildPhase::Resolving.as_str().to_string()),
-                                        resolved_cells: Some(resolved_json),
-                                        ..Default::default()
-                                    },
-                                );
-                            }
-                            dual_emit(&channel, &app_handle, &event);
-                        }
-                        BuildEvent::Question { .. } => {
-                            // Defer question handling until after all CellUpdates are processed
-                            pending_question_event = Some(event);
-                        }
-                        BuildEvent::SessionStatus { total_count: tc, .. } => {
-                            total_count = *tc;
-                            dual_emit(&channel, &app_handle, &event);
-                        }
-                        _ => {
-                            dual_emit(&channel, &app_handle, &event);
-                        }
+        // On turn 1+, add --continue to resume the previous Claude session
+        // instead of re-sending the full system prompt (~1100 lines).
+        let turn_args = if turn > 0 {
+            let mut args = cli_args.clone();
+            args.args.push("--continue".to_string());
+            args
+        } else {
+            cli_args.clone()
+        };
+
+        // Spawn CLI in the shared session dir so --continue can find the
+        // previous conversation state.
+        let mut driver = match CliProcessDriver::spawn(&turn_args, session_exec_dir.clone()) {
+            Ok(d) => d,
+            Err(e) => {
+                tracing::error!(session_id = %session_id, error = %e, "CLI spawn failed on turn {}", turn);
+                let _ = update_phase_with_error(&pool, &session_id, &format!("CLI spawn failed: {e}"));
+                emit_error(&channel, &app_handle, &session_id, &format!("Failed to start build: {e}"), false);
+                let _ = std::fs::remove_dir_all(&session_exec_dir);
+                cleanup_session(&sessions_map, &registry, &session_id);
+                return;
+            }
+        };
+
+        if let Some(pid) = driver.pid() {
+            registry.set_run_pid("build_session", &session_id, pid);
+        }
+
+        // Write prompt and close stdin (CLI processes on EOF)
+        if let Err(e) = driver.write_stdin_line(turn_prompt.as_bytes()).await {
+            tracing::error!(session_id = %session_id, error = %e, "Failed to write prompt on turn {}", turn);
+            let _ = driver.kill().await;
+            break;
+        }
+        driver.close_stdin().await;
+
+        // Read all output from this turn
+        let mut turn_events: Vec<BuildEvent> = Vec::new();
+        let mut turn_raw = String::new();
+
+        if let Some(mut reader) = driver.take_stdout_reader() {
+            loop {
+                match read_line_limited(&mut reader).await {
+                    Ok(Some(line)) => {
+                        turn_raw.push_str(&line);
+                        turn_raw.push('\n');
+                        turn_events.extend(parse_build_line(&line, &session_id));
                     }
+                    Ok(None) => break,
+                    Err(_) => break,
                 }
+            }
+        }
 
-                // Handle pending question (blocks on mpsc recv)
-                if let Some(q_event) = pending_question_event {
-                    if let BuildEvent::Question { ref question, ref cell_key, ref options, .. } = q_event {
-                        // Checkpoint question state
-                        let question_json = serde_json::json!({
-                            "cell_key": cell_key,
-                            "question": question,
-                            "options": options,
+        // Wait for the CLI process to exit (don't use finish() which would
+        // attempt dir cleanup — we reuse session_exec_dir across turns).
+        let _ = driver.wait().await;
+
+        // Deduplicate events by cell_key (CLI sends both `assistant` and `result` envelopes
+        // containing the same content, which produces duplicate CellUpdate/Question events)
+        {
+            let mut seen_cells = std::collections::HashSet::new();
+            let mut seen_questions = std::collections::HashSet::new();
+            turn_events.retain(|e| match e {
+                BuildEvent::CellUpdate { cell_key, .. } => seen_cells.insert(cell_key.clone()),
+                BuildEvent::Question { cell_key, .. } => seen_questions.insert(cell_key.clone()),
+                _ => true,
+            });
+        }
+
+        // Build assistant text for conversation history
+        let assistant_text: String = turn_events.iter().filter_map(|e| match e {
+            BuildEvent::Question { question, cell_key, options, .. } => {
+                let opts = options.as_ref().map(|o| o.join(", ")).unwrap_or_default();
+                Some(format!("{{\"question\": \"{}\", \"dimension\": \"{}\", \"options\": [{}]}}", question, cell_key, opts))
+            }
+            BuildEvent::CellUpdate { cell_key, data, status, .. } => {
+                Some(format!("{{\"dimension\": \"{}\", \"status\": \"{}\", \"data\": {}}}", cell_key, status, data))
+            }
+            _ => None,
+        }).collect::<Vec<_>>().join("\n");
+        if !assistant_text.is_empty() {
+            conversation.push(("assistant".to_string(), assistant_text));
+        }
+
+        // Process events from this turn
+        let mut got_question = false;
+        let mut got_agent_ir = false;
+        let mut turn_resolved_keys: Vec<String> = Vec::new();
+
+        for event in turn_events {
+            match &event {
+                BuildEvent::CellUpdate { cell_key, data, .. } => {
+                    if cell_key == "agent_ir" {
+                        got_agent_ir = true;
+                        let ir_str = serde_json::to_string(data).ok();
+                        let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
+                            agent_ir: Some(ir_str),
+                            ..Default::default()
                         });
-                        let _ = build_session_repo::update(
-                            &pool,
-                            &session_id,
-                            &UpdateBuildSession {
-                                phase: Some(BuildPhase::AwaitingInput.as_str().to_string()),
-                                pending_question: Some(Some(
-                                    serde_json::to_string(&question_json).unwrap_or_default(),
-                                )),
-                                ..Default::default()
-                            },
-                        );
+                        // Update persona name from agent_ir
+                        if let Some(name) = data.get("name").and_then(|n| n.as_str()) {
+                            if !name.is_empty() {
+                                let _ = crate::db::repos::core::personas::update_name(&pool, &_persona_id, name);
+                            }
+                        }
+                    } else if cell_key != "_test_report" {
+                        resolved_cells.insert(cell_key.clone(), data.clone());
+                        turn_resolved_keys.push(cell_key.clone());
+                        let resolved_json = serde_json::to_string(&serde_json::Value::Object(resolved_cells.clone())).unwrap_or_else(|_| "{}".to_string());
+                        let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
+                            phase: Some(BuildPhase::Resolving.as_str().to_string()),
+                            resolved_cells: Some(resolved_json),
+                            ..Default::default()
+                        });
+                        // Emit rich activity for dimension resolution
+                        let activity_event = BuildEvent::Progress {
+                            session_id: session_id.clone(),
+                            dimension: Some(cell_key.clone()),
+                            message: format!("Resolved: {}", cell_key),
+                            percent: Some((resolved_cells.len() as f32 / 8.0) * 100.0),
+                            activity: Some(format!("Resolved {} — moving to next dimension", cell_key)),
+                        };
+                        dual_emit(&channel, &app_handle, &activity_event);
+                    }
+                    dual_emit(&channel, &app_handle, &event);
+                }
+                BuildEvent::Question { question, cell_key, options, .. } => {
+                    got_question = true;
+                    let question_json = serde_json::json!({ "cell_key": cell_key, "question": question, "options": options });
+                    let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
+                        phase: Some(BuildPhase::AwaitingInput.as_str().to_string()),
+                        pending_question: Some(Some(serde_json::to_string(&question_json).unwrap_or_default())),
+                        ..Default::default()
+                    });
+                    // Emit rich activity for awaiting input
+                    let activity_event = BuildEvent::Progress {
+                        session_id: session_id.clone(),
+                        dimension: Some(cell_key.clone()),
+                        message: format!("Awaiting input: {}", cell_key),
+                        percent: None,
+                        activity: Some(format!("Needs your input on: {}", cell_key)),
+                    };
+                    dual_emit(&channel, &app_handle, &activity_event);
+                    dual_emit(&channel, &app_handle, &event);
+                }
+                _ => {
+                    dual_emit(&channel, &app_handle, &event);
+                }
+            }
+        }
 
-                        // Emit the question to frontend
-                        dual_emit(&channel, &app_handle, &q_event);
+        // Use resolved_cells.len() for accurate count (HashMap deduplicates)
+        resolved_count = resolved_cells.len();
 
-                        // Wait for user answer via mpsc
-                        match input_rx.recv().await {
-                            Some(answer) => {
-                                tracing::info!(
-                                    session_id = %session_id,
-                                    cell_key = %answer.cell_key,
-                                    "Received user answer for build session"
-                                );
-                                let _ = build_session_repo::update(
-                                    &pool,
-                                    &session_id,
-                                    &UpdateBuildSession {
-                                        phase: Some(BuildPhase::Resolving.as_str().to_string()),
-                                        pending_question: Some(None),
-                                        ..Default::default()
-                                    },
-                                );
-                                emit_session_status(
-                                    &channel,
-                                    &app_handle,
-                                    &session_id,
-                                    BuildPhase::Resolving,
-                                    resolved_count,
-                                    total_count,
-                                );
+        // If the previous turn's answered cells weren't re-emitted this turn,
+        // re-emit them as "resolved" so the frontend exits "filling"/"Analyzing" state.
+        for answered_key in &last_answered_cells {
+            if !turn_resolved_keys.contains(answered_key) {
+                if let Some(data) = resolved_cells.get(answered_key) {
+                    let confirm_event = BuildEvent::CellUpdate {
+                        session_id: session_id.clone(),
+                        cell_key: answered_key.clone(),
+                        data: data.clone(),
+                        status: "resolved".to_string(),
+                    };
+                    dual_emit(&channel, &app_handle, &confirm_event);
+                    tracing::info!(session_id = %session_id, cell_key = %answered_key, "Re-emitted resolved for answered cell");
+                }
+            }
+        }
+        last_answered_cells.clear();
 
-                                // Forward the answer to the CLI subprocess stdin
-                                let answer_json = serde_json::json!({
-                                    "cell_key": answer.cell_key,
-                                    "answer": answer.answer,
-                                });
-                                let answer_text = answer_json.to_string();
-                                if let Err(e) = driver.write_stdin_line(answer_text.as_bytes()).await {
-                                    tracing::warn!(
-                                        session_id = %session_id,
-                                        error = %e,
-                                        "Failed to write answer to CLI stdin"
-                                    );
+        // If question asked: wait for user answer, then continue to next turn
+        if got_question {
+            emit_session_status(&channel, &app_handle, &session_id, BuildPhase::AwaitingInput, resolved_count, 8);
+            notifications::send(&app_handle, "Input Required", "Your agent build needs your input to continue.");
+            tracing::info!(session_id = %session_id, turn = turn + 1, "Waiting for user answer");
+
+            match input_rx.recv().await {
+                Some(answer) => {
+                    tracing::info!(session_id = %session_id, cell_key = %answer.cell_key, "Received user answer");
+                    let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
+                        phase: Some(BuildPhase::Resolving.as_str().to_string()),
+                        pending_question: Some(None),
+                        ..Default::default()
+                    });
+                    emit_session_status(&channel, &app_handle, &session_id, BuildPhase::Resolving, resolved_count, 8);
+
+                    // Handle batch answers: cell_key="_batch" means multiple dimension answers
+                    if answer.cell_key == "_batch" {
+                        // Parse dimension keys from the answer text: lines like "[use-cases]: ..."
+                        let mut keys = Vec::new();
+                        for line in answer.answer.lines() {
+                            if let Some(start) = line.find('[') {
+                                if let Some(end) = line.find("]:") {
+                                    let key = line[start+1..end].trim().to_string();
+                                    if !key.is_empty() {
+                                        keys.push(key);
+                                    }
                                 }
                             }
-                            None => {
-                                tracing::info!(
-                                    session_id = %session_id,
-                                    "Input channel closed, ending build session"
-                                );
-                                let _ = driver.kill().await;
-                                cleanup_session(&sessions_map, &registry, &session_id);
-                                return;
-                            }
                         }
+                        conversation.push(("user".to_string(), format!("User confirmed/answered multiple dimensions:\n{}", answer.answer)));
+                        last_answered_cells = keys;
+                    } else {
+                        conversation.push(("user".to_string(), format!("My answer for {}: {}", answer.cell_key, answer.answer)));
+                        last_answered_cells = vec![answer.cell_key.clone()];
                     }
                 }
+                None => {
+                    tracing::info!(session_id = %session_id, "Input channel closed");
+                    let _ = std::fs::remove_dir_all(&session_exec_dir);
+                    cleanup_session(&sessions_map, &registry, &session_id);
+                    return;
+                }
             }
-            Ok(None) => {
-                // EOF -- CLI process finished
-                break;
+        } else if got_agent_ir || resolved_count >= 8 {
+            // All done — enter draft_ready and wait for test/refine
+            let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
+                phase: Some(BuildPhase::DraftReady.as_str().to_string()),
+                pending_question: Some(None),
+                ..Default::default()
+            });
+            let draft_activity = BuildEvent::Progress {
+                session_id: session_id.clone(),
+                dimension: None,
+                message: "Draft ready for review".to_string(),
+                percent: Some(100.0),
+                activity: Some("Draft ready for review".to_string()),
+            };
+            dual_emit(&channel, &app_handle, &draft_activity);
+            emit_session_status(&channel, &app_handle, &session_id, BuildPhase::DraftReady, resolved_count, 8);
+            notifications::send(&app_handle, "Agent Draft Ready", "Your agent configuration is complete. Review and test it.");
+
+            // Wait for _test or _refine input
+            tracing::info!(session_id = %session_id, "Draft ready, waiting for test/refine");
+            match input_rx.recv().await {
+                Some(answer) => {
+                    if answer.cell_key == "_test" {
+                        let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
+                            phase: Some(BuildPhase::Testing.as_str().to_string()),
+                            ..Default::default()
+                        });
+                        emit_session_status(&channel, &app_handle, &session_id, BuildPhase::Testing, resolved_count, 8);
+                        conversation.push(("user".to_string(), "Test this agent. Report any issues via test_report JSON.".to_string()));
+                    } else if answer.cell_key == "_refine" {
+                        let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
+                            phase: Some(BuildPhase::Resolving.as_str().to_string()),
+                            ..Default::default()
+                        });
+                        emit_session_status(&channel, &app_handle, &session_id, BuildPhase::Resolving, resolved_count, 8);
+                        conversation.push(("user".to_string(), format!("Refinement: {}. Update affected dimensions.", answer.answer)));
+                    } else {
+                        conversation.push(("user".to_string(), format!("Answer for {}: {}", answer.cell_key, answer.answer)));
+                    }
+                    // Continue to next turn
+                }
+                None => {
+                    let _ = std::fs::remove_dir_all(&session_exec_dir);
+                    cleanup_session(&sessions_map, &registry, &session_id);
+                    return;
+                }
             }
-            Err(e) => {
-                tracing::warn!(session_id = %session_id, error = %e, "Error reading CLI output");
-                break;
+        } else {
+            // No question and no agent_ir — CLI gave partial results. Continue to next turn.
+            tracing::info!(session_id = %session_id, turn = turn + 1, resolved = resolved_count, "Turn complete, continuing");
+        }
+    }
+
+    // Clean up the shared session temp directory now that all turns are done.
+    let _ = std::fs::remove_dir_all(&session_exec_dir);
+
+    // Final checkpoint
+    let agent_ir_str = resolved_cells.get("agent_ir")
+        .and_then(|v| serde_json::to_string(v).ok());
+
+    let final_phase = if resolved_count > 0 { BuildPhase::DraftReady } else { BuildPhase::DraftReady };
+    let resolved_json = serde_json::to_string(&serde_json::Value::Object(resolved_cells)).unwrap_or_else(|_| "{}".to_string());
+    let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
+        phase: Some(final_phase.as_str().to_string()),
+        resolved_cells: Some(resolved_json),
+        cli_pid: Some(None),
+        pending_question: Some(None),
+        agent_ir: if agent_ir_str.is_some() { Some(agent_ir_str) } else { None },
+        ..Default::default()
+    });
+
+    emit_session_status(&channel, &app_handle, &session_id, final_phase, resolved_count, 8);
+    cleanup_session(&sessions_map, &registry, &session_id);
+}
+
+// =============================================================================
+// run_tool_tests -- LLM-driven real API testing for build drafts
+// =============================================================================
+
+/// Test an agent draft by having the LLM compose test curl commands for each
+/// tool, then executing them against real APIs with resolved credentials.
+///
+/// Flow:
+/// 1. Resolve credentials for the agent's connectors → get env var names
+/// 2. Spawn a CLI process with a test-specific prompt containing the agent_ir
+///    tools and available credential env var names
+/// 3. CLI outputs a `test_plan` JSON with curl commands per tool
+/// 4. Backend executes each curl command with real credential values
+/// 5. Emits per-tool result events and returns aggregate report
+pub async fn run_tool_tests(
+    pool: &DbPool,
+    app: &tauri::AppHandle,
+    session_id: &str,
+    persona_id: &str,
+    agent_ir: &serde_json::Value,
+) -> Result<serde_json::Value, AppError> {
+    let tools = agent_ir
+        .get("tools")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    if tools.is_empty() {
+        return Ok(serde_json::json!({
+            "results": [],
+            "tools_tested": 0,
+            "tools_passed": 0,
+            "tools_failed": 0,
+            "tools_skipped": 0,
+            "credential_issues": [],
+        }));
+    }
+
+    let persona_name = agent_ir
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("draft-agent");
+
+    // Step 1: Resolve credentials to get env var names + values
+    let tool_defs: Vec<_> = tools
+        .iter()
+        .filter_map(tool_runner::tool_def_from_ir)
+        .collect();
+
+    let (env_vars, hints, cred_failures) =
+        super::runner::resolve_credential_env_vars(pool, &tool_defs, persona_id, persona_name)
+            .await;
+
+    let cred_context = if hints.is_empty() && cred_failures.is_empty() {
+        "No credentials resolved. Tools requiring auth will fail.".to_string()
+    } else {
+        let mut ctx = String::new();
+        if !hints.is_empty() {
+            ctx.push_str("Available credential env vars:\n");
+            for h in &hints {
+                ctx.push_str(&format!("  {h}\n"));
+            }
+        }
+        if !cred_failures.is_empty() {
+            ctx.push_str(&format!(
+                "\nFailed to resolve credentials for: {}\n",
+                cred_failures.join(", ")
+            ));
+        }
+        ctx
+    };
+
+    // Step 2: Build test prompt for the CLI
+    let tools_json = serde_json::to_string_pretty(&tools).unwrap_or_default();
+    let test_prompt = build_test_prompt(&tools_json, &cred_context);
+
+    // Step 3: Spawn CLI and get test plan
+    let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push("claude-sonnet-4-20250514".to_string());
+
+    let mut driver = CliProcessDriver::spawn_temp(&cli_args, "build-test")
+        .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn test CLI: {e}")))?;
+
+    if let Err(e) = driver.write_stdin_line(test_prompt.as_bytes()).await {
+        let _ = driver.kill().await;
+        return Err(AppError::Execution(format!("Failed to write test prompt: {e}")));
+    }
+    driver.close_stdin().await;
+
+    // Read CLI output and extract test_plan
+    let mut raw_output = String::new();
+    if let Some(mut reader) = driver.take_stdout_reader() {
+        loop {
+            match read_line_limited(&mut reader).await {
+                Ok(Some(line)) => {
+                    raw_output.push_str(&line);
+                    raw_output.push('\n');
+                }
+                Ok(None) => break,
+                Err(_) => break,
+            }
+        }
+    }
+    let _ = driver.finish().await;
+
+    // Parse test_plan from CLI output (may be wrapped in stream-json envelope)
+    let test_plan = extract_test_plan(&raw_output);
+
+    let total = test_plan.len();
+    if total == 0 {
+        tracing::warn!(
+            session_id = %session_id,
+            "CLI returned no test_plan entries, falling back to skip-all"
+        );
+        let fallback_results: Vec<serde_json::Value> = tools
+            .iter()
+            .filter_map(|t| t.get("name").and_then(|n| n.as_str()))
+            .map(|name| serde_json::json!({
+                "tool_name": name,
+                "status": "skipped",
+                "http_status": null,
+                "latency_ms": 0,
+                "error": "CLI did not generate a test command for this tool",
+                "connector": null,
+                "output_preview": null,
+            }))
+            .collect();
+        return Ok(serde_json::json!({
+            "results": fallback_results,
+            "tools_tested": 0,
+            "tools_passed": 0,
+            "tools_failed": 0,
+            "tools_skipped": fallback_results.len(),
+            "credential_issues": [],
+        }));
+    }
+
+    // Step 4: Execute each test curl command with real credentials
+    let env_map: std::collections::HashMap<&str, &str> = env_vars
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect();
+
+    let mut results: Vec<serde_json::Value> = Vec::new();
+    let mut passed = 0usize;
+    let mut failed = 0usize;
+    let mut skipped = 0usize;
+    let mut credential_issues: Vec<serde_json::Value> = Vec::new();
+
+    for (idx, entry) in test_plan.iter().enumerate() {
+        let tool_name = entry
+            .get("tool_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown");
+        let curl_cmd = entry
+            .get("curl")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let connector = entry
+            .get("connector")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        tracing::info!(
+            session_id = %session_id,
+            tool = %tool_name,
+            "Executing test {}/{}",
+            idx + 1,
+            total
+        );
+
+        let result = if curl_cmd.is_empty() {
+            skipped += 1;
+            tool_runner::ToolTestResult {
+                tool_name: tool_name.to_string(),
+                status: "skipped".to_string(),
+                http_status: None,
+                latency_ms: 0,
+                error: Some("No curl command generated".to_string()),
+                connector: connector.clone(),
+                output_preview: None,
+            }
+        } else {
+            let r = tool_runner::execute_test_curl(curl_cmd, &env_map).await;
+            match r.status.as_str() {
+                "passed" => passed += 1,
+                "credential_missing" => {
+                    failed += 1;
+                    credential_issues.push(serde_json::json!({
+                        "connector": connector,
+                        "issue": r.error,
+                    }));
+                }
+                _ => failed += 1,
+            }
+            tool_runner::ToolTestResult {
+                tool_name: tool_name.to_string(),
+                connector: connector.clone(),
+                ..r
+            }
+        };
+
+        let result_json = serde_json::json!({
+            "tool_name": result.tool_name,
+            "status": result.status,
+            "http_status": result.http_status,
+            "latency_ms": result.latency_ms,
+            "error": result.error,
+            "connector": result.connector,
+            "output_preview": result.output_preview,
+        });
+
+        // Emit per-tool result event
+        let _ = app.emit("build-test-tool-result", serde_json::json!({
+            "session_id": session_id,
+            "tool_name": result.tool_name,
+            "status": result.status,
+            "http_status": result.http_status,
+            "latency_ms": result.latency_ms,
+            "error": result.error,
+            "connector": result.connector,
+            "tested": idx + 1,
+            "total": total,
+        }));
+
+        results.push(result_json);
+    }
+
+    // Step 5: Generate human-friendly summary via CLI
+    let results_json = serde_json::to_string_pretty(&results).unwrap_or_default();
+    let summary = generate_test_summary(
+        &results_json,
+        persona_name,
+        passed,
+        failed,
+        skipped,
+    )
+    .await
+    .unwrap_or_else(|_| build_fallback_summary(&results, passed, failed, skipped));
+
+    Ok(serde_json::json!({
+        "results": results,
+        "tools_tested": passed + failed,
+        "tools_passed": passed,
+        "tools_failed": failed,
+        "tools_skipped": skipped,
+        "credential_issues": credential_issues,
+        "summary": summary,
+    }))
+}
+
+/// Ask the CLI to generate a human-friendly summary of test results.
+async fn generate_test_summary(
+    results_json: &str,
+    agent_name: &str,
+    passed: usize,
+    failed: usize,
+    skipped: usize,
+) -> Result<String, AppError> {
+    let prompt = format!(
+r#"You are writing a test report summary for a non-technical user who just built an AI agent called "{agent_name}".
+
+## Test Results (raw data)
+{results_json}
+
+## Stats
+- {passed} passed, {failed} failed, {skipped} skipped
+
+## Instructions
+Write a brief, friendly summary (3-6 sentences) explaining:
+1. What was tested and the overall result
+2. For any failures: explain in plain language what went wrong and what the user should do to fix it (e.g., "Your Gmail connection needs to be re-authenticated" rather than "HTTP 401 Unauthorized")
+3. For credential issues: tell them to go to the Keys section to add or refresh their credentials
+4. End with encouragement if tests passed, or reassurance that fixing is easy if they failed
+
+Output ONLY the summary text, no JSON, no markdown headers, no code blocks. Just plain readable text."#
+    );
+
+    let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push("claude-haiku-4-5-20251001".to_string());
+
+    let mut driver = CliProcessDriver::spawn_temp(&cli_args, "test-summary")
+        .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn summary CLI: {e}")))?;
+
+    if let Err(e) = driver.write_stdin_line(prompt.as_bytes()).await {
+        let _ = driver.kill().await;
+        return Err(AppError::Execution(format!("Failed to write summary prompt: {e}")));
+    }
+    driver.close_stdin().await;
+
+    let mut raw_output = String::new();
+    if let Some(mut reader) = driver.take_stdout_reader() {
+        loop {
+            match read_line_limited(&mut reader).await {
+                Ok(Some(line)) => {
+                    raw_output.push_str(&line);
+                    raw_output.push('\n');
+                }
+                Ok(None) => break,
+                Err(_) => break,
+            }
+        }
+    }
+    let _ = driver.finish().await;
+
+    // Extract plain text from CLI output (unwrap stream-json envelopes)
+    let text = extract_llm_text_from_output(&raw_output);
+    let cleaned = text
+        .replace("```", "")
+        .trim()
+        .to_string();
+
+    if cleaned.is_empty() {
+        return Err(AppError::Execution("Empty summary from CLI".to_string()));
+    }
+
+    Ok(cleaned)
+}
+
+/// Build a basic fallback summary when CLI summary generation fails.
+fn build_fallback_summary(
+    results: &[serde_json::Value],
+    passed: usize,
+    failed: usize,
+    skipped: usize,
+) -> String {
+    let mut lines = Vec::new();
+
+    if failed == 0 && passed > 0 {
+        lines.push(format!("All {} tool connections were verified successfully.", passed));
+    } else if passed == 0 && failed > 0 {
+        lines.push(format!("None of the {} tools could connect to their services.", failed));
+    } else {
+        lines.push(format!("{} of {} tools connected successfully, {} had issues.", passed, passed + failed, failed));
+    }
+
+    for r in results {
+        let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        let name = r.get("tool_name").and_then(|v| v.as_str()).unwrap_or("unknown");
+        let friendly = name.replace('_', " ");
+
+        if status == "credential_missing" {
+            lines.push(format!("\"{}\" needs credentials — add them in the Keys section.", friendly));
+        } else if status == "failed" {
+            let code = r.get("http_status").and_then(|v| v.as_u64());
+            match code {
+                Some(401) | Some(403) => {
+                    lines.push(format!("\"{}\" authentication failed — try refreshing credentials in Keys.", friendly));
+                }
+                Some(404) => {
+                    lines.push(format!("\"{}\" endpoint not found — the API configuration may need updating.", friendly));
+                }
+                _ => {
+                    lines.push(format!("\"{}\" could not connect to the service.", friendly));
+                }
             }
         }
     }
 
-    // Close stdin to signal no more input
-    if let Some(mut stdin) = driver.child.stdin.take() {
-        let _ = stdin.shutdown().await;
+    if skipped > 0 {
+        lines.push(format!("{} tools were skipped (read-only verification not available).", skipped));
     }
 
-    // Wait for process exit
-    let exit_status = driver.finish().await;
+    lines.join(" ")
+}
 
-    let final_phase = match &exit_status {
-        Ok(status) if status.success() => BuildPhase::DraftReady,
-        _ => BuildPhase::Failed,
+/// Build the test prompt sent to the CLI to generate executable curl commands.
+fn build_test_prompt(tools_json: &str, cred_context: &str) -> String {
+    format!(
+r#"You are a tool-testing agent. Given the tool definitions below and available credentials, compose a MINIMAL safe curl command to verify each tool's API connection actually works.
+
+## Tools to Test
+{tools_json}
+
+## Credentials
+{cred_context}
+
+## Rules
+1. For each tool, compose a real curl command using the credential env vars shown above.
+2. Use GET endpoints or read-only operations only — NO writes, deletes, or mutations.
+3. Use minimal params (limit=1, maxResults=1, per_page=1) to reduce data and avoid side effects.
+4. Use $ENV_VAR placeholders for credential values (e.g., $GMAIL_ACCESS_TOKEN).
+5. Always include -s (silent) and -w '\n%{{http_code}}' to capture the HTTP status code on the last line.
+6. If a tool cannot be tested (no API endpoint, write-only, or missing credentials), set curl to empty string.
+
+## Output Format
+Output EXACTLY one JSON object — a test_plan array. No markdown, no commentary, raw JSON only:
+{{"test_plan": [
+  {{"tool_name": "fetch_unread_emails", "connector": "gmail", "curl": "curl -s -H 'Authorization: Bearer $GMAIL_ACCESS_TOKEN' 'https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=1&q=is:unread' -w '\\n%{{http_code}}'", "description": "Verify Gmail API access with minimal fetch"}},
+  {{"tool_name": "write_only_tool", "connector": "slack", "curl": "", "description": "Skipped: write-only operation"}}
+]}}
+
+Generate the test_plan now."#
+    )
+}
+
+/// Extract test_plan entries from CLI output (handles stream-json envelopes).
+fn extract_test_plan(raw_output: &str) -> Vec<serde_json::Value> {
+    // First try to parse from LLM text content (unwrap envelopes)
+    let text_content = extract_llm_text_from_output(raw_output);
+    let search_text = if text_content.is_empty() {
+        raw_output.to_string()
+    } else {
+        text_content
     };
 
-    // Try to parse the accumulated output as agent IR
-    let agent_ir = parse_agent_ir(&last_output);
+    // Look for test_plan JSON object in the text
+    // Strategy: find a JSON object containing "test_plan" key
+    let cleaned = search_text
+        .replace("```json", "")
+        .replace("```", "");
 
-    // Final checkpoint
-    let resolved_json =
-        serde_json::to_string(&serde_json::Value::Object(resolved_cells)).unwrap_or_else(|_| "{}".to_string());
-    let mut final_update = UpdateBuildSession {
-        phase: Some(final_phase.as_str().to_string()),
-        resolved_cells: Some(resolved_json),
-        cli_pid: Some(None), // Clear PID
-        pending_question: Some(None),
-        ..Default::default()
-    };
-
-    if let Some(ir) = &agent_ir {
-        final_update.agent_ir = Some(Some(ir.clone()));
+    for line in cleaned.lines() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with('{') {
+            continue;
+        }
+        if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
+            if let Some(plan) = val.get("test_plan").and_then(|v| v.as_array()) {
+                return plan.clone();
+            }
+        }
     }
 
-    if final_phase == BuildPhase::Failed {
-        let error_msg = match &exit_status {
-            Ok(status) => format!("CLI exited with status: {status}"),
-            Err(e) => format!("CLI process error: {e}"),
-        };
-        final_update.error_message = Some(Some(error_msg.clone()));
-        emit_error(&channel, &app_handle, &session_id, &error_msg, true);
+    // Try multi-line parse (test_plan might span multiple lines)
+    if let Ok(val) = serde_json::from_str::<serde_json::Value>(&cleaned) {
+        if let Some(plan) = val.get("test_plan").and_then(|v| v.as_array()) {
+            return plan.clone();
+        }
     }
 
-    let _ = build_session_repo::update(&pool, &session_id, &final_update);
+    // Try to find test_plan in any JSON object in the raw output
+    for chunk in raw_output.split('\n') {
+        let trimmed = chunk.trim();
+        if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
+            // Check stream-json result envelope
+            if let Some(result_text) = val.get("result").and_then(|v| v.as_str()) {
+                let inner_cleaned = result_text
+                    .replace("```json", "")
+                    .replace("```", "");
+                if let Ok(inner) = serde_json::from_str::<serde_json::Value>(&inner_cleaned) {
+                    if let Some(plan) = inner.get("test_plan").and_then(|v| v.as_array()) {
+                        return plan.clone();
+                    }
+                }
+            }
+            // Check assistant envelope
+            if let Some(content) = val.get("message")
+                .and_then(|m| m.get("content"))
+                .and_then(|c| c.as_array())
+            {
+                for item in content {
+                    if let Some(text) = item.get("text").and_then(|t| t.as_str()) {
+                        let inner_cleaned = text
+                            .replace("```json", "")
+                            .replace("```", "");
+                        if let Ok(inner) = serde_json::from_str::<serde_json::Value>(&inner_cleaned) {
+                            if let Some(plan) = inner.get("test_plan").and_then(|v| v.as_array()) {
+                                return plan.clone();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-    // Emit final status
-    emit_session_status(
-        &channel,
-        &app_handle,
-        &session_id,
-        final_phase,
-        resolved_count,
-        total_count,
-    );
+    vec![]
+}
 
-    // Cleanup
-    cleanup_session(&sessions_map, &registry, &session_id);
+/// Extract the LLM's text content from raw CLI stream-json output.
+fn extract_llm_text_from_output(raw: &str) -> String {
+    let mut texts = Vec::new();
+    for line in raw.lines() {
+        let trimmed = line.trim();
+        if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
+            let obj = match val.as_object() {
+                Some(o) => o,
+                None => continue,
+            };
+            let etype = obj.get("type").and_then(|v| v.as_str()).unwrap_or("");
+            match etype {
+                "assistant" => {
+                    if let Some(text) = obj
+                        .get("message")
+                        .and_then(|m| m.get("content"))
+                        .and_then(|c| c.as_array())
+                        .and_then(|arr| {
+                            arr.iter()
+                                .find(|i| i.get("type").and_then(|t| t.as_str()) == Some("text"))
+                                .and_then(|i| i.get("text").and_then(|t| t.as_str()))
+                        })
+                    {
+                        texts.push(text.to_string());
+                    }
+                }
+                "result" => {
+                    if let Some(text) = obj.get("result").and_then(|v| v.as_str()) {
+                        texts.push(text.to_string());
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    texts.join("\n")
 }
 
 // =============================================================================
@@ -546,9 +1132,10 @@ fn build_session_prompt(
     intent: &str,
     credentials: &[String],
     connectors: &[String],
+    template_context: &str,
 ) -> String {
     let cred_section = if credentials.is_empty() {
-        "No credentials configured. Ask the user which services they need and note that credentials must be added in the Vault.".to_string()
+        "No credentials configured. The user MUST add credentials in the Vault (Keys module) before the agent can connect to external services. Warn them clearly.".to_string()
     } else {
         format!("Available credentials:\n{}", credentials.join("\n"))
     };
@@ -563,67 +1150,214 @@ fn build_session_prompt(
     };
 
     format!(
-r#"You are building an AI agent in the Personas app. The user described what they want:
+r##"You are a senior AI agent architect. The user wants:
 
 "{intent}"
 
-## How Personas Works
-Personas is a desktop app where users build AI agents by configuring 8 dimensions in a visual grid. Analyze the intent carefully, ask meaningful questions, and produce a production-quality agent configuration.
+## How Dimensions Work
+
+An agent has 8 dimensions forming a natural dependency graph:
+
+**Intent → Tasks** (what the agent does) → **Connectors** (which services it needs) → **Triggers** (when it runs)
+
+From those three core decisions, the rest follows naturally:
+- If it sends emails → it needs **Messages** config (where to notify) and **Human Review** (approve before sending?)
+- If it polls an API → it needs **Memory** (what was already processed?) and **Error Handling** (what if the API is down?)
+- All actions produce observable **Events** for coordination with other agents.
+
+Think like an architect: when you know the tasks and services, you already know what notifications make sense, what needs approval, what to remember, and what can go wrong. Resolve everything you can reason about.
 
 ## The 8 Dimensions
-- **use-cases** — What tasks/workflows the agent handles. Break down into 3-6 distinct use cases.
-- **connectors** — External services/APIs it needs (Gmail, GitHub, Slack, databases). MUST check credentials.
-- **triggers** — When it runs: schedule (cron), webhook, polling, manual, or event-based.
-- **messages** — How it delivers results using notifications and status updates.
-- **human-review** — Whether it needs human approval before acting on external consequences.
-- **memory** — What the agent remembers between runs (business facts, preferences, learned patterns).
-- **error-handling** — What happens on failure: retry, timeout, fallback, escalation.
-- **events** — Events it subscribes to or emits for inter-agent coordination.
 
-## Available Credentials (from user's Vault)
+### 1. use-cases — WHAT it does
+Business logic only. No scheduling (that's triggers). Propose your best interpretation.
+
+### 2. connectors — WHICH services
+Each connector needs structured data so the UI can render interactive cards:
+data format: {{"items": ["Gmail (google) — reading emails"], "connectors": [{{"name": "gmail", "service_type": "google", "purpose": "reading and filtering emails", "has_credential": true}}], "alternatives": {{"gmail": ["outlook", "yahoo_mail"]}}}}
+- Check Available Credentials below to set has_credential correctly
+- Always include 1-2 alternatives per connector (similar services the user could swap to)
+
+### 3. triggers — WHEN it runs
+Each trigger needs structured data so the UI can render config cards:
+data format: {{"items": ["Polling: check Gmail every 5 min"], "triggers": [{{"trigger_type": "polling", "config": {{"cron": "*/5 * * * *", "interval": "5 minutes"}}, "description": "Check Gmail every 5 minutes"}}]}}
+trigger_type: schedule | polling | webhook | manual | event
+
+### 4. messages — HOW it notifies
+Notification channels and formats. Follows naturally from connectors.
+
+### 5. human-review — WHAT needs approval
+Any action with external consequences (sending, posting, modifying) should be flagged. Read-only is safe.
+
+### 6. memory — WHAT to remember between runs
+Deduplication IDs, learned patterns, state tracking. Follows from tasks.
+
+### 7. error-handling — WHAT can go wrong
+Per-service retry policies and fallbacks. Follows from connectors.
+
+### 8. events — WHAT to observe
+Emitted/subscribed events for inter-agent coordination.
+
+## Available Credentials
 {cred_section}
 
-## Available Connectors (configured in app)
+## Available Connectors
 {connector_section}
 
-## Output Format — STRICT JSON only, one object per line, NO markdown
+## Output Format
 
-### Per-dimension resolution (when resolving a dimension):
-{{"dimension": "triggers", "status": "resolved", "data": {{"items": ["Schedule: every 6 hours", "Manual trigger for on-demand runs"]}}}}
+RAW JSON only — one object per line, no markdown, no commentary.
 
-### Ask a question (include 2-4 options):
-{{"question": "Your question here?", "dimension": "connectors", "options": ["Option A", "Option B", "Option C"]}}
+Resolve a dimension:
+{{"dimension": "use-cases", "status": "resolved", "data": {{"items": ["Task 1", "Task 2"]}}}}
 
-Output MULTIPLE resolved events + one question in a single response to be efficient.
+Ask a question (2-4 specific options):
+{{"question": "Your question", "dimension": "use-cases", "options": ["Option 1", "Option 2", "Option 3"]}}
 
-### When ALL 8 are resolved, emit the full agent definition:
-{{"agent_ir": {{"name": "Agent Name", "description": "What this agent does", "system_prompt": "Complete system prompt", "structured_prompt": {{"identity": "...", "instructions": "...", "toolGuidance": "...", "examples": "...", "errorHandling": "..."}}, "icon": "Sparkles", "color": "#8b5cf6", "tools": [{{"name": "tool_name", "category": "email", "description": "What it does", "requires_credential_type": "google", "implementation_guide": "API endpoint, auth, curl example"}}], "triggers": [{{"trigger_type": "schedule", "config": {{}}, "description": "Every 6 hours"}}], "required_connectors": [{{"name": "google", "n8n_credential_type": "", "has_credential": false}}], "design_context": {{"summary": "Overview", "use_cases": []}}, "use_cases": ["Use case 1"], "connectors": ["Service 1"], "triggers_summary": ["Schedule"], "human_review": {{"required": true}}, "messages": {{"channels": ["built-in"]}}, "memory": {{"strategy": "progressive"}}, "error_handling": {{"retry": true}}, "events": []}}}}
+When ALL 8 are resolved, also emit agent_ir:
+{{"agent_ir": {{"name": "Short Agent Name", "description": "...", "system_prompt": "...", "structured_prompt": {{"identity": "...", "instructions": "...", "toolGuidance": "...", "examples": "...", "errorHandling": "..."}}, "icon": "Sparkles", "color": "#8b5cf6", "tools": [...], "triggers": [...], "required_connectors": [...], "design_context": {{"summary": "...", "use_cases": [...]}}, "use_cases": [...], "connectors": [...], "triggers_summary": [...], "human_review": {{}}, "messages": {{}}, "memory": {{}}, "error_handling": {{}}, "events": []}}}}
 
-## CRITICAL: Mandatory Question Rules
-You MUST ask at least one question for EACH of these dimensions (do NOT auto-resolve them):
-1. **connectors** — ALWAYS ask. Check Available Credentials. Warn about missing ones.
-2. **human-review** — ALWAYS ask about approval gates for actions with external consequences.
-3. **memory** — ALWAYS ask about what the agent should learn and remember across runs.
+## Rules
+1. Output RAW JSON only — no markdown, no code fences, no prose
+2. Dimension keys exactly: use-cases, connectors, triggers, messages, human-review, memory, error-handling, events
+3. connectors data MUST include "connectors" array (structured) and "alternatives" map
+4. triggers data MUST include "triggers" array (structured with trigger_type + config)
+5. Generate a short agent name (2-4 words, Title Case) in agent_ir — not the raw intent
+6. Resolve dimensions you can reason about. If tasks + connectors are clear, messages/review/memory/errors follow logically — resolve them too
 
-## CRITICAL: Connectors Dimension Rules
-The connectors dimension CANNOT be auto-resolved. CHECK the Available Credentials list. If a required service is NOT listed, warn the user. If it IS available, confirm it.
+{template_context}
 
-## Refinement Support
-If the conversation contains a refinement request, update affected dimensions and re-output the agent_ir.
-
-## Test Support
-If asked to test, analyze the configuration and report:
-{{"test_report": {{"status": "ready"|"blocked", "issues": [], "can_proceed": true|false, "summary": "Assessment"}}}}
-
-## General Rules
-1. Ask meaningful questions — each should elicit a choice that changes agent behavior
-2. data.items = short descriptive bullets of what was decided
-3. Output RAW JSON only — no markdown, no code fences, no explanatory text
-4. Dimension keys EXACT: use-cases, connectors, triggers, messages, human-review, memory, error-handling, events
-5. Include implementation_guide for EVERY tool with API endpoint, auth pattern, curl example
-
-Analyze the intent now:"#
+Analyze the intent now:"##
     )
+}
+
+// =============================================================================
+// Template lookup — keyword similarity matching against local template catalog
+// =============================================================================
+
+/// Lightweight template index entry for similarity matching.
+#[derive(Clone)]
+struct TemplateEntry {
+    name: String,
+    description: String,
+    category: String,
+    service_flow: Vec<String>,
+}
+
+/// Load template index from `scripts/templates/` — reads only the lightweight fields
+/// (name, description, category, service_flow) from each JSON file.
+/// Results are cached in-process after the first load (templates don't change at runtime).
+fn load_template_index() -> Vec<TemplateEntry> {
+    static CACHE: std::sync::LazyLock<Vec<TemplateEntry>> = std::sync::LazyLock::new(|| {
+        let templates_dir = std::path::Path::new("scripts/templates");
+        if !templates_dir.exists() {
+            return vec![];
+        }
+
+        let mut entries = Vec::new();
+        if let Ok(categories) = std::fs::read_dir(templates_dir) {
+            for cat_entry in categories.flatten() {
+                let cat_path = cat_entry.path();
+                if !cat_path.is_dir() || cat_path.file_name().map(|n| n.to_string_lossy().starts_with('_')).unwrap_or(true) {
+                    continue;
+                }
+                if let Ok(files) = std::fs::read_dir(&cat_path) {
+                    for file_entry in files.flatten() {
+                        let fp = file_entry.path();
+                        if fp.extension().map(|e| e == "json").unwrap_or(false) {
+                            if let Ok(content) = std::fs::read_to_string(&fp) {
+                                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                                    entries.push(TemplateEntry {
+                                        name: val.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                        description: val.get("description").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                        category: val.get("category")
+                                            .and_then(|v| v.as_array())
+                                            .and_then(|a| a.first())
+                                            .and_then(|v| v.as_str())
+                                            .unwrap_or("")
+                                            .to_string(),
+                                        service_flow: val.get("service_flow")
+                                            .and_then(|v| v.as_array())
+                                            .map(|a| a.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                                            .unwrap_or_default(),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        tracing::info!("Template index loaded: {} entries (cached)", entries.len());
+        entries
+    });
+    CACHE.clone()
+}
+
+/// Extract keywords from text: lowercase, split on whitespace/punctuation, filter stopwords.
+fn extract_keywords(text: &str) -> Vec<String> {
+    let stopwords: std::collections::HashSet<&str> = [
+        "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
+        "of", "with", "by", "from", "is", "it", "that", "this", "be", "are",
+        "was", "were", "been", "have", "has", "had", "do", "does", "did",
+        "will", "would", "could", "should", "may", "might", "can", "shall",
+        "i", "me", "my", "we", "our", "you", "your", "they", "their",
+        "want", "need", "like", "make", "create", "build", "agent", "bot",
+    ].into_iter().collect();
+
+    text.to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| w.len() > 2 && !stopwords.contains(w))
+        .map(|s| s.to_string())
+        .collect()
+}
+
+/// Find the top N templates most similar to the given intent by keyword overlap score.
+fn find_similar_templates<'a>(intent: &str, templates: &'a [TemplateEntry], top_n: usize) -> Vec<&'a TemplateEntry> {
+    let intent_kw = extract_keywords(intent);
+    if intent_kw.is_empty() {
+        return vec![];
+    }
+
+    let mut scored: Vec<(usize, &TemplateEntry)> = templates.iter().map(|t| {
+        let text = format!("{} {} {} {}", t.name, t.description, t.category, t.service_flow.join(" "));
+        let tmpl_kw = extract_keywords(&text);
+        let score = intent_kw.iter().filter(|kw| tmpl_kw.contains(kw)).count();
+        (score, t)
+    }).collect();
+
+    scored.sort_by(|a, b| b.0.cmp(&a.0));
+    scored.into_iter()
+        .filter(|(score, _)| *score > 0)
+        .take(top_n)
+        .map(|(_, t)| t)
+        .collect()
+}
+
+/// Build a template context section for the prompt from matched templates.
+fn build_template_context(intent: &str) -> String {
+    let templates = load_template_index();
+    if templates.is_empty() {
+        return String::new();
+    }
+
+    let matches = find_similar_templates(intent, &templates, 3);
+    if matches.is_empty() {
+        return String::new();
+    }
+
+    let mut section = String::from("## Reference Templates\nThe following existing templates are similar to the user's intent. Use them as inspiration for dimension values, tool configurations, and service flows. Adapt — don't copy verbatim.\n\n");
+    for (i, t) in matches.iter().enumerate() {
+        section.push_str(&format!(
+            "### Reference {}: {} ({})\n{}\nServices: {}\n\n",
+            i + 1,
+            t.name,
+            t.category,
+            t.description,
+            t.service_flow.join(", "),
+        ));
+    }
+    section
 }
 
 // =============================================================================
@@ -653,6 +1387,7 @@ fn parse_build_line(line: &str, session_id: &str) -> Vec<BuildEvent> {
                 dimension: None,
                 message: trimmed.to_string(),
                 percent: None,
+                activity: None,
             }];
         }
     };
@@ -733,6 +1468,7 @@ fn parse_llm_text_content(text: &str, session_id: &str) -> Vec<BuildEvent> {
             dimension: None,
             message: msg.trim().to_string(),
             percent: None,
+            activity: None,
         });
     }
 

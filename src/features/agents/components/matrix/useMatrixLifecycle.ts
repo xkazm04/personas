@@ -2,23 +2,20 @@
  * Lifecycle hook orchestrating the post-build test/approve/reject/refine/promote flow.
  *
  * After the matrix build reaches draft_ready, this hook handles:
- *   1. Starting a test run via testN8nDraft (with pre-validation)
- *   2. Listening for streaming test output and status events
+ *   1. Starting a real API test via testBuildDraft (executes each tool against live APIs)
+ *   2. Listening for streaming per-tool test results via Tauri events
  *   3. Promoting a tested draft to production (credential coverage + updatePersona)
  *   4. Rejecting a test and returning to draft_ready for refinement
- *   5. Refining: starting a new build session with previous agent_ir context
- *
- * Uses testN8nDraft (single-turn, streaming, confusion detection) rather
- * than startTestRun (full multi-model test runner) per RESEARCH.md.
+ *   5. Refining: sending feedback through the build session conversation
  */
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { answerBuildQuestion, promoteBuildDraft } from "@/api/agents/buildSession";
+import { answerBuildQuestion, promoteBuildDraft, testBuildDraft } from "@/api/agents/buildSession";
 import {
   updatePersona,
   buildUpdateInput,
 } from "@/api/agents/personas";
-import type { PromoteBuildResult } from "@/lib/types/buildTypes";
+import type { PromoteBuildResult, ToolTestResult } from "@/lib/types/buildTypes";
 import { useAgentStore } from "@/stores/agentStore";
 
 // ---------------------------------------------------------------------------
@@ -31,16 +28,16 @@ interface UseMatrixLifecycleOptions {
   handleGenerate?: (intent: string, overridePersonaId?: string) => Promise<void>;
 }
 
-interface TestStatusPayload {
-  test_id: string;
-  status: "running" | "completed" | "failed";
+interface ToolTestEventPayload {
+  session_id: string;
+  tool_name: string;
+  status: string;
+  http_status?: number;
+  latency_ms?: number;
   error?: string;
-  passed?: boolean;
-}
-
-interface TestOutputPayload {
-  test_id: string;
-  line: string;
+  connector?: string;
+  tested: number;
+  total: number;
 }
 
 export interface PromoteResult {
@@ -61,81 +58,78 @@ export function useMatrixLifecycle({
   // -- Read build slice state from Zustand selectors -------------------------
 
   const buildPhase = useAgentStore((s) => s.buildPhase);
-  const buildTestId = useAgentStore((s) => s.buildTestId);
   const buildTestPassed = useAgentStore((s) => s.buildTestPassed);
   const buildTestError = useAgentStore((s) => s.buildTestError);
   const buildTestOutputLines = useAgentStore((s) => s.buildTestOutputLines);
+  const buildToolTestResults = useAgentStore((s) => s.buildToolTestResults);
+  const buildTestSummary = useAgentStore((s) => s.buildTestSummary);
 
-  // Ref to track current testId for event filtering in listeners
-  const testIdRef = useRef<string | null>(buildTestId);
-  testIdRef.current = buildTestId;
-
-  // -- Event listeners -------------------------------------------------------
+  // -- Event listeners for per-tool test results ----------------------------
 
   useEffect(() => {
-    let statusUnlisten: (() => void) | null = null;
-    let outputUnlisten: (() => void) | null = null;
+    let unlisten: (() => void) | null = null;
     let cancelled = false;
 
-    async function setupListeners() {
-      statusUnlisten = await listen<TestStatusPayload>(
-        "n8n-test-status",
+    async function setup() {
+      unlisten = await listen<ToolTestEventPayload>(
+        "build-test-tool-result",
         (event) => {
           if (cancelled) return;
-          const currentTestId = testIdRef.current;
-          if (!currentTestId || event.payload.test_id !== currentTestId) return;
+          const store = useAgentStore.getState();
+          if (!store.buildSessionId || event.payload.session_id !== store.buildSessionId) return;
 
-          if (event.payload.status === "completed") {
-            useAgentStore
-              .getState()
-              .handleTestComplete(event.payload.passed === true, "");
-          } else if (event.payload.status === "failed") {
-            useAgentStore
-              .getState()
-              .handleTestFailed(event.payload.error ?? "Test failed");
-          }
-        },
-      );
-
-      outputUnlisten = await listen<TestOutputPayload>(
-        "n8n-test-output",
-        (event) => {
-          if (cancelled) return;
-          const currentTestId = testIdRef.current;
-          if (!currentTestId || event.payload.test_id !== currentTestId) return;
-
-          useAgentStore.getState().appendTestOutput(event.payload.line);
+          const result: ToolTestResult = {
+            tool_name: event.payload.tool_name,
+            status: event.payload.status as ToolTestResult["status"],
+            http_status: event.payload.http_status,
+            latency_ms: event.payload.latency_ms,
+            error: event.payload.error,
+            connector: event.payload.connector,
+          };
+          store.appendToolTestResult(result);
+          store.appendTestOutput(
+            `${result.status === "passed" ? "PASS" : result.status === "skipped" ? "SKIP" : "FAIL"} ${result.tool_name}${result.http_status ? ` (${result.http_status})` : ""}${result.latency_ms ? ` ${result.latency_ms}ms` : ""}`
+          );
         },
       );
     }
 
-    setupListeners();
-
-    return () => {
-      cancelled = true;
-      statusUnlisten?.();
-      outputUnlisten?.();
-    };
+    setup();
+    return () => { cancelled = true; unlisten?.(); };
   }, []);
 
   // -- handleStartTest -------------------------------------------------------
-  // Sends a _test message through the build session conversation
+  // Calls testBuildDraft which executes each tool against real APIs
 
   const handleStartTest = useCallback(async () => {
     const state = useAgentStore.getState();
-    if (state.buildPhase !== "draft_ready") return;
+    if (state.buildPhase !== "draft_ready" && state.buildPhase !== "test_complete") return;
 
     const sessionId = state.buildSessionId;
-    if (!sessionId) return;
+    if (!sessionId || !personaId) return;
+
+    // Optimistic: transition to testing immediately
+    const testId = `test_${Date.now()}`;
+    useAgentStore.getState().handleStartTest(testId);
 
     try {
-      // Send test request through the build session conversation
-      await answerBuildQuestion(sessionId, "_test", "Run test");
+      const report = await testBuildDraft(sessionId, personaId);
+
+      // Store full results and summary
+      const store = useAgentStore.getState();
+      store.setToolTestResults(report.results);
+      if (report.summary) store.setTestSummary(report.summary);
+
+      const allPassed = report.tools_failed === 0 && report.tools_tested > 0;
+      store.handleTestComplete(
+        allPassed,
+        `${report.tools_passed}/${report.tools_tested} tools passed${report.credential_issues.length > 0 ? `, ${report.credential_issues.length} credential issue(s)` : ""}`,
+      );
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to start test";
+      const message = err instanceof Error ? err.message : "Failed to run tests";
       useAgentStore.getState().handleTestFailed(message);
     }
-  }, []);
+  }, [personaId]);
 
   // -- handleRefine -----------------------------------------------------------
   // Sends a _refine message through the build session conversation
@@ -143,13 +137,15 @@ export function useMatrixLifecycle({
   const handleRefine = useCallback(
     async (feedback: string) => {
       const state = useAgentStore.getState();
-      if (state.buildPhase !== "draft_ready") return;
+      if (state.buildPhase !== "draft_ready" && state.buildPhase !== "test_complete") return;
 
       const sessionId = state.buildSessionId;
       if (!sessionId) return;
 
+      // Reset test state before refining
+      useAgentStore.getState().handleRejectTest();
+
       try {
-        // Send refinement through the build session conversation
         await answerBuildQuestion(sessionId, "_refine", feedback);
       } catch (err) {
         console.error("Refinement failed:", err);
@@ -255,6 +251,8 @@ export function useMatrixLifecycle({
     buildTestPassed,
     buildTestError,
     buildTestOutputLines,
+    buildToolTestResults,
+    buildTestSummary,
     isTesting: buildPhase === "testing",
     isTestComplete: buildPhase === "test_complete",
   };

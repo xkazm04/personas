@@ -655,6 +655,17 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     get_by_id(pool, id)
 }
 
+/// Lightweight name-only update used by build sessions to rename a persona from the agent_ir.
+pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> {
+    validate_name(name)?;
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE personas SET name = ?1, updated_at = datetime('now') WHERE id = ?2",
+        params![name, id],
+    )?;
+    Ok(())
+}
+
 /// Batch-fetch sidebar summary data (enabled trigger count + last execution time + health)
 /// for all personas in a single CTE query, eliminating the N+1 per-persona health pattern.
 /// Previously ran 3 queries per persona (recent statuses, runs today, 7-day sparkline);

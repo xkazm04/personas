@@ -346,6 +346,36 @@ TOOLS = [
             "required": ["text"],
         },
     ),
+    types.Tool(
+        name="answer_question",
+        description=(
+            "Answer a build question during agent creation. Opens the question popover "
+            "and clicks the option at the given index (0-based). The cellKey parameter is "
+            "informational — the method clicks whichever answer button is currently visible."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "cell_key": {"type": "string", "description": "Cell key (e.g., 'use-cases', 'triggers')"},
+                "option_index": {"type": "integer", "description": "0-based option index to select"},
+            },
+            "required": ["cell_key", "option_index"],
+        },
+    ),
+    types.Tool(
+        name="delete_agent",
+        description=(
+            "Delete an agent by name (partial match) or ID. Handles both regular agents "
+            "and draft agents (cleans up build state). Returns success/failure."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "name_or_id": {"type": "string", "description": "Agent name (partial match) or UUID"},
+            },
+            "required": ["name_or_id"],
+        },
+    ),
 ]
 
 
@@ -411,6 +441,13 @@ async def call_tool(name: str, arguments: dict[str, Any] | None) -> list[types.T
             "text": arguments["text"],
             "timeout_ms": arguments.get("timeout_ms", 5000),
         })
+    elif name == "answer_question":
+        result = await _post("/answer-question", {
+            "cell_key": arguments["cell_key"],
+            "option_index": arguments["option_index"],
+        })
+    elif name == "delete_agent":
+        result = await _post("/delete-agent", {"name_or_id": arguments["name_or_id"]})
     else:
         result = json.dumps({"error": f"Unknown tool: {name}"})
 

@@ -4,12 +4,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Play, X, Loader2, HelpCircle, CheckCircle2, Send,
-  XCircle, Eye, RotateCcw,
+  Play, X, Loader2, HelpCircle, CheckCircle2, Send, RefreshCw,
+  XCircle, Eye, RotateCcw, FileText, Clock, AlertTriangle, Key,
 } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { DesignQuestion } from '@/lib/types/designTypes';
-import type { BuildPhase } from '@/lib/types/buildTypes';
+import type { BuildPhase, ToolTestResult } from '@/lib/types/buildTypes';
+import { useAgentStore } from '@/stores/agentStore';
 
 interface PromptSection { key: string; label: string; icon: React.ComponentType<{ className?: string }>; color: string; content: string; }
 
@@ -153,88 +154,113 @@ export function BuildStatusIndicator({ phaseLabel, hint }: { phaseLabel: string;
 
 /** Active build progress — shows phase, completeness ring, active cells, and CLI output. */
 export function ActiveBuildProgress({
-  buildPhase, completeness, cellStates, cliOutputLines,
+  buildPhase, cellStates, onOpenNextQuestion, buildActivity, onSubmitAnswers,
 }: {
   buildPhase?: BuildPhase;
-  completeness: number;
+  completeness?: number;
   cellStates?: Record<string, string>;
-  cliOutputLines: string[];
+  cliOutputLines?: string[];
+  onOpenNextQuestion?: () => void;
+  buildActivity?: string | null;
+  /** Submit all collected answers at once */
+  onSubmitAnswers?: () => void;
 }) {
   const phaseLabel = BUILD_PHASE_LABELS[buildPhase ?? 'analyzing'] ?? 'Building...';
-  const phaseSubtext = PHASE_SUBTEXT[buildPhase ?? ''] ?? '';
   const isAwaitingInput = buildPhase === 'awaiting_input';
+  const pendingAnswerCount = useAgentStore((s) => Object.keys(s.buildPendingAnswers).length);
 
-  const highlightedCells = cellStates
+  const highlightedCellKeys = cellStates
     ? Object.entries(cellStates)
         .filter(([, status]) => status === 'highlighted')
-        .map(([key]) => CELL_FRIENDLY_NAMES[key] ?? key)
+        .map(([key]) => key)
     : [];
+  const highlightedCells = highlightedCellKeys.map((key) => CELL_FRIENDLY_NAMES[key] ?? key);
   const activeCells = cellStates
     ? Object.entries(cellStates)
-        .filter(([, status]) => status === 'filling' || status === 'pending' || status === 'highlighted')
+        .filter(([, status]) => status === 'filling' || status === 'pending')
         .map(([key]) => CELL_FRIENDLY_NAMES[key] ?? key)
     : [];
   const resolvedCells = cellStates
-    ? Object.values(cellStates).filter((s) => s === 'resolved').length
+    ? Object.values(cellStates).filter((s) => s === 'resolved' || s === 'updated').length
     : 0;
   const totalCells = 8;
   const allResolved = resolvedCells === totalCells;
 
+  // Has remaining unanswered questions?
+  const hasUnansweredQuestions = highlightedCells.length > 0;
+  // All questions answered (pending answers collected) but not yet submitted?
+  const allQuestionsAnswered = pendingAnswerCount > 0 && !hasUnansweredQuestions;
+
   return (
-    <div className="flex flex-col items-center gap-2 w-full h-full justify-center">
-      <div className="relative">
-        <CompletenessRing value={completeness} size={52} />
-        <div className="absolute inset-0 flex items-center justify-center">
-          {allResolved
-            ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 relative z-10" />
-            : isAwaitingInput
-              ? <HelpCircle className="w-3.5 h-3.5 text-primary/60 relative z-10" />
-              : <Loader2 className="w-3.5 h-3.5 text-primary/40 animate-spin" />}
+    <div className="flex flex-col items-center gap-2.5 w-full h-full justify-center">
+      {/* All questions answered → show Continue Build button */}
+      {isAwaitingInput && allQuestionsAnswered && onSubmitAnswers ? (
+        <button
+          type="button"
+          onClick={onSubmitAnswers}
+          data-testid="continue-build-btn"
+          className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
+        >
+          <Play className="w-4 h-4" />
+          <span className="text-sm font-semibold">Continue Build</span>
+        </button>
+      ) : allResolved ? (
+        <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
+          <CheckCircle2 className="w-6 h-6 text-emerald-400" />
         </div>
-      </div>
-
-      <div className="w-full h-1 rounded-full bg-primary/10 overflow-hidden">
-        <div className="h-full rounded-full bg-primary/50 transition-all duration-700" style={{ width: `${completeness}%` }} />
-      </div>
-
-      {allResolved ? (
-        <span className="text-xs font-semibold text-emerald-400 tracking-wide uppercase">
-          All Dimensions Resolved
-        </span>
+      ) : isAwaitingInput && hasUnansweredQuestions ? (
+        <button
+          type="button"
+          onClick={onOpenNextQuestion}
+          data-testid={`answer-button-${highlightedCellKeys[0]}`}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/15 border border-primary/25 text-primary hover:bg-primary/25 transition-colors"
+        >
+          <HelpCircle className="w-4 h-4" />
+          <span className="text-sm font-medium">Answer: {highlightedCells[0]}</span>
+        </button>
       ) : (
-        <>
-          <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">
-            {phaseLabel}
-          </span>
-          {phaseSubtext && (
-            <p className="text-[10px] text-muted-foreground/40 text-center leading-relaxed">
-              {phaseSubtext}
-            </p>
-          )}
-        </>
+        <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+          <Loader2 className="w-5 h-5 text-primary/50 animate-spin" />
+        </div>
       )}
 
+      {/* Progress dots */}
       <div className="flex items-center gap-1">
         {Array.from({ length: totalCells }).map((_, i) => (
           <div key={i} className={`w-2 h-2 rounded-full transition-colors duration-500 ${i < resolvedCells ? 'bg-emerald-400' : 'bg-primary/15'}`} />
         ))}
       </div>
 
-      {isAwaitingInput && highlightedCells.length > 0 && (
-        <p className="text-[11px] text-primary/70 text-center leading-relaxed font-medium">
-          Click the highlighted cell{highlightedCells.length > 1 ? 's' : ''} to answer
+      {/* Phase label */}
+      {allResolved ? (
+        <span className="text-xs font-semibold text-emerald-400 tracking-wide uppercase">
+          All Dimensions Resolved
+        </span>
+      ) : allQuestionsAnswered ? (
+        <span className="text-xs font-semibold text-emerald-400/80 tracking-wide uppercase">
+          {pendingAnswerCount} answer{pendingAnswerCount > 1 ? 's' : ''} ready — click Continue
+        </span>
+      ) : (
+        <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">
+          {buildActivity || phaseLabel}
+        </span>
+      )}
+
+      {/* Hint: which cells still need answers */}
+      {isAwaitingInput && hasUnansweredQuestions && pendingAnswerCount > 0 && (
+        <p className="text-[10px] text-primary/60 text-center leading-relaxed">
+          {pendingAnswerCount} answered, {highlightedCells.length} remaining
+        </p>
+      )}
+      {isAwaitingInput && hasUnansweredQuestions && pendingAnswerCount === 0 && highlightedCells.length > 1 && (
+        <p className="text-[10px] text-primary/60 text-center leading-relaxed">
+          {highlightedCells.length} questions — answer all, then Continue
         </p>
       )}
 
       {!isAwaitingInput && activeCells.length > 0 && (
         <p className="text-[10px] text-primary/60 text-center leading-relaxed animate-pulse">
           Working on: {activeCells.join(', ')}
-        </p>
-      )}
-
-      {cliOutputLines.length > 0 && (
-        <p className="text-[10px] text-muted-foreground/40 text-center truncate w-full px-2">
-          {cliOutputLines[cliOutputLines.length - 1]}
         </p>
       )}
     </div>
@@ -295,14 +321,20 @@ export function CompletenessRing({ value, size = 56 }: { value: number; size?: n
 
 /** Post-generation state for creation mode. */
 export function CreationPostGeneration({
-  completeness, onRefine, onStartTest,
+  completeness, onRefine, onStartTest, onApplyEdits, onDiscardEdits,
 }: {
   completeness: number;
   onRefine?: (feedback: string) => void;
   onStartTest?: () => void;
+  /** Apply inline cell edits via CLI refine (--continue session) */
+  onApplyEdits?: () => void;
+  /** Discard inline cell edits */
+  onDiscardEdits?: () => void;
 }) {
   const [refineText, setRefineText] = useState('');
   const [isTesting, setIsTesting] = useState(false);
+  const editDirty = useAgentStore((s) => s.buildEditDirty);
+  const editingCellKey = useAgentStore((s) => s.editingCellKey);
 
   const handleTest = async () => {
     if (!onStartTest || isTesting) return;
@@ -319,10 +351,38 @@ export function CreationPostGeneration({
       <CompletenessRing value={completeness} />
 
       <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">
-        Draft Ready
+        {editingCellKey ? `Editing: ${CELL_FRIENDLY_NAMES[editingCellKey] ?? editingCellKey}` : 'Draft Ready'}
       </span>
 
-      {onStartTest && (
+      {/* Inline edit hint */}
+      {!editDirty && !editingCellKey && (
+        <p className="text-[10px] text-muted-foreground/40 text-center">Click any cell to adjust</p>
+      )}
+
+      {/* Apply/Discard bar when edits are pending */}
+      {editDirty && onApplyEdits && (
+        <div className="w-full flex gap-1.5">
+          <button
+            type="button"
+            onClick={onApplyEdits}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25 transition-colors"
+          >
+            <RefreshCw className="w-3 h-3" />
+            Apply Changes
+          </button>
+          {onDiscardEdits && (
+            <button
+              type="button"
+              onClick={onDiscardEdits}
+              className="px-2.5 py-1.5 rounded-lg text-[11px] text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+            >
+              Discard
+            </button>
+          )}
+        </div>
+      )}
+
+      {onStartTest && !editDirty && (
         <button
           type="button"
           onClick={handleTest}
@@ -335,7 +395,7 @@ export function CreationPostGeneration({
         </button>
       )}
 
-      {onRefine && (
+      {onRefine && !editDirty && (
         <div className="w-full flex gap-1.5">
           <input
             type="text"
@@ -433,17 +493,24 @@ export function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { t
   );
 }
 
-/** Test results panel -- pass/fail indicator with approve/reject buttons. */
+/** Test results panel -- pass/fail summary with View Report button. */
 export function TestResultsPanel({
-  passed, outputLines = [], error, onApprove, onReject,
+  passed, error, onApprove, onReject, toolResults = [], summary,
 }: {
   passed?: boolean | null;
   outputLines?: string[];
   error?: string | null;
   onApprove?: () => void;
   onReject?: () => void;
+  toolResults?: ToolTestResult[];
+  summary?: string | null;
 }) {
+  const [showReport, setShowReport] = useState(false);
   const didPass = passed === true;
+  const passedCount = toolResults.filter((r) => r.status === 'passed').length;
+  const failedCount = toolResults.filter((r) => r.status === 'failed' || r.status === 'credential_missing').length;
+  const skippedCount = toolResults.filter((r) => r.status === 'skipped').length;
+
   return (
     <div className="flex flex-col items-center gap-3 py-2 w-full">
       <div className="relative w-12 h-12 flex items-center justify-center">
@@ -459,19 +526,32 @@ export function TestResultsPanel({
       </div>
 
       <span className={`text-sm font-medium ${didPass ? 'text-emerald-400' : 'text-red-400'}`}>
-        {didPass ? 'Test Passed' : 'Test Failed'}
+        {didPass ? 'All Tests Passed' : 'Some Tests Failed'}
       </span>
 
-      {error && (
+      {/* Brief summary */}
+      {toolResults.length > 0 && (
+        <div className="flex items-center gap-3 text-xs text-muted-foreground/60">
+          {passedCount > 0 && <span className="text-emerald-400">{passedCount} passed</span>}
+          {failedCount > 0 && <span className="text-red-400">{failedCount} failed</span>}
+          {skippedCount > 0 && <span className="text-muted-foreground/40">{skippedCount} skipped</span>}
+        </div>
+      )}
+
+      {error && !toolResults.length && (
         <p className="text-xs text-red-400/80 text-center leading-relaxed px-2">{error}</p>
       )}
 
-      {outputLines.length > 0 && (
-        <div className="w-full max-h-14 overflow-y-auto rounded-lg bg-black/20 border border-primary/10 px-2 py-1.5 font-mono text-[10px] text-muted-foreground/50 leading-relaxed">
-          {outputLines.slice(-5).map((line, i) => (
-            <div key={i} className="truncate">{line}</div>
-          ))}
-        </div>
+      {/* View Report button */}
+      {toolResults.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowReport(true)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-primary/15 text-foreground/60 hover:bg-primary/5 hover:text-foreground/80 transition-colors"
+        >
+          <FileText className="w-3 h-3" />
+          View Report
+        </button>
       )}
 
       <div className="flex gap-2 w-full">
@@ -496,6 +576,137 @@ export function TestResultsPanel({
           </button>
         )}
       </div>
+
+      {showReport && createPortal(
+        <TestReportModal results={toolResults} summary={summary} onClose={() => setShowReport(false)} />,
+        document.body,
+      )}
+    </div>
+  );
+}
+
+/** Split-pane modal: left = test scope (per-tool results), right = LLM-generated summary. */
+function TestReportModal({ results, summary, onClose }: { results: ToolTestResult[]; summary?: string | null; onClose: () => void }) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  useClickOutside(modalRef, true, onClose);
+
+  const passedCount = results.filter((r) => r.status === 'passed').length;
+  const failedCount = results.filter((r) => r.status === 'failed' || r.status === 'credential_missing').length;
+  const skippedCount = results.filter((r) => r.status === 'skipped').length;
+  const allPassed = failedCount === 0 && passedCount > 0;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-6">
+      <div
+        ref={modalRef}
+        className="w-full max-w-4xl max-h-[85vh] flex flex-col rounded-2xl border border-primary/15 bg-background shadow-2xl shadow-black/30 overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-primary/[0.03]">
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
+              allPassed
+                ? 'bg-emerald-500/10 border-emerald-500/20'
+                : 'bg-red-500/10 border-red-500/20'
+            }`}>
+              {allPassed
+                ? <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400" />
+                : <XCircle className="w-4.5 h-4.5 text-red-400" />}
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-foreground/90">Test Report</h2>
+              <div className="flex items-center gap-3 mt-0.5">
+                {passedCount > 0 && (
+                  <span className="text-xs text-emerald-400 font-medium">{passedCount} passed</span>
+                )}
+                {failedCount > 0 && (
+                  <span className="text-xs text-red-400 font-medium">{failedCount} failed</span>
+                )}
+                {skippedCount > 0 && (
+                  <span className="text-xs text-muted-foreground/50">{skippedCount} skipped</span>
+                )}
+              </div>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-secondary/50 transition-colors">
+            <X className="w-4 h-4 text-muted-foreground/60" />
+          </button>
+        </div>
+
+        {/* Split content: left = scope, right = analysis */}
+        <div className="flex-1 min-h-0 flex">
+          {/* Left pane: Test Scope */}
+          <div className="w-1/2 border-r border-primary/10 flex flex-col min-h-0">
+            <div className="px-5 py-3 border-b border-primary/5 bg-secondary/10">
+              <h3 className="text-xs font-semibold text-foreground/60 uppercase tracking-wider">Test Scope</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+              {results.map((r, i) => (
+                <ToolTestResultRow key={i} result={r} />
+              ))}
+            </div>
+          </div>
+
+          {/* Right pane: Analysis */}
+          <div className="w-1/2 flex flex-col min-h-0">
+            <div className="px-5 py-3 border-b border-primary/5 bg-secondary/10">
+              <h3 className="text-xs font-semibold text-foreground/60 uppercase tracking-wider">Analysis</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {summary ? (
+                <p className="text-sm text-foreground/70 leading-relaxed whitespace-pre-line">
+                  {summary}
+                </p>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center gap-2">
+                  <Loader2 className="w-5 h-5 text-muted-foreground/30 animate-spin" />
+                  <p className="text-sm text-muted-foreground/40">Generating analysis...</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Single tool test result row inside the report modal. */
+function ToolTestResultRow({ result }: { result: ToolTestResult }) {
+  const statusConfig = {
+    passed: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/8', border: 'border-emerald-500/15', label: 'Passed' },
+    failed: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/8', border: 'border-red-500/15', label: 'Failed' },
+    credential_missing: { icon: Key, color: 'text-amber-400', bg: 'bg-amber-500/8', border: 'border-amber-500/15', label: 'Needs Credential' },
+    skipped: { icon: AlertTriangle, color: 'text-muted-foreground/40', bg: 'bg-secondary/20', border: 'border-primary/10', label: 'Skipped' },
+  }[result.status] ?? { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/8', border: 'border-red-500/15', label: result.status };
+
+  const StatusIcon = statusConfig.icon;
+  const toolLabel = result.tool_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+  return (
+    <div className={`rounded-lg border ${statusConfig.border} ${statusConfig.bg} px-3 py-2.5`}>
+      <div className="flex items-center gap-2">
+        <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${statusConfig.color}`} />
+        <span className="text-[13px] font-medium text-foreground/80 truncate flex-1">{toolLabel}</span>
+        {result.http_status && (
+          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+            result.http_status >= 200 && result.http_status < 300
+              ? 'bg-emerald-500/15 text-emerald-400'
+              : 'bg-red-500/15 text-red-400'
+          }`}>
+            {result.http_status}
+          </span>
+        )}
+        {result.latency_ms != null && result.latency_ms > 0 && (
+          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/30 flex-shrink-0">
+            <Clock className="w-2.5 h-2.5" />
+            {result.latency_ms}ms
+          </span>
+        )}
+      </div>
+      {result.connector && (
+        <span className="text-[10px] text-muted-foreground/35 ml-5.5 block mt-0.5">via {result.connector}</span>
+      )}
     </div>
   );
 }

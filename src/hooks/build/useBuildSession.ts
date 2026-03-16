@@ -65,6 +65,7 @@ interface UseBuildSessionReturn {
     parserResultJson?: string,
   ) => Promise<string>;
   answerQuestion: (cellKey: string, answer: string) => Promise<void>;
+  submitAllAnswers: () => Promise<void>;
   cancelSession: () => Promise<void>;
   // State is read from useAgentStore selectors, not returned here
 }
@@ -162,6 +163,12 @@ export function useBuildSession(
       workflowJson?: string,
       parserResultJson?: string,
     ): Promise<string> => {
+      // If store was reset (e.g., Create new agent), clear stale refs
+      if (!useAgentStore.getState().buildSessionId) {
+        channelRef.current = null;
+        sessionIdRef.current = null;
+      }
+
       // Prevent double-start
       if (channelRef.current && sessionIdRef.current) {
         console.warn(
@@ -177,6 +184,8 @@ export function useBuildSession(
       }
 
       // Create typed Channel for streaming events
+      // Flag prevents the global EventBridge from double-processing the same events
+      (window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__ = true;
       const channel = new Channel<BuildEvent>();
       channel.onmessage = handleChannelMessage;
 
@@ -201,16 +210,45 @@ export function useBuildSession(
     [personaId, handleChannelMessage],
   );
 
+  /**
+   * Collect an answer locally without sending to CLI.
+   * The user answers all pending questions, then clicks "Continue" to send.
+   */
   const answerQuestion = useCallback(
     async (cellKey: string, answer: string): Promise<void> => {
       if (!sessionIdRef.current) {
         throw new Error("[useBuildSession] No active session to answer");
       }
+      // Store answer locally — don't send to CLI yet
+      useAgentStore.getState().collectAnswer(cellKey, answer);
+    },
+    [],
+  );
 
-      await answerBuildQuestion(sessionIdRef.current, cellKey, answer);
+  /**
+   * Submit all collected answers to the CLI as a single batch.
+   * Combines answers into one message so the CLI processes them in one turn.
+   * Cells stay in 'resolved' state (confirmed by user) — no 'filling' spinner.
+   */
+  const submitAllAnswers = useCallback(
+    async (): Promise<void> => {
+      if (!sessionIdRef.current) {
+        throw new Error("[useBuildSession] No active session");
+      }
+      const store = useAgentStore.getState();
+      const answers = store.buildPendingAnswers;
+      const entries = Object.entries(answers);
+      if (entries.length === 0) return;
 
-      // Clear only the answered question from the pending array
-      useAgentStore.getState().clearBuildQuestion(cellKey);
+      // Build a combined answer that clearly lists each dimension's answer
+      const combined = entries
+        .map(([cellKey, answer]) => `[${cellKey}]: ${answer}`)
+        .join('\n');
+
+      // Use "_batch" as cellKey so the backend knows this is multi-dimension
+      // The actual dimension keys are embedded in the answer text
+      await answerBuildQuestion(sessionIdRef.current, "_batch", combined);
+      store.clearPendingAnswers();
     },
     [],
   );
@@ -243,15 +281,29 @@ export function useBuildSession(
     let cancelled = false;
 
     (async () => {
+      // Skip hydration if the store already has a valid session with cell data
+      // (happens when navigating away and back — Zustand state survives but Channel detached)
+      const currentStore = useAgentStore.getState();
+      if (currentStore.buildSessionId && Object.keys(currentStore.buildCellStates).length > 0) {
+        // Restore sessionIdRef so answerQuestion can reach the backend
+        sessionIdRef.current = currentStore.buildSessionId;
+        (window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__ = true;
+        return;
+      }
+
       const session = await getActiveBuildSession(personaId);
       if (cancelled) return;
       if (session) {
+        sessionIdRef.current = session.id;
+        (window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__ = true;
         useAgentStore.getState().hydrateBuildSession(session);
       }
     })();
 
     return () => {
       cancelled = true;
+      // Clear channel-active flag so EventBridge takes over for background events
+      (window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__ = false;
       // Cleanup: cancel any pending RAF on unmount
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
@@ -265,6 +317,7 @@ export function useBuildSession(
   return {
     startSession,
     answerQuestion,
+    submitAllAnswers,
     cancelSession,
   };
 }

@@ -276,6 +276,17 @@ struct WaitToastRequest {
     timeout_ms: u64,
 }
 
+#[derive(Deserialize)]
+struct AnswerQuestionRequest {
+    cell_key: String,
+    option_index: u64,
+}
+
+#[derive(Deserialize)]
+struct DeleteAgentRequest {
+    name_or_id: String,
+}
+
 async fn handle_select_agent(
     AxumState(state): AxumState<ServerState>,
     Json(req): Json<SelectAgentRequest>,
@@ -350,6 +361,22 @@ async fn handle_wait_toast(
     eval_bridge_method(&state, "waitForToast", &params).await
 }
 
+async fn handle_answer_question(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<AnswerQuestionRequest>,
+) -> Result<String, (StatusCode, String)> {
+    let params = serde_json::json!({ "cellKey": req.cell_key, "optionIndex": req.option_index });
+    eval_bridge_method(&state, "answerBuildQuestion", &params).await
+}
+
+async fn handle_delete_agent(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<DeleteAgentRequest>,
+) -> Result<String, (StatusCode, String)> {
+    let params = serde_json::json!({ "nameOrId": req.name_or_id });
+    eval_bridge_method(&state, "deleteAgent", &params).await
+}
+
 async fn handle_health() -> &'static str {
     r#"{"status":"ok","server":"personas-test-automation","version":"0.2.0"}"#
 }
@@ -386,6 +413,8 @@ pub fn start_server(app_handle: AppHandle, pending: PendingResponses) {
         .route("/search-agents", post(handle_search_agents))
         .route("/open-settings-tab", post(handle_open_settings_tab))
         .route("/wait-toast", post(handle_wait_toast))
+        .route("/answer-question", post(handle_answer_question))
+        .route("/delete-agent", post(handle_delete_agent))
         .with_state(state);
 
     tauri::async_runtime::spawn(async move {

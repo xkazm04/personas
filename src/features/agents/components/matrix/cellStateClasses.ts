@@ -79,6 +79,14 @@ export const CELL_STATE_CLASSES: Record<CellBuildStatus, CellStateConfig> = {
     glow: "cell-glow cell-glow-highlighted",
     watermarkOpacity: "opacity-[0.20]",
   },
+  updated: {
+    border: "border-amber-400/50",
+    bg: "bg-amber-500/5",
+    opacity: "opacity-100",
+    interactive: true,
+    glow: "cell-glow cell-glow-updated",
+    watermarkOpacity: "opacity-[0.20]",
+  },
   error: {
     border: "border-red-500/30",
     bg: "bg-red-500/5",

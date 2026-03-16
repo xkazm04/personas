@@ -12,7 +12,7 @@
  * NOTE: This does NOT delete CreationWizard -- that happens in Plan 05.
  * This plan just creates the replacement component.
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { PersonaMatrix } from "@/features/templates/sub_generated/gallery/matrix/PersonaMatrix";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
@@ -26,6 +26,28 @@ import { useAgentStore } from "@/stores/agentStore";
 interface UnifiedMatrixEntryProps {
   /** Whether the cancel link is shown at the bottom. */
   canCancel?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Generate a short agent name (2-4 words) from an intent description. */
+function generateAgentName(intent: string): string {
+  const lower = intent.toLowerCase();
+  const stopwords = new Set([
+    'a','an','the','my','our','all','new','and','or','for','to','in','on','from',
+    'with','that','this','of','by','is','it','me','i','be','do','so','if','up',
+    'help','more','want','get','make','let','just','very','really','much','also',
+    'some','every','each','should','would','could','please','like','need','about',
+  ]);
+  const words = lower
+    .replace(/[^a-z0-9\s]/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !stopwords.has(w));
+  if (words.length < 2) return 'Custom Agent';
+  const nameWords = words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1));
+  return `${nameWords.join(' ')} Agent`;
 }
 
 // ---------------------------------------------------------------------------
@@ -60,6 +82,18 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
     personaId: draftPersonaId,
   });
 
+  // -- Sync agent name from build draft (agent_ir.name) -------------------
+
+  const buildDraft = useAgentStore((s) => s.buildDraft);
+  useEffect(() => {
+    if (!buildDraft || typeof buildDraft !== "object") return;
+    const ir = buildDraft as Record<string, unknown>;
+    const draftName = ir.name;
+    if (typeof draftName === "string" && draftName.length > 0 && draftName !== agentName) {
+      setAgentName(draftName);
+    }
+  }, [buildDraft]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // -- Handlers -----------------------------------------------------------
 
   /**
@@ -81,7 +115,7 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
     let personaId = draftPersonaId;
     if (!personaId) {
       try {
-        const name = (workflowName ?? trimmed).slice(0, 30) || "Draft Agent";
+        const name = workflowName?.slice(0, 30) || generateAgentName(trimmed);
         const persona = await createPersona({
           name,
           description: trimmed.slice(0, 200) || undefined,
@@ -123,6 +157,48 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
     setIsCreatingPersona(false);
   }, [build, setIsCreatingPersona]);
 
+  // -- Inline edit handlers (use --continue session for CLI refine) --------
+
+  const handleApplyEdits = useCallback(async () => {
+    const store = useAgentStore.getState();
+    if (!store.buildEditDirty) return;
+
+    // Build a summary of what the user changed in buildCellData
+    const parts: string[] = [];
+    const cellData = store.buildCellData;
+
+    for (const [key, data] of Object.entries(cellData)) {
+      if (data?.items && data.items.length > 0) {
+        parts.push(`[${key}]: ${data.items.join('; ')}`);
+      }
+      // Include structured connector data
+      if (key === 'connectors' && data?.raw?.connectors) {
+        const names = (data.raw.connectors as Array<{ name: string }>).map((c) => c.name);
+        parts.push(`[connectors-structured]: ${names.join(', ')}`);
+      }
+      // Include structured trigger data
+      if (key === 'triggers' && data?.raw?.triggers) {
+        const descs = (data.raw.triggers as Array<{ description?: string }>).map((t) => t.description ?? 'trigger');
+        parts.push(`[triggers-structured]: ${descs.join(', ')}`);
+      }
+    }
+
+    if (parts.length === 0) {
+      store.clearEditDirty();
+      return;
+    }
+
+    const summary = `User edited the agent dimensions. Here is the current state of all dimensions after their edits:\n${parts.join('\n')}\n\nPlease update the agent_ir to reflect these changes. Re-emit any dimensions that need updating.`;
+    await lifecycle.handleRefine(summary);
+    store.clearEditDirty();
+  }, [lifecycle]);
+
+  const handleDiscardEdits = useCallback(() => {
+    const store = useAgentStore.getState();
+    store.initEditStateFromDraft();
+    store.clearEditDirty();
+  }, []);
+
   // -- Derived props for PersonaMatrix ------------------------------------
 
   const isActivelyBuilding = build.isBuilding || build.buildPhase === "awaiting_input";
@@ -161,6 +237,12 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
           testOutputLines={build.buildTestOutputLines}
           testPassed={build.buildTestPassed}
           testError={build.buildTestError}
+          toolTestResults={lifecycle.buildToolTestResults}
+          testSummary={lifecycle.buildTestSummary}
+          buildActivity={build.buildActivity}
+          onApplyEdits={handleApplyEdits}
+          onDiscardEdits={handleDiscardEdits}
+          onSubmitAllAnswers={build.handleSubmitAnswers}
         />
       </div>
 

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
 import { deriveArchCategories, type ArchCategory } from './architecturalCategories';
@@ -11,7 +11,7 @@ import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import type { DesignQuestion } from '@/lib/types/designTypes';
-import type { CellBuildStatus, BuildQuestion, BuildPhase } from '@/lib/types/buildTypes';
+import type { CellBuildStatus, BuildQuestion, BuildPhase, ToolTestResult } from '@/lib/types/buildTypes';
 import type { RequiredConnector } from '../../adoption/steps/connect/ConnectStep';
 import type { MatrixEditState, MatrixEditCallbacks } from './EditableMatrixCells';
 import { ConnectorEditCell, TriggerEditCell, ReviewEditCell, MemoryEditCell, MessagesEditCell, ErrorEditCell, UseCaseEditCell } from './EditableMatrixCells';
@@ -20,8 +20,10 @@ import { CELL_LABELS } from '@/features/agents/components/matrix/cellVocabulary'
 import { SpatialQuestionPopover } from '@/features/agents/components/matrix/SpatialQuestionPopover';
 import { ConnectorsCellContent } from '@/features/agents/components/matrix/ConnectorsCellContent';
 import { useMatrixCredentialGap } from '@/features/agents/components/matrix/useMatrixCredentialGap';
+import { DimensionEditPanel, checkConnectorsHealth } from '@/features/agents/components/matrix/DimensionEditPanel';
 import { extractProtocolCapabilities } from '@/features/templates/sub_n8n/edit/protocolParser';
 import { useAgentStore } from '@/stores/agentStore';
+import { useVaultStore } from '@/stores/vaultStore';
 
 import { MatrixCellRenderer, CellBullets, type MatrixCell } from './MatrixCellRenderer';
 import {
@@ -103,8 +105,20 @@ interface PersonaMatrixBaseProps {
   testPassed?: boolean | null;
   /** Lifecycle: test error message */
   testError?: string | null;
+  /** Lifecycle: per-tool test results */
+  toolTestResults?: ToolTestResult[];
+  /** Lifecycle: LLM-generated human-friendly test summary */
+  testSummary?: string | null;
   /** Lifecycle: navigate to promoted agent */
   onViewAgent?: () => void;
+  /** Rich activity description from build progress events */
+  buildActivity?: string | null;
+  /** Apply inline cell edits via CLI refine */
+  onApplyEdits?: () => void;
+  /** Discard inline cell edits */
+  onDiscardEdits?: () => void;
+  /** Submit all collected answers to CLI */
+  onSubmitAllAnswers?: () => void;
 }
 
 interface PersonaMatrixViewProps extends PersonaMatrixBaseProps { mode?: 'view'; }
@@ -121,8 +135,23 @@ export type PersonaMatrixProps = PersonaMatrixViewProps | PersonaMatrixEditProps
 // -- Main Component ---------------------------------------------------
 
 export function PersonaMatrix(props: PersonaMatrixProps) {
-  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion, cellBuildStates, pendingQuestions, onAnswerBuildQuestion, buildPhase, onStartTest, onApproveTest, onRejectTest, testOutputLines, testPassed, testError, onViewAgent } = props;
+  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion, cellBuildStates, pendingQuestions, onAnswerBuildQuestion, buildPhase, onStartTest, onApproveTest, onRejectTest, testOutputLines, testPassed, testError, toolTestResults, testSummary, onViewAgent, buildActivity, onApplyEdits, onDiscardEdits, onSubmitAllAnswers } = props;
   const isEditMode = props.mode === 'edit';
+
+  // Track which question modal is currently open (only one at a time)
+  const [openQuestionKey, setOpenQuestionKey] = useState<string | null>(null);
+
+  // Listen for cell clicks from MatrixCellRenderer (custom event)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.cellKey) {
+        setOpenQuestionKey(detail.cellKey);
+      }
+    };
+    window.addEventListener('matrix-cell-click', handler);
+    return () => window.removeEventListener('matrix-cell-click', handler);
+  }, []);
 
   // Ref map for cell DOM elements -- used by SpatialQuestionPopover anchoring
   const cellRefsRef = useRef<Record<string, HTMLElement | null>>({});
@@ -137,6 +166,52 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   // Build draft data for enhanced cell rendering (connectors, protocol badges)
   const buildDraft = useAgentStore((s) => s.buildDraft) as Record<string, unknown> | null;
   const { draftConnectors } = useMatrixCredentialGap();
+
+  // Extract connectors from structured cell data (available before agent_ir)
+  const connectorsCellRaw = useAgentStore((s) => s.buildCellData["connectors"]?.raw);
+  const cellConnectors = useMemo(() => {
+    if (draftConnectors.length > 0) return draftConnectors; // prefer agent_ir source
+    const structured = connectorsCellRaw?.connectors;
+    if (!Array.isArray(structured)) return [];
+    return structured
+      .filter((c: unknown): c is Record<string, unknown> => c != null && typeof c === 'object')
+      .map((c: Record<string, unknown>) => ({
+        name: (c.name as string) ?? '',
+        has_credential: (c.has_credential as boolean) ?? false,
+      }));
+  }, [draftConnectors, connectorsCellRaw]);
+
+  // Check connectors health — override cell state if credentials are unhealthy
+  const vaultCredentials = useVaultStore((s) => s.credentials) ?? [];
+  const buildConnectorLinks = useAgentStore((s) => s.buildConnectorLinks);
+  const connectorsHealthy = useMemo(() => {
+    if (cellConnectors.length === 0) return true;
+    const { allHealthy } = checkConnectorsHealth(cellConnectors, vaultCredentials, buildConnectorLinks);
+    return allHealthy;
+  }, [cellConnectors, vaultCredentials, buildConnectorLinks]);
+
+  // Build effective cell states — connectors shows "updated" (amber) if credentials unhealthy
+  const effectiveCellStates = useMemo(() => {
+    if (!cellBuildStates) return cellBuildStates;
+    if (connectorsHealthy || cellBuildStates['connectors'] !== 'resolved') return cellBuildStates;
+    return { ...cellBuildStates, connectors: 'updated' as const };
+  }, [cellBuildStates, connectorsHealthy]);
+
+  // Post-build inline editing state
+  const editingCellKey = useAgentStore((s) => s.editingCellKey);
+  const isDraftPhase = buildPhase === 'draft_ready' || buildPhase === 'test_complete';
+
+  // Handle cell click for editing in draft phase
+  const handleCellEditClick = (cellKey: string) => {
+    if (!isCreationMode || !isDraftPhase) return;
+    const store = useAgentStore.getState();
+    store.setEditingCell(editingCellKey === cellKey ? null : cellKey);
+  };
+
+  // Dirty handler for DimensionEditPanel
+  const handleEditDirty = () => {
+    useAgentStore.getState().markEditDirty();
+  };
 
   // Extract protocol capabilities from build draft for cell badges
   const protocolCapabilities = useMemo(() => {
@@ -185,16 +260,21 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         );
       };
 
+      const editPanel = (key: string) => isDraftPhase
+        ? () => <DimensionEditPanel cellKey={key} onDirty={handleEditDirty} />
+        : undefined;
+
       return [
-        { key: 'use-cases', label: CELL_LABELS['use-cases'] ?? 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400', render: () => null },
+        { key: 'use-cases', label: CELL_LABELS['use-cases'] ?? 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400', render: () => null, editRender: editPanel('use-cases') },
         { key: 'connectors', label: CELL_LABELS['connectors'] ?? 'Connectors', watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400',
-          render: () => draftConnectors.length > 0 ? <ConnectorsCellContent connectors={draftConnectors} /> : null },
-        { key: 'triggers', label: CELL_LABELS['triggers'] ?? 'Triggers', watermark: TriggersIcon, watermarkColor: 'text-amber-400', render: () => null },
-        { key: 'human-review', label: CELL_LABELS['human-review'] ?? 'Human Review', watermark: HumanReviewIcon, watermarkColor: 'text-rose-400', render: () => badge('human-review') },
-        { key: 'messages', label: CELL_LABELS['messages'] ?? 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400', render: () => badge('messages') },
-        { key: 'memory', label: CELL_LABELS['memory'] ?? 'Memory', watermark: MemoryIcon, watermarkColor: 'text-purple-400', render: () => badge('memory') },
-        { key: 'error-handling', label: CELL_LABELS['error-handling'] ?? 'Error Handling', watermark: ErrorsIcon, watermarkColor: 'text-orange-400', render: () => null },
-        { key: 'events', label: CELL_LABELS['events'] ?? 'Events', watermark: EventsIcon, watermarkColor: 'text-teal-400', render: () => badge('events') },
+          render: () => cellConnectors.length > 0 ? <ConnectorsCellContent connectors={cellConnectors} /> : null,
+          editRender: editPanel('connectors') },
+        { key: 'triggers', label: CELL_LABELS['triggers'] ?? 'Triggers', watermark: TriggersIcon, watermarkColor: 'text-amber-400', render: () => null, editRender: editPanel('triggers') },
+        { key: 'human-review', label: CELL_LABELS['human-review'] ?? 'Human Review', watermark: HumanReviewIcon, watermarkColor: 'text-rose-400', render: () => badge('human-review'), editRender: editPanel('human-review') },
+        { key: 'messages', label: CELL_LABELS['messages'] ?? 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400', render: () => badge('messages'), editRender: editPanel('messages') },
+        { key: 'memory', label: CELL_LABELS['memory'] ?? 'Memory', watermark: MemoryIcon, watermarkColor: 'text-purple-400', render: () => badge('memory'), editRender: editPanel('memory') },
+        { key: 'error-handling', label: CELL_LABELS['error-handling'] ?? 'Error Handling', watermark: ErrorsIcon, watermarkColor: 'text-orange-400', render: () => null, editRender: editPanel('error-handling') },
+        { key: 'events', label: CELL_LABELS['events'] ?? 'Events', watermark: EventsIcon, watermarkColor: 'text-teal-400', render: () => badge('events'), editRender: editPanel('events') },
       ];
     }
 
@@ -242,11 +322,12 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [designResult, flows, isEditMode, onNavigateCatalog, hasBuildStates, isCreationMode, draftConnectors, protocolByCellKey,
+    isDraftPhase, buildDraft, cellConnectors, connectorsCellRaw, handleEditDirty,
     ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
 
   // Creation mode is interactive (textarea + launch orb) even without mode="edit"
   const commandCenterEditMode = isEditMode || isCreationMode;
-  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onRejectTest={onRejectTest} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} onViewAgent={onViewAgent} cellBuildStates={cellBuildStates} />);
+  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAllAnswers ?? onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onRejectTest={onRejectTest} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} toolTestResults={toolTestResults} testSummary={testSummary} onViewAgent={onViewAgent} cellBuildStates={cellBuildStates} buildActivity={buildActivity} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} />);
 
   // When cellBuildStates are provided or in creation mode, render even without designResult (ghosted outlines)
   if ((!designResult && !hasBuildStates && !isCreationMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
@@ -267,7 +348,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
       <div className="grid grid-cols-[2fr_2.6fr_2fr] grid-rows-[1fr_1fr_1fr] gap-2.5 flex-1 min-h-0 w-full min-w-[1100px]">
         {firstFour.map((cell) => (
           <motion.div key={cell.key} custom={cell.key} variants={cellRevealVariants} initial={shouldAnimate ? "hidden" : false} animate="visible">
-            <MatrixCellRenderer cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} onCellRef={handleCellRef} />
+            <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={isDraftPhase && isCreationMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} />
           </motion.div>
         ))}
         <div className={`relative rounded-xl border border-primary/40 p-5 min-h-[200px] ring-1 ring-primary/15 shadow-2xl shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
@@ -280,18 +361,24 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         </div>
         {lastFour.map((cell) => (
           <motion.div key={cell.key} custom={cell.key} variants={cellRevealVariants} initial={shouldAnimate ? "hidden" : false} animate="visible">
-            <MatrixCellRenderer cell={cell} isEditMode={isEditMode} buildLocked={buildLocked} cellBuildStatus={cellBuildStates?.[cell.key]} onCellRef={handleCellRef} />
+            <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={isDraftPhase && isCreationMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} />
           </motion.div>
         ))}
       </div>
 
-      {/* Spatial Q&A popovers anchored to cells with pending questions */}
+      {/* Spatial Q&A popovers anchored to cells with pending questions — only one open at a time */}
       {pendingQuestions?.map((q) => (
         <SpatialQuestionPopover
           key={q.cellKey}
           referenceElement={cellRefsRef.current[q.cellKey] ?? null}
           question={q}
-          onAnswer={onAnswerBuildQuestion!}
+          onAnswer={(cellKey, answer) => {
+            setOpenQuestionKey(null);
+            onAnswerBuildQuestion?.(cellKey, answer);
+          }}
+          isOpen={openQuestionKey === q.cellKey}
+          onRequestOpen={() => setOpenQuestionKey(q.cellKey)}
+          onRequestClose={() => setOpenQuestionKey(null)}
         />
       ))}
     </div>

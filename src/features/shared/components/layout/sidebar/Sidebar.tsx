@@ -121,6 +121,9 @@ export default function Sidebar() {
   });
 
   const handleCreatePersona = useCallback(() => {
+    // Reset build state so user gets a fresh creation form
+    // (any in-progress build continues in the background)
+    useAgentStore.getState().resetBuildSession();
     selectPersona(null);
     setIsCreatingPersona(true);
     setSidebarSection('personas');

@@ -15,6 +15,9 @@ use crate::error::AppError;
 /// Default timeout for direct tool invocations (script and API calls).
 const DIRECT_TOOL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
 
+/// Shorter timeout for test-mode tool invocations.
+const TEST_TOOL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+
 /// Result of a direct (no-LLM) tool invocation.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -451,6 +454,261 @@ async fn invoke_automation_tool(
             run.error_message.unwrap_or_else(|| "Unknown error".into())
         )))
     }
+}
+
+// =============================================================================
+// Safe test execution for build draft validation
+// =============================================================================
+
+/// Result of testing a single tool against a real API.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ToolTestResult {
+    pub tool_name: String,
+    /// "passed" | "failed" | "skipped" | "credential_missing"
+    pub status: String,
+    pub http_status: Option<u16>,
+    pub latency_ms: u64,
+    pub error: Option<String>,
+    pub connector: Option<String>,
+    pub output_preview: Option<String>,
+}
+
+/// Construct a temporary `PersonaToolDefinition` from an agent_ir tool JSON object.
+///
+/// The agent_ir `tools[]` entries have: name, category, description,
+/// requires_credential_type, implementation_guide. We fill in defaults for
+/// fields not present in the IR (id, script_path, etc.).
+pub fn tool_def_from_ir(tool_json: &serde_json::Value) -> Option<PersonaToolDefinition> {
+    let name = tool_json.get("name")?.as_str()?.to_string();
+    Some(PersonaToolDefinition {
+        id: format!("test_{}", name),
+        name,
+        category: tool_json
+            .get("category")
+            .and_then(|v| v.as_str())
+            .unwrap_or("api")
+            .to_string(),
+        description: tool_json
+            .get("description")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        script_path: String::new(),
+        input_schema: None,
+        output_schema: None,
+        requires_credential_type: tool_json
+            .get("requires_credential_type")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        implementation_guide: tool_json
+            .get("implementation_guide")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        is_builtin: false,
+        created_at: String::new(),
+        updated_at: String::new(),
+    })
+}
+
+/// Execute a CLI-generated curl command with real credential env vars.
+///
+/// The curl command string comes from the LLM's test_plan and contains
+/// `$ENV_VAR` placeholders. We tokenize, substitute placeholders with real
+/// credential values, validate, and execute.
+///
+/// The command is expected to include `-w '\n%{http_code}'` so the HTTP
+/// status code appears on the last line of stdout.
+pub async fn execute_test_curl(
+    curl_command: &str,
+    env_map: &HashMap<&str, &str>,
+) -> ToolTestResult {
+    let start = Instant::now();
+
+    if curl_command.is_empty() {
+        return ToolTestResult {
+            tool_name: String::new(),
+            status: "skipped".to_string(),
+            http_status: None,
+            latency_ms: 0,
+            error: Some("Empty curl command".to_string()),
+            connector: None,
+            output_preview: None,
+        };
+    }
+
+    // Tokenize the curl command
+    let raw_tokens = shell_tokenize(curl_command);
+    if raw_tokens.is_empty() || raw_tokens[0] != "curl" {
+        return ToolTestResult {
+            tool_name: String::new(),
+            status: "failed".to_string(),
+            http_status: None,
+            latency_ms: 0,
+            error: Some(format!("Invalid curl command: must start with 'curl', got: {:?}", raw_tokens.first())),
+            connector: None,
+            output_preview: None,
+        };
+    }
+
+    // Substitute $ENV_VAR placeholders with real credential values
+    let resolved_tokens: Vec<String> = raw_tokens[1..]
+        .iter()
+        .map(|token| {
+            let mut resolved = token.to_string();
+            for (k, v) in env_map {
+                resolved = resolved.replace(&format!("${{{}}}", k), v);
+                resolved = resolved.replace(&format!("${}", k), v);
+            }
+            resolved
+        })
+        .collect();
+
+    // Validate against dangerous flags
+    if let Err(e) = validate_curl_args(&resolved_tokens, "test") {
+        return ToolTestResult {
+            tool_name: String::new(),
+            status: "failed".to_string(),
+            http_status: None,
+            latency_ms: 0,
+            error: Some(e.to_string()),
+            connector: None,
+            output_preview: None,
+        };
+    }
+
+    // Execute with test timeout
+    let mut cmd = tokio::process::Command::new("curl");
+    cmd.arg("--proto").arg("=https,http");
+    for token in &resolved_tokens {
+        cmd.arg(token);
+    }
+    for (k, v) in env_map {
+        cmd.env(k, v);
+    }
+    cmd.stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    let result = tokio::time::timeout(TEST_TOOL_TIMEOUT, cmd.output()).await;
+    let latency_ms = start.elapsed().as_millis() as u64;
+
+    match result {
+        Ok(Ok(output)) => {
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+            // Try to extract HTTP status code from last line (from -w '%{http_code}')
+            let (body, http_code) = extract_http_code_from_output(&stdout);
+
+            let preview = if body.len() > 300 {
+                format!("{}...", &body[..300])
+            } else {
+                body.to_string()
+            };
+
+            if output.status.success() {
+                // Curl succeeded (exit code 0), but check HTTP status
+                let status = match http_code {
+                    Some(code) if code >= 200 && code < 300 => "passed",
+                    Some(code) if code == 401 || code == 403 => "failed",
+                    Some(code) if code == 404 => "failed",
+                    Some(code) if code == 429 => "failed",
+                    Some(code) if code >= 500 => "failed",
+                    Some(_) => "failed",
+                    None => "passed", // no -w flag, curl succeeded = assume OK
+                };
+                ToolTestResult {
+                    tool_name: String::new(),
+                    status: status.to_string(),
+                    http_status: http_code,
+                    latency_ms,
+                    error: if status == "passed" { None } else { Some(preview.clone()) },
+                    connector: None,
+                    output_preview: Some(preview),
+                }
+            } else {
+                let msg = if stderr.is_empty() { &stdout } else { &stderr };
+                let (_, code) = classify_api_error(msg);
+                ToolTestResult {
+                    tool_name: String::new(),
+                    status: "failed".to_string(),
+                    http_status: code,
+                    latency_ms,
+                    error: Some(msg.trim().to_string()),
+                    connector: None,
+                    output_preview: if !preview.is_empty() { Some(preview) } else { None },
+                }
+            }
+        }
+        Ok(Err(e)) => ToolTestResult {
+            tool_name: String::new(),
+            status: "failed".to_string(),
+            http_status: None,
+            latency_ms,
+            error: Some(format!("Failed to execute curl: {e}")),
+            connector: None,
+            output_preview: None,
+        },
+        Err(_) => ToolTestResult {
+            tool_name: String::new(),
+            status: "failed".to_string(),
+            http_status: None,
+            latency_ms,
+            error: Some(format!("Curl timed out after {}s", TEST_TOOL_TIMEOUT.as_secs())),
+            connector: None,
+            output_preview: None,
+        },
+    }
+}
+
+/// Extract the HTTP status code from curl output that used `-w '%{http_code}'`.
+/// Returns (body_without_status, Optional<status_code>).
+fn extract_http_code_from_output(stdout: &str) -> (&str, Option<u16>) {
+    let trimmed = stdout.trim_end();
+    // The HTTP status code is on the last line (from -w '\n%{http_code}')
+    if let Some(last_newline) = trimmed.rfind('\n') {
+        let last_line = trimmed[last_newline + 1..].trim();
+        if let Ok(code) = last_line.parse::<u16>() {
+            if (100..=599).contains(&code) {
+                return (&trimmed[..last_newline], Some(code));
+            }
+        }
+    }
+    // Maybe the entire output IS just the status code (empty body)
+    if let Ok(code) = trimmed.parse::<u16>() {
+        if (100..=599).contains(&code) {
+            return ("", Some(code));
+        }
+    }
+    (stdout, None)
+}
+
+/// Classify an API error message to determine the failure category and HTTP status code.
+fn classify_api_error(error_msg: &str) -> (&'static str, Option<u16>) {
+    // Try to extract HTTP status code from curl exit message
+    // Format: "Curl exited with exit status: N: <body>"
+    if let Some(body) = error_msg.strip_prefix("Curl exited with ") {
+        // Look for common HTTP error patterns in the body
+        if body.contains("401") || body.contains("Unauthorized") {
+            return ("failed", Some(401));
+        }
+        if body.contains("403") || body.contains("Forbidden") {
+            return ("failed", Some(403));
+        }
+        if body.contains("404") || body.contains("Not Found") {
+            return ("failed", Some(404));
+        }
+        if body.contains("429") || body.contains("Too Many Requests") || body.contains("rate limit") {
+            return ("failed", Some(429));
+        }
+        if body.contains("500") || body.contains("Internal Server Error") {
+            return ("failed", Some(500));
+        }
+        if body.contains("502") || body.contains("503") || body.contains("504") {
+            return ("failed", Some(503));
+        }
+    }
+    ("failed", None)
 }
 
 /// Extract the curl command from an implementation_guide string.

@@ -40,6 +40,8 @@ export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
   const buildTestPassed = useAgentStore((s) => s.buildTestPassed);
   const buildTestOutputLines = useAgentStore((s) => s.buildTestOutputLines);
   const buildTestError = useAgentStore((s) => s.buildTestError);
+  const buildActivity = useAgentStore((s) => s.buildActivity);
+  const pendingAnswerCount = useAgentStore((s) => Object.keys(s.buildPendingAnswers).length);
 
   // -- Derived state ------------------------------------------------------
 
@@ -88,6 +90,10 @@ export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
     [session],
   );
 
+  const handleSubmitAnswers = useCallback(async () => {
+    await session.submitAllAnswers();
+  }, [session]);
+
   const handleCancel = useCallback(async () => {
     await session.cancelSession();
   }, [session]);
@@ -109,9 +115,13 @@ export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
     buildTestPassed,
     buildTestOutputLines,
     buildTestError,
+    // Activity
+    buildActivity,
+    pendingAnswerCount,
     // Actions
     handleGenerate,
     handleAnswer,
+    handleSubmitAnswers,
     handleCancel,
   };
 }

@@ -13,7 +13,9 @@ import type {
   BuildQuestion,
   PersistedBuildSession,
   CellBuildStatus,
+  ToolTestResult,
 } from "@/lib/types/buildTypes";
+import type { MatrixEditState } from "@/features/templates/sub_generated/gallery/matrix/matrixEditTypes";
 
 // -- Slice interface --------------------------------------------------------
 
@@ -23,11 +25,12 @@ export interface MatrixBuildSlice {
   buildSessionId: string | null;
   buildPhase: BuildPhase;
   buildCellStates: Record<string, CellBuildStatus>;
-  /** Resolved dimension data — keyed by cell key, contains items/summary from CLI */
-  buildCellData: Record<string, { items?: string[]; summary?: string }>;
+  /** Resolved dimension data — keyed by cell key, contains items/summary/raw from CLI */
+  buildCellData: Record<string, { items?: string[]; summary?: string; raw?: Record<string, unknown> }>;
   buildPendingQuestions: BuildQuestion[];
   buildProgress: number;
   buildOutputLines: string[];
+  buildActivity: string | null;
   buildError: string | null;
   buildDraft: unknown | null;
 
@@ -45,6 +48,8 @@ export interface MatrixBuildSlice {
   buildTestPassed: boolean | null;
   buildTestOutputLines: string[];
   buildTestError: string | null;
+  buildToolTestResults: ToolTestResult[];
+  buildTestSummary: string | null;
 
   // Actions -- event handlers
   handleBuildCellUpdate: (event: Extract<BuildEvent, { type: "cell_update" }>) => void;
@@ -53,8 +58,18 @@ export interface MatrixBuildSlice {
   handleBuildError: (event: Extract<BuildEvent, { type: "error" }>) => void;
   handleBuildSessionStatus: (event: Extract<BuildEvent, { type: "session_status" }>) => void;
 
+  // Collected answers waiting for user to click "Continue"
+  buildPendingAnswers: Record<string, string>;
+
   // Actions -- question management
   clearBuildQuestion: (cellKey: string) => void;
+  /** Store an answer locally without sending to CLI yet */
+  collectAnswer: (cellKey: string, answer: string) => void;
+  /** Clear all collected answers (after submission) */
+  clearPendingAnswers: () => void;
+
+  // Actions -- cell update confirmation
+  confirmCellUpdate: (cellKey: string) => void;
 
   // Actions -- connector links
   linkBuildConnector: (connectorName: string, credentialId: string) => void;
@@ -75,6 +90,21 @@ export interface MatrixBuildSlice {
   handleTestFailed: (error: string) => void;
   handleRejectTest: () => void;
   appendTestOutput: (line: string) => void;
+  setToolTestResults: (results: ToolTestResult[]) => void;
+  appendToolTestResult: (result: ToolTestResult) => void;
+  setTestSummary: (summary: string) => void;
+
+  // Post-build inline editing state
+  buildEditState: MatrixEditState;
+  buildEditDirty: boolean;
+  editingCellKey: string | null;
+
+  // Actions -- inline editing
+  setEditingCell: (cellKey: string | null) => void;
+  updateEditState: (partial: Partial<MatrixEditState>) => void;
+  markEditDirty: () => void;
+  clearEditDirty: () => void;
+  initEditStateFromDraft: () => void;
 
   // Actions -- lifecycle
   resetBuildSession: () => void;
@@ -103,6 +133,7 @@ export const createMatrixBuildSlice: StateCreator<
   buildPendingQuestions: [],
   buildProgress: 0,
   buildOutputLines: [],
+  buildActivity: null,
   buildError: null,
   buildDraft: null,
   buildConnectorLinks: {},
@@ -111,11 +142,33 @@ export const createMatrixBuildSlice: StateCreator<
   buildWorkflowName: null,
   buildWorkflowPlatform: null,
 
+  // Collected answers
+  buildPendingAnswers: {},
+
   // Test lifecycle initial state
   buildTestId: null,
   buildTestPassed: null,
   buildTestOutputLines: [],
   buildTestError: null,
+  buildToolTestResults: [],
+  buildTestSummary: null,
+
+  // Post-build inline editing defaults
+  buildEditState: {
+    connectorCredentialMap: {},
+    connectorSwaps: {},
+    triggerConfigs: {},
+    requireApproval: false,
+    autoApproveSeverity: '',
+    reviewTimeout: '',
+    memoryEnabled: false,
+    memoryScope: '',
+    messagePreset: '',
+    errorStrategy: '',
+    useCases: [],
+  },
+  buildEditDirty: false,
+  editingCellKey: null,
 
   // -- Event handlers -------------------------------------------------------
 
@@ -129,23 +182,44 @@ export const createMatrixBuildSlice: StateCreator<
         return { buildDraft: data };
       }
 
-      // Parse data for items/summary if present
+      // Parse data for items/summary/raw if present
       const cellData = { ...s.buildCellData };
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         if (data && typeof data === 'object') {
-          const items = (data as Record<string, unknown>).items as string[] | undefined;
-          const summary = (data as Record<string, unknown>).summary as string | undefined;
-          if (items || summary) {
-            cellData[event.cell_key] = { items, summary };
-          }
+          const obj = data as Record<string, unknown>;
+          const items = obj.items as string[] | undefined;
+          const summary = obj.summary as string | undefined;
+          // Store full raw data for cells that need extra fields (e.g. connectors.alternatives)
+          cellData[event.cell_key] = { items, summary, raw: obj };
         }
       } catch { /* ignore parse errors */ }
+
+      // Determine new cell status:
+      // - First resolution: 'resolved' (green)
+      // - Re-resolution after refinement: 'updated' (yellow) — user should review
+      // - Skip if already in same state (prevents EventBridge duplicate processing)
+      const prevStatus = s.buildCellStates[event.cell_key];
+      const incomingStatus = event.status as CellBuildStatus;
+
+      // Skip no-op: if cell is already resolved and incoming is also resolved,
+      // only mark 'updated' if the data actually changed
+      let newStatus: CellBuildStatus;
+      if (prevStatus === incomingStatus && prevStatus === 'resolved') {
+        // Check if data changed (refinement) vs duplicate event
+        const oldItems = s.buildCellData[event.cell_key]?.items;
+        const newData = typeof event.data === 'string' ? (() => { try { return JSON.parse(event.data as string); } catch { return null; } })() : event.data;
+        const newItems = (newData as Record<string, unknown> | null)?.items;
+        const dataChanged = JSON.stringify(oldItems) !== JSON.stringify(newItems);
+        newStatus = dataChanged ? 'updated' : 'resolved';
+      } else {
+        newStatus = incomingStatus;
+      }
 
       return {
         buildCellStates: {
           ...s.buildCellStates,
-          [event.cell_key]: event.status as CellBuildStatus,
+          [event.cell_key]: newStatus,
         },
         buildCellData: cellData,
       };
@@ -153,9 +227,12 @@ export const createMatrixBuildSlice: StateCreator<
   },
 
   handleBuildQuestion: (event) => {
-    set((s) => ({
+    set((s) => {
+      // Replace existing question for the same cell key (don't duplicate)
+      const filtered = s.buildPendingQuestions.filter((q) => q.cellKey !== event.cell_key);
+      return {
       buildPendingQuestions: [
-        ...s.buildPendingQuestions,
+        ...filtered,
         {
           cellKey: event.cell_key,
           question: event.question,
@@ -167,7 +244,7 @@ export const createMatrixBuildSlice: StateCreator<
         [event.cell_key]: "highlighted",
       },
       buildPhase: "awaiting_input",
-    }));
+    };});
   },
 
   handleBuildProgress: (event) => {
@@ -181,6 +258,7 @@ export const createMatrixBuildSlice: StateCreator<
 
       return {
         buildOutputLines: trimmed,
+        buildActivity: event.activity ?? s.buildActivity,
         ...(event.percent != null ? { buildProgress: event.percent } : {}),
       };
     });
@@ -239,6 +317,8 @@ export const createMatrixBuildSlice: StateCreator<
       buildTestPassed: null,
       buildTestOutputLines: [],
       buildTestError: null,
+      buildToolTestResults: [],
+      buildTestSummary: null,
     });
   },
 
@@ -253,6 +333,20 @@ export const createMatrixBuildSlice: StateCreator<
     });
   },
 
+  setToolTestResults: (results) => {
+    set({ buildToolTestResults: results });
+  },
+
+  appendToolTestResult: (result) => {
+    set((s) => ({
+      buildToolTestResults: [...s.buildToolTestResults, result],
+    }));
+  },
+
+  setTestSummary: (summary) => {
+    set({ buildTestSummary: summary });
+  },
+
   // -- Question management --------------------------------------------------
 
   clearBuildQuestion: (cellKey) => {
@@ -260,6 +354,34 @@ export const createMatrixBuildSlice: StateCreator<
       buildPendingQuestions: s.buildPendingQuestions.filter(
         (q) => q.cellKey !== cellKey,
       ),
+    }));
+  },
+
+  collectAnswer: (cellKey, answer) => {
+    set((s) => ({
+      buildPendingAnswers: { ...s.buildPendingAnswers, [cellKey]: answer },
+      // Mark the answered question's cell as "resolved" (confirmed the proposal)
+      buildCellStates: {
+        ...s.buildCellStates,
+        [cellKey]: 'resolved',
+      },
+      // Remove the question from pending list
+      buildPendingQuestions: s.buildPendingQuestions.filter((q) => q.cellKey !== cellKey),
+    }));
+  },
+
+  clearPendingAnswers: () => {
+    set({ buildPendingAnswers: {} });
+  },
+
+  // -- Cell update confirmation -----------------------------------------------
+
+  confirmCellUpdate: (cellKey) => {
+    set((s) => ({
+      buildCellStates: {
+        ...s.buildCellStates,
+        [cellKey]: "resolved",
+      },
     }));
   },
 
@@ -302,6 +424,84 @@ export const createMatrixBuildSlice: StateCreator<
     });
   },
 
+  // -- Inline editing actions -----------------------------------------------
+
+  setEditingCell: (cellKey) => {
+    set({ editingCellKey: cellKey });
+  },
+
+  updateEditState: (partial) => {
+    set((s) => ({
+      buildEditState: { ...s.buildEditState, ...partial },
+    }));
+  },
+
+  markEditDirty: () => {
+    set({ buildEditDirty: true });
+  },
+
+  clearEditDirty: () => {
+    set({ buildEditDirty: false, editingCellKey: null });
+  },
+
+  initEditStateFromDraft: () => {
+    set((s) => {
+      const draft = s.buildDraft as Record<string, unknown> | null;
+      if (!draft) return {};
+
+      // Extract use cases from buildCellData
+      const ucData = s.buildCellData['use-cases'];
+      const useCases = (ucData?.items ?? []).map((title, i) => ({
+        id: `uc-${i}`,
+        title,
+        category: 'general',
+      }));
+
+      // Extract review settings from buildCellData
+      const reviewData = s.buildCellData['human-review'];
+      const hasApproval = reviewData?.items?.some(
+        (item) => item.toLowerCase().includes('required') || item.toLowerCase().includes('approval'),
+      ) ?? false;
+
+      // Extract memory settings
+      const memoryData = s.buildCellData['memory'];
+      const hasMemory = memoryData?.items?.some(
+        (item) => !item.toLowerCase().includes('stateless') && !item.toLowerCase().includes('no memory'),
+      ) ?? false;
+
+      // Extract connectors from agent_ir
+      const connectorMap: Record<string, string> = {};
+      const connectors = draft.required_connectors;
+      if (Array.isArray(connectors)) {
+        for (const c of connectors) {
+          const name = (c as Record<string, unknown>)?.name as string;
+          const linked = s.buildConnectorLinks[name];
+          if (name && linked) {
+            connectorMap[name] = linked;
+          }
+        }
+      }
+
+      return {
+        buildEditState: {
+          connectorCredentialMap: connectorMap,
+          connectorSwaps: {},
+          triggerConfigs: {},
+          requireApproval: hasApproval,
+          autoApproveSeverity: hasApproval ? '' : 'all',
+          reviewTimeout: hasApproval ? '24h' : 'none',
+          memoryEnabled: hasMemory,
+          memoryScope: hasMemory ? 'all' : '',
+          messagePreset: 'updates',
+          errorStrategy: 'retry-3x',
+          useCases,
+        },
+        buildEditDirty: false,
+        editingCellKey: null,
+      };
+    });
+  },
+
   // -- Lifecycle actions ----------------------------------------------------
 
   resetBuildSession: () => {
@@ -314,9 +514,11 @@ export const createMatrixBuildSlice: StateCreator<
       buildPendingQuestions: [],
       buildProgress: 0,
       buildOutputLines: [],
+      buildActivity: null,
       buildError: null,
       buildDraft: null,
       buildConnectorLinks: {},
+      buildPendingAnswers: {},
       buildWorkflowJson: null,
       buildParserResultJson: null,
       buildWorkflowName: null,
@@ -325,15 +527,52 @@ export const createMatrixBuildSlice: StateCreator<
       buildTestPassed: null,
       buildTestOutputLines: [],
       buildTestError: null,
+      buildToolTestResults: [],
+      buildTestSummary: null,
+      buildEditState: {
+        connectorCredentialMap: {},
+        connectorSwaps: {},
+        triggerConfigs: {},
+        requireApproval: false,
+        autoApproveSeverity: '',
+        reviewTimeout: '',
+        memoryEnabled: false,
+        memoryScope: '',
+        messagePreset: '',
+        errorStrategy: '',
+        useCases: [],
+      },
+      buildEditDirty: false,
+      editingCellKey: null,
     });
   },
 
   hydrateBuildSession: (session) => {
-    // Build cell states from resolved_cells: each resolved cell -> "resolved" status
+    // Build cell states AND cell data from resolved_cells
     const cellStates: Record<string, CellBuildStatus> = {};
+    const cellData: Record<string, { items?: string[]; summary?: string }> = {};
     const resolvedCells = session.resolved_cells ?? {};
     for (const key of Object.keys(resolvedCells)) {
       cellStates[key] = "resolved";
+      // Extract items/summary from the resolved cell value
+      const val = (resolvedCells as Record<string, unknown>)[key];
+      if (val && typeof val === 'object') {
+        const obj = val as Record<string, unknown>;
+        const items = Array.isArray(obj.items) ? obj.items.filter((i): i is string => typeof i === 'string') : undefined;
+        const summary = typeof obj.summary === 'string' ? obj.summary : undefined;
+        if (items || summary) {
+          cellData[key] = { items, summary };
+        }
+      }
+    }
+
+    // Also check for highlighted cells from pending question
+    if (session.pending_question && typeof session.pending_question === 'object') {
+      const pq = session.pending_question as unknown as Record<string, unknown>;
+      const cellKey = (pq.cellKey ?? pq.cell_key) as string | undefined;
+      if (cellKey) {
+        cellStates[cellKey] = "highlighted";
+      }
     }
 
     // Handle backward compat: backend sends single pending_question (not array).
@@ -363,6 +602,7 @@ export const createMatrixBuildSlice: StateCreator<
       buildSessionId: session.id,
       buildPhase: session.phase,
       buildCellStates: cellStates,
+      buildCellData: cellData,
       buildPendingQuestions: pendingQuestions,
       buildDraft: session.agent_ir,
       buildError: session.error_message,

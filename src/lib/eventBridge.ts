@@ -176,6 +176,9 @@ const registry: EventRegistration[] = [
   },
 
   // -- Build session events (background resilience) -------------------------
+  // Only processes events when the Channel handler is NOT active (user navigated away).
+  // When the matrix component is mounted, the Channel handler processes events directly.
+  // This prevents double-processing that causes "updated" state on first resolve.
   {
     event: "build-session-event",
     setup: async () => {
@@ -184,6 +187,9 @@ const registry: EventRegistration[] = [
         session_id: string;
         [key: string]: unknown;
       }>("build-session-event", (event) => {
+        // Skip if Channel handler is active (component mounted)
+        if ((window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__) return;
+
         const store = useAgentStore.getState();
         const e = event.payload;
 

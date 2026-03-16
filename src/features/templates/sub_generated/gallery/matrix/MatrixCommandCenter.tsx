@@ -3,11 +3,11 @@
  * Two variants: 'adoption' (template flow) and 'creation' (agent creation flow).
  * View mode: expandable prompt section chips.
  */
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { FileText, User, Wrench, BookOpen, Shield, Globe, Search, Loader2, Sparkles, Upload } from 'lucide-react';
 import type { AgentIR, DesignQuestion } from '@/lib/types/designTypes';
-import type { BuildPhase } from '@/lib/types/buildTypes';
+import type { BuildPhase, ToolTestResult } from '@/lib/types/buildTypes';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { BuildQuestionnaireModal } from './BuildQuestionnaireModal';
 import { WorkflowUploadZone } from '@/features/agents/components/matrix/WorkflowUploadZone';
@@ -56,7 +56,11 @@ interface MatrixCommandCenterProps {
   cliOutputLines?: string[]; designQuestion?: DesignQuestion | null; onAnswerQuestion?: (answer: string) => void;
   buildPhase?: BuildPhase; onStartTest?: () => void; onApproveTest?: () => void; onRejectTest?: () => void;
   testOutputLines?: string[]; testPassed?: boolean | null; testError?: string | null;
+  toolTestResults?: ToolTestResult[];
+  testSummary?: string | null;
   onViewAgent?: () => void; cellBuildStates?: Record<string, string>;
+  buildActivity?: string | null;
+  onApplyEdits?: () => void; onDiscardEdits?: () => void;
 }
 
 const WRAP = "flex flex-col gap-3 w-full h-full items-center justify-center";
@@ -69,7 +73,8 @@ export function MatrixCommandCenter({
   intentText, onIntentChange, completeness = 0, hasDesignResult = false, onRefine,
   cliOutputLines = [], designQuestion, onAnswerQuestion,
   buildPhase, onStartTest, onApproveTest, onRejectTest,
-  testOutputLines = [], testPassed, testError, onViewAgent, cellBuildStates,
+  testOutputLines = [], testPassed, testError, toolTestResults = [], testSummary, onViewAgent, cellBuildStates,
+  buildActivity, onApplyEdits, onDiscardEdits,
 }: MatrixCommandCenterProps) {
   const [openSection, setOpenSection] = useState<PromptSection | null>(null);
   const [localPromptText, setLocalPromptText] = useState('');
@@ -78,6 +83,14 @@ export function MatrixCommandCenter({
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
   const hasWorkflowImport = !!useAgentStore((s) => s.buildWorkflowJson);
+
+  // Callback to open the next pending question
+  const handleOpenNextQuestion = useCallback(() => {
+    if (!cellBuildStates) return;
+    const nextKey = Object.entries(cellBuildStates).find(([, s]) => s === 'highlighted')?.[0];
+    if (!nextKey) return;
+    window.dispatchEvent(new CustomEvent('matrix-cell-click', { detail: { cellKey: nextKey } }));
+  }, [cellBuildStates]);
   const [inputMode, setInputMode] = useState<'describe' | 'import'>(hasWorkflowImport ? 'import' : 'describe');
 
   // Auto-switch to import mode when workflow data arrives from n8n wizard handoff
@@ -136,17 +149,17 @@ export function MatrixCommandCenter({
     }
     // Building/Generating
     if (isRunning) {
-      if (isCreation) return (<div className={WRAP}><ActiveBuildProgress buildPhase={buildPhase} completeness={completeness} cellStates={cellBuildStates} cliOutputLines={cliOutputLines} /></div>);
+      if (isCreation) return (<div className={WRAP}><ActiveBuildProgress buildPhase={buildPhase} completeness={completeness} cellStates={cellBuildStates} cliOutputLines={cliOutputLines} onOpenNextQuestion={handleOpenNextQuestion} buildActivity={buildActivity} onSubmitAnswers={onSubmitAnswers} /></div>);
       return (<div className={WRAP}><BuildStatusIndicator phaseLabel={phaseLabel} hint="You can close this dialog -- processing continues in the background." /></div>);
     }
     // Creation: Awaiting user input on cells
     if (isCreation && buildPhase === 'awaiting_input')
-      return (<div className={WRAP}><ActiveBuildProgress buildPhase={buildPhase} completeness={completeness} cellStates={cellBuildStates} cliOutputLines={cliOutputLines} /></div>);
+      return (<div className={WRAP}><ActiveBuildProgress buildPhase={buildPhase} completeness={completeness} cellStates={cellBuildStates} cliOutputLines={cliOutputLines} onOpenNextQuestion={handleOpenNextQuestion} buildActivity={buildActivity} onSubmitAnswers={onSubmitAnswers} /></div>);
     // Creation: Testing lifecycle states
     if (isCreation && buildPhase === 'testing')
       return (<div className={WRAP}><TestRunningIndicator testOutputLines={testOutputLines} onCancelTest={undefined} /></div>);
     if (isCreation && buildPhase === 'test_complete')
-      return (<div className={WRAP}><TestResultsPanel passed={testPassed} outputLines={testOutputLines} error={testError} onApprove={onApproveTest} onReject={onRejectTest} /></div>);
+      return (<div className={WRAP}><TestResultsPanel passed={testPassed} outputLines={testOutputLines} error={testError} onApprove={onApproveTest} onReject={onRejectTest} toolResults={toolTestResults} summary={testSummary} /></div>);
     if (isCreation && buildPhase === 'promoted')
       return (<div className={WRAP}><PromotionSuccessIndicator onViewAgent={onViewAgent} /></div>);
     // Creation: Design question awaiting answer
@@ -167,7 +180,7 @@ export function MatrixCommandCenter({
     // Adoption: Build completed
     if (!isCreation && buildCompleted) return (<div className={WRAP}><BuildCompletedIndicator /></div>);
     // Creation: Post-generation
-    if (isCreation && hasDesignResult) return (<div className={WRAP}><CreationPostGeneration completeness={completeness} onRefine={onRefine} onStartTest={onStartTest} /></div>);
+    if (isCreation && hasDesignResult) return (<div className={WRAP}><CreationPostGeneration completeness={completeness} onRefine={onRefine} onStartTest={onStartTest} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} /></div>);
     // Pre-build / Pre-generation
     return (
       <div className="flex flex-col gap-3 w-full h-full items-center">

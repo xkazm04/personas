@@ -36,6 +36,8 @@ interface TestBridge {
   searchAgents(query: string): { success: boolean; query?: string; error?: string };
   openSettingsTab(tab: string): { success: boolean; tab?: string };
   simulateBuild(phase: string, personaId: string, cells: Record<string, string>): { success: boolean; phase?: string; personaId?: string };
+  answerBuildQuestion(cellKey: string, optionIndex: number): Promise<Record<string, unknown>>;
+  deleteAgent(nameOrId: string): Promise<{ success: boolean; deleted?: string; error?: string }>;
   __exec__(id: string, method: string, params: Record<string, unknown>): Promise<void>;
   [key: string]: unknown;
 }
@@ -71,6 +73,7 @@ const bridge: TestBridge = {
       buildError: agent.buildError,
       buildProgress: agent.buildProgress,
       buildCellStates: agent.buildCellStates,
+      buildActivity: agent.buildActivity,
       buildOutputLineCount: agent.buildOutputLines.length,
       // UI state
       sidebarSection: sys.sidebarSection,
@@ -347,6 +350,52 @@ const bridge: TestBridge = {
       useSystemStore.getState().setIsCreatingPersona(true);
     }
     return { success: true, phase, personaId };
+  },
+
+  /** Answer a build question by cell key and option index (0-based) */
+  answerBuildQuestion(cellKey: string, optionIndex: number) {
+    // Find the answer button and click it to open the popover
+    const buttons = document.querySelectorAll('button');
+    let answerBtn: HTMLElement | null = null;
+    for (const b of buttons) {
+      if (b.innerText?.includes('Answer:') && b.offsetParent !== null) {
+        answerBtn = b as HTMLElement;
+        break;
+      }
+    }
+    if (!answerBtn) return Promise.resolve({ success: false, error: 'No answer button visible' });
+    answerBtn.click();
+    // Wait a tick for popover to render, then click the option
+    return new Promise<Record<string, unknown>>((resolve) => {
+      setTimeout(() => {
+        const options = document.querySelectorAll('[data-testid^="option-button-"]');
+        if (optionIndex >= options.length) {
+          resolve({ success: false, error: `Option index ${optionIndex} out of range (${options.length} options)` });
+          return;
+        }
+        (options[optionIndex] as HTMLElement).click();
+        resolve({ success: true, cellKey, optionIndex });
+      }, 300);
+    });
+  },
+
+  /** Delete an agent by name or ID with full cleanup */
+  async deleteAgent(nameOrId: string) {
+    const store = useAgentStore.getState();
+    const match = store.personas.find(
+      p => p.id === nameOrId || p.name.toLowerCase().includes(nameOrId.toLowerCase()),
+    );
+    if (!match) return { success: false, error: `No agent matching: ${nameOrId}` };
+    try {
+      await store.deletePersona(match.id);
+      // Clean up build state if this was the active build persona
+      if (store.buildPersonaId === match.id) {
+        store.resetBuildSession();
+      }
+      return { success: true, deleted: match.name };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
   },
 
   /** Navigate to settings and switch to a specific tab */

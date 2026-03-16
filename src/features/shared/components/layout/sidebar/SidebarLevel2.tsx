@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Key, Radio, Users, Sparkles, Plus, List, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
+import { Key, Radio, Users, Sparkles, Plus, List, Loader2, Star, Bot, ChevronDown } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -8,6 +8,7 @@ import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab, DevTools
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 // GroupedAgentSidebar replaced by inline AgentsSidebarNav (persona list moved to table view)
+import { useFavoriteAgents as useFavoriteAgentsInline } from '@/hooks/agents/useFavoriteAgents';
 import TeamDragPanel from '@/features/pipeline/components/TeamDragPanel';
 import SidebarSubNav from './SidebarSubNav';
 import type { SubNavBadge } from './SidebarSubNav';
@@ -261,9 +262,17 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
   const isCreatingPersona = useSystemStore((s) => s.isCreatingPersona);
   const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
   const buildPhase = useAgentStore((s) => s.buildPhase);
+  const [favoritesCollapsed, setFavoritesCollapsed] = useState(false);
 
   const hasActiveBuild = !!buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted';
   const buildingPersona = hasActiveBuild ? personas.find((p) => p.id === buildPersonaId) : null;
+
+  // Favorites from localStorage
+  const { favorites, toggleFavorite } = useFavoriteAgentsInline();
+  const favoritePersonas = useMemo(
+    () => personas.filter((p) => favorites.has(p.id)),
+    [personas, favorites],
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -282,7 +291,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
       </div>
 
       {/* Nav items */}
-      <div className="flex-1 px-2 py-2 space-y-1">
+      <div className="flex-1 px-2 py-2 space-y-1 overflow-y-auto">
         {/* All Agents */}
         <button
           onClick={() => { selectPersona(null); setAgentTab('all'); useSystemStore.getState().setIsCreatingPersona(false); }}
@@ -315,7 +324,50 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
             <span className="ml-auto text-[10px] text-violet-400/60 capitalize">{buildPhase}</span>
           </button>
         )}
+
+        {/* Favorites section */}
+        {favoritePersonas.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-primary/10">
+            <button
+              onClick={() => setFavoritesCollapsed(!favoritesCollapsed)}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-amber-400/60 hover:text-amber-400/80 transition-colors"
+            >
+              <Star className="w-3 h-3 fill-amber-400/60" />
+              Favorites
+              <span className="text-[10px] font-mono text-amber-400/40 ml-0.5">{favoritePersonas.length}</span>
+              <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${favoritesCollapsed ? '-rotate-90' : ''}`} />
+            </button>
+            {!favoritesCollapsed && (
+              <div className="mt-1 space-y-0.5">
+                {favoritePersonas.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => selectPersona(p.id)}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-secondary/40 group"
+                  >
+                    <Bot
+                      className="w-4 h-4 flex-shrink-0"
+                      style={{ color: p.color ?? 'var(--primary)' }}
+                    />
+                    <span className="text-foreground/70 truncate text-[13px] min-w-0">{p.name}</span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
+                      className="ml-auto flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
+                      title="Remove from favorites"
+                    >
+                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+

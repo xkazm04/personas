@@ -219,7 +219,7 @@ export function EditorBody() {
                   draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}
                   connectorDefinitions={connectorDefinitions} showDeleteConfirm={showDeleteConfirm}
                   setShowDeleteConfirm={setShowDeleteConfirm} isSaving={isSaving}
-                  onDelete={async () => { await deletePersona(selectedPersona.id); setShowDeleteConfirm(false); }}
+                  onDelete={async () => { await deletePersona(selectedPersona.id); const { buildPersonaId, resetBuildSession } = useAgentStore.getState(); if (buildPersonaId === selectedPersona.id) { resetBuildSession(); } setShowDeleteConfirm(false); }}
                 />
               )}
             </Suspense>

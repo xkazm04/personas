@@ -103,6 +103,10 @@ export function useContextMenuActions(personaId: string, enabled: boolean, onClo
       return;
     }
     await deletePersona(personaId);
+    const { buildPersonaId, resetBuildSession } = useAgentStore.getState();
+    if (buildPersonaId === personaId) {
+      resetBuildSession();
+    }
     onClose();
   }, [confirmDelete, personaId, deletePersona, onClose]);
 

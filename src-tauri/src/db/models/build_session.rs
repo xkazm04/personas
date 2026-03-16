@@ -87,6 +87,7 @@ pub enum BuildEvent {
         dimension: Option<String>,
         message: String,
         percent: Option<f32>,
+        activity: Option<String>,
     },
     Error {
         session_id: String,

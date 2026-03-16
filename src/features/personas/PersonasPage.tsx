@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
+import { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
@@ -113,13 +113,18 @@ export default function PersonasPage() {
     };
   }, [personasFetched]);
 
-  // Auto-resume: if there's an in-progress build, re-enter creation mode
+  // Auto-resume active build when returning to personas from another section.
+  // Uses a ref to prevent the infinite loop: only resumes ONCE per navigation event.
   const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
   const buildPhase = useAgentStore((s) => s.buildPhase);
-  const hasActiveBuild = !!buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted';
+  const hasActiveBuild = !!buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted' && buildPhase !== 'failed' && buildPhase !== 'cancelled';
+  const prevSectionRef = useRef(sidebarSection);
 
   useEffect(() => {
-    if (sidebarSection === 'personas' && hasActiveBuild && !isCreatingPersona) {
+    const wasElsewhere = prevSectionRef.current !== 'personas';
+    prevSectionRef.current = sidebarSection;
+    // Only auto-resume when ARRIVING at personas from another section with an active build
+    if (sidebarSection === 'personas' && wasElsewhere && hasActiveBuild && !isCreatingPersona) {
       useSystemStore.getState().setIsCreatingPersona(true);
     }
   }, [sidebarSection, hasActiveBuild, isCreatingPersona]);
@@ -173,6 +178,9 @@ export default function PersonasPage() {
     if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={SectionFallback}><DesignReviewsPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'dev-tools') return <ErrorBoundary name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'settings') return <ErrorBoundary name="Settings"><Suspense fallback={SectionFallback}><SettingsPage /></Suspense></ErrorBoundary>;
+    if (selectedPersonaId && buildPersonaId === selectedPersonaId && buildPhase && buildPhase !== 'promoted') {
+      return <ErrorBoundary name="UnifiedMatrixEntry"><Suspense fallback={SectionFallback}><UnifiedMatrixEntry canCancel /></Suspense></ErrorBoundary>;
+    }
     if (selectedPersonaId) return <ErrorBoundary name="Agent Editor"><Suspense fallback={SectionFallback}><PersonaEditor /></Suspense></ErrorBoundary>;
     // Default: All Agents table view
     return <ErrorBoundary name="Agent Overview"><Suspense fallback={SectionFallback}><PersonaOverviewPage /></Suspense></ErrorBoundary>;

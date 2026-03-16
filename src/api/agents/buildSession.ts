@@ -11,6 +11,7 @@ import type {
   PersistedBuildSession,
   BuildSessionSummary,
   PromoteBuildResult,
+  TestReport,
 } from "@/lib/types/buildTypes";
 
 /**
@@ -67,6 +68,20 @@ export async function listBuildSessions(
 ): Promise<BuildSessionSummary[]> {
   return invokeWithTimeout<BuildSessionSummary[]>("list_build_sessions", {
     personaId: personaId ?? null,
+  });
+}
+
+/**
+ * Test a build draft by executing each tool against its real API.
+ * Returns a per-tool test report with HTTP status codes, latency, and errors.
+ */
+export async function testBuildDraft(
+  sessionId: string,
+  personaId: string,
+): Promise<TestReport> {
+  return invokeWithTimeout<TestReport>("test_build_draft", {
+    sessionId,
+    personaId,
   });
 }
 

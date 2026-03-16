@@ -723,7 +723,8 @@ pub fn run() {
             commands::design::build_sessions::cancel_build_session,
             commands::design::build_sessions::get_active_build_session,
             commands::design::build_sessions::list_build_sessions,
-            // commands::design::build_sessions::promote_build_draft, // TODO: not yet implemented
+            commands::design::build_sessions::test_build_draft,
+            commands::design::build_sessions::promote_build_draft,
             // Design -- Conversations
             commands::design::conversations::list_design_conversations,
             commands::design::conversations::get_design_conversation,

@@ -1,6 +1,6 @@
 import { createContext, useContext, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, HelpCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, HelpCircle, AlertCircle, Loader2, Pencil } from 'lucide-react';
 import { getCellStateClasses } from '@/features/agents/components/matrix/cellStateClasses';
 import { getCellGlowColorClass } from '@/features/agents/components/matrix/cellGlowColors';
 import { GhostedCellRenderer } from '@/features/agents/components/matrix/GhostedCellRenderer';
@@ -76,12 +76,24 @@ export function MatrixCellRenderer({
   buildLocked,
   cellBuildStatus,
   onCellRef,
+  questionCount = 0,
+  onConfirmUpdate,
+  onCellClick,
+  isInlineEditing,
 }: {
   cell: MatrixCell;
   isEditMode: boolean;
   buildLocked?: boolean;
   cellBuildStatus?: CellBuildStatus;
   onCellRef?: (key: string, el: HTMLElement | null) => void;
+  /** Number of pending questions for this cell's dimension */
+  questionCount?: number;
+  /** Called when user clicks an 'updated' cell to confirm they've reviewed it */
+  onConfirmUpdate?: (cellKey: string) => void;
+  /** Called when cell is clicked in draft phase for inline editing */
+  onCellClick?: () => void;
+  /** Whether this cell is currently showing inline edit UI */
+  isInlineEditing?: boolean;
 }) {
   // When cellBuildStatus is 'hidden' or 'revealed', render the ghosted outline
   if (cellBuildStatus === 'hidden' || cellBuildStatus === 'revealed') {
@@ -105,7 +117,7 @@ export function MatrixCellRenderer({
   // When filling, the cell is locked regardless of buildLocked prop
   const effectiveBuildLocked = buildLocked || cellBuildStatus === 'filling';
 
-  const useEditRender = isEditMode && cell.editRender && !effectiveBuildLocked;
+  const useEditRender = (isEditMode || isInlineEditing) && cell.editRender && !effectiveBuildLocked;
   const filledGlow = isEditMode && cell.filled;
 
   // Track previous status to detect filling->resolved transition for typewriter effect
@@ -152,6 +164,12 @@ export function MatrixCellRenderer({
   return (
     <div
       ref={(el) => onCellRef?.(cell.key, el)}
+      data-cell-key={cell.key}
+      onClick={cellBuildStatus === 'highlighted' ? () => {
+        // Dispatch custom event for SpatialQuestionPopover
+        window.dispatchEvent(new CustomEvent('matrix-cell-click', { detail: { cellKey: cell.key } }));
+      } : undefined}
+      style={cellBuildStatus === 'highlighted' ? { cursor: 'pointer' } : undefined}
       className={outerClasses}
     >
       <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
@@ -159,26 +177,11 @@ export function MatrixCellRenderer({
           <Watermark className={`w-22 h-22 ${cell.watermarkColor}`} />
         </div>
       </div>
+      {/* Header: label only (badge moved to bottom) */}
       <div className="mb-2.5 flex items-center gap-2">
         <span className="text-[13px] font-bold uppercase tracking-[0.15em] text-foreground/60">{cell.label}</span>
         {cell.filled !== undefined && (
           <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${cell.filled ? 'bg-emerald-400' : 'bg-muted-foreground/20'}`} />
-        )}
-        {cellBuildStatus && (
-          <span className="flex items-center gap-1 ml-auto">
-            {(cellBuildStatus === 'pending' || cellBuildStatus === 'filling') && (
-              <><span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" /><span className="text-[10px] text-cyan-400/70">Analyzing...</span></>
-            )}
-            {cellBuildStatus === 'resolved' && (
-              <><CheckCircle2 className="w-3 h-3 text-emerald-400" /><span className="text-[10px] text-emerald-400/70">Resolved</span></>
-            )}
-            {cellBuildStatus === 'highlighted' && (
-              <><HelpCircle className="w-3 h-3 text-amber-400" /><span className="text-[10px] text-amber-400/70">Input needed</span></>
-            )}
-            {cellBuildStatus === 'error' && (
-              <><AlertCircle className="w-3 h-3 text-red-400" /><span className="text-[10px] text-red-400/70">Error</span></>
-            )}
-          </span>
         )}
       </div>
       <div className="relative flex-1 flex flex-col justify-center">
@@ -187,6 +190,8 @@ export function MatrixCellRenderer({
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
             {cellBuildStatus === 'resolved' ? (
               <CheckCircle2 className="w-20 h-20 text-emerald-400/10" />
+            ) : cellBuildStatus === 'updated' ? (
+              <CheckCircle2 className="w-20 h-20 text-amber-400/10" />
             ) : cellBuildStatus === 'highlighted' ? (
               <HelpCircle className="w-20 h-20 text-primary/10 animate-pulse" />
             ) : cellBuildStatus === 'filling' || cellBuildStatus === 'pending' ? (
@@ -197,9 +202,14 @@ export function MatrixCellRenderer({
           </div>
         )}
         <AnimatePresence mode="wait">
-          {/* Resolved cell content — bullet points from buildCellData */}
-          {cellBuildStatus === 'resolved' ? (
-            <ResolvedCellContent cellKey={cell.key} fallbackRender={useEditRender ? cell.editRender!() : cell.render()} typewriterActive={typewriterActiveRef.current} />
+          {/* Resolved/Updated/Highlighted cell content — bullet points or inline edit */}
+          {/* Highlighted cells also show resolved content (propose-and-confirm pattern) */}
+          {(cellBuildStatus === 'resolved' || cellBuildStatus === 'updated') && useEditRender ? (
+            <motion.div key="edit-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="w-full relative z-10">
+              {cell.editRender!()}
+            </motion.div>
+          ) : (cellBuildStatus === 'resolved' || cellBuildStatus === 'updated' || cellBuildStatus === 'highlighted') ? (
+            <ResolvedCellContent cellKey={cell.key} fallbackRender={cell.render()} typewriterActive={typewriterActiveRef.current} />
           ) : hasContent ? (
             <motion.div
               key="cell-content"
@@ -216,6 +226,73 @@ export function MatrixCellRenderer({
           ) : null}
         </AnimatePresence>
       </div>
+
+      {/* Bottom-left edit button — shown when cell is editable (resolved/updated in draft phase) */}
+      {onCellClick && cell.editRender && (cellBuildStatus === 'resolved' || cellBuildStatus === 'updated') && !isInlineEditing && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onCellClick(); }}
+          className="absolute bottom-2.5 left-3 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-primary/50 bg-primary/5 border border-primary/10 hover:text-primary hover:bg-primary/10 hover:border-primary/20 transition-colors"
+        >
+          <Pencil className="w-2.5 h-2.5" />
+          Edit
+        </button>
+      )}
+      {isInlineEditing && onCellClick && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onCellClick(); }}
+          className="absolute bottom-2.5 left-3 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-emerald-400/70 bg-emerald-500/10 border border-emerald-500/20 hover:text-emerald-400 transition-colors"
+        >
+          <CheckCircle2 className="w-2.5 h-2.5" />
+          Done
+        </button>
+      )}
+
+      {/* Bottom-right status badge with question count */}
+      {cellBuildStatus && (
+        <div className="absolute bottom-2.5 right-3 flex items-center gap-1.5 z-10">
+          {questionCount > 0 && cellBuildStatus === 'highlighted' && (
+            <span className="text-[9px] font-mono text-amber-400/60 bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-500/15">
+              {questionCount}Q
+            </span>
+          )}
+          {(cellBuildStatus === 'pending' || cellBuildStatus === 'filling') && (
+            <span className="flex items-center gap-1 text-[10px] text-cyan-400/70">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              Analyzing
+            </span>
+          )}
+          {cellBuildStatus === 'resolved' && (
+            <span className="flex items-center gap-1 text-[10px] text-emerald-400/70">
+              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              Resolved
+            </span>
+          )}
+          {cellBuildStatus === 'highlighted' && (
+            <span className="flex items-center gap-1 text-[10px] text-amber-400/70">
+              <HelpCircle className="w-3 h-3 text-amber-400" />
+              Input needed
+            </span>
+          )}
+          {cellBuildStatus === 'updated' && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onConfirmUpdate?.(cell.key); }}
+              className="flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 transition-colors"
+            >
+              <AlertCircle className="w-3 h-3" />
+              Updated — click to confirm
+            </button>
+          )}
+          {cellBuildStatus === 'error' && (
+            <span className="flex items-center gap-1 text-[10px] text-red-400/70">
+              <AlertCircle className="w-3 h-3 text-red-400" />
+              Error
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

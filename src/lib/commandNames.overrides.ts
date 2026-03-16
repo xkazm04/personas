@@ -48,6 +48,7 @@ export type UnregisteredCommand =
   | "get_active_build_session"
   | "list_build_sessions"
   | "promote_build_draft"
+  | "test_build_draft"
   | "zapier_create_zap"
   | "zapier_list_zaps"
   | "zapier_trigger_webhook"

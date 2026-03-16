@@ -1676,6 +1676,11 @@ input[type="number"] {
   opacity: 0.25;
 }
 
+.cell-glow-updated::before {
+  box-shadow: 0 0 16px 3px #f59e0b;
+  opacity: 0.2;
+}
+
 /* -- Highlighted glow -- corner-heavy border glow (no spinning animation) -- */
 
 .cell-glow-highlighted {

@@ -49,6 +49,10 @@ export interface DataGridProps<T> {
   className?: string;
   /** When true, hides column filters and reduces page size to 5. */
   simplified?: boolean;
+  /** Whether all rows are selected (renders a header checkbox for the first column) */
+  selectAll?: boolean;
+  /** Toggle select-all callback */
+  onSelectAll?: () => void;
 }
 
 /* -- Stagger animation variants --------------------------------------- */
@@ -90,6 +94,8 @@ export function DataGrid<T>({
   emptyDescription,
   className,
   simplified = false,
+  selectAll,
+  onSelectAll,
 }: DataGridProps<T>) {
   const [page, setPage] = useState(1);
   const effectivePageSize = simplified && pageSize === 0 ? 5 : pageSize;
@@ -134,6 +140,28 @@ export function DataGrid<T>({
           const SortIcon = isSorted
             ? sortDirection === 'asc' ? ArrowUp : ArrowDown
             : ArrowUpDown;
+
+          /* Select-all checkbox header */
+          if (col.key === 'select' && onSelectAll) {
+            return (
+              <div key={col.key} className="px-4 py-2.5 flex items-center justify-center">
+                <div
+                  onClick={onSelectAll}
+                  className={`w-4 h-4 rounded border transition-all flex items-center justify-center cursor-pointer ${
+                    selectAll
+                      ? 'bg-primary/80 border-primary/60'
+                      : 'border-primary/25 hover:border-primary/50'
+                  }`}
+                >
+                  {selectAll && (
+                    <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                      <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+              </div>
+            );
+          }
 
           /* Filterable header (hidden in simplified mode) */
           if (!simplified && col.filterOptions && col.onFilterChange) {
