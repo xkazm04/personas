@@ -24,6 +24,7 @@ export async function startBuildSession(
   intent: string,
   workflowJson?: string | null,
   parserResultJson?: string | null,
+  language?: string | null,
 ): Promise<string> {
   return invokeWithTimeout<string>("start_build_session", {
     channel,
@@ -31,6 +32,7 @@ export async function startBuildSession(
     intent,
     workflowJson: workflowJson ?? null,
     parserResultJson: parserResultJson ?? null,
+    language: language ?? null,
   });
 }
 

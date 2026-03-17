@@ -70,6 +70,7 @@ impl BuildSessionManager {
         workflow_json: Option<String>,
         parser_result_json: Option<String>,
         app_handle: tauri::AppHandle,
+        language: Option<String>,
     ) -> Result<String, AppError> {
         let (input_tx, input_rx) = mpsc::channel::<UserAnswer>(32);
         let cancel_flag = Arc::new(AtomicBool::new(false));
@@ -126,7 +127,7 @@ impl BuildSessionManager {
         let template_context = build_template_context(&intent);
 
         // Build the system prompt that wraps the user intent with dimension framework
-        let system_prompt = build_session_prompt(&intent, &cred_summary, &connector_summary, &template_context);
+        let system_prompt = build_session_prompt(&intent, &cred_summary, &connector_summary, &template_context, language.as_deref());
 
         // Spawn the session task
         let sessions_map = self.sessions.clone();
@@ -354,6 +355,8 @@ async fn run_session(
         if let Err(e) = driver.write_stdin_line(turn_prompt.as_bytes()).await {
             tracing::error!(session_id = %session_id, error = %e, "Failed to write prompt on turn {}", turn);
             let _ = driver.kill().await;
+            let _ = update_phase_with_error(&pool, &session_id, &format!("Failed to send prompt: {e}"));
+            emit_error(&channel, &app_handle, &session_id, &format!("Build failed: could not send prompt (turn {})", turn + 1), false);
             break;
         }
         driver.close_stdin().await;
@@ -1133,6 +1136,7 @@ fn build_session_prompt(
     credentials: &[String],
     connectors: &[String],
     template_context: &str,
+    language: Option<&str>,
 ) -> String {
     let cred_section = if credentials.is_empty() {
         "No credentials configured. The user MUST add credentials in the Vault (Keys module) before the agent can connect to external services. Warn them clearly.".to_string()
@@ -1149,7 +1153,7 @@ fn build_session_prompt(
         )
     };
 
-    format!(
+    let mut result = format!(
 r##"You are a senior AI agent architect. The user wants:
 
 "{intent}"
@@ -1222,13 +1226,48 @@ When ALL 8 are resolved, also emit agent_ir:
 2. Dimension keys exactly: use-cases, connectors, triggers, messages, human-review, memory, error-handling, events
 3. connectors data MUST include "connectors" array (structured) and "alternatives" map
 4. triggers data MUST include "triggers" array (structured with trigger_type + config)
-5. Generate a short agent name (2-4 words, Title Case) in agent_ir — not the raw intent
+5. agent_ir.name MUST be a concise, descriptive Title Case name (2-4 words) that captures the agent's PURPOSE, not the raw intent. Examples: "Email Triage Manager", "Sprint Report Bot", "Invoice Tracker", "PR Review Assistant". NEVER use the user's exact words as the name.
 6. Resolve dimensions you can reason about. If tasks + connectors are clear, messages/review/memory/errors follow logically — resolve them too
 
 {template_context}
 
 Analyze the intent now:"##
-    )
+    );
+
+    // Append language instruction if a non-English language is specified
+    if let Some(lang) = language {
+        if lang != "en" {
+            let lang_name = match lang {
+                "zh" => "Chinese (Simplified)",
+                "ar" => "Arabic",
+                "hi" => "Hindi",
+                "ru" => "Russian",
+                "id" => "Indonesian",
+                "es" => "Spanish",
+                "fr" => "French",
+                "bn" => "Bengali",
+                "ja" => "Japanese",
+                "vi" => "Vietnamese",
+                "de" => "German",
+                "ko" => "Korean",
+                "cs" => "Czech",
+                other => other,
+            };
+            result.push_str(&format!(
+                "\n\n## Language\nThe user's language is {lang_name} ({lang}). ALL user-facing text MUST be in {lang_name}:\n\
+                - agent_ir.name — in {lang_name}\n\
+                - agent_ir.description — in {lang_name}\n\
+                - agent_ir.system_prompt and structured_prompt content — in {lang_name}\n\
+                - Question text and option labels — in {lang_name}\n\
+                - dimension data \"items\" arrays — in {lang_name}\n\
+                JSON keys (\"dimension\", \"connectors\", \"trigger_type\", etc.) stay in English.\n\
+                Technical identifiers (connector names like \"gmail\", \"notion\", cron expressions, service_type values) stay in English.\n\
+                Only human-readable descriptions and labels are translated."
+            ));
+        }
+    }
+
+    result
 }
 
 // =============================================================================

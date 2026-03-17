@@ -41,6 +41,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Channel } from "@tauri-apps/api/core";
 import { useAgentStore } from "@/stores/agentStore";
+import { useI18nStore } from "@/stores/i18nStore";
 import {
   startBuildSession,
   answerBuildQuestion,
@@ -190,12 +191,14 @@ export function useBuildSession(
       channel.onmessage = handleChannelMessage;
 
       // Invoke the Tauri command -- backend starts the CLI process
+      const language = useI18nStore.getState().language;
       const sessionId = await startBuildSession(
         channel,
         effectivePersonaId,
         intent,
         workflowJson,
         parserResultJson,
+        language,
       );
 
       // Store refs

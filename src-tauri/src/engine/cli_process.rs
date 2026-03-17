@@ -26,7 +26,8 @@ pub(crate) const MAX_LINE_BYTES: usize = 64 * 1024; // 64 KB
 /// Watchdog timeout: if no newline arrives within this duration, the line
 /// read is aborted and whatever has been buffered so far is returned.
 /// Prevents indefinite hangs from processes that produce output without newlines.
-pub(crate) const LINE_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+/// Set generously to accommodate initial API latency + model reasoning time.
+pub(crate) const LINE_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
 
 // =============================================================================
 // read_line_limited -- robust per-line reader with size + time guards
@@ -168,13 +169,17 @@ impl CliProcessDriver {
     }
 
     /// Internal: configure and spawn a `tokio::process::Command` from `CliArgs`.
+    ///
+    /// stderr is sent to null to prevent buffer-full deadlocks on Windows
+    /// (the ~4 KB pipe buffer fills up if nobody reads stderr, causing the
+    /// child process to block on its next stderr write and hang forever).
     fn build_and_spawn(cli_args: &CliArgs, exec_dir: &PathBuf) -> Result<tokio::process::Child, std::io::Error> {
         let mut cmd = Command::new(&cli_args.command);
         cmd.args(&cli_args.args)
             .current_dir(exec_dir)
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped());
+            .stderr(std::process::Stdio::null());
 
         #[cfg(windows)]
         {

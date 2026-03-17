@@ -32,7 +32,7 @@ interface UnifiedMatrixEntryProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Generate a short agent name (2-4 words) from an intent description. */
+/** Generate a short placeholder agent name from intent (replaced by LLM name once agent_ir arrives). */
 function generateAgentName(intent: string): string {
   const lower = intent.toLowerCase();
   const stopwords = new Set([
@@ -40,12 +40,16 @@ function generateAgentName(intent: string): string {
     'with','that','this','of','by','is','it','me','i','be','do','so','if','up',
     'help','more','want','get','make','let','just','very','really','much','also',
     'some','every','each','should','would','could','please','like','need','about',
+    'build','create','monitor','automate','run','set','use','manage','handle',
+    'send','post','check','track','find','watch','start','stop','keep','turn',
+    'add','update','process','generate','log','report','daily','weekly','monthly',
+    'automatically','before','after','based','into','then','when','using','via',
   ]);
   const words = lower
     .replace(/[^a-z0-9\s]/g, '')
     .split(/\s+/)
     .filter(w => w.length > 2 && !stopwords.has(w));
-  if (words.length < 2) return 'Custom Agent';
+  if (words.length < 2) return 'New Agent';
   const nameWords = words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1));
   return `${nameWords.join(' ')} Agent`;
 }

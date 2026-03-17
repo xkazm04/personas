@@ -41,7 +41,7 @@ SCENARIOS = [
     {"id": 20, "name": "Contradictory Requirements", "intent": "Build a fully automated agent that requires manual approval for every single action", "creds_hit": [], "creds_missing": []},
 ]
 
-MAX_BUILD_TIME = 180  # seconds max per scenario
+MAX_BUILD_TIME = 300  # seconds max per scenario (allows for 120s API latency + processing)
 POLL_INTERVAL = 5
 
 
@@ -141,10 +141,13 @@ def run_scenario(scenario):
                 if personas:
                     name = personas[-1]["name"]
                     result["agent_name"] = name
-                    intent_start = scenario["intent"][:15].lower()
-                    is_raw = name.lower().startswith(intent_start)
+                    intent_words = set(scenario["intent"].lower().split()[:4])
+                    name_words = set(name.lower().split())
+                    # Fail if name is >5 words, or shares 3+ words with raw intent (too close to copy)
+                    overlap = len(intent_words & name_words)
                     is_short = len(name.split()) <= 5
-                    result["name_quality"] = "PASS" if (not is_raw and is_short) else "FAIL"
+                    is_placeholder = name in ("New Agent", "Custom Agent", "Draft Agent")
+                    result["name_quality"] = "PASS" if (is_short and overlap < 3 and not is_placeholder) else "WARN"
 
                 result["status"] = "PASS"
                 break

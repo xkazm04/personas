@@ -28,6 +28,7 @@ pub async fn start_build_session(
     intent: String,
     workflow_json: Option<String>,
     parser_result_json: Option<String>,
+    language: Option<String>,
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
 
@@ -43,6 +44,7 @@ pub async fn start_build_session(
         workflow_json,
         parser_result_json,
         app,
+        language,
     )?;
 
     Ok(session_id)
