@@ -34,6 +34,14 @@ interface UnifiedMatrixEntryProps {
 
 /** Generate a short placeholder agent name from intent (replaced by LLM name once agent_ir arrives). */
 function generateAgentName(intent: string): string {
+  // For non-Latin scripts, take the first few characters of the intent as placeholder
+  const hasLatin = /[a-zA-Z]{3,}/.test(intent);
+  if (!hasLatin) {
+    // Non-Latin: use first ~10 chars of intent + generic suffix
+    const trimmed = intent.replace(/\s+/g, '').slice(0, 10);
+    return trimmed.length > 0 ? `${trimmed}...` : 'New Agent';
+  }
+
   const lower = intent.toLowerCase();
   const stopwords = new Set([
     'a','an','the','my','our','all','new','and','or','for','to','in','on','from',

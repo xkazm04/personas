@@ -1153,10 +1153,43 @@ fn build_session_prompt(
         )
     };
 
+    // Build language preamble (placed at top of prompt for maximum visibility)
+    let lang_preamble = if let Some(lang) = language {
+        if lang != "en" {
+            let lang_name = match lang {
+                "zh" => "Chinese (Simplified)",
+                "ar" => "Arabic",
+                "hi" => "Hindi",
+                "ru" => "Russian",
+                "id" => "Indonesian",
+                "es" => "Spanish",
+                "fr" => "French",
+                "bn" => "Bengali",
+                "ja" => "Japanese",
+                "vi" => "Vietnamese",
+                "de" => "German",
+                "ko" => "Korean",
+                "cs" => "Czech",
+                other => other,
+            };
+            format!(
+                "\n\n**LANGUAGE RULE — {lang_name} ({lang})**: ALL human-readable text you output MUST be in {lang_name}. This includes:\n\
+                - dimension data: \"items\" arrays, descriptions, labels\n\
+                - agent_ir: name, description, system_prompt, structured_prompt content\n\
+                - questions: question text and option labels\n\
+                Keep JSON keys, connector names (\"gmail\", \"notion\"), cron expressions, and service_type values in English.\n"
+            )
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
+
     let mut result = format!(
 r##"You are a senior AI agent architect. The user wants:
 
-"{intent}"
+"{intent}"{lang_preamble}
 
 ## How Dimensions Work
 
@@ -1233,39 +1266,6 @@ When ALL 8 are resolved, also emit agent_ir:
 
 Analyze the intent now:"##
     );
-
-    // Append language instruction if a non-English language is specified
-    if let Some(lang) = language {
-        if lang != "en" {
-            let lang_name = match lang {
-                "zh" => "Chinese (Simplified)",
-                "ar" => "Arabic",
-                "hi" => "Hindi",
-                "ru" => "Russian",
-                "id" => "Indonesian",
-                "es" => "Spanish",
-                "fr" => "French",
-                "bn" => "Bengali",
-                "ja" => "Japanese",
-                "vi" => "Vietnamese",
-                "de" => "German",
-                "ko" => "Korean",
-                "cs" => "Czech",
-                other => other,
-            };
-            result.push_str(&format!(
-                "\n\n## Language\nThe user's language is {lang_name} ({lang}). ALL user-facing text MUST be in {lang_name}:\n\
-                - agent_ir.name — in {lang_name}\n\
-                - agent_ir.description — in {lang_name}\n\
-                - agent_ir.system_prompt and structured_prompt content — in {lang_name}\n\
-                - Question text and option labels — in {lang_name}\n\
-                - dimension data \"items\" arrays — in {lang_name}\n\
-                JSON keys (\"dimension\", \"connectors\", \"trigger_type\", etc.) stay in English.\n\
-                Technical identifiers (connector names like \"gmail\", \"notion\", cron expressions, service_type values) stay in English.\n\
-                Only human-readable descriptions and labels are translated."
-            ));
-        }
-    }
 
     result
 }

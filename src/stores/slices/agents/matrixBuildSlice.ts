@@ -179,6 +179,15 @@ export const createMatrixBuildSlice: StateCreator<
         const data = typeof event.data === 'string'
           ? (() => { try { return JSON.parse(event.data as string); } catch { return event.data; } })()
           : event.data;
+        // Also update persona name in the personas list so it's visible immediately
+        const irName = data && typeof data === 'object' ? (data as Record<string, unknown>).name : undefined;
+        if (typeof irName === 'string' && irName.length > 0 && s.buildPersonaId) {
+          const pid = s.buildPersonaId;
+          return {
+            buildDraft: data,
+            personas: s.personas.map(p => p.id === pid ? { ...p, name: irName } : p),
+          };
+        }
         return { buildDraft: data };
       }
 
