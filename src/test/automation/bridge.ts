@@ -405,6 +405,84 @@ const bridge: TestBridge = {
     return { success: true, tab };
   },
 
+  /** Gap 4: Verify build state hydration after navigation round-trip */
+  async verifyHydrationRoundTrip() {
+    const before = useAgentStore.getState();
+    if (!before.buildSessionId) {
+      return { success: false, error: 'No active build session to test hydration' };
+    }
+    const beforeCells = { ...before.buildCellStates };
+    const beforePhase = before.buildPhase;
+    const beforeSessionId = before.buildSessionId;
+    const beforeCellCount = Object.keys(beforeCells).length;
+
+    // Navigate away
+    useSystemStore.getState().setSidebarSection('settings');
+    await new Promise(r => setTimeout(r, 500));
+
+    // Navigate back
+    useSystemStore.getState().setSidebarSection('personas');
+    await new Promise(r => setTimeout(r, 1000));
+
+    // Compare
+    const after = useAgentStore.getState();
+    const cellsMatch = JSON.stringify(beforeCells) === JSON.stringify(after.buildCellStates);
+    const phaseMatch = beforePhase === after.buildPhase;
+    const sessionMatch = beforeSessionId === after.buildSessionId;
+
+    return {
+      success: cellsMatch && phaseMatch && sessionMatch,
+      details: {
+        cellsMatch, phaseMatch, sessionMatch,
+        beforeCellCount,
+        afterCellCount: Object.keys(after.buildCellStates).length,
+      },
+    };
+  },
+
+  /** Gap 5: Verify concurrent build is rejected */
+  async testConcurrentBuildRejection(personaId: string) {
+    try {
+      const { Channel } = await import('@tauri-apps/api/core');
+      const ch = new Channel();
+      await invoke('start_build_session', {
+        channel: ch,
+        personaId,
+        intent: 'concurrent test intent',
+        workflowJson: null,
+        parserResultJson: null,
+        language: null,
+      });
+      return { success: false, error: 'Second build was NOT rejected — expected rejection' };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes('already active')) {
+        return { success: true };
+      }
+      return { success: false, error: `Unexpected error: ${msg}` };
+    }
+  },
+
+  /** Gap 6: Trigger test_build_draft for the active build session */
+  async triggerBuildTest() {
+    const state = useAgentStore.getState();
+    if (!state.buildSessionId || !state.buildPersonaId) {
+      return { success: false, error: 'No active build session' };
+    }
+    if (state.buildPhase !== 'draft_ready' && state.buildPhase !== 'test_complete') {
+      return { success: false, error: `Cannot test in phase: ${state.buildPhase}` };
+    }
+    try {
+      const report = await invoke('test_build_draft', {
+        sessionId: state.buildSessionId,
+        personaId: state.buildPersonaId,
+      });
+      return { success: true, report };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
   /**
    * Dispatcher called from Rust via eval().
    * Executes a bridge method and sends the result back via Tauri IPC.

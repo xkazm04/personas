@@ -369,10 +369,12 @@ export const createMatrixBuildSlice: StateCreator<
   collectAnswer: (cellKey, answer) => {
     set((s) => ({
       buildPendingAnswers: { ...s.buildPendingAnswers, [cellKey]: answer },
-      // Mark the answered question's cell as "resolved" (confirmed the proposal)
+      // Mark as "filling" — the CLI will confirm with "resolved" on the next turn.
+      // Using "filling" prevents the handleBuildCellUpdate handler from seeing
+      // a resolved→resolved transition and marking it as "updated".
       buildCellStates: {
         ...s.buildCellStates,
-        [cellKey]: 'resolved',
+        [cellKey]: 'filling',
       },
       // Remove the question from pending list
       buildPendingQuestions: s.buildPendingQuestions.filter((q) => q.cellKey !== cellKey),

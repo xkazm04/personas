@@ -94,6 +94,23 @@ impl BuildSessionManager {
         };
         build_session_repo::create(&pool, &session)?;
 
+        // Guard: reject if there's already an active build for this persona
+        {
+            let sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+            for handle in sessions.values() {
+                if !handle.cancel_flag.load(Ordering::Relaxed) {
+                    if let Ok(Some(existing)) = build_session_repo::get_by_id(&pool, &handle.session_id) {
+                        if existing.persona_id == persona_id && !existing.phase.is_terminal() {
+                            return Err(AppError::Validation(format!(
+                                "Build session {} already active for persona {}",
+                                handle.session_id, persona_id
+                            )));
+                        }
+                    }
+                }
+            }
+        }
+
         // Insert the session handle
         let handle = SessionHandle {
             input_tx,
@@ -542,6 +559,15 @@ async fn run_session(
                     return;
                 }
             }
+        } else if resolved_count >= 8 && !got_agent_ir {
+            // All 8 dimensions resolved but no agent_ir — request it explicitly
+            tracing::warn!(session_id = %session_id, turn = turn + 1, "All 8 resolved but no agent_ir — sending recovery prompt");
+
+            let ir_recovery = "All 8 dimensions are now resolved. Emit the agent_ir JSON object NOW. Output ONLY the {\"agent_ir\": {...}} line — no dimensions, no questions, no commentary.";
+            conversation.push(("user".to_string(), ir_recovery.to_string()));
+            // The next iteration of the turn loop will spawn a CLI with this prompt
+            // and hopefully get agent_ir back. If it still fails after MAX_TURNS,
+            // the final checkpoint will persist whatever we have.
         } else if got_agent_ir || resolved_count >= 8 {
             // All done — enter draft_ready and wait for test/refine
             let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
@@ -1172,18 +1198,64 @@ fn build_session_prompt(
                 "cs" => "Czech",
                 other => other,
             };
+            let name_examples = match lang {
+                "de" => "\"E-Mail Triage Manager\", \"Sprint-Bericht Bot\", \"Rechnungs-Tracker\"",
+                "es" => "\"Gestor de Triaje de Correo\", \"Bot de Informes Sprint\", \"Rastreador de Facturas\"",
+                "fr" => "\"Gestionnaire de Tri d'E-mails\", \"Bot Rapport Sprint\", \"Suivi de Factures\"",
+                "ja" => "\"メール振り分けマネージャー\", \"スプリントレポートボット\", \"請求書トラッカー\"",
+                "ko" => "\"이메일 분류 관리자\", \"스프린트 보고서 봇\", \"청구서 추적기\"",
+                "zh" => "\"邮件分类管理器\", \"冲刺报告机器人\", \"发票追踪器\"",
+                "ru" => "\"Менеджер Сортировки Почты\", \"Бот Отчётов Спринта\", \"Трекер Счетов\"",
+                "ar" => "\"مدير فرز البريد\", \"بوت تقارير السبرنت\", \"متتبع الفواتير\"",
+                "hi" => "\"ईमेल ट्राइएज मैनेजर\", \"स्प्रिंट रिपोर्ट बॉट\", \"इनवॉइस ट्रैकर\"",
+                "id" => "\"Manajer Triase Email\", \"Bot Laporan Sprint\", \"Pelacak Faktur\"",
+                "vi" => "\"Quản Lý Phân Loại Email\", \"Bot Báo Cáo Sprint\", \"Theo Dõi Hóa Đơn\"",
+                "bn" => "\"ইমেইল ট্রায়াজ ম্যানেজার\", \"স্প্রিন্ট রিপোর্ট বট\", \"ইনভয়েস ট্র্যাকার\"",
+                "cs" => "\"Správce Třídění E-mailů\", \"Bot Sprintových Reportů\", \"Sledovač Faktur\"",
+                _ => "\"Email Triage Manager\", \"Sprint Report Bot\"",
+            };
             format!(
                 "\n\n**LANGUAGE RULE — {lang_name} ({lang})**: ALL human-readable text you output MUST be in {lang_name}. This includes:\n\
                 - dimension data: \"items\" arrays, descriptions, labels\n\
                 - agent_ir: name, description, system_prompt, structured_prompt content\n\
                 - questions: question text and option labels\n\
-                Keep JSON keys, connector names (\"gmail\", \"notion\"), cron expressions, and service_type values in English.\n"
+                Keep JSON keys, connector names (\"gmail\", \"notion\"), cron expressions, and service_type values in English.\n\
+                agent_ir.name MUST be in {lang_name}, NOT English. Examples: {name_examples}\n"
             )
         } else {
             String::new()
         }
     } else {
         String::new()
+    };
+
+    // Build Rule 5 (agent naming) with language-appropriate examples
+    let rule5 = if let Some(lang) = language {
+        if lang != "en" {
+            let lang_name = match lang {
+                "zh" => "Chinese", "ar" => "Arabic", "hi" => "Hindi", "ru" => "Russian",
+                "id" => "Indonesian", "es" => "Spanish", "fr" => "French", "bn" => "Bengali",
+                "ja" => "Japanese", "vi" => "Vietnamese", "de" => "German", "ko" => "Korean",
+                "cs" => "Czech", other => other,
+            };
+            let examples = match lang {
+                "de" => "\"E-Mail Triage Manager\", \"Sprint-Bericht Bot\"",
+                "es" => "\"Gestor de Correo\", \"Rastreador de Facturas\"",
+                "fr" => "\"Gestionnaire d'E-mails\", \"Suivi de Factures\"",
+                "ja" => "\"メール振り分けマネージャー\", \"請求書トラッカー\"",
+                "ko" => "\"이메일 분류 관리자\", \"청구서 추적기\"",
+                "zh" => "\"邮件分类管理器\", \"发票追踪器\"",
+                "ru" => "\"Менеджер Почты\", \"Трекер Счетов\"",
+                "ar" => "\"مدير فرز البريد\", \"متتبع الفواتير\"",
+                "hi" => "\"ईमेल ट्राइएज मैनेजर\", \"इनवॉइस ट्रैकर\"",
+                _ => "\"Email Triage Manager\", \"Invoice Tracker\"",
+            };
+            format!("agent_ir.name MUST be in {lang_name} — NEVER in English. Use {lang_name} words. Examples: {examples}. The name describes the agent's purpose in 2-4 words.")
+        } else {
+            "agent_ir.name MUST be a concise, descriptive Title Case name (2-4 words) that captures the agent's PURPOSE. Examples: \"Email Triage Manager\", \"Sprint Report Bot\", \"Invoice Tracker\". NEVER use the user's exact words.".to_string()
+        }
+    } else {
+        "agent_ir.name MUST be a concise, descriptive Title Case name (2-4 words) that captures the agent's PURPOSE. Examples: \"Email Triage Manager\", \"Sprint Report Bot\", \"Invoice Tracker\". NEVER use the user's exact words.".to_string()
     };
 
     let mut result = format!(
@@ -1259,7 +1331,7 @@ When ALL 8 are resolved, also emit agent_ir:
 2. Dimension keys exactly: use-cases, connectors, triggers, messages, human-review, memory, error-handling, events
 3. connectors data MUST include "connectors" array (structured) and "alternatives" map
 4. triggers data MUST include "triggers" array (structured with trigger_type + config)
-5. agent_ir.name MUST be a concise, descriptive Title Case name (2-4 words) that captures the agent's PURPOSE, not the raw intent. Examples: "Email Triage Manager", "Sprint Report Bot", "Invoice Tracker", "PR Review Assistant". NEVER use the user's exact words as the name.
+5. {rule5}
 6. Resolve dimensions you can reason about. If tasks + connectors are clear, messages/review/memory/errors follow logically — resolve them too
 
 {template_context}
@@ -1333,7 +1405,12 @@ fn load_template_index() -> Vec<TemplateEntry> {
     CACHE.clone()
 }
 
-/// Extract keywords from text: lowercase, split on whitespace/punctuation, filter stopwords.
+/// Extract keywords from text: word splitting + known service name scanning.
+///
+/// For non-English intents, standard word splitting may fail (CJK has no spaces,
+/// Arabic is joined), but service names like "Gmail", "Notion", "Slack" are always
+/// written in ASCII regardless of language. The service name scan finds these as
+/// substrings, ensuring template matching works for all languages.
 fn extract_keywords(text: &str) -> Vec<String> {
     let stopwords: std::collections::HashSet<&str> = [
         "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
@@ -1344,11 +1421,29 @@ fn extract_keywords(text: &str) -> Vec<String> {
         "want", "need", "like", "make", "create", "build", "agent", "bot",
     ].into_iter().collect();
 
-    text.to_lowercase()
+    // Standard word extraction (works for space-delimited languages)
+    let mut keywords: Vec<String> = text.to_lowercase()
         .split(|c: char| !c.is_alphanumeric())
         .filter(|w| w.len() > 2 && !stopwords.contains(w))
         .map(|s| s.to_string())
-        .collect()
+        .collect();
+
+    // Service name substring scan — finds "gmail" inside "Gmailのメール" etc.
+    let known_services = [
+        "gmail", "outlook", "notion", "slack", "discord", "trello", "jira",
+        "asana", "github", "gitlab", "linear", "airtable", "google", "sheets",
+        "drive", "calendar", "teams", "zoom", "hubspot", "salesforce",
+        "stripe", "shopify", "sentry", "supabase", "clickup", "attio",
+        "telegram", "whatsapp", "twilio", "sendgrid", "calcom",
+    ];
+    let text_lower = text.to_lowercase();
+    for svc in &known_services {
+        if text_lower.contains(svc) && !keywords.contains(&svc.to_string()) {
+            keywords.push(svc.to_string());
+        }
+    }
+
+    keywords
 }
 
 /// Find the top N templates most similar to the given intent by keyword overlap score.
