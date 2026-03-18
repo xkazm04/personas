@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { FlaskConical, Trophy } from 'lucide-react';
 import { LabHistoryTable, type LabHistoryColumn } from '../shared/LabHistoryTable';
 import { LabResultModal } from '../shared/LabResultModal';
+import { ImprovePromptButton } from '../shared/ImprovePromptButton';
 import { ArenaResultsView } from './ArenaResultsView';
 import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
@@ -80,6 +81,11 @@ export function ArenaHistory({ runs, resultsMap, expandedRunId, onToggleExpand, 
               <span className="text-xs text-muted-foreground/60">{parseModels(activeRun).join(', ')}</span>
               {activeRun.scenariosCount > 0 && <span className="text-xs text-muted-foreground/50">{activeRun.scenariosCount} scenarios</span>}
             </>
+          }
+          footerActions={
+            activeRun.status === 'completed' ? (
+              <ImprovePromptButton personaId={activeRun.personaId} runId={activeRun.id} mode="arena" />
+            ) : undefined
           }
         >
           <ArenaResultsView results={resultsMap[activeRun.id] ?? []} runId={activeRun.id} />
