@@ -262,6 +262,15 @@ export interface DesignContextData {
   watchedTables?: Record<string, string[]>;
   /** Round-trip metadata for resuming builder from a draft. */
   builderMeta?: BuilderMeta;
+  /** Lab test results metadata -- feedback loop from testing into persona building. */
+  labTestMetadata?: {
+    testCoverage: number;
+    avgCompositeScore: number;
+    modelRecommendation: string | null;
+    weaknesses: Array<{ scenario: string; metric: string; score: number }>;
+    strengths: Array<{ scenario: string; metric: string; score: number }>;
+    lastTestedAt: string;
+  };
 }
 
 // -- Flow Diagram Types ------------------------------------------------
