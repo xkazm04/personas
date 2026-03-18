@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Wand2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
+import { buildTestMetadataForDesignContext } from '../../libs/labFeedbackLoop';
+import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 
 interface ImprovePromptButtonProps {
   personaId: string;
@@ -10,20 +12,75 @@ interface ImprovePromptButtonProps {
   disabled?: boolean;
 }
 
+/** Extract results array from the appropriate store results map based on mode. */
+function getResultsForRun(runId: string, mode: string) {
+  const store = useAgentStore.getState();
+  const maps: Record<string, Record<string, unknown[]>> = {
+    arena: store.arenaResultsMap,
+    ab: store.abResultsMap,
+    eval: store.evalResultsMap,
+    matrix: store.matrixResultsMap,
+  };
+  return (maps[mode]?.[runId] ?? []) as Array<Record<string, unknown>>;
+}
+
+/** Extract models tested from the run object based on mode. */
+function getModelsTested(runId: string, mode: string): string[] {
+  const store = useAgentStore.getState();
+  const runMaps: Record<string, unknown[]> = {
+    arena: store.arenaRuns,
+    ab: store.abRuns,
+    eval: store.evalRuns,
+    matrix: store.matrixRuns,
+  };
+  const runs = runMaps[mode] ?? [];
+  const run = runs.find((r) => (r as { id: string }).id === runId) as { modelsTested?: string } | undefined;
+  if (!run?.modelsTested) return [];
+  try { return JSON.parse(run.modelsTested); } catch { return []; }
+}
+
 /**
  * Button that triggers a Matrix run to improve the persona's prompt
- * based on the results of the current lab run.
+ * based on the results of the current lab run, and enriches the
+ * persona's design_context with lab test metadata.
  */
 export function ImprovePromptButton({ personaId, runId, mode, disabled }: ImprovePromptButtonProps) {
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const startMatrix = useAgentStore((s) => s.startMatrix);
+  const updatePersona = useAgentStore((s) => s.updatePersona);
   const addToast = useToastStore((s) => s.addToast);
 
   const handleClick = async () => {
     setState('loading');
     setErrorMsg(null);
     try {
+      // 1. Enrich design_context with lab test metadata
+      const results = getResultsForRun(runId, mode);
+      const modelsTested = getModelsTested(runId, mode);
+      if (results.length > 0) {
+        const metadata = buildTestMetadataForDesignContext(
+          mode,
+          results.map((r) => ({
+            scenarioName: (r.scenarioName as string) ?? '',
+            status: (r.status as string) ?? '',
+            toolAccuracyScore: (r.toolAccuracyScore as number | null) ?? null,
+            outputQualityScore: (r.outputQualityScore as number | null) ?? null,
+            protocolCompliance: (r.protocolCompliance as number | null) ?? null,
+            rationale: (r.rationale as string | null) ?? null,
+            suggestions: (r.suggestions as string | null) ?? null,
+          })),
+          modelsTested,
+        );
+
+        // Read current design_context and merge in the metadata
+        const persona = useAgentStore.getState().selectedPersona;
+        const currentCtx = parseDesignContext(persona?.design_context);
+        const enriched = serializeDesignContext({ ...currentCtx, labTestMetadata: metadata });
+        await updatePersona(personaId, { design_context: enriched });
+      }
+
+      // 2. Start a Matrix run to generate an improved prompt
       const instruction = `Improve the prompt based on the ${mode} test results from run ${runId}. ` +
         `Analyze weaknesses and low-scoring scenarios, then generate an improved version ` +
         `that addresses the identified issues while preserving existing strengths.`;
