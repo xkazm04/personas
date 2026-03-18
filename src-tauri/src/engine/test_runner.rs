@@ -1479,3 +1479,117 @@ fn parse_draft_from_output(output: &str) -> Result<(serde_json::Value, String), 
         &trimmed[..trimmed.len().min(500)]
     ))
 }
+
+// ============================================================================
+// Prompt Improvement Engine -- Analyze test results, generate targeted patches
+// ============================================================================
+
+/// Analyze test results and generate targeted prompt improvements.
+///
+/// Returns (improved_structured_prompt_json, change_summary).
+pub async fn generate_targeted_improvements(
+    pool: &DbPool,
+    persona: &Persona,
+    run_results_summary: &str,
+    user_feedback: Option<&str>,
+) -> Result<(serde_json::Value, String), String> {
+    let _ = pool; // available for future use (e.g. loading tools, history)
+
+    let improvement_prompt = build_improvement_prompt(persona, run_results_summary, user_feedback);
+
+    let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--max-turns".to_string());
+    cli_args.args.push("1".to_string());
+
+    let output = spawn_cli_and_collect(&cli_args, &improvement_prompt).await?;
+
+    parse_draft_from_output(&output)
+}
+
+fn build_improvement_prompt(
+    persona: &Persona,
+    run_results_summary: &str,
+    user_feedback: Option<&str>,
+) -> String {
+    let sp_json = persona.structured_prompt.as_deref().unwrap_or("{}");
+    let description = persona.description.as_deref().unwrap_or("(no description)");
+
+    let user_feedback_section = user_feedback
+        .filter(|f| !f.is_empty())
+        .map(|f| format!(
+            r#"
+## User Feedback
+The user provided the following feedback on the results:
+{f}
+
+Prioritize addressing the user's specific concerns alongside the data-driven improvements."#
+        ))
+        .unwrap_or_default();
+
+    format!(
+        r#"# Persona Prompt Improvement Engine
+
+You are an expert prompt engineer specializing in iterative improvement. Your task is to
+analyze test results for a persona and produce TARGETED patches to the structured prompt
+that will increase scores by 20-40 points in the weakest areas.
+
+## Current Persona
+- Name: {name}
+- Description: {description}
+
+## Current Structured Prompt
+{sp_json}
+
+## Test Results Summary
+The persona was evaluated across multiple scenarios and models. Here are the results:
+{run_results_summary}
+
+The three scoring dimensions (each 0-100) are:
+- **tool_accuracy**: Did the persona select the correct tools and call them with the right parameters?
+- **output_quality**: Was the output well-formatted, complete, and helpful?
+- **protocol_compliance**: Did the persona follow its defined protocols, instructions, and constraints?
+{user_feedback_section}
+
+## Analysis Instructions
+
+1. **Identify the weakest dimension(s)**: Which of tool_accuracy, output_quality, protocol_compliance scored lowest on average? Focus your improvements there.
+
+2. **Read the rationale and suggestions**: The test evaluator provided per-scenario rationale and suggestions. Use these as your primary guide for what to fix.
+
+3. **Make TARGETED patches** -- do NOT rewrite the entire prompt. Only modify the specific sections that address the weaknesses:
+
+   - **For low tool_accuracy (< 70)**: Improve the `toolGuidance` section with:
+     - Explicit tool selection rules (e.g., "When the user asks about X, ALWAYS use tool Y")
+     - Parameter mapping guidance (which user inputs map to which tool parameters)
+     - Decision trees for choosing between similar tools
+     - Common mistakes to avoid
+
+   - **For low output_quality (< 70)**: Improve the `instructions` and `examples` sections with:
+     - Clearer formatting requirements (markdown structure, headers, bullet points)
+     - Response length guidance (minimum/maximum)
+     - Template patterns for common response types
+     - Better examples showing the expected output format
+
+   - **For low protocol_compliance (< 70)**: Add explicit protocol rules to `instructions`:
+     - "ALWAYS do X before Y" rules
+     - "NEVER do Z" constraints
+     - Error handling protocols
+     - Escalation/fallback behavior
+
+4. **Preserve what works**: Sections with scores above 80 should be left mostly unchanged. Only add, don't remove content that's working.
+
+5. **Be specific**: Replace vague guidance like "be helpful" with concrete rules like "Always include a summary section with 2-3 bullet points at the top of your response".
+
+## Output Format
+Respond with ONLY a JSON object (no markdown fences, no extra text):
+{{
+  "structured_prompt": {{ ... the full updated structured_prompt JSON ... }},
+  "change_summary": "Concise description of each change and its expected impact on scores. Format: [dimension] change description (+X points expected)"
+}}"#,
+        name = persona.name,
+        description = description,
+        sp_json = sp_json,
+        run_results_summary = run_results_summary,
+        user_feedback_section = user_feedback_section,
+    )
+}

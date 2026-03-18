@@ -614,6 +614,165 @@ pub fn lab_get_error_rate(
 }
 
 // ============================================================================
+// Prompt Improvement Engine -- Analyze results, generate improved prompt
+// ============================================================================
+
+#[tauri::command]
+pub async fn lab_improve_prompt(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    run_id: String,
+    mode: String,
+) -> Result<PersonaPromptVersion, AppError> {
+    require_auth(&state).await?;
+    let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+
+    // Load results based on mode and build a summary JSON
+    let results_summary = match mode.as_str() {
+        "arena" => {
+            let results = arena_repo::get_results_by_run(&state.db, &run_id)?;
+            build_results_summary_arena(&results)
+        }
+        "ab" => {
+            let results = ab_repo::get_results_by_run(&state.db, &run_id)?;
+            build_results_summary_ab(&results)
+        }
+        "matrix" => {
+            let results = matrix_repo::get_results_by_run(&state.db, &run_id)?;
+            build_results_summary_matrix(&results)
+        }
+        "eval" => {
+            let results = eval_repo::get_results_by_run(&state.db, &run_id)?;
+            build_results_summary_eval(&results)
+        }
+        _ => return Err(AppError::Validation(format!("Invalid mode: {mode}"))),
+    };
+
+    // Load user ratings for this run
+    let ratings = ratings_repo::get_ratings_for_run(&state.db, &run_id)?;
+    let user_feedback = if ratings.is_empty() {
+        None
+    } else {
+        let feedback_parts: Vec<String> = ratings
+            .iter()
+            .map(|r| {
+                let rating_label = if r.rating > 0 { "thumbs-up" } else { "thumbs-down" };
+                let fb = r.feedback.as_deref().unwrap_or("");
+                format!("- Scenario '{}': {} {}", r.scenario_name, rating_label, fb)
+            })
+            .collect();
+        Some(feedback_parts.join("\n"))
+    };
+
+    // Generate improvements via LLM
+    let (improved_prompt, change_summary) = test_runner::generate_targeted_improvements(
+        &state.db,
+        &persona,
+        &results_summary,
+        user_feedback.as_deref(),
+    )
+    .await
+    .map_err(|e| AppError::Internal(format!("Improvement generation failed: {e}")))?;
+
+    // Save as a new prompt version with "experimental" tag
+    let improved_json_str = serde_json::to_string(&improved_prompt)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize improved prompt: {e}")))?;
+
+    let version = metrics_repo::create_prompt_version(
+        &state.db,
+        &persona_id,
+        Some(improved_json_str),
+        None,
+        Some(change_summary),
+    )?;
+
+    Ok(version)
+}
+
+// -- Helpers: build results summary strings for the improvement prompt -------
+
+fn build_results_summary_arena(results: &[LabArenaResult]) -> String {
+    let entries: Vec<serde_json::Value> = results
+        .iter()
+        .map(|r| {
+            serde_json::json!({
+                "scenario": r.scenario_name,
+                "model": r.model_id,
+                "tool_accuracy": r.tool_accuracy_score,
+                "output_quality": r.output_quality_score,
+                "protocol_compliance": r.protocol_compliance,
+                "rationale": r.rationale,
+                "suggestions": r.suggestions,
+                "status": r.status,
+            })
+        })
+        .collect();
+    serde_json::to_string_pretty(&entries).unwrap_or_else(|_| "[]".into())
+}
+
+fn build_results_summary_ab(results: &[LabAbResult]) -> String {
+    let entries: Vec<serde_json::Value> = results
+        .iter()
+        .map(|r| {
+            serde_json::json!({
+                "scenario": r.scenario_name,
+                "model": r.model_id,
+                "version_id": r.version_id,
+                "version_number": r.version_number,
+                "tool_accuracy": r.tool_accuracy_score,
+                "output_quality": r.output_quality_score,
+                "protocol_compliance": r.protocol_compliance,
+                "rationale": r.rationale,
+                "suggestions": r.suggestions,
+                "status": r.status,
+            })
+        })
+        .collect();
+    serde_json::to_string_pretty(&entries).unwrap_or_else(|_| "[]".into())
+}
+
+fn build_results_summary_matrix(results: &[LabMatrixResult]) -> String {
+    let entries: Vec<serde_json::Value> = results
+        .iter()
+        .map(|r| {
+            serde_json::json!({
+                "scenario": r.scenario_name,
+                "model": r.model_id,
+                "variant": r.variant,
+                "tool_accuracy": r.tool_accuracy_score,
+                "output_quality": r.output_quality_score,
+                "protocol_compliance": r.protocol_compliance,
+                "rationale": r.rationale,
+                "suggestions": r.suggestions,
+                "status": r.status,
+            })
+        })
+        .collect();
+    serde_json::to_string_pretty(&entries).unwrap_or_else(|_| "[]".into())
+}
+
+fn build_results_summary_eval(results: &[LabEvalResult]) -> String {
+    let entries: Vec<serde_json::Value> = results
+        .iter()
+        .map(|r| {
+            serde_json::json!({
+                "scenario": r.scenario_name,
+                "model": r.model_id,
+                "version_id": r.version_id,
+                "version_number": r.version_number,
+                "tool_accuracy": r.tool_accuracy_score,
+                "output_quality": r.output_quality_score,
+                "protocol_compliance": r.protocol_compliance,
+                "rationale": r.rationale,
+                "suggestions": r.suggestions,
+                "status": r.status,
+            })
+        })
+        .collect();
+    serde_json::to_string_pretty(&entries).unwrap_or_else(|_| "[]".into())
+}
+
+// ============================================================================
 // Ratings -- User thumbs up/down feedback on lab results
 // ============================================================================
 

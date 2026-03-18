@@ -202,6 +202,9 @@ export interface LabSlice {
   rollbackVersion: (versionId: string) => Promise<void>;
   healthErrorRate: number | null;
   fetchHealthRate: (personaId: string) => Promise<void>;
+
+  // Prompt Improvement Engine
+  improvePrompt: (personaId: string, runId: string, mode: string) => Promise<string | null>;
 }
 
 // -- Slice Creator ------------------------------------------------
@@ -367,6 +370,19 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         set({ healthErrorRate: rate });
       } catch (err) {
         reportError(err, "Failed to fetch error rate", set);
+      }
+    },
+
+    // Prompt Improvement Engine
+    improvePrompt: async (personaId, runId, mode) => {
+      try {
+        const version = await api.labImprovePrompt(personaId, runId, mode);
+        // Refresh versions list to include the new one
+        get().fetchVersions(personaId);
+        return version.id;
+      } catch (err) {
+        reportError(err, "Failed to generate prompt improvement", set);
+        return null;
       }
     },
   };

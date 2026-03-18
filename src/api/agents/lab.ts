@@ -153,3 +153,10 @@ export const labRateResult = (runId: string, resultId: string | null, scenarioNa
 
 export const labGetRatings = (runId: string) =>
   invoke<LabUserRating[]>("lab_get_ratings", { runId });
+
+// ============================================================================
+// Prompt Improvement Engine
+// ============================================================================
+
+export const labImprovePrompt = (personaId: string, runId: string, mode: string) =>
+  invoke<PersonaPromptVersion>("lab_improve_prompt", { personaId, runId, mode });
