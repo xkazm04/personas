@@ -488,6 +488,17 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             metadata: Some(r#"{"template_enabled":true,"summary":"LinkedIn professional network for profile, connections, and social posts.","auth_type":"oauth","auth_type_label":"OAuth","oauth_provider_id":"linkedin","oauth_scopes":["openid","profile","email","w_member_social"],"docs_url":"https://learn.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow","setup_guide":"1. Go to linkedin.com/developers and create a new app\n2. Under Products, request access to 'Sign In with LinkedIn using OpenID Connect' and 'Share on LinkedIn'\n3. Go to Auth tab and copy Client ID and Client Secret\n4. Add http://127.0.0.1 as an Authorized Redirect URL (the port is assigned dynamically)\n5. Paste Client ID and Client Secret here, then click Authorize with LinkedIn","pricing_tier":"free","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
         },
         BuiltinConnector {
+            id: r#"builtin-local-messaging"#,
+            name: r#"personas_messages"#,
+            label: r#"Local Messaging"#,
+            color: r#"#8B5CF6"#,
+            icon_url: r#""#,
+            category: r#"messaging"#,
+            fields: r#"[]"#,
+            healthcheck_config: None,
+            metadata: Some(r#"{"template_enabled":true,"summary":"Built-in in-app messaging channel. Agents can send notifications and messages to the Personas inbox without external services.","auth_type":"none","auth_type_label":"Built-in (Local)","connection_mode":"local","capabilities":["messaging","notifications"],"docs_url":"","setup_guide":"Local messaging works out of the box. No configuration needed — agents publish messages to the in-app inbox."}"#),
+        },
+        BuiltinConnector {
             id: r#"builtin-microsoft-calendar"#,
             name: r#"microsoft_calendar"#,
             label: r#"Microsoft Outlook Calendar"#,
@@ -853,7 +864,7 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         BuiltinConnector {
             id: r#"builtin-vector-knowledge-base"#,
             name: r#"personas_vector_db"#,
-            label: r#"Vector Knowledge Base"#,
+            label: r#"Local Vector DB"#,
             color: r#"#8B5CF6"#,
             icon_url: r#"/icons/connectors/vector-db.svg"#,
             category: r#"database"#,
