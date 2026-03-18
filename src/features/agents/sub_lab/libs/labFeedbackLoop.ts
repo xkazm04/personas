@@ -83,7 +83,7 @@ export function buildTestMetadataForDesignContext(
 
       // For model recommendation: try to extract modelId from results if available
       // Results from arena/eval have a modelId field -- we'll look at the object shape
-      const modelId = (r as Record<string, unknown>)['modelId'] as string | undefined;
+      const modelId = (r as unknown as Record<string, unknown>)['modelId'] as string | undefined;
       if (modelId) {
         if (!modelScores[modelId]) modelScores[modelId] = [];
         modelScores[modelId].push(composite);
@@ -108,7 +108,7 @@ export function buildTestMetadataForDesignContext(
 
   // If no model-level data, use the first model tested as a fallback only if there's one
   if (!modelRecommendation && modelsTested.length === 1) {
-    modelRecommendation = modelsTested[0];
+    modelRecommendation = modelsTested[0] ?? null;
   }
 
   return {
