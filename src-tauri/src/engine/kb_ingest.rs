@@ -22,6 +22,7 @@ use super::vector_store::SqliteVectorStore;
 const EMBED_BATCH_SIZE: usize = 32;
 
 /// Ingest files into a knowledge base.
+#[allow(clippy::too_many_arguments)]
 pub async fn ingest_files(
     app: AppHandle,
     user_db: UserDbPool,
@@ -165,6 +166,7 @@ pub async fn ingest_text(
 }
 
 /// Ingest a single file.
+#[allow(clippy::too_many_arguments)]
 async fn ingest_single_file(
     user_db: &UserDbPool,
     embedder: &EmbeddingManager,

@@ -23,7 +23,7 @@ import {
   CHANNEL_TYPES,
 } from "@/features/agents/components/creation/steps/builder/types";
 import type { BuilderState } from "@/features/agents/components/creation";
-import type { BuildEvent, BuildQuestion, CellBuildStatus } from "@/lib/types/buildTypes";
+import type { BuildEvent, BuildQuestion as _BuildQuestion, CellBuildStatus } from "@/lib/types/buildTypes";
 import { ALL_CELL_KEYS, DIMENSION_TO_CELL } from "@/lib/constants/dimensionMapping";
 
 // ---------------------------------------------------------------------------
@@ -337,7 +337,7 @@ describe("Old persona format compatibility (INTG-01)", () => {
       // No builderMeta -- old format
     };
 
-    const restored = fromDesignContext(legacyContext as any);
+    const restored = fromDesignContext(legacyContext as unknown as Parameters<typeof fromDesignContext>[0]);
     expect(restored.intent).toBe("Legacy persona summary");
     expect(restored.useCases.length).toBe(1);
     expect(restored.useCases[0].title).toBe("Legacy Task");
@@ -348,7 +348,7 @@ describe("Old persona format compatibility (INTG-01)", () => {
 
   it("fromDesignContext handles empty design context gracefully", () => {
     const emptyContext = {};
-    const restored = fromDesignContext(emptyContext as any);
+    const restored = fromDesignContext(emptyContext as unknown as Parameters<typeof fromDesignContext>[0]);
     expect(restored.intent).toBe("");
     expect(restored.useCases).toEqual([]);
     // Should have default notify component
@@ -366,7 +366,7 @@ describe("Old persona format compatibility (INTG-01)", () => {
       // No builderMeta
     };
 
-    const restored = fromDesignContext(contextWithRolesInLabels as any);
+    const restored = fromDesignContext(contextWithRolesInLabels as unknown as Parameters<typeof fromDesignContext>[0]);
     const github = restored.components.find((c) => c.connectorName === "github");
     const postgres = restored.components.find((c) => c.connectorName === "postgres");
     expect(github?.role).toBe("retrieve");

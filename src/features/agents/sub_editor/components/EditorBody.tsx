@@ -16,7 +16,7 @@ import { PersonaEditorHeader } from './PersonaEditorHeader';
 import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 import {
   PersonaPromptEditor, PersonaSettingsTab, PersonaUseCasesTab,
-  PersonaConnectorsTab, DesignTab, LabTab, PromptPerformanceCard, HealthTab,
+  PersonaConnectorsTab, DesignTab, LabTab, HealthTab, ChatTab,
 } from './EditorLazyTabs';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
@@ -24,8 +24,6 @@ import { UnsavedChangesModal } from '@/features/shared/components/overlays/Unsav
 export function EditorBody() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const editorTab = useSystemStore((s) => s.editorTab);
-  const setEditorTab = useSystemStore((s) => s.setEditorTab);
-  const setLabMode = useAgentStore((s) => s.setLabMode);
   const deletePersona = useAgentStore((s) => s.deletePersona);
   const credentials = useVaultStore((s) => s.credentials);
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
@@ -167,11 +165,6 @@ export function EditorBody() {
 
   const changedSections = allDirtyTabs.map((t) => t.charAt(0).toUpperCase() + t.slice(1));
 
-  const handleOpenLab = useCallback(() => {
-    setEditorTab('lab');
-    setLabMode('versions');
-  }, [setEditorTab, setLabMode]);
-
   return (
     <ContentBox>
       <PersonaEditorHeader draft={draft} baseline={baseline} patch={patch} setBaseline={setBaseline} />
@@ -190,15 +183,6 @@ export function EditorBody() {
       <OnboardingBanner personaId={selectedPersona.id} />
 
       <div className="flex-1 overflow-y-auto p-4">
-        {/* Prompt Performance Summary Card -- shown on prompt and use-cases tabs */}
-        {(editorTab === 'prompt' || editorTab === 'use-cases') && (
-          <Suspense fallback={null}>
-            <div className="mb-4">
-              <PromptPerformanceCard personaId={selectedPersona.id} onOpenLab={handleOpenLab} />
-            </div>
-          </Suspense>
-        )}
-
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={editorTab}
@@ -212,6 +196,7 @@ export function EditorBody() {
               {editorTab === 'prompt' && <PersonaPromptEditor />}
               {editorTab === 'lab' && <LabTab />}
               {editorTab === 'connectors' && <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />}
+              {editorTab === 'chat' && <ChatTab />}
               {editorTab === 'design' && <DesignTab />}
               {editorTab === 'health' && <HealthTab />}
               {editorTab === 'settings' && (

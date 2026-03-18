@@ -4,7 +4,7 @@ import {
   List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu,
   Network, Database, Home, Compass, Shield, CalendarClock, HardDriveDownload,
   Wrench, FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
-  Radio,
+  Radio, Gauge, Unplug, Webhook,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -73,6 +73,14 @@ export const credentialItems: SubNavItem[] = [
   { id: 'from-template', label: 'Catalog', icon: LayoutTemplate, minTier: TIERS.TEAM },
   { id: 'graph', label: 'Graph', icon: Network },
   { id: 'add-new', label: 'Add new', icon: Plus },
+];
+
+export const eventBusItems: SubNavItem[] = [
+  { id: 'live-stream', label: 'Live Stream', icon: Activity },
+  { id: 'rate-limits', label: 'Rate Limits', icon: Gauge },
+  { id: 'test', label: 'Test', icon: Zap },
+  { id: 'smee-relay', label: 'Smee Relay', icon: Unplug },
+  { id: 'cloud-webhooks', label: 'Cloud Webhooks', icon: Webhook },
 ];
 
 export const templateItems: SubNavItem[] = [

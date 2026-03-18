@@ -22,6 +22,7 @@ pub struct PeriodicTask {
     cancel: CancellationToken,
 }
 
+#[allow(dead_code)]
 impl PeriodicTask {
     /// Create a new periodic task with a fixed interval.
     pub fn new(name: &'static str, interval: Duration, cancel: CancellationToken) -> Self {

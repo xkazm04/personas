@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
-import { useDesignReviews } from "../useDesignReviews";
+import { useDesignReviews } from "../template/useDesignReviews";
 import { mockInvokeMap, resetInvokeMocks, mockInvokeError } from "@/test/tauriMock";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 
@@ -123,7 +123,11 @@ describe("useDesignReviews", () => {
   });
 
   it("deleteReview sets error on failure", async () => {
-    mockInvokeMap({ list_design_reviews: [makeReview()] });
+    mockInvokeMap({
+      list_design_reviews: [makeReview()],
+      import_design_review: undefined,
+      delete_design_review: undefined,
+    });
 
     const { result } = renderHook(() => useDesignReviews());
 
@@ -131,8 +135,12 @@ describe("useDesignReviews", () => {
       expect(result.current.reviews).toHaveLength(1);
     });
 
-    // Now mock delete to fail
-    mockInvokeError("delete_design_review", "Delete failed");
+    const { invoke } = await import("@tauri-apps/api/core");
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
+      if (cmd === "delete_design_review") return Promise.reject(new Error("Delete failed"));
+      if (cmd === "list_design_reviews") return Promise.resolve([makeReview()] as never);
+      return Promise.resolve(undefined as never);
+    });
 
     await act(async () => {
       await result.current.deleteReview("r-1");

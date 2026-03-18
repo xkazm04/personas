@@ -20,6 +20,7 @@ use ts_rs::TS;
 
 /// Returned when a caller attempts a state transition that is not allowed.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(dead_code)]
 pub struct InvalidTransition {
     pub entity: &'static str,
     pub from: String,
@@ -63,6 +64,7 @@ pub enum TriggerStatus {
     Disabled,
 }
 
+#[allow(dead_code)]
 impl TriggerStatus {
     /// Check whether transitioning from `self` to `target` is valid.
     pub fn can_transition_to(&self, target: TriggerStatus) -> bool {
@@ -167,6 +169,7 @@ pub enum AutomationDeployStatus {
     Error,
 }
 
+#[allow(dead_code)]
 impl AutomationDeployStatus {
     pub fn can_transition_to(&self, target: AutomationDeployStatus) -> bool {
         matches!(
@@ -260,6 +263,7 @@ pub enum RotationEntryStatus {
     Skipped,
 }
 
+#[allow(dead_code)]
 impl RotationEntryStatus {
     pub fn is_failure(&self) -> bool {
         matches!(self, RotationEntryStatus::Failed)

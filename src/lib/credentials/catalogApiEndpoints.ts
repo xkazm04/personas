@@ -1069,6 +1069,20 @@ const knock: EP[] = [
   ep('GET', '/users/{userId}/preferences', 'Get user preferences', [pathP('userId')], ['Preferences']),
 ];
 
+// -- Obsidian (Local REST API) -------------------------------------------
+
+const obsidian: EP[] = [
+  ep('GET', '/vault/', 'List vault root files', [], ['Vault']),
+  ep('GET', '/vault/{filename}', 'Read a note', [pathP('filename', 'Path to note (e.g. folder/note.md)')], ['Vault']),
+  ep('PUT', '/vault/{filename}', 'Create or replace a note', [pathP('filename')], ['Vault'], jsonBody()),
+  ep('POST', '/vault/{filename}', 'Append to a note', [pathP('filename')], ['Vault'], jsonBody()),
+  ep('DELETE', '/vault/{filename}', 'Delete a note', [pathP('filename')], ['Vault']),
+  ep('POST', '/search/simple/', 'Search vault by text', [], ['Search'], jsonBody()),
+  ep('GET', '/active/', 'Get active file content', [], ['Active']),
+  ep('GET', '/commands/', 'List available commands', [], ['Commands']),
+  ep('POST', '/commands/{commandId}/', 'Execute a command', [pathP('commandId', 'Command ID to execute')], ['Commands']),
+];
+
 export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   azure_devops,
   github,
@@ -1126,4 +1140,5 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   lemonsqueezy,
   novu,
   knock,
+  obsidian,
 };

@@ -82,6 +82,8 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
         connectorFilter={connectorFilter} onCategoryFilterChange={onCategoryFilterChange}
         onConnectorFilterChange={onConnectorFilterChange} availableConnectors={availableConnectors}
         coverageFilter={coverageFilter} onCoverageFilterChange={onCoverageFilterChange} coverageCounts={coverageCounts}
+        componentFilter={props.componentFilter} onComponentFilterChange={props.onComponentFilterChange}
+        availableComponents={props.availableComponents}
         onCleanupDuplicates={onCleanupDuplicates} isCleaningUp={isCleaningUp}
         onBackfillPipeline={onBackfillPipeline} isBackfillingPipeline={isBackfillingPipeline}
         onBackfillTools={onBackfillTools} isBackfillingTools={isBackfillingTools}

@@ -1,7 +1,5 @@
 use std::sync::Arc;
-use serde::Serialize;
 use tauri::State;
-use ts_rs::TS;
 
 use crate::db::models::{AutomationRun, CreateAutomationInput, PersonaAutomation, UpdateAutomationInput};
 use crate::db::repos::resources::automations as repo;

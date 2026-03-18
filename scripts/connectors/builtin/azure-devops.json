@@ -4,7 +4,7 @@
   "label": "Azure DevOps",
   "color": "#0078D7",
   "icon_url": "/icons/connectors/azure-devops.svg",
-  "category": "development",
+  "category": "devops",
   "fields": [
     {
       "key": "organization",
@@ -42,8 +42,23 @@
     "setup_guide": "1. Go to dev.azure.com and sign in\n2. Click User Settings (gear icon) -> Personal Access Tokens\n3. Click 'New Token', set scopes (e.g. Code, Work Items, Build)\n4. Copy the generated token\n5. Enter your organization name and paste the token",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "pat", "label": "PAT", "type": "credential", "is_default": true},
-      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@azure-devops/mcp", "transport": "stdio", "suggested_env": {"AZURE_DEVOPS_ORG": "", "AZURE_DEVOPS_PAT": ""}}
+      {
+        "id": "pat",
+        "label": "PAT",
+        "type": "credential",
+        "is_default": true
+      },
+      {
+        "id": "mcp",
+        "label": "MCP",
+        "type": "mcp",
+        "package": "@azure-devops/mcp",
+        "transport": "stdio",
+        "suggested_env": {
+          "AZURE_DEVOPS_ORG": "",
+          "AZURE_DEVOPS_PAT": ""
+        }
+      }
     ]
   }
 }

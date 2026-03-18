@@ -796,8 +796,8 @@ fn import_bundle(
         let new_id = uuid::Uuid::new_v4().to_string();
         let persona_name = format!("{} (imported)", p.name);
         let enabled_i = 0i32; // imported personas start disabled
-        let max_concurrent = p.max_concurrent as i32;
-        let timeout_ms = p.timeout_ms as i32;
+        let max_concurrent = p.max_concurrent;
+        let timeout_ms = p.timeout_ms;
 
         match tx.execute(
             "INSERT INTO personas
@@ -869,7 +869,7 @@ fn import_bundle(
                 for m in &p.memories {
                     let mid = uuid::Uuid::new_v4().to_string();
                     let category = m.category.as_str();
-                    let importance = m.importance as i32;
+                    let importance = m.importance;
                     if let Err(e) = tx.execute(
                         "INSERT INTO persona_memories
                          (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at)

@@ -44,26 +44,31 @@ impl CronSchedule {
         v < 8 && (self.days_of_week & (1u8 << v)) != 0
     }
 
+    #[allow(dead_code)]
     /// Count how many values are set in the minutes bitfield.
     pub fn minutes_count(&self) -> u32 {
         self.minutes.count_ones()
     }
 
+    #[allow(dead_code)]
     /// Count how many values are set in the hours bitfield.
     pub fn hours_count(&self) -> u32 {
         self.hours.count_ones()
     }
 
+    #[allow(dead_code)]
     /// Count how many values are set in the days_of_month bitfield.
     pub fn days_of_month_count(&self) -> u32 {
         self.days_of_month.count_ones()
     }
 
+    #[allow(dead_code)]
     /// Count how many values are set in the months bitfield.
     pub fn months_count(&self) -> u32 {
         self.months.count_ones()
     }
 
+    #[allow(dead_code)]
     /// Count how many values are set in the days_of_week bitfield.
     pub fn days_of_week_count(&self) -> u32 {
         self.days_of_week.count_ones()

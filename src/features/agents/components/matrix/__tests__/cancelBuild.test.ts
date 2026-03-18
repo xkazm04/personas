@@ -7,12 +7,14 @@ import { renderHook, act } from "@testing-library/react";
 
 const mockStartSession = vi.fn().mockResolvedValue("session-cancel-test");
 const mockAnswerQuestion = vi.fn().mockResolvedValue(undefined);
+const mockSubmitAllAnswers = vi.fn().mockResolvedValue(undefined);
 const mockCancelSession = vi.fn().mockResolvedValue(undefined);
 
 vi.mock("@/hooks/build/useBuildSession", () => ({
   useBuildSession: vi.fn(() => ({
     startSession: mockStartSession,
     answerQuestion: mockAnswerQuestion,
+    submitAllAnswers: mockSubmitAllAnswers,
     cancelSession: mockCancelSession,
   })),
 }));
@@ -47,11 +49,17 @@ function setStoreState(overrides: Partial<Record<string, unknown>> = {}) {
   mockStoreState = {
     buildPhase: "initializing",
     buildCellStates: {},
+    buildCellData: {},
     buildPendingQuestions: [],
     buildProgress: 0,
     buildOutputLines: [],
     buildError: null,
     buildSessionId: null,
+    buildTestPassed: null,
+    buildTestOutputLines: [],
+    buildTestError: null,
+    buildActivity: null,
+    buildPendingAnswers: {},
     ...overrides,
   };
 }

@@ -95,7 +95,7 @@ pub fn create(pool: &DbPool, input: CreateChatMessageInput) -> Result<ChatMessag
             params![id],
             row_to_chat_message,
         )
-        .map_err(|e| AppError::Database(e))?;
+        .map_err(AppError::Database)?;
     Ok(msg)
 }
 

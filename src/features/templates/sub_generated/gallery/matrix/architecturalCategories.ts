@@ -23,9 +23,12 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+// -- Single source of truth: connector-categories.json ---------------
+// The JSON config in scripts/templates/ is the canonical mapping.
+// We import and hydrate it with Lucide icons (which can't live in JSON).
+import connectorCatalog from '@/lib/config/connector-categories.json';
+
 // -- Architectural categories -------------------------------------
-// Maps connector names to high-level architectural categories.
-// These categories match the section headers from ConnectorMeta.tsx.
 
 export interface ArchCategory {
   key: string;
@@ -34,117 +37,92 @@ export interface ArchCategory {
   color: string;
 }
 
-export const ARCH_CATEGORIES: Record<string, ArchCategory> = {
-  messaging:     { key: 'messaging',     label: 'Messaging',      icon: MessageSquare, color: '#6366f1' },
-  database:      { key: 'database',      label: 'Database',       icon: Database,      color: '#06b6d4' },
-  crm:           { key: 'crm',           label: 'CRM',            icon: Users,         color: '#f97316' },
-  'project-mgmt':{ key: 'project-mgmt',  label: 'Project Mgmt',   icon: Kanban,        color: '#0ea5e9' },
-  devops:        { key: 'devops',         label: 'DevOps / CI-CD', icon: Code2,         color: '#8b5cf6' },
-  monitoring:    { key: 'monitoring',     label: 'Monitoring',     icon: Activity,      color: '#14b8a6' },
-  analytics:     { key: 'analytics',      label: 'Analytics',      icon: BarChart3,     color: '#7856FF' },
-  email:         { key: 'email',          label: 'Email / SMS',    icon: Mail,          color: '#ef4444' },
-  finance:       { key: 'finance',        label: 'Finance',        icon: CreditCard,    color: '#10b981' },
-  support:       { key: 'support',        label: 'Support',        icon: LifeBuoy,      color: '#0891b2' },
-  social:        { key: 'social',         label: 'Social',         icon: Share2,        color: '#ec4899' },
-  ecommerce:     { key: 'ecommerce',      label: 'E-Commerce',     icon: ShoppingBag,   color: '#7AB55C' },
-  scheduling:    { key: 'scheduling',     label: 'Scheduling',     icon: Calendar,      color: '#006BFF' },
-  productivity:  { key: 'productivity',   label: 'Productivity',   icon: FileText,      color: '#eab308' },
-  cloud:         { key: 'cloud',          label: 'Cloud',          icon: Cloud,         color: '#3b82f6' },
-  design:        { key: 'design',         label: 'Design',         icon: Layout,        color: '#F24E1E' },
-  ai:            { key: 'ai',             label: 'AI',             icon: Bot,           color: '#6C3AEF' },
-  cms:           { key: 'cms',            label: 'CMS',            icon: Globe,         color: '#4353FF' },
-  storage:       { key: 'storage',        label: 'Storage',        icon: HardDrive,     color: '#569A31' },
-  forms:         { key: 'forms',          label: 'Forms',          icon: ClipboardList, color: '#3CCF91' },
-  notifications: { key: 'notifications',  label: 'Notifications',  icon: Bell,          color: '#FF4981' },
+const ICON_MAP: Record<string, LucideIcon> = {
+  MessageSquare, Database, Users, Kanban, Code2, Activity, BarChart3,
+  Mail, CreditCard, LifeBuoy, Share2, ShoppingBag, Calendar,
+  FileText, Cloud, Layout, Bot, Globe, HardDrive, ClipboardList, Bell,
 };
 
-/** Maps a connector name to its architectural category key. */
-const CONNECTOR_TO_CATEGORY: Record<string, string> = {
-  // Messaging
-  slack: 'messaging', discord: 'messaging', telegram: 'messaging',
-  microsoft_teams: 'messaging',
-  personas_messages: 'messaging', 'in-app-messaging': 'messaging',
-  personas_database: 'database',
-  // Source Control & DevOps
-  github: 'devops', gitlab: 'devops', azure_devops: 'devops',
-  circleci: 'devops', github_actions: 'devops',
-  // Project Management
-  jira: 'project-mgmt', linear: 'project-mgmt', clickup: 'project-mgmt',
-  asana: 'project-mgmt', trello: 'project-mgmt', monday: 'project-mgmt',
-  monday_com: 'project-mgmt', todoist: 'project-mgmt',
-  // Productivity / Knowledge
-  notion: 'productivity', confluence: 'productivity', airtable: 'productivity',
-  coda: 'productivity', google_drive: 'productivity', google_sheets: 'productivity',
-  microsoft_excel: 'productivity', onedrive: 'productivity', sharepoint: 'productivity',
-  dropbox: 'productivity',
-  // Design
-  figma: 'design', canva: 'design', penpot: 'design',
-  // Cloud & DevOps
-  vercel: 'cloud', netlify: 'cloud', cloudflare: 'cloud', aws: 'cloud',
-  firebase: 'cloud', kubernetes: 'cloud',
-  // Database
-  supabase: 'database', neon: 'database', postgres_proxy: 'database',
-  convex: 'database', upstash: 'database',
-  // Monitoring
-  sentry: 'monitoring', datadog: 'monitoring', pagerduty: 'monitoring',
-  betterstack: 'monitoring', uptime_robot: 'monitoring', snyk: 'monitoring',
-  // Analytics
-  mixpanel: 'analytics', posthog: 'analytics', amplitude: 'analytics',
-  segment: 'analytics', google_analytics: 'analytics',
-  // Email / SMS
-  gmail: 'email', microsoft_outlook: 'email',
-  sendgrid: 'email', mailchimp: 'email', twilio: 'email',
-  // CRM
-  hubspot: 'crm', intercom: 'crm', pipedrive: 'crm', attio: 'crm',
-  // Support
-  zendesk: 'support', freshdesk: 'support', crisp: 'support',
-  // Social
-  buffer: 'social', linkedin: 'social', twitter: 'social',
-  // E-Commerce
-  shopify: 'ecommerce', shipstation: 'ecommerce',
-  woocommerce: 'ecommerce', lemonsqueezy: 'ecommerce',
-  // Finance
-  stripe: 'finance', paddle: 'finance', quickbooks: 'finance',
-  xero: 'finance', plaid: 'finance',
-  // Scheduling
-  google_calendar: 'scheduling', microsoft_calendar: 'scheduling',
-  cal_com: 'scheduling', calendly: 'scheduling',
-  // CMS
-  wordpress: 'cms', webflow: 'cms', contentful: 'cms',
-  // AI
-  leonardo_ai: 'ai', openai: 'ai', replicate: 'ai',
-  // Search
-  algolia: 'productivity',
-  // Video
-  loom: 'productivity',
-  // Feature Flags
-  launchdarkly: 'devops',
-  // Legal
-  docusign: 'productivity',
-  // Auth
-  clerk: 'devops',
-  // HR
-  greenhouse: 'crm',
-  // Forms (moved to forms category below)
-  // Marketing
-  google_ads: 'social',
-  // Automation
-  n8n: 'devops', zapier: 'devops',
-  // Storage
-  aws_s3: 'storage', cloudflare_r2: 'storage', backblaze_b2: 'storage',
-  // Forms
-  typeform: 'forms', tally: 'forms', formbricks: 'forms',
-  // Notifications
-  novu: 'notifications', knock: 'notifications', ntfy: 'notifications',
-  // Generic
-  http: 'cloud',
-};
+interface CatalogCategoryDef {
+  label: string;
+  color: string;
+  icon: string;
+  builtIn?: boolean;
+}
 
-/** Get the architectural category for a connector name. */
+const catalogCategories = connectorCatalog.categories as Record<string, CatalogCategoryDef>;
+
+/** Build ARCH_CATEGORIES from the JSON config, adding Lucide icon references. */
+export const ARCH_CATEGORIES: Record<string, ArchCategory> = Object.fromEntries(
+  Object.entries(catalogCategories).map(([key, meta]) => [
+    key,
+    {
+      key,
+      label: meta.label,
+      icon: ICON_MAP[meta.icon] ?? Globe,
+      color: meta.color,
+    },
+  ]),
+);
+
+/** Connector → category key mapping (from JSON config). */
+const CONNECTOR_TO_CATEGORY: Record<string, string> = connectorCatalog.connectors as Record<string, string>;
+
+/**
+ * Heuristic fallback: infer a category from the connector name when
+ * it is not explicitly mapped.  Never returns 'Other'.
+ */
+function inferCategory(name: string): ArchCategory {
+  const n = name.toLowerCase();
+  if (n.includes('db') || n.includes('sql') || n.includes('database') || n.includes('mongo') || n.includes('redis') || n.includes('dynamo'))
+    return ARCH_CATEGORIES['database']!;
+  if (n.includes('mail') || n.includes('smtp') || n.includes('inbox'))
+    return ARCH_CATEGORIES['email']!;
+  if (n.includes('slack') || n.includes('chat') || n.includes('message') || n.includes('discord'))
+    return ARCH_CATEGORIES['messaging']!;
+  if (n.includes('git') || n.includes('ci') || n.includes('deploy') || n.includes('docker') || n.includes('kube'))
+    return ARCH_CATEGORIES['devops']!;
+  if (n.includes('analytics') || n.includes('metric') || n.includes('track'))
+    return ARCH_CATEGORIES['analytics']!;
+  if (n.includes('pay') || n.includes('invoice') || n.includes('billing') || n.includes('stripe'))
+    return ARCH_CATEGORIES['finance']!;
+  if (n.includes('shop') || n.includes('store') || n.includes('commerce') || n.includes('cart'))
+    return ARCH_CATEGORIES['ecommerce']!;
+  if (n.includes('ai') || n.includes('llm') || n.includes('gpt') || n.includes('model'))
+    return ARCH_CATEGORIES['ai']!;
+  if (n.includes('calendar') || n.includes('schedule') || n.includes('booking'))
+    return ARCH_CATEGORIES['scheduling']!;
+  if (n.includes('monitor') || n.includes('alert') || n.includes('sentry') || n.includes('log'))
+    return ARCH_CATEGORIES['monitoring']!;
+  if (n.includes('storage') || n.includes('s3') || n.includes('bucket') || n.includes('file'))
+    return ARCH_CATEGORIES['storage']!;
+  if (n.includes('crm') || n.includes('lead') || n.includes('contact'))
+    return ARCH_CATEGORIES['crm']!;
+  if (n.includes('cms') || n.includes('content') || n.includes('blog'))
+    return ARCH_CATEGORIES['cms']!;
+  if (n.includes('form') || n.includes('survey'))
+    return ARCH_CATEGORIES['forms']!;
+  if (n.includes('notify') || n.includes('push') || n.includes('bell'))
+    return ARCH_CATEGORIES['notifications']!;
+  if (n.includes('support') || n.includes('ticket') || n.includes('helpdesk'))
+    return ARCH_CATEGORIES['support']!;
+  if (n.includes('social') || n.includes('twitter') || n.includes('linkedin'))
+    return ARCH_CATEGORIES['social']!;
+  if (n.includes('api') || n.includes('http') || n.includes('webhook') || n.includes('cloud') || n.includes('server'))
+    return ARCH_CATEGORIES['cloud']!;
+  if (n.includes('design') || n.includes('figma') || n.includes('sketch'))
+    return ARCH_CATEGORIES['design']!;
+  if (n.includes('project') || n.includes('task') || n.includes('board') || n.includes('kanban'))
+    return ARCH_CATEGORIES['project-mgmt']!;
+  // Ultimate fallback: productivity (generic tool)
+  return ARCH_CATEGORIES['productivity']!;
+}
+
+/** Get the architectural category for a connector name. Never returns 'Other'. */
 export function getArchCategory(connectorName: string): ArchCategory {
   const key = CONNECTOR_TO_CATEGORY[connectorName];
   if (key && ARCH_CATEGORIES[key]) return ARCH_CATEGORIES[key];
-  return { key: 'other', label: 'Other', icon: Globe, color: '#71717a' };
+  return inferCategory(connectorName);
 }
 
 /** Derive unique architectural categories from a list of connector names. */
@@ -171,8 +149,8 @@ export function userHasCategoryCredential(
   userCredentialServiceTypes: Set<string>,
 ): boolean {
   // Built-in components -- always available without external credentials
-  if (categoryKey === 'messaging') return true;  // in-app messaging
-  if (categoryKey === 'database') return true;   // built-in SQLite database
+  const catDef = catalogCategories[categoryKey];
+  if (catDef?.builtIn) return true;
 
   for (const [connector, cat] of Object.entries(CONNECTOR_TO_CATEGORY)) {
     if (cat === categoryKey && userCredentialServiceTypes.has(connector)) {

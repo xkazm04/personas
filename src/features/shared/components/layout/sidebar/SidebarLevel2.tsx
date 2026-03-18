@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Key, Radio, Users, Sparkles, Plus, List, Loader2, Star, Bot, ChevronDown } from 'lucide-react';
+import { Key, Users, Sparkles, Plus, List, Loader2, Star, Bot, ChevronDown } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
-import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab } from '@/lib/types/types';
+import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, EventBusTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 // GroupedAgentSidebar replaced by inline AgentsSidebarNav (persona list moved to table view)
@@ -14,7 +14,7 @@ import SidebarSubNav from './SidebarSubNav';
 import type { SubNavBadge } from './SidebarSubNav';
 import {
   homeItems, overviewItems, credentialItems, templateItems,
-  cloudItems, devToolsItems, getSettingsItems,
+  cloudItems, devToolsItems, eventBusItems, getSettingsItems,
 } from './sidebarData';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { filterByTier } from './sidebarData';
@@ -72,6 +72,8 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
   const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
   const devToolsTab = useSystemStore((s) => s.devToolsTab);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+  const eventBusTab = useSystemStore((s) => s.eventBusTab);
+  const setEventBusTab = useSystemStore((s) => s.setEventBusTab);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore((s) => s.projects);
 
@@ -142,13 +144,11 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
 
     case 'events':
       return (
-        <div className="text-center py-12">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-            <Radio className="w-6 h-6 text-cyan-400/60" />
-          </div>
-          <p className="text-sm text-muted-foreground/80">Event Bus</p>
-          <p className="text-sm text-muted-foreground/80 mt-1">Central event hub</p>
-        </div>
+        <SidebarSubNav
+          items={eventBusItems}
+          activeId={eventBusTab}
+          onSelect={(id) => setEventBusTab(id as EventBusTab)}
+        />
       );
 
     case 'credentials':

@@ -132,6 +132,7 @@ fn validated_sort_direction(dir: Option<&str>) -> &str {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn get_all(
     pool: &DbPool,
     persona_id: Option<&str>,
@@ -352,6 +353,7 @@ pub struct MemoriesWithStats {
 
 /// Fetch memories, total count, and aggregate stats in a single DB connection.
 /// Replaces three separate IPC calls with one.
+#[allow(clippy::too_many_arguments)]
 pub fn get_all_with_stats(
     pool: &DbPool,
     persona_id: Option<&str>,
@@ -561,20 +563,20 @@ mod tests {
         assert_eq!(fetched.tags, Some("ui,preference".into()));
 
         // Get all (no filters)
-        let all = get_all(&pool, None, None, None, None, None).unwrap();
+        let all = get_all(&pool, None, None, None, None, None, None, None).unwrap();
         assert_eq!(all.len(), 2);
 
         // Get all filtered by persona_id
-        let by_persona = get_all(&pool, Some(&persona.id), None, None, None, None).unwrap();
+        let by_persona = get_all(&pool, Some(&persona.id), None, None, None, None, None, None).unwrap();
         assert_eq!(by_persona.len(), 2);
 
         // Get all filtered by category
-        let by_category = get_all(&pool, None, Some("preference"), None, None, None).unwrap();
+        let by_category = get_all(&pool, None, Some("preference"), None, None, None, None, None).unwrap();
         assert_eq!(by_category.len(), 1);
         assert_eq!(by_category[0].title, "User prefers dark mode");
 
         // Get all with limit
-        let limited = get_all(&pool, None, None, None, Some(1), None).unwrap();
+        let limited = get_all(&pool, None, None, None, Some(1), None, None, None).unwrap();
         assert_eq!(limited.len(), 1);
 
         // Get by persona (ordered by importance DESC)
@@ -588,7 +590,7 @@ mod tests {
         assert!(deleted);
         assert!(get_by_id(&pool, &m1.id).is_err());
 
-        let remaining = get_all(&pool, None, None, None, None, None).unwrap();
+        let remaining = get_all(&pool, None, None, None, None, None, None, None).unwrap();
         assert_eq!(remaining.len(), 1);
     }
 }

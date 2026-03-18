@@ -36,6 +36,7 @@ export function ExecutionListToolbar({
         {executionCount > 0 && (
           <Tooltip content={showRaw ? 'Sensitive values are visible' : 'Sensitive values are masked'}>
             <button
+              data-testid="exec-toggle-raw"
               onClick={onToggleRaw}
               className={`ml-auto flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
                 showRaw
@@ -50,6 +51,7 @@ export function ExecutionListToolbar({
         )}
         {executionCount >= 2 && (
           <button
+            data-testid="exec-toggle-compare"
             onClick={onToggleCompare}
             className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
               compareMode
@@ -87,6 +89,7 @@ export function ExecutionListToolbar({
           )}
           {canCompare && (
             <button
+              data-testid="exec-show-comparison"
               onClick={onShowComparison}
               className="ml-2 px-2.5 py-1 text-sm font-medium rounded-xl bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
             >
@@ -121,6 +124,7 @@ export function ExecutionListEmptyState({ onTryIt }: ExecutionListEmptyStateProp
         Run it to see results here. Each execution will appear in this timeline.
       </p>
       <button
+        data-testid="exec-try-it"
         onClick={onTryIt}
         className="mt-4 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors"
       >

@@ -6,6 +6,10 @@ import type { PersonaCostEntry } from "./PersonaCostEntry";
  */
 export type DashboardDailyPoint = { date: string, total_cost: number, total_executions: number, completed: number, failed: number, success_rate: number, p50_duration_ms: number, p95_duration_ms: number, p99_duration_ms: number, 
 /**
+ * Total input + output tokens for this date.
+ */
+total_tokens: number, 
+/**
  * Per-persona cost breakdown for this date.
  */
 persona_costs: Array<PersonaCostEntry>, };

@@ -4,4 +4,4 @@ import type { ExecutionKnowledge } from "./ExecutionKnowledge";
 /**
  * Dashboard summary of the knowledge graph for a persona or globally.
  */
-export type KnowledgeGraphSummary = { total_entries: number, tool_sequence_count: number, failure_pattern_count: number, model_performance_count: number, top_patterns: Array<ExecutionKnowledge>, recent_learnings: Array<ExecutionKnowledge>, };
+export type KnowledgeGraphSummary = { total_entries: number, tool_sequence_count: number, failure_pattern_count: number, model_performance_count: number, annotation_count: number, top_patterns: Array<ExecutionKnowledge>, recent_learnings: Array<ExecutionKnowledge>, };

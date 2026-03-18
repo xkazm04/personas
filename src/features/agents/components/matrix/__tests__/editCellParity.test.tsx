@@ -21,7 +21,7 @@ import React from "react";
 vi.mock("@/features/shared/components/forms/ThemedSelect", () => ({
   ThemedSelect: ({
     value,
-    placeholder,
+    _placeholder,
     options,
   }: {
     value?: string;
@@ -193,7 +193,7 @@ describe("Edit cell parity -- all 7 cells render (INTG-02, MTRX-08)", () => {
               config: { cron: "0 * * * *" },
             },
           ],
-        } as any}
+        } as unknown}
         editState={editState}
         callbacks={callbacks}
       />,

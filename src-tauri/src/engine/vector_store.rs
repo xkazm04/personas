@@ -23,6 +23,7 @@ fn ensure_vec_registered() {
         // (xEntryPoint: extern "C" fn(*mut sqlite3, *mut *const c_char, *const sqlite3_api_routines) -> c_int).
         // This is guaranteed by the sqlite-vec crate's public API.
         unsafe {
+            #[allow(clippy::missing_transmute_annotations)]
             rusqlite::ffi::sqlite3_auto_extension(Some(std::mem::transmute(
                 sqlite_vec::sqlite3_vec_init as *const (),
             )));

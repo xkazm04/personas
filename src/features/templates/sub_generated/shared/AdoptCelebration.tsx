@@ -98,10 +98,9 @@ export function ConfettiBurst() {
               height: p.isRect ? p.size * 0.6 : p.size * 0.8,
               borderRadius: p.isRect ? '1px' : '50%',
               backgroundColor: p.color,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              ['--tx' as any]: `${p.tx}px`,
-              ['--ty' as any]: `${p.ty}px`,
-              ['--rot' as any]: `${p.rotation}deg`,
+              ['--tx' as string]: `${p.tx}px`,
+              ['--ty' as string]: `${p.ty}px`,
+              ['--rot' as string]: `${p.rotation}deg`,
               animation: `confetti-burst 1.1s ${p.delay}s cubic-bezier(0.22, 1, 0.36, 1) forwards`,
             }}
           />

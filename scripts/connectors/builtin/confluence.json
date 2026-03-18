@@ -4,7 +4,7 @@
   "label": "Confluence",
   "color": "#172B4D",
   "icon_url": "/icons/connectors/confluence.svg",
-  "category": "development",
+  "category": "productivity",
   "fields": [
     {
       "key": "domain",

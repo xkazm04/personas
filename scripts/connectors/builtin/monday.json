@@ -4,7 +4,7 @@
   "label": "Monday.com",
   "color": "#FF3D57",
   "icon_url": "/icons/connectors/monday.svg",
-  "category": "productivity",
+  "category": "project-mgmt",
   "fields": [
     {
       "key": "api_key_v2",

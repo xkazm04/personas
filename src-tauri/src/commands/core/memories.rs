@@ -12,6 +12,7 @@ use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn list_memories(
     state: State<'_, Arc<AppState>>,
     persona_id: Option<String>,
@@ -58,6 +59,7 @@ pub fn get_memory_stats(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn list_memories_with_stats(
     state: State<'_, Arc<AppState>>,
     persona_id: Option<String>,

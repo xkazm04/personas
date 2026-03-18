@@ -1,34 +1,31 @@
 import {
-  CheckCircle2,
   Download,
-  ShieldCheck,
   Sparkles,
 } from 'lucide-react';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
-import { getCategoryMeta } from '../search/filters/searchConstants';
+import { getCachedLightFields } from './reviewParseCache';
+import { deriveArchCategories, userHasCategoryCredential } from '../matrix/architecturalCategories';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { TemplateModal } from './reviewParseCache';
 import type { ModalStackActions } from '../modals/useModalStack';
 
 interface CompactRowProps {
   review: PersonaDesignReview;
-  readinessScore: number;
   searchQuery: string;
   isAiResult: boolean;
   modals: ModalStackActions<TemplateModal>;
+  credentialServiceTypes: Set<string>;
 }
 
 export function CompactRow({
   review,
-  readinessScore,
   searchQuery,
   isAiResult,
   modals,
+  credentialServiceTypes,
 }: CompactRowProps) {
-  const isSimple = useSimpleMode();
-  const categoryMeta = review.category ? getCategoryMeta(review.category) : null;
-  const CategoryIcon = categoryMeta?.icon ?? null;
+  const { connectors } = getCachedLightFields(review);
+  const archCategories = deriveArchCategories(connectors);
 
   return (
     <div
@@ -45,46 +42,35 @@ export function CompactRow({
             <Sparkles className="w-2.5 h-2.5 inline -mt-px mr-0.5" />AI
           </span>
         )}
-        {categoryMeta && CategoryIcon && (
-          <span
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded-full bg-violet-500/8 border border-violet-500/15 text-muted-foreground/60 flex-shrink-0"
-          >
-            <CategoryIcon className="w-2.5 h-2.5" style={{ color: categoryMeta.color }} />
-            {categoryMeta.label}
-          </span>
+      </div>
+      {/* Components */}
+      <div className="flex items-center gap-1 flex-shrink-0 ml-2 mr-3">
+        {archCategories.slice(0, 4).map((cat) => {
+          const hasIt = userHasCategoryCredential(cat.key, credentialServiceTypes);
+          const CatIcon = cat.icon;
+          return (
+            <div
+              key={cat.key}
+              className={`w-5.5 h-5.5 rounded flex items-center justify-center flex-shrink-0 ${
+                hasIt ? '' : 'grayscale opacity-50'
+              }`}
+              style={{ backgroundColor: `${cat.color}15` }}
+              title={`${cat.label}${hasIt ? ' (ready)' : ''}`}
+            >
+              <CatIcon className="w-3 h-3" style={{ color: cat.color }} />
+            </div>
+          );
+        })}
+        {archCategories.length > 4 && (
+          <span className="text-[10px] text-muted-foreground/50 ml-0.5">+{archCategories.length - 4}</span>
         )}
       </div>
-      <div className="flex items-center gap-3 flex-shrink-0 ml-2">
-        {isSimple ? (
-          <span className={`inline-flex items-center gap-1 ${readinessScore === 100 ? 'text-emerald-400/80' : 'text-amber-400/70'}`}>
-            {readinessScore === 100 ? <CheckCircle2 className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+      <div className="flex items-center gap-3 flex-shrink-0">
+        {review.adoption_count > 0 && (
+          <span className="inline-flex items-center gap-1 text-sm font-mono text-emerald-400/70">
+            <Download className="w-2.5 h-2.5" />
+            {review.adoption_count}
           </span>
-        ) : (
-          <>
-            <span
-              className={`inline-flex items-center gap-1 text-sm font-mono ${
-                readinessScore === 100
-                  ? 'text-emerald-400/80'
-                  : readinessScore > 0
-                    ? 'text-amber-400/70'
-                    : 'text-muted-foreground/70'
-              }`}
-              title={`${readinessScore}% ready`}
-            >
-              {readinessScore === 100 ? (
-                <CheckCircle2 className="w-3 h-3" />
-              ) : (
-                <ShieldCheck className="w-3 h-3" />
-              )}
-              {readinessScore}%
-            </span>
-            {review.adoption_count > 0 && (
-              <span className="inline-flex items-center gap-1 text-sm font-mono text-emerald-400/70">
-                <Download className="w-2.5 h-2.5" />
-                {review.adoption_count}
-              </span>
-            )}
-          </>
         )}
       </div>
     </div>

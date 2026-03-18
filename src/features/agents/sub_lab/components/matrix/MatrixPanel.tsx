@@ -60,7 +60,7 @@ export function MatrixPanel() {
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground/80">Describe your desired changes</label>
-            <textarea value={instruction} onChange={(e) => setInstruction(e.target.value)}
+            <textarea data-testid="matrix-instruction" value={instruction} onChange={(e) => setInstruction(e.target.value)}
               placeholder="e.g. Make the greeting more formal and add multi-language support for German and French"
               disabled={isLabRunning}
               className="w-full h-28 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring resize-none disabled:opacity-50" />
@@ -109,7 +109,7 @@ export function MatrixPanel() {
           )}
 
           {isLabRunning ? (
-            <button onClick={() => void handleCancel()} className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20">
+            <button data-testid="matrix-cancel-btn" onClick={() => void handleCancel()} className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20">
               <Square className="w-4 h-4" />Cancel Matrix Test
             </button>
           ) : (
@@ -123,7 +123,7 @@ export function MatrixPanel() {
               placement="top"
               delay={200}
             >
-              <button onClick={() => void handleStart()} disabled={!instruction.trim() || selectedModels.size === 0 || !hasPrompt}
+              <button data-testid="matrix-run-btn" onClick={() => void handleStart()} disabled={!instruction.trim() || selectedModels.size === 0 || !hasPrompt}
                 className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-500/90 hover:to-purple-500/90 text-foreground shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
                 <Wand2 className="w-4 h-4" />Generate & Test Draft
               </button>

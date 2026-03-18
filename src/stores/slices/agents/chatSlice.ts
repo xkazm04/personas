@@ -7,7 +7,6 @@ import {
   listChatSessions,
   getChatMessages,
   createChatMessage,
-  createChatSession,
   deleteChatSession,
 } from "@/api/agents/chat";
 import { executePersona } from "@/api/agents/executions";
@@ -64,21 +63,11 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
     }
   },
 
-  startNewChatSession: async (personaId) => {
+  startNewChatSession: async (_personaId) => {
+    // Sessions are derived from chat_messages grouped by session_id —
+    // no backend call needed. The session materialises when the first message is sent.
     const sessionId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     set({ activeChatSessionId: sessionId, chatMessages: [] });
-    try {
-      await createChatSession(personaId, sessionId);
-    } catch (err) {
-      // Session failed to persist — roll back the optimistic state
-      set((s) =>
-        s.activeChatSessionId === sessionId
-          ? { activeChatSessionId: null, chatMessages: [] }
-          : {},
-      );
-      reportError(err, "Failed to create chat session", set);
-      return "";
-    }
     return sessionId;
   },
 

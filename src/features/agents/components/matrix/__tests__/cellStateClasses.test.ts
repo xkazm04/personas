@@ -15,9 +15,9 @@ describe("cellStateClasses - glow and watermarkOpacity extensions", () => {
       );
     });
 
-    it("highlighted state has edge-shimmer class", () => {
+    it("highlighted state has glow-highlighted class", () => {
       expect(getCellStateClasses("highlighted").glow).toBe(
-        "cell-glow cell-edge-shimmer"
+        "cell-glow cell-glow-highlighted"
       );
     });
 

@@ -4,7 +4,7 @@
   "label": "Figma",
   "color": "#F24E1E",
   "icon_url": "/icons/connectors/figma.svg",
-  "category": "creativity",
+  "category": "design",
   "fields": [
     {
       "key": "personal_access_token",

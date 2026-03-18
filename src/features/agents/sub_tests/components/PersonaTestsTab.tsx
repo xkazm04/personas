@@ -137,7 +137,7 @@ export function PersonaTestsTab() {
                 onSelectFocused={(idx) => { const opt = useCaseOptions[idx]; if (opt) setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); }}
                 ariaLabel="Filter by use case"
                 renderTrigger={({ isOpen, toggle }) => (
-                  <button onClick={toggle} disabled={isTestRunning}
+                  <button data-testid="test-usecase-filter" onClick={toggle} disabled={isTestRunning}
                     title={isTestRunning ? 'Cannot change while test is running' : undefined}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30 text-foreground/90' : 'bg-background/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'} ${isTestRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                     <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? 'All Use Cases'}</span>
@@ -160,7 +160,7 @@ export function PersonaTestsTab() {
           )}
           <TestModelSelector selectedModels={selectedModels} toggleModel={toggleModel} disabled={isTestRunning} />
           {isTestRunning ? (
-            <button onClick={handleCancel} className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20">
+            <button data-testid="cancel-test-btn" onClick={handleCancel} className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20">
               <Square className="w-4 h-4" />Cancel Test Run
             </button>
           ) : (
@@ -173,7 +173,7 @@ export function PersonaTestsTab() {
               placement="top"
               delay={200}
             >
-              <button onClick={handleStartTest} disabled={selectedModels.size === 0 || !hasPrompt}
+              <button data-testid="run-test-btn" onClick={handleStartTest} disabled={selectedModels.size === 0 || !hasPrompt}
                 className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
                 <Play className="w-4 h-4" />Run Test ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` \u2014 ${selectedUseCase.title}` : ''})
               </button>

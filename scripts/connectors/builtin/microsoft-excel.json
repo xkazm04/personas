@@ -17,7 +17,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": true,
+    "template_enabled": false,
     "summary": "Microsoft Excel spreadsheet automation for reading, writing, and managing workbook data via the Microsoft Graph API.",
     "auth_type": "oauth",
     "auth_type_label": "OAuth",
@@ -32,8 +32,24 @@
     "setup_guide": "1. Go to the Azure Portal -> Microsoft Entra ID -> App registrations.\n2. Click 'New registration', name your app, and set redirect URI to http://localhost.\n3. Under 'Certificates & secrets', create a new client secret and copy it.\n4. Under 'API permissions', add Microsoft Graph delegated permissions: User.Read, Files.Read, Files.ReadWrite.\n5. Copy the Application (client) ID from the Overview page.\n6. In Personas, click Authorize with Microsoft.\n7. Complete consent in your browser and return to Personas.",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "oauth", "label": "OAuth", "type": "oauth", "is_default": true},
-      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@softeria/ms-365-mcp-server", "transport": "stdio", "suggested_env": {"MICROSOFT_CLIENT_ID": "", "MICROSOFT_CLIENT_SECRET": "", "MICROSOFT_TENANT_ID": ""}}
+      {
+        "id": "oauth",
+        "label": "OAuth",
+        "type": "oauth",
+        "is_default": true
+      },
+      {
+        "id": "mcp",
+        "label": "MCP",
+        "type": "mcp",
+        "package": "@softeria/ms-365-mcp-server",
+        "transport": "stdio",
+        "suggested_env": {
+          "MICROSOFT_CLIENT_ID": "",
+          "MICROSOFT_CLIENT_SECRET": "",
+          "MICROSOFT_TENANT_ID": ""
+        }
+      }
     ]
   }
 }

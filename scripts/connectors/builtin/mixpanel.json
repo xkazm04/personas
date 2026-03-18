@@ -50,7 +50,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": true,
+    "template_enabled": false,
     "summary": "Mixpanel product analytics with GDPR-compliant data access.",
     "auth_type": "project_secret",
     "auth_type_label": "Service Account",

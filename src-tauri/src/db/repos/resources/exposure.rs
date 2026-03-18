@@ -143,12 +143,12 @@ pub fn update_exposed_resource(
     let fields_json = input
         .fields_exposed
         .as_ref()
-        .map(|f| serde_json::to_string(f))
+        .map(serde_json::to_string)
         .transpose()?;
     let tags_json = input
         .tags
         .as_ref()
-        .map(|t| serde_json::to_string(t))
+        .map(serde_json::to_string)
         .transpose()?;
 
     // Build a single UPDATE with only the supplied columns to ensure atomicity.

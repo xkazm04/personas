@@ -5,12 +5,13 @@ use tauri::State;
 
 use crate::db::models::{
     BuildEvent, BuildPhase, PersistedBuildSession, UserAnswer, UpdateBuildSession,
-    CreateToolDefinitionInput, CreateTriggerInput, UpdatePersonaInput,
+    CreateToolDefinitionInput, CreateTriggerInput, CreateEventSubscriptionInput, UpdatePersonaInput,
 };
 use crate::db::repos::core::build_sessions as build_session_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
+use crate::db::repos::communication::events as event_repo;
 use crate::engine::build_session as build_session_engine;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -20,6 +21,7 @@ use crate::AppState;
 /// Events are streamed back via the Channel parameter.
 /// Optional workflow_json + parser_result_json enable workflow import mode.
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn start_build_session(
     app: tauri::AppHandle,
     state: State<'_, Arc<AppState>>,
@@ -180,9 +182,13 @@ pub async fn test_build_draft(
 
 /// Promote a tested build draft to production.
 ///
-/// Reads the agent_ir from the build session, updates the persona with enriched
-/// prompt data, creates tool definitions and assigns them, creates triggers,
-/// and transitions the session to the Promoted phase.
+/// Creates ALL records the Editor tabs expect from agent_ir:
+/// - PersonaToolDefinition with input/output schemas
+/// - PersonaTrigger linked to use cases
+/// - PersonaEventSubscription from events dimension
+/// - DesignContextData-format design_context with structured DesignUseCase entries
+/// - AgentIR-compatible last_design_result for Design tab preview
+/// - Notification channels on persona
 #[tauri::command]
 pub async fn promote_build_draft(
     state: State<'_, Arc<AppState>>,
@@ -191,11 +197,9 @@ pub async fn promote_build_draft(
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
 
-    // Load session
     let session = build_session_repo::get_by_id(&state.db, &session_id)?
         .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
 
-    // Parse agent_ir
     let agent_ir: serde_json::Value = session
         .agent_ir
         .as_ref()
@@ -204,10 +208,10 @@ pub async fn promote_build_draft(
 
     let mut tools_created = 0u32;
     let mut triggers_created = 0u32;
+    let mut subscriptions_created = 0u32;
     let mut entity_errors: Vec<serde_json::Value> = Vec::new();
     let mut connectors_needing_setup: Vec<String> = Vec::new();
 
-    // -- Update persona with enriched data --
     let ir_name = agent_ir.get("name").and_then(|v| v.as_str());
     let ir_description = agent_ir.get("description").and_then(|v| v.as_str());
     let ir_system_prompt = agent_ir.get("system_prompt").and_then(|v| v.as_str());
@@ -215,12 +219,216 @@ pub async fn promote_build_draft(
     let ir_icon = agent_ir.get("icon").and_then(|v| v.as_str());
     let ir_color = agent_ir.get("color").and_then(|v| v.as_str());
 
-    let design_context = serde_json::json!({
-        "summary": agent_ir.get("design_context").and_then(|d| d.get("summary")).and_then(|v| v.as_str()).unwrap_or(""),
-        "use_cases": agent_ir.get("use_cases").cloned().unwrap_or(serde_json::Value::Array(vec![])),
+    // ================================================================
+    // Step 1: Build structured DesignUseCase[] from agent_ir
+    // ================================================================
+    let ir_use_cases = agent_ir.get("use_cases").and_then(|v| v.as_array());
+    let ir_triggers = agent_ir.get("triggers").and_then(|v| v.as_array());
+    let ir_events = agent_ir.get("events").and_then(|v| v.as_array());
+    let ir_messages = agent_ir.get("messages");
+
+    let mut structured_use_cases: Vec<serde_json::Value> = Vec::new();
+    let mut use_case_ids: Vec<String> = Vec::new();
+
+    if let Some(use_cases) = ir_use_cases {
+        for (idx, uc) in use_cases.iter().enumerate() {
+            let uc_id = format!("uc-{}", uuid::Uuid::new_v4());
+
+            // Use case may be a string or a structured object from enriched prompt
+            let (title, description, category, execution_mode) = if let Some(s) = uc.as_str() {
+                (s.to_string(), s.to_string(), "general".to_string(), "e2e".to_string())
+            } else {
+                (
+                    uc.get("title").and_then(|v| v.as_str()).unwrap_or("Use Case").to_string(),
+                    uc.get("description").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    uc.get("category").and_then(|v| v.as_str()).unwrap_or("general").to_string(),
+                    uc.get("execution_mode").and_then(|v| v.as_str()).unwrap_or("e2e").to_string(),
+                )
+            };
+
+            // Link trigger by index if available
+            let suggested_trigger = ir_triggers
+                .and_then(|triggers| triggers.get(idx))
+                .map(|t| serde_json::json!({
+                    "type": t.get("trigger_type").and_then(|v| v.as_str()).unwrap_or("manual"),
+                    "cron": t.get("config").and_then(|c| c.get("cron")).and_then(|v| v.as_str()),
+                    "description": t.get("description").and_then(|v| v.as_str()).unwrap_or(""),
+                }));
+
+            // Link event subscriptions
+            let event_subs: Vec<serde_json::Value> = ir_events
+                .map(|events| events.iter()
+                    .filter(|e| e.get("direction").and_then(|v| v.as_str()) == Some("subscribe"))
+                    .map(|e| serde_json::json!({
+                        "event_type": e.get("event_type").and_then(|v| v.as_str()).unwrap_or(""),
+                        "source_filter": e.get("source_filter").and_then(|v| v.as_str()),
+                        "enabled": true,
+                    }))
+                    .collect())
+                .unwrap_or_default();
+
+            structured_use_cases.push(serde_json::json!({
+                "id": uc_id,
+                "title": title,
+                "description": description,
+                "category": category,
+                "execution_mode": execution_mode,
+                "suggested_trigger": suggested_trigger,
+                "event_subscriptions": event_subs,
+            }));
+            use_case_ids.push(uc_id);
+        }
+    }
+
+    // ================================================================
+    // Step 2: Create tools with schema inference
+    // ================================================================
+    let mut tool_names: Vec<String> = Vec::new();
+
+    if let Some(tools) = agent_ir.get("tools").and_then(|v| v.as_array()) {
+        for tool_json in tools {
+            let name = tool_json.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            if name.is_empty() { continue; }
+            tool_names.push(name.clone());
+
+            // Schema inference: check LLM-provided → parameters → permissive fallback
+            let input_schema = tool_json.get("input_schema")
+                .map(|v| serde_json::to_string(v).unwrap_or_default())
+                .or_else(|| tool_json.get("parameters").map(|p| {
+                    serde_json::json!({"type": "object", "properties": p}).to_string()
+                }))
+                .or_else(|| Some(r#"{"type":"object","properties":{},"additionalProperties":true}"#.to_string()));
+
+            let output_schema = tool_json.get("output_schema")
+                .map(|v| serde_json::to_string(v).unwrap_or_default())
+                .or_else(|| Some(r#"{"type":"object","properties":{},"additionalProperties":true}"#.to_string()));
+
+            let input = CreateToolDefinitionInput {
+                name: name.clone(),
+                category: tool_json.get("category").and_then(|v| v.as_str()).unwrap_or("api").to_string(),
+                description: tool_json.get("description").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                script_path: String::new(),
+                input_schema,
+                output_schema,
+                requires_credential_type: tool_json.get("requires_credential_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                implementation_guide: tool_json.get("implementation_guide").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                is_builtin: Some(false),
+            };
+
+            match tool_repo::create_definition(&state.db, input) {
+                Ok(def) => {
+                    if let Err(e) = tool_repo::assign_tool(&state.db, &persona_id, &def.id, None) {
+                        entity_errors.push(serde_json::json!({"entity_type": "tool_assignment", "entity_name": name, "error": e.to_string()}));
+                    } else {
+                        tools_created += 1;
+                    }
+                }
+                Err(e) => {
+                    entity_errors.push(serde_json::json!({"entity_type": "tool", "entity_name": name, "error": e.to_string()}));
+                }
+            }
+        }
+    }
+
+    // ================================================================
+    // Step 3: Create triggers linked to use cases
+    // ================================================================
+    if let Some(triggers) = ir_triggers {
+        for (idx, trigger_json) in triggers.iter().enumerate() {
+            let trigger_type = trigger_json.get("trigger_type").and_then(|v| v.as_str()).unwrap_or("manual").to_string();
+            let config = trigger_json.get("config").map(|v| serde_json::to_string(v).unwrap_or_default());
+
+            // Link trigger to use case by index
+            let use_case_id = use_case_ids.get(idx).cloned();
+
+            let input = CreateTriggerInput {
+                persona_id: persona_id.clone(),
+                trigger_type: trigger_type.clone(),
+                config,
+                enabled: Some(true),
+                use_case_id,
+            };
+
+            match trigger_repo::create(&state.db, input) {
+                Ok(_) => triggers_created += 1,
+                Err(e) => {
+                    let desc = trigger_json.get("description").and_then(|v| v.as_str()).unwrap_or("");
+                    entity_errors.push(serde_json::json!({"entity_type": "trigger", "entity_name": format!("{} - {}", trigger_type, desc), "error": e.to_string()}));
+                }
+            }
+        }
+    }
+
+    // ================================================================
+    // Step 4: Create event subscriptions from events dimension
+    // ================================================================
+    if let Some(events) = ir_events {
+        for event_json in events {
+            let event_type = event_json.get("event_type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("").to_string();
+            if event_type.is_empty() { continue; }
+
+            // Only create subscriptions for "subscribe" direction events
+            let direction = event_json.get("direction").and_then(|v| v.as_str()).unwrap_or("subscribe");
+            if direction != "subscribe" { continue; }
+
+            let input = CreateEventSubscriptionInput {
+                persona_id: persona_id.clone(),
+                event_type: event_type.clone(),
+                source_filter: event_json.get("source_filter").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                enabled: Some(true),
+                use_case_id: None,
+            };
+
+            match event_repo::create_subscription(&state.db, input) {
+                Ok(_) => subscriptions_created += 1,
+                Err(e) => {
+                    entity_errors.push(serde_json::json!({"entity_type": "event_subscription", "entity_name": event_type, "error": e.to_string()}));
+                }
+            }
+        }
+    }
+
+    // ================================================================
+    // Step 5: Notification channels
+    // ================================================================
+    let notification_channels = ir_messages
+        .or_else(|| agent_ir.get("notification_channels"))
+        .map(|v| serde_json::to_string(v).unwrap_or_default());
+
+    // ================================================================
+    // Step 6: Build AgentIR-compatible last_design_result
+    // ================================================================
+    let design_result = serde_json::json!({
+        "suggested_tools": tool_names,
+        "suggested_connectors": agent_ir.get("required_connectors").cloned().unwrap_or(serde_json::Value::Array(vec![])),
+        "suggested_triggers": agent_ir.get("triggers").cloned().unwrap_or(serde_json::Value::Array(vec![])),
+        "structured_prompt": agent_ir.get("structured_prompt").cloned(),
+        "full_prompt_markdown": agent_ir.get("system_prompt").and_then(|v| v.as_str()),
+        "suggested_event_subscriptions": agent_ir.get("events").cloned(),
+        "suggested_notification_channels": ir_messages.cloned(),
     });
 
-    // Build the update input for the persona
+    // ================================================================
+    // Step 7: Build DesignContextData-format design_context
+    // ================================================================
+    let summary = agent_ir.get("design_context")
+        .and_then(|d| d.get("summary"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+
+    let design_context = serde_json::json!({
+        "useCases": structured_use_cases,
+        "summary": summary,
+        "builderMeta": {
+            "creationMethod": "matrix"
+        }
+    });
+
+    // ================================================================
+    // Update persona with all enriched data
+    // ================================================================
     let persona_update = UpdatePersonaInput {
         name: ir_name.map(|s| s.to_string()),
         description: ir_description.map(|s| Some(s.to_string())),
@@ -229,94 +437,22 @@ pub async fn promote_build_draft(
         icon: ir_icon.map(|s| Some(s.to_string())),
         color: ir_color.map(|s| Some(s.to_string())),
         enabled: Some(true),
+        notification_channels,
         design_context: Some(Some(serde_json::to_string(&design_context).unwrap_or_default())),
-        last_design_result: Some(session.agent_ir.clone()),
+        last_design_result: Some(Some(serde_json::to_string(&design_result).unwrap_or_default())),
         ..Default::default()
     };
 
     if let Err(e) = persona_repo::update(&state.db, &persona_id, persona_update) {
-        entity_errors.push(serde_json::json!({
-            "entity_type": "persona",
-            "entity_name": ir_name.unwrap_or("persona"),
-            "error": e.to_string(),
-        }));
+        entity_errors.push(serde_json::json!({"entity_type": "persona", "entity_name": ir_name.unwrap_or("persona"), "error": e.to_string()}));
     }
 
-    // -- Create tools from agent_ir.tools[] --
-    if let Some(tools) = agent_ir.get("tools").and_then(|v| v.as_array()) {
-        for tool_json in tools {
-            let name = tool_json.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-            if name.is_empty() { continue; }
-
-            let input = CreateToolDefinitionInput {
-                name: name.clone(),
-                category: tool_json.get("category").and_then(|v| v.as_str()).unwrap_or("api").to_string(),
-                description: tool_json.get("description").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                script_path: String::new(),
-                input_schema: None,
-                output_schema: None,
-                requires_credential_type: tool_json.get("requires_credential_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                implementation_guide: tool_json.get("implementation_guide").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                is_builtin: Some(false),
-            };
-
-            match tool_repo::create_definition(&state.db, input) {
-                Ok(def) => {
-                    // Assign tool to persona
-                    if let Err(e) = tool_repo::assign_tool(&state.db, &persona_id, &def.id, None) {
-                        entity_errors.push(serde_json::json!({
-                            "entity_type": "tool_assignment",
-                            "entity_name": name,
-                            "error": e.to_string(),
-                        }));
-                    } else {
-                        tools_created += 1;
-                    }
-                }
-                Err(e) => {
-                    entity_errors.push(serde_json::json!({
-                        "entity_type": "tool",
-                        "entity_name": name,
-                        "error": e.to_string(),
-                    }));
-                }
-            }
-        }
-    }
-
-    // -- Create triggers from agent_ir.triggers[] --
-    if let Some(triggers) = agent_ir.get("triggers").and_then(|v| v.as_array()) {
-        for trigger_json in triggers {
-            let trigger_type = trigger_json.get("trigger_type").and_then(|v| v.as_str()).unwrap_or("manual").to_string();
-            let config = trigger_json.get("config").map(|v| serde_json::to_string(v).unwrap_or_default());
-            let description = trigger_json.get("description").and_then(|v| v.as_str()).unwrap_or("");
-
-            let input = CreateTriggerInput {
-                persona_id: persona_id.clone(),
-                trigger_type: trigger_type.clone(),
-                config,
-                enabled: Some(true),
-                use_case_id: None,
-            };
-
-            match trigger_repo::create(&state.db, input) {
-                Ok(_) => triggers_created += 1,
-                Err(e) => {
-                    entity_errors.push(serde_json::json!({
-                        "entity_type": "trigger",
-                        "entity_name": format!("{} - {}", trigger_type, description),
-                        "error": e.to_string(),
-                    }));
-                }
-            }
-        }
-    }
-
-    // -- Identify connectors needing credential setup --
+    // ================================================================
+    // Identify connectors needing credential setup
+    // ================================================================
     if let Some(connectors) = agent_ir.get("required_connectors").and_then(|v| v.as_array()) {
         for conn in connectors {
-            let has_cred = conn.get("has_credential").and_then(|v| v.as_bool()).unwrap_or(false);
-            if !has_cred {
+            if !conn.get("has_credential").and_then(|v| v.as_bool()).unwrap_or(false) {
                 if let Some(name) = conn.get("name").and_then(|v| v.as_str()) {
                     connectors_needing_setup.push(name.to_string());
                 }
@@ -324,7 +460,9 @@ pub async fn promote_build_draft(
         }
     }
 
-    // -- Transition to Promoted --
+    // ================================================================
+    // Transition to Promoted
+    // ================================================================
     build_session_repo::update(
         &state.db,
         &session_id,
@@ -338,6 +476,7 @@ pub async fn promote_build_draft(
         "persona": { "id": persona_id },
         "triggers_created": triggers_created,
         "tools_created": tools_created,
+        "subscriptions_created": subscriptions_created,
         "connectors_needing_setup": connectors_needing_setup,
         "entity_errors": entity_errors,
     }))

@@ -1,6 +1,6 @@
 import { useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, AlertCircle, Download } from 'lucide-react';
+import { X, AlertCircle, Download, Sparkles } from 'lucide-react';
 import { DimensionRadial } from '../shared/DimensionRadial';
 import { TrustBadge } from '../shared/TrustBadge';
 import { SandboxWarningBanner } from '../shared/SandboxWarningBanner';
@@ -12,8 +12,15 @@ import { BaseModal } from '../shared/BaseModal';
 import { BackButton } from './BackButton';
 import { SIDEBAR_STEPS, STEP_COMPONENTS } from './wizardConstants';
 import { getNextAction, getBackLabel } from './state/getNextAction';
+import { AdoptionModeSwitcher, type AdoptionMode } from './AdoptionWizardModal';
 
-export function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
+interface AdoptionWizardInnerProps {
+  onClose: () => void;
+  adoptionMode: AdoptionMode;
+  setAdoptionMode: (m: AdoptionMode) => void;
+}
+
+export function AdoptionWizardInner({ onClose, adoptionMode, setAdoptionMode }: AdoptionWizardInnerProps) {
   const { motion: MOTION } = useTemplateMotion();
   const {
     state, wizard, designResult, completedSteps,
@@ -43,6 +50,10 @@ export function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
   const backLabel = () => getBackLabel(state.step, state.transforming);
   const StepComponent = STEP_COMPONENTS[state.step];
 
+  // 'quick' = Legacy Matrix (auto-resolved quick-adopt view)
+  // 'wizard' = Full Wizard (5-step sidebar)
+  const showQuickAdopt = adoptionMode === 'quick';
+
   return (
     <BaseModal isOpen onClose={handleClose} titleId="adoption-wizard-title" maxWidthClass="max-w-[1400px]"
       panelClassName="h-[92vh] bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
@@ -57,7 +68,10 @@ export function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between px-6 py-3.5 border-b border-primary/10 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-              <Download className="w-4.5 h-4.5 text-violet-400" />
+              {showQuickAdopt
+                ? <Sparkles className="w-4.5 h-4.5 text-violet-400" />
+                : <Download className="w-4.5 h-4.5 text-violet-400" />
+              }
             </div>
             <div>
               <h2 id="adoption-wizard-title" className="text-sm font-semibold text-foreground/90">Adopt Template</h2>
@@ -67,6 +81,7 @@ export function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
           <div className="flex items-center gap-3">
             <TrustBadge trustLevel={verification.trustLevel} />
             {designResult && <DimensionRadial designResult={designResult} size={28} />}
+            <AdoptionModeSwitcher mode={adoptionMode} setMode={setAdoptionMode} />
             <button onClick={handleClose} disabled={state.confirming}
               className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/80 hover:text-foreground/95 disabled:opacity-30"
               title={state.transforming ? 'Close (processing continues in background)' : 'Close'}>
@@ -89,8 +104,8 @@ export function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
           <SandboxWarningBanner verification={verification} className="mx-6 mt-3" />
         )}
 
-        {/* Main body */}
-        {state.autoResolved && state.step === 'choose' ? (
+        {/* Main body — switches between quick-adopt and full wizard */}
+        {showQuickAdopt ? (
           <div className="flex-1 flex items-center justify-center min-h-0"><QuickAdoptConfirm /></div>
         ) : (
           <div className="flex flex-1 min-h-0">
@@ -117,8 +132,8 @@ export function AdoptionWizardInner({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        {/* Footer */}
-        <div className={`flex items-center justify-between px-6 py-3 border-t border-primary/10 bg-secondary/10 flex-shrink-0${state.autoResolved && state.step === 'choose' ? ' hidden' : ''}`}>
+        {/* Footer — hidden in quick-adopt mode */}
+        <div className={`flex items-center justify-between px-6 py-3 border-t border-primary/10 bg-secondary/10 flex-shrink-0${showQuickAdopt ? ' hidden' : ''}`}>
           <BackButton state={state} onClose={handleClose} onBack={() => wizard.goBack()} getBackLabel={backLabel} />
           <div className="flex items-center gap-2">
             {nextAction && (

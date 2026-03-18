@@ -63,7 +63,7 @@ export function invokeWithTimeout<T>(
     // Ensure the timer doesn't keep the process alive if the invoke resolves
     // first.  We attach a cleanup to the original promise so the timeout is
     // cleared as soon as it settles (fulfilled *or* rejected).
-    void invocation.finally(() => clearTimeout(id));
+    invocation.finally(() => clearTimeout(id)).catch(() => {/* rejection handled by Promise.race */});
   });
 
   return Promise.race([invocation, timeout]).then(

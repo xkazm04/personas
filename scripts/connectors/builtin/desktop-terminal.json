@@ -4,7 +4,7 @@
   "label": "Terminal",
   "color": "#4D4D4D",
   "icon_url": "/icons/connectors/terminal.svg",
-  "category": "development",
+  "category": "devops",
   "fields": [
     {
       "key": "shell",
@@ -17,11 +17,26 @@
   ],
   "healthcheck_config": null,
   "services": [
-    { "toolName": "terminal_execute", "label": "Execute Command" },
-    { "toolName": "terminal_read_file", "label": "Read File" },
-    { "toolName": "terminal_write_file", "label": "Write File" },
-    { "toolName": "terminal_list_dir", "label": "List Directory" },
-    { "toolName": "terminal_path_exists", "label": "Check Path" }
+    {
+      "toolName": "terminal_execute",
+      "label": "Execute Command"
+    },
+    {
+      "toolName": "terminal_read_file",
+      "label": "Read File"
+    },
+    {
+      "toolName": "terminal_write_file",
+      "label": "Write File"
+    },
+    {
+      "toolName": "terminal_list_dir",
+      "label": "List Directory"
+    },
+    {
+      "toolName": "terminal_path_exists",
+      "label": "Check Path"
+    }
   ],
   "events": [],
   "metadata": {
@@ -34,6 +49,11 @@
     "docs_url": "",
     "setup_guide": "1. A shell (bash, zsh, or PowerShell) must be available on your system\n2. Click Detect to scan for available shells\n3. Approve the requested capabilities -- terminal has elevated permissions",
     "pricing_tier": "free",
-    "capabilities": ["process_spawn", "file_read", "file_write", "env_read"]
+    "capabilities": [
+      "process_spawn",
+      "file_read",
+      "file_write",
+      "env_read"
+    ]
   }
 }

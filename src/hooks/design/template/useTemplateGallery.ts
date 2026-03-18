@@ -31,6 +31,7 @@ export interface UseTemplateGalleryReturn {
   recommendedTemplates: PersonaDesignReview[];
   coverageFilter: string;
   setCoverageFilter: (f: string) => void;
+  unfilteredTotal: number;
   // AI search
   aiSearchMode: boolean;
   setAiSearchMode: (m: boolean) => void;
@@ -42,7 +43,7 @@ export interface UseTemplateGalleryReturn {
   aiCliLog: string[];
 }
 
-export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplateGalleryReturn {
+export function useTemplateGallery(coverageServiceTypes?: string[], perPage?: number): UseTemplateGalleryReturn {
   // Ref to break the circular dependency: AI search needs to write into query state,
   // but query needs aiSearchActive from AI search.
   const queryRef = useRef<UseGalleryQueryReturn>(null!);
@@ -54,7 +55,7 @@ export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplate
 
   const ai = useAiSearch(handleAiResults);
 
-  const query = useGalleryQuery(coverageServiceTypes, ai.aiSearchActive);
+  const query = useGalleryQuery(coverageServiceTypes, ai.aiSearchActive, perPage);
   queryRef.current = query;
 
   // Compose search setter: in AI mode clear AI state on empty input
@@ -90,6 +91,7 @@ export function useTemplateGallery(coverageServiceTypes?: string[]): UseTemplate
     recommendedTemplates: query.recommendedTemplates,
     coverageFilter: query.coverageFilter,
     setCoverageFilter: query.setCoverageFilter,
+    unfilteredTotal: query.unfilteredTotal,
     // AI search
     aiSearchMode: ai.aiSearchMode,
     setAiSearchMode: ai.setAiSearchMode,

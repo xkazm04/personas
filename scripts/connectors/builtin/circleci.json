@@ -4,7 +4,7 @@
   "label": "CircleCI",
   "color": "#343434",
   "icon_url": "/icons/connectors/circleci.svg",
-  "category": "development",
+  "category": "devops",
   "fields": [
     {
       "key": "personal_token",
@@ -26,7 +26,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": true,
+    "template_enabled": false,
     "summary": "CircleCI continuous integration and delivery platform.",
     "auth_type": "pat",
     "auth_type_label": "PAT",

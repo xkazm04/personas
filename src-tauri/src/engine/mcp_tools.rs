@@ -90,6 +90,7 @@ fn set_cached_tools(credential_id: &str, tools: Vec<McpTool>) {
 }
 
 /// Invalidate the cache entry for a credential (e.g. after server reconnect).
+#[allow(dead_code)]
 pub fn invalidate_tools_cache(credential_id: &str) {
     if let Ok(mut cache) = tools_list_cache().lock() {
         cache.remove(credential_id);
@@ -200,6 +201,7 @@ async fn spawn_stdio_session(
 }
 
 /// Invalidate (kill) any pooled session for a credential.
+#[allow(dead_code)]
 pub async fn invalidate_pooled_session(credential_id: &str) {
     let mut pool = stdio_session_pool().lock().await;
     if let Some(mut session) = pool.remove(credential_id) {
@@ -208,6 +210,7 @@ pub async fn invalidate_pooled_session(credential_id: &str) {
 }
 
 /// Kill all pooled sessions (e.g. on app shutdown).
+#[allow(dead_code)]
 pub async fn shutdown_stdio_pool() {
     let mut pool = stdio_session_pool().lock().await;
     for (_, mut session) in pool.drain() {
@@ -587,7 +590,6 @@ async fn finish_session(session: PooledStdioSession, credential_id: Option<&str>
     if success {
         if let Some(cid) = credential_id {
             return_pooled_session(cid, session).await;
-            return;
         }
     }
     // Session dropped here — kill_on_drop(true) handles cleanup

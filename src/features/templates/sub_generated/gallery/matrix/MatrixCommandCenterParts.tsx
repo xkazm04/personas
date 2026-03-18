@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Play, X, Loader2, HelpCircle, CheckCircle2, Send, RefreshCw,
-  XCircle, Eye, RotateCcw, FileText, Clock, AlertTriangle, Key,
+  XCircle, Eye, RotateCcw, FileText, AlertTriangle,
 } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { DesignQuestion } from '@/lib/types/designTypes';
@@ -184,7 +184,9 @@ export function ActiveBuildProgress({
     ? Object.values(cellStates).filter((s) => s === 'resolved' || s === 'updated').length
     : 0;
   const totalCells = 8;
-  const allResolved = resolvedCells === totalCells;
+  // Don't show "All Resolved" during active processing phases — the CLI is still working
+  const isActivelyProcessing = buildPhase === 'resolving' || buildPhase === 'analyzing';
+  const allResolved = resolvedCells === totalCells && !isActivelyProcessing;
 
   // Has remaining unanswered questions?
   const hasUnansweredQuestions = highlightedCells.length > 0;
@@ -514,19 +516,25 @@ export function TestResultsPanel({
   return (
     <div className="flex flex-col items-center gap-3 py-2 w-full">
       <div className="relative w-12 h-12 flex items-center justify-center">
-        <span className={`absolute inset-0 rounded-full border-2 ${didPass ? 'border-emerald-400/25' : 'border-red-400/25'}`} />
+        <span className={`absolute inset-0 rounded-full border-2 ${
+          didPass ? 'border-emerald-400/25' : failedCount > 0 ? 'border-red-400/25' : 'border-amber-400/25'
+        }`} />
         <span className={`absolute inset-[3px] rounded-full bg-gradient-to-br ${
           didPass
             ? 'from-emerald-500/15 via-emerald-500/8 to-emerald-400/10'
-            : 'from-red-500/15 via-red-500/8 to-red-400/10'
+            : failedCount > 0
+            ? 'from-red-500/15 via-red-500/8 to-red-400/10'
+            : 'from-amber-500/15 via-amber-500/8 to-amber-400/10'
         }`} />
         {didPass
           ? <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
-          : <XCircle className="w-5 h-5 text-red-400 relative z-10" />}
+          : failedCount > 0
+          ? <XCircle className="w-5 h-5 text-red-400 relative z-10" />
+          : <AlertTriangle className="w-5 h-5 text-amber-400 relative z-10" />}
       </div>
 
-      <span className={`text-sm font-medium ${didPass ? 'text-emerald-400' : 'text-red-400'}`}>
-        {didPass ? 'All Tests Passed' : 'Some Tests Failed'}
+      <span className={`text-sm font-medium ${didPass ? 'text-emerald-400' : failedCount > 0 ? 'text-red-400' : 'text-amber-400'}`}>
+        {didPass ? 'All Tests Passed' : failedCount > 0 ? 'Some Tests Failed' : 'Tests Skipped'}
       </span>
 
       {/* Brief summary */}
@@ -542,8 +550,8 @@ export function TestResultsPanel({
         <p className="text-xs text-red-400/80 text-center leading-relaxed px-2">{error}</p>
       )}
 
-      {/* View Report button */}
-      {toolResults.length > 0 && (
+      {/* View Report button — always show when results OR error exist */}
+      {(toolResults.length > 0 || error) && (
         <button
           type="button"
           onClick={() => setShowReport(true)}
@@ -589,11 +597,16 @@ export function TestResultsPanel({
 function TestReportModal({ results, summary, onClose }: { results: ToolTestResult[]; summary?: string | null; onClose: () => void }) {
   const modalRef = useRef<HTMLDivElement>(null);
   useClickOutside(modalRef, true, onClose);
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
 
   const passedCount = results.filter((r) => r.status === 'passed').length;
   const failedCount = results.filter((r) => r.status === 'failed' || r.status === 'credential_missing').length;
   const skippedCount = results.filter((r) => r.status === 'skipped').length;
   const allPassed = failedCount === 0 && passedCount > 0;
+
+  // Parse markdown sections from summary
+  const sections = summary ? parseReportSections(summary) : null;
+  const selectedResult = selectedTool ? results.find((r) => r.tool_name === selectedTool) : null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-6">
@@ -607,20 +620,20 @@ function TestReportModal({ results, summary, onClose }: { results: ToolTestResul
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
               allPassed
                 ? 'bg-emerald-500/10 border-emerald-500/20'
-                : 'bg-red-500/10 border-red-500/20'
+                : 'bg-amber-500/10 border-amber-500/20'
             }`}>
               {allPassed
-                ? <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400" />
-                : <XCircle className="w-4.5 h-4.5 text-red-400" />}
+                ? <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                : <AlertTriangle className="w-5 h-5 text-amber-400" />}
             </div>
             <div>
               <h2 className="text-base font-semibold text-foreground/90">Test Report</h2>
               <div className="flex items-center gap-3 mt-0.5">
                 {passedCount > 0 && (
-                  <span className="text-xs text-emerald-400 font-medium">{passedCount} passed</span>
+                  <span className="text-xs text-emerald-400/90 font-medium">{passedCount} passed</span>
                 )}
                 {failedCount > 0 && (
-                  <span className="text-xs text-red-400 font-medium">{failedCount} failed</span>
+                  <span className="text-xs text-red-400/90 font-medium">{failedCount} failed</span>
                 )}
                 {skippedCount > 0 && (
                   <span className="text-xs text-muted-foreground/50">{skippedCount} skipped</span>
@@ -635,33 +648,78 @@ function TestReportModal({ results, summary, onClose }: { results: ToolTestResul
 
         {/* Split content: left = scope, right = analysis */}
         <div className="flex-1 min-h-0 flex">
-          {/* Left pane: Test Scope */}
-          <div className="w-1/2 border-r border-primary/10 flex flex-col min-h-0">
-            <div className="px-5 py-3 border-b border-primary/5 bg-secondary/10">
-              <h3 className="text-xs font-semibold text-foreground/60 uppercase tracking-wider">Test Scope</h3>
+          {/* Left pane: Test Scope — clickable tool list */}
+          <div className="w-[280px] flex-shrink-0 border-r border-primary/10 flex flex-col min-h-0">
+            <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/10">
+              <h3 className="text-[10px] font-semibold text-foreground/50 uppercase tracking-wider">Test Scope</h3>
             </div>
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-              {results.map((r, i) => (
-                <ToolTestResultRow key={i} result={r} />
-              ))}
+            <div className="flex-1 overflow-y-auto py-1">
+              {/* Overview tab */}
+              <button
+                type="button"
+                onClick={() => setSelectedTool(null)}
+                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors ${
+                  selectedTool === null
+                    ? 'bg-primary/8 border-r-2 border-primary'
+                    : 'hover:bg-secondary/30'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" />
+                <span className="text-[13px] font-medium text-foreground/80">Overview</span>
+              </button>
+
+              {/* Per-tool tabs */}
+              {results.map((r) => {
+                const isActive = selectedTool === r.tool_name;
+                const statusIcon = r.status === 'passed'
+                  ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  : r.status === 'skipped'
+                  ? <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground/35 flex-shrink-0" />
+                  : <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />;
+                const label = r.tool_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+                return (
+                  <button
+                    key={r.tool_name}
+                    type="button"
+                    onClick={() => setSelectedTool(r.tool_name)}
+                    className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors ${
+                      isActive
+                        ? 'bg-primary/8 border-r-2 border-primary'
+                        : 'hover:bg-secondary/30'
+                    }`}
+                  >
+                    {statusIcon}
+                    <span className={`text-[13px] truncate ${isActive ? 'font-medium text-foreground/90' : 'text-foreground/60'}`}>
+                      {label}
+                    </span>
+                    {r.http_status && (
+                      <span className={`ml-auto text-[10px] font-mono flex-shrink-0 ${
+                        r.http_status >= 200 && r.http_status < 300
+                          ? 'text-emerald-400/60'
+                          : 'text-red-400/60'
+                      }`}>
+                        {r.http_status}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Right pane: Analysis */}
-          <div className="w-1/2 flex flex-col min-h-0">
-            <div className="px-5 py-3 border-b border-primary/5 bg-secondary/10">
-              <h3 className="text-xs font-semibold text-foreground/60 uppercase tracking-wider">Analysis</h3>
+          {/* Right pane: Analysis content */}
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="px-5 py-2.5 border-b border-primary/5 bg-secondary/10">
+              <h3 className="text-[10px] font-semibold text-foreground/50 uppercase tracking-wider">
+                {selectedTool ? selectedTool.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Analysis'}
+              </h3>
             </div>
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              {summary ? (
-                <p className="text-sm text-foreground/70 leading-relaxed whitespace-pre-line">
-                  {summary}
-                </p>
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {selectedTool && selectedResult ? (
+                <ToolDetailView result={selectedResult} sections={sections} />
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center gap-2">
-                  <Loader2 className="w-5 h-5 text-muted-foreground/30 animate-spin" />
-                  <p className="text-sm text-muted-foreground/40">Generating analysis...</p>
-                </div>
+                <ReportOverview sections={sections} summary={summary} results={results} />
               )}
             </div>
           </div>
@@ -671,45 +729,237 @@ function TestReportModal({ results, summary, onClose }: { results: ToolTestResul
   );
 }
 
-/** Single tool test result row inside the report modal. */
-function ToolTestResultRow({ result }: { result: ToolTestResult }) {
-  const statusConfig = {
-    passed: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/8', border: 'border-emerald-500/15', label: 'Passed' },
-    failed: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/8', border: 'border-red-500/15', label: 'Failed' },
-    credential_missing: { icon: Key, color: 'text-amber-400', bg: 'bg-amber-500/8', border: 'border-amber-500/15', label: 'Needs Credential' },
-    skipped: { icon: AlertTriangle, color: 'text-muted-foreground/40', bg: 'bg-secondary/20', border: 'border-primary/10', label: 'Skipped' },
-  }[result.status] ?? { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/8', border: 'border-red-500/15', label: result.status };
+/** Parse LLM markdown summary into sections. */
+function parseReportSections(md: string): { overview: string; results: string; nextSteps: string } {
+  const sections = { overview: '', results: '', nextSteps: '' };
+  let currentSection: 'overview' | 'results' | 'nextSteps' | null = null;
 
-  const StatusIcon = statusConfig.icon;
-  const toolLabel = result.tool_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  for (const line of md.split('\n')) {
+    const trimmed = line.trim();
+    if (/^###?\s+overview/i.test(trimmed)) { currentSection = 'overview'; continue; }
+    if (/^###?\s+results/i.test(trimmed)) { currentSection = 'results'; continue; }
+    if (/^###?\s+next\s*steps/i.test(trimmed)) { currentSection = 'nextSteps'; continue; }
+    if (/^###?\s+/.test(trimmed)) { currentSection = null; continue; }
+    if (currentSection) {
+      sections[currentSection] += line + '\n';
+    }
+  }
+
+  // Fallback: if no sections parsed, put entire summary in overview
+  if (!sections.overview && !sections.results && !sections.nextSteps) {
+    sections.overview = md;
+  }
+
+  return sections;
+}
+
+/** Render the overview tab with parsed markdown sections. */
+function ReportOverview({ sections, summary, results }: { sections: ReturnType<typeof parseReportSections> | null; summary?: string | null; results: ToolTestResult[] }) {
+  // Build a fallback overview from results when no LLM summary
+  if (!sections && !summary) {
+    const passed = results.filter((r) => r.status === 'passed');
+    const failed = results.filter((r) => r.status === 'failed' || r.status === 'credential_missing');
+    const skipped = results.filter((r) => r.status === 'skipped');
+
+    return (
+      <div className="space-y-5">
+        <div>
+          <p className="text-sm text-foreground/70 leading-relaxed">
+            {failed.length === 0 && passed.length > 0
+              ? `All ${passed.length} tool${passed.length > 1 ? 's' : ''} connected successfully.${skipped.length > 0 ? ` ${skipped.length} tool${skipped.length > 1 ? 's were' : ' was'} skipped (built-in capabilities that don't need external connections).` : ''}`
+              : failed.length > 0
+              ? `${failed.length} tool${failed.length > 1 ? 's' : ''} had issues connecting.${passed.length > 0 ? ` ${passed.length} tool${passed.length > 1 ? 's' : ''} verified OK.` : ''}${skipped.length > 0 ? ` ${skipped.length} skipped.` : ''}`
+              : `${skipped.length} tool${skipped.length > 1 ? 's were' : ' was'} skipped. These use built-in capabilities and don't need external API verification.`}
+          </p>
+        </div>
+        <div>
+          <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-2">Results</h4>
+          <div className="space-y-1.5">
+            {results.map((r, i) => {
+              const icon = r.status === 'passed' ? '\u2705' : r.status === 'skipped' ? '\u23ED' : '\u274C';
+              const label = r.tool_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+              const desc = r.status === 'passed'
+                ? 'Connection verified'
+                : r.status === 'skipped'
+                ? 'Uses built-in capabilities'
+                : r.status === 'credential_missing'
+                ? 'Needs credentials'
+                : 'Connection failed';
+              return <MarkdownLine key={i} text={`- ${icon} **${label}** — ${desc}`} />;
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sections) {
+    return <p className="text-sm text-foreground/60 leading-relaxed whitespace-pre-line">{summary}</p>;
+  }
 
   return (
-    <div className={`rounded-lg border ${statusConfig.border} ${statusConfig.bg} px-3 py-2.5`}>
-      <div className="flex items-center gap-2">
-        <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${statusConfig.color}`} />
-        <span className="text-[13px] font-medium text-foreground/80 truncate flex-1">{toolLabel}</span>
-        {result.http_status && (
-          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-            result.http_status >= 200 && result.http_status < 300
-              ? 'bg-emerald-500/15 text-emerald-400'
-              : 'bg-red-500/15 text-red-400'
-          }`}>
-            {result.http_status}
-          </span>
-        )}
-        {result.latency_ms != null && result.latency_ms > 0 && (
-          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/30 flex-shrink-0">
-            <Clock className="w-2.5 h-2.5" />
-            {result.latency_ms}ms
-          </span>
-        )}
-      </div>
-      {result.connector && (
-        <span className="text-[10px] text-muted-foreground/35 ml-5.5 block mt-0.5">via {result.connector}</span>
+    <div className="space-y-5">
+      {sections.overview && (
+        <div>
+          <p className="text-sm text-foreground/70 leading-relaxed">{sections.overview.trim()}</p>
+        </div>
+      )}
+      {sections.results && (
+        <div>
+          <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-2">Results</h4>
+          <div className="space-y-1.5">
+            {sections.results.trim().split('\n').filter(Boolean).map((line, i) => (
+              <MarkdownLine key={i} text={line} />
+            ))}
+          </div>
+        </div>
+      )}
+      {sections.nextSteps && (
+        <div>
+          <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-2">Next Steps</h4>
+          <div className="space-y-1.5">
+            {sections.nextSteps.trim().split('\n').filter(Boolean).map((line, i) => (
+              <MarkdownLine key={i} text={line} />
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
 }
+
+/** Render a single markdown line with basic formatting (bold, emoji). */
+function MarkdownLine({ text }: { text: string }) {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  // Parse bullet point prefix
+  const isBullet = /^[-*]\s/.test(trimmed);
+  const content = isBullet ? trimmed.slice(2) : trimmed;
+
+  // Simple markdown bold rendering
+  const parts = content.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="text-foreground/90 font-semibold">{part.slice(2, -2)}</strong>;
+    }
+    return <span key={i}>{part}</span>;
+  });
+
+  return (
+    <div className={`flex gap-2 text-sm text-foreground/60 leading-relaxed ${isBullet ? '' : ''}`}>
+      {isBullet && <span className="text-primary/40 mt-0.5 flex-shrink-0">&#8226;</span>}
+      <span>{parts}</span>
+    </div>
+  );
+}
+
+/** Detail view for a single selected tool. */
+function ToolDetailView({ result, sections }: { result: ToolTestResult; sections: ReturnType<typeof parseReportSections> | null }) {
+  const isPassed = result.status === 'passed';
+  const isSkipped = result.status === 'skipped';
+  const toolLabel = result.tool_name.replace(/_/g, ' ');
+
+  // Find this tool's line in the results section
+  const toolSummaryLine = sections?.results
+    .split('\n')
+    .find((line) => line.toLowerCase().includes(toolLabel.toLowerCase()))
+    ?? null;
+
+  // Build a human-readable description when no LLM summary is available
+  const fallbackDescription = isPassed
+    ? result.output_preview || 'Connection verified successfully.'
+    : isSkipped
+    ? result.error || 'This tool uses built-in capabilities and does not require an external API connection to test.'
+    : result.status === 'credential_missing'
+    ? `This tool needs credentials for ${result.connector || 'its service'}. Go to the **Keys** section to add or refresh the required credentials.`
+    : result.error
+    ? formatErrorForUser(result.error, result.http_status)
+    : 'Could not connect to the service.';
+
+  return (
+    <div className="space-y-4">
+      {/* Status header */}
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
+        isPassed
+          ? 'bg-emerald-500/5 border-emerald-500/15'
+          : isSkipped
+          ? 'bg-amber-500/5 border-amber-500/15'
+          : 'bg-red-500/5 border-red-500/15'
+      }`}>
+        {isPassed
+          ? <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+          : isSkipped
+          ? <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+          : <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />}
+        <div>
+          <span className={`text-sm font-semibold ${isPassed ? 'text-emerald-400' : isSkipped ? 'text-amber-400' : 'text-red-400'}`}>
+            {isPassed ? 'Passed' : isSkipped ? 'Skipped' : result.status === 'credential_missing' ? 'Needs Credential' : 'Failed'}
+          </span>
+          {result.latency_ms != null && result.latency_ms > 0 && (
+            <span className="text-xs text-muted-foreground/40 ml-2">{result.latency_ms}ms</span>
+          )}
+        </div>
+      </div>
+
+      {/* Summary — LLM line if available, else human-readable fallback */}
+      <div>
+        <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-2">What happened</h4>
+        {toolSummaryLine ? (
+          <MarkdownLine text={toolSummaryLine} />
+        ) : (
+          <div className="text-sm text-foreground/60 leading-relaxed space-y-1">
+            {fallbackDescription.split('\n').map((line, i) => (
+              <MarkdownLine key={i} text={line} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Connector info */}
+      {result.connector && (
+        <div>
+          <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-1">Service</h4>
+          <p className="text-sm text-foreground/60">{result.connector}</p>
+        </div>
+      )}
+
+      {/* Output preview (for passed tools) */}
+      {result.output_preview && isPassed && (
+        <div>
+          <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-1">Response Preview</h4>
+          <div className="rounded-lg bg-black/20 border border-primary/10 px-3 py-2 font-mono text-[11px] text-muted-foreground/50 leading-relaxed max-h-32 overflow-y-auto">
+            {result.output_preview.slice(0, 300)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Convert raw API errors into user-friendly language. */
+function formatErrorForUser(error: string, httpStatus?: number): string {
+  if (httpStatus === 401 || httpStatus === 403) {
+    return 'Authentication failed. Your credentials may have expired. Go to **Keys** to refresh them.';
+  }
+  if (httpStatus === 404) {
+    return 'The API endpoint could not be found. The service configuration may need updating.';
+  }
+  if (httpStatus === 429) {
+    return 'The service rate-limited the request. This is temporary — try again in a few minutes.';
+  }
+  if (httpStatus && httpStatus >= 500) {
+    return 'The service is currently experiencing issues. This is not a problem with your agent — try again later.';
+  }
+  if (error.includes('timed out')) {
+    return 'The connection timed out. The service may be slow or unavailable right now.';
+  }
+  if (error.includes('credential') || error.includes('Credential')) {
+    return 'Missing credentials. Go to **Keys** to add the required service credentials.';
+  }
+  // Truncate raw errors
+  return error.length > 150 ? error.slice(0, 150) + '...' : error;
+}
+
 
 /** Promotion success indicator -- checkmark with emerald glow. */
 export function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () => void }) {

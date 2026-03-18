@@ -18,9 +18,6 @@ export const DesignTab = lazy(() =>
 export const LabTab = lazy(() =>
   import('@/features/agents/sub_lab/components/shared/LabTab').then((m) => ({ default: m.LabTab })),
 );
-export const PromptPerformanceCard = lazy(() =>
-  import('@/features/agents/sub_prompt_lab').then((m) => ({ default: m.PromptPerformanceCard })),
-);
 export const HealthTab = lazy(() =>
   import('@/features/agents/sub_health').then((m) => ({ default: m.HealthTab })),
 );

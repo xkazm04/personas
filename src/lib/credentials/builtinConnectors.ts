@@ -76,6 +76,7 @@ import formbricks from '../../../scripts/connectors/builtin/formbricks.json';
 import novu from '../../../scripts/connectors/builtin/novu.json';
 import knock from '../../../scripts/connectors/builtin/knock.json';
 import ntfy from '../../../scripts/connectors/builtin/ntfy.json';
+import obsidian from '../../../scripts/connectors/builtin/obsidian.json';
 
 /**
  * Builtin connector shape -- extends the shared ConnectorDefinitionBase.
@@ -153,4 +154,5 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   novu,
   knock,
   ntfy,
+  obsidian,
 ] as BuiltinConnectorDef[];

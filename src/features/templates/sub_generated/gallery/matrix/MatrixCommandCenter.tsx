@@ -155,6 +155,9 @@ export function MatrixCommandCenter({
     // Creation: Awaiting user input on cells
     if (isCreation && buildPhase === 'awaiting_input')
       return (<div className={WRAP}><ActiveBuildProgress buildPhase={buildPhase} completeness={completeness} cellStates={cellBuildStates} cliOutputLines={cliOutputLines} onOpenNextQuestion={handleOpenNextQuestion} buildActivity={buildActivity} onSubmitAnswers={onSubmitAnswers} /></div>);
+    // Creation: Resolving/Analyzing (after refinement or continuation)
+    if (isCreation && (buildPhase === 'resolving' || buildPhase === 'analyzing'))
+      return (<div className={WRAP}><ActiveBuildProgress buildPhase={buildPhase} completeness={completeness} cellStates={cellBuildStates} cliOutputLines={cliOutputLines} onOpenNextQuestion={handleOpenNextQuestion} buildActivity={buildActivity} onSubmitAnswers={onSubmitAnswers} /></div>);
     // Creation: Testing lifecycle states
     if (isCreation && buildPhase === 'testing')
       return (<div className={WRAP}><TestRunningIndicator testOutputLines={testOutputLines} onCancelTest={undefined} /></div>);

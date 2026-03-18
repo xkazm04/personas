@@ -4,7 +4,7 @@
   "label": "Lemon Squeezy",
   "color": "#FFC233",
   "icon_url": "/icons/connectors/lemonsqueezy.svg",
-  "category": "commerce",
+  "category": "ecommerce",
   "fields": [
     {
       "key": "api_key",
@@ -35,7 +35,12 @@
     "setup_guide": "1. Log in to app.lemonsqueezy.com.\n2. Go to Settings -> API.\n3. Click 'Create API Key'.\n4. Copy the key and paste it here.",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

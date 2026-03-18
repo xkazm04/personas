@@ -72,6 +72,7 @@ export function ExecutionListRow({
     <div>
       {/* Desktop table row (md+) */}
       <motion.div
+        data-testid={`exec-row-${execution.id}`}
         onClick={() => onRowClick(execution.id)}
         className={`hidden md:grid grid-cols-12 gap-4 px-4 py-3 border-b border-primary/10 cursor-pointer transition-colors ${
           isCompareSelected

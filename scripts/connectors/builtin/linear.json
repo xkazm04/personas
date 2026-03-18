@@ -4,7 +4,7 @@
   "label": "Linear",
   "color": "#5E6AD2",
   "icon_url": "/icons/connectors/linear.svg",
-  "category": "development",
+  "category": "project-mgmt",
   "fields": [
     {
       "key": "api_key",

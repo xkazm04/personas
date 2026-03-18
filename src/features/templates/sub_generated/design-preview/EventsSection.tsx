@@ -28,7 +28,8 @@ export function EventsSection({
   actualTriggers,
   onTriggerEnabledToggle,
 }: EventsSectionProps) {
-  const hasTriggers = result.suggested_triggers.length > 0 || (readOnly && actualTriggers.length > 0);
+  const suggestedTriggers = result?.suggested_triggers ?? [];
+  const hasTriggers = suggestedTriggers.length > 0 || (readOnly && actualTriggers.length > 0);
   const hasSubscriptions = suggestedSubscriptions && suggestedSubscriptions.length > 0;
 
   if (!hasTriggers && !hasSubscriptions) return null;
@@ -74,7 +75,7 @@ export function EventsSection({
                 );
               })
             ) : (
-              result.suggested_triggers.map((trigger, trigIdx) => {
+              suggestedTriggers.map((trigger, trigIdx) => {
                 const isSelected = selectedTriggerIndices.has(trigIdx);
                 return (
                   <div key={trigIdx} className="flex items-start gap-2.5 py-1">

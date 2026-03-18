@@ -8,12 +8,6 @@ export const listChatSessions = (personaId: string, limit?: number) =>
     limit: limit,
   });
 
-export const createChatSession = (personaId: string, sessionId: string) =>
-  invoke<ChatSession>("create_chat_session", {
-    personaId,
-    sessionId,
-  });
-
 export const getChatMessages = (
   personaId: string,
   sessionId: string,

@@ -61,7 +61,7 @@ export function PersonaRunner() {
       {/* Input & Execute Card */}
       <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-4 space-y-4">
         <div className="space-y-2">
-          <button onClick={() => state.setShowInputEditor(!state.showInputEditor)} className="flex items-center gap-2 text-sm text-foreground/90 hover:text-foreground transition-colors">
+          <button data-testid="runner-toggle-input" onClick={() => state.setShowInputEditor(!state.showInputEditor)} className="flex items-center gap-2 text-sm text-foreground/90 hover:text-foreground transition-colors">
             {state.showInputEditor ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             Input Data (Optional)
           </button>
@@ -86,6 +86,7 @@ export function PersonaRunner() {
             </div>
             {isBudgetBlocked && (
               <button
+                data-testid="runner-budget-override"
                 onClick={() => overrideBudgetPause(personaId)}
                 className="flex-shrink-0 px-2.5 py-1 text-sm rounded-lg border border-red-500/20 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
               >

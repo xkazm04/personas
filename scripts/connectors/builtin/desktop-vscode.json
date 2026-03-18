@@ -4,7 +4,7 @@
   "label": "VS Code",
   "color": "#007ACC",
   "icon_url": "/icons/connectors/vscode.svg",
-  "category": "development",
+  "category": "devops",
   "fields": [
     {
       "key": "binary_path",
@@ -17,12 +17,30 @@
   ],
   "healthcheck_config": null,
   "services": [
-    { "toolName": "vscode_open_file", "label": "Open File" },
-    { "toolName": "vscode_open_folder", "label": "Open Folder" },
-    { "toolName": "vscode_diff", "label": "Diff Files" },
-    { "toolName": "vscode_extensions", "label": "List Extensions" },
-    { "toolName": "vscode_install_ext", "label": "Install Extension" },
-    { "toolName": "vscode_run_task", "label": "Run Task" }
+    {
+      "toolName": "vscode_open_file",
+      "label": "Open File"
+    },
+    {
+      "toolName": "vscode_open_folder",
+      "label": "Open Folder"
+    },
+    {
+      "toolName": "vscode_diff",
+      "label": "Diff Files"
+    },
+    {
+      "toolName": "vscode_extensions",
+      "label": "List Extensions"
+    },
+    {
+      "toolName": "vscode_install_ext",
+      "label": "Install Extension"
+    },
+    {
+      "toolName": "vscode_run_task",
+      "label": "Run Task"
+    }
   ],
   "events": [],
   "metadata": {
@@ -35,6 +53,10 @@
     "docs_url": "https://code.visualstudio.com/docs/editor/command-line",
     "setup_guide": "1. Ensure VS Code is installed on your system\n2. The 'code' command should be available in your PATH\n3. Click Detect to scan for VS Code\n4. Approve the requested capabilities",
     "pricing_tier": "free",
-    "capabilities": ["file_read", "file_write", "process_spawn"]
+    "capabilities": [
+      "file_read",
+      "file_write",
+      "process_spawn"
+    ]
   }
 }

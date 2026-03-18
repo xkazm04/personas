@@ -4,6 +4,7 @@ import { DensityToggle, type Density } from './filters/DensityToggle';
 import { SortDropdown } from './filters/SortDropdown';
 import { FilterChips } from './filters/FilterChips';
 import { ConnectorFilterDropdown } from './filters/ConnectorFilterDropdown';
+import { ComponentFilterDropdown } from './filters/ComponentFilterDropdown';
 import { AdminToolsDropdown } from './filters/AdminToolsDropdown';
 import type { ConnectorWithCount } from '@/api/overview/reviews';
 
@@ -30,6 +31,10 @@ interface TemplateSearchFilterRowProps {
   coverageFilter?: string;
   onCoverageFilterChange?: (value: string) => void;
   coverageCounts?: { all: number; ready: number; partial: number };
+  // Component filter
+  componentFilter?: string[];
+  onComponentFilterChange?: (components: string[]) => void;
+  availableComponents?: { key: string; count: number }[];
   // Admin
   onCleanupDuplicates?: () => void;
   isCleaningUp?: boolean;
@@ -131,6 +136,9 @@ export function TemplateSearchFilterRow({
   coverageFilter,
   onCoverageFilterChange,
   coverageCounts,
+  componentFilter,
+  onComponentFilterChange,
+  availableComponents,
   onCleanupDuplicates,
   isCleaningUp,
   onBackfillPipeline,
@@ -150,6 +158,8 @@ export function TemplateSearchFilterRow({
         coverageFilter={coverageFilter}
         onCoverageFilterChange={onCoverageFilterChange}
         coverageCounts={coverageCounts}
+        componentFilter={componentFilter}
+        onComponentFilterChange={onComponentFilterChange}
       />
 
       <ConnectorFilterDropdown
@@ -157,6 +167,14 @@ export function TemplateSearchFilterRow({
         connectorFilter={connectorFilter}
         setConnectorFilter={onConnectorFilterChange}
       />
+
+      {onComponentFilterChange && availableComponents && (
+        <ComponentFilterDropdown
+          availableComponents={availableComponents}
+          componentFilter={componentFilter ?? []}
+          setComponentFilter={onComponentFilterChange}
+        />
+      )}
 
       <div className="flex-1" />
 

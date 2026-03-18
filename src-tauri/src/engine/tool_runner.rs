@@ -84,7 +84,7 @@ pub async fn invoke_tool_direct(
         .map(|(k, v)| (k.as_str(), v.as_str()))
         .collect();
 
-    let kind = tool.tool_kind().map_err(|msg| AppError::Execution(msg))?;
+    let kind = tool.tool_kind().map_err(AppError::Execution)?;
 
     let result = match kind {
         ToolKind::Automation => {
@@ -609,10 +609,10 @@ pub async fn execute_test_curl(
             if output.status.success() {
                 // Curl succeeded (exit code 0), but check HTTP status
                 let status = match http_code {
-                    Some(code) if code >= 200 && code < 300 => "passed",
-                    Some(code) if code == 401 || code == 403 => "failed",
-                    Some(code) if code == 404 => "failed",
-                    Some(code) if code == 429 => "failed",
+                    Some(code) if (200..300).contains(&code) => "passed",
+                    Some(401 | 403) => "failed",
+                    Some(404) => "failed",
+                    Some(429) => "failed",
                     Some(code) if code >= 500 => "failed",
                     Some(_) => "failed",
                     None => "passed", // no -w flag, curl succeeded = assume OK

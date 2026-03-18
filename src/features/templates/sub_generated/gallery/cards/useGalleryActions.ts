@@ -3,7 +3,8 @@ import { getConnectorMeta } from '@/features/shared/components/display/Connector
 import { useVaultStore } from "@/stores/vaultStore";
 import { deleteDesignReview, cleanupDuplicateReviews, backfillServiceFlow, backfillRelatedTools } from '@/api/overview/reviews';
 import { computeAdoptionReadiness } from '../../shared/adoptionReadiness';
-import { getCachedDesignResult } from './reviewParseCache';
+import { deriveArchCategories } from '../matrix/architecturalCategories';
+import { getCachedDesignResult, getCachedLightFields } from './reviewParseCache';
 import type { CredentialModalTarget } from '../modals/TemplateModals';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
@@ -19,6 +20,9 @@ export function useGalleryActions(
   credentials: CredentialMetadata[],
   connectorDefinitions: ConnectorDefinition[],
   refresh: () => void,
+  unfilteredTotal?: number,
+  coverageFilter = 'all',
+  componentFilter: string[] = [],
 ) {
   // -- Readiness scoring --------------------------------------------
   const installedConnectorNames = useMemo(
@@ -47,18 +51,60 @@ export function useGalleryActions(
       if (score === 100) ready++;
       else if (score > 0) partial++;
     }
-    return { all: total, ready, partial };
-  }, [readinessScores, total]);
+    return { all: unfilteredTotal ?? total, ready, partial };
+  }, [readinessScores, total, unfilteredTotal]);
+
+  // -- Available architectural components ----------------------------
+  const availableComponents = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of allItems) {
+      const { connectors } = getCachedLightFields(item);
+      const cats = deriveArchCategories(connectors);
+      for (const cat of cats) {
+        counts.set(cat.key, (counts.get(cat.key) ?? 0) + 1);
+      }
+    }
+    return [...counts.entries()]
+      .map(([key, count]) => ({ key, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [allItems]);
+
+  // -- Component filter helper: does item have ANY of the selected components?
+  const componentFilterSet = useMemo(
+    () => new Set(componentFilter),
+    [componentFilter],
+  );
 
   const displayItems = useMemo(() => {
-    if (!isReadinessSort) return allItems;
-    return [...allItems].sort((a, b) => {
+    let filtered = allItems;
+
+    // Coverage filter
+    if (coverageFilter === 'full') {
+      filtered = filtered.filter((item) => (readinessScores.get(item.id) ?? 0) === 100);
+    } else if (coverageFilter === 'partial') {
+      filtered = filtered.filter((item) => {
+        const score = readinessScores.get(item.id) ?? 0;
+        return score > 0 && score < 100;
+      });
+    }
+
+    // Component filter
+    if (componentFilterSet.size > 0) {
+      filtered = filtered.filter((item) => {
+        const { connectors } = getCachedLightFields(item);
+        const cats = deriveArchCategories(connectors);
+        return cats.some((cat) => componentFilterSet.has(cat.key));
+      });
+    }
+
+    if (!isReadinessSort) return filtered;
+    return [...filtered].sort((a, b) => {
       const sa = readinessScores.get(a.id) ?? 0;
       const sb = readinessScores.get(b.id) ?? 0;
       if (sb !== sa) return sb - sa;
       return b.adoption_count - a.adoption_count;
     });
-  }, [isReadinessSort, allItems, readinessScores]);
+  }, [isReadinessSort, allItems, readinessScores, coverageFilter, componentFilterSet]);
 
   // -- Credential modal ---------------------------------------------
   const [credentialModalTarget, setCredentialModalTarget] = useState<CredentialModalTarget | null>(null);
@@ -124,6 +170,7 @@ export function useGalleryActions(
     readinessScores,
     coverageCounts,
     displayItems,
+    availableComponents,
     credentialModalTarget,
     clearCredentialModal: () => setCredentialModalTarget(null),
     handleCredentialSave,

@@ -887,6 +887,7 @@ struct LabVariant<'a> {
 }
 
 /// Callbacks that abstract mode-specific persistence and summary building.
+#[allow(clippy::type_complexity)]
 struct LabCallbacks<'a> {
     event_name: &'a str,
     update_status: Box<dyn Fn(&DbPool, &str, LabRunStatus, Option<i32>, Option<&str>, Option<&str>, Option<&str>) + Send + Sync + 'a>,
@@ -895,6 +896,7 @@ struct LabCallbacks<'a> {
 }
 
 /// Generic lab execution loop shared by arena, A/B, eval, and matrix modes.
+#[allow(clippy::too_many_arguments)]
 async fn run_lab_loop(
     app: &AppHandle,
     pool: &DbPool,
@@ -912,7 +914,7 @@ async fn run_lab_loop(
     let scenarios = match generate_scenarios(persona_for_scenarios, tools, use_case_filter, None).await {
         Ok(s) if s.is_empty() => {
             let now = chrono::Utc::now().to_rfc3339();
-            let _ = (cb.update_status)(pool, run_id, LabRunStatus::Failed, None, None, Some("No test scenarios were generated"), Some(&now));
+            (cb.update_status)(pool, run_id, LabRunStatus::Failed, None, None, Some("No test scenarios were generated"), Some(&now));
             emit_lab_status(app, cb.event_name, run_id, "failed", Some("No test scenarios were generated"));
             return;
         }
@@ -920,14 +922,14 @@ async fn run_lab_loop(
         Err(e) => {
             let msg = format!("Scenario generation failed: {e}");
             let now = chrono::Utc::now().to_rfc3339();
-            let _ = (cb.update_status)(pool, run_id, LabRunStatus::Failed, None, None, Some(&msg), Some(&now));
+            (cb.update_status)(pool, run_id, LabRunStatus::Failed, None, None, Some(&msg), Some(&now));
             emit_lab_status(app, cb.event_name, run_id, "failed", Some(&msg));
             return;
         }
     };
 
     let scenario_count = scenarios.len();
-    let _ = (cb.update_status)(pool, run_id, LabRunStatus::Running, Some(scenario_count as i32), None, None, None);
+    (cb.update_status)(pool, run_id, LabRunStatus::Running, Some(scenario_count as i32), None, None, None);
 
     let _ = app.emit(cb.event_name, TestRunStatusEvent {
         run_id: run_id.to_string(), phase: "generated".into(),
@@ -938,13 +940,14 @@ async fn run_lab_loop(
 
     let total = scenario_count * model_configs.len() * variants.len();
     let mut current = 0usize;
+    #[allow(clippy::type_complexity)]
     let mut tracker: HashMap<String, Vec<(i32, i32, i32, f64, i64)>> = HashMap::new();
 
     for scenario in &scenarios {
         for model in model_configs {
             for variant in variants {
                 if cancelled.load(std::sync::atomic::Ordering::Acquire) {
-                    let _ = (cb.update_status)(pool, run_id, LabRunStatus::Cancelled, None, None, None, None);
+                    (cb.update_status)(pool, run_id, LabRunStatus::Cancelled, None, None, None, None);
                     emit_lab_status(app, cb.event_name, run_id, "cancelled", None);
                     return;
                 }
@@ -999,7 +1002,7 @@ async fn run_lab_loop(
     let summary = (cb.build_summary)(&tracker, model_configs);
     let summary_str = serde_json::to_string(&summary).unwrap_or_default();
     let now = chrono::Utc::now().to_rfc3339();
-    let _ = (cb.update_status)(pool, run_id, LabRunStatus::Completed, None, Some(&summary_str), None, Some(&now));
+    (cb.update_status)(pool, run_id, LabRunStatus::Completed, None, Some(&summary_str), None, Some(&now));
 
     let _ = app.emit(cb.event_name, TestRunStatusEvent {
         run_id: run_id.to_string(), phase: "completed".into(),
@@ -1011,6 +1014,7 @@ async fn run_lab_loop(
 }
 
 /// Build a keyed summary (used by A/B, eval, matrix modes).
+#[allow(clippy::type_complexity)]
 fn build_keyed_summary(
     tracker: &HashMap<String, Vec<(i32, i32, i32, f64, i64)>>,
     _models: &[TestModelConfig],
@@ -1036,6 +1040,7 @@ fn build_keyed_summary(
 }
 
 /// Build arena-style ranked summary.
+#[allow(clippy::type_complexity)]
 fn build_arena_summary(
     tracker: &HashMap<String, Vec<(i32, i32, i32, f64, i64)>>,
     models: &[TestModelConfig],
@@ -1084,6 +1089,7 @@ fn build_arena_summary(
     })
 }
 
+#[allow(clippy::type_complexity)]
 fn make_common_result_fields(scenario: &TestScenario, model: &TestModelConfig, status: &str, scores: &ScoreResult) -> (String, String, String, String, Option<String>, Option<String>, Option<String>, Option<i32>, Option<i32>, Option<i32>, i64, i64, f64, i64, Option<String>) {
     (
         scenario.name.clone(),

@@ -103,6 +103,7 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   novu:                            'personal',
   knock:                           'personal',
   ntfy:                            'personal',
+  obsidian:                        'personal',
 
   // -- Paid (no meaningful free tier) ------------------
   leonardo_ai:                     'paid',

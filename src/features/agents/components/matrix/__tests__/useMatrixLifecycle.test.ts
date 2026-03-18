@@ -5,27 +5,25 @@ import { renderHook, act } from "@testing-library/react";
 // Mocks -- must be before import of the module under test
 // ---------------------------------------------------------------------------
 
-const mockTestN8nDraft = vi.fn().mockResolvedValue(undefined);
-const mockValidateN8nDraft = vi.fn().mockResolvedValue({
-  passed: true,
-  error: null,
-  output_preview: null,
-  tool_issues: [],
-});
-const mockGetPersonaDetail = vi.fn().mockResolvedValue({
-  id: "persona-1",
-  name: "Test Agent",
-  system_prompt: "You are helpful.",
-  tools: [{ id: "tool-1", name: "slack", tool_type: "connector" }],
-  triggers: [],
-  subscriptions: [],
-  automations: [],
+const mockTestBuildDraft = vi.fn().mockResolvedValue({
+  tools_tested: 1,
+  tools_passed: 1,
+  tools_failed: 0,
+  tools_skipped: 0,
+  credential_issues: [],
+  results: [],
+  summary: "1 passed",
 });
 
-vi.mock("@/api/agents/tests", () => ({
-  testN8nDraft: (...args: unknown[]) => mockTestN8nDraft(...args),
-  validateN8nDraft: (...args: unknown[]) => mockValidateN8nDraft(...args),
-}));
+const mockAnswerBuildQuestion = vi.fn().mockResolvedValue(undefined);
+
+const mockPromoteBuildDraft = vi.fn().mockResolvedValue({
+  persona: {},
+  triggers_created: 2,
+  tools_created: 3,
+  connectors_needing_setup: [],
+  entity_errors: [],
+});
 
 const mockUpdatePersona = vi.fn().mockResolvedValue({ id: "persona-1", name: "Test Agent", enabled: true });
 const mockBuildUpdateInput = vi.fn((partial: Record<string, unknown>) => ({
@@ -49,21 +47,15 @@ const mockBuildUpdateInput = vi.fn((partial: Record<string, unknown>) => ({
   group_id: null,
 }));
 
-vi.mock("@/api/agents/personas", () => ({
-  getPersonaDetail: (...args: unknown[]) => mockGetPersonaDetail(...args),
-  updatePersona: (...args: unknown[]) => mockUpdatePersona(...args),
-  buildUpdateInput: (...args: unknown[]) => mockBuildUpdateInput(...args),
+vi.mock("@/api/agents/buildSession", () => ({
+  testBuildDraft: (...args: unknown[]) => mockTestBuildDraft(...args),
+  answerBuildQuestion: (...args: unknown[]) => mockAnswerBuildQuestion(...args),
+  promoteBuildDraft: (...args: unknown[]) => mockPromoteBuildDraft(...args),
 }));
 
-const mockComputeCredentialCoverage = vi.fn().mockReturnValue({
-  covered: true,
-  missing: [],
-  total: 1,
-  linked: 1,
-});
-
-vi.mock("@/lib/validation/credentialCoverage", () => ({
-  computeCredentialCoverage: (...args: unknown[]) => mockComputeCredentialCoverage(...args),
+vi.mock("@/api/agents/personas", () => ({
+  updatePersona: (...args: unknown[]) => mockUpdatePersona(...args),
+  buildUpdateInput: (...args: unknown[]) => mockBuildUpdateInput(...args),
 }));
 
 // Mock Tauri event listeners
@@ -86,6 +78,9 @@ const mockHandleTestFailed = vi.fn();
 const mockHandleRejectTest = vi.fn();
 const mockAppendTestOutput = vi.fn();
 const mockHandleBuildSessionStatus = vi.fn();
+const mockSetToolTestResults = vi.fn();
+const mockSetTestSummary = vi.fn();
+const mockAppendToolTestResult = vi.fn();
 
 vi.mock("@/stores/agentStore", () => {
   const getState = () => ({
@@ -96,6 +91,9 @@ vi.mock("@/stores/agentStore", () => {
     handleRejectTest: mockHandleRejectTest,
     appendTestOutput: mockAppendTestOutput,
     handleBuildSessionStatus: mockHandleBuildSessionStatus,
+    setToolTestResults: mockSetToolTestResults,
+    setTestSummary: mockSetTestSummary,
+    appendToolTestResult: mockAppendToolTestResult,
   });
 
   const useAgentStore = vi.fn(
@@ -125,8 +123,11 @@ function setStoreState(overrides: Partial<Record<string, unknown>> = {}) {
     buildTestPassed: null,
     buildTestOutputLines: [],
     buildTestError: null,
+    buildToolTestResults: [],
+    buildTestSummary: null,
     buildDraft: null,
     buildSessionId: null,
+    buildConnectorLinks: {},
     ...overrides,
   };
 }
@@ -147,10 +148,6 @@ describe("useMatrixLifecycle", () => {
     vi.clearAllMocks();
     listenerMap.clear();
     setStoreState();
-    // Stub crypto.randomUUID
-    vi.spyOn(crypto, "randomUUID").mockReturnValue(
-      "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-    );
   });
 
   afterEach(() => {
@@ -160,7 +157,12 @@ describe("useMatrixLifecycle", () => {
   // -- handleStartTest ---------------------------------------------------
 
   describe("handleStartTest", () => {
-    it("generates a unique testId prefixed with 'build-test-'", async () => {
+    it("generates a testId and calls handleStartTest on store", async () => {
+      setStoreState({
+        buildPhase: "draft_ready",
+        buildSessionId: "session-123",
+      });
+
       const { result } = renderHook(() =>
         useMatrixLifecycle({ personaId: "persona-1" }),
       );
@@ -170,33 +172,14 @@ describe("useMatrixLifecycle", () => {
       });
 
       expect(mockHandleStartTest).toHaveBeenCalledWith(
-        "build-test-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        expect.stringMatching(/^test_\d+$/),
       );
     });
 
-    it("calls validateN8nDraft before testN8nDraft", async () => {
-      const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
-      );
-
-      await act(async () => {
-        await result.current.handleStartTest();
-      });
-
-      expect(mockValidateN8nDraft).toHaveBeenCalled();
-      expect(mockTestN8nDraft).toHaveBeenCalled();
-      // validateN8nDraft should be called before testN8nDraft
-      const validateOrder = mockValidateN8nDraft.mock.invocationCallOrder[0];
-      const testOrder = mockTestN8nDraft.mock.invocationCallOrder[0];
-      expect(validateOrder).toBeLessThan(testOrder!);
-    });
-
-    it("aborts if validation fails", async () => {
-      mockValidateN8nDraft.mockResolvedValueOnce({
-        passed: false,
-        error: "Missing tool scripts",
-        output_preview: null,
-        tool_issues: [{ tool_name: "slack", issue: "Script not found" }],
+    it("calls testBuildDraft with sessionId and personaId", async () => {
+      setStoreState({
+        buildPhase: "draft_ready",
+        buildSessionId: "session-123",
       });
 
       const { result } = renderHook(() =>
@@ -207,13 +190,15 @@ describe("useMatrixLifecycle", () => {
         await result.current.handleStartTest();
       });
 
-      expect(mockTestN8nDraft).not.toHaveBeenCalled();
-      expect(mockHandleTestFailed).toHaveBeenCalledWith(
-        expect.stringContaining("Missing tool scripts"),
-      );
+      expect(mockTestBuildDraft).toHaveBeenCalledWith("session-123", "persona-1");
     });
 
-    it("calls testN8nDraft with serialized persona draft JSON", async () => {
+    it("calls handleTestComplete with true when all tools pass", async () => {
+      setStoreState({
+        buildPhase: "draft_ready",
+        buildSessionId: "session-123",
+      });
+
       const { result } = renderHook(() =>
         useMatrixLifecycle({ personaId: "persona-1" }),
       );
@@ -222,20 +207,11 @@ describe("useMatrixLifecycle", () => {
         await result.current.handleStartTest();
       });
 
-      expect(mockTestN8nDraft).toHaveBeenCalledWith(
-        "build-test-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-        expect.any(String),
-      );
-
-      // Verify the draft JSON contains persona data
-      const draftJson = mockTestN8nDraft.mock.calls[0]![1] as string;
-      const parsed = JSON.parse(draftJson);
-      expect(parsed.name).toBe("Test Agent");
-      expect(parsed.tools).toBeDefined();
+      expect(mockHandleTestComplete).toHaveBeenCalledWith(true, "1 passed");
     });
 
-    it("only starts when buildPhase is draft_ready", async () => {
-      setStoreState({ buildPhase: "testing" });
+    it("only starts when buildPhase is draft_ready or test_complete", async () => {
+      setStoreState({ buildPhase: "testing", buildSessionId: "session-123" });
 
       const { result } = renderHook(() =>
         useMatrixLifecycle({ personaId: "persona-1" }),
@@ -246,11 +222,15 @@ describe("useMatrixLifecycle", () => {
       });
 
       expect(mockHandleStartTest).not.toHaveBeenCalled();
-      expect(mockTestN8nDraft).not.toHaveBeenCalled();
+      expect(mockTestBuildDraft).not.toHaveBeenCalled();
     });
 
     it("calls handleTestFailed on API error", async () => {
-      mockTestN8nDraft.mockRejectedValueOnce(new Error("Network error"));
+      mockTestBuildDraft.mockRejectedValueOnce(new Error("Network error"));
+      setStoreState({
+        buildPhase: "draft_ready",
+        buildSessionId: "session-123",
+      });
 
       const { result } = renderHook(() =>
         useMatrixLifecycle({ personaId: "persona-1" }),
@@ -260,205 +240,191 @@ describe("useMatrixLifecycle", () => {
         await result.current.handleStartTest();
       });
 
-      expect(mockHandleTestFailed).toHaveBeenCalledWith(
-        expect.stringContaining("Network error"),
+      expect(mockHandleTestFailed).toHaveBeenCalledWith("Network error");
+    });
+
+    it("reports failures correctly in summary", async () => {
+      mockTestBuildDraft.mockResolvedValueOnce({
+        tools_tested: 3,
+        tools_passed: 2,
+        tools_failed: 1,
+        tools_skipped: 0,
+        credential_issues: [],
+        results: [],
+      });
+
+      setStoreState({
+        buildPhase: "draft_ready",
+        buildSessionId: "session-123",
+      });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1" }),
+      );
+
+      await act(async () => {
+        await result.current.handleStartTest();
+      });
+
+      expect(mockHandleTestComplete).toHaveBeenCalledWith(
+        false,
+        expect.stringContaining("failed"),
       );
     });
   });
 
   // -- Event listeners ---------------------------------------------------
 
-  describe("n8n-test-status listener", () => {
-    it("filters events by test_id", async () => {
+  describe("build-test-tool-result listener", () => {
+    it("registers a listener for build-test-tool-result events", async () => {
       setStoreState({
         buildPhase: "testing",
-        buildTestId: "build-test-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        buildSessionId: "session-123",
       });
 
       renderHook(() => useMatrixLifecycle({ personaId: "persona-1" }));
 
-      // Wait for listeners to be registered
       await act(async () => {});
 
-      // Simulate event with wrong test_id
-      simulateEvent("n8n-test-status", {
-        test_id: "other-test-id",
-        status: "completed",
-        passed: true,
-      });
-
-      expect(mockHandleTestComplete).not.toHaveBeenCalled();
+      expect(listenerMap.has("build-test-tool-result")).toBe(true);
     });
 
-    it("calls handleTestComplete on completed+passed status", async () => {
+    it("filters events by session_id", async () => {
       setStoreState({
         buildPhase: "testing",
-        buildTestId: "build-test-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        buildSessionId: "session-123",
       });
 
       renderHook(() => useMatrixLifecycle({ personaId: "persona-1" }));
 
       await act(async () => {});
 
-      simulateEvent("n8n-test-status", {
-        test_id: "build-test-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-        status: "completed",
-        passed: true,
+      // Simulate event with wrong session_id
+      simulateEvent("build-test-tool-result", {
+        session_id: "other-session",
+        tool_name: "slack",
+        status: "passed",
+        tested: 1,
+        total: 1,
       });
 
-      expect(mockHandleTestComplete).toHaveBeenCalledWith(true, "");
+      expect(mockAppendToolTestResult).not.toHaveBeenCalled();
     });
 
-    it("calls handleTestFailed on failed status", async () => {
+    it("appends tool test result on matching session_id", async () => {
       setStoreState({
         buildPhase: "testing",
-        buildTestId: "build-test-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        buildSessionId: "session-123",
       });
 
       renderHook(() => useMatrixLifecycle({ personaId: "persona-1" }));
 
       await act(async () => {});
 
-      simulateEvent("n8n-test-status", {
-        test_id: "build-test-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-        status: "failed",
-        error: "Assertion failed",
+      simulateEvent("build-test-tool-result", {
+        session_id: "session-123",
+        tool_name: "slack",
+        status: "passed",
+        http_status: 200,
+        latency_ms: 150,
+        tested: 1,
+        total: 1,
       });
 
-      expect(mockHandleTestFailed).toHaveBeenCalledWith("Assertion failed");
-    });
-  });
-
-  describe("n8n-test-output listener", () => {
-    it("appends output lines via appendTestOutput", async () => {
-      setStoreState({
-        buildPhase: "testing",
-        buildTestId: "build-test-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-      });
-
-      renderHook(() => useMatrixLifecycle({ personaId: "persona-1" }));
-
-      await act(async () => {});
-
-      simulateEvent("n8n-test-output", {
-        test_id: "build-test-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-        line: "Running test case 1...",
-      });
-
-      expect(mockAppendTestOutput).toHaveBeenCalledWith(
-        "Running test case 1...",
+      expect(mockAppendToolTestResult).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool_name: "slack",
+          status: "passed",
+        }),
       );
-    });
-
-    it("filters output events by test_id", async () => {
-      setStoreState({
-        buildPhase: "testing",
-        buildTestId: "build-test-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-      });
-
-      renderHook(() => useMatrixLifecycle({ personaId: "persona-1" }));
-
-      await act(async () => {});
-
-      simulateEvent("n8n-test-output", {
-        test_id: "some-other-test",
-        line: "Should be ignored",
-      });
-
-      expect(mockAppendTestOutput).not.toHaveBeenCalled();
+      expect(mockAppendTestOutput).toHaveBeenCalled();
     });
   });
 
   // -- handleRefine ------------------------------------------------------
 
   describe("handleRefine", () => {
-    const mockHandleGenerate = vi.fn().mockResolvedValue(undefined);
-
-    it("starts a new build session with refinement text and previous agent_ir context", async () => {
-      const draftIR = { name: "My Bot", description: "A helper", credential_links: {} };
+    it("calls answerBuildQuestion with _refine cellKey", async () => {
       setStoreState({
         buildPhase: "draft_ready",
-        buildDraft: draftIR,
+        buildSessionId: "session-123",
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1", handleGenerate: mockHandleGenerate }),
+        useMatrixLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
         await result.current.handleRefine("Please update the Slack integration");
       });
 
-      expect(mockHandleGenerate).toHaveBeenCalledWith(
-        expect.stringContaining("[REFINEMENT]"),
-        "persona-1",
-      );
-      expect(mockHandleGenerate).toHaveBeenCalledWith(
-        expect.stringContaining("Please update the Slack integration"),
-        "persona-1",
+      expect(mockAnswerBuildQuestion).toHaveBeenCalledWith(
+        "session-123",
+        "_refine",
+        "Please update the Slack integration",
       );
     });
 
-    it("includes previous buildDraft as JSON context in the intent string", async () => {
-      const draftIR = { name: "My Bot", tools: ["slack"] };
+    it("resets test state by calling handleRejectTest before refining", async () => {
       setStoreState({
         buildPhase: "draft_ready",
-        buildDraft: draftIR,
+        buildSessionId: "session-123",
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1", handleGenerate: mockHandleGenerate }),
-      );
-
-      await act(async () => {
-        await result.current.handleRefine("Add email support");
-      });
-
-      const intent = mockHandleGenerate.mock.calls[0]![0] as string;
-      expect(intent).toContain(JSON.stringify(draftIR));
-    });
-
-    it("resets test state by calling handleRejectTest before starting new session", async () => {
-      setStoreState({
-        buildPhase: "draft_ready",
-        buildDraft: { name: "Bot" },
-      });
-
-      const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1", handleGenerate: mockHandleGenerate }),
+        useMatrixLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
         await result.current.handleRefine("Fix the tools");
       });
 
-      // handleRejectTest resets test state (test ID, passed, output, error)
       expect(mockHandleRejectTest).toHaveBeenCalled();
     });
 
-    it("only callable when buildPhase is draft_ready", async () => {
+    it("only callable when buildPhase is draft_ready or test_complete", async () => {
       setStoreState({
         buildPhase: "testing",
-        buildDraft: { name: "Bot" },
+        buildSessionId: "session-123",
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1", handleGenerate: mockHandleGenerate }),
+        useMatrixLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
         await result.current.handleRefine("some feedback");
       });
 
-      expect(mockHandleGenerate).not.toHaveBeenCalled();
+      expect(mockAnswerBuildQuestion).not.toHaveBeenCalled();
     });
   });
 
   // -- handlePromote ----------------------------------------------------
 
   describe("handlePromote", () => {
-    it("calls updatePersona with enabled=true on the draft persona", async () => {
-      const draftIR = { name: "Production Bot", description: "Does things", credential_links: { slack: "cred-1" } };
+    it("calls promoteBuildDraft when draft has rich agent_ir", async () => {
+      const draftIR = { system_prompt: "You are a bot", tools: ["slack"], triggers: [] };
+      setStoreState({
+        buildPhase: "test_complete",
+        buildTestPassed: true,
+        buildDraft: draftIR,
+        buildSessionId: "session-123",
+      });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1" }),
+      );
+
+      await act(async () => {
+        await result.current.handlePromote();
+      });
+
+      expect(mockPromoteBuildDraft).toHaveBeenCalledWith("session-123", "persona-1");
+    });
+
+    it("falls back to updatePersona when draft has no rich fields", async () => {
+      const draftIR = { name: "Bot", description: "Desc" };
       setStoreState({
         buildPhase: "test_complete",
         buildTestPassed: true,
@@ -480,92 +446,8 @@ describe("useMatrixLifecycle", () => {
       );
     });
 
-    it("sets design_context with credential_links from buildDraft", async () => {
-      const draftIR = { name: "Bot", description: "Desc", credential_links: { slack: "cred-1", github: "cred-2" } };
-      setStoreState({
-        buildPhase: "test_complete",
-        buildTestPassed: true,
-        buildDraft: draftIR,
-        buildSessionId: "session-123",
-      });
-
-      const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
-      );
-
-      await act(async () => {
-        await result.current.handlePromote();
-      });
-
-      expect(mockBuildUpdateInput).toHaveBeenCalledWith(
-        expect.objectContaining({
-          design_context: expect.stringContaining("credential_links"),
-        }),
-      );
-    });
-
-    it("checks credential coverage and rejects if missing credentials", async () => {
-      mockComputeCredentialCoverage.mockReturnValueOnce({
-        covered: false,
-        missing: ["github_token"],
-        total: 2,
-        linked: 1,
-      });
-
-      const draftIR = { name: "Bot", description: "Desc", credential_links: { slack: "cred-1" } };
-      setStoreState({
-        buildPhase: "test_complete",
-        buildTestPassed: true,
-        buildDraft: draftIR,
-        buildSessionId: "session-123",
-      });
-
-      const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
-      );
-
-      let promoteResult: { success: boolean; coverage: { covered: boolean; missing: string[] } } | undefined;
-      await act(async () => {
-        promoteResult = await result.current.handlePromote();
-      });
-
-      expect(promoteResult!.success).toBe(false);
-      expect(promoteResult!.coverage.missing).toEqual(["github_token"]);
-      expect(mockUpdatePersona).not.toHaveBeenCalled();
-    });
-
-    it("returns CoverageResult with missing list when coverage fails", async () => {
-      mockComputeCredentialCoverage.mockReturnValueOnce({
-        covered: false,
-        missing: ["slack_token", "github_token"],
-        total: 3,
-        linked: 1,
-      });
-
-      const draftIR = { name: "Bot", credential_links: {} };
-      setStoreState({
-        buildPhase: "test_complete",
-        buildTestPassed: true,
-        buildDraft: draftIR,
-        buildSessionId: "session-123",
-      });
-
-      const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
-      );
-
-      let promoteResult: { success: boolean; coverage: { missing: string[] } } | undefined;
-      await act(async () => {
-        promoteResult = await result.current.handlePromote();
-      });
-
-      expect(promoteResult!.success).toBe(false);
-      expect(promoteResult!.coverage.missing).toContain("slack_token");
-      expect(promoteResult!.coverage.missing).toContain("github_token");
-    });
-
     it("transitions to promoted phase on success", async () => {
-      const draftIR = { name: "Bot", description: "Desc", credential_links: { slack: "cred-1" } };
+      const draftIR = { system_prompt: "You are a bot", tools: [] };
       setStoreState({
         buildPhase: "test_complete",
         buildTestPassed: true,
@@ -589,8 +471,8 @@ describe("useMatrixLifecycle", () => {
       );
     });
 
-    it("returns success true with coverage when promotion succeeds", async () => {
-      const draftIR = { name: "Bot", description: "Desc", credential_links: { slack: "cred-1" } };
+    it("returns PromoteResult with entity counts on success", async () => {
+      const draftIR = { system_prompt: "You are a bot", tools: [] };
       setStoreState({
         buildPhase: "test_complete",
         buildTestPassed: true,
@@ -602,13 +484,14 @@ describe("useMatrixLifecycle", () => {
         useMatrixLifecycle({ personaId: "persona-1" }),
       );
 
-      let promoteResult: { success: boolean; coverage: { covered: boolean } } | undefined;
+      let promoteResult: { success: boolean; triggersCreated: number; toolsCreated: number } | undefined;
       await act(async () => {
         promoteResult = await result.current.handlePromote();
       });
 
       expect(promoteResult!.success).toBe(true);
-      expect(promoteResult!.coverage.covered).toBe(true);
+      expect(promoteResult!.triggersCreated).toBe(2);
+      expect(promoteResult!.toolsCreated).toBe(3);
     });
 
     it("guards against non-test_complete phase", async () => {
@@ -616,6 +499,7 @@ describe("useMatrixLifecycle", () => {
         buildPhase: "draft_ready",
         buildTestPassed: true,
         buildDraft: { name: "Bot" },
+        buildSessionId: "session-123",
       });
 
       const { result } = renderHook(() =>
@@ -629,6 +513,7 @@ describe("useMatrixLifecycle", () => {
 
       expect(promoteResult!.success).toBe(false);
       expect(mockUpdatePersona).not.toHaveBeenCalled();
+      expect(mockPromoteBuildDraft).not.toHaveBeenCalled();
     });
 
     it("guards against buildTestPassed not being true", async () => {
@@ -636,6 +521,7 @@ describe("useMatrixLifecycle", () => {
         buildPhase: "test_complete",
         buildTestPassed: false,
         buildDraft: { name: "Bot" },
+        buildSessionId: "session-123",
       });
 
       const { result } = renderHook(() =>
@@ -649,6 +535,7 @@ describe("useMatrixLifecycle", () => {
 
       expect(promoteResult!.success).toBe(false);
       expect(mockUpdatePersona).not.toHaveBeenCalled();
+      expect(mockPromoteBuildDraft).not.toHaveBeenCalled();
     });
   });
 
@@ -724,6 +611,27 @@ describe("useMatrixLifecycle", () => {
         "line 1",
         "line 2",
       ]);
+    });
+
+    it("exposes buildToolTestResults from store", () => {
+      const results = [{ tool_name: "slack", status: "passed" }];
+      setStoreState({ buildToolTestResults: results });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1" }),
+      );
+
+      expect(result.current.buildToolTestResults).toEqual(results);
+    });
+
+    it("exposes buildTestSummary from store", () => {
+      setStoreState({ buildTestSummary: "3 passed, 0 failed" });
+
+      const { result } = renderHook(() =>
+        useMatrixLifecycle({ personaId: "persona-1" }),
+      );
+
+      expect(result.current.buildTestSummary).toBe("3 passed, 0 failed");
     });
   });
 });

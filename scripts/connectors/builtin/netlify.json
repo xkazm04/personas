@@ -4,7 +4,7 @@
   "label": "Netlify",
   "color": "#00C7B7",
   "icon_url": "/icons/connectors/netlify.svg",
-  "category": "devops",
+  "category": "cloud",
   "fields": [
     {
       "key": "access_token",

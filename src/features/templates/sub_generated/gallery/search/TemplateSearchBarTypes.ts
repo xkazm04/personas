@@ -25,6 +25,10 @@ export interface TemplateSearchBarProps {
   coverageFilter?: string;
   onCoverageFilterChange?: (value: string) => void;
   coverageCounts?: { all: number; ready: number; partial: number };
+  // Component filter
+  componentFilter?: string[];
+  onComponentFilterChange?: (components: string[]) => void;
+  availableComponents?: { key: string; count: number }[];
   // Density & view mode
   density?: Density;
   onDensityChange?: (d: Density) => void;

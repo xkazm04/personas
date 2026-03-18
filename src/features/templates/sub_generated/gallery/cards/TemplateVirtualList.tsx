@@ -12,7 +12,6 @@ interface TemplateVirtualListProps {
   displayItems: PersonaDesignReview[];
   density: Density;
   expandedRow: string | null;
-  readinessScores: Map<string, number>;
   searchQuery: string;
   isAiResult: boolean;
   installedConnectorNames: Set<string>;
@@ -38,7 +37,6 @@ export function TemplateVirtualList({
   displayItems,
   density,
   expandedRow,
-  readinessScores,
   searchQuery,
   isAiResult,
   installedConnectorNames,
@@ -95,6 +93,9 @@ export function TemplateVirtualList({
       <div className="flex items-center border-b border-primary/10 bg-secondary/80 flex-shrink-0" style={{ backgroundColor: 'hsl(var(--background))' }}>
         {density === 'comfortable' && <div className="w-14 px-6 py-3" />}
         <div className="flex-1 text-left text-sm font-medium text-muted-foreground/70 px-4 py-2">Template Name</div>
+        <div className={`text-sm font-medium text-muted-foreground/70 px-4 py-2 flex-shrink-0 ${density === 'compact' ? 'w-32 text-center' : 'w-auto text-right'}`}>
+          Components
+        </div>
         {density === 'comfortable' && (
           <div className="w-28 text-center text-sm font-medium text-muted-foreground/70 px-4 py-2">Adoptions</div>
         )}
@@ -108,7 +109,6 @@ export function TemplateVirtualList({
             const review = displayItems[virtualRow.index];
             if (!review) return null;
             const isExpanded = density === 'comfortable' && expandedRow === review.id;
-            const readinessScore = readinessScores.get(review.id) ?? 0;
 
             return (
               <div
@@ -120,16 +120,15 @@ export function TemplateVirtualList({
                 {density === 'compact' ? (
                   <CompactRow
                     review={review}
-                    readinessScore={readinessScore}
                     searchQuery={searchQuery}
                     isAiResult={isAiResult}
                     modals={modals}
+                    credentialServiceTypes={credentialServiceTypes}
                   />
                 ) : (
                   <ComfortableRow
                     review={review}
                     isExpanded={isExpanded}
-                    readinessScore={readinessScore}
                     searchQuery={searchQuery}
                     isAiResult={isAiResult}
                     installedConnectorNames={installedConnectorNames}

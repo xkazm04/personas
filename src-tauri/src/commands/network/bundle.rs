@@ -27,7 +27,7 @@ pub fn export_persona_bundle(
     let (bytes, result) = bundle::export_bundle(&state.db, &resource_ids)?;
 
     std::fs::write(&save_path, &bytes)
-        .map_err(|e| AppError::Io(e))?;
+        .map_err(AppError::Io)?;
 
     tracing::info!(
         path = %save_path,
@@ -49,7 +49,7 @@ pub fn preview_bundle_import(
 ) -> Result<BundleImportPreview, AppError> {
     require_auth_sync(&state)?;
     let bytes = std::fs::read(&file_path)
-        .map_err(|e| AppError::Io(e))?;
+        .map_err(AppError::Io)?;
     bundle::preview_bundle(&state.db, &bytes)
 }
 
@@ -72,7 +72,7 @@ pub fn apply_bundle_import(
         })
     } else {
         std::fs::read(&file_path)
-            .map_err(|e| AppError::Io(e))?
+            .map_err(AppError::Io)?
     };
 
     if bytes.is_empty() {
@@ -102,6 +102,6 @@ pub fn verify_bundle(
 ) -> Result<BundleVerification, AppError> {
     require_auth_sync(&state)?;
     let bytes = std::fs::read(&file_path)
-        .map_err(|e| AppError::Io(e))?;
+        .map_err(AppError::Io)?;
     bundle::verify_bundle(&state.db, &bytes)
 }

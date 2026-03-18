@@ -279,22 +279,29 @@ export function useBuildSession(
   // -- Hydration on mount ----------------------------------------------------
 
   useEffect(() => {
-    if (!personaId) return;
+    // Derive effective persona ID: from prop, or from existing store state
+    const currentStore = useAgentStore.getState();
+    const effectivePersonaId = personaId ?? currentStore.buildPersonaId;
+
+    if (!effectivePersonaId) return;
 
     let cancelled = false;
 
     (async () => {
       // Skip hydration if the store already has a valid session with cell data
       // (happens when navigating away and back — Zustand state survives but Channel detached)
-      const currentStore = useAgentStore.getState();
       if (currentStore.buildSessionId && Object.keys(currentStore.buildCellStates).length > 0) {
         // Restore sessionIdRef so answerQuestion can reach the backend
         sessionIdRef.current = currentStore.buildSessionId;
         (window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__ = true;
+        // Ensure buildPersonaId is set (may be null if component unmounted and remounted)
+        if (!currentStore.buildPersonaId) {
+          useAgentStore.setState({ buildPersonaId: effectivePersonaId });
+        }
         return;
       }
 
-      const session = await getActiveBuildSession(personaId);
+      const session = await getActiveBuildSession(effectivePersonaId);
       if (cancelled) return;
       if (session) {
         sessionIdRef.current = session.id;

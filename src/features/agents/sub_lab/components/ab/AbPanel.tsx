@@ -65,12 +65,12 @@ export function AbPanel() {
     if (runId) setActiveRunId(runId);
   };
 
-  const renderVersionPicker = (label: string, color: string, value: string | null, onChange: (v: string) => void) => (
+  const renderVersionPicker = (label: string, color: string, value: string | null, onChange: (v: string) => void, testId: string) => (
     <div className="space-y-1">
       <label className={`text-sm font-medium text-${color}-400`}>{label}</label>
       <Listbox itemCount={versionOptions.length} onSelectFocused={(idx) => { const opt = versionOptions[idx]; if (opt) onChange(opt.value); }} ariaLabel={`Select ${label}`}
         renderTrigger={({ isOpen, toggle }) => (
-          <button onClick={toggle} disabled={isLabRunning}
+          <button onClick={toggle} disabled={isLabRunning} data-testid={testId}
             title={isLabRunning ? 'Cannot change while test is running' : undefined}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? `bg-${color}-500/10 border-${color}-500/30` : 'bg-background/30 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
             <span className="text-foreground/80">{versionOptions.find((o) => o.value === value)?.label ?? 'Select version'}</span>
@@ -80,7 +80,7 @@ export function AbPanel() {
         {({ close, focusIndex }) => (
           <div className="py-1 bg-background border border-primary/20 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
             {versionOptions.map((opt, i) => (
-              <button key={opt.value} onClick={() => { onChange(opt.value); close(); }}
+              <button key={opt.value} data-testid={`ab-version-opt-${opt.label.replace(/\s+/g, '-').toLowerCase()}`} onClick={() => { onChange(opt.value); close(); }}
                 className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${focusIndex === i ? 'bg-primary/15 text-foreground' : ''} ${value === opt.value ? `text-${color}-400 font-medium` : 'text-muted-foreground/90 hover:bg-secondary/30'}`}>
                 {opt.label}
               </button>
@@ -96,8 +96,8 @@ export function AbPanel() {
       <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
         <div className="p-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            {renderVersionPicker('Version A', 'blue', versionAId, setVersionAId)}
-            {renderVersionPicker('Version B', 'violet', versionBId, setVersionBId)}
+            {renderVersionPicker('Version A', 'blue', versionAId, setVersionAId, 'ab-version-a-trigger')}
+            {renderVersionPicker('Version B', 'violet', versionBId, setVersionBId, 'ab-version-b-trigger')}
           </div>
 
           {versionA && versionB && (
@@ -150,7 +150,7 @@ export function AbPanel() {
           </div>
 
           {isLabRunning ? (
-            <button onClick={() => void handleCancel()} className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20">
+            <button data-testid="ab-cancel-btn" onClick={() => void handleCancel()} className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20">
               <Square className="w-4 h-4" />Cancel A/B Test
             </button>
           ) : (
@@ -164,7 +164,7 @@ export function AbPanel() {
               placement="top"
               delay={200}
             >
-              <button onClick={() => void handleStart()} disabled={!versionAId || !versionBId || selectedModels.size === 0}
+              <button data-testid="ab-run-btn" onClick={() => void handleStart()} disabled={!versionAId || !versionBId || selectedModels.size === 0}
                 className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
                 <Play className="w-4 h-4" />Run A/B Test
               </button>

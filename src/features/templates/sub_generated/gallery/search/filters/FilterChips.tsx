@@ -1,6 +1,7 @@
 import { CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { getCategoryMeta } from './searchConstants';
+import { ARCH_CATEGORIES } from '../../matrix/architecturalCategories';
 
 export function FilterChips({
   selectedCategory,
@@ -10,6 +11,8 @@ export function FilterChips({
   coverageFilter,
   onCoverageFilterChange,
   coverageCounts,
+  componentFilter,
+  onComponentFilterChange,
 }: {
   selectedCategory: string | null;
   connectorFilter: string[];
@@ -18,6 +21,8 @@ export function FilterChips({
   coverageFilter?: string;
   onCoverageFilterChange?: (value: string) => void;
   coverageCounts?: { all: number; ready: number; partial: number };
+  componentFilter?: string[];
+  onComponentFilterChange?: (components: string[]) => void;
 }) {
   const activeCategoryMeta = selectedCategory ? getCategoryMeta(selectedCategory) : null;
   const ActiveCategoryIcon = activeCategoryMeta?.icon ?? null;
@@ -53,6 +58,34 @@ export function FilterChips({
                 {meta.label}
                 <button
                   onClick={() => onConnectorFilterChange(connectorFilter.filter((c) => c !== name))}
+                  className="ml-0.5 hover:text-white transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Active component filter chips */}
+      {componentFilter && componentFilter.length > 0 && onComponentFilterChange && (
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {(selectedCategory || connectorFilter.length > 0 || componentFilter.length > 0) && <div className="w-px h-5 bg-primary/10 mx-0.5" />}
+          {componentFilter.map((key) => {
+            const cat = ARCH_CATEGORIES[key];
+            if (!cat) return null;
+            const CatIcon = cat.icon;
+            return (
+              <span
+                key={key}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full border border-violet-500/20 text-violet-300"
+                style={{ backgroundColor: `${cat.color}15` }}
+              >
+                <CatIcon className="w-3 h-3" style={{ color: cat.color }} />
+                {cat.label}
+                <button
+                  onClick={() => onComponentFilterChange(componentFilter.filter((c) => c !== key))}
                   className="ml-0.5 hover:text-white transition-colors"
                 >
                   <X className="w-3 h-3" />

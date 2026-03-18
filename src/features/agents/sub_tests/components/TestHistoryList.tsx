@@ -58,8 +58,9 @@ export function TestHistoryList({
             })();
 
             return (
-              <div key={run.id} className="border border-primary/10 rounded-xl overflow-hidden">
+              <div key={run.id} data-testid={`test-run-${run.id}`} className="border border-primary/10 rounded-xl overflow-hidden">
                 <button
+                  data-testid={`test-run-expand-${run.id}`}
                   onClick={() => toggleExpand(run.id)}
                   className="w-full flex items-center gap-3 px-4 py-3 bg-background/30 hover:bg-secondary/20 transition-colors text-left"
                 >
@@ -92,6 +93,7 @@ export function TestHistoryList({
                     </div>
                   </div>
                   <button
+                    data-testid={`test-run-delete-${run.id}`}
                     onClick={(e) => { e.stopPropagation(); onDelete(run.id); }}
                     className="p-1.5 rounded-lg hover:bg-red-500/15 text-muted-foreground/80 hover:text-red-400 transition-colors"
                     title="Delete test run"

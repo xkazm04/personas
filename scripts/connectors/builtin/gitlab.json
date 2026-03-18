@@ -4,7 +4,7 @@
   "label": "GitLab",
   "color": "#FC6D26",
   "icon_url": "/icons/connectors/gitlab.svg",
-  "category": "development",
+  "category": "devops",
   "fields": [
     {
       "key": "personal_access_token",
@@ -34,7 +34,12 @@
     "setup_guide": "1. Go to GitLab > User Settings > Access Tokens\n2. Click 'Add new token', set a name and expiration\n3. Select the 'api' scope for full API access\n4. Click 'Create personal access token' and copy the glpat-... value",
     "pricing_tier": "free",
     "auth_methods": [
-      {"id": "pat", "label": "PAT", "type": "credential", "is_default": true}
+      {
+        "id": "pat",
+        "label": "PAT",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

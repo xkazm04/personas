@@ -27,7 +27,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": true,
+    "template_enabled": false,
     "summary": "DuckDB embedded analytical database for OLAP workloads, Parquet, CSV, and JSON.",
     "auth_type": "file_path",
     "auth_type_label": "Database Path",
@@ -38,13 +38,18 @@
       {
         "id": "local",
         "label": "Local File",
-        "fields": ["database_path"],
+        "fields": [
+          "database_path"
+        ],
         "auth_type_label": "Database Path"
       },
       {
         "id": "motherduck",
         "label": "MotherDuck Cloud",
-        "fields": ["database_path", "motherduck_token"],
+        "fields": [
+          "database_path",
+          "motherduck_token"
+        ],
         "auth_type_label": "MotherDuck Token"
       }
     ]

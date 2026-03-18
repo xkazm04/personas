@@ -4,6 +4,7 @@ use crate::db::DbPool;
 use crate::error::AppError;
 
 /// Append a tool execution entry to the audit log.
+#[allow(clippy::too_many_arguments)]
 pub fn insert(
     pool: &DbPool,
     tool_id: &str,

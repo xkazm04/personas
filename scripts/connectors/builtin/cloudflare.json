@@ -4,7 +4,7 @@
   "label": "Cloudflare",
   "color": "#F38020",
   "icon_url": "/icons/connectors/cloudflare.svg",
-  "category": "devops",
+  "category": "cloud",
   "fields": [
     {
       "key": "api_token",

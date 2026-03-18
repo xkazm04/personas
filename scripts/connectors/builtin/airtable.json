@@ -4,7 +4,7 @@
   "label": "Airtable",
   "color": "#18BFFF",
   "icon_url": "/icons/connectors/airtable.svg",
-  "category": "productivity",
+  "category": "database",
   "fields": [
     {
       "key": "api_key",

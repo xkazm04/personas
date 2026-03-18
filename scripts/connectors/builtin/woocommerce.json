@@ -4,7 +4,7 @@
   "label": "WooCommerce",
   "color": "#96588A",
   "icon_url": "/icons/connectors/woocommerce.svg",
-  "category": "commerce",
+  "category": "ecommerce",
   "fields": [
     {
       "key": "base_url",
@@ -40,7 +40,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": true,
+    "template_enabled": false,
     "summary": "WooCommerce open-source e-commerce platform for managing orders, products, and customers via the WooCommerce REST API v3.",
     "auth_type": "api_key",
     "auth_type_label": "API Key",
@@ -48,7 +48,12 @@
     "setup_guide": "1. In your WordPress admin, go to WooCommerce -> Settings -> Advanced -> REST API.\n2. Click 'Add Key'.\n3. Enter a description, select a user, and set permissions to Read/Write.\n4. Click 'Generate API key'.\n5. Copy the Consumer Key and Consumer Secret.\n6. Paste both values and your store URL here.",
     "pricing_tier": "free",
     "auth_methods": [
-      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

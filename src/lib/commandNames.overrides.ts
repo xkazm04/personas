@@ -55,4 +55,9 @@ export type UnregisteredCommand =
   | "cloud_webhook_relay_status"
   | "smee_get_channel_url"
   | "smee_set_channel_url"
-  | "smee_disconnect";
+  | "smee_disconnect"
+  | "smee_relay_list"
+  | "smee_relay_create"
+  | "smee_relay_update"
+  | "smee_relay_set_status"
+  | "smee_relay_delete";

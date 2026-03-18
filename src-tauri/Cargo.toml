@@ -5,7 +5,7 @@ description = "Personas AI Agent Platform"
 authors = ["Personas"]
 license = "MIT"
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.80.0"
 default-run = "personas-desktop"
 
 [lib]

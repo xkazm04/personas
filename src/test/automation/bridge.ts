@@ -338,6 +338,12 @@ const bridge: TestBridge = {
     return { success: true, query };
   },
 
+  /** Set buildPersonaId without affecting other state */
+  setBuildPersonaId(personaId: string) {
+    useAgentStore.setState({ buildPersonaId: personaId });
+    return { success: true, personaId };
+  },
+
   /** Simulate build state for testing (sets Zustand store directly) */
   simulateBuild(phase: string, personaId: string, cells: Record<string, string>) {
     useAgentStore.setState({

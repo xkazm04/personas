@@ -1,0 +1,49 @@
+{
+  "id": "builtin-obsidian",
+  "name": "obsidian",
+  "label": "Obsidian",
+  "color": "#7C3AED",
+  "icon_url": "/icons/connectors/obsidian.svg",
+  "category": "productivity",
+  "fields": [
+    {
+      "key": "base_url",
+      "label": "Server URL",
+      "type": "url",
+      "required": false,
+      "placeholder": "https://127.0.0.1:27124",
+      "helpText": "URL of your Obsidian Local REST API server (defaults to https://127.0.0.1:27124)"
+    },
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Find in Obsidian Settings > Local REST API > API Key"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{base_url|https://127.0.0.1:27124}}/",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
+    "description": "Validates API key via Obsidian Local REST API root endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Obsidian vault access via the Local REST API plugin for reading, writing, and searching notes.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://coddingtonbear.github.io/obsidian-local-rest-api/",
+    "setup_guide": "1. Install the Local REST API plugin from Obsidian Community Plugins\n2. Enable the plugin in Obsidian Settings\n3. Copy the API Key from Settings > Local REST API\n4. Paste the API Key here\n5. Optionally set a custom server URL (default: https://127.0.0.1:27124)",
+    "pricing_tier": "free",
+    "auth_methods": [
+      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true},
+      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "obsidian-mcp-server", "transport": "stdio", "suggested_env": {"OBSIDIAN_API_KEY": "", "OBSIDIAN_API_URL": "https://127.0.0.1:27124"}}
+    ]
+  }
+}

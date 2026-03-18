@@ -28,6 +28,7 @@ const MAX_LABEL_LEN: usize = 50;
 const MAX_COMMENT_LEN: usize = 2000;
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn create_template_feedback(
     state: State<'_, Arc<AppState>>,
     review_id: String,

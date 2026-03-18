@@ -9,10 +9,11 @@ use url::Url;
 use crate::cloud;
 use crate::cloud::client::CloudClient;
 use crate::db::repos::core::settings;
-use crate::db::models::UpdateExecutionStatus;
+use crate::db::models::{UpdateExecutionStatus, CreateSmeeRelayInput, UpdateSmeeRelayInput, SmeeRelay};
 use crate::db::repos::core::personas;
 use crate::db::repos::execution::executions;
 use crate::db::repos::resources::tools;
+use crate::db::repos::communication::smee_relays as smee_relay_repo;
 use crate::engine;
 use crate::error::AppError;
 use crate::ipc_auth::require_cloud_auth;
@@ -736,4 +737,68 @@ pub async fn smee_disconnect(
     settings::delete(&state.db, engine::smee_relay::SETTINGS_KEY)?;
     tracing::info!("Smee relay disconnected");
     Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// Smee Relay CRUD
+// ---------------------------------------------------------------------------
+
+/// List all configured Smee relays.
+#[tauri::command]
+pub async fn smee_relay_list(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<SmeeRelay>, AppError> {
+    require_cloud_auth(&state, "smee_relay_list").await?;
+    smee_relay_repo::list(&state.db)
+}
+
+/// Create a new Smee relay.
+#[tauri::command]
+pub async fn smee_relay_create(
+    state: State<'_, Arc<AppState>>,
+    input: CreateSmeeRelayInput,
+) -> Result<SmeeRelay, AppError> {
+    require_cloud_auth(&state, "smee_relay_create").await?;
+    // Validate URL
+    let stripped = input.channel_url.strip_prefix("https://smee.io/")
+        .ok_or_else(|| AppError::Validation("Smee URL must be https://smee.io/<channel>".into()))?;
+    if stripped.is_empty() || stripped.contains('/') {
+        return Err(AppError::Validation("Smee URL must be https://smee.io/<channel>".into()));
+    }
+    smee_relay_repo::create(&state.db, input)
+}
+
+/// Update an existing Smee relay.
+#[tauri::command]
+pub async fn smee_relay_update(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    input: UpdateSmeeRelayInput,
+) -> Result<SmeeRelay, AppError> {
+    require_cloud_auth(&state, "smee_relay_update").await?;
+    smee_relay_repo::update(&state.db, &id, input)
+}
+
+/// Set the status of a Smee relay (active/paused).
+#[tauri::command]
+pub async fn smee_relay_set_status(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    status: String,
+) -> Result<SmeeRelay, AppError> {
+    require_cloud_auth(&state, "smee_relay_set_status").await?;
+    if !["active", "paused"].contains(&status.as_str()) {
+        return Err(AppError::Validation("Status must be 'active' or 'paused'".into()));
+    }
+    smee_relay_repo::set_status(&state.db, &id, &status)
+}
+
+/// Delete a Smee relay.
+#[tauri::command]
+pub async fn smee_relay_delete(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<(), AppError> {
+    require_cloud_auth(&state, "smee_relay_delete").await?;
+    smee_relay_repo::delete(&state.db, &id)
 }

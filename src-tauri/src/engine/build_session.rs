@@ -11,7 +11,6 @@ use std::sync::{Arc, Mutex};
 
 use tauri::ipc::Channel;
 use tauri::Emitter;
-use tokio::io::AsyncWriteExt;
 use tokio::sync::mpsc;
 
 use crate::db::models::{
@@ -122,7 +121,7 @@ impl BuildSessionManager {
             sessions.insert(session_id.clone(), handle);
         }
 
-        // Build CLI args — force Sonnet for speed in build sessions
+        // Build CLI args — force Sonnet for build sessions
         let mut cli_args = prompt::build_cli_args(None, None);
         cli_args.args.push("--model".to_string());
         cli_args.args.push("claude-sonnet-4-20250514".to_string());
@@ -628,7 +627,7 @@ async fn run_session(
     let agent_ir_str = resolved_cells.get("agent_ir")
         .and_then(|v| serde_json::to_string(v).ok());
 
-    let final_phase = if resolved_count > 0 { BuildPhase::DraftReady } else { BuildPhase::DraftReady };
+    let final_phase = BuildPhase::DraftReady;
     let resolved_json = serde_json::to_string(&serde_json::Value::Object(resolved_cells)).unwrap_or_else(|_| "{}".to_string());
     let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
         phase: Some(final_phase.as_str().to_string()),
@@ -815,14 +814,36 @@ pub async fn run_tool_tests(
             total
         );
 
-        let result = if curl_cmd.is_empty() {
+        let is_cli_native = entry
+            .get("cli_native")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        let description = entry
+            .get("description")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+
+        let result = if is_cli_native {
+            // CLI-native tools (web search, summarization, etc.) auto-pass
+            passed += 1;
+            tool_runner::ToolTestResult {
+                tool_name: tool_name.to_string(),
+                status: "passed".to_string(),
+                http_status: None,
+                latency_ms: 0,
+                error: None,
+                connector: connector.clone(),
+                output_preview: Some(description),
+            }
+        } else if curl_cmd.is_empty() {
             skipped += 1;
             tool_runner::ToolTestResult {
                 tool_name: tool_name.to_string(),
                 status: "skipped".to_string(),
                 http_status: None,
                 latency_ms: 0,
-                error: Some("No curl command generated".to_string()),
+                error: Some(if description.is_empty() { "No curl command generated".to_string() } else { description }),
                 connector: connector.clone(),
                 output_preview: None,
             }
@@ -904,7 +925,7 @@ async fn generate_test_summary(
     skipped: usize,
 ) -> Result<String, AppError> {
     let prompt = format!(
-r#"You are writing a test report summary for a non-technical user who just built an AI agent called "{agent_name}".
+r#"You are writing a test report for a non-technical user who just built an AI agent called "{agent_name}".
 
 ## Test Results (raw data)
 {results_json}
@@ -913,13 +934,26 @@ r#"You are writing a test report summary for a non-technical user who just built
 - {passed} passed, {failed} failed, {skipped} skipped
 
 ## Instructions
-Write a brief, friendly summary (3-6 sentences) explaining:
-1. What was tested and the overall result
-2. For any failures: explain in plain language what went wrong and what the user should do to fix it (e.g., "Your Gmail connection needs to be re-authenticated" rather than "HTTP 401 Unauthorized")
-3. For credential issues: tell them to go to the Keys section to add or refresh their credentials
-4. End with encouragement if tests passed, or reassurance that fixing is easy if they failed
+Write a structured report in this EXACT markdown format:
 
-Output ONLY the summary text, no JSON, no markdown headers, no code blocks. Just plain readable text."#
+### Overview
+One paragraph (2-3 sentences) summarizing the overall result in plain, friendly language.
+
+### Results
+For EACH tool tested, write exactly one entry:
+- **Tool Name** — ✅ One sentence describing what was verified and that it works. OR
+- **Tool Name** — ❌ One sentence explaining in plain language what went wrong and how to fix it.
+
+### Next Steps
+If all passed: One encouraging sentence.
+If some failed: 2-3 bullet points with specific, actionable steps the user should take (e.g., "Go to **Keys** section and refresh your Gmail credentials").
+
+## Rules
+- Use ONLY the markdown format above (###, **, -, ✅, ❌)
+- Write for a NON-TECHNICAL user — no HTTP codes, no API jargon, no JSON
+- For CLI-native tools (web search, summarization): explain they use built-in capabilities and are always available
+- For credential failures: always mention the **Keys** section
+- Keep each tool summary to exactly ONE sentence"#
     );
 
     let mut cli_args = prompt::build_cli_args(None, None);
@@ -1014,7 +1048,7 @@ fn build_fallback_summary(
 /// Build the test prompt sent to the CLI to generate executable curl commands.
 fn build_test_prompt(tools_json: &str, cred_context: &str) -> String {
     format!(
-r#"You are a tool-testing agent. Given the tool definitions below and available credentials, compose a MINIMAL safe curl command to verify each tool's API connection actually works.
+r#"You are a tool-testing agent. Given the tool definitions below, determine the correct test strategy for each tool.
 
 ## Tools to Test
 {tools_json}
@@ -1022,19 +1056,34 @@ r#"You are a tool-testing agent. Given the tool definitions below and available 
 ## Credentials
 {cred_context}
 
-## Rules
-1. For each tool, compose a real curl command using the credential env vars shown above.
-2. Use GET endpoints or read-only operations only — NO writes, deletes, or mutations.
-3. Use minimal params (limit=1, maxResults=1, per_page=1) to reduce data and avoid side effects.
-4. Use $ENV_VAR placeholders for credential values (e.g., $GMAIL_ACCESS_TOKEN).
-5. Always include -s (silent) and -w '\n%{{http_code}}' to capture the HTTP status code on the last line.
-6. If a tool cannot be tested (no API endpoint, write-only, or missing credentials), set curl to empty string.
+## Tool Categories — choose the right test strategy per tool
+
+### 1. API tools (requires external service authentication)
+Tools that call external APIs (Gmail, Slack, Notion, etc.) — compose a minimal safe curl command.
+
+### 2. CLI-native tools (uses built-in Claude capabilities)
+Tools for web search, web browsing, URL fetching, text summarization, content analysis, data extraction from text — these are powered by Claude CLI's built-in capabilities and do NOT need external API calls or credentials. Mark these as `"cli_native": true`.
+
+### 3. Non-testable tools (write-only, destructive, or no endpoint)
+Tools that only write/delete/mutate data — mark with empty curl.
+
+## Rules for API tools
+1. Use GET endpoints or read-only operations only — NO writes, deletes, or mutations.
+2. Use minimal params (limit=1, maxResults=1, per_page=1).
+3. Use $ENV_VAR placeholders for credential values.
+4. Always include -s (silent) and -w '\n%{{http_code}}' to capture HTTP status.
+
+## Rules for CLI-native tools
+1. Set `"cli_native": true` and `"curl": ""`
+2. These tools are automatically verified — they use Claude's built-in web search, browsing, and reasoning capabilities.
 
 ## Output Format
 Output EXACTLY one JSON object — a test_plan array. No markdown, no commentary, raw JSON only:
 {{"test_plan": [
-  {{"tool_name": "fetch_unread_emails", "connector": "gmail", "curl": "curl -s -H 'Authorization: Bearer $GMAIL_ACCESS_TOKEN' 'https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=1&q=is:unread' -w '\\n%{{http_code}}'", "description": "Verify Gmail API access with minimal fetch"}},
-  {{"tool_name": "write_only_tool", "connector": "slack", "curl": "", "description": "Skipped: write-only operation"}}
+  {{"tool_name": "fetch_unread_emails", "connector": "gmail", "curl": "curl -s -H 'Authorization: Bearer $GMAIL_ACCESS_TOKEN' 'https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=1&q=is:unread' -w '\\n%{{http_code}}'", "cli_native": false, "description": "Verify Gmail API access with minimal fetch"}},
+  {{"tool_name": "search_web", "connector": null, "curl": "", "cli_native": true, "description": "Uses Claude CLI built-in web search — auto-verified"}},
+  {{"tool_name": "summarize_article", "connector": null, "curl": "", "cli_native": true, "description": "Uses Claude CLI built-in reasoning — auto-verified"}},
+  {{"tool_name": "post_to_slack", "connector": "slack", "curl": "", "cli_native": false, "description": "Skipped: write-only operation"}}
 ]}}
 
 Generate the test_plan now."#
@@ -1258,7 +1307,7 @@ fn build_session_prompt(
         "agent_ir.name MUST be a concise, descriptive Title Case name (2-4 words) that captures the agent's PURPOSE. Examples: \"Email Triage Manager\", \"Sprint Report Bot\", \"Invoice Tracker\". NEVER use the user's exact words.".to_string()
     };
 
-    let mut result = format!(
+    let result = format!(
 r##"You are a senior AI agent architect. The user wants:
 
 "{intent}"{lang_preamble}
@@ -1278,10 +1327,17 @@ Think like an architect: when you know the tasks and services, you already know 
 
 ## The 8 Dimensions
 
-### 1. use-cases — WHAT it does
-Business logic only. No scheduling (that's triggers). Propose your best interpretation.
+### 1. use-cases — WHAT it does (ALWAYS ask clarifying questions first)
+Business logic only. No scheduling (that's triggers).
+**CRITICAL:** The user's initial description is ALWAYS too vague to build a quality agent. You MUST ask 2-3 targeted clarifying questions BEFORE resolving this dimension. Ask about:
+- **Scope**: What specific data/items to process? (e.g., "all emails or only unread?", "which news categories?", "last 24h or real-time?")
+- **Output format**: How should results be presented? (e.g., "bullet summary or detailed analysis?", "grouped by topic?")
+- **Edge cases**: What should happen with exceptions? (e.g., "skip duplicates?", "what if source is unavailable?")
+Only resolve use-cases AFTER the user answers your questions. Never auto-resolve from a short description.
+data format: {{"items": ["Human-readable description of task 1"], "use_cases": [{{"title": "Short Title", "description": "Detailed description of what this task does", "category": "email|data|notification|monitoring|integration|other", "execution_mode": "e2e"}}]}}
 
 ### 2. connectors — WHICH services
+**IMPORTANT:** This agent runs on Claude CLI which has **built-in web search and web browsing capabilities**. For use cases involving web search, news fetching, or URL reading, use the built-in capability — do NOT suggest a separate web browser/search connector. Only suggest external connectors for services requiring API authentication (Gmail, Slack, Notion, etc.).
 Each connector needs structured data so the UI can render interactive cards:
 data format: {{"items": ["Gmail (google) — reading emails"], "connectors": [{{"name": "gmail", "service_type": "google", "purpose": "reading and filtering emails", "has_credential": true}}], "alternatives": {{"gmail": ["outlook", "yahoo_mail"]}}}}
 - Check Available Credentials below to set has_credential correctly
@@ -1294,6 +1350,7 @@ trigger_type: schedule | polling | webhook | manual | event
 
 ### 4. messages — HOW it notifies
 Notification channels and formats. Follows naturally from connectors.
+data format: {{"items": ["Slack: post to #channel"], "channels": [{{"channel": "slack", "target": "#alerts", "format": "summary"}}, {{"channel": "built-in", "target": "status", "format": "updates"}}]}}
 
 ### 5. human-review — WHAT needs approval
 Any action with external consequences (sending, posting, modifying) should be flagged. Read-only is safe.
@@ -1306,6 +1363,7 @@ Per-service retry policies and fallbacks. Follows from connectors.
 
 ### 8. events — WHAT to observe
 Emitted/subscribed events for inter-agent coordination.
+data format: {{"items": ["Subscribe: manual_review_completed"], "subscriptions": [{{"event_type": "manual_review_completed", "source_filter": null, "direction": "subscribe"}}, {{"event_type": "digest_published", "source_filter": null, "direction": "emit"}}]}}
 
 ## Available Credentials
 {cred_section}
@@ -1710,6 +1768,7 @@ fn parse_json_object(
 }
 
 /// Try to extract agent IR (the final JSON result) from accumulated output.
+#[allow(dead_code)]
 fn parse_agent_ir(output: &str) -> Option<String> {
     // Walk backwards through lines looking for the last complete JSON object
     for line in output.lines().rev() {

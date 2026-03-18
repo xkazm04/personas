@@ -1,15 +1,12 @@
 import {
-  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Download,
-  ShieldCheck,
   Sparkles,
   Workflow,
 } from 'lucide-react';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
 import { deriveConnectorReadiness } from '../../shared/ConnectorReadiness';
-import { readinessTier } from '../../shared/adoptionReadiness';
 import { RowActionMenu } from './RowActionMenu';
 import { ArchCategoryIcons } from './ArchCategoryIcons';
 import { ExpandedRowContent } from '../matrix/ExpandedRowContent';
@@ -21,7 +18,6 @@ import type { ModalStackActions } from '../modals/useModalStack';
 interface ComfortableRowProps {
   review: PersonaDesignReview;
   isExpanded: boolean;
-  readinessScore: number;
   searchQuery: string;
   isAiResult: boolean;
   installedConnectorNames: Set<string>;
@@ -42,7 +38,6 @@ interface ComfortableRowProps {
 export function ComfortableRow({
   review,
   isExpanded,
-  readinessScore,
   searchQuery,
   isAiResult,
   installedConnectorNames,
@@ -106,17 +101,6 @@ export function ComfortableRow({
                     {review.adoption_count}
                   </span>
                 )}
-                <span
-                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded border flex-shrink-0 ${readinessTier(readinessScore).bgClass}`}
-                  title={`${readinessScore}% of connectors ready`}
-                >
-                  {readinessScore === 100 ? (
-                    <CheckCircle2 className="w-2.5 h-2.5" />
-                  ) : (
-                    <ShieldCheck className="w-2.5 h-2.5" />
-                  )}
-                  {readinessScore}% ready
-                </span>
                 {flowCount > 0 && (
                   <button
                     onClick={(e) => {

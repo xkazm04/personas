@@ -82,7 +82,7 @@ pub fn init_db(app_data_dir: &PathBuf) -> Result<DbPool, AppError> {
 
 /// Initialize the user-facing database: a separate SQLite file (`personas_data.db`)
 /// that agents and users can freely read/write without risk to the internal app database.
-pub fn init_user_db(app_data_dir: &PathBuf) -> Result<UserDbPool, AppError> {
+pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
     let db_path = app_data_dir.join("personas_data.db");
 
     tracing::info!(path = %db_path.display(), "Initializing user data database");
@@ -1218,6 +1218,17 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
             fields: r#"[{"key":"base_url","label":"Server URL","type":"url","required":false,"placeholder":"https://ntfy.sh","helpText":"Your ntfy server URL (defaults to ntfy.sh public server)"},{"key":"access_token","label":"Access Token","type":"password","required":false,"placeholder":"tk_...","helpText":"Optional -- only needed for access-controlled topics"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{base_url|https://ntfy.sh}}/v1/health","method":"GET","headers":{},"description":"Validates ntfy server availability via health endpoint"}"#),
             metadata: Some(r#"{"template_enabled":true,"summary":"ntfy open-source push notification service for sending notifications to phones and desktops via simple HTTP.","auth_type":"pat","auth_type_label":"Access Token","docs_url":"https://docs.ntfy.sh/","pricing_tier":"free","auth_methods":[{"id":"pat","label":"Access Token","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
+            id: "builtin-obsidian",
+            name: "obsidian",
+            label: "Obsidian",
+            color: "#7C3AED",
+            icon_url: "/icons/connectors/obsidian.svg",
+            category: "productivity",
+            fields: r#"[{"key":"base_url","label":"Server URL","type":"url","required":false,"placeholder":"https://127.0.0.1:27124","helpText":"URL of your Obsidian Local REST API server (defaults to https://127.0.0.1:27124)"},{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Find in Obsidian Settings > Local REST API > API Key"}]"#,
+            healthcheck_config: Some(r#"{"endpoint":"{{base_url|https://127.0.0.1:27124}}/","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Obsidian Local REST API root endpoint"}"#),
+            metadata: Some(r#"{"template_enabled":true,"summary":"Obsidian vault access via the Local REST API plugin for reading, writing, and searching notes.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://coddingtonbear.github.io/obsidian-local-rest-api/","setup_guide":"1. Install the Local REST API plugin from Obsidian Community Plugins\n2. Enable the plugin in Obsidian Settings\n3. Copy the API Key from Settings > Local REST API\n4. Paste the API Key here\n5. Optionally set a custom server URL (default: https://127.0.0.1:27124)","pricing_tier":"free","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"obsidian-mcp-server","transport":"stdio","suggested_env":{"OBSIDIAN_API_KEY":"","OBSIDIAN_API_URL":"https://127.0.0.1:27124"}}]}"#),
         },
     ];
 

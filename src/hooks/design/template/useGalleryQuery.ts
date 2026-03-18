@@ -38,12 +38,13 @@ export interface UseGalleryQueryReturn {
   trendingTemplates: PersonaDesignReview[];
   readyTemplates: PersonaDesignReview[];
   recommendedTemplates: PersonaDesignReview[];
+  unfilteredTotal: number;
   setItems: React.Dispatch<React.SetStateAction<PersonaDesignReview[]>>;
   setTotal: React.Dispatch<React.SetStateAction<number>>;
   fetchPage: (pageNum: number, append: boolean) => Promise<void>;
 }
 
-const PER_PAGE = 50;
+const DEFAULT_PER_PAGE = 50;
 const DEBOUNCE_MS = 150;
 const MAX_RECOMMENDATIONS = 8;
 
@@ -83,6 +84,7 @@ export function useGalleryQuery(
   coverageServiceTypes?: string[],
   /** When true, the normal fetch-on-filter-change is paused (AI search overrides results). */
   aiSearchActive = false,
+  perPage = DEFAULT_PER_PAGE,
 ): UseGalleryQueryReturn {
   const [items, setItems] = useState<PersonaDesignReview[]>([]);
   const [total, setTotal] = useState(0);
@@ -100,6 +102,7 @@ export function useGalleryQuery(
   const [trendingTemplates, setTrendingTemplates] = useState<PersonaDesignReview[]>([]);
   const [readyTemplates, setReadyTemplates] = useState<PersonaDesignReview[]>([]);
   const [recommendedTemplates, setRecommendedTemplates] = useState<PersonaDesignReview[]>([]);
+  const [unfilteredTotal, setUnfilteredTotal] = useState(0);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchIdRef = useRef(0);
@@ -132,6 +135,8 @@ export function useGalleryQuery(
       // 'readiness' is computed client-side; fall back to 'trending' for backend fetch
       const effectiveSortBy = sortBy === 'readiness' ? 'trending' : sortBy;
       const effectiveSortDir = sortBy === 'readiness' ? 'desc' : sortDir;
+      // Coverage filtering is applied client-side (in useGalleryActions) so it uses
+      // the same category-level readiness logic as the filter counts.
       const result: PaginatedReviewsResult = await listDesignReviewsPaginated({
         search: debouncedSearch || undefined,
         connectorFilter: connectorFilter.length > 0 ? connectorFilter : undefined,
@@ -139,9 +144,7 @@ export function useGalleryQuery(
         sortBy: effectiveSortBy,
         sortDir: effectiveSortDir,
         page: pageNum,
-        perPage: PER_PAGE,
-        coverageFilter: coverageFilter !== 'all' ? coverageFilter : undefined,
-        coverageServiceTypes: coverageFilter !== 'all' && coverageServiceTypes ? coverageServiceTypes : undefined,
+        perPage,
       });
       if (id !== fetchIdRef.current) return;
       setTotal(result.total);
@@ -154,7 +157,7 @@ export function useGalleryQuery(
         setIsFetchingMore(false);
       }
     }
-  }, [debouncedSearch, connectorFilter, categoryFilter, sortBy, sortDir, coverageFilter, coverageServiceTypes]);
+  }, [debouncedSearch, connectorFilter, categoryFilter, sortBy, sortDir, perPage]);
 
   // Reset and fetch page 0 when filters/search/sort change (only when AI not active)
   useEffect(() => {
@@ -188,6 +191,11 @@ export function useGalleryQuery(
       .catch(() => {});
     getTrendingTemplates(8)
       .then((data) => { if (!cancelled) setTrendingTemplates(data); })
+      .catch(() => {});
+
+    // Fetch unfiltered total so "All" count stays stable across coverage filter changes
+    listDesignReviewsPaginated({ page: 0, perPage: 1 })
+      .then((r) => { if (!cancelled) setUnfilteredTotal(r.total); })
       .catch(() => {});
 
     if (coverageServiceTypes && coverageServiceTypes.length > 0) {
@@ -235,6 +243,9 @@ export function useGalleryQuery(
     getTrendingTemplates(8)
       .then(setTrendingTemplates)
       .catch(() => {});
+    listDesignReviewsPaginated({ page: 0, perPage: 1 })
+      .then((r) => setUnfilteredTotal(r.total))
+      .catch(() => {});
   }, [fetchPage, aiSearchActive]);
 
   return {
@@ -263,6 +274,7 @@ export function useGalleryQuery(
     trendingTemplates,
     readyTemplates,
     recommendedTemplates,
+    unfilteredTotal,
     setItems,
     setTotal,
     fetchPage,

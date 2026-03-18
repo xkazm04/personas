@@ -43,17 +43,27 @@ export default function GeneratedReviewsTab({
   const templateAdoptActive = useSystemStore((s) => s.templateAdoptActive);
   const adoptionDraft = useSystemStore((s) => s.adoptionDraft);
   const setAdoptionDraft = useSystemStore((s) => s.setAdoptionDraft);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [density, setDensityRaw] = useState<Density>('comfortable');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+
   const credentialServiceTypesArray = useMemo(
     () => credentials.map((c) => c.service_type),
     [credentials],
   );
-  const gallery = useTemplateGallery(credentialServiceTypesArray);
+  const gallery = useTemplateGallery(credentialServiceTypesArray, density === 'compact' ? 20 : 50);
 
   useEffect(() => { onTotalChange?.(gallery.total); }, [gallery.total, onTotalChange]);
 
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [density, setDensity] = useState<Density>('comfortable');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  // When switching to compact, default to name A-Z sort
+  const setDensity = (d: Density) => {
+    setDensityRaw(d);
+    if (d === 'compact') {
+      gallery.setSortBy('name');
+      gallery.setSortDir('asc');
+    }
+  };
+  const [componentFilter, setComponentFilter] = useState<string[]>([]);
   const modals = useModalStack<TemplateModal>();
 
   useAdoptionCompletionNotifier(templateAdoptActive, modals.isOpen('adopt'));
@@ -64,6 +74,7 @@ export default function GeneratedReviewsTab({
   const actions = useGalleryActions(
     gallery.allItems, gallery.total, gallery.sortBy,
     credentials, connectorDefinitions, gallery.refresh,
+    gallery.unfilteredTotal, gallery.coverageFilter, componentFilter,
   );
 
   const handlePersonaCreated = () => {
@@ -152,6 +163,9 @@ export default function GeneratedReviewsTab({
         coverageFilter={gallery.coverageFilter}
         onCoverageFilterChange={gallery.setCoverageFilter}
         coverageCounts={actions.coverageCounts}
+        componentFilter={componentFilter}
+        onComponentFilterChange={setComponentFilter}
+        availableComponents={actions.availableComponents}
         density={density}
         onDensityChange={setDensity}
         viewMode={viewMode}
@@ -194,7 +208,6 @@ export default function GeneratedReviewsTab({
           displayItems={actions.displayItems}
           density={density}
           expandedRow={expandedRow}
-          readinessScores={actions.readinessScores}
           searchQuery={gallery.search.trim()}
           isAiResult={gallery.aiSearchActive}
           installedConnectorNames={actions.installedConnectorNames}

@@ -9,6 +9,24 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
 
     conn.execute_batch(SCHEMA)?;
 
+    // -- Smee Relay management table ------------------------------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS smee_relays (
+            id              TEXT PRIMARY KEY,
+            label           TEXT NOT NULL,
+            channel_url     TEXT NOT NULL UNIQUE,
+            status          TEXT NOT NULL DEFAULT 'active',
+            event_filter    TEXT,
+            target_persona_id TEXT REFERENCES personas(id) ON DELETE SET NULL,
+            events_relayed  INTEGER NOT NULL DEFAULT 0,
+            last_event_at   TEXT,
+            error           TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_smee_relays_status ON smee_relays(status);"
+    )?;
+
     tracing::info!("Database migrations complete");
     Ok(())
 }

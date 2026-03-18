@@ -36,6 +36,7 @@ mod knowledge_base;
 pub mod webhook_log;
 mod chat;
 mod build_session;
+mod smee_relay;
 
 pub use persona::*;
 pub use tool::*;
@@ -74,3 +75,4 @@ pub use exposure::*;
 pub use knowledge_base::*;
 pub use chat::*;
 pub use build_session::*;
+pub use smee_relay::*;

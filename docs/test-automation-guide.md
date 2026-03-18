@@ -182,6 +182,40 @@ Stable selectors that survive UI refactors. Use with `click_testid` and `fill_fi
 | `agent-enabled` | Enabled toggle (settings tab) |
 | `agent-delete-btn` | Delete button |
 | `agent-delete-confirm` | Confirm delete button |
+| `agent-test-btn` | Test Agent button (draft_ready phase) |
+
+### Lab (Test Arena)
+
+| testid | Element |
+|---|---|
+| `lab-mode-arena` | Arena mode tab |
+| `lab-mode-ab` | A/B test mode tab |
+| `lab-mode-eval` | Eval mode tab |
+| `lab-mode-matrix` | Matrix mode tab |
+| `lab-mode-versions` | Versions mode tab |
+| `arena-run-btn` | Run Arena button |
+| `arena-cancel-btn` | Cancel Arena test |
+| `arena-model-{id}` | Model toggle (e.g., `arena-model-sonnet`) |
+| `run-test-btn` | Run Test button (PersonaTestsTab) |
+| `cancel-test-btn` | Cancel Test Run button |
+| `test-usecase-filter` | Use case filter dropdown |
+| `model-toggle-{id}` | Model toggle (e.g., `model-toggle-sonnet`) |
+| `test-run-{id}` | Test run row container |
+| `test-run-expand-{id}` | Expand/collapse test run |
+| `test-run-delete-{id}` | Delete test run |
+
+### Execution
+
+| testid | Element |
+|---|---|
+| `execute-persona-btn` | Execute/Stop persona button |
+| `runner-toggle-input` | Toggle input data editor |
+| `runner-budget-override` | Override budget pause |
+| `exec-toggle-raw` | Toggle raw/masked output |
+| `exec-toggle-compare` | Toggle compare mode |
+| `exec-show-comparison` | Show comparison (when 2 selected) |
+| `exec-try-it` | "Try it now" empty state button |
+| `exec-row-{id}` | Execution history row |
 
 ### Agent Context Menu (right-click card)
 

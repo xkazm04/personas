@@ -6,4 +6,4 @@ import type { DashboardTopPersona } from "./DashboardTopPersona";
 /**
  * Combined response for the execution metrics dashboard.
  */
-export type ExecutionDashboardData = { daily_points: Array<DashboardDailyPoint>, top_personas: Array<DashboardTopPersona>, cost_anomalies: Array<DashboardCostAnomaly>, total_executions: number, total_cost: number, overall_success_rate: number, avg_latency_ms: number, };
+export type ExecutionDashboardData = { daily_points: Array<DashboardDailyPoint>, top_personas: Array<DashboardTopPersona>, cost_anomalies: Array<DashboardCostAnomaly>, total_executions: number, successful_executions: number, failed_executions: number, total_cost: number, overall_success_rate: number, avg_latency_ms: number, active_personas: number, projected_monthly_cost: number | null, burn_rate: number | null, };

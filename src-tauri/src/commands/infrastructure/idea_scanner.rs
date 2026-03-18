@@ -7,7 +7,6 @@
 
 use std::sync::Arc;
 
-use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -411,7 +410,7 @@ pub async fn dev_tools_run_scan(
     app: tauri::AppHandle,
     project_id: String,
     scan_types: Vec<String>,
-    context_id: Option<String>,
+    _context_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
 
@@ -580,7 +579,7 @@ async fn run_idea_scan(
     app: &tauri::AppHandle,
     scan_id: &str,
     pool: &crate::db::DbPool,
-    project_id: &str,
+    _project_id: &str,
     root_path: &str,
     prompt_text: String,
 ) -> Result<i32, AppError> {

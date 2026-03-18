@@ -4,3 +4,4 @@ pub mod messages;
 pub mod reviews;
 pub mod template_feedback;
 pub mod chat;
+pub mod smee_relays;

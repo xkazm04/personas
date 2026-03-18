@@ -120,11 +120,13 @@ export function useMatrixLifecycle({
       store.setToolTestResults(report.results);
       if (report.summary) store.setTestSummary(report.summary);
 
-      const allPassed = report.tools_failed === 0 && report.tools_tested > 0;
-      store.handleTestComplete(
-        allPassed,
-        `${report.tools_passed}/${report.tools_tested} tools passed${report.credential_issues.length > 0 ? `, ${report.credential_issues.length} credential issue(s)` : ""}`,
-      );
+      // All passed = no failures AND at least something ran or was auto-verified
+      const totalTools = report.tools_passed + report.tools_failed + report.tools_skipped;
+      const allPassed = report.tools_failed === 0 && totalTools > 0;
+      const summary = report.tools_failed === 0
+        ? `${report.tools_passed} passed${report.tools_skipped > 0 ? `, ${report.tools_skipped} skipped` : ''}`
+        : `${report.tools_passed}/${report.tools_tested} passed, ${report.tools_failed} failed${report.credential_issues.length > 0 ? `, ${report.credential_issues.length} credential issue(s)` : ""}`;
+      store.handleTestComplete(allPassed, summary);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to run tests";
       useAgentStore.getState().handleTestFailed(message);

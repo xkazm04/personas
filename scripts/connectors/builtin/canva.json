@@ -26,7 +26,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": true,
+    "template_enabled": false,
     "summary": "Canva design platform for creating, managing, and exporting designs via the Canva Connect API.",
     "auth_type": "pat",
     "auth_type_label": "PAT",
@@ -34,7 +34,12 @@
     "setup_guide": "1. Go to canva.com/developers and sign in.\n2. Create a new integration or select an existing one.\n3. Generate an access token with the required scopes.\n4. Copy the token and paste it here.",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "pat", "label": "PAT", "type": "credential", "is_default": true}
+      {
+        "id": "pat",
+        "label": "PAT",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

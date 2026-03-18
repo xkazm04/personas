@@ -91,6 +91,7 @@ pub struct NetworkStatusInfo {
 
 /// Info about a specific peer connection.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct PeerConnectionInfo {
     pub peer_id: String,
     pub display_name: String,

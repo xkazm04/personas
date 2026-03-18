@@ -63,6 +63,12 @@ pub struct ActiveProcessRegistry {
     run_pids: Mutex<HashMap<String, u32>>,
 }
 
+impl Default for ActiveProcessRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ActiveProcessRegistry {
     pub fn new() -> Self {
         Self {
@@ -189,6 +195,7 @@ impl ActiveProcessRegistry {
 }
 
 /// Shared application state accessible from all Tauri commands.
+#[allow(clippy::type_complexity)]
 pub struct AppState {
     pub db: DbPool,
     /// Separate user-facing database (`personas_data.db`).
@@ -1135,6 +1142,11 @@ pub fn run() {
             commands::infrastructure::cloud::smee_get_channel_url,
             commands::infrastructure::cloud::smee_set_channel_url,
             commands::infrastructure::cloud::smee_disconnect,
+            commands::infrastructure::cloud::smee_relay_list,
+            commands::infrastructure::cloud::smee_relay_create,
+            commands::infrastructure::cloud::smee_relay_update,
+            commands::infrastructure::cloud::smee_relay_set_status,
+            commands::infrastructure::cloud::smee_relay_delete,
             // Infrastructure -- GitLab
             commands::infrastructure::gitlab::gitlab_connect,
             commands::infrastructure::gitlab::gitlab_connect_from_vault,

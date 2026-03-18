@@ -171,3 +171,47 @@ export const smeeSetChannelUrl = (url: string) =>
 
 export const smeeDisconnect = () =>
   invoke<void>("smee_disconnect");
+
+// -- Smee Relay Management --------------------------------------------------
+
+export interface SmeeRelay {
+  id: string;
+  label: string;
+  channelUrl: string;
+  status: 'active' | 'paused' | 'error';
+  eventFilter: string | null;
+  targetPersonaId: string | null;
+  eventsRelayed: number;
+  lastEventAt: string | null;
+  error: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateSmeeRelayInput {
+  label: string;
+  channelUrl: string;
+  eventFilter?: string | null;
+  targetPersonaId?: string | null;
+}
+
+export interface UpdateSmeeRelayInput {
+  label?: string;
+  eventFilter?: string | null;
+  targetPersonaId?: string | null;
+}
+
+export const smeeRelayList = () =>
+  invoke<SmeeRelay[]>("smee_relay_list");
+
+export const smeeRelayCreate = (input: CreateSmeeRelayInput) =>
+  invoke<SmeeRelay>("smee_relay_create", { input });
+
+export const smeeRelayUpdate = (id: string, input: UpdateSmeeRelayInput) =>
+  invoke<SmeeRelay>("smee_relay_update", { id, input });
+
+export const smeeRelaySetStatus = (id: string, status: 'active' | 'paused') =>
+  invoke<SmeeRelay>("smee_relay_set_status", { id, status });
+
+export const smeeRelayDelete = (id: string) =>
+  invoke<void>("smee_relay_delete", { id });

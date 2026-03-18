@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, type Mock } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAgentStore } from "@/stores/agentStore";
 import type { BuildEvent } from "@/lib/types/buildTypes";
@@ -318,7 +318,7 @@ describe("useBuildSession", () => {
   });
 
   describe("answerQuestion", () => {
-    it("calls API with correct arguments", async () => {
+    it("calls collectAnswer on the store with correct arguments", async () => {
       const { result } = renderHook(() =>
         useBuildSession({ personaId: "p-1" }),
       );
@@ -342,9 +342,8 @@ describe("useBuildSession", () => {
         await result.current.answerQuestion("use-cases", "Do code reviews");
       });
 
-      expect(mockAnswerBuildQuestion).toHaveBeenCalledWith(
-        "session-123",
-        "use-cases",
+      // answerQuestion now collects locally instead of sending to API
+      expect(useAgentStore.getState().buildPendingAnswers["use-cases"]).toBe(
         "Do code reviews",
       );
     });

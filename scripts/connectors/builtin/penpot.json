@@ -34,7 +34,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": true,
+    "template_enabled": false,
     "summary": "Penpot open-source design platform for prototyping, components, and design tokens.",
     "auth_type": "pat",
     "auth_type_label": "PAT",
@@ -42,7 +42,12 @@
     "setup_guide": "1. Log in to your Penpot instance (design.penpot.app or self-hosted).\n2. Go to Profile -> Access Tokens.\n3. Create a new token and copy it.\n4. Paste the token here. If self-hosted, also enter your instance URL.",
     "pricing_tier": "free",
     "auth_methods": [
-      {"id": "pat", "label": "PAT", "type": "credential", "is_default": true}
+      {
+        "id": "pat",
+        "label": "PAT",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

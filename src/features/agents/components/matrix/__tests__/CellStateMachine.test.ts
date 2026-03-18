@@ -9,12 +9,13 @@ const ALL_STATUSES: CellBuildStatus[] = [
   "filling",
   "resolved",
   "highlighted",
+  "updated",
   "error",
 ];
 
 describe("CELL_STATE_CLASSES", () => {
-  it("maps all 7 CellBuildStatus values", () => {
-    expect(Object.keys(CELL_STATE_CLASSES)).toHaveLength(7);
+  it("maps all 8 CellBuildStatus values", () => {
+    expect(Object.keys(CELL_STATE_CLASSES)).toHaveLength(8);
   });
 
   it("has an entry for every CellBuildStatus value", () => {

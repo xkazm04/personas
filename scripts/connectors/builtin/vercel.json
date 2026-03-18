@@ -4,7 +4,7 @@
   "label": "Vercel",
   "color": "#000000",
   "icon_url": "/icons/connectors/vercel.svg",
-  "category": "devops",
+  "category": "cloud",
   "fields": [
     {
       "key": "access_token",

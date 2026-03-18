@@ -561,18 +561,18 @@ export const createMatrixBuildSlice: StateCreator<
   hydrateBuildSession: (session) => {
     // Build cell states AND cell data from resolved_cells
     const cellStates: Record<string, CellBuildStatus> = {};
-    const cellData: Record<string, { items?: string[]; summary?: string }> = {};
+    const cellData: Record<string, { items?: string[]; summary?: string; raw?: Record<string, unknown> }> = {};
     const resolvedCells = session.resolved_cells ?? {};
     for (const key of Object.keys(resolvedCells)) {
       cellStates[key] = "resolved";
-      // Extract items/summary from the resolved cell value
+      // Extract items/summary/raw from the resolved cell value
       const val = (resolvedCells as Record<string, unknown>)[key];
       if (val && typeof val === 'object') {
         const obj = val as Record<string, unknown>;
         const items = Array.isArray(obj.items) ? obj.items.filter((i): i is string => typeof i === 'string') : undefined;
         const summary = typeof obj.summary === 'string' ? obj.summary : undefined;
         if (items || summary) {
-          cellData[key] = { items, summary };
+          cellData[key] = { items, summary, raw: obj };
         }
       }
     }
@@ -610,6 +610,7 @@ export const createMatrixBuildSlice: StateCreator<
     }
 
     set({
+      buildPersonaId: session.persona_id,
       buildSessionId: session.id,
       buildPhase: session.phase,
       buildCellStates: cellStates,

@@ -4,34 +4,7 @@ import userEvent from "@testing-library/user-event";
 import type { BuildQuestion } from "@/lib/types/buildTypes";
 
 // ---------------------------------------------------------------------------
-// Mock @floating-ui/react -- we test rendering/interaction, not positioning
-// ---------------------------------------------------------------------------
-
-vi.mock("@floating-ui/react", () => {
-  const setReference = vi.fn();
-  const setFloating = vi.fn();
-
-  return {
-    useFloating: vi.fn(() => ({
-      refs: {
-        setReference,
-        setFloating,
-      },
-      floatingStyles: { position: "absolute" as const, top: 0, left: 0 },
-      placement: "right" as const,
-    })),
-    offset: vi.fn(() => ({})),
-    flip: vi.fn(() => ({})),
-    shift: vi.fn(() => ({})),
-    autoUpdate: vi.fn(),
-    FloatingPortal: ({ children }: { children: React.ReactNode }) => (
-      <div data-testid="floating-portal">{children}</div>
-    ),
-  };
-});
-
-// ---------------------------------------------------------------------------
-// Import under test (AFTER mocks)
+// Import under test
 // ---------------------------------------------------------------------------
 
 import { SpatialQuestionPopover } from "../SpatialQuestionPopover";
@@ -61,10 +34,12 @@ function makeReferenceElement(): HTMLElement {
 
 describe("SpatialQuestionPopover", () => {
   let onAnswer: ReturnType<typeof vi.fn>;
+  let onRequestClose: ReturnType<typeof vi.fn>;
   let referenceElement: HTMLElement;
 
   beforeEach(() => {
     onAnswer = vi.fn();
+    onRequestClose = vi.fn();
     referenceElement = makeReferenceElement();
   });
 
@@ -76,20 +51,25 @@ describe("SpatialQuestionPopover", () => {
         referenceElement={referenceElement}
         question={makeQuestion({ question: "Pick a connector" })}
         onAnswer={onAnswer}
+        isOpen={true}
+        onRequestClose={onRequestClose}
       />,
     );
     expect(screen.getByText("Pick a connector")).toBeTruthy();
   });
 
-  it("renders inside a FloatingPortal", () => {
+  it("renders via portal into document.body", () => {
     render(
       <SpatialQuestionPopover
         referenceElement={referenceElement}
         question={makeQuestion()}
         onAnswer={onAnswer}
+        isOpen={true}
+        onRequestClose={onRequestClose}
       />,
     );
-    expect(screen.getByTestId("floating-portal")).toBeTruthy();
+    // The modal renders into document.body via createPortal
+    expect(screen.getByTestId("freetext-input")).toBeTruthy();
   });
 
   it("does not render when referenceElement is null", () => {
@@ -98,9 +78,24 @@ describe("SpatialQuestionPopover", () => {
         referenceElement={null}
         question={makeQuestion()}
         onAnswer={onAnswer}
+        isOpen={true}
+        onRequestClose={onRequestClose}
       />,
     );
-    expect(screen.queryByTestId("spatial-question-popover")).toBeNull();
+    expect(screen.queryByTestId("freetext-input")).toBeNull();
+  });
+
+  it("does not render when isOpen is false", () => {
+    render(
+      <SpatialQuestionPopover
+        referenceElement={referenceElement}
+        question={makeQuestion()}
+        onAnswer={onAnswer}
+        isOpen={false}
+        onRequestClose={onRequestClose}
+      />,
+    );
+    expect(screen.queryByTestId("freetext-input")).toBeNull();
   });
 
   // -- Multiple choice mode -------------------------------------------------
@@ -113,13 +108,13 @@ describe("SpatialQuestionPopover", () => {
           options: ["Slack API", "Discord API", "Email SMTP"],
         })}
         onAnswer={onAnswer}
+        isOpen={true}
+        onRequestClose={onRequestClose}
       />,
     );
-    const buttons = screen.getAllByTestId("option-button");
-    expect(buttons).toHaveLength(3);
-    expect(buttons[0].textContent).toBe("Slack API");
-    expect(buttons[1].textContent).toBe("Discord API");
-    expect(buttons[2].textContent).toBe("Email SMTP");
+    expect(screen.getByTestId("option-button-0")).toBeTruthy();
+    expect(screen.getByTestId("option-button-1")).toBeTruthy();
+    expect(screen.getByTestId("option-button-2")).toBeTruthy();
   });
 
   it("calls onAnswer with correct cellKey and option text when option is clicked", () => {
@@ -131,21 +126,26 @@ describe("SpatialQuestionPopover", () => {
           options: ["Webhook", "Schedule", "Manual"],
         })}
         onAnswer={onAnswer}
+        isOpen={true}
+        onRequestClose={onRequestClose}
       />,
     );
-    fireEvent.click(screen.getAllByTestId("option-button")[1]);
+    fireEvent.click(screen.getByTestId("option-button-1"));
     expect(onAnswer).toHaveBeenCalledWith("triggers", "Schedule");
   });
 
-  it("does not render textarea in multiple choice mode", () => {
+  it("always shows textarea (free text input is always available)", () => {
     render(
       <SpatialQuestionPopover
         referenceElement={referenceElement}
         question={makeQuestion({ options: ["A", "B"] })}
         onAnswer={onAnswer}
+        isOpen={true}
+        onRequestClose={onRequestClose}
       />,
     );
-    expect(screen.queryByTestId("freetext-input")).toBeNull();
+    // Free text input is always shown, even with options
+    expect(screen.getByTestId("freetext-input")).toBeTruthy();
   });
 
   // -- Free text mode -------------------------------------------------------
@@ -156,6 +156,8 @@ describe("SpatialQuestionPopover", () => {
         referenceElement={referenceElement}
         question={makeQuestion({ options: null })}
         onAnswer={onAnswer}
+        isOpen={true}
+        onRequestClose={onRequestClose}
       />,
     );
     expect(screen.getByTestId("freetext-input")).toBeTruthy();
@@ -168,6 +170,8 @@ describe("SpatialQuestionPopover", () => {
         referenceElement={referenceElement}
         question={makeQuestion({ options: [] })}
         onAnswer={onAnswer}
+        isOpen={true}
+        onRequestClose={onRequestClose}
       />,
     );
     expect(screen.getByTestId("freetext-input")).toBeTruthy();
@@ -184,6 +188,8 @@ describe("SpatialQuestionPopover", () => {
           options: null,
         })}
         onAnswer={onAnswer}
+        isOpen={true}
+        onRequestClose={onRequestClose}
       />,
     );
 
@@ -201,6 +207,8 @@ describe("SpatialQuestionPopover", () => {
         referenceElement={referenceElement}
         question={makeQuestion({ options: null })}
         onAnswer={onAnswer}
+        isOpen={true}
+        onRequestClose={onRequestClose}
       />,
     );
 
@@ -214,9 +222,11 @@ describe("SpatialQuestionPopover", () => {
         referenceElement={referenceElement}
         question={makeQuestion({ options: null })}
         onAnswer={onAnswer}
+        isOpen={true}
+        onRequestClose={onRequestClose}
       />,
     );
-    expect(screen.queryByTestId("option-button")).toBeNull();
+    expect(screen.queryByTestId("option-button-0")).toBeNull();
   });
 
   // -- No skip button -------------------------------------------------------
@@ -227,6 +237,8 @@ describe("SpatialQuestionPopover", () => {
         referenceElement={referenceElement}
         question={makeQuestion()}
         onAnswer={onAnswer}
+        isOpen={true}
+        onRequestClose={onRequestClose}
       />,
     );
     // No button containing "skip" text should exist

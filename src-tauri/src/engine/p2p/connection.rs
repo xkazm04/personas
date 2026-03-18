@@ -33,6 +33,7 @@ pub struct ConnectionManager {
     /// Tracks peer_ids with in-progress connection attempts to prevent duplicates.
     connecting: Mutex<HashSet<String>>,
     max_peers: usize,
+    #[allow(dead_code)]
     max_retries: u32,
 }
 

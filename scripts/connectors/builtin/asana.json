@@ -4,7 +4,7 @@
   "label": "Asana",
   "color": "#F06A6A",
   "icon_url": "/icons/connectors/asana.svg",
-  "category": "task_management",
+  "category": "project-mgmt",
   "fields": [
     {
       "key": "personal_access_token",
@@ -34,8 +34,22 @@
     "setup_guide": "1. Open Asana and click your profile photo (top right)\n2. Go to My Settings -> Apps -> Manage Developer Apps\n3. Under Personal Access Tokens, click 'Create new token'\n4. Give it a description and click 'Create token'\n5. Copy the token (format: 1/12345:abcdef...) and paste it here",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "pat", "label": "PAT", "type": "credential", "is_default": true},
-      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@roychri/mcp-server-asana", "transport": "stdio", "suggested_env": {"ASANA_ACCESS_TOKEN": ""}}
+      {
+        "id": "pat",
+        "label": "PAT",
+        "type": "credential",
+        "is_default": true
+      },
+      {
+        "id": "mcp",
+        "label": "MCP",
+        "type": "mcp",
+        "package": "@roychri/mcp-server-asana",
+        "transport": "stdio",
+        "suggested_env": {
+          "ASANA_ACCESS_TOKEN": ""
+        }
+      }
     ]
   }
 }

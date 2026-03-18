@@ -20,6 +20,7 @@ function ModelGroup({ label, models, selectedModels, toggleModel, disabled }: {
         {models.map((m) => (
           <button
             key={m.id}
+            data-testid={`model-toggle-${m.id}`}
             onClick={() => toggleModel(m.id)}
             disabled={disabled}
             className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${

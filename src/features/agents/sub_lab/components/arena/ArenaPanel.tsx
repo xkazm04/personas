@@ -102,7 +102,7 @@ export function ArenaPanel() {
                 <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">Anthropic</span>
                 <div className="flex flex-wrap gap-2">
                   {ANTHROPIC_MODELS.map((m) => (
-                    <button key={m.id} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
+                    <button key={m.id} data-testid={`arena-model-${m.id}`} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
                       title={isLabRunning ? 'Cannot change while test is running' : undefined}
                       className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                       {m.label}
@@ -115,7 +115,7 @@ export function ArenaPanel() {
                   <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">Ollama Cloud</span>
                   <div className="flex flex-wrap gap-2">
                     {OLLAMA_MODELS.map((m) => (
-                      <button key={m.id} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
+                      <button key={m.id} data-testid={`arena-model-${m.id}`} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
                         title={isLabRunning ? 'Cannot change while test is running' : undefined}
                         className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                         {m.label}
@@ -128,7 +128,7 @@ export function ArenaPanel() {
           </div>
 
           {isLabRunning ? (
-            <button onClick={() => void handleCancel()} className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20">
+            <button data-testid="arena-cancel-btn" onClick={() => void handleCancel()} className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20">
               <Square className="w-4 h-4" />Cancel Test
             </button>
           ) : (
@@ -141,7 +141,7 @@ export function ArenaPanel() {
               placement="top"
               delay={200}
             >
-              <button onClick={() => void handleStart()} disabled={selectedModels.size === 0 || !hasPrompt}
+              <button data-testid="arena-run-btn" onClick={() => void handleStart()} disabled={selectedModels.size === 0 || !hasPrompt}
                 className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
                 <Play className="w-4 h-4" />Run Arena ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` -- ${selectedUseCase.title}` : ''})
               </button>

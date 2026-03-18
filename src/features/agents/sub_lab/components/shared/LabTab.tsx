@@ -48,6 +48,7 @@ export function LabTab() {
           return (
             <button
               key={tab.id}
+              data-testid={`lab-mode-${tab.id}`}
               onClick={() => setLabMode(tab.id)}
               className={`relative flex flex-col items-start gap-0.5 px-3 py-2 text-sm font-medium rounded-xl transition-colors ${
                 isActive

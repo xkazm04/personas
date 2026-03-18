@@ -33,12 +33,14 @@ export function ConnectorsSection({
   const connectorNames = new Set(connectorDefinitions.map((c) => c.name));
   const suggestedConnectors = result.suggested_connectors ?? [];
 
+  const suggestedTools = result.suggested_tools ?? [];
+
   const connectorToolMap = useMemo(() => {
     const linkedTools = new Set<string>();
     const map: Array<{ connector: SuggestedConnector; connDef: ConnectorDefinition | undefined; tools: string[] }> = [];
 
     for (const conn of suggestedConnectors) {
-      const tools = (conn.related_tools ?? []).filter((t) => result.suggested_tools.includes(t));
+      const tools = (conn.related_tools ?? []).filter((t) => suggestedTools.includes(t));
       tools.forEach((t) => linkedTools.add(t));
       map.push({
         connector: conn,
@@ -47,15 +49,15 @@ export function ConnectorsSection({
       });
     }
 
-    const unlinked = result.suggested_tools.filter((t) => !linkedTools.has(t));
+    const unlinked = suggestedTools.filter((t) => !linkedTools.has(t));
     if (unlinked.length > 0) {
       map.push({ connector: { name: 'general' } as SuggestedConnector, connDef: undefined, tools: unlinked });
     }
 
     return map;
-  }, [suggestedConnectors, connectorDefinitions, result.suggested_tools]);
+  }, [suggestedConnectors, connectorDefinitions, suggestedTools]);
 
-  if (connectorToolMap.length === 0 && result.suggested_tools.length === 0) return null;
+  if (connectorToolMap.length === 0 && suggestedTools.length === 0) return null;
 
   return (
     <div className="space-y-3">

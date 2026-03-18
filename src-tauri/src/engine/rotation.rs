@@ -795,7 +795,7 @@ pub fn get_rotation_status(
     let has_policy = !policies.is_empty();
     let policy_enabled = active_policy.is_some();
 
-    let last_status = history.first().map(|h| h.status.clone());
+    let last_status = history.first().map(|h| h.status);
     let anomaly_detected = history.iter().any(|h| h.rotation_type == "anomaly");
     let consecutive_failures =
         rotation_repo::get_consecutive_rotation_failures(pool, credential_id).unwrap_or(0);

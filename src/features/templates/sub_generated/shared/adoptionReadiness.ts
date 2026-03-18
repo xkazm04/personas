@@ -1,31 +1,27 @@
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
-import { getCachedDesignResult } from '../gallery/cards/reviewParseCache';
-import { deriveConnectorReadiness } from './ConnectorReadiness';
+import { computeCategoryReadiness } from '../gallery/matrix/architecturalCategories';
 
 /**
  * Compute a 0-100 adoption readiness score for a template based on
- * the user's installed connectors and configured credentials.
+ * whether the user has credentials for the architectural component
+ * categories the template requires (e.g. messaging, database, email).
+ *
+ * This evaluates at the *category* level rather than per-connector,
+ * so having any email client unlocks all email-dependent templates.
  */
 export function computeAdoptionReadiness(
   review: PersonaDesignReview,
-  installedConnectorNames: Set<string>,
+  _installedConnectorNames: Set<string>,
   credentialServiceTypes: Set<string>,
 ): number {
   const connectors: string[] = parseJsonSafe(review.connectors_used, []);
   if (connectors.length === 0) return 100; // no connectors needed = fully ready
 
-  const designResult = getCachedDesignResult(review);
-  const statuses = designResult?.suggested_connectors
-    ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
-    : [];
+  const { total, ready } = computeCategoryReadiness(connectors, credentialServiceTypes);
+  if (total === 0) return 100;
 
-  const readyCount = connectors.filter((c) => {
-    const s = statuses.find((st) => st.connector_name === c);
-    return s?.health === 'ready';
-  }).length;
-
-  return Math.round((readyCount / connectors.length) * 100);
+  return Math.round((ready / total) * 100);
 }
 
 /** Color + label helpers for readiness scores. */

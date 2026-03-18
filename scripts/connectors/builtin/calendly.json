@@ -4,7 +4,7 @@
   "label": "Calendly",
   "color": "#006BFF",
   "icon_url": "/icons/connectors/calendly.svg",
-  "category": "productivity",
+  "category": "scheduling",
   "fields": [
     {
       "key": "api_key",
@@ -26,7 +26,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": true,
+    "template_enabled": false,
     "summary": "Calendly scheduling for meetings and appointment automation.",
     "auth_type": "pat",
     "auth_type_label": "PAT",

@@ -29,12 +29,12 @@ spans: Array<TraceSpan>,
 /**
  * Total trace duration in milliseconds.
  */
-total_duration_ms: number | null,
+total_duration_ms: number | null, 
 /**
  * Number of spans evicted due to the MAX_SPANS limit.
  * Non-zero means the trace is incomplete.
  */
-evicted_span_count: number,
+evicted_span_count: number, 
 /**
  * When the trace was created (ISO 8601).
  */
