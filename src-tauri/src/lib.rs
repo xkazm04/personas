@@ -699,6 +699,8 @@ pub fn run() {
             commands::execution::lab::lab_tag_version,
             commands::execution::lab::lab_rollback_version,
             commands::execution::lab::lab_get_error_rate,
+            commands::execution::lab::lab_rate_result,
+            commands::execution::lab::lab_get_ratings,
             // Execution -- Healing
             commands::execution::healing::list_healing_issues,
             commands::execution::healing::get_healing_issue,

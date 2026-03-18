@@ -9,6 +9,7 @@ use crate::db::repos::lab::arena as arena_repo;
 use crate::db::repos::lab::ab as ab_repo;
 use crate::db::repos::lab::matrix as matrix_repo;
 use crate::db::repos::lab::eval as eval_repo;
+use crate::db::repos::lab::ratings as ratings_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::engine::test_runner::{self, TestModelConfig};
 use crate::engine::types::EphemeralPersona;
@@ -610,4 +611,37 @@ pub fn lab_get_error_rate(
 ) -> Result<f64, AppError> {
     require_auth_sync(&state)?;
     metrics_repo::get_recent_error_rate(&state.db, &persona_id, window.unwrap_or(10))
+}
+
+// ============================================================================
+// Ratings -- User thumbs up/down feedback on lab results
+// ============================================================================
+
+#[tauri::command]
+pub fn lab_rate_result(
+    state: State<'_, Arc<AppState>>,
+    run_id: String,
+    result_id: Option<String>,
+    scenario_name: String,
+    rating: i32,
+    feedback: Option<String>,
+) -> Result<LabUserRating, AppError> {
+    require_auth_sync(&state)?;
+    let input = crate::db::models::CreateRatingInput {
+        run_id,
+        result_id,
+        scenario_name,
+        rating,
+        feedback,
+    };
+    ratings_repo::upsert_rating(&state.db, &input)
+}
+
+#[tauri::command]
+pub fn lab_get_ratings(
+    state: State<'_, Arc<AppState>>,
+    run_id: String,
+) -> Result<Vec<LabUserRating>, AppError> {
+    require_auth_sync(&state)?;
+    ratings_repo::get_ratings_for_run(&state.db, &run_id)
 }

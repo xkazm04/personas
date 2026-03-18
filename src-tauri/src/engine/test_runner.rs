@@ -198,7 +198,7 @@ pub async fn run_test(
 
             let (status, scores) = match &result {
                 Ok(r) => {
-                    let s = score_result(r, scenario);
+                    let s = score_result(r, scenario, persona).await;
                     ("passed".to_string(), s)
                 }
                 Err(e) => (
@@ -214,6 +214,8 @@ pub async fn run_test(
                         cost_usd: 0.0,
                         duration_ms: 0,
                         error_message: Some(e.clone()),
+                        rationale: None,
+                        suggestions: None,
                     },
                 ),
             };
@@ -532,6 +534,8 @@ struct ScoreResult {
     cost_usd: f64,
     duration_ms: i64,
     error_message: Option<String>,
+    rationale: Option<String>,
+    suggestions: Option<String>,
 }
 
 async fn execute_scenario(
@@ -602,9 +606,9 @@ fn inject_sandbox_into_prompt(base_prompt: &str, sandbox_section: &str) -> Strin
     }
 }
 
-// -- Scoring (delegates to unified eval framework) --------------
+// -- Scoring (delegates to unified eval framework + LLM eval) ---
 
-fn score_result(output: &ExecutionOutput, scenario: &TestScenario) -> ScoreResult {
+async fn score_result(output: &ExecutionOutput, scenario: &TestScenario, persona: &Persona) -> ScoreResult {
     let expected_tools = scenario.expected_tool_sequence.as_deref();
     let expected_protocols = scenario.expected_protocols.as_deref();
 
@@ -616,10 +620,6 @@ fn score_result(output: &ExecutionOutput, scenario: &TestScenario) -> ScoreResul
         expected_protocols,
         has_tools: true,
     };
-
-    let keyword_result = eval::eval_keyword_match(&eval_input);
-    let tool_result = eval::eval_tool_accuracy(&eval_input);
-    let protocol_result = eval::eval_protocol_compliance(&eval_input);
 
     let tool_calls_json = if output.tool_calls.is_empty() {
         None
@@ -635,10 +635,19 @@ fn score_result(output: &ExecutionOutput, scenario: &TestScenario) -> ScoreResul
         Some(output.assistant_text.clone())
     };
 
+    // Try LLM-based evaluation for richer scoring with rationale/suggestions
+    let llm_result = eval::eval_with_llm(
+        &eval_input,
+        &persona.name,
+        persona.description.as_deref().unwrap_or(""),
+        &scenario.name,
+        &scenario.description,
+    ).await;
+
     ScoreResult {
-        tool_accuracy: tool_result.score,
-        output_quality: keyword_result.score,
-        protocol_compliance: protocol_result.score,
+        tool_accuracy: llm_result.tool_accuracy,
+        output_quality: llm_result.output_quality,
+        protocol_compliance: llm_result.protocol_compliance,
         output_preview: preview,
         tool_calls_actual: tool_calls_json,
         input_tokens: output.input_tokens as i64,
@@ -646,6 +655,8 @@ fn score_result(output: &ExecutionOutput, scenario: &TestScenario) -> ScoreResul
         cost_usd: output.cost_usd,
         duration_ms: output.duration_ms as i64,
         error_message: output.error.clone(),
+        rationale: Some(llm_result.rationale),
+        suggestions: Some(llm_result.suggestions),
     }
 }
 
@@ -965,12 +976,13 @@ async fn run_lab_loop(
                 let result = execute_scenario(variant.persona, tools, scenario, model).await;
 
                 let (status, scores) = match &result {
-                    Ok(r) => ("passed".to_string(), score_result(r, scenario)),
+                    Ok(r) => ("passed".to_string(), score_result(r, scenario, variant.persona).await),
                     Err(e) => ("error".to_string(), ScoreResult {
                         tool_accuracy: 0, output_quality: 0, protocol_compliance: 0,
                         output_preview: Some(e.clone()), tool_calls_actual: None,
                         input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
                         error_message: Some(e.clone()),
+                        rationale: None, suggestions: None,
                     }),
                 };
 
@@ -1089,25 +1101,47 @@ fn build_arena_summary(
     })
 }
 
-#[allow(clippy::type_complexity)]
-fn make_common_result_fields(scenario: &TestScenario, model: &TestModelConfig, status: &str, scores: &ScoreResult) -> (String, String, String, String, Option<String>, Option<String>, Option<String>, Option<i32>, Option<i32>, Option<i32>, i64, i64, f64, i64, Option<String>) {
-    (
-        scenario.name.clone(),
-        model.id.clone(),
-        model.provider.clone(),
-        status.to_string(),
-        scores.output_preview.clone(),
-        scenario.expected_tool_sequence.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
-        scores.tool_calls_actual.clone(),
-        Some(scores.tool_accuracy),
-        Some(scores.output_quality),
-        Some(scores.protocol_compliance),
-        scores.input_tokens,
-        scores.output_tokens,
-        scores.cost_usd,
-        scores.duration_ms,
-        scores.error_message.clone(),
-    )
+/// Common fields extracted from a scenario + model + scores for persisting lab results.
+struct CommonResultFields {
+    scenario_name: String,
+    model_id: String,
+    provider: String,
+    status: String,
+    output_preview: Option<String>,
+    tool_calls_expected: Option<String>,
+    tool_calls_actual: Option<String>,
+    tool_accuracy_score: Option<i32>,
+    output_quality_score: Option<i32>,
+    protocol_compliance: Option<i32>,
+    input_tokens: i64,
+    output_tokens: i64,
+    cost_usd: f64,
+    duration_ms: i64,
+    error_message: Option<String>,
+    rationale: Option<String>,
+    suggestions: Option<String>,
+}
+
+fn make_common_result_fields(scenario: &TestScenario, model: &TestModelConfig, status: &str, scores: &ScoreResult) -> CommonResultFields {
+    CommonResultFields {
+        scenario_name: scenario.name.clone(),
+        model_id: model.id.clone(),
+        provider: model.provider.clone(),
+        status: status.to_string(),
+        output_preview: scores.output_preview.clone(),
+        tool_calls_expected: scenario.expected_tool_sequence.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
+        tool_calls_actual: scores.tool_calls_actual.clone(),
+        tool_accuracy_score: Some(scores.tool_accuracy),
+        output_quality_score: Some(scores.output_quality),
+        protocol_compliance: Some(scores.protocol_compliance),
+        input_tokens: scores.input_tokens,
+        output_tokens: scores.output_tokens,
+        cost_usd: scores.cost_usd,
+        duration_ms: scores.duration_ms,
+        error_message: scores.error_message.clone(),
+        rationale: scores.rationale.clone(),
+        suggestions: scores.suggestions.clone(),
+    }
 }
 
 // ============================================================================
@@ -1137,11 +1171,13 @@ pub async fn run_arena_test(
         persist_result: Box::new(|pool, run_id, _variant, scenario, model, status, scores| {
             let f = make_common_result_fields(scenario, model, status, scores);
             let _ = arena_repo::create_result(pool, &CreateArenaResultInput {
-                run_id: run_id.to_string(), scenario_name: f.0, model_id: f.1, provider: f.2,
-                status: f.3, output_preview: f.4, tool_calls_expected: f.5, tool_calls_actual: f.6,
-                tool_accuracy_score: f.7, output_quality_score: f.8, protocol_compliance: f.9,
-                input_tokens: f.10, output_tokens: f.11, cost_usd: f.12, duration_ms: f.13,
-                error_message: f.14,
+                run_id: run_id.to_string(), scenario_name: f.scenario_name, model_id: f.model_id,
+                provider: f.provider, status: f.status, output_preview: f.output_preview,
+                tool_calls_expected: f.tool_calls_expected, tool_calls_actual: f.tool_calls_actual,
+                tool_accuracy_score: f.tool_accuracy_score, output_quality_score: f.output_quality_score,
+                protocol_compliance: f.protocol_compliance, input_tokens: f.input_tokens,
+                output_tokens: f.output_tokens, cost_usd: f.cost_usd, duration_ms: f.duration_ms,
+                error_message: f.error_message, rationale: f.rationale, suggestions: f.suggestions,
             });
         }),
         build_summary: Box::new(build_arena_summary),
@@ -1185,11 +1221,13 @@ pub async fn run_ab_test(
             let f = make_common_result_fields(scenario, model, status, scores);
             let _ = ab_repo::create_result(pool, &CreateAbResultInput {
                 run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1,
-                scenario_name: f.0, model_id: f.1, provider: f.2, status: f.3,
-                output_preview: f.4, tool_calls_expected: f.5, tool_calls_actual: f.6,
-                tool_accuracy_score: f.7, output_quality_score: f.8, protocol_compliance: f.9,
-                input_tokens: f.10, output_tokens: f.11, cost_usd: f.12, duration_ms: f.13,
-                error_message: f.14,
+                scenario_name: f.scenario_name, model_id: f.model_id, provider: f.provider,
+                status: f.status, output_preview: f.output_preview,
+                tool_calls_expected: f.tool_calls_expected, tool_calls_actual: f.tool_calls_actual,
+                tool_accuracy_score: f.tool_accuracy_score, output_quality_score: f.output_quality_score,
+                protocol_compliance: f.protocol_compliance, input_tokens: f.input_tokens,
+                output_tokens: f.output_tokens, cost_usd: f.cost_usd, duration_ms: f.duration_ms,
+                error_message: f.error_message, rationale: f.rationale, suggestions: f.suggestions,
             });
         }),
         build_summary: Box::new(build_keyed_summary),
@@ -1232,11 +1270,13 @@ pub async fn run_eval_test(
             let f = make_common_result_fields(scenario, model, status, scores);
             let _ = eval_repo::create_result(pool, &CreateEvalResultInput {
                 run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1,
-                scenario_name: f.0, model_id: f.1, provider: f.2, status: f.3,
-                output_preview: f.4, tool_calls_expected: f.5, tool_calls_actual: f.6,
-                tool_accuracy_score: f.7, output_quality_score: f.8, protocol_compliance: f.9,
-                input_tokens: f.10, output_tokens: f.11, cost_usd: f.12, duration_ms: f.13,
-                error_message: f.14,
+                scenario_name: f.scenario_name, model_id: f.model_id, provider: f.provider,
+                status: f.status, output_preview: f.output_preview,
+                tool_calls_expected: f.tool_calls_expected, tool_calls_actual: f.tool_calls_actual,
+                tool_accuracy_score: f.tool_accuracy_score, output_quality_score: f.output_quality_score,
+                protocol_compliance: f.protocol_compliance, input_tokens: f.input_tokens,
+                output_tokens: f.output_tokens, cost_usd: f.cost_usd, duration_ms: f.duration_ms,
+                error_message: f.error_message, rationale: f.rationale, suggestions: f.suggestions,
             });
         }),
         build_summary: Box::new(build_keyed_summary),
@@ -1266,7 +1306,7 @@ pub async fn run_matrix_test(
     // Phase 0: Generate draft persona
     emit_lab_status(&app, "lab-matrix-status", &run_id, "drafting", None);
 
-    let draft_prompt_text = build_draft_generation_prompt(persona, &user_instruction);
+    let draft_prompt_text = build_draft_generation_prompt(persona, &user_instruction, None);
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
@@ -1313,23 +1353,70 @@ pub async fn run_matrix_test(
             let f = make_common_result_fields(scenario, model, status, scores);
             let _ = matrix_repo::create_result(pool, &CreateMatrixResultInput {
                 run_id: run_id.to_string(), variant: variant.label.clone(),
-                scenario_name: f.0, model_id: f.1, provider: f.2, status: f.3,
-                output_preview: f.4, tool_calls_expected: f.5, tool_calls_actual: f.6,
-                tool_accuracy_score: f.7, output_quality_score: f.8, protocol_compliance: f.9,
-                input_tokens: f.10, output_tokens: f.11, cost_usd: f.12, duration_ms: f.13,
-                error_message: f.14,
+                scenario_name: f.scenario_name, model_id: f.model_id, provider: f.provider,
+                status: f.status, output_preview: f.output_preview,
+                tool_calls_expected: f.tool_calls_expected, tool_calls_actual: f.tool_calls_actual,
+                tool_accuracy_score: f.tool_accuracy_score, output_quality_score: f.output_quality_score,
+                protocol_compliance: f.protocol_compliance, input_tokens: f.input_tokens,
+                output_tokens: f.output_tokens, cost_usd: f.cost_usd, duration_ms: f.duration_ms,
+                error_message: f.error_message, rationale: f.rationale, suggestions: f.suggestions,
             });
         }),
         build_summary: Box::new(build_keyed_summary),
     };
+
+    // Transition Drafting -> Generating so run_lab_loop can then go Generating -> Running -> Completed
+    let _ = matrix_repo::update_run_status(&pool, &run_id, LabRunStatus::Generating, None, None, None, None);
 
     run_lab_loop(&app, &pool, &run_id, persona, tools, &model_configs, &variants, &cancelled, use_case_filter.as_deref(), &cb).await;
 }
 
 // -- Matrix helpers ---------------------------------------------
 
-fn build_draft_generation_prompt(persona: &Persona, user_instruction: &str) -> String {
+fn build_draft_generation_prompt(persona: &Persona, user_instruction: &str, previous_results_summary: Option<&str>) -> String {
     let sp_json = persona.structured_prompt.as_deref().unwrap_or("{}");
+
+    // Extract use cases from design_context if available
+    let use_cases_section = persona
+        .design_context
+        .as_deref()
+        .and_then(|ctx| {
+            serde_json::from_str::<serde_json::Value>(ctx).ok().and_then(|v| {
+                v.get("use_cases")
+                    .or_else(|| v.get("useCases"))
+                    .and_then(|uc| {
+                        if uc.is_array() {
+                            let items: Vec<String> = uc
+                                .as_array()
+                                .unwrap()
+                                .iter()
+                                .filter_map(|item| {
+                                    item.as_str()
+                                        .map(|s| s.to_string())
+                                        .or_else(|| item.get("name").and_then(|n| n.as_str()).map(|s| s.to_string()))
+                                })
+                                .collect();
+                            if items.is_empty() {
+                                None
+                            } else {
+                                Some(format!(
+                                    "\n## Persona Use Cases\nThis persona is designed for these use cases:\n{}",
+                                    items.iter().map(|i| format!("- {i}")).collect::<Vec<_>>().join("\n")
+                                ))
+                            }
+                        } else {
+                            None
+                        }
+                    })
+            })
+        })
+        .unwrap_or_default();
+
+    let prev_results_section = previous_results_summary
+        .map(|s| format!(
+            "\n## Previous Test Results\nHere is a summary of how the current prompt performed in testing:\n{s}\nUse this context to address weaknesses in the current prompt."
+        ))
+        .unwrap_or_default();
 
     format!(
         r#"# Persona Prompt Optimizer
@@ -1340,18 +1427,25 @@ improvement instruction, generate an optimized version of the structured prompt.
 ## Current Persona: {}
 ## Current Structured Prompt:
 {}
+{use_cases_section}{prev_results_section}
 
 ## User's Instruction:
 {}
+
+## Improvement Guidelines
+- Preserve all sections that don't need changes
+- Only modify what the user requested
+- Ensure tool guidance matches the persona's available tools
+- Keep the prompt concise but thorough
+- If the persona has use cases, ensure the prompt handles all of them well
+- Add specific examples where they would improve clarity
 
 ## Output Format
 Respond with ONLY a JSON object (no markdown fences, no extra text):
 {{
   "structured_prompt": {{ "identity": "...", "instructions": "...", "toolGuidance": "...", "examples": "...", "errorHandling": "..." }},
-  "change_summary": "Brief description of what was changed"
-}}
-
-Preserve all sections that don't need changes. Only modify what the user requested."#,
+  "change_summary": "Brief description of what was changed and why"
+}}"#,
         persona.name, sp_json, user_instruction
     )
 }

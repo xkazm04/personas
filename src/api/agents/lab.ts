@@ -10,6 +10,7 @@ import type { LabEvalRun } from "@/lib/bindings/LabEvalRun";
 import type { LabEvalResult } from "@/lib/bindings/LabEvalResult";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { Persona } from "@/lib/bindings/Persona";
+import type { LabUserRating } from "@/lib/bindings/LabUserRating";
 import type { ModelTestConfig } from "./tests";
 
 // ============================================================================
@@ -142,3 +143,13 @@ export const labRollbackVersion = (versionId: string) =>
 
 export const labGetErrorRate = (personaId: string, window?: number) =>
   invoke<number>("lab_get_error_rate", { personaId, window: window });
+
+// ============================================================================
+// Ratings -- User feedback on results
+// ============================================================================
+
+export const labRateResult = (runId: string, resultId: string | null, scenarioName: string, rating: number, feedback?: string) =>
+  invoke<LabUserRating>("lab_rate_result", { runId, resultId, scenarioName, rating, feedback });
+
+export const labGetRatings = (runId: string) =>
+  invoke<LabUserRating[]>("lab_get_ratings", { runId });

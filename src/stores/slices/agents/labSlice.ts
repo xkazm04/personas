@@ -9,6 +9,7 @@ import type { LabMatrixRun } from "@/lib/bindings/LabMatrixRun";
 import type { LabMatrixResult } from "@/lib/bindings/LabMatrixResult";
 import type { LabEvalRun } from "@/lib/bindings/LabEvalRun";
 import type { LabEvalResult } from "@/lib/bindings/LabEvalResult";
+import type { LabUserRating } from "@/lib/bindings/LabUserRating";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { LabRunStatus } from "@/lib/bindings/LabRunStatus";
 import type { ModelTestConfig } from "@/api/agents/tests";
@@ -189,6 +190,11 @@ export interface LabSlice {
   fetchEvalResults: (runId: string) => Promise<void>;
   deleteEvalRun: (runId: string) => Promise<void>;
 
+  // User Ratings
+  userRatings: Record<string, LabUserRating[]>;
+  fetchUserRatings: (runId: string) => Promise<void>;
+  rateResult: (runId: string, resultId: string | null, scenarioName: string, rating: number, feedback?: string) => Promise<void>;
+
   // Versions
   promptVersions: PersonaPromptVersion[];
   fetchVersions: (personaId: string) => Promise<void>;
@@ -292,6 +298,36 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
     cancelEval: eval_.cancelRun,
     fetchEvalResults: eval_.fetchResults,
     deleteEvalRun: eval_.deleteRun,
+
+    // User Ratings
+    userRatings: {},
+    fetchUserRatings: async (runId) => {
+      try {
+        const ratings = await api.labGetRatings(runId);
+        set((state) => ({
+          userRatings: { ...state.userRatings, [runId]: ratings },
+        }));
+      } catch (err) {
+        reportError(err, "Failed to fetch user ratings", set);
+      }
+    },
+    rateResult: async (runId, resultId, scenarioName, rating, feedback) => {
+      try {
+        const created = await api.labRateResult(runId, resultId, scenarioName, rating, feedback);
+        set((state) => {
+          const existing = state.userRatings[runId] ?? [];
+          // Replace existing rating for same scenario+result, or add new
+          const filtered = existing.filter(
+            (r) => !(r.scenarioName === scenarioName && r.resultId === resultId),
+          );
+          return {
+            userRatings: { ...state.userRatings, [runId]: [...filtered, created] },
+          };
+        });
+      } catch (err) {
+        reportError(err, "Failed to rate result", set);
+      }
+    },
 
     // Versions
     promptVersions: [],

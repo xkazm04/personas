@@ -27,6 +27,20 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_smee_relays_status ON smee_relays(status);"
     )?;
 
+    // -- Lab User Ratings table -----------------------------------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS lab_user_ratings (
+            id              TEXT PRIMARY KEY,
+            run_id          TEXT NOT NULL,
+            result_id       TEXT,
+            scenario_name   TEXT NOT NULL,
+            rating          INTEGER NOT NULL CHECK(rating IN (-1, 0, 1)),
+            feedback        TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_lab_ratings_run ON lab_user_ratings(run_id);"
+    )?;
+
     tracing::info!("Database migrations complete");
     Ok(())
 }
@@ -2512,6 +2526,26 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
          CREATE INDEX IF NOT EXISTS idx_lab_matrix_runs_persona_created ON lab_matrix_runs(persona_id, created_at DESC);
          CREATE INDEX IF NOT EXISTS idx_lab_eval_runs_persona_created ON lab_eval_runs(persona_id, created_at DESC);"
     )?;
+
+    // Add rationale and suggestions columns to all lab result tables (LLM-based evaluation)
+    let has_arena_rationale: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('lab_arena_results') WHERE name = 'rationale'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_arena_rationale {
+        conn.execute_batch(
+            "ALTER TABLE lab_arena_results ADD COLUMN rationale TEXT;
+             ALTER TABLE lab_arena_results ADD COLUMN suggestions TEXT;
+             ALTER TABLE lab_ab_results ADD COLUMN rationale TEXT;
+             ALTER TABLE lab_ab_results ADD COLUMN suggestions TEXT;
+             ALTER TABLE lab_matrix_results ADD COLUMN rationale TEXT;
+             ALTER TABLE lab_matrix_results ADD COLUMN suggestions TEXT;
+             ALTER TABLE lab_eval_results ADD COLUMN rationale TEXT;
+             ALTER TABLE lab_eval_results ADD COLUMN suggestions TEXT;"
+        )?;
+        tracing::info!("Added rationale and suggestions columns to all lab result tables");
+    }
 
     // Add workflow import context columns to build_sessions (Phase 2: matrix import)
     let has_workflow_json: bool = conn

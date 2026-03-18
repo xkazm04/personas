@@ -111,6 +111,8 @@ pub struct LabArenaResult {
     pub cost_usd: f64,
     #[ts(type = "number")]
     pub duration_ms: i64,
+    pub rationale: Option<String>,
+    pub suggestions: Option<String>,
     pub error_message: Option<String>,
     pub created_at: String,
 }
@@ -133,6 +135,8 @@ pub struct CreateArenaResultInput {
     pub cost_usd: f64,
     pub duration_ms: i64,
     pub error_message: Option<String>,
+    pub rationale: Option<String>,
+    pub suggestions: Option<String>,
 }
 
 // ============================================================================
@@ -192,6 +196,8 @@ pub struct LabAbResult {
     pub cost_usd: f64,
     #[ts(type = "number")]
     pub duration_ms: i64,
+    pub rationale: Option<String>,
+    pub suggestions: Option<String>,
     pub error_message: Option<String>,
     pub created_at: String,
 }
@@ -216,6 +222,8 @@ pub struct CreateAbResultInput {
     pub cost_usd: f64,
     pub duration_ms: i64,
     pub error_message: Option<String>,
+    pub rationale: Option<String>,
+    pub suggestions: Option<String>,
 }
 
 // ============================================================================
@@ -270,6 +278,8 @@ pub struct LabMatrixResult {
     pub cost_usd: f64,
     #[ts(type = "number")]
     pub duration_ms: i64,
+    pub rationale: Option<String>,
+    pub suggestions: Option<String>,
     pub error_message: Option<String>,
     pub created_at: String,
 }
@@ -293,6 +303,8 @@ pub struct CreateMatrixResultInput {
     pub cost_usd: f64,
     pub duration_ms: i64,
     pub error_message: Option<String>,
+    pub rationale: Option<String>,
+    pub suggestions: Option<String>,
 }
 
 // ============================================================================
@@ -350,11 +362,40 @@ pub struct LabEvalResult {
     pub cost_usd: f64,
     #[ts(type = "number")]
     pub duration_ms: i64,
+    pub rationale: Option<String>,
+    pub suggestions: Option<String>,
     pub error_message: Option<String>,
     pub created_at: String,
 }
 
 #[derive(Debug, Clone)]
+// ============================================================================
+// Lab: User Ratings (thumbs up/down feedback on results)
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LabUserRating {
+    pub id: String,
+    pub run_id: String,
+    pub result_id: Option<String>,
+    pub scenario_name: String,
+    #[ts(type = "number")]
+    pub rating: i32,
+    pub feedback: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct CreateRatingInput {
+    pub run_id: String,
+    pub result_id: Option<String>,
+    pub scenario_name: String,
+    pub rating: i32,
+    pub feedback: Option<String>,
+}
+
 pub struct CreateEvalResultInput {
     pub run_id: String,
     pub version_id: String,
@@ -374,4 +415,6 @@ pub struct CreateEvalResultInput {
     pub cost_usd: f64,
     pub duration_ms: i64,
     pub error_message: Option<String>,
+    pub rationale: Option<String>,
+    pub suggestions: Option<String>,
 }
