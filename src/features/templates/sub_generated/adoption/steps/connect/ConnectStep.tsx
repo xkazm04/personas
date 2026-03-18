@@ -32,7 +32,7 @@ export interface RequiredConnector {
 
 // -- Helpers --------------------------------------------------------------
 
-const BUILTIN_CONNECTORS = new Set(['personas_messages', 'personas_database']);
+const BUILTIN_CONNECTORS = new Set(['personas_messages', 'personas_database', 'personas_vector_db']);
 
 function isVirtual(name: string): boolean {
   return BUILTIN_CONNECTORS.has(name);

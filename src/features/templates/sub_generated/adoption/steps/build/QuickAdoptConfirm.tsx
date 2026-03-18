@@ -7,7 +7,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
 
-const BUILTIN = new Set(['personas_messages', 'personas_database']);
+const BUILTIN = new Set(['personas_messages', 'personas_database', 'personas_vector_db']);
 
 /** Derive a user-friendly phase label from transform lines. */
 function derivePhaseLabel(lines: string[]): string {

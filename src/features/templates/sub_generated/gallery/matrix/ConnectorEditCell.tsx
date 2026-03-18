@@ -16,7 +16,7 @@ import type { RequiredConnector } from '../../adoption/steps/connect/ConnectStep
 import type { MatrixEditState, MatrixEditCallbacks } from './matrixEditTypes';
 import { getRoleForConnector } from '@/lib/credentials/connectorRoles';
 
-const BUILTIN = new Set(['personas_messages', 'personas_database']);
+const BUILTIN = new Set(['personas_messages', 'personas_database', 'personas_vector_db']);
 
 // -- Connector Popup ---------------------------------------------------
 

@@ -314,11 +314,11 @@ pub fn run() {
             let user_db_pool = db::init_user_db(&app_data_dir)?;
             tracing::info!("User data database pool ready (max_size=4)");
 
-            // Seed the built-in database credential so it appears in the Databases UI
+            // Seed built-in local credentials (database, vector KB, messaging)
             {
                 let conn = pool.get().map_err(|e| format!("Failed to get DB connection for credential seed: {e}"))?;
-                if let Err(e) = db::seed_builtin_database_credential(&conn) {
-                    tracing::warn!("Failed to seed built-in database credential: {}", e);
+                if let Err(e) = db::seed_builtin_credentials(&conn) {
+                    tracing::warn!("Failed to seed built-in credentials: {}", e);
                 }
             }
 

@@ -8,7 +8,7 @@ import { getConnectorMeta } from '@/features/shared/components/display/Connector
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { CredentialMetadata } from '@/lib/types/types';
 
-const BUILTIN_CONNECTORS = new Set(['personas_messages', 'personas_database']);
+const BUILTIN_CONNECTORS = new Set(['personas_messages', 'personas_database', 'personas_vector_db']);
 
 export function ConnectorDropdown({
   members,

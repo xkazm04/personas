@@ -1,7 +1,7 @@
 {
   "id": "builtin-vector-knowledge-base",
   "name": "personas_vector_db",
-  "label": "Vector Knowledge Base",
+  "label": "Local Vector DB",
   "color": "#8B5CF6",
   "icon_url": "/icons/connectors/vector-db.svg",
   "category": "database",

@@ -40,7 +40,7 @@ export function getNextAction(
       return { label: 'Next: Connect', icon: ArrowRight, disabled: state.selectedUseCaseIds.size === 0, variant: 'violet' };
     case 'connect': {
       const unconfigured = requiredConnectors.filter(
-        (c) => c.activeName !== 'personas_messages' && c.activeName !== 'personas_database' && !state.connectorCredentialMap[c.activeName],
+        (c) => c.activeName !== 'personas_messages' && c.activeName !== 'personas_database' && c.activeName !== 'personas_vector_db' && !state.connectorCredentialMap[c.activeName],
       ).length;
       return {
         label: unconfigured > 0 ? `Configure (${unconfigured} remaining)` : 'Next: Configure',
