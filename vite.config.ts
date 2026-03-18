@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { readFile } from "fs/promises";
+import { execSync } from "child_process";
 import { visualizer } from "rollup-plugin-visualizer";
 import {
   needsTransform,
@@ -30,6 +31,24 @@ export default defineConfig(async () => ({
   // Use relative paths so assets resolve under tauri:// protocol in production
   base: "./",
   plugins: [
+    // Auto-regenerate template checksums and connector seed so DB seeding
+    // always works on any device after clone + build
+    {
+      name: "catalog-codegen",
+      buildStart() {
+        const cwd = path.resolve(__dirname);
+        for (const script of [
+          "scripts/generate-template-checksums.mjs",
+          "scripts/generate-connector-seed.mjs",
+        ]) {
+          try {
+            execSync(`node ${script}`, { cwd, stdio: "pipe" });
+          } catch (e) {
+            console.warn(`[catalog-codegen] Failed to run ${script}:`, e);
+          }
+        }
+      },
+    },
     react(),
     tailwindcss(),
     // Bundle analysis: run `ANALYZE=true npm run build` then open dist/bundle-report.html

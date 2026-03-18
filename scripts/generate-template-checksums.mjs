@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = join(__dirname, '..');
 const TEMPLATES_DIR = join(ROOT, 'scripts', 'templates');
-const OUTPUT_FILE = join(ROOT, 'src', 'lib', 'personas', 'templateChecksums.ts');
+const OUTPUT_FILE = join(ROOT, 'src', 'lib', 'personas', 'templates', 'templateChecksums.ts');
 
 function computeContentHashSync(content) {
   let h1 = 0xdeadbeef;

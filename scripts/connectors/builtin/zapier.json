@@ -1,0 +1,31 @@
+{
+  "id": "builtin-zapier",
+  "name": "zapier",
+  "label": "Zapier",
+  "color": "#FF4A00",
+  "icon_url": "/icons/connectors/zapier.svg",
+  "category": "automation",
+  "fields": [
+    { "key": "api_key", "label": "API Key", "type": "password", "required": true, "placeholder": "", "helpText": "From zapier.com/app/developer -> API Key" }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.zapier.com/v1/profiles/me",
+    "method": "GET",
+    "headers": { "Authorization": "Bearer {{api_key}}" },
+    "description": "Validates API key via Zapier profiles endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Zapier automation platform -- trigger Zaps via webhooks and manage workflows from your agent.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://platform.zapier.com/reference/introduction",
+    "is_platform": true,
+    "platform_type": "zapier",
+    "auth_methods": [
+      { "id": "api_key", "label": "API Key", "type": "credential", "is_default": true }
+    ]
+  }
+}

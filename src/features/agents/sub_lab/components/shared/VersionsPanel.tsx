@@ -6,6 +6,7 @@ import {
 import { useAgentStore } from "@/stores/agentStore";
 import { VersionItem, DiffViewer, type VersionAction } from '@/features/agents/sub_lab/shared';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
+import { ScoreTrendCard } from './ScoreTrendCard';
 
 export function VersionsPanel() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
@@ -146,6 +147,9 @@ export function VersionsPanel() {
             Run these versions in A/B test
           </button>
         )}
+
+        {/* Score trend */}
+        <ScoreTrendCard personaId={personaId} />
 
         {/* Error rate monitor */}
         <div className="rounded-xl border border-primary/10 bg-secondary/20 p-4 space-y-3">

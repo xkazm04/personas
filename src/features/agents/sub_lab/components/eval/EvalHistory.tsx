@@ -69,7 +69,7 @@ export function EvalHistory({ runs, resultsMap, expandedRunId, onToggleExpand, o
             ) : undefined
           }
         >
-          <EvalResultsGrid results={resultsMap[activeRun.id] ?? []} />
+          <EvalResultsGrid results={resultsMap[activeRun.id] ?? []} runId={activeRun.id} />
         </LabResultModal>
       )}
     </>

@@ -60,7 +60,7 @@ export function ArenaPanel() {
   return (
     <div className="space-y-6">
       <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-3">
           {(!hasPrompt || !hasTools) && (
             <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
               <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
@@ -104,7 +104,7 @@ export function ArenaPanel() {
                   {ANTHROPIC_MODELS.map((m) => (
                     <button key={m.id} data-testid={`arena-model-${m.id}`} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
                       title={isLabRunning ? 'Cannot change while test is running' : undefined}
-                      className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                      className={`px-2.5 py-1 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                       {m.label}
                     </button>
                   ))}
@@ -117,7 +117,7 @@ export function ArenaPanel() {
                     {OLLAMA_MODELS.map((m) => (
                       <button key={m.id} data-testid={`arena-model-${m.id}`} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
                         title={isLabRunning ? 'Cannot change while test is running' : undefined}
-                        className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                        className={`px-2.5 py-1 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                         {m.label}
                       </button>
                     ))}

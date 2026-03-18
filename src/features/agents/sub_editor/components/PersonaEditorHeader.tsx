@@ -7,6 +7,8 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { useToastStore } from '@/stores/toastStore';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { LabQualityBadge } from '@/features/agents/sub_lab/components/shared/LabQualityBadge';
+import { useParsedDesignContext } from '@/stores/selectors/personaSelectors';
 import type { PersonaDraft } from '../libs/PersonaDraft';
 import { useEffectivePersona } from '../libs/useEffectivePersona';
 
@@ -22,6 +24,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
   const credentials = useVaultStore((s) => s.credentials);
   const effective = useEffectivePersona(draft, baseline);
+  const designContext = useParsedDesignContext();
   const [showReadinessTooltip, setShowReadinessTooltip] = useState(false);
 
   const readiness = useMemo(() => {
@@ -76,7 +79,12 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
     <ContentHeader
       icon={personaIcon}
       title={effective.name}
-      subtitle={effective.description || undefined}
+      subtitle={
+        <span className="flex items-center gap-2">
+          {effective.description && <span>{effective.description}</span>}
+          <LabQualityBadge testMetadata={designContext.labTestMetadata} compact />
+        </span>
+      }
       actions={
         <div className="relative flex items-center gap-2 flex-shrink-0">
           <span className={`text-sm font-medium transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-muted-foreground/80'}`}>

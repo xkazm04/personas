@@ -1,0 +1,31 @@
+{
+  "id": "builtin-google-workspace-oauth-template",
+  "name": "google_workspace_oauth_template",
+  "label": "Google Workspace",
+  "color": "#4285F4",
+  "icon_url": "/icons/connectors/google.svg",
+  "category": "productivity",
+  "fields": [],
+  "healthcheck_config": {
+    "endpoint": "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
+    "method": "GET",
+    "headers": { "Authorization": "Bearer {{access_token}}" },
+    "description": "Validates Google OAuth identity access"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "recommended": true,
+    "summary": "Google Workspace consent-first template for Gmail, Drive, and Calendar automation.",
+    "setup_instructions": "1. Open Google Cloud Console (https://console.cloud.google.com).\n2. Create/select a project and enable Gmail API, Google Drive API, and Google Calendar API.\n3. Configure OAuth consent screen and add authorized test users.\n4. In Personas, click Authorize with Google.\n5. Complete consent in your browser.\n6. Return to Personas; token metadata is saved automatically.",
+    "oauth_type": "google",
+    "auth_type": "oauth",
+    "auth_type_label": "OAuth",
+    "docs_url": "https://console.cloud.google.com/apis/credentials",
+    "auth_methods": [
+      { "id": "oauth", "label": "OAuth", "type": "oauth", "is_default": true },
+      { "id": "mcp", "label": "MCP", "type": "mcp", "package": "@anthropic/mcp-google-workspace", "transport": "stdio", "suggested_env": { "GOOGLE_CLIENT_ID": "", "GOOGLE_CLIENT_SECRET": "", "GOOGLE_REFRESH_TOKEN": "" } }
+    ]
+  }
+}

@@ -368,7 +368,6 @@ pub struct LabEvalResult {
     pub created_at: String,
 }
 
-#[derive(Debug, Clone)]
 // ============================================================================
 // Lab: User Ratings (thumbs up/down feedback on results)
 // ============================================================================

@@ -44,6 +44,8 @@ fn row_to_result(row: &Row) -> rusqlite::Result<LabEvalResult> {
         output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
         cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
         duration_ms: row.get::<_, Option<i64>>("duration_ms")?.unwrap_or(0),
+        rationale: row.get("rationale")?,
+        suggestions: row.get("suggestions")?,
         error_message: row.get("error_message")?,
         created_at: row.get("created_at")?,
     })
@@ -160,8 +162,8 @@ pub fn create_result(
              output_preview, tool_calls_expected, tool_calls_actual,
              tool_accuracy_score, output_quality_score, protocol_compliance,
              input_tokens, output_tokens, cost_usd, duration_ms,
-             error_message, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)
+             rationale, suggestions, error_message, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)
          RETURNING *",
         params![
             id,
@@ -182,6 +184,8 @@ pub fn create_result(
             input.output_tokens,
             input.cost_usd,
             input.duration_ms,
+            input.rationale,
+            input.suggestions,
             input.error_message,
             now,
         ],

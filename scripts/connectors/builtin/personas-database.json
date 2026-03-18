@@ -1,0 +1,23 @@
+{
+  "id": "builtin-personas-database",
+  "name": "personas_database",
+  "label": "Built-in Database",
+  "color": "#06B6D4",
+  "icon_url": "",
+  "category": "database",
+  "fields": [],
+  "healthcheck_config": null,
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "is_builtin": true,
+    "always_active": true,
+    "summary": "Local SQLite database managed by Personas. Available on first launch -- agents can create tables, store data, and run SQL queries without any external service.",
+    "auth_type": "builtin",
+    "auth_type_label": "Built-in",
+    "auth_methods": [
+      { "id": "builtin", "label": "Built-in", "type": "credential", "is_default": true }
+    ]
+  }
+}

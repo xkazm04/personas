@@ -53,7 +53,7 @@ export function EvalPanel() {
   return (
     <div className="space-y-6" data-testid="eval-panel">
       <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-3">
           <div className="space-y-1">
             <label className="text-sm font-medium text-muted-foreground/80">Prompt Versions (select 2+)</label>
             <div className="flex flex-wrap gap-2" data-testid="eval-version-selector">
@@ -62,7 +62,7 @@ export function EvalPanel() {
                 return (
                   <button key={v.id} onClick={() => toggleVersion(v.id)} disabled={isLabRunning} data-testid={`eval-version-toggle-${v.version_number}`}
                     title={isLabRunning ? 'Cannot change while test is running' : undefined}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${isSelected ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-medium border transition-all ${isSelected ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                     {isSelected && <Check className="w-3 h-3" />}
                     <span className="font-mono">v{v.version_number}</span>
                     <span className="text-sm opacity-60">{v.tag}</span>
@@ -79,7 +79,7 @@ export function EvalPanel() {
               {ANTHROPIC_MODELS.map((m) => (
                 <button key={m.id} onClick={() => toggleModel(m.id)} disabled={isLabRunning} data-testid={`eval-model-toggle-${m.id}`}
                   title={isLabRunning ? 'Cannot change while test is running' : undefined}
-                  className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                  className={`px-2.5 py-1 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                   {m.label}
                 </button>
               ))}

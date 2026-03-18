@@ -18,6 +18,8 @@ export interface LabMatrixResult {
   outputTokens: number;
   costUsd: number;
   durationMs: number;
+  rationale: string | null;
+  suggestions: string | null;
   errorMessage: string | null;
   createdAt: string;
 }

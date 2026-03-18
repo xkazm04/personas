@@ -1,0 +1,26 @@
+{
+  "id": "builtin-desktop-browser",
+  "name": "desktop_browser",
+  "label": "Browser (Chrome/Edge)",
+  "color": "#4285F4",
+  "icon_url": "/icons/connectors/chrome.svg",
+  "category": "desktop",
+  "fields": [
+    { "key": "binary_path", "label": "Browser Path", "type": "text", "required": false, "placeholder": "chrome", "helpText": "Auto-detected. Path to Chrome or Edge binary." },
+    { "key": "cdp_port", "label": "DevTools Port", "type": "text", "required": false, "placeholder": "9222", "helpText": "Chrome DevTools Protocol port (default: 9222)" }
+  ],
+  "healthcheck_config": null,
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Browser automation via Chrome DevTools Protocol -- navigate pages, extract data, and automate web tasks.",
+    "auth_type": "local",
+    "auth_type_label": "Local App",
+    "is_desktop": true,
+    "required_capabilities": ["process_spawn", "network_local"],
+    "auth_methods": [
+      { "id": "local", "label": "Local App", "type": "credential", "is_default": true }
+    ]
+  }
+}

@@ -12,6 +12,11 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use super::cli_process::CliProcessDriver;
+use super::parser;
+use super::prompt;
+use super::types::*;
+
 // ============================================================================
 // EvalResult -- standardized output from any evaluation strategy
 // ============================================================================
@@ -367,6 +372,183 @@ pub fn eval_composite(input: &EvalInput) -> CompositeEvalResult {
 pub struct CompositeEvalResult {
     pub composite: EvalResult,
     pub individual: Vec<EvalResult>,
+}
+
+// ============================================================================
+// LLM-based evaluation -- asks Claude to score and provide rationale
+// ============================================================================
+
+/// Result from LLM-based evaluation, including scores, rationale, and suggestions.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct LlmEvalResult {
+    pub tool_accuracy: i32,
+    pub output_quality: i32,
+    pub protocol_compliance: i32,
+    pub rationale: String,
+    pub suggestions: String,
+}
+
+/// Ask an LLM to evaluate a persona's test result, providing scores, rationale,
+/// and concrete improvement suggestions. Falls back to heuristic scoring on failure.
+pub async fn eval_with_llm(
+    input: &EvalInput<'_>,
+    persona_name: &str,
+    persona_description: &str,
+    scenario_name: &str,
+    scenario_description: &str,
+) -> LlmEvalResult {
+    let eval_prompt = build_llm_eval_prompt(
+        input, persona_name, persona_description, scenario_name, scenario_description,
+    );
+
+    match run_llm_eval(&eval_prompt).await {
+        Ok(result) => result,
+        Err(e) => {
+            tracing::warn!("LLM eval failed, falling back to heuristic scoring: {e}");
+            fallback_heuristic(input)
+        }
+    }
+}
+
+fn build_llm_eval_prompt(
+    input: &EvalInput<'_>,
+    persona_name: &str,
+    persona_description: &str,
+    scenario_name: &str,
+    scenario_description: &str,
+) -> String {
+    let tool_calls_actual = input.actual_tools
+        .map(|t| t.join(", "))
+        .unwrap_or_else(|| "(none)".to_string());
+    let tool_calls_expected = input.expected_tools
+        .map(|t| t.join(", "))
+        .unwrap_or_else(|| "(none specified)".to_string());
+    let output_preview = if input.output.len() > 3000 {
+        &input.output[..3000]
+    } else {
+        input.output
+    };
+    let expected_behavior = input.expected_behavior.unwrap_or("(not specified)");
+
+    format!(
+        r#"# Persona Test Evaluation
+
+You are an expert evaluator for AI persona testing. Score this test result.
+
+## Persona
+Name: {persona_name}
+Description: {persona_description}
+
+## Test Scenario
+Name: {scenario_name}
+Description: {scenario_description}
+
+## Expected Behavior
+{expected_behavior}
+
+## Expected Tool Calls
+{tool_calls_expected}
+
+## Actual Tool Calls
+{tool_calls_actual}
+
+## Agent Output (first 3000 chars)
+{output_preview}
+
+## Scoring Instructions
+Rate each metric from 0 to 100:
+
+1. **tool_accuracy**: Did the agent call the right tools in the right order? 100 = perfect match, 0 = completely wrong tools or no tools when expected.
+2. **output_quality**: Does the output address the scenario correctly? 100 = comprehensive and accurate, 0 = irrelevant or empty.
+3. **protocol_compliance**: Does the agent follow its protocols correctly? 100 = perfect adherence, 0 = no protocol compliance.
+
+## Response Format
+Respond with ONLY a JSON object (no markdown fences, no extra text):
+{{
+  "tool_accuracy": <number 0-100>,
+  "output_quality": <number 0-100>,
+  "protocol_compliance": <number 0-100>,
+  "rationale": "<1-2 sentences per metric explaining the score>",
+  "suggestions": "<1-2 specific, actionable prompt improvements>"
+}}"#
+    )
+}
+
+async fn run_llm_eval(prompt_text: &str) -> Result<LlmEvalResult, String> {
+    let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--max-turns".to_string());
+    cli_args.args.push("1".to_string());
+
+    let mut driver = CliProcessDriver::spawn_temp_no_stderr(&cli_args, "personas-llm-eval")
+        .map_err(|e| format!("Failed to spawn LLM eval process: {e}"))?;
+    driver.write_stdin(prompt_text.as_bytes()).await;
+
+    let mut assistant_text = String::new();
+    let timeout = tokio::time::Duration::from_secs(60);
+
+    driver.collect_lines_with_timeout(timeout, |line| {
+        let (line_type, _) = parser::parse_stream_line(line);
+        if let StreamLineType::AssistantText { text } = line_type {
+            assistant_text.push_str(&text);
+            assistant_text.push('\n');
+        }
+    }).await.map_err(|e| format!("LLM eval timed out or failed: {e}"))?;
+
+    let _ = driver.finish().await;
+
+    parse_llm_eval_response(&assistant_text)
+}
+
+fn parse_llm_eval_response(raw: &str) -> Result<LlmEvalResult, String> {
+    let trimmed = raw.trim();
+
+    // Try direct parse
+    if let Ok(result) = serde_json::from_str::<LlmEvalResult>(trimmed) {
+        return validate_llm_result(result);
+    }
+
+    // Try to extract JSON from text
+    if let Some(start) = trimmed.find('{') {
+        if let Some(end) = trimmed.rfind('}') {
+            let json_str = &trimmed[start..=end];
+            if let Ok(result) = serde_json::from_str::<LlmEvalResult>(json_str) {
+                return validate_llm_result(result);
+            }
+        }
+    }
+
+    Err(format!(
+        "Failed to parse LLM eval response. Raw (first 500 chars): {}",
+        &trimmed[..trimmed.len().min(500)]
+    ))
+}
+
+fn validate_llm_result(mut result: LlmEvalResult) -> Result<LlmEvalResult, String> {
+    result.tool_accuracy = result.tool_accuracy.clamp(0, 100);
+    result.output_quality = result.output_quality.clamp(0, 100);
+    result.protocol_compliance = result.protocol_compliance.clamp(0, 100);
+    Ok(result)
+}
+
+/// Fallback to heuristic scoring when LLM evaluation fails.
+fn fallback_heuristic(input: &EvalInput<'_>) -> LlmEvalResult {
+    let tool = eval_tool_accuracy(input);
+    let keyword = eval_keyword_match(input);
+    let protocol = eval_protocol_compliance(input);
+
+    LlmEvalResult {
+        tool_accuracy: tool.score,
+        output_quality: keyword.score,
+        protocol_compliance: protocol.score,
+        rationale: format!(
+            "Heuristic fallback: tool_accuracy={} ({}), output_quality={} ({}), protocol={}  ({})",
+            tool.score, tool.explanation,
+            keyword.score, keyword.explanation,
+            protocol.score, protocol.explanation,
+        ),
+        suggestions: "LLM evaluation unavailable; consider re-running with LLM eval enabled.".to_string(),
+    }
 }
 
 // ============================================================================

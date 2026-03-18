@@ -18,7 +18,7 @@ interface Props {
   onRate?: (scenarioName: string, versionId: string, rating: number, feedback?: string) => void;
 }
 
-export function AbResultsView({ results, runId, userRatings, onRate }: Props) {
+export function AbResultsView({ results, runId: _runId, userRatings, onRate }: Props) {
   const { versionAggs, scenarios, matrix, winnerId } = useMemo(
     () => aggregateAbResults(results),
     [results],

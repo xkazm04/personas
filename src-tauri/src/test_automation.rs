@@ -91,10 +91,48 @@ struct EvalRequest {
 
 // ── Core eval + response machinery ──────────────────────────────────────────
 
+/// Default timeout for quick bridge operations (query, navigate, etc.)
+const BRIDGE_TIMEOUT_DEFAULT: u64 = 15;
+/// Longer timeout for operations that trigger state changes (click, fill-field)
+/// which may cause React re-renders and brief JS thread blocking during lab runs.
+const BRIDGE_TIMEOUT_MUTATION: u64 = 30;
+/// Maximum timeout for explicit wait operations (wait-for, wait-toast).
+const BRIDGE_TIMEOUT_WAIT_MAX: u64 = 300;
+
 async fn eval_bridge_method(
     state: &ServerState,
     method: &str,
     params: &serde_json::Value,
+) -> Result<String, (StatusCode, String)> {
+    eval_bridge_method_with_timeout(state, method, params, BRIDGE_TIMEOUT_DEFAULT).await
+}
+
+async fn eval_bridge_method_with_timeout(
+    state: &ServerState,
+    method: &str,
+    params: &serde_json::Value,
+    timeout_secs: u64,
+) -> Result<String, (StatusCode, String)> {
+    // Try up to 2 times — first attempt + one retry on timeout
+    for attempt in 0..2u8 {
+        match try_eval_bridge(state, method, params, timeout_secs).await {
+            Ok(result) => return Ok(result),
+            Err(e) if e.0 == StatusCode::GATEWAY_TIMEOUT && attempt == 0 => {
+                // First timeout — retry once after a brief pause to let the JS thread breathe
+                tokio::time::sleep(Duration::from_millis(500)).await;
+                continue;
+            }
+            Err(e) => return Err(e),
+        }
+    }
+    unreachable!()
+}
+
+async fn try_eval_bridge(
+    state: &ServerState,
+    method: &str,
+    params: &serde_json::Value,
+    timeout_secs: u64,
 ) -> Result<String, (StatusCode, String)> {
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -130,7 +168,7 @@ async fn eval_bridge_method(
     })?;
 
     // Wait for the JS bridge to respond via __test_respond
-    match tokio::time::timeout(Duration::from_secs(15), rx).await {
+    match tokio::time::timeout(Duration::from_secs(timeout_secs), rx).await {
         Ok(Ok(result)) => Ok(result),
         Ok(Err(_)) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -142,7 +180,7 @@ async fn eval_bridge_method(
             map.remove(&id);
             Err((
                 StatusCode::GATEWAY_TIMEOUT,
-                "Bridge response timeout (15s)".to_string(),
+                format!("Bridge response timeout ({timeout_secs}s)"),
             ))
         }
     }
@@ -163,7 +201,7 @@ async fn handle_click(
     Json(req): Json<ClickRequest>,
 ) -> Result<String, (StatusCode, String)> {
     let params = serde_json::json!({ "selector": req.selector });
-    eval_bridge_method(&state, "click", &params).await
+    eval_bridge_method_with_timeout(&state, "click", &params, BRIDGE_TIMEOUT_MUTATION).await
 }
 
 async fn handle_type(
@@ -202,7 +240,9 @@ async fn handle_wait(
     Json(req): Json<WaitRequest>,
 ) -> Result<String, (StatusCode, String)> {
     let params = serde_json::json!({ "selector": req.selector, "timeoutMs": req.timeout_ms });
-    eval_bridge_method(&state, "waitFor", &params).await
+    // Wait timeout = JS-side timeout + generous buffer for bridge overhead
+    let bridge_timeout = (req.timeout_ms / 1000).max(BRIDGE_TIMEOUT_DEFAULT) + 10;
+    eval_bridge_method_with_timeout(&state, "waitFor", &params, bridge_timeout.min(BRIDGE_TIMEOUT_WAIT_MAX)).await
 }
 
 async fn handle_list_interactive(
@@ -326,7 +366,7 @@ async fn handle_fill_field(
     Json(req): Json<FillFieldRequest>,
 ) -> Result<String, (StatusCode, String)> {
     let params = serde_json::json!({ "testId": req.test_id, "value": req.value });
-    eval_bridge_method(&state, "fillField", &params).await
+    eval_bridge_method_with_timeout(&state, "fillField", &params, BRIDGE_TIMEOUT_MUTATION).await
 }
 
 async fn handle_click_testid(
@@ -334,7 +374,7 @@ async fn handle_click_testid(
     Json(req): Json<ClickTestIdRequest>,
 ) -> Result<String, (StatusCode, String)> {
     let params = serde_json::json!({ "testId": req.test_id });
-    eval_bridge_method(&state, "clickTestId", &params).await
+    eval_bridge_method_with_timeout(&state, "clickTestId", &params, BRIDGE_TIMEOUT_MUTATION).await
 }
 
 async fn handle_search_agents(
@@ -358,7 +398,8 @@ async fn handle_wait_toast(
     Json(req): Json<WaitToastRequest>,
 ) -> Result<String, (StatusCode, String)> {
     let params = serde_json::json!({ "text": req.text, "timeoutMs": req.timeout_ms });
-    eval_bridge_method(&state, "waitForToast", &params).await
+    let bridge_timeout = (req.timeout_ms / 1000).max(BRIDGE_TIMEOUT_DEFAULT) + 10;
+    eval_bridge_method_with_timeout(&state, "waitForToast", &params, bridge_timeout.min(BRIDGE_TIMEOUT_WAIT_MAX)).await
 }
 
 async fn handle_answer_question(
@@ -374,7 +415,7 @@ async fn handle_delete_agent(
     Json(req): Json<DeleteAgentRequest>,
 ) -> Result<String, (StatusCode, String)> {
     let params = serde_json::json!({ "nameOrId": req.name_or_id });
-    eval_bridge_method(&state, "deleteAgent", &params).await
+    eval_bridge_method_with_timeout(&state, "deleteAgent", &params, BRIDGE_TIMEOUT_MUTATION).await
 }
 
 async fn handle_health() -> &'static str {
