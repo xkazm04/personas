@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { GitBranch } from 'lucide-react';
 import { LabHistoryTable, type LabHistoryColumn } from '../shared/LabHistoryTable';
 import { LabResultModal } from '../shared/LabResultModal';
+import { ImprovePromptButton } from '../shared/ImprovePromptButton';
 import { AbResultsView } from './AbResultsView';
 import type { LabAbRun } from '@/lib/bindings/LabAbRun';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';
@@ -63,6 +64,11 @@ export function AbHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onD
               <span className="text-muted-foreground/40 text-xs">vs</span>
               <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-violet-500/15 text-violet-400">v{activeRun.versionBNum}</span>
             </div>
+          }
+          footerActions={
+            activeRun.status === 'completed' ? (
+              <ImprovePromptButton personaId={activeRun.personaId} runId={activeRun.id} mode="ab" />
+            ) : undefined
           }
         >
           <AbResultsView results={resultsMap[activeRun.id] ?? []} runId={activeRun.id} />
