@@ -9,6 +9,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
+import { sections as sidebarSections } from "@/features/shared/components/layout/sidebar/sidebarData";
+import { isTierVisible, TIERS, type Tier } from "@/lib/constants/uiModes";
 import type { SidebarSection } from "@/lib/types/types";
 
 const VALID_SECTIONS: SidebarSection[] = [
@@ -58,6 +60,19 @@ const bridge: TestBridge = {
     if (!VALID_SECTIONS.includes(section as SidebarSection)) {
       return { success: false, error: `Invalid section: ${section}. Valid: ${VALID_SECTIONS.join(", ")}` };
     }
+    // Check tier gating: the Sidebar component will redirect inaccessible sections
+    // back to home via useEffect — surface that early so callers get honest feedback.
+    const def = sidebarSections.find((s) => s.id === section);
+    if (def) {
+      const tier = useSystemStore.getState().viewMode as Tier;
+      const minTier = def.minTier ?? TIERS.STARTER;
+      if (!isTierVisible(minTier, tier)) {
+        return { success: false, error: `Section "${section}" requires tier "${minTier}" (current: "${tier}")` };
+      }
+      if (def.devOnly && !import.meta.env.DEV) {
+        return { success: false, error: `Section "${section}" is dev-only` };
+      }
+    }
     useSystemStore.getState().setSidebarSection(section as SidebarSection);
     return { success: true, section };
   },
@@ -76,6 +91,7 @@ const bridge: TestBridge = {
       buildActivity: agent.buildActivity,
       buildOutputLineCount: agent.buildOutputLines.length,
       // UI state
+      viewMode: sys.viewMode,
       sidebarSection: sys.sidebarSection,
       homeTab: sys.homeTab,
       editorTab: sys.editorTab,

@@ -7,7 +7,7 @@ import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
 import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, EventBusTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
-// GroupedAgentSidebar replaced by inline AgentsSidebarNav (persona list moved to table view)
+
 import { useFavoriteAgents as useFavoriteAgentsInline } from '@/hooks/agents/useFavoriteAgents';
 import TeamDragPanel from '@/features/pipeline/components/TeamDragPanel';
 import SidebarSubNav from './SidebarSubNav';

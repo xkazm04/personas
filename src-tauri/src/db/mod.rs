@@ -163,39 +163,61 @@ CREATE INDEX IF NOT EXISTS idx_kb_chunks_doc ON kb_chunks(document_id);
 CREATE INDEX IF NOT EXISTS idx_kb_chunks_kb ON kb_chunks(kb_id);
 "#;
 
-/// Seed the built-in `personas_database` credential if it doesn't already exist.
-/// This ensures a "Built-in Database" entry appears in the Databases submodule
-/// immediately on first app launch.
-pub fn seed_builtin_database_credential(conn: &rusqlite::Connection) -> Result<(), AppError> {
-    let exists: bool = conn.query_row(
-        "SELECT COUNT(*) > 0 FROM persona_credentials WHERE id = 'builtin-personas-database'",
-        [],
-        |row| row.get(0),
-    )?;
+/// Seed all built-in local credentials if they don't already exist.
+/// This ensures the three local services (database, vector KB, messaging)
+/// appear in the credential manager immediately on first app launch.
+pub fn seed_builtin_credentials(conn: &rusqlite::Connection) -> Result<(), AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
 
-    if exists {
-        return Ok(());
+    let builtins: &[(&str, &str, &str, &str)] = &[
+        (
+            "builtin-personas-database",
+            "Local Database",
+            "personas_database",
+            r#"{"is_builtin":true,"description":"Local SQLite database managed by Personas. Safe for agent read/write operations."}"#,
+        ),
+        (
+            "builtin-personas-vector-db",
+            "Local Vector DB",
+            "personas_vector_db",
+            r#"{"is_builtin":true,"description":"Local vector knowledge base powered by sqlite-vec. Entirely offline, no API keys needed."}"#,
+        ),
+        (
+            "builtin-personas-messaging",
+            "Local Messaging",
+            "personas_messages",
+            r#"{"is_builtin":true,"description":"Built-in in-app messaging channel. Agents can send notifications and messages without external services."}"#,
+        ),
+    ];
+
+    for (id, name, service_type, metadata) in builtins {
+        let exists: bool = conn.query_row(
+            "SELECT COUNT(*) > 0 FROM persona_credentials WHERE id = ?1",
+            params![id],
+            |row| row.get(0),
+        )?;
+
+        if exists {
+            // Rename legacy "Built-in Database" → "Local Database"
+            if *id == "builtin-personas-database" {
+                conn.execute(
+                    "UPDATE persona_credentials SET name = ?1 WHERE id = ?2 AND name = 'Built-in Database'",
+                    params![name, id],
+                )?;
+            }
+            continue;
+        }
+
+        conn.execute(
+            "INSERT INTO persona_credentials
+             (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+            params![id, name, service_type, "{}", "", metadata, now],
+        )?;
+
+        tracing::info!("Seeded built-in credential: {name}");
     }
 
-    let now = chrono::Utc::now().to_rfc3339();
-    // The credential stores no secrets -- it's a local file.
-    // We use a dummy encrypted_data/iv since the schema requires non-null values.
-    conn.execute(
-        "INSERT INTO persona_credentials
-         (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
-        params![
-            "builtin-personas-database",
-            "Built-in Database",
-            "personas_database",
-            "{}",  // no encrypted data
-            "",    // no IV
-            r#"{"is_builtin":true,"description":"Local SQLite database managed by Personas. Safe for agent read/write operations."}"#,
-            now,
-        ],
-    )?;
-
-    tracing::info!("Seeded built-in database credential");
     Ok(())
 }
 

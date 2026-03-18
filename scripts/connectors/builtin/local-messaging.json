@@ -1,0 +1,27 @@
+{
+  "id": "builtin-local-messaging",
+  "name": "personas_messages",
+  "label": "Local Messaging",
+  "color": "#8B5CF6",
+  "icon_url": null,
+  "category": "messaging",
+  "fields": [],
+  "healthcheck_config": null,
+  "services": [
+    { "toolName": "send_notification", "label": "Send Notification" },
+    { "toolName": "send_message", "label": "Send Message" }
+  ],
+  "events": [
+    { "eventType": "message_received", "label": "Message Received" }
+  ],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Built-in in-app messaging channel. Agents can send notifications and messages to the Personas inbox without external services.",
+    "auth_type": "none",
+    "auth_type_label": "Built-in (Local)",
+    "connection_mode": "local",
+    "capabilities": ["messaging", "notifications"],
+    "docs_url": "",
+    "setup_guide": "Local messaging works out of the box. No configuration needed — agents publish messages to the in-app inbox."
+  }
+}

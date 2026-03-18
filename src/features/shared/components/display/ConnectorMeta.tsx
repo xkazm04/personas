@@ -52,6 +52,7 @@ import {
   Palette,
   ClipboardList,
   Boxes,
+  BrainCircuit,
 } from 'lucide-react';
 
 export interface ConnectorMeta {
@@ -83,8 +84,9 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   slack:              { label: 'Slack',              color: '#4A154B', iconUrl: '/icons/connectors/slack.svg',                          Icon: MessageSquare },
   discord:            { label: 'Discord',            color: '#5865F2', iconUrl: 'https://cdn.simpleicons.org/discord/5865F2',          Icon: MessageSquare },
   telegram:           { label: 'Telegram',           color: '#26A5E4', iconUrl: 'https://cdn.simpleicons.org/telegram/26A5E4',        Icon: MessageSquare },
-  personas_messages:  { label: 'In-App Messages',    color: '#8B5CF6', iconUrl: null,                                                  Icon: Bell },
-  personas_database:  { label: 'Built-in Database',  color: '#06B6D4', iconUrl: null,                                                  Icon: Database },
+  personas_messages:  { label: 'Local Messaging',     color: '#8B5CF6', iconUrl: null,                                                  Icon: Bell },
+  personas_database:  { label: 'Local Database',      color: '#06B6D4', iconUrl: null,                                                  Icon: Database },
+  personas_vector_db: { label: 'Local Vector DB',     color: '#8B5CF6', iconUrl: null,                                                  Icon: BrainCircuit },
 
   // -- Source Control & CI/CD ------------------------------------
   azure_devops:       { label: 'Azure DevOps',       color: '#0078D7', iconUrl: '/icons/connectors/azure-devops.svg',                   Icon: GitBranch },
