@@ -34,7 +34,7 @@ export function AiHealingCounters({
         : 'bg-violet-400 animate-pulse';
 
   return (
-    <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+    <span className="flex items-center gap-1.5 typo-heading text-muted-foreground">
       <span className={`inline-block w-1.5 h-1.5 rounded-full ${dotColor}`} />
       {label}
     </span>

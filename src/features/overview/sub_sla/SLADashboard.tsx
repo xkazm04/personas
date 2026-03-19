@@ -1,5 +1,7 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect, useCallback } from 'react';
-import { Shield, AlertTriangle, Clock, Loader2, Wrench } from 'lucide-react';
+import { Shield, AlertTriangle, Clock, Wrench } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { getSlaDashboard } from '@/api/overview/sla';
@@ -19,7 +21,7 @@ export default function SLADashboard() {
     setLoading(true);
     getSlaDashboard(days)
       .then(setData)
-      .catch(() => {})
+      .catch(silentCatch("SLADashboard:loadDashboard"))
       .finally(() => setLoading(false));
   }, [days]);
 
@@ -56,7 +58,7 @@ export default function SLADashboard() {
       <ContentBody centered>
         {loading && !data ? (
           <div className="flex items-center justify-center py-20 text-muted-foreground/70">
-            <Loader2 className="w-5 h-5 animate-spin mr-2" />
+            <LoadingSpinner size="lg" className="mr-2" />
             Loading SLA data...
           </div>
         ) : !data ? (

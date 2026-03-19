@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { RefreshCw, X, Loader2, CheckCircle2, XCircle, Square } from 'lucide-react';
+import { RefreshCw, X, CheckCircle2, XCircle, Square } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { RebuildPhase } from '@/hooks/design/core/useBackgroundRebuild';
 import { BaseModal } from '../../shared/BaseModal';
@@ -109,7 +110,7 @@ export function RebuildModal({
           {displayPhase === 'processing' && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm text-blue-400/80">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <LoadingSpinner size="sm" />
                 <span>Rebuilding template with Claude CLI...</span>
               </div>
 

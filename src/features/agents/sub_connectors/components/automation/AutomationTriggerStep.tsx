@@ -1,7 +1,8 @@
 import {
-  Sparkles, Loader2, CheckCircle2, AlertCircle,
+  Sparkles, CheckCircle2, AlertCircle,
   KeyRound, ExternalLink, Zap,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion } from 'framer-motion';
 import type { AutomationPlatform } from '@/lib/bindings/PersonaAutomation';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -148,7 +149,7 @@ export function AutomationTriggerStep({
             <div className="mt-1.5">
               {loadingRepos ? (
                 <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <LoadingSpinner size="sm" />
                   Loading repositories...
                 </div>
               ) : (
@@ -174,7 +175,7 @@ export function AutomationTriggerStep({
           <label className="text-sm font-medium text-muted-foreground">Your existing Zaps</label>
           {loadingZaps ? (
             <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <LoadingSpinner size="sm" />
               Loading your Zaps...
             </div>
           ) : zapierZaps.length > 0 ? (

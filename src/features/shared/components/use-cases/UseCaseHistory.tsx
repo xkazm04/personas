@@ -54,7 +54,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
 
   if (loading) {
     return (
-      <div className="px-4 py-3 text-sm text-muted-foreground/50">
+      <div className="px-4 py-3 typo-body text-muted-foreground/50">
         Loading history...
       </div>
     );
@@ -66,13 +66,13 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
         <div className="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center">
           <Clock className="w-5 h-5 text-primary/30" />
         </div>
-        <h4 className="text-sm font-medium text-foreground/70">No executions yet</h4>
-        <p className="text-sm text-muted-foreground/50 text-center max-w-xs">
+        <h4 className="typo-heading text-foreground/70">No executions yet</h4>
+        <p className="typo-body text-muted-foreground/50 text-center max-w-xs">
           Run this use case to see execution history, timings, and costs here.
         </p>
         <button
           onClick={() => onRerun('')}
-          className="mt-1 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
+          className="mt-1 inline-flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
         >
           <Play className="w-3.5 h-3.5" />
           Run this use case
@@ -95,17 +95,17 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
               className="w-full flex items-center gap-3 text-left"
             >
               <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${statusInfo.className}`} />
-              <span className="text-sm text-foreground/80 font-medium capitalize w-20 flex-shrink-0">
+              <span className="typo-heading text-foreground/80 capitalize w-20 flex-shrink-0">
                 {exec.status}
               </span>
-              <span className="text-sm text-muted-foreground/60 font-mono w-14 flex-shrink-0">
+              <span className="typo-data text-muted-foreground/60 w-14 flex-shrink-0">
                 {formatDuration(exec.duration_ms)}
               </span>
-              <span className="text-sm text-muted-foreground/50 flex-1 truncate">
+              <span className="typo-body text-muted-foreground/50 flex-1 truncate">
                 {formatRelativeTime(exec.created_at)}
               </span>
               {exec.cost_usd > 0 && (
-                <span className="text-sm text-muted-foreground/50 font-mono flex-shrink-0">
+                <span className="typo-data text-muted-foreground/50 flex-shrink-0">
                   ${exec.cost_usd.toFixed(4)}
                 </span>
               )}
@@ -125,11 +125,11 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
 
             {/* Expanded detail */}
             {isExpanded && (
-              <div className="mt-2 ml-6 space-y-1.5 text-sm">
+              <div className="mt-2 ml-6 space-y-1.5 typo-body">
                 {exec.input_data && (
                   <div>
                     <span className="text-muted-foreground/50 font-medium">Input: </span>
-                    <code className="text-foreground/60 text-sm break-all">
+                    <code className="text-foreground/60 typo-code break-all">
                       {exec.input_data.length > 200 ? exec.input_data.slice(0, 200) + '...' : exec.input_data}
                     </code>
                   </div>
@@ -137,13 +137,13 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
                 {exec.error_message && (
                   <div>
                     <span className="text-red-400/70 font-medium">Error: </span>
-                    <span className="text-red-400/60 text-sm">{exec.error_message}</span>
+                    <span className="text-red-400/60">{exec.error_message}</span>
                   </div>
                 )}
                 {exec.output_data && (
                   <div>
                     <span className="text-muted-foreground/50 font-medium">Output: </span>
-                    <code className="text-foreground/60 text-sm break-all">
+                    <code className="text-foreground/60 typo-code break-all">
                       {exec.output_data.length > 300 ? exec.output_data.slice(0, 300) + '...' : exec.output_data}
                     </code>
                   </div>

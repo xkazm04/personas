@@ -1,4 +1,5 @@
-import { Link, CheckCircle2, AlertCircle, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { ConnectorStatusCard } from './ConnectorStatusCard';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
@@ -89,7 +90,7 @@ export function ConnectorsSection({
         trailing={testableCount > 0 ? (
           <button onClick={onTestAll} disabled={testingAll}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors duration-snap disabled:opacity-40">
-            {testingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Test All
+            {testingAll ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3 h-3" />} Test All
           </button>
         ) : undefined}
       />

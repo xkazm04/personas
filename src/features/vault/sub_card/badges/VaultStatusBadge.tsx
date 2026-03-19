@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Shield, ShieldAlert, ShieldCheck, ChevronDown, Lock, KeyRound, HardDrive, Loader2 } from 'lucide-react';
+import { Shield, ShieldAlert, ShieldCheck, ChevronDown, Lock, KeyRound, HardDrive } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import type { VaultStatus } from "@/api/vault/credentials";
 import { migratePlaintextCredentials, vaultStatus as refreshVaultStatus } from "@/api/vault/credentials";
@@ -149,7 +150,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-300 text-sm font-medium hover:bg-amber-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isMigrating ? (
-                  <><Loader2 className="w-3.5 h-3.5 animate-spin" />Encrypting...</>
+                  <><LoadingSpinner size="sm" />Encrypting...</>
                 ) : (
                   <><Lock className="w-3.5 h-3.5" />Encrypt {vault.plaintext} unencrypted credential{vault.plaintext !== 1 ? 's' : ''} now</>
                 )}

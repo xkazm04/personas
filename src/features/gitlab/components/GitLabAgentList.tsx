@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Bot, Trash2, ExternalLink, RefreshCw, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
+import { Bot, Trash2, ExternalLink, RefreshCw, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { GitLabAgent } from '@/api/system/gitlab';
 import { useSystemStore } from "@/stores/systemStore";
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
@@ -133,7 +134,7 @@ function PipelineStatusBadge({ projectId }: { projectId: number }) {
       text: 'text-red-400',
     },
     running: {
-      icon: <Loader2 className="w-3 h-3 animate-spin" />,
+      icon: <LoadingSpinner size="xs" />,
       bg: 'bg-amber-500/10 border-amber-500/20',
       text: 'text-amber-400',
     },

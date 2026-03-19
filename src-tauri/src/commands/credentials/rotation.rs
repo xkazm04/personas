@@ -4,9 +4,10 @@ use tauri::State;
 
 use crate::db::models::{
     CreateRotationPolicyInput, CredentialRotationEntry, CredentialRotationPolicy,
-    UpdateRotationPolicyInput,
+    OAuthTokenLifetimeSummary, OAuthTokenMetric, UpdateRotationPolicyInput,
 };
 use crate::db::repos::resources::audit_log;
+use crate::db::repos::resources::oauth_token_metrics as metrics_repo;
 use crate::db::repos::resources::rotation as rotation_repo;
 use crate::engine::rotation as rotation_engine;
 use crate::error::AppError;
@@ -116,4 +117,27 @@ pub async fn refresh_credential_oauth_now(
         op, None, None, Some(&detail),
     );
     result
+}
+
+// ============================================================================
+// OAuth Token Lifetime Metrics
+// ============================================================================
+
+#[tauri::command]
+pub fn get_oauth_token_metrics(
+    state: State<'_, Arc<AppState>>,
+    credential_id: String,
+    limit: Option<u32>,
+) -> Result<Vec<OAuthTokenMetric>, AppError> {
+    require_privileged_sync(&state, "get_oauth_token_metrics")?;
+    metrics_repo::get_by_credential(&state.db, &credential_id, limit.unwrap_or(50))
+}
+
+#[tauri::command]
+pub fn get_oauth_token_lifetime_summary(
+    state: State<'_, Arc<AppState>>,
+    credential_id: String,
+) -> Result<OAuthTokenLifetimeSummary, AppError> {
+    require_privileged_sync(&state, "get_oauth_token_lifetime_summary")?;
+    metrics_repo::get_lifetime_summary(&state.db, &credential_id)
 }

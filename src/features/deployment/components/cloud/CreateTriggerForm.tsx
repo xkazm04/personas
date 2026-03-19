@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Loader2, Clock, Webhook } from 'lucide-react';
+import { Plus, Clock, Webhook } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import {
   cloudCreateTrigger,
 } from '@/api/system/cloud';
@@ -123,7 +124,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
           disabled={!createPersonaId || isCreating}
           className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/25 disabled:opacity-40 transition-colors"
         >
-          {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+          {isCreating ? <LoadingSpinner size="sm" /> : <Plus className="w-3.5 h-3.5" />}
           {isCreating ? 'Creating...' : 'Create Trigger'}
         </button>
         <button

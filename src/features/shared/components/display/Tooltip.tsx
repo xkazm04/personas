@@ -16,6 +16,22 @@ interface TooltipProps {
 }
 
 const OFFSET = 8;
+const VIEWPORT_PAD = 6;
+
+const FLIP_MAP: Record<Placement, Placement> = {
+  top: 'bottom',
+  bottom: 'top',
+  left: 'right',
+  right: 'left',
+};
+
+/** Animation origin shift per resolved placement (tooltip slides away from trigger) */
+const MOTION_OFFSET: Record<Placement, { x: number; y: number }> = {
+  top: { x: 0, y: 4 },
+  bottom: { x: 0, y: -4 },
+  left: { x: 4, y: 0 },
+  right: { x: -4, y: 0 },
+};
 
 function getPosition(
   triggerRect: DOMRect,
@@ -46,14 +62,41 @@ function getPosition(
   }
 }
 
+/** Check whether the preferred placement overflows the viewport and flip if so. */
+function resolvePlacement(
+  triggerRect: DOMRect,
+  tooltipRect: DOMRect,
+  preferred: Placement,
+): Placement {
+  const pos = getPosition(triggerRect, tooltipRect, preferred);
+
+  const overflows =
+    pos.top < VIEWPORT_PAD ||
+    pos.left < VIEWPORT_PAD ||
+    pos.top + tooltipRect.height > window.innerHeight - VIEWPORT_PAD ||
+    pos.left + tooltipRect.width > window.innerWidth - VIEWPORT_PAD;
+
+  if (!overflows) return preferred;
+
+  // Check if the flipped side fits
+  const flipped = FLIP_MAP[preferred];
+  const flippedPos = getPosition(triggerRect, tooltipRect, flipped);
+  const flippedOverflows =
+    flippedPos.top < VIEWPORT_PAD ||
+    flippedPos.left < VIEWPORT_PAD ||
+    flippedPos.top + tooltipRect.height > window.innerHeight - VIEWPORT_PAD ||
+    flippedPos.left + tooltipRect.width > window.innerWidth - VIEWPORT_PAD;
+
+  return flippedOverflows ? preferred : flipped;
+}
+
 function clampToViewport(
   pos: { top: number; left: number },
   tooltipRect: DOMRect,
 ): { top: number; left: number } {
-  const pad = 6;
   return {
-    top: Math.max(pad, Math.min(pos.top, window.innerHeight - tooltipRect.height - pad)),
-    left: Math.max(pad, Math.min(pos.left, window.innerWidth - tooltipRect.width - pad)),
+    top: Math.max(VIEWPORT_PAD, Math.min(pos.top, window.innerHeight - tooltipRect.height - VIEWPORT_PAD)),
+    left: Math.max(VIEWPORT_PAD, Math.min(pos.left, window.innerWidth - tooltipRect.width - VIEWPORT_PAD)),
   };
 }
 
@@ -65,6 +108,7 @@ export function Tooltip({
 }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [resolvedPlacement, setResolvedPlacement] = useState<Placement>(placement);
   const triggerRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -87,6 +131,7 @@ export function Tooltip({
   useEffect(() => {
     if (!visible) {
       setPos(null);
+      setResolvedPlacement(placement);
       return;
     }
 
@@ -99,7 +144,10 @@ export function Tooltip({
       const triggerRect = trigger.getBoundingClientRect();
       const tooltipRect = tooltip.getBoundingClientRect();
 
-      const raw = getPosition(triggerRect, tooltipRect, placement);
+      const resolved = resolvePlacement(triggerRect, tooltipRect, placement);
+      setResolvedPlacement(resolved);
+
+      const raw = getPosition(triggerRect, tooltipRect, resolved);
       setPos(clampToViewport(raw, tooltipRect));
     });
 
@@ -114,6 +162,8 @@ export function Tooltip({
   }, []);
 
   if (!content) return <>{children}</>;
+
+  const offset = MOTION_OFFSET[resolvedPlacement];
 
   return (
     <>
@@ -132,12 +182,12 @@ export function Tooltip({
           {visible && (
             <motion.div
               ref={tooltipRef}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 4 }}
+              initial={{ opacity: 0, x: offset.x, y: offset.y }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              exit={{ opacity: 0, x: offset.x, y: offset.y }}
               transition={{ duration: 0.15 }}
               role="tooltip"
-              className="fixed z-[9999] pointer-events-none max-w-[240px] text-xs text-foreground glass-sm rounded-lg px-2.5 py-1.5 shadow-elevation-3"
+              className="fixed z-[9999] pointer-events-none max-w-[240px] typo-caption text-foreground glass-sm rounded-lg px-2.5 py-1.5 shadow-elevation-3"
               style={pos ? { top: pos.top, left: pos.left } : { visibility: 'hidden' as const, top: 0, left: 0 }}
             >
               {content}

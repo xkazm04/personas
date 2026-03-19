@@ -1,8 +1,9 @@
 import {
-  ArrowUpDown, Loader2, Activity,
+  ArrowUpDown, Activity,
   CheckCircle2, PauseCircle, XCircle, AlertCircle,
 } from 'lucide-react';
 import type { DeployStatus, SortKey, SortDir } from './deploymentTypes';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 // ---------------------------------------------------------------------------
 // Status icon
@@ -115,7 +116,7 @@ export function ActionButton({
       disabled={busy}
       className={`p-1.5 rounded-lg text-muted-foreground/50 ${hoverColor} disabled:opacity-40 transition-colors cursor-pointer`}
     >
-      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Icon className="w-3.5 h-3.5" />}
+      {busy ? <LoadingSpinner size="sm" /> : <Icon className="w-3.5 h-3.5" />}
     </button>
   );
 }

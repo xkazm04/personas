@@ -1,7 +1,12 @@
+pub mod assertions;
+pub mod evolution;
 pub mod executions;
+pub mod genome;
 pub mod healing;
 pub mod knowledge;
 pub mod lab;
 pub mod scheduler;
 pub mod test_suites;
 pub mod tests;
+#[cfg(feature = "desktop")]
+pub mod ambient;

@@ -60,7 +60,7 @@ export function TerminalSearchBar({ filter, onChange }: TerminalSearchBarProps) 
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground/80 hover:text-foreground/95 transition-colors border-b border-border/10"
+        className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-muted-foreground/80 hover:text-foreground/95 transition-colors border-b border-border/10"
       >
         <Search className="w-3 h-3" />
         Search & Filter
@@ -88,7 +88,7 @@ export function TerminalSearchBar({ filter, onChange }: TerminalSearchBarProps) 
           <button
             key={type}
             onClick={() => toggleType(type)}
-            className={`px-1.5 py-0.5 rounded text-sm font-mono border transition-colors ${
+            className={`px-1.5 py-0.5 rounded typo-code border transition-colors ${
               filter.activeTypes.has(type) ? activeColor : color
             }`}
           >

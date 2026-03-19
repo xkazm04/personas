@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { AutomationPlatform } from '@/lib/bindings/PersonaAutomation';
 import { githubListRepos, githubCheckPermissions, zapierListZaps } from '@/api/agents/automations';
+import { silentCatchNull } from "@/lib/silentCatch";
 import type { GitHubRepo, GitHubPermissions, ZapierZap } from '@/api/agents/automations';
 
 export function usePlatformData(platform: AutomationPlatform, platformCredentialId: string | null) {
@@ -22,10 +23,10 @@ export function usePlatformData(platform: AutomationPlatform, platformCredential
     }
     setLoadingRepos(true);
     Promise.all([
-      githubListRepos(platformCredentialId).catch(() => [] as GitHubRepo[]),
-      githubCheckPermissions(platformCredentialId).catch(() => null),
+      githubListRepos(platformCredentialId).catch(silentCatchNull("usePlatformData:githubListRepos")) as Promise<GitHubRepo[] | null>,
+      githubCheckPermissions(platformCredentialId).catch(silentCatchNull("usePlatformData:githubCheckPermissions")),
     ]).then(([repos, perms]) => {
-      setGithubRepos(repos);
+      setGithubRepos(repos ?? []);
       setGithubPerms(perms);
       setLoadingRepos(false);
     });

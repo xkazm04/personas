@@ -6,6 +6,7 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { WizardDetectPhase } from './WizardDetectPhase';
 import { WizardBatchPhase } from './WizardBatchPhase';
 import { cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
+import { silentCatch } from "@/lib/silentCatch";
 import type { ConnectorDefinition } from '@/lib/types/types';
 
 interface ProvisioningWizardProps {
@@ -52,7 +53,7 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
   const handleBack = useCallback(() => {
     // If going back from batch, cancel any running session
     if (batchActiveRef.current) {
-      cancelAutoCredBrowser().catch(() => {});
+      cancelAutoCredBrowser().catch(silentCatch("ProvisioningWizard:cancelBrowserOnBack"));
     }
     back();
   }, [back]);
@@ -60,7 +61,7 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
   const handleClose = useCallback(() => {
     // Cancel any running session before closing
     if (batchActiveRef.current) {
-      cancelAutoCredBrowser().catch(() => {});
+      cancelAutoCredBrowser().catch(silentCatch("ProvisioningWizard:cancelBrowserOnClose"));
     }
     close();
     onClose();

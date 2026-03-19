@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { cancelSetupInstall, startSetupInstall } from "@/api/system/system";
+import { silentCatch } from "@/lib/silentCatch";
 
 
 export type InstallTarget = 'node' | 'claude_cli';
@@ -90,7 +91,7 @@ export function useAutoInstaller() {
   }, [cleanup]);
 
   const cancel = useCallback(() => {
-    cancelSetupInstall().catch(() => {});
+    cancelSetupInstall().catch(silentCatch("autoInstaller:cancelInstall"));
     cleanup();
     setNodeState(defaultState());
     setClaudeState(defaultState());

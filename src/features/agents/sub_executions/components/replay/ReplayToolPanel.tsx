@@ -26,8 +26,8 @@ export function ReplayToolPanel({
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
         <Wrench className="w-3.5 h-3.5 text-muted-foreground/60" />
-        <span className="text-sm font-medium text-muted-foreground/70">Tool Steps</span>
-        <span className="ml-auto text-sm tabular-nums text-muted-foreground/60">
+        <span className="typo-heading text-muted-foreground/70">Tool Steps</span>
+        <span className="ml-auto typo-body tabular-nums text-muted-foreground/60">
           {completedSteps.length}/{toolSteps.length}
         </span>
       </div>
@@ -52,7 +52,7 @@ export function ReplayToolPanel({
               }`}
             >
               <div className="flex items-center gap-2">
-                <span className={`text-sm font-mono tabular-nums ${
+                <span className={`typo-code tabular-nums ${
                   isActive ? 'text-blue-400' : isCompleted ? 'text-emerald-400' : 'text-muted-foreground/40'
                 }`}>
                   {step.step_index + 1}
@@ -64,13 +64,13 @@ export function ReplayToolPanel({
                       ? 'bg-emerald-400'
                       : 'bg-muted-foreground/20'
                 }`} />
-                <span className={`text-sm font-mono truncate ${
+                <span className={`typo-code truncate ${
                   isPending ? 'text-muted-foreground/40' : 'text-foreground/80'
                 }`}>
                   {step.tool_name}
                 </span>
                 {step.duration_ms != null && isCompleted && (
-                  <span className="ml-auto text-sm font-mono text-muted-foreground/60 tabular-nums">
+                  <span className="ml-auto typo-code text-muted-foreground/60 tabular-nums">
                     {formatDuration(step.duration_ms)}
                   </span>
                 )}
@@ -89,7 +89,7 @@ export function ReplayToolPanel({
           );
         })}
         {toolSteps.length === 0 && (
-          <div className="text-center py-6 text-sm text-muted-foreground/60">No tool calls recorded</div>
+          <div className="text-center py-6 typo-body text-muted-foreground/60">No tool calls recorded</div>
         )}
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Search, RefreshCw, Loader2, Table2, CheckSquare, Square } from 'lucide-react';
+import { Search, RefreshCw, Table2, CheckSquare, Square } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { IntrospectedTable } from '@/hooks/database/useTableIntrospection';
 
 interface TableSelectorProps {
@@ -66,7 +67,7 @@ export function TableSelector({
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filter tables..."
-            className="w-full pl-6 pr-2 py-1 rounded-xl bg-background/50 border border-primary/8 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/25 transition-colors"
+            className="w-full pl-6 pr-2 py-1 rounded-xl bg-background/50 border border-primary/8 typo-body text-foreground/80 placeholder:text-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/25 transition-colors"
           />
         </div>
         {onRefresh && (
@@ -86,7 +87,7 @@ export function TableSelector({
         <button
           type="button"
           onClick={toggleAll}
-          className="w-full flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/20 border-b border-primary/5 transition-colors"
+          className="w-full flex items-center gap-1.5 px-2.5 py-1 typo-heading text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/20 border-b border-primary/5 transition-colors"
         >
           {allFilteredSelected ? (
             <CheckSquare className="w-3 h-3 text-primary/60" />
@@ -102,25 +103,25 @@ export function TableSelector({
       <div className="overflow-y-auto" style={{ maxHeight }}>
         {loading && tables.length === 0 && (
           <div className="flex items-center justify-center py-6 gap-1.5">
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground/60" />
-            <span className="text-sm text-muted-foreground/60">Loading tables...</span>
+            <LoadingSpinner size="sm" className="text-muted-foreground/60" />
+            <span className="typo-body text-muted-foreground/60">Loading tables...</span>
           </div>
         )}
 
         {error && (
-          <div className="p-2 mx-2 my-1.5 rounded-lg bg-red-500/10 border border-red-500/15 text-sm text-red-400 break-words">
+          <div className="p-2 mx-2 my-1.5 rounded-lg bg-red-500/10 border border-red-500/15 typo-body text-red-400 break-words">
             {error}
           </div>
         )}
 
         {!loading && !error && filteredTables.length === 0 && tables.length === 0 && (
-          <p className="text-sm text-muted-foreground/60 text-center py-6">
+          <p className="typo-body text-muted-foreground/60 text-center py-6">
             No tables found
           </p>
         )}
 
         {!loading && !error && filteredTables.length === 0 && tables.length > 0 && (
-          <p className="text-sm text-muted-foreground/60 text-center py-6">
+          <p className="typo-body text-muted-foreground/60 text-center py-6">
             No matching tables
           </p>
         )}
@@ -144,11 +145,11 @@ export function TableSelector({
                 <Square className="w-3 h-3 text-muted-foreground/25 shrink-0" />
               )}
               <Table2 className="w-2.5 h-2.5 text-muted-foreground/50 shrink-0" />
-              <span className="flex-1 text-sm font-mono text-foreground/70 truncate">
+              <span className="flex-1 typo-code text-foreground/70 truncate">
                 {table.table_name}
               </span>
               {table.table_type === 'VIEW' && (
-                <span className="px-1 py-0.5 rounded text-sm font-medium bg-violet-500/10 text-violet-400/70 shrink-0">
+                <span className="px-1 py-0.5 rounded typo-heading bg-violet-500/10 text-violet-400/70 shrink-0">
                   VIEW
                 </span>
               )}
@@ -159,7 +160,7 @@ export function TableSelector({
 
       {/* Footer */}
       {selectedTables.length > 0 && (
-        <div className="px-2.5 py-1.5 border-t border-primary/5 text-sm text-muted-foreground/60">
+        <div className="px-2.5 py-1.5 border-t border-primary/5 typo-body text-muted-foreground/60">
           {selectedTables.length} of {tables.length} table{tables.length !== 1 ? 's' : ''} selected
         </div>
       )}

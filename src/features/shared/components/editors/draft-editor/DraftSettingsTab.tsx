@@ -95,13 +95,13 @@ export function DraftSettingsTab({
     >
       {/* Appearance */}
       <div className="space-y-3">
-        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+        <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           Appearance
         </h4>
         <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-3 space-y-3">
           <div>
-            <label className="block text-sm font-medium text-foreground/80 mb-2">Icon</label>
+            <label className="block typo-heading text-foreground/80 mb-2">Icon</label>
             <IconSelector
               value={draft.icon ?? ''}
               onChange={(icon) => updateDraft((curr) => ({ ...curr, icon: icon || null }))}
@@ -110,7 +110,7 @@ export function DraftSettingsTab({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground/80 mb-2">Color</label>
+            <label className="block typo-heading text-foreground/80 mb-2">Color</label>
             <ColorPicker
               value={draft.color ?? '#8b5cf6'}
               onChange={(color) => updateDraft((curr) => ({ ...curr, color }))}
@@ -148,7 +148,7 @@ export function DraftSettingsTab({
       {/* Notification Channels (opt-in, self-managed from draft.notification_channels) */}
       {showNotifications && (
         <div className="space-y-3">
-          <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+          <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90 tracking-wide">
             <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
             Notifications
           </h4>

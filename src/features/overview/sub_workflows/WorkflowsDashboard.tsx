@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Workflow, Loader2, Terminal, RefreshCw } from 'lucide-react';
+import { Workflow, Terminal, RefreshCw } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { useToastStore } from '@/stores/toastStore';
@@ -85,7 +86,7 @@ export default function WorkflowsDashboard() {
       <ContentBody>
         {loading && !data ? (
           <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground/60">
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <LoadingSpinner size="lg" />
             Loading workflows...
           </div>
         ) : !data || data.total_count === 0 ? (

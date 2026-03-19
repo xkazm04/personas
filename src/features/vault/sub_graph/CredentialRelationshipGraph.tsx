@@ -4,11 +4,14 @@ import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { useOverviewStore } from "@/stores/overviewStore";
 import { getCredentialDependents } from '@/api/vault/credentials';
 import type { CredentialDependent } from '@/lib/bindings/CredentialDependent';
 import {
   buildCredentialGraph,
   analyzeBlastRadius,
+  simulateRevocation,
   type GraphNodeKind,
 } from './credentialGraph';
 import { KIND_ICONS, KIND_LABELS } from './graphConstants';
@@ -23,10 +26,16 @@ export function CredentialRelationshipGraph() {
   const credentialEvents = useVaultStore((s) => s.credentialEvents);
   const fetchCredentialEvents = useVaultStore((s) => s.fetchCredentialEvents);
 
+  // Simulation data sources
+  const workflows = usePipelineStore((s) => s.workflows);
+  const fetchWorkflows = usePipelineStore((s) => s.fetchWorkflows);
+  const healthSignals = useOverviewStore((s) => s.healthSignals);
+
   const [dependentsMap, setDependentsMap] = useState<Map<string, CredentialDependent[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [filterKind, setFilterKind] = useState<GraphNodeKind | 'all'>('all');
+  const [simulationMode, setSimulationMode] = useState(false);
 
   // Fetch dependents for all credentials
   useEffect(() => {
@@ -61,6 +70,11 @@ export function CredentialRelationshipGraph() {
     return () => { cancelled = true; };
   }, [credentials, fetchCredentialEvents]);
 
+  // Ensure workflows are loaded for simulation
+  useEffect(() => {
+    fetchWorkflows();
+  }, [fetchWorkflows]);
+
   const graph = useMemo(
     () => buildCredentialGraph(credentials, connectorDefinitions, personas, credentialEvents, dependentsMap),
     [credentials, connectorDefinitions, personas, credentialEvents, dependentsMap],
@@ -83,6 +97,14 @@ export function CredentialRelationshipGraph() {
     return analyzeBlastRadius(selectedNodeId, graph);
   }, [selectedNodeId, graph]);
 
+  // Simulation result — computed when simulation mode is active and a credential is selected
+  const selectedSimulation = useMemo(() => {
+    if (!simulationMode || !selectedNodeId) return null;
+    const node = graph.nodes.find((n) => n.id === selectedNodeId);
+    if (!node || node.kind !== 'credential') return null;
+    return simulateRevocation(selectedNodeId, graph, workflows, healthSignals, credentials);
+  }, [simulationMode, selectedNodeId, graph, workflows, healthSignals, credentials]);
+
   const stats = useMemo(() => {
     const counts: Record<GraphNodeKind, number> = { credential: 0, agent: 0, event: 0 };
     for (const n of graph.nodes) counts[n.kind]++;
@@ -91,6 +113,10 @@ export function CredentialRelationshipGraph() {
 
   const handleNodeClick = useCallback((nodeId: string) => {
     setSelectedNodeId((prev) => prev === nodeId ? null : nodeId);
+  }, []);
+
+  const handleToggleSimulation = useCallback(() => {
+    setSimulationMode((prev) => !prev);
   }, []);
 
   if (loading) {
@@ -197,6 +223,9 @@ export function CredentialRelationshipGraph() {
                 key={selectedBlast.credentialId}
                 blast={selectedBlast}
                 onClose={() => setSelectedNodeId(null)}
+                simulation={selectedSimulation}
+                simulationMode={simulationMode}
+                onToggleSimulation={handleToggleSimulation}
               />
             ) : selectedNodeId ? (
               <NodeDetailPanel

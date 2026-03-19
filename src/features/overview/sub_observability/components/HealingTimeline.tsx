@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import {
   AlertTriangle, Zap, RefreshCw, CheckCircle, BookOpen,
-  ChevronDown, ChevronRight, Tag, Search, Loader2, Shield,
+  ChevronDown, ChevronRight, Tag, Search, Shield,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
 
@@ -199,7 +200,7 @@ function KnowledgeCard({ events }: { events: HealingTimelineEvent[] }) {
           : <ChevronRight className="w-3.5 h-3.5 text-blue-400/70 flex-shrink-0" />
         }
         <BookOpen className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-        <span className="text-sm font-medium text-blue-300">Knowledge Base</span>
+        <span className="typo-heading text-blue-300">Knowledge Base</span>
         <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/15 text-blue-400 ml-1">
           {events.length}
         </span>
@@ -276,7 +277,7 @@ export function HealingTimeline({ events, loading, onSelectIssue }: HealingTimel
   if (loading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+        <LoadingSpinner size="lg" className="text-cyan-400" />
         <span className="ml-2 text-sm text-muted-foreground">Loading timeline...</span>
       </div>
     );
@@ -289,7 +290,7 @@ export function HealingTimeline({ events, loading, onSelectIssue }: HealingTimel
           <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
             <CheckCircle className="w-6 h-6 text-emerald-400" />
           </div>
-          <p className="text-sm font-medium text-foreground/80">No healing events</p>
+          <p className="typo-heading text-foreground/80">No healing events</p>
           <p className="text-sm text-muted-foreground mt-1">Run analysis to build the resilience timeline.</p>
         </div>
       </div>

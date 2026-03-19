@@ -125,8 +125,8 @@ export default function EmptyState({
           <Icon className={`w-4 h-4 ${resolvedIconColor}`} />
         </div>
       )}
-      {resolvedTitle && <h3 className="text-sm font-medium text-foreground/90">{resolvedTitle}</h3>}
-      {detailText && <p className="text-sm text-muted-foreground/60 max-w-[34ch]">{detailText}</p>}
+      {resolvedTitle && <h3 className="typo-heading text-foreground/90">{resolvedTitle}</h3>}
+      {detailText && <p className="typo-body text-muted-foreground/60 max-w-[34ch]">{detailText}</p>}
 
       {/* Step guide for multi-step scenarios */}
       {steps && (
@@ -140,7 +140,7 @@ export default function EmptyState({
                   <div className={`w-6 h-6 rounded-lg border flex items-center justify-center ${step.color}`}>
                     <StepIcon className="w-3 h-3" />
                   </div>
-                  <span className="text-xs text-muted-foreground/70">{step.label}</span>
+                  <span className="typo-caption text-muted-foreground/70">{step.label}</span>
                 </div>
               </div>
             );
@@ -152,7 +152,7 @@ export default function EmptyState({
       {action && (
         <button
           onClick={action.onClick}
-          className="mt-1 px-3 py-1.5 text-sm font-medium rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors"
+          className="mt-1 px-3 py-1.5 typo-heading rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors"
         >
           {action.label}
         </button>

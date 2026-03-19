@@ -9,6 +9,7 @@ import { AutomationSetupModal } from '../automation/AutomationSetupModal';
 import { UseCaseSubscriptionsSection } from '../subscriptions/UseCaseSubscriptionsSection';
 import { AgentCredentialDemands } from './AgentCredentialDemands';
 import { useConnectorStatuses } from '../../libs/useConnectorStatuses';
+import { silentCatch } from "@/lib/silentCatch";
 import { getRoleForConnector } from '@/lib/credentials/connectorRoles';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
 import { ReadinessWarnings, ConnectorsSection } from './ConnectorsTabSections';
@@ -47,7 +48,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
 
   const handleDesignComplete = () => {
     setDesignOpen(false); setDesignInstruction('');
-    void fetchCredentials().catch(() => {});
+    void fetchCredentials().catch(silentCatch("PersonaConnectorsTab:fetchCredentialsOnDesignComplete"));
   };
 
   const roleGroups = useMemo(() => {

@@ -21,6 +21,11 @@ impl ClipboardState {
     pub fn new() -> Self {
         Self { last_hash: None }
     }
+
+    /// Read the last known clipboard hash (for ambient context change detection).
+    pub fn last_hash(&self) -> Option<u64> {
+        self.last_hash
+    }
 }
 
 /// Simple FNV-1a hash for change detection.

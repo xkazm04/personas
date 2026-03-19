@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { GitCompareArrows, Loader2 } from 'lucide-react';
+import { GitCompareArrows } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
 import { listTeamMemoriesByRun } from '@/api/pipeline/teamMemories';
 import { computeMemoryDiff, type MemoryRunDiff } from '../../libs/memoryDiff';
@@ -68,7 +69,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
 
       {loading && (
         <div className="flex items-center justify-center py-4 gap-1.5">
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-400" />
+          <LoadingSpinner size="sm" className="text-violet-400" />
           <span className="text-xs text-muted-foreground/50">Comparing runs...</span>
         </div>
       )}

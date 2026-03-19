@@ -71,13 +71,13 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                     max={1000}
                     value={rateLimit.max_per_window}
                     onChange={(e) => update({ max_per_window: Math.max(0, parseInt(e.target.value) || 0) })}
-                    className="w-20 px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-lg text-foreground/80 focus-visible:outline-none focus-visible:border-primary/30"
+                    className="w-20 px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-lg text-foreground/80 focus-ring"
                     placeholder="0"
                   />
                   <select
                     value={rateLimit.window_seconds}
                     onChange={(e) => update({ window_seconds: parseInt(e.target.value) })}
-                    className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-lg text-foreground/80 focus-visible:outline-none focus-visible:border-primary/30"
+                    className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-lg text-foreground/80 focus-ring"
                   >
                     {RATE_LIMIT_WINDOW_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -99,7 +99,7 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                   max={86400}
                   value={rateLimit.cooldown_seconds}
                   onChange={(e) => update({ cooldown_seconds: Math.max(0, parseInt(e.target.value) || 0) })}
-                  className="w-24 px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-lg text-foreground/80 focus-visible:outline-none focus-visible:border-primary/30"
+                  className="w-24 px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-lg text-foreground/80 focus-ring"
                   placeholder="0"
                 />
               </div>
@@ -116,7 +116,7 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                   max={100}
                   value={rateLimit.max_concurrent}
                   onChange={(e) => update({ max_concurrent: Math.max(0, parseInt(e.target.value) || 0) })}
-                  className="w-24 px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-lg text-foreground/80 focus-visible:outline-none focus-visible:border-primary/30"
+                  className="w-24 px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-lg text-foreground/80 focus-ring"
                   placeholder="0"
                 />
                 <p className="text-sm text-muted-foreground/50">0 = unlimited</p>

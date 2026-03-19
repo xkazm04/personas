@@ -3,6 +3,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { sendAppNotification } from '@/api/system/system';
+import { silentCatch } from "@/lib/silentCatch";
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import type { ConnectorStatus, ConnectorReadiness } from './connectorTypes';
@@ -53,7 +54,7 @@ export function useConnectorStatuses() {
     );
   }, [requiredCredTypes, credentials, credentialLinks]);
 
-  useEffect(() => { void fetchCredentials().catch(() => {}); }, [fetchCredentials]);
+  useEffect(() => { void fetchCredentials().catch(silentCatch("useConnectorStatuses:initialFetchCredentials")); }, [fetchCredentials]);
 
   useEffect(() => {
     lastAutoTestedCredentialRef.current.clear();
@@ -131,7 +132,7 @@ export function useConnectorStatuses() {
       sendAppNotification(
         'Connector Tests Complete',
         `${persona}: All ${testable.length} connector tests finished.`,
-      ).catch(() => {});
+      ).catch(silentCatch("useConnectorStatuses:sendTestCompleteNotification"));
     } finally {
       testAllActiveRef.current = false;
       setTestingAll(false);

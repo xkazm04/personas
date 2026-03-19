@@ -1,6 +1,7 @@
 /**
  * confirmSave and cleanupAll actions for useAsyncTransform.
  */
+import { silentCatch } from "@/lib/silentCatch";
 import { useCallback, type MutableRefObject } from 'react';
 import {
   clearTemplateAdoptSnapshot,
@@ -116,7 +117,7 @@ export function useConfirmSave({
       wizard.confirmCompleted();
 
       if (state.backgroundAdoptId) {
-        void clearTemplateAdoptSnapshot(state.backgroundAdoptId).catch(() => {});
+        void clearTemplateAdoptSnapshot(state.backgroundAdoptId).catch(silentCatch("useConfirmSave:clearConfirmSnapshot"));
       }
       clearPersistedContext();
       // Emit tour event so the guided tour can advance
@@ -138,7 +139,7 @@ export function useConfirmSave({
   /** Clean up all async state (for close / reset). */
   const cleanupAll = useCallback(async () => {
     const snapshotId = state.backgroundAdoptId || currentAdoptId;
-    if (snapshotId) void clearTemplateAdoptSnapshot(snapshotId).catch(() => {});
+    if (snapshotId) void clearTemplateAdoptSnapshot(snapshotId).catch(silentCatch("useConfirmSave:cleanupSnapshot"));
     clearPersistedContext();
     void resetAdoptStream();
     setTemplateAdoptActive(false);

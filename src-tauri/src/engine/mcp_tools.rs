@@ -9,6 +9,7 @@
 //! for repeated tool invocations during agent executions.
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::Instant;
 
@@ -44,6 +45,84 @@ const STDIO_POOL_IDLE_TIMEOUT: std::time::Duration = std::time::Duration::from_s
 
 /// Maximum number of concurrent sessions in the pool.
 const STDIO_POOL_MAX_SESSIONS: usize = 32;
+
+/// Pool utilization threshold (75%) above which saturation warnings are logged.
+const POOL_SATURATION_WARN_THRESHOLD: f64 = 0.75;
+
+// ============================================================================
+// Stdio session pool metrics
+// ============================================================================
+
+/// Lightweight atomic counters for MCP stdio session pool observability.
+pub struct PoolMetrics {
+    /// Sessions successfully retrieved from the pool (warm reuse).
+    pub pool_hits: AtomicU64,
+    /// Pool lookups that found no usable session (cold spawn required).
+    pub pool_misses: AtomicU64,
+    /// Sessions evicted because they exceeded the idle timeout.
+    pub pool_evictions: AtomicU64,
+    /// Sessions silently dropped because the pool was at capacity.
+    pub pool_full_drops: AtomicU64,
+    /// Cumulative spawn latency in microseconds (divide by pool_misses for avg).
+    pub total_spawn_us: AtomicU64,
+}
+
+/// Snapshot of pool metrics exposed to the frontend.
+#[derive(Debug, Clone, serde::Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct StdioPoolMetrics {
+    pub pool_hits: u64,
+    pub pool_misses: u64,
+    pub pool_evictions: u64,
+    pub pool_full_drops: u64,
+    pub active_sessions: u64,
+    pub max_sessions: u64,
+    pub utilization_pct: f64,
+    pub avg_spawn_latency_ms: f64,
+}
+
+fn pool_metrics() -> &'static PoolMetrics {
+    static METRICS: PoolMetrics = PoolMetrics {
+        pool_hits: AtomicU64::new(0),
+        pool_misses: AtomicU64::new(0),
+        pool_evictions: AtomicU64::new(0),
+        pool_full_drops: AtomicU64::new(0),
+        total_spawn_us: AtomicU64::new(0),
+    };
+    &METRICS
+}
+
+/// Build a snapshot of the current pool metrics (called from the Tauri command).
+pub async fn snapshot_pool_metrics() -> StdioPoolMetrics {
+    let m = pool_metrics();
+    let active = {
+        let pool = stdio_session_pool().lock().await;
+        pool.len() as u64
+    };
+    let hits = m.pool_hits.load(Ordering::Relaxed);
+    let misses = m.pool_misses.load(Ordering::Relaxed);
+    let evictions = m.pool_evictions.load(Ordering::Relaxed);
+    let full_drops = m.pool_full_drops.load(Ordering::Relaxed);
+    let total_spawn = m.total_spawn_us.load(Ordering::Relaxed);
+    let utilization = (active as f64 / STDIO_POOL_MAX_SESSIONS as f64) * 100.0;
+    let avg_spawn_ms = if misses > 0 {
+        (total_spawn as f64 / misses as f64) / 1000.0
+    } else {
+        0.0
+    };
+
+    StdioPoolMetrics {
+        pool_hits: hits,
+        pool_misses: misses,
+        pool_evictions: evictions,
+        pool_full_drops: full_drops,
+        active_sessions: active,
+        max_sessions: STDIO_POOL_MAX_SESSIONS as u64,
+        utilization_pct: utilization,
+        avg_spawn_latency_ms: avg_spawn_ms,
+    }
+}
 
 // ============================================================================
 // tools/list response cache
@@ -122,15 +201,25 @@ fn stdio_session_pool() -> &'static tokio::sync::Mutex<HashMap<String, PooledStd
 
 /// Take a live session from the pool if one exists and is still alive.
 async fn take_pooled_session(credential_id: &str) -> Option<PooledStdioSession> {
+    let m = pool_metrics();
     let mut pool = stdio_session_pool().lock().await;
-    // Evict expired sessions opportunistically
+    // Evict expired sessions opportunistically and count evictions
+    let before = pool.len();
     pool.retain(|_, s| s.last_used.elapsed() < STDIO_POOL_IDLE_TIMEOUT);
+    let evicted = before - pool.len();
+    if evicted > 0 {
+        m.pool_evictions.fetch_add(evicted as u64, Ordering::Relaxed);
+    }
     let mut session = pool.remove(credential_id)?;
     // Verify the process hasn't exited while idle
     match session.child.try_wait() {
-        Ok(None) => Some(session), // still running
+        Ok(None) => {
+            m.pool_hits.fetch_add(1, Ordering::Relaxed);
+            Some(session) // still running
+        }
         _ => {
             let _ = session.child.start_kill();
+            m.pool_misses.fetch_add(1, Ordering::Relaxed);
             None
         }
     }
@@ -138,12 +227,34 @@ async fn take_pooled_session(credential_id: &str) -> Option<PooledStdioSession> 
 
 /// Return a session to the pool for future reuse.
 async fn return_pooled_session(credential_id: &str, mut session: PooledStdioSession) {
+    let m = pool_metrics();
     session.last_used = Instant::now();
     let mut pool = stdio_session_pool().lock().await;
+    let before = pool.len();
     pool.retain(|_, s| s.last_used.elapsed() < STDIO_POOL_IDLE_TIMEOUT);
+    let evicted = before - pool.len();
+    if evicted > 0 {
+        m.pool_evictions.fetch_add(evicted as u64, Ordering::Relaxed);
+    }
     if pool.len() >= STDIO_POOL_MAX_SESSIONS {
-        // Pool is full — drop session (kill_on_drop handles cleanup)
+        m.pool_full_drops.fetch_add(1, Ordering::Relaxed);
+        tracing::warn!(
+            pool_size = pool.len(),
+            max = STDIO_POOL_MAX_SESSIONS,
+            credential_id = %credential_id,
+            "MCP stdio pool full — session dropped"
+        );
         return;
+    }
+    // Log saturation warning when utilization exceeds threshold
+    let util = pool.len() as f64 / STDIO_POOL_MAX_SESSIONS as f64;
+    if util >= POOL_SATURATION_WARN_THRESHOLD {
+        tracing::warn!(
+            pool_size = pool.len(),
+            max = STDIO_POOL_MAX_SESSIONS,
+            utilization_pct = format!("{:.0}", util * 100.0),
+            "MCP stdio pool utilization above 75%"
+        );
     }
     // If a session already exists for this credential (race), the old one is
     // dropped and killed via kill_on_drop.
@@ -154,6 +265,7 @@ async fn return_pooled_session(credential_id: &str, mut session: PooledStdioSess
 async fn spawn_stdio_session(
     fields: &HashMap<String, String>,
 ) -> Result<PooledStdioSession, AppError> {
+    let spawn_start = Instant::now();
     let command = fields
         .get("command")
         .ok_or_else(|| AppError::Validation("MCP server has no 'command' field".into()))?;
@@ -196,6 +308,11 @@ async fn spawn_stdio_session(
         "method": "notifications/initialized"
     });
     write_session_jsonrpc(&mut session.stdin, &initialized).await?;
+
+    // Record spawn latency
+    let m = pool_metrics();
+    let spawn_us = spawn_start.elapsed().as_micros() as u64;
+    m.total_spawn_us.fetch_add(spawn_us, Ordering::Relaxed);
 
     Ok(session)
 }
@@ -441,9 +558,15 @@ async fn list_tools_stdio_inner(
                 tracing::debug!(credential_id = %cid, "Reusing pooled MCP stdio session for tools/list");
                 (s, true)
             }
-            None => (spawn_stdio_session(fields).await?, false),
+            None => {
+                pool_metrics().pool_misses.fetch_add(1, Ordering::Relaxed);
+                (spawn_stdio_session(fields).await?, false)
+            }
         },
-        None => (spawn_stdio_session(fields).await?, false),
+        None => {
+            pool_metrics().pool_misses.fetch_add(1, Ordering::Relaxed);
+            (spawn_stdio_session(fields).await?, false)
+        }
     };
 
     let result = list_tools_on_session(&mut session).await;
@@ -500,9 +623,15 @@ async fn execute_tool_stdio_inner(
                 tracing::debug!(credential_id = %cid, tool = %tool_name, "Reusing pooled MCP stdio session");
                 (s, true)
             }
-            None => (spawn_stdio_session(fields).await?, false),
+            None => {
+                pool_metrics().pool_misses.fetch_add(1, Ordering::Relaxed);
+                (spawn_stdio_session(fields).await?, false)
+            }
         },
-        None => (spawn_stdio_session(fields).await?, false),
+        None => {
+            pool_metrics().pool_misses.fetch_add(1, Ordering::Relaxed);
+            (spawn_stdio_session(fields).await?, false)
+        }
     };
 
     let result = execute_tool_on_session(&mut session, tool_name, arguments, cached_schema).await;

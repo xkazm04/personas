@@ -24,7 +24,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
       <div className="flex gap-1 p-1 rounded-xl bg-secondary/40 border border-primary/10 w-fit">
         <button
           onClick={() => setActiveTab('detail')}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl typo-heading transition-all ${
             activeTab === 'detail'
               ? 'bg-primary/15 text-foreground/90 border border-primary/30'
               : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
@@ -36,7 +36,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
         {hasToolSteps && (
           <button
             onClick={() => setActiveTab('inspector')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl typo-heading transition-all ${
               activeTab === 'inspector'
                 ? 'bg-primary/15 text-foreground/90 border border-primary/30'
                 : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
@@ -48,7 +48,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
         )}
         <button
           onClick={() => setActiveTab('trace')}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl typo-heading transition-all ${
             activeTab === 'trace'
               ? 'bg-primary/15 text-foreground/90 border border-primary/30'
               : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
@@ -59,7 +59,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
         </button>
         <button
           onClick={() => setActiveTab('pipeline')}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl typo-heading transition-all ${
             activeTab === 'pipeline'
               ? 'bg-primary/15 text-foreground/90 border border-primary/30'
               : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'
@@ -71,7 +71,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
         {isTerminalState(execution.status) && (
           <button
             onClick={() => setActiveTab('replay')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl typo-heading transition-all ${
               activeTab === 'replay'
                 ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
                 : 'text-muted-foreground/90 hover:text-foreground/95 border border-transparent'

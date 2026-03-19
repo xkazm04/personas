@@ -11,7 +11,7 @@ export function MemoryEmptyState({ hasFilters }: MemoryEmptyStateProps) {
         <Brain className="w-8 h-8 text-violet-400/40" />
       </div>
       <div className="text-center">
-        <p className="text-sm font-medium">No memories yet</p>
+        <p className="typo-heading">No memories yet</p>
         <p className="text-sm text-muted-foreground/80 mt-1 max-w-xs">
           {hasFilters
             ? 'No memories match your filters. Try adjusting your search.'

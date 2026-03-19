@@ -2,6 +2,7 @@ pub mod auto_rollback;
 pub mod build_session;
 pub mod identity;
 pub mod bundle;
+pub mod enclave;
 pub mod p2p;
 pub mod background;
 pub mod bus;
@@ -46,9 +47,11 @@ pub mod subscription;
 pub mod test_runner;
 pub mod tool_runner;
 pub mod trace;
+pub mod dream_replay;
 pub mod types;
 pub mod lifecycle;
 pub mod webhook;
+pub mod workflow_compiler;
 pub mod platform_rules;
 pub mod url_safety;
 #[cfg(feature = "desktop")]
@@ -57,8 +60,15 @@ pub mod file_watcher;
 pub mod clipboard_monitor;
 #[cfg(feature = "desktop")]
 pub mod app_focus;
+#[cfg(feature = "desktop")]
+pub mod ambient_context;
+#[cfg(feature = "desktop")]
+pub mod context_rules;
 pub mod composite;
 pub mod db_query;
+pub mod output_assertions;
+pub mod genome;
+pub mod evolution;
 pub mod chunker;
 pub mod embedder;
 pub mod vector_store;
@@ -93,6 +103,7 @@ use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as healing_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
+use crate::engine::background::SchedulerState;
 use crate::error::AppError;
 
 use self::types::{ExecutionResult, ExecutionState, HealingEventPayload, QueueStatusEvent};
@@ -295,10 +306,12 @@ pub struct ExecutionEngine {
     pub(crate) circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
     /// Saved contexts for queued executions, keyed by execution_id.
     queued_contexts: Arc<Mutex<HashMap<String, QueuedExecutionContext>>>,
+    /// Shared scheduler state for recording queue rejection metrics.
+    scheduler: Arc<SchedulerState>,
 }
 
 impl ExecutionEngine {
-    pub fn new(log_dir: PathBuf) -> Self {
+    pub fn new(log_dir: PathBuf, scheduler: Arc<SchedulerState>) -> Self {
         Self {
             tracker: Arc::new(Mutex::new(ConcurrencyTracker::new())),
             tasks: Arc::new(Mutex::new(HashMap::new())),
@@ -307,6 +320,7 @@ impl ExecutionEngine {
             log_dir,
             circuit_breaker: Arc::new(failover::ProviderCircuitBreaker::new()),
             queued_contexts: Arc::new(Mutex::new(HashMap::new())),
+            scheduler,
         }
     }
 
@@ -469,6 +483,17 @@ impl ExecutionEngine {
                     max_depth = max_depth,
                     "Execution rejected: queue full",
                 );
+                self.scheduler.record_queue_rejection();
+                let _ = app.emit(
+                    "queue-backpressure",
+                    serde_json::json!({
+                        "personaId": persona.id,
+                        "personaName": persona.name,
+                        "executionId": execution_id,
+                        "maxDepth": max_depth,
+                        "running": persona.max_concurrent,
+                    }),
+                );
                 Err(AppError::Validation(format!(
                     "Persona '{}' execution queue is full ({} queued, {} running). Try again later.",
                     persona.name, max_depth, persona.max_concurrent
@@ -538,6 +563,7 @@ impl ExecutionEngine {
         let circuit_breaker = self.circuit_breaker.clone();
         let circuit_breaker_for_drain = self.circuit_breaker.clone();
         let queued_contexts = self.queued_contexts.clone();
+        let scheduler_for_task = self.scheduler.clone();
 
         // Clone log_dir for potential healing retries (log_dir is moved into run_execution)
         let log_dir_for_retry = log_dir.clone();
@@ -598,6 +624,7 @@ impl ExecutionEngine {
                     cancelled_flags.clone(),
                     log_dir_for_retry.clone(),
                     circuit_breaker,
+                    Some(scheduler_for_task.clone()),
                 )
                 .await;
             }
@@ -616,6 +643,7 @@ impl ExecutionEngine {
                 tasks.clone(),
                 queued_contexts,
                 cancelled_flags,
+                child_pids,
                 persona_id,
                 persona_max_concurrent,
                 app_for_drain,
@@ -956,6 +984,7 @@ fn drain_and_start_next(
     tasks: Arc<Mutex<HashMap<String, tokio::task::JoinHandle<()>>>>,
     queued_contexts: Arc<Mutex<HashMap<String, QueuedExecutionContext>>>,
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
+    child_pids: Arc<Mutex<HashMap<String, u32>>>,
     persona_id: String,
     max_concurrent: i32,
     app: AppHandle,
@@ -1030,7 +1059,7 @@ fn drain_and_start_next(
             let app_handle = ctx.app.clone();
             let app_for_healing = ctx.app.clone();
             let app_for_drain = ctx.app.clone();
-            let child_pids: Arc<Mutex<HashMap<String, u32>>> = Arc::new(Mutex::new(HashMap::new()));
+            let child_pids = child_pids.clone();
             let cancelled = Arc::new(AtomicBool::new(false));
             cancelled_flags
                 .lock()
@@ -1051,6 +1080,7 @@ fn drain_and_start_next(
             let tasks_clone = tasks.clone();
             let queued_contexts_clone = queued_contexts.clone();
             let cancelled_flags_clone = cancelled_flags.clone();
+            let child_pids_clone = child_pids.clone();
             let circuit_breaker = circuit_breaker.clone();
             let circuit_breaker_for_drain = circuit_breaker.clone();
 
@@ -1102,6 +1132,7 @@ fn drain_and_start_next(
                         cancelled_flags.clone(),
                         log_dir_for_retry.clone(),
                         circuit_breaker,
+                        None,
                     )
                     .await;
                 }
@@ -1120,6 +1151,7 @@ fn drain_and_start_next(
                     tasks_clone.clone(),
                     queued_contexts_clone,
                     cancelled_flags_clone,
+                    child_pids_clone,
                     persona_id_owned,
                     persona_max_concurrent_inner,
                     app_for_drain,
@@ -1157,6 +1189,7 @@ async fn handle_execution_result(
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     log_dir: PathBuf,
     circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
+    scheduler: Option<Arc<SchedulerState>>,
 ) {
     let status = if result.success { ExecutionState::Completed } else { ExecutionState::Failed };
 
@@ -1199,6 +1232,28 @@ async fn handle_execution_result(
         );
     }
 
+    // Output assertion evaluation -- continuous declarative checks
+    if result.success {
+        let output_text = exec_repo::get_by_id(pool, exec_id)
+            .ok()
+            .and_then(|e| e.output_data)
+            .unwrap_or_default();
+        if !output_text.is_empty() {
+            let summary = output_assertions::evaluate_assertions(pool, exec_id, persona_id, &output_text);
+            if summary.total > 0 {
+                tracing::info!(
+                    execution_id = %exec_id,
+                    persona_id,
+                    total = summary.total,
+                    passed = summary.passed,
+                    failed = summary.failed,
+                    "Output assertions evaluated"
+                );
+                let _ = app.emit("assertion-results", &summary);
+            }
+        }
+    }
+
     // OS Notification
     notify_execution(app, pool, persona_id, status.as_str(), result.duration_ms);
 
@@ -1222,7 +1277,7 @@ async fn handle_execution_result(
     let chain_trace_id = existing_chain_trace_id
         .or_else(|| result.trace_id.clone());
 
-    chain::evaluate_chain_triggers(
+    let cascade_metrics = chain::evaluate_chain_triggers(
         pool,
         persona_id,
         status.as_str(),
@@ -1232,6 +1287,9 @@ async fn handle_execution_result(
         &visited,
         chain_trace_id.as_deref(),
     );
+    if let Some(ref sched) = scheduler {
+        sched.record_chain_cascade(&cascade_metrics);
+    }
 
     // Healing check for failed executions
     if !result.success {

@@ -22,7 +22,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
       <button
         onClick={() => setToolsExpanded(!toolsExpanded)}
         aria-expanded={toolsExpanded}
-        className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none focus-visible:rounded-xl"
+        className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors focus-ring"
       >
         {toolsExpanded ? (
           <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" />
@@ -75,7 +75,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
                       <button
                         onClick={() => setShowRunner(!showRunner)}
                         aria-expanded={showRunner}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none focus-visible:rounded-xl"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors focus-ring"
                       >
                         <Play className="w-3 h-3" />
                         {showRunner ? 'Hide Tool Runner' : `Try Tools (${invocableTools.length})`}

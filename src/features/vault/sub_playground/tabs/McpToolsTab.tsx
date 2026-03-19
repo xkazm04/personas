@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { RefreshCw, Play, Loader2, Server, AlertCircle } from 'lucide-react';
+import { RefreshCw, Play, Server, AlertCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { listMcpTools, executeMcpTool } from '@/api/agents/mcpTools';
 import type { McpTool, McpToolResult } from '@/api/agents/mcpTools';
@@ -109,7 +110,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
         <Button
           variant="secondary"
           size="sm"
-          icon={loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+          icon={loading ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3 h-3" />}
           onClick={handleRefresh}
           disabled={loading}
           loading={loading}
@@ -188,7 +189,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
             <Button
               variant="accent"
               size="sm"
-              icon={executing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              icon={executing ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
               onClick={() => handleExecute(currentTool.name)}
               disabled={executing}
               loading={executing}

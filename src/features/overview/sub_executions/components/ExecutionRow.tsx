@@ -2,7 +2,8 @@ import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, RotateCw } from 'lucide-react';
 import type { GlobalExecution } from '@/lib/types/types';
-import { formatDuration, formatRelativeTime, getStatusEntry } from '@/lib/utils/formatters';
+import { formatDuration, getStatusEntry } from '@/lib/utils/formatters';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { ExecutionDetail } from '@/features/agents/sub_executions';
 
 interface ExecutionRowProps {
@@ -40,12 +41,12 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
           >
             {execution.persona_icon || '?'}
           </div>
-          <span className="text-sm font-medium text-foreground/80 truncate max-w-[100px]">
+          <span className="typo-heading text-foreground/80 truncate max-w-[100px]">
             {execution.persona_name || 'Unknown'}
           </span>
         </div>
 
-        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-medium border ${status.bg} ${status.text} ${status.border}`}>
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl typo-heading border ${status.bg} ${status.text} ${status.border}`}>
           {status.pulse && (
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
@@ -66,9 +67,7 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
           {formatDuration(execution.duration_ms)}
         </span>
 
-        <span className="text-sm text-muted-foreground/80 min-w-[70px] text-right">
-          {formatRelativeTime(execution.started_at || execution.created_at)}
-        </span>
+        <RelativeTime timestamp={execution.started_at || execution.created_at} className="text-sm text-muted-foreground/80 min-w-[70px] text-right" />
 
         {execution.error_message && (
           <span className="flex-1 text-sm text-red-400/70 truncate ml-2">

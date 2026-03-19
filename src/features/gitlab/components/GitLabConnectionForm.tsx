@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { Loader2, LogIn, LogOut, Key, ArrowRight } from 'lucide-react';
+import { LogIn, LogOut, Key, ArrowRight } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { DEPLOYMENT_TOKENS } from '@/features/deployment/components/deploymentTokens';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -85,7 +86,7 @@ export function GitLabConnectionForm({
             >
               {isConnecting ? (
                 <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
-                  <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
+                  <LoadingSpinner />
                   <span className="sr-only">Connecting to GitLab...</span>
                 </span>
               ) : (

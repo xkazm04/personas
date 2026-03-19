@@ -9,14 +9,14 @@ export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">Cost Breakdown</div>
+        <div className="typo-code text-muted-foreground/80 uppercase tracking-wider">Cost Breakdown</div>
         {estimated && (
-          <span className="text-sm px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400/80 font-medium">
+          <span className="typo-heading px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400/80">
             Unknown model -- no pricing data
           </span>
         )}
       </div>
-      <div className="flex items-center gap-3 text-sm font-mono">
+      <div className="flex items-center gap-3 typo-code">
         <span className="text-blue-400">Input: {formatCost(inputCost)}</span>
         <span className="text-muted-foreground/80">|</span>
         <span className="text-amber-400">Output: {formatCost(outputCost)}</span>
@@ -33,7 +33,7 @@ export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: 
           style={{ width: `${outputPct}%` }}
         />
       </div>
-      <div className="flex justify-between text-sm font-mono text-muted-foreground/80">
+      <div className="flex justify-between typo-code text-muted-foreground/80">
         <span>Input ({inputPct.toFixed(0)}%)</span>
         <span>Output ({outputPct.toFixed(0)}%)</span>
       </div>

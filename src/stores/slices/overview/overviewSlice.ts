@@ -21,6 +21,7 @@ import { cloudListPendingReviews, cloudRespondToReview } from "@/api/system/clou
 import { log } from "@/lib/log";
 import { classifyError, ApiError, withRetry } from "@/lib/utils/apiError";
 import { deduplicateFetch } from "@/lib/utils/deduplicateFetch";
+import { measureStoreAction } from "@/lib/utils/storePerf";
 
 export interface OverviewSlice {
   // State -- navigation
@@ -287,9 +288,11 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   fetchExecutionDashboard: async (days = 30) => {
     set({ executionDashboardLoading: true });
     try {
-      const data = await withRetry(
-        () => getExecutionDashboard(days),
-        "Failed to load execution dashboard",
+      const data = await measureStoreAction('fetchExecutionDashboard', () =>
+        withRetry(
+          () => getExecutionDashboard(days),
+          "Failed to load execution dashboard",
+        ),
       );
       set({ executionDashboard: data, executionDashboardError: null, executionDashboardLoading: false });
     } catch (err) {

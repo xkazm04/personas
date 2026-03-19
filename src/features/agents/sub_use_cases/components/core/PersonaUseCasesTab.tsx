@@ -118,7 +118,7 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
           <button
             onClick={() => setToolRunnerOpen(!toolRunnerOpen)}
             aria-expanded={toolRunnerOpen}
-            className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none focus-visible:rounded-xl"
+            className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors focus-ring"
           >
             {toolRunnerOpen ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />}
             <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />

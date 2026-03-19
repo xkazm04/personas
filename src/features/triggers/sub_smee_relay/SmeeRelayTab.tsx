@@ -1,8 +1,10 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Plus, Copy, Check, ExternalLink, Loader2, Unplug, Plug,
+  Plus, Copy, Check, ExternalLink, Unplug, Plug,
   AlertCircle, Trash2, Pause, Play, Bot, Filter, X,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSmeeRelayStatus } from '@/hooks/realtime/useSmeeRelayStatus';
 import { useAgentStore } from '@/stores/agentStore';
 import {
@@ -60,7 +62,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
     navigator.clipboard.writeText(text).then(() => {
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2000);
-    }).catch(() => {});
+    }).catch(silentCatch("SmeeRelayTab:copyToClipboard"));
   };
 
   const handleCreate = async () => {
@@ -139,7 +141,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => openExternalUrl('https://smee.io/new').catch(() => {})}
+              onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNew"))}
               className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
               title="Open smee.io/new to create a channel"
             >
@@ -241,11 +243,11 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 disabled={isCreating || !addLabel.trim() || !addUrl.startsWith('https://smee.io/')}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-purple-500/15 text-purple-400 border border-purple-500/25 hover:bg-purple-500/25 disabled:opacity-50 transition-colors"
               >
-                {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plug className="w-3.5 h-3.5" />}
+                {isCreating ? <LoadingSpinner size="sm" /> : <Plug className="w-3.5 h-3.5" />}
                 Create Relay
               </button>
               <p className="text-xs text-muted-foreground/50">
-                Get a channel URL from <button onClick={() => openExternalUrl('https://smee.io/new').catch(() => {})} className="text-purple-400/60 hover:text-purple-400 underline">smee.io/new</button>
+                Get a channel URL from <button onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))} className="text-purple-400/60 hover:text-purple-400 underline">smee.io/new</button>
               </p>
             </div>
           </div>
@@ -254,7 +256,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
         {/* Loading */}
         {isLoading && (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/60" />
+            <LoadingSpinner size="lg" className="text-muted-foreground/60" />
           </div>
         )}
 

@@ -22,7 +22,7 @@ export function ProgressIndicator({ elapsedMs, typicalDurationMs }: ProgressIndi
       <div className="flex-1 min-w-0">
         {typicalDurationMs ? (
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between typo-body">
               <span className="text-muted-foreground/80">
                 {formatElapsed(elapsedMs)} elapsed
               </span>
@@ -42,7 +42,7 @@ export function ProgressIndicator({ elapsedMs, typicalDurationMs }: ProgressIndi
             </div>
           </div>
         ) : (
-          <span className="text-sm text-muted-foreground/90">
+          <span className="typo-body text-muted-foreground/90">
             {formatElapsed(elapsedMs)} elapsed
           </span>
         )}

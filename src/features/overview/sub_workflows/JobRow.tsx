@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, Square, Clock, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Square, Clock } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { getWorkflowJobOutput } from '@/api/pipeline/workflows';
 import type { WorkflowJob } from '@/api/pipeline/workflows';
 import { StatusIcon, statusBadgeClass, formatElapsed, JOB_TYPE_LABELS } from './workflowHelpers';
@@ -48,7 +49,7 @@ export function JobRow({ job, expanded, onToggle, onCancel }: JobRowProps) {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground truncate">
+            <span className="typo-heading text-foreground truncate">
               {JOB_TYPE_LABELS[job.job_type] || job.job_type}
             </span>
             <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${statusBadgeClass(job.status)}`}>
@@ -108,7 +109,7 @@ export function JobRow({ job, expanded, onToggle, onCancel }: JobRowProps) {
           >
             {loadingOutput ? (
               <div className="flex items-center gap-2 py-4 justify-center text-muted-foreground/50">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <LoadingSpinner size="sm" />
                 Loading output...
               </div>
             ) : lines.length > 0 ? (

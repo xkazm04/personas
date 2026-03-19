@@ -184,7 +184,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-300/80 font-mono">
+      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl typo-code text-red-300/80">
         Failed to load trace: {error}
       </div>
     );
@@ -196,8 +196,8 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
         <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
           <Activity className="w-6 h-6 text-muted-foreground/60" />
         </div>
-        <p className="text-sm text-muted-foreground/80">No trace data recorded</p>
-        <p className="text-sm text-muted-foreground/60 mt-1">Trace spans appear during execution</p>
+        <p className="typo-body text-muted-foreground/80">No trace data recorded</p>
+        <p className="typo-body text-muted-foreground/60 mt-1">Trace spans appear during execution</p>
       </div>
     );
   }
@@ -208,10 +208,10 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
 
       <div className="rounded-xl border border-primary/20 bg-secondary/30 overflow-hidden">
         <div className="grid grid-cols-[minmax(200px,1fr)_minmax(200px,2fr)] gap-2 px-2 py-1.5 border-b border-primary/10 bg-secondary/40">
-          <div className="text-sm font-mono text-muted-foreground/60 uppercase tracking-wider">
+          <div className="typo-code text-muted-foreground/60 uppercase tracking-wider">
             Span
           </div>
-          <div className="flex justify-between text-sm font-mono text-muted-foreground/60 uppercase tracking-wider">
+          <div className="flex justify-between typo-code text-muted-foreground/60 uppercase tracking-wider">
             <span>0ms</span>
             <span>{formatDuration(totalMs)}</span>
           </div>

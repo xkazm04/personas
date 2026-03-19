@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Download, Loader2, ShieldCheck, ShieldAlert, ShieldOff, AlertTriangle } from 'lucide-react';
+import { Download, ShieldCheck, ShieldAlert, ShieldOff, AlertTriangle, Lock } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { open } from '@tauri-apps/plugin-dialog';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { BundleImportPreview, BundleResourcePreview } from '@/api/network/bundle';
+import type { EnclaveVerifyResult } from '@/api/network/enclave';
 
 type Phase = 'pick' | 'previewing' | 'preview' | 'importing' | 'done';
 
@@ -16,21 +18,26 @@ interface BundleImportDialogProps {
 export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps) {
   const previewBundleImport = useSystemStore((s) => s.previewBundleImport);
   const applyBundleImport = useSystemStore((s) => s.applyBundleImport);
+  const verifyEnclave = useSystemStore((s) => s.verifyEnclave);
   const addToast = useToastStore((s) => s.addToast);
 
   const [phase, setPhase] = useState<Phase>('pick');
   const [filePath, setFilePath] = useState<string | null>(null);
   const [preview, setPreview] = useState<BundleImportPreview | null>(null);
+  const [enclaveResult, setEnclaveResult] = useState<EnclaveVerifyResult | null>(null);
   const [skipConflicts, setSkipConflicts] = useState(true);
   const [renamePrefix, setRenamePrefix] = useState('');
   const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dangerConfirmed, setDangerConfirmed] = useState(false);
 
+  const isEnclave = filePath?.endsWith('.enclave') ?? false;
+
   const reset = () => {
     setPhase('pick');
     setFilePath(null);
     setPreview(null);
+    setEnclaveResult(null);
     setSkipConflicts(true);
     setRenamePrefix('');
     setImportResult(null);
@@ -47,22 +54,31 @@ export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps)
     try {
       const selected = await open({
         multiple: false,
-        filters: [{ name: 'Persona Bundle', extensions: ['persona'] }],
+        filters: [
+          { name: 'Persona Bundle or Enclave', extensions: ['persona', 'enclave'] },
+        ],
       });
-      if (!selected) return; // cancelled
+      if (!selected) return;
 
       const path = typeof selected === 'string' ? selected : selected;
       setFilePath(path);
       setPhase('previewing');
       setError(null);
+      setEnclaveResult(null);
 
-      const p = await previewBundleImport(path);
-      setPreview(p);
-      setPhase('preview');
+      if (path.endsWith('.enclave')) {
+        const result = await verifyEnclave(path);
+        setEnclaveResult(result);
+        setPhase('preview');
+      } else {
+        const p = await previewBundleImport(path);
+        setPreview(p);
+        setPhase('preview');
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[BundleImportDialog] Failed to load bundle', { error: msg });
-      setError(msg || 'Failed to load bundle');
+      console.warn('[BundleImportDialog] Failed to load file', { error: msg });
+      setError(msg || 'Failed to load file');
       setPhase('pick');
     }
   };
@@ -92,11 +108,17 @@ export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps)
       <div className="p-5 space-y-4">
         <div>
           <h2 id="bundle-import-title" className="text-base font-semibold text-foreground flex items-center gap-2">
-            <Download className="w-4.5 h-4.5 text-emerald-400" />
-            Import Bundle
+            {isEnclave ? (
+              <Lock className="w-4.5 h-4.5 text-violet-400" />
+            ) : (
+              <Download className="w-4.5 h-4.5 text-emerald-400" />
+            )}
+            {isEnclave ? 'Verify Enclave' : 'Import Bundle'}
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Import a signed .persona bundle from a trusted peer.
+            {isEnclave
+              ? 'Verify a sealed persona enclave from a trusted creator.'
+              : 'Import a signed .persona bundle from a trusted peer.'}
           </p>
         </div>
 
@@ -118,10 +140,10 @@ export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps)
                 onClick={handlePickFile}
                 className="px-4 py-2 text-sm rounded-lg bg-primary text-white hover:bg-primary/90"
               >
-                Choose .persona file
+                Choose file
               </button>
               <p className="text-xs text-muted-foreground mt-2">
-                Select a .persona bundle file to preview and import.
+                Select a .persona bundle or .enclave file.
               </p>
             </div>
           </div>
@@ -133,30 +155,43 @@ export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps)
         }`}>
           <div className="overflow-hidden">
             <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Verifying bundle...
+              <LoadingSpinner />
+              {isEnclave ? 'Verifying enclave...' : 'Verifying bundle...'}
             </div>
           </div>
         </div>
 
-        {/* Phase: Preview */}
-        <div className={`grid transition-all duration-200 ease-in-out ${
-          phase === 'preview' && preview ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-        }`}>
-          <div className="overflow-hidden">
-            {preview && (
-              <BundlePreviewContent
-                preview={preview}
-                skipConflicts={skipConflicts}
-                setSkipConflicts={setSkipConflicts}
-                renamePrefix={renamePrefix}
-                setRenamePrefix={setRenamePrefix}
-                dangerConfirmed={dangerConfirmed}
-                setDangerConfirmed={setDangerConfirmed}
-              />
-            )}
+        {/* Phase: Preview -- Enclave verification result */}
+        {isEnclave && enclaveResult && (
+          <div className={`grid transition-all duration-200 ease-in-out ${
+            phase === 'preview' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}>
+            <div className="overflow-hidden">
+              <EnclaveVerificationView result={enclaveResult} />
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Phase: Preview -- Bundle */}
+        {!isEnclave && (
+          <div className={`grid transition-all duration-200 ease-in-out ${
+            phase === 'preview' && preview ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}>
+            <div className="overflow-hidden">
+              {preview && (
+                <BundlePreviewContent
+                  preview={preview}
+                  skipConflicts={skipConflicts}
+                  setSkipConflicts={setSkipConflicts}
+                  renamePrefix={renamePrefix}
+                  setRenamePrefix={setRenamePrefix}
+                  dangerConfirmed={dangerConfirmed}
+                  setDangerConfirmed={setDangerConfirmed}
+                />
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Phase: Importing */}
         <div className={`grid transition-all duration-200 ease-in-out ${
@@ -164,7 +199,7 @@ export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps)
         }`}>
           <div className="overflow-hidden">
             <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <LoadingSpinner />
               Importing resources...
             </div>
           </div>
@@ -185,9 +220,9 @@ export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps)
             onClick={handleClose}
             className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50"
           >
-            {phase === 'done' ? 'Close' : 'Cancel'}
+            {phase === 'done' || isEnclave ? 'Close' : 'Cancel'}
           </button>
-          {phase === 'preview' && preview && (
+          {phase === 'preview' && !isEnclave && preview && (
             preview.signature_valid ? (
               <button
                 onClick={handleImport}
@@ -212,6 +247,107 @@ export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps)
     </BaseModal>
   );
 }
+
+// -- Enclave Verification View ------------------------------------------------
+
+function EnclaveVerificationView({ result }: { result: EnclaveVerifyResult }) {
+  const allValid = result.signatureValid && result.contentIntact;
+
+  return (
+    <div className="space-y-3">
+      {/* Status header */}
+      <div className={`rounded-lg border p-3 space-y-2 ${
+        !allValid
+          ? 'border-red-500/30 bg-red-500/5'
+          : 'border-violet-500/20 bg-violet-500/5'
+      }`}>
+        <div className="flex items-center gap-2">
+          {allValid ? (
+            result.creatorTrusted ? (
+              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            ) : (
+              <ShieldAlert className="w-5 h-5 text-amber-400" />
+            )
+          ) : (
+            <ShieldOff className="w-5 h-5 text-red-400" />
+          )}
+          <div>
+            <div className="text-sm font-medium text-foreground">
+              {result.personaName}
+            </div>
+            <div className="text-[10px] text-muted-foreground">
+              by {result.creatorDisplayName}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 text-[10px]">
+          <span className={`px-1.5 py-0.5 rounded-full ${
+            result.signatureValid
+              ? 'bg-emerald-500/10 text-emerald-400'
+              : 'bg-red-500/10 text-red-400'
+          }`}>
+            {result.signatureValid ? 'Signature valid' : 'Invalid signature'}
+          </span>
+          <span className={`px-1.5 py-0.5 rounded-full ${
+            result.contentIntact
+              ? 'bg-emerald-500/10 text-emerald-400'
+              : 'bg-red-500/10 text-red-400'
+          }`}>
+            {result.contentIntact ? 'Content intact' : 'Content tampered'}
+          </span>
+          <span className={`px-1.5 py-0.5 rounded-full ${
+            result.creatorTrusted
+              ? 'bg-emerald-500/10 text-emerald-400'
+              : 'bg-amber-500/10 text-amber-400'
+          }`}>
+            {result.creatorTrusted ? 'Trusted creator' : 'Unknown creator'}
+          </span>
+        </div>
+      </div>
+
+      {/* Creator identity */}
+      <div className="rounded-lg border border-border bg-secondary/10 p-3 space-y-1.5">
+        <div className="text-xs text-muted-foreground font-medium">Creator Identity</div>
+        <div className="text-[10px] text-muted-foreground font-mono">
+          {result.creatorPeerId.slice(0, 12)}...{result.creatorPeerId.slice(-12)}
+        </div>
+      </div>
+
+      {/* Policy details */}
+      <div className="rounded-lg border border-border bg-secondary/10 p-3 space-y-2">
+        <div className="text-xs text-muted-foreground font-medium">Execution Policy</div>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span className="text-muted-foreground">Max cost:</span>{' '}
+            <span className="text-foreground">${result.policy.maxCostUsd.toFixed(2)}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Max turns:</span>{' '}
+            <span className="text-foreground">{result.policy.maxTurns}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Persistence:</span>{' '}
+            <span className="text-foreground">{result.policy.allowPersistence ? 'Allowed' : 'Denied'}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Capabilities:</span>{' '}
+            <span className="text-foreground">
+              {result.policy.requiredCapabilities.length || 'None'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Enclave hash */}
+      <div className="text-[10px] text-muted-foreground/60 font-mono truncate">
+        Hash: {result.enclaveHash}
+      </div>
+    </div>
+  );
+}
+
+// -- Bundle Preview and shared components (unchanged) -------------------------
 
 const CONFETTI_COLORS = ['#34d399', '#06b6d4', '#10b981', '#22d3ee', '#6ee7b7', '#67e8f9'];
 
@@ -274,129 +410,48 @@ function PackageUnwrapSvg() {
       className="mx-auto"
       aria-hidden="true"
     >
-      {/* Confetti particles */}
       {Array.from({ length: 8 }, (_, i) => (
         <ConfettiParticle key={i} index={i} />
       ))}
-
-      {/* Package base */}
       <g>
         <rect x="45" y="50" width="70" height="50" rx="6" fill="#064e3b" stroke="#34d399" strokeWidth="1.5">
           <animate attributeName="opacity" values="0;1" dur="0.3s" fill="freeze" />
         </rect>
-        {/* Vertical ribbon */}
         <rect x="76" y="50" width="8" height="50" fill="#10b981" opacity="0.4">
           <animate attributeName="opacity" values="0;0.4" dur="0.3s" fill="freeze" />
         </rect>
-        {/* Horizontal ribbon */}
         <rect x="45" y="70" width="70" height="8" fill="#10b981" opacity="0.4">
           <animate attributeName="opacity" values="0;0.4" dur="0.3s" fill="freeze" />
         </rect>
-        {/* Ribbon bow center */}
         <circle cx="80" cy="50" r="5" fill="#34d399">
           <animate attributeName="opacity" values="0;1" dur="0.3s" fill="freeze" />
         </circle>
       </g>
-
-      {/* Lid lifting off */}
       <g>
         <rect x="42" y="44" width="76" height="14" rx="4" fill="#065f46" stroke="#34d399" strokeWidth="1.5">
           <animate attributeName="opacity" values="0;1" dur="0.3s" fill="freeze" />
-          <animateTransform
-            attributeName="transform"
-            type="translate"
-            values="0 0; 0 -18"
-            dur="0.5s"
-            begin="0.15s"
-            fill="freeze"
-          />
-          <animate
-            attributeName="opacity"
-            values="1;1;0"
-            keyTimes="0;0.6;1"
-            dur="0.6s"
-            begin="0.15s"
-            fill="freeze"
-          />
+          <animateTransform attributeName="transform" type="translate" values="0 0; 0 -18" dur="0.5s" begin="0.15s" fill="freeze" />
+          <animate attributeName="opacity" values="1;1;0" keyTimes="0;0.6;1" dur="0.6s" begin="0.15s" fill="freeze" />
         </rect>
-        {/* Lid ribbon */}
         <rect x="76" y="44" width="8" height="14" fill="#10b981" opacity="0.4">
-          <animateTransform
-            attributeName="transform"
-            type="translate"
-            values="0 0; 0 -18"
-            dur="0.5s"
-            begin="0.15s"
-            fill="freeze"
-          />
-          <animate
-            attributeName="opacity"
-            values="0.4;0.4;0"
-            keyTimes="0;0.6;1"
-            dur="0.6s"
-            begin="0.15s"
-            fill="freeze"
-          />
+          <animateTransform attributeName="transform" type="translate" values="0 0; 0 -18" dur="0.5s" begin="0.15s" fill="freeze" />
+          <animate attributeName="opacity" values="0.4;0.4;0" keyTimes="0;0.6;1" dur="0.6s" begin="0.15s" fill="freeze" />
         </rect>
       </g>
-
-      {/* Checkmark emerging from box */}
       <g>
         <circle cx="80" cy="62" r="14" fill="#059669" opacity="0">
           <animate attributeName="opacity" values="0;0;1" keyTimes="0;0.5;1" dur="0.8s" begin="0.3s" fill="freeze" />
-          <animateTransform
-            attributeName="transform"
-            type="translate"
-            values="0 10; 0 -12"
-            dur="0.5s"
-            begin="0.45s"
-            fill="freeze"
-          />
+          <animateTransform attributeName="transform" type="translate" values="0 10; 0 -12" dur="0.5s" begin="0.45s" fill="freeze" />
         </circle>
-        <path
-          d="M73 62 L78 67 L88 57"
-          stroke="white"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity="0"
-        >
+        <path d="M73 62 L78 67 L88 57" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0">
           <animate attributeName="opacity" values="0;0;1" keyTimes="0;0.5;1" dur="0.8s" begin="0.3s" fill="freeze" />
-          <animateTransform
-            attributeName="transform"
-            type="translate"
-            values="0 10; 0 -12"
-            dur="0.5s"
-            begin="0.45s"
-            fill="freeze"
-          />
+          <animateTransform attributeName="transform" type="translate" values="0 10; 0 -12" dur="0.5s" begin="0.45s" fill="freeze" />
         </path>
       </g>
-
-      {/* Sparkle accents */}
       {[[50, 30], [110, 28], [35, 55], [125, 52]].map(([cx, cy], i) => (
-        <circle
-          key={i}
-          cx={cx}
-          cy={cy}
-          r={2}
-          fill={i % 2 === 0 ? '#34d399' : '#22d3ee'}
-          opacity="0"
-        >
-          <animate
-            attributeName="opacity"
-            values="0;0.8;0"
-            dur="0.6s"
-            begin={`${0.5 + i * 0.12}s`}
-            fill="freeze"
-          />
-          <animate
-            attributeName="r"
-            values="0;3;1.5"
-            dur="0.6s"
-            begin={`${0.5 + i * 0.12}s`}
-            fill="freeze"
-          />
+        <circle key={i} cx={cx} cy={cy} r={2} fill={i % 2 === 0 ? '#34d399' : '#22d3ee'} opacity="0">
+          <animate attributeName="opacity" values="0;0.8;0" dur="0.6s" begin={`${0.5 + i * 0.12}s`} fill="freeze" />
+          <animate attributeName="r" values="0;3;1.5" dur="0.6s" begin={`${0.5 + i * 0.12}s`} fill="freeze" />
         </circle>
       ))}
     </svg>

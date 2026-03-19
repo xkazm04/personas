@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 
 export function LabProgress() {
@@ -18,7 +18,7 @@ export function LabProgress() {
           <div className="p-4 rounded-xl bg-secondary/30 border border-primary/10 space-y-3" role="status" aria-live="polite">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                <LoadingSpinner className="text-primary" />
                 <span className="text-sm text-foreground/80 capitalize">
                   {labProgress.phase === 'drafting'
                     ? 'Generating draft persona...'

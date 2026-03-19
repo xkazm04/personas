@@ -3,6 +3,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { useEngineCapabilities } from '@/hooks/utility/data/useEngineCapabilities';
 import { CLI_OPERATIONS, PROVIDERS } from '../libs/engineCapabilities';
 import { OperationRow } from './OperationRow';
+import { AmbientContextPanel } from '@/features/settings/components/AmbientContextPanel';
 
 export default function EngineSettings() {
   const {
@@ -126,6 +127,11 @@ export default function EngineSettings() {
                 Not installed
               </span>
             </div>
+          </div>
+
+          {/* Ambient Context Fusion */}
+          <div className="rounded-xl border border-primary/10 bg-card-bg p-6">
+            <AmbientContextPanel />
           </div>
 
           {/* Protocol warning */}

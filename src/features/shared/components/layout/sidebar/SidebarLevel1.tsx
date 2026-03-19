@@ -112,12 +112,12 @@ export default function SidebarLevel1({
                 </span>
               )}
               {isDisabled && section.id !== 'cloud' && (
-                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px text-sm font-semibold uppercase tracking-wider leading-none rounded bg-muted-foreground/15 text-muted-foreground/80 whitespace-nowrap">
+                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px typo-label leading-none rounded bg-muted-foreground/15 text-muted-foreground/80 whitespace-nowrap">
                   soon
                 </span>
               )}
               {section.id === 'overview' && pendingReviewCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 z-20 min-w-[16px] h-4 px-1 flex items-center justify-center text-sm font-bold leading-none rounded-full bg-amber-500 text-white shadow-sm shadow-amber-500/30">
+                <span className="absolute top-0.5 right-0.5 z-20 min-w-[16px] h-4 px-1 flex items-center justify-center typo-heading leading-none rounded-full bg-amber-500 text-white shadow-sm shadow-amber-500/30">
                   {pendingReviewCount > 99 ? '99+' : pendingReviewCount}
                 </span>
               )}
@@ -156,7 +156,7 @@ export default function SidebarLevel1({
 
         {!collapsed && appVersion && (
           <div className="pb-1 pt-1">
-            <span className="text-sm font-mono text-muted-foreground/80 block text-center">
+            <span className="typo-code text-muted-foreground/80 block text-center">
               v{appVersion}
             </span>
           </div>

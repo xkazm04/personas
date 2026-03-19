@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Loader2, Pause, Play, Trash2, Copy, ExternalLink, Check, DollarSign } from 'lucide-react';
+import { Pause, Play, Trash2, Copy, ExternalLink, Check, DollarSign } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { statusColor, timeAgo, budgetUtilization, budgetColor, formatCost } from './cloudDeploymentHelpers';
@@ -64,7 +65,7 @@ export function DeploymentCard({
               className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-amber-400
                          hover:bg-amber-500/10 disabled:opacity-40 transition-colors cursor-pointer"
             >
-              {isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Pause className="w-3.5 h-3.5" />}
+              {isBusy ? <LoadingSpinner size="sm" /> : <Pause className="w-3.5 h-3.5" />}
             </button>
           )}
           {d.status === 'paused' && (
@@ -76,7 +77,7 @@ export function DeploymentCard({
               className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-emerald-400
                          hover:bg-emerald-500/10 disabled:opacity-40 transition-colors cursor-pointer"
             >
-              {isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              {isBusy ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
             </button>
           )}
           <button

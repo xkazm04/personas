@@ -1397,6 +1397,83 @@ CREATE TABLE IF NOT EXISTS build_sessions (
 CREATE INDEX IF NOT EXISTS idx_build_sessions_persona ON build_sessions(persona_id);
 CREATE INDEX IF NOT EXISTS idx_build_sessions_phase ON build_sessions(phase);
 
+-- ============================================================================
+-- Genome Breeding: Runs & Results (Persona Genetic Programming)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS genome_breeding_runs (
+    id                TEXT PRIMARY KEY,
+    project_id        TEXT NOT NULL DEFAULT 'default',
+    status            TEXT NOT NULL DEFAULT 'generating',
+    parent_ids        TEXT NOT NULL DEFAULT '[]',
+    fitness_objective TEXT NOT NULL DEFAULT '{}',
+    mutation_rate     REAL NOT NULL DEFAULT 0.1,
+    generations       INTEGER NOT NULL DEFAULT 1,
+    offspring_count   INTEGER NOT NULL DEFAULT 0,
+    summary           TEXT,
+    error             TEXT,
+    created_at        TEXT NOT NULL,
+    completed_at      TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_genome_breeding_runs_project ON genome_breeding_runs(project_id);
+CREATE INDEX IF NOT EXISTS idx_genome_breeding_runs_created ON genome_breeding_runs(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS genome_breeding_results (
+    id                  TEXT PRIMARY KEY,
+    run_id              TEXT NOT NULL REFERENCES genome_breeding_runs(id) ON DELETE CASCADE,
+    genome_json         TEXT NOT NULL,
+    parent_ids          TEXT NOT NULL DEFAULT '[]',
+    generation          INTEGER NOT NULL DEFAULT 1,
+    fitness_json        TEXT,
+    fitness_overall     REAL,
+    adopted             INTEGER NOT NULL DEFAULT 0,
+    adopted_persona_id  TEXT,
+    created_at          TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_genome_breeding_results_run ON genome_breeding_results(run_id);
+CREATE INDEX IF NOT EXISTS idx_genome_breeding_results_fitness ON genome_breeding_results(fitness_overall DESC);
+
+-- ============================================================================
+-- Evolution Policies & Cycles (Auto-evolving personas via lab optimization)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS evolution_policies (
+    id                      TEXT PRIMARY KEY,
+    persona_id              TEXT NOT NULL UNIQUE REFERENCES personas(id) ON DELETE CASCADE,
+    enabled                 INTEGER NOT NULL DEFAULT 0,
+    fitness_objective       TEXT NOT NULL DEFAULT '{"speed":0.33,"quality":0.34,"cost":0.33}',
+    mutation_rate           REAL NOT NULL DEFAULT 0.15,
+    variants_per_cycle      INTEGER NOT NULL DEFAULT 4,
+    improvement_threshold   REAL NOT NULL DEFAULT 0.05,
+    min_executions_between  INTEGER NOT NULL DEFAULT 10,
+    last_cycle_at           TEXT,
+    total_cycles            INTEGER NOT NULL DEFAULT 0,
+    total_promotions        INTEGER NOT NULL DEFAULT 0,
+    created_at              TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at              TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_evolution_policies_persona ON evolution_policies(persona_id);
+CREATE INDEX IF NOT EXISTS idx_evolution_policies_enabled ON evolution_policies(enabled);
+
+CREATE TABLE IF NOT EXISTS evolution_cycles (
+    id                TEXT PRIMARY KEY,
+    policy_id         TEXT NOT NULL REFERENCES evolution_policies(id) ON DELETE CASCADE,
+    persona_id        TEXT NOT NULL,
+    status            TEXT NOT NULL DEFAULT 'breeding'
+                      CHECK(status IN ('breeding','evaluating','promoting','completed','failed')),
+    variants_tested   INTEGER NOT NULL DEFAULT 0,
+    winner_fitness    REAL,
+    incumbent_fitness REAL,
+    promoted          INTEGER NOT NULL DEFAULT 0,
+    summary           TEXT,
+    error             TEXT,
+    started_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    completed_at      TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_evolution_cycles_policy ON evolution_cycles(policy_id);
+CREATE INDEX IF NOT EXISTS idx_evolution_cycles_persona ON evolution_cycles(persona_id);
+CREATE INDEX IF NOT EXISTS idx_evolution_cycles_started ON evolution_cycles(started_at DESC);
+
 "#;
 
 /// Incremental migrations for columns added after the initial schema.
@@ -2560,6 +2637,92 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
              ALTER TABLE build_sessions ADD COLUMN parser_result_json TEXT;"
         )?;
         tracing::info!("Added workflow_json and parser_result_json columns to build_sessions");
+    }
+
+    // -- Frontend crash telemetry table (persists React ErrorBoundary crashes to SQLite) --
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS frontend_crashes (
+            id              TEXT PRIMARY KEY,
+            component       TEXT NOT NULL,
+            message         TEXT NOT NULL,
+            stack           TEXT,
+            component_stack TEXT,
+            app_version     TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_fc_created ON frontend_crashes(created_at DESC);"
+    )?;
+
+    // -- OAuth token lifetime metrics (tracks predicted vs actual token expiry) --
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS oauth_token_metrics (
+            id                      TEXT PRIMARY KEY,
+            credential_id           TEXT NOT NULL REFERENCES persona_credentials(id) ON DELETE CASCADE,
+            service_type            TEXT NOT NULL,
+            predicted_lifetime_secs INTEGER,
+            actual_lifetime_secs    INTEGER,
+            drift_secs              INTEGER,
+            used_fallback           INTEGER NOT NULL DEFAULT 0,
+            success                 INTEGER NOT NULL DEFAULT 1,
+            error_message           TEXT,
+            created_at              TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_otm_credential ON oauth_token_metrics(credential_id);
+        CREATE INDEX IF NOT EXISTS idx_otm_created    ON oauth_token_metrics(created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_otm_service    ON oauth_token_metrics(service_type);"
+    )?;
+
+    // -- Output Assertions (declarative output validation) ---------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS output_assertions (
+            id              TEXT PRIMARY KEY,
+            persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+            name            TEXT NOT NULL,
+            description     TEXT,
+            assertion_type  TEXT NOT NULL,
+            config          TEXT NOT NULL DEFAULT '{}',
+            severity        TEXT NOT NULL DEFAULT 'warning',
+            enabled         INTEGER NOT NULL DEFAULT 1,
+            on_failure      TEXT NOT NULL DEFAULT 'log',
+            pass_count      INTEGER NOT NULL DEFAULT 0,
+            fail_count      INTEGER NOT NULL DEFAULT 0,
+            last_evaluated_at TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_oa_persona ON output_assertions(persona_id);
+        CREATE INDEX IF NOT EXISTS idx_oa_enabled ON output_assertions(enabled);
+
+        CREATE TABLE IF NOT EXISTS assertion_results (
+            id              TEXT PRIMARY KEY,
+            assertion_id    TEXT NOT NULL REFERENCES output_assertions(id) ON DELETE CASCADE,
+            execution_id    TEXT NOT NULL REFERENCES persona_executions(id) ON DELETE CASCADE,
+            persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+            passed          INTEGER NOT NULL,
+            explanation     TEXT NOT NULL DEFAULT '',
+            matched_value   TEXT,
+            evaluation_ms   INTEGER NOT NULL DEFAULT 0,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_ar_assertion  ON assertion_results(assertion_id);
+        CREATE INDEX IF NOT EXISTS idx_ar_execution  ON assertion_results(execution_id);
+        CREATE INDEX IF NOT EXISTS idx_ar_persona    ON assertion_results(persona_id);
+        CREATE INDEX IF NOT EXISTS idx_ar_created    ON assertion_results(created_at DESC);"
+    )?;
+
+    // -- saved_views: view_type + view_config columns ------
+    let has_view_type: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('saved_views') WHERE name = 'view_type'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_view_type {
+        conn.execute_batch(
+            "ALTER TABLE saved_views ADD COLUMN view_type TEXT NOT NULL DEFAULT 'analytics';
+             ALTER TABLE saved_views ADD COLUMN view_config TEXT;"
+        )?;
+        tracing::info!("Added view_type, view_config columns to saved_views");
     }
 
     Ok(())

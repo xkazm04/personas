@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck, Zap, RefreshCw, Loader2 } from 'lucide-react';
+import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck, Zap, RefreshCw } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
@@ -108,7 +109,7 @@ function ResolvedAnimation() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15, duration: 0.3 }}
-        className="mt-4 text-sm font-medium text-emerald-400"
+        className="mt-4 typo-heading text-emerald-400"
       >
         Issue Resolved
       </motion.p>
@@ -133,7 +134,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
       {/* Header */}
       <div className="flex items-start justify-between p-4 border-b border-primary/10">
         <div className="flex-1 min-w-0 pr-4">
-          <h3 id="healing-issue-title" className="text-sm font-semibold text-foreground/90 mb-2">{issue.title}</h3>
+          <h3 id="healing-issue-title" className="typo-heading text-foreground/90 mb-2">{issue.title}</h3>
           <div className="flex items-center gap-2 flex-wrap">
             {isCircuitBreaker ? (
               <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-lg ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text} ${SEVERITY_STYLES.error.border}`}>
@@ -141,7 +142,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
               </span>
             ) : isAutoFixPending ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-lg border bg-amber-500/10 text-amber-400 border-amber-500/20">
-                <Loader2 className="w-3 h-3 animate-spin" /> retrying
+                <LoadingSpinner size="xs" /> retrying
               </span>
             ) : isAutoFixed ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-lg border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
@@ -163,7 +164,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
             <span className="text-sm text-muted-foreground/80">{new Date(issue.created_at).toLocaleDateString()}</span>
           </div>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors" aria-label="Close">
+        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors focus-ring" aria-label="Close">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -174,7 +175,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
           <div className={`flex items-start gap-2.5 p-3.5 rounded-xl ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.border}`}>
             <Zap className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-red-300/90">Persona auto-disabled</p>
+              <p className="typo-heading text-red-300/90">Persona auto-disabled</p>
               <p className="text-sm text-red-300/60 mt-1">
                 This persona was automatically disabled after 5 consecutive failures. Review the error pattern below and re-enable manually once the root cause is resolved.
               </p>
@@ -192,7 +193,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
                 <Wrench className="w-3.5 h-3.5 text-emerald-400" />
                 <h4 className="text-sm font-mono uppercase text-emerald-400/80">Suggested Fix</h4>
               </div>
-              <button onClick={onCopyFix} className="flex items-center gap-1 px-2 py-1 text-sm font-medium text-emerald-400/70 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg transition-colors">
+              <button onClick={onCopyFix} className="flex items-center gap-1 px-2 py-1 typo-heading text-emerald-400/70 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg transition-colors">
                 {copied ? <ClipboardCheck className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 {copied ? 'Copied' : 'Copy Fix'}
               </button>
@@ -222,7 +223,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
       <div className="flex items-center justify-end gap-3 px-5 py-4 bg-secondary/20">
         {isAutoFixPending && (
           <div className="flex items-center gap-1.5 mr-auto">
-            <Loader2 className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+            <LoadingSpinner size="sm" className="text-amber-400" />
             <span className="text-sm text-amber-400/60">Retry in progress — status will update when complete</span>
           </div>
         )}
@@ -234,14 +235,14 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
             <span className="text-sm text-emerald-400/60">This issue was automatically resolved</span>
           </div>
         )}
-        <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-muted-foreground/80 hover:text-foreground/95 rounded-xl hover:bg-secondary/60 transition-colors">
+        <button onClick={onClose} className="px-4 py-2 typo-heading text-muted-foreground/80 hover:text-foreground/95 rounded-xl hover:bg-secondary/60 transition-colors">
           Close
         </button>
         {!isAutoFixed && !isAutoFixPending && (
           <button
             onClick={onResolve}
             title="Manual fix applied outside the healing system"
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-xl hover:bg-emerald-500/20 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 typo-heading text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-xl hover:bg-emerald-500/20 transition-colors"
           >
             <CheckCircle className="w-3.5 h-3.5" />
             Mark as Resolved

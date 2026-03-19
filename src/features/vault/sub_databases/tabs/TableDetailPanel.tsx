@@ -1,4 +1,5 @@
-import { Loader2, Table2, Pin, Eye, Key } from 'lucide-react';
+import { Table2, Pin, Eye, Key } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { IntrospectedTable, IntrospectedColumn } from '@/hooks/database/useTableIntrospection';
 
 interface TableDetailPanelProps {
@@ -64,7 +65,7 @@ export function TableDetailPanel({
           <div className="flex-1 min-h-0 overflow-y-auto p-4">
             {columnsLoading && (
               <div className="flex items-center gap-2 py-8 justify-center">
-                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/60" />
+                <LoadingSpinner className="text-muted-foreground/60" />
                 <span className="text-sm text-muted-foreground/60">Loading columns...</span>
               </div>
             )}
@@ -144,7 +145,7 @@ export function TableDetailPanel({
           <div className="p-4">
             {keyTypeResult === null ? (
               <div className="flex items-center gap-2 py-4">
-                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/60" />
+                <LoadingSpinner className="text-muted-foreground/60" />
                 <span className="text-sm text-muted-foreground/60">Loading key info...</span>
               </div>
             ) : (

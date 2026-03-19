@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Sparkles, AlertCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 export function AiSearchStatusBar({
   aiSearchMode,
@@ -31,7 +32,7 @@ export function AiSearchStatusBar({
       }`}>
         {aiSearchLoading ? (
           <>
-            <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin flex-shrink-0" />
+            <LoadingSpinner size="sm" className="text-indigo-400 flex-shrink-0" />
             <span className="text-sm text-indigo-300/80">Searching with AI -- results will appear when ready...</span>
           </>
         ) : aiSearchActive ? (

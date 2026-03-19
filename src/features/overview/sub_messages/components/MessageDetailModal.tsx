@@ -1,3 +1,4 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Trash2, ExternalLink, Check, X, Copy } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
@@ -55,7 +56,7 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
                 navigator.clipboard.writeText(message.id).then(() => {
                   setCopiedId(true);
                   setTimeout(() => setCopiedId(false), 2000);
-                }).catch(() => {});
+                }).catch(silentCatch("MessageDetailModal:copyId"));
               }}
               className="inline-flex items-center gap-1 hover:text-muted-foreground transition-colors"
               title={message.id}
@@ -95,7 +96,7 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
                 if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
                 confirmTimerRef.current = setTimeout(() => setConfirmingDelete(false), 3000);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" /> Delete
             </button>
@@ -126,8 +127,8 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
                 return (
                   <div key={d.id} className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl border ${statusCfg.bgColor} ${statusCfg.borderColor}`}>
                     <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${statusCfg.color}`} />
-                    <span className="text-sm font-medium text-foreground/90 min-w-[60px]">{channelLabels[d.channel_type] ?? d.channel_type}</span>
-                    <span className={`text-sm font-medium ${statusCfg.color}`}>{statusCfg.label}</span>
+                    <span className="typo-heading text-foreground/90 min-w-[60px]">{channelLabels[d.channel_type] ?? d.channel_type}</span>
+                    <span className={`typo-heading ${statusCfg.color}`}>{statusCfg.label}</span>
                     {d.delivered_at && <span className="text-sm text-muted-foreground/80 ml-auto">{formatRelativeTime(d.delivered_at)}</span>}
                     {d.error_message && <span className="text-sm text-red-400/80 ml-auto truncate max-w-[200px]" title={d.error_message}>{d.error_message}</span>}
                   </div>

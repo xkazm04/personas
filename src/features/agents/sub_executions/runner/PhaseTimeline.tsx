@@ -48,7 +48,7 @@ export function PhaseTimeline({
     <div className="border-b border-border/20">
       <button
         onClick={onTogglePhases}
-        className="w-full flex items-center gap-1.5 px-3 py-1.5 text-sm font-mono text-muted-foreground/80 hover:text-muted-foreground transition-colors uppercase tracking-wider"
+        className="w-full flex items-center gap-1.5 px-3 py-1.5 typo-code text-muted-foreground/80 hover:text-muted-foreground transition-colors uppercase tracking-wider"
       >
         {showPhases ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         Phases
@@ -116,9 +116,9 @@ export function PhaseTimeline({
                         </div>
                       )}
                       <PhaseIcon className="w-3 h-3 flex-shrink-0 relative z-[2]" />
-                      <span className="truncate text-sm font-medium relative z-[2]">{phase.label}</span>
+                      <span className="truncate typo-heading relative z-[2]">{phase.label}</span>
                       {duration > 0 && (
-                        <span className="font-mono text-sm opacity-60 relative z-[2] flex-shrink-0">
+                        <span className="typo-code opacity-60 relative z-[2] flex-shrink-0">
                           {formatElapsed(duration)}
                         </span>
                       )}

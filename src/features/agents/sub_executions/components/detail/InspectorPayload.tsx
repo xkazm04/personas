@@ -18,15 +18,15 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
         <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
           <Hash className="w-3.5 h-3.5 text-primary/70" />
         </div>
-        <span className="text-sm font-mono text-muted-foreground/90">{step.step_index + 1}</span>
+        <span className="typo-code text-muted-foreground/90">{step.step_index + 1}</span>
 
         <div className="flex items-center gap-1.5">
           <Wrench className="w-3.5 h-3.5 text-muted-foreground/90" />
-          <span className="text-sm font-medium text-foreground/90 font-mono">{step.tool_name}</span>
+          <span className="typo-code font-medium text-foreground/90">{step.tool_name}</span>
         </div>
 
         <div className="ml-auto">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm font-mono border ${durationColor(step.duration_ms)}`}>
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-code border ${durationColor(step.duration_ms)}`}>
             <Clock className="w-3 h-3" />
             {step.duration_ms !== undefined ? formatDuration(step.duration_ms) : 'pending'}
           </span>
@@ -38,7 +38,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
         <div className="border-t border-primary/10">
           <button
             onClick={() => setShowInput(!showInput)}
-            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+            className="flex items-center gap-2 w-full px-4 py-2 typo-body text-muted-foreground/90 hover:text-foreground/95 transition-colors"
           >
             {showInput ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             Input
@@ -51,7 +51,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.15 }}
               >
-                <pre className="px-4 pb-3 text-sm text-foreground/90 font-mono whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
+                <pre className="px-4 pb-3 typo-code text-foreground/90 whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
                   {step.input_preview}
                 </pre>
               </motion.div>
@@ -65,7 +65,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
         <div className="border-t border-primary/10">
           <button
             onClick={() => setShowOutput(!showOutput)}
-            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+            className="flex items-center gap-2 w-full px-4 py-2 typo-body text-muted-foreground/90 hover:text-foreground/95 transition-colors"
           >
             {showOutput ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             Output
@@ -78,7 +78,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.15 }}
               >
-                <pre className="px-4 pb-3 text-sm text-foreground/90 font-mono whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
+                <pre className="px-4 pb-3 typo-code text-foreground/90 whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
                   {step.output_preview}
                 </pre>
               </motion.div>
@@ -98,14 +98,14 @@ export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">Cost Breakdown</div>
+        <div className="typo-code text-muted-foreground/80 uppercase tracking-wider">Cost Breakdown</div>
         {estimated && (
-          <span className="text-sm px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400/80 font-medium">
+          <span className="typo-heading px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400/80">
             Unknown model -- no pricing data
           </span>
         )}
       </div>
-      <div className="flex items-center gap-3 text-sm font-mono">
+      <div className="flex items-center gap-3 typo-code">
         <span className="text-blue-400">Input: {formatCost(inputCost)}</span>
         <span className="text-muted-foreground/80">|</span>
         <span className="text-amber-400">Output: {formatCost(outputCost)}</span>
@@ -122,7 +122,7 @@ export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: 
           style={{ width: `${outputPct}%` }}
         />
       </div>
-      <div className="flex justify-between text-sm font-mono text-muted-foreground/80">
+      <div className="flex justify-between typo-code text-muted-foreground/80">
         <span>Input ({inputPct.toFixed(0)}%)</span>
         <span>Output ({outputPct.toFixed(0)}%)</span>
       </div>

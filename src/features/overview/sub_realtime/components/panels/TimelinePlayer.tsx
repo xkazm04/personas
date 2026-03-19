@@ -2,8 +2,9 @@ import { memo, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, Pause, X, Gauge, Calendar, History,
-  Loader2, ChevronRight, SkipBack,
+  ChevronRight, SkipBack,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { TimeRange, PlaybackSpeed, TimelineReplayState } from '@/hooks/realtime/useTimelineReplay';
 
 interface Props extends TimelineReplayState {
@@ -37,8 +38,8 @@ const ReplayEntryBar = memo(function ReplayEntryBar({ loading, onEnterReplay }: 
       <span className="text-sm text-muted-foreground/60 font-medium tracking-wide">REPLAY</span>
       <div className="w-px h-4 bg-primary/10" />
       {RANGE_OPTIONS.map((opt) => (
-        <button key={opt.value} disabled={loading} onClick={() => onEnterReplay(opt.value)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold rounded-xl bg-primary/5 border border-primary/10 text-muted-foreground/70 hover:text-foreground/80 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-[0.97] disabled:opacity-40">
-          {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Calendar className="w-3 h-3" />}
+        <button key={opt.value} disabled={loading} onClick={() => onEnterReplay(opt.value)} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-xl bg-primary/5 border border-primary/10 text-muted-foreground/70 hover:text-foreground/80 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-[0.97] disabled:opacity-40">
+          {loading ? <LoadingSpinner size="xs" /> : <Calendar className="w-3 h-3" />}
           Last {opt.label}
         </button>
       ))}
@@ -114,11 +115,11 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar(props: Props) {
         </button>
         <button onClick={() => onSeek(0)} aria-label="Reset timeline" className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/5 border border-primary/10 text-muted-foreground/50 hover:text-foreground/70 hover:bg-primary/10 transition-all active:scale-[0.93]" title="Reset to start"><SkipBack className="w-3.5 h-3.5" /></button>
         <div className="w-px h-5 bg-primary/10" />
-        <button onClick={cycleSpeed} aria-label="Cycle playback speed" className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/8 border border-purple-500/15 text-purple-300/80 hover:bg-purple-500/15 transition-all text-sm font-bold tracking-wide active:scale-[0.97]" title="Cycle playback speed"><Gauge className="w-3 h-3" /><span aria-live="polite">{speed}x</span></button>
+        <button onClick={cycleSpeed} aria-label="Cycle playback speed" className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/8 border border-purple-500/15 text-purple-300/80 hover:bg-purple-500/15 transition-all typo-heading tracking-wide active:scale-[0.97]" title="Cycle playback speed"><Gauge className="w-3 h-3" /><span aria-live="polite">{speed}x</span></button>
         <div className="w-px h-5 bg-primary/10" />
         <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground/60"><span className="text-foreground/70">{formatDate(cursorTime)}</span><ChevronRight className="w-3 h-3 text-muted-foreground/30" /><span>{formatDate(rangeEnd)}</span></div>
         <div className="flex-1" />
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/5 border border-primary/8"><div className="w-1.5 h-1.5 rounded-full bg-cyan-400/60" /><span className="text-sm font-bold text-foreground/60">{emittedCount}</span><span className="text-sm text-muted-foreground/40">/</span><span className="text-sm text-muted-foreground/50">{totalEventCount}</span><span className="text-sm text-muted-foreground/60 ml-0.5">events</span></div>
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/5 border border-primary/8"><div className="w-1.5 h-1.5 rounded-full bg-cyan-400/60" /><span className="typo-heading text-foreground/60">{emittedCount}</span><span className="text-sm text-muted-foreground/40">/</span><span className="text-sm text-muted-foreground/50">{totalEventCount}</span><span className="text-sm text-muted-foreground/60 ml-0.5">events</span></div>
         <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/30 border border-primary/8 text-sm text-muted-foreground/50 font-bold tracking-wider"><History className="w-3 h-3" />{range === '1d' ? '24H' : '7D'}</div>
         <button onClick={onExitReplay} aria-label="Exit replay" className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-500/8 border border-red-500/15 text-red-400/60 hover:text-red-400 hover:bg-red-500/15 transition-all active:scale-[0.93]" title="Exit replay"><X className="w-3.5 h-3.5" /></button>
       </div>

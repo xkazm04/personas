@@ -49,7 +49,7 @@ export function TerminalBody({ lines }: TerminalBodyProps) {
   return (
     <>
       {lines.length === 0 ? (
-        <div className="p-4 text-muted-foreground/80 text-center text-sm">No output yet...</div>
+        <div className="p-4 text-muted-foreground/80 text-center typo-body">No output yet...</div>
       ) : (
         <div className="p-3">
           {lines.map((line, index) => {

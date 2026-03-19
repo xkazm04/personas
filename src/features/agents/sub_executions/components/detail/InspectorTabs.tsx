@@ -33,41 +33,41 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
       {/* Metrics Summary Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 3xl:gap-5 4xl:gap-6">
         <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
-          <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
+          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Zap className="w-3 h-3" />
             Input Tokens
           </div>
-          <div className="text-lg font-mono text-foreground/90">
+          <div className="typo-body-lg font-mono text-foreground/90">
             {execution.input_tokens.toLocaleString()}
           </div>
         </div>
 
         <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
-          <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
+          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Zap className="w-3 h-3" />
             Output Tokens
           </div>
-          <div className="text-lg font-mono text-foreground/90">
+          <div className="typo-body-lg font-mono text-foreground/90">
             {execution.output_tokens.toLocaleString()}
           </div>
         </div>
 
         <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
-          <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
+          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <DollarSign className="w-3 h-3" />
             Cost
           </div>
-          <div className="text-lg font-mono text-foreground/90">
+          <div className="typo-body-lg font-mono text-foreground/90">
             {formatCost(execution.cost_usd)}
           </div>
         </div>
 
         <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
-          <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
+          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Clock className="w-3 h-3" />
             Duration
           </div>
-          <div className="text-lg font-mono text-foreground/90">
+          <div className="typo-body-lg font-mono text-foreground/90">
             {formatDuration(execution.duration_ms)}
           </div>
         </div>
@@ -81,7 +81,7 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
       {/* Tool Call Timeline */}
       {steps.length > 0 && (
         <div className="space-y-3">
-          <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1.5">
             <Wrench className="w-3 h-3" />
             Tool Call Timeline ({steps.length} steps)
           </div>
@@ -114,7 +114,7 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
                   {i > 0 && (
                     <div className="relative h-6 flex items-center">
                       {gapMs != null && gapMs >= 10 && (
-                        <span className="absolute left-[-16px] text-sm font-mono text-muted-foreground/35 leading-none bg-background z-10 px-0.5">
+                        <span className="absolute left-[-16px] typo-code text-muted-foreground/35 leading-none bg-background z-10 px-0.5">
                           {formatTimeGap(gapMs)}
                         </span>
                       )}
@@ -147,8 +147,8 @@ export function InspectorTabs({ execution }: InspectorTabsProps) {
           <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
             <Wrench className="w-6 h-6 text-muted-foreground/80" />
           </div>
-          <p className="text-sm text-muted-foreground/90">No tool calls recorded</p>
-          <p className="text-sm text-muted-foreground/80 mt-1">Tool steps appear after execution completes</p>
+          <p className="typo-body text-muted-foreground/90">No tool calls recorded</p>
+          <p className="typo-body text-muted-foreground/80 mt-1">Tool steps appear after execution completes</p>
         </div>
       )}
     </div>

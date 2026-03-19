@@ -1,3 +1,4 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useVaultStore } from "@/stores/vaultStore";
 import { mergeCredentialLink } from '@/features/shared/components/use-cases/UseCasesList';
@@ -140,7 +141,7 @@ export function useConnectorStatuses({
 
   // Fetch credentials and connector definitions on mount
   useEffect(() => {
-    void fetchCredentials().catch(() => {});
+    void fetchCredentials().catch(silentCatch("useConnectorStatuses:fetchCredentials"));
     void fetchConnectorDefinitions();
   }, [fetchCredentials, fetchConnectorDefinitions]);
 
@@ -222,7 +223,7 @@ export function useConnectorStatuses({
   const handleDesignComplete = useCallback(() => {
     setDesignOpen(false);
     setDesignInstruction('');
-    void fetchCredentials().catch(() => {});
+    void fetchCredentials().catch(silentCatch("useConnectorStatuses:refreshCredentials"));
     void fetchConnectorDefinitions();
     onCredentialCreated?.();
   }, [fetchCredentials, fetchConnectorDefinitions, onCredentialCreated]);

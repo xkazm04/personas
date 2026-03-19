@@ -44,17 +44,17 @@ export function HealingCard({
           <ShieldAlert className={`w-4 h-4 mt-0.5 flex-shrink-0 ${styles.icon}`} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-sm font-semibold ${styles.accent}`}>{notification.title}</span>
-              <span className="text-sm font-mono px-1.5 py-0.5 rounded bg-secondary/40 text-muted-foreground/60 border border-primary/10">{notification.severity}</span>
+              <span className={`typo-heading ${styles.accent}`}>{notification.title}</span>
+              <span className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 text-muted-foreground/60 border border-primary/10">{notification.severity}</span>
             </div>
           </div>
           <button onClick={onDismiss} className="text-muted-foreground/50 hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5">
-            <span className="text-sm">dismiss</span>
+            <span className="typo-body">dismiss</span>
           </button>
         </div>
 
         {notification.strategy && (
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 typo-body">
             <RotateCw className={`w-3.5 h-3.5 flex-shrink-0 ${styles.icon} opacity-60`} />
             <span className="text-foreground/80">{notification.strategy}</span>
           </div>
@@ -65,16 +65,16 @@ export function HealingCard({
             {countdown > 0 && (
               <div className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-amber-400/60 animate-pulse" />
-                <span className="text-sm font-mono text-amber-300/90">Retrying in {countdown}s...</span>
+                <span className="typo-code text-amber-300/90">Retrying in {countdown}s...</span>
               </div>
             )}
             {countdown === 0 && (
               <div className="flex items-center gap-1.5">
                 <RotateCw className="w-3.5 h-3.5 text-blue-400/70 animate-spin" />
-                <span className="text-sm font-mono text-blue-300/90">Retrying now...</span>
+                <span className="typo-code text-blue-300/90">Retrying now...</span>
               </div>
             )}
-            <span className="ml-auto text-sm font-mono text-muted-foreground/60 px-2 py-0.5 rounded bg-secondary/30 border border-primary/10">
+            <span className="ml-auto typo-code text-muted-foreground/60 px-2 py-0.5 rounded bg-secondary/30 border border-primary/10">
               Attempt {notification.retry_number} of {notification.max_retries}
             </span>
           </div>
@@ -87,13 +87,13 @@ export function HealingCard({
         )}
 
         {isIssue && (
-          <button onClick={() => setSidebarSection('overview')} className="flex items-center gap-1.5 text-sm text-red-400/80 hover:text-red-300 transition-colors">
+          <button onClick={() => setSidebarSection('overview')} className="flex items-center gap-1.5 typo-body text-red-400/80 hover:text-red-300 transition-colors">
             <ExternalLink className="w-3 h-3" />View in healing issues
           </button>
         )}
 
         {notification.suggested_fix && (
-          <p className="text-sm text-muted-foreground/60 leading-relaxed pl-6.5">{notification.suggested_fix}</p>
+          <p className="typo-body text-muted-foreground/60 leading-relaxed pl-6.5">{notification.suggested_fix}</p>
         )}
       </div>
     </motion.div>
@@ -127,7 +127,7 @@ export function AiHealingCounters({
   const dotClr = phase === 'completed' ? 'bg-emerald-400' : phase === 'failed' ? 'bg-red-400' : 'bg-violet-400 animate-pulse';
 
   return (
-    <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+    <span className="flex items-center gap-1.5 typo-heading text-muted-foreground">
       <span className={`inline-block w-1.5 h-1.5 rounded-full ${dotClr}`} />
       {label}
     </span>

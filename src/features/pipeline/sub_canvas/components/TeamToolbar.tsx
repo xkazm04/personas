@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Plus, LayoutGrid, Save, ChevronDown, Check, Loader2, StickyNote } from 'lucide-react';
+import { ArrowLeft, Plus, LayoutGrid, Save, ChevronDown, Check, StickyNote } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { PersonaAvatar } from '../libs/teamConstants';
@@ -118,7 +119,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
           }`}
         >
           {saveStatus === 'saving' ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <LoadingSpinner size="sm" />
           ) : saveStatus === 'saved' ? (
             <Check className="w-3.5 h-3.5" />
           ) : (

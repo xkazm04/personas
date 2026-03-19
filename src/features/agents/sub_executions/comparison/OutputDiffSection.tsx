@@ -52,12 +52,12 @@ export function OutputDiffSection({
     <div>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-2 text-sm text-foreground/80 hover:text-foreground transition-colors"
+        className="flex items-center gap-2 typo-body text-foreground/80 hover:text-foreground transition-colors"
       >
         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        <span className="text-xs uppercase tracking-wider">Terminal Output Diff</span>
+        <span className="typo-label">Terminal Output Diff</span>
         {diff.length > 0 && (
-          <span className="text-sm text-muted-foreground/50">
+          <span className="typo-body text-muted-foreground/50">
             ({diff.filter(d => d.type !== 'same').length} differences)
           </span>
         )}
@@ -72,14 +72,14 @@ export function OutputDiffSection({
             className="mt-2 overflow-hidden"
           >
             {loading ? (
-              <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground/60">
+              <div className="flex items-center gap-2 py-4 typo-body text-muted-foreground/60">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Loading logs...
               </div>
             ) : diff.length === 0 ? (
-              <p className="text-sm text-muted-foreground/50 py-3">No log data available</p>
+              <p className="typo-body text-muted-foreground/50 py-3">No log data available</p>
             ) : (
-              <div className="max-h-64 overflow-y-auto rounded-lg border border-primary/10 bg-background/50 font-mono text-sm">
+              <div className="max-h-64 overflow-y-auto rounded-lg border border-primary/10 bg-background/50 typo-code">
                 {diff.reduce<{ elements: React.ReactNode[]; leftLine: number; rightLine: number }>(
                   (acc, d, i) => {
                     const ln = d.type === 'added' ? undefined : ++acc.leftLine;

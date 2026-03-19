@@ -140,6 +140,8 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
                     state.rate_limiter.clone(),
                     state.tier_config.clone(),
                     state.cloud_client.clone(),
+                    #[cfg(feature = "desktop")]
+                    state.ambient_context.clone(),
                 );
             }
             refresh_tray(app);

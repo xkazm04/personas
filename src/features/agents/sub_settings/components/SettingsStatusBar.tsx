@@ -1,4 +1,5 @@
-import { Trash2, AlertTriangle, Loader2, Check } from 'lucide-react';
+import { Trash2, AlertTriangle, Check } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 interface SettingsStatusBarProps {
   isSaving: boolean;
@@ -22,7 +23,7 @@ export function SettingsStatusBar({
       <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
         {isSaving ? (
           <>
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-primary/70" aria-hidden="true" />
+            <LoadingSpinner size="sm" className="text-primary/70" />
             <span>Saving {changedSections.join(' + ').toLowerCase()}...</span>
           </>
         ) : isDirty ? (

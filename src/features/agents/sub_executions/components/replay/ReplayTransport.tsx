@@ -71,7 +71,7 @@ export function ReplayTransport({
           <button
             key={s}
             onClick={() => onSetSpeed(s)}
-            className={`px-2 py-0.5 text-sm font-mono rounded-lg transition-colors ${
+            className={`px-2 py-0.5 typo-code rounded-lg transition-colors ${
               speed === s
                 ? 'bg-primary/15 text-foreground/90 border border-primary/20'
                 : 'text-muted-foreground/50 hover:text-muted-foreground/80 border border-transparent'
@@ -100,7 +100,7 @@ export function ReplayTransport({
             </button>
             <button
               onClick={onFork}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
             >
               <GitFork className="w-3 h-3" />
               Fork after step {forkPoint + 1}

@@ -159,11 +159,13 @@ pub async fn start_design_review_run(
     let tool_names: Vec<String> = tools.iter().map(|t| t.name.clone()).collect();
     let connector_names: Vec<String> = connectors.iter().map(|c| c.name.clone()).collect();
 
-    // Register cancellation flag in process registry
-    let cancel_flag = state.process_registry.register_run("review", &run_id);
-    let registry = state.process_registry.clone();
+    // Register cancellation flag in process registry.
+    // The guard ensures unregister_run is called even if the task panics.
+    let (cancel_flag, run_guard) =
+        state.process_registry.register_run_guarded("review", &run_id);
 
     tokio::spawn(async move {
+        let _guard = run_guard;
         for (i, test_case) in test_cases.iter().enumerate() {
             // Check cancellation
             if cancel_flag.load(Ordering::Relaxed) {
@@ -438,8 +440,7 @@ pub async fn start_design_review_run(
             }
         }
 
-        // Cleanup cancellation flag and child PID
-        registry.unregister_run("review", &run_id_clone);
+        // Guard handles unregister_run on drop.
 
         // Emit completion
         let _ = app.emit(

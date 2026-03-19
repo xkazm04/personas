@@ -545,7 +545,7 @@ async fn execute_scenario(
     model: &TestModelConfig,
 ) -> Result<ExecutionOutput, String> {
     // Build the base prompt
-    let base_prompt = prompt::assemble_prompt(persona, tools, scenario.input_data.as_ref(), None, None);
+    let base_prompt = prompt::assemble_prompt(persona, tools, scenario.input_data.as_ref(), None, None, #[cfg(feature = "desktop")] None);
 
     // Inject sandbox mock section before the EXECUTE NOW section
     let sandbox_section = build_sandbox_section(&scenario.mock_tools);

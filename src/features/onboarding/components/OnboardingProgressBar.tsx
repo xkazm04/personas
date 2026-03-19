@@ -40,8 +40,8 @@ export default function OnboardingProgressBar() {
         {/* Header */}
         <div className="flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-          <span className="text-sm font-medium text-violet-300">Getting Started</span>
-          <span className="ml-auto text-sm text-violet-400/60">{completedCount}/{STEP_ORDER.length}</span>
+          <span className="typo-heading text-violet-300">Getting Started</span>
+          <span className="ml-auto typo-body text-violet-400/60">{completedCount}/{STEP_ORDER.length}</span>
         </div>
 
         {/* Progress bar */}
@@ -74,7 +74,7 @@ export default function OnboardingProgressBar() {
                   />
                 )}
                 <span
-                  className={`text-sm ${
+                  className={`typo-body ${
                     isCompleted
                       ? 'text-emerald-400/70 line-through'
                       : isCurrent

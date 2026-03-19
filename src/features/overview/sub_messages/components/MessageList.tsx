@@ -107,14 +107,14 @@ export default function MessageList() {
         actions={
           <>
             {import.meta.env.DEV && (
-              <button onClick={handleSeedMessage} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock message (dev only)">
+              <button onClick={handleSeedMessage} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock message (dev only)">
                 <Plus className="w-3.5 h-3.5" /> Mock Message
               </button>
             )}
             <button onClick={handleRefresh} disabled={isRefreshing} className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors" title="Refresh">
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
-            <button onClick={() => markAllMessagesAsRead()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all">
+            <button onClick={() => markAllMessagesAsRead()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all">
               <CheckCheck className="w-3.5 h-3.5" /> Mark All Read
             </button>
           </>
@@ -139,7 +139,7 @@ export default function MessageList() {
                 <><p className="text-sm text-muted-foreground/90">No {filter === 'unread' ? 'unread' : filter === 'high' ? 'high-priority' : ''} messages{selectedPersonaId ? ' for the selected persona' : ''}</p><p className="text-sm text-muted-foreground/80 mt-1">Try switching to "All" to see all messages</p></>
               ) : (
                 <><p className="text-sm text-muted-foreground/90">No messages yet</p><p className="text-sm text-muted-foreground/80 mt-1.5 max-w-sm mx-auto leading-relaxed">Messages are created when agents run and communicate with each other.</p>
-                  <button onClick={() => useSystemStore.getState().setSidebarSection('personas')} className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"><Send className="w-3.5 h-3.5" />Go to Agents</button></>
+                  <button onClick={() => useSystemStore.getState().setSidebarSection('personas')} className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"><Send className="w-3.5 h-3.5" />Go to Agents</button></>
               )}
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function MessageList() {
                         <span className="text-sm text-muted-foreground/80 truncate">{message.persona_name || 'Unknown'}</span>
                       </div>
                       <div role="gridcell" className="px-4 min-w-0"><span className={`text-sm truncate block ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>{message.title || message.content.slice(0, 80)}</span></div>
-                      <div role="gridcell" className="px-4"><span className={`inline-flex px-2 py-0.5 rounded-lg text-sm font-medium border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>{priority.label}</span></div>
+                      <div role="gridcell" className="px-4"><span className={`inline-flex px-2 py-0.5 rounded-lg typo-heading border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>{priority.label}</span></div>
                       <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <div className="w-2.5 h-2.5 rounded-full bg-blue-500" title="Unread" aria-label="Unread message" /> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title="Read" aria-hidden="true" />}</div>
                       <div role="gridcell" className="px-4 text-right"><span className="text-sm text-muted-foreground/80">{formatRelativeTime(message.created_at)}</span></div>
                     </div>

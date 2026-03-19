@@ -213,9 +213,9 @@ export default function GlobalExecutionList() {
                             <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: (exec.persona_color || '#6366f1') + '15' }}>
                               {exec.persona_icon || '?'}
                             </div>
-                            <span className="text-sm font-medium text-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
+                            <span className="typo-heading text-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
                           </div>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium flex-shrink-0 ${badgeClass(status)}`}>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-caption flex-shrink-0 ${badgeClass(status)}`}>
                             {status.pulse && (<span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" /></span>)}
                             {status.label}
                           </span>
@@ -237,10 +237,10 @@ export default function GlobalExecutionList() {
                           <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: (exec.persona_color || '#6366f1') + '15' }}>
                             {exec.persona_icon || '?'}
                           </div>
-                          <span className="text-sm font-medium text-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
+                          <span className="typo-heading text-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
                         </div>
                         <div className="px-4 w-[20%]">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-sm font-medium ${badgeClass(status)}`}>
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg typo-heading ${badgeClass(status)}`}>
                             {status.pulse && (<span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" /></span>)}
                             {status.label}
                           </span>
@@ -255,7 +255,7 @@ export default function GlobalExecutionList() {
 
                 {hasMore && (
                   <div className="pt-3 pb-2 text-center">
-                    <button onClick={handleLoadMore} className="px-4 py-2 text-sm font-medium text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-xl border border-primary/15 transition-all">
+                    <button onClick={handleLoadMore} className="px-4 py-2 typo-heading text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-xl border border-primary/15 transition-all">
                       Load More
                     </button>
                   </div>

@@ -43,7 +43,7 @@ export const ToolCard = memo(function ToolCard({
       whileHover={missingCredential ? undefined : { scale: 1.02 }}
       whileTap={missingCredential ? undefined : { scale: 0.98 }}
       onClick={() => !missingCredential && onToggle(tool.id, tool.name, isAssigned)}
-      className={`p-3 rounded-xl border backdrop-blur-sm transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+      className={`p-3 rounded-xl border backdrop-blur-sm transition-all focus-ring ${
         missingCredential
           ? `bg-secondary/20 ${TOOLS_BORDER} opacity-60 cursor-not-allowed`
           : isAssigned

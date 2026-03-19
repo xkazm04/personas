@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { FormField } from '@/features/shared/components/forms/FormField';
 import { inputFieldClass } from '@/lib/utils/designTokens';
@@ -100,7 +101,7 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
               : 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
           }`}
         >
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+          {saving ? <LoadingSpinner size="sm" /> : <Plus className="w-3.5 h-3.5" />}
           Add
         </button>
         <button

@@ -6,12 +6,12 @@ import {
   Workflow,
   Zap,
   CheckCircle2,
-  Loader2,
   ArrowRight,
   Sparkles,
   AlertCircle,
   ExternalLink,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
@@ -154,9 +154,9 @@ export default function DeployFirstAutomationCard() {
       >
         <div className="flex items-center gap-2">
           <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-          <h3 className="text-sm font-semibold text-emerald-300">Automation Deployed!</h3>
+          <h3 className="typo-heading text-emerald-300">Automation Deployed!</h3>
         </div>
-        <p className="text-sm text-muted-foreground/80">
+        <p className="typo-body text-muted-foreground/80">
           {deployResult.deploymentMessage}
         </p>
         {sanitizeExternalUrl(deployResult.platformUrl) && (
@@ -164,7 +164,7 @@ export default function DeployFirstAutomationCard() {
             href={sanitizeExternalUrl(deployResult.platformUrl)!}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+            className="inline-flex items-center gap-1.5 typo-body text-emerald-400 hover:text-emerald-300 transition-colors"
           >
             View on platform <ExternalLink className="w-3 h-3" />
           </a>
@@ -178,12 +178,12 @@ export default function DeployFirstAutomationCard() {
     return (
       <div className="rounded-xl border border-primary/10 bg-secondary/20 p-5">
         <div className="flex items-center gap-3">
-          <Loader2 className="w-5 h-5 text-primary animate-spin" />
+          <LoadingSpinner size="lg" className="text-primary" />
           <div>
-            <p className="text-sm font-medium text-foreground/80">
+            <p className="typo-heading text-foreground/80">
               {phase === 'designing' ? 'Designing automation...' : 'Deploying to platform...'}
             </p>
-            <p className="text-xs text-muted-foreground/80 mt-0.5">
+            <p className="typo-caption text-muted-foreground/80 mt-0.5">
               This may take a few moments
             </p>
           </div>
@@ -198,11 +198,11 @@ export default function DeployFirstAutomationCard() {
       <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-5 space-y-3">
         <div className="flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-rose-400" />
-          <p className="text-sm text-rose-300">{errorMsg}</p>
+          <p className="typo-body text-rose-300">{errorMsg}</p>
         </div>
         <button
           onClick={() => setPhase('prompt')}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="typo-caption text-muted-foreground hover:text-foreground transition-colors"
         >
           Try again
         </button>
@@ -219,8 +219,8 @@ export default function DeployFirstAutomationCard() {
             <Rocket className="w-5 h-5 text-violet-400" />
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-foreground/90">Ready to automate?</h3>
-            <p className="text-xs text-muted-foreground/70 mt-0.5">
+            <h3 className="typo-heading text-foreground/90">Ready to automate?</h3>
+            <p className="typo-caption text-muted-foreground/70 mt-0.5">
               Set up your first automation in one click
             </p>
           </div>
@@ -228,7 +228,7 @@ export default function DeployFirstAutomationCard() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => handleDeploy(availableTemplates[0]!)}
-            className="px-4 py-2 rounded-xl bg-violet-500/15 text-violet-400 text-sm font-semibold border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-1.5"
+            className="px-4 py-2 rounded-xl bg-violet-500/15 text-violet-400 typo-heading border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-1.5"
           >
             Get Started <ArrowRight className="w-3.5 h-3.5" />
           </motion.button>
@@ -249,11 +249,11 @@ export default function DeployFirstAutomationCard() {
             <Rocket className="w-4 h-4 text-violet-400" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-1.5">
+            <h3 className="typo-heading text-foreground/90 flex items-center gap-1.5">
               Deploy Your First Automation
               <Sparkles className="w-3 h-3 text-amber-400" />
             </h3>
-            <p className="text-xs text-muted-foreground/70">
+            <p className="typo-caption text-muted-foreground/70">
               One-click deploy using your existing credentials
             </p>
           </div>
@@ -281,8 +281,8 @@ export default function DeployFirstAutomationCard() {
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground/85">{tpl.title}</p>
-                  <p className="text-xs text-muted-foreground/80 mt-0.5 truncate">{tpl.description}</p>
+                  <p className="typo-heading text-foreground/85">{tpl.title}</p>
+                  <p className="typo-caption text-muted-foreground/80 mt-0.5 truncate">{tpl.description}</p>
                 </div>
                 <ArrowRight className="w-4 h-4 text-muted-foreground/70 group-hover:text-primary/60 transition-colors shrink-0" />
               </motion.button>

@@ -27,6 +27,8 @@ const MODE_LABELS: Record<LabMode, string> = {
   ab: "A/B Test",
   eval: "Evaluation",
   matrix: "Matrix",
+  breed: "Breed",
+  evolve: "Evolution",
   versions: "Versions",
 };
 

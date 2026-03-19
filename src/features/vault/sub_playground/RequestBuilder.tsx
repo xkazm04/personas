@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Play, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Play, Plus, Trash2 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SqlEditor } from '@/features/vault/sub_databases/SqlEditor';
 import type { ApiEndpoint, ApiParameter } from '@/api/system/apiProxy';
 
@@ -96,7 +97,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
         >
           {isSending ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <LoadingSpinner size="sm" />
           ) : (
             <Play className="w-3.5 h-3.5" />
           )}

@@ -2,19 +2,27 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Bot, Home, BarChart3, Radio, Key, FlaskConical, Users,
-  Cloud, Settings, Plus, Power, Workflow,
+  Cloud, Settings, Plus, Power, Workflow, Play, ToggleLeft, Copy,
+  HeartPulse, Pencil,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
+import { useToastStore } from "@/stores/toastStore";
 import type { SidebarSection } from '@/lib/types/types';
 import {
   type PaletteItem, type ResultKind,
   fuzzyMatch, fuzzyScore, trackRecent, getRecentAgentIds,
   agentItem, credentialItem, templateItem, automationItem,
+  agentActionItems, type AgentActionCallbacks,
 } from './commandPaletteUtils';
+import { executePersona } from '@/api/agents/executions';
+import { duplicatePersona } from '@/api/agents/personas';
+import { systemHealthCheck } from '@/api/system/system';
 import { CommandPaletteResults } from './CommandPaletteResults';
+import { QuickEditPanel } from './QuickEditPanel';
+import type { Persona } from '@/lib/bindings/Persona';
 
 // -- Section icons -----------------------------------------------------
 
@@ -34,6 +42,7 @@ export default function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [editingPersona, setEditingPersona] = useState<Persona | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +54,9 @@ export default function CommandPalette() {
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const selectPersona = useAgentStore((s) => s.selectPersona);
   const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
+  const storeUpdatePersona = useAgentStore((s) => s.updatePersona);
+  const storeFetchPersonas = useAgentStore((s) => s.fetchPersonas);
+  const addToast = useToastStore((s) => s.addToast);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -61,6 +73,7 @@ export default function CommandPalette() {
     if (open) {
       setQuery('');
       setSelectedIndex(0);
+      setEditingPersona(null);
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [open]);
@@ -81,12 +94,59 @@ export default function CommandPalette() {
   const keyIcon = <Key className="w-4 h-4" />;
   const flaskIcon = <FlaskConical className="w-4 h-4" />;
   const workflowIcon = <Workflow className="w-4 h-4" />;
+  const playIcon = <Play className="w-4 h-4" />;
+  const toggleIcon = <ToggleLeft className="w-4 h-4" />;
+  const copyIcon = <Copy className="w-4 h-4" />;
+  const healthIcon = <HeartPulse className="w-4 h-4" />;
+  const pencilIcon = <Pencil className="w-4 h-4" />;
+
+  const agentActions = useCallback((): AgentActionCallbacks => ({
+    onRun: (id: string) => {
+      executePersona(id).then(
+        () => addToast('Execution started', 'success'),
+        () => addToast('Failed to start execution', 'error'),
+      );
+    },
+    onToggle: (id: string, enabled: boolean) => {
+      storeUpdatePersona(id, { enabled }).then(
+        () => addToast(`Agent ${enabled ? 'enabled' : 'disabled'}`, 'success'),
+        () => addToast('Failed to toggle agent', 'error'),
+      );
+    },
+    onDuplicate: (id: string) => {
+      duplicatePersona(id).then(
+        (p) => {
+          storeFetchPersonas();
+          addToast(`Duplicated as "${p.name}"`, 'success');
+        },
+        () => addToast('Failed to duplicate agent', 'error'),
+      );
+    },
+    onHealthCheck: () => {
+      systemHealthCheck().then(
+        () => {
+          setSidebarSection('overview');
+          addToast('Health check complete', 'success');
+        },
+        () => addToast('Health check failed', 'error'),
+      );
+    },
+    onNavigate: (id: string) => {
+      setSidebarSection('personas');
+      selectPersona(id);
+    },
+    onQuickEdit: (id: string) => {
+      const p = personas.find(a => a.id === id);
+      if (p) setEditingPersona(p);
+    },
+  }), [addToast, storeUpdatePersona, storeFetchPersonas, setSidebarSection, selectPersona, personas]);
 
   const items = useMemo((): PaletteItem[] => {
     const results: PaletteItem[] = [];
     const recentAgentIds = getRecentAgentIds();
 
     if (isCommandMode) {
+      const cbs = agentActions();
       const actions: PaletteItem[] = [
         {
           id: 'cmd:create-agent', kind: 'action', label: 'Create New Agent',
@@ -97,6 +157,10 @@ export default function CommandPalette() {
           id: `cmd:nav-${nav.id}`, kind: 'action' as const, label: `Go to ${nav.label}`,
           icon: nav.icon, onSelect: () => setSidebarSection(nav.id),
         })),
+        ...agentActionItems(personas, cbs, {
+          run: playIcon, toggle: toggleIcon, duplicate: copyIcon,
+          health: healthIcon, edit: pencilIcon,
+        }),
       ];
       if (!searchQuery) return actions;
       return actions
@@ -180,7 +244,7 @@ export default function CommandPalette() {
     }
 
     return results;
-  }, [personas, groups, groupMap, credentials, recipes, automations, searchQuery, isCommandMode, selectPersona, setSidebarSection, setIsCreatingPersona, botIcon, powerIcon, keyIcon, flaskIcon, workflowIcon]);
+  }, [personas, groups, groupMap, credentials, recipes, automations, searchQuery, isCommandMode, selectPersona, setSidebarSection, setIsCreatingPersona, botIcon, powerIcon, keyIcon, flaskIcon, workflowIcon, agentActions, playIcon, toggleIcon, copyIcon, healthIcon, pencilIcon]);
 
   useEffect(() => {
     setSelectedIndex(i => Math.min(i, Math.max(0, items.length - 1)));
@@ -191,10 +255,26 @@ export default function CommandPalette() {
     el?.scrollIntoView({ block: 'nearest' });
   }, [selectedIndex]);
 
+  const handleQuickEditSave = useCallback((id: string, updates: { description?: string; model?: string }) => {
+    const partial: Record<string, unknown> = {};
+    if (updates.description !== undefined) partial.description = updates.description || null;
+    if (updates.model !== undefined) {
+      const existing = editingPersona?.model_profile;
+      let profile: Record<string, unknown> = {};
+      if (existing) { try { profile = JSON.parse(existing); } catch { /* keep empty */ } }
+      profile.model = updates.model || null;
+      partial.model_profile = JSON.stringify(profile);
+    }
+    storeUpdatePersona(id, partial as Parameters<typeof storeUpdatePersona>[1]).then(
+      () => { addToast('Agent updated', 'success'); close(); },
+      () => addToast('Failed to update agent', 'error'),
+    );
+  }, [storeUpdatePersona, addToast, close, editingPersona]);
+
   const executeItem = useCallback((item: PaletteItem) => {
     if (item.kind === 'agent') trackRecent(item.id.replace('agent:', ''));
     item.onSelect();
-    close();
+    if (!item.staysOpen) close();
   }, [close]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -230,6 +310,7 @@ export default function CommandPalette() {
     };
     if (isCommandMode) {
       addSection('action', 'Commands');
+      addSection('agent-action', 'Agent Actions');
     } else {
       addSection('agent', !searchQuery && recentAgentIds.length > 0 ? 'Recent Agents' : 'Agents');
       addSection('credential', 'Credentials');
@@ -248,7 +329,7 @@ export default function CommandPalette() {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.12 }}
             className="absolute inset-0 bg-black/50 backdrop-blur-md"
-            onClick={close}
+            onClick={() => { if (editingPersona) setEditingPersona(null); else close(); }}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -257,44 +338,56 @@ export default function CommandPalette() {
             transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="relative w-full max-w-lg glass-md rounded-xl shadow-elevation-4 overflow-hidden"
           >
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10">
-              <Search className="w-4 h-4 text-muted-foreground/60 shrink-0" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={e => { setQuery(e.target.value); setSelectedIndex(0); }}
-                onKeyDown={handleKeyDown}
-                placeholder='Search agents, credentials, templates... (type ">" for commands)'
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 outline-none"
-                spellCheck={false}
+            {!editingPersona && (
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10">
+                <Search className="w-4 h-4 text-muted-foreground/60 shrink-0" />
+                <input
+                  ref={inputRef}
+                  value={query}
+                  onChange={e => { setQuery(e.target.value); setSelectedIndex(0); }}
+                  onKeyDown={handleKeyDown}
+                  placeholder='Search agents, credentials, templates... (type ">" for commands)'
+                  className="flex-1 bg-transparent typo-body text-foreground placeholder:text-muted-foreground/40 outline-none"
+                  spellCheck={false}
+                />
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground/50 bg-secondary/50 border border-primary/10 rounded">
+                  ESC
+                </kbd>
+              </div>
+            )}
+
+            {editingPersona ? (
+              <QuickEditPanel
+                persona={editingPersona}
+                onSave={handleQuickEditSave}
+                onCancel={() => setEditingPersona(null)}
               />
-              <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground/50 bg-secondary/50 border border-primary/10 rounded">
-                ESC
-              </kbd>
-            </div>
+            ) : (
+              <>
+                <CommandPaletteResults
+                  sections={sections}
+                  selectedIndex={selectedIndex}
+                  onExecute={executeItem}
+                  onHover={setSelectedIndex}
+                  listRef={listRef}
+                />
 
-            <CommandPaletteResults
-              sections={sections}
-              selectedIndex={selectedIndex}
-              onExecute={executeItem}
-              onHover={setSelectedIndex}
-              listRef={listRef}
-            />
-
-            <div className="flex items-center gap-4 px-4 py-2 border-t border-primary/10 text-[11px] text-muted-foreground/60">
-              <span className="flex items-center gap-1">
-                <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&uarr;&darr;</kbd>
-                navigate
-              </span>
-              <span className="flex items-center gap-1">
-                <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&crarr;</kbd>
-                select
-              </span>
-              <span className="flex items-center gap-1">
-                <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&gt;</kbd>
-                commands
-              </span>
-            </div>
+                <div className="flex items-center gap-4 px-4 py-2 border-t border-primary/10 text-[11px] text-muted-foreground/60">
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&uarr;&darr;</kbd>
+                    navigate
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&crarr;</kbd>
+                    select
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&gt;</kbd>
+                    commands
+                  </span>
+                </div>
+              </>
+            )}
           </motion.div>
         </div>
       )}

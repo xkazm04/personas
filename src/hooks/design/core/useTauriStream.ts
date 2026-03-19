@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { silentCatch } from "@/lib/silentCatch";
 
 // -- Types -------------------------------------------------------
 
@@ -68,6 +69,9 @@ export function useTauriStream<TResult>(
   const [error, setError] = useState<string | null>(null);
   const unlistenersRef = useRef<UnlistenFn[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Monotonic generation counter — incremented on every start/cancel/reset to
+   *  invalidate in-flight async work from a previous generation. */
+  const generationRef = useRef(0);
 
   const clearTimeout_ = useCallback(() => {
     if (timeoutRef.current !== null) {
@@ -89,6 +93,7 @@ export function useTauriStream<TResult>(
 
   const start = useCallback(async (invokeBackend: () => Promise<unknown>) => {
     cleanup();
+    const gen = ++generationRef.current;
     setPhase(runningPhase);
     setLines([]);
     setResult(null);
@@ -99,10 +104,12 @@ export function useTauriStream<TResult>(
       // a race where fast completions emit events before listeners are ready.
       const [unlistenProgress, unlistenStatus] = await Promise.all([
         listen(progressEvent, (event) => {
+          if (generationRef.current !== gen) return;
           const line = getLine(event.payload as Record<string, unknown>);
           setLines((prev) => [...prev, line]);
         }),
         listen(statusEvent, (event) => {
+          if (generationRef.current !== gen) return;
           const outcome = resolveStatus(event.payload as Record<string, unknown>);
           if (!outcome) return;
 
@@ -117,11 +124,21 @@ export function useTauriStream<TResult>(
         }),
       ]);
 
+      // If cancel/reset/another start happened during the await, tear down
+      // the just-registered listeners immediately — they belong to a stale generation.
+      if (generationRef.current !== gen) {
+        unlistenProgress();
+        unlistenStatus();
+        return;
+      }
+
       unlistenersRef.current = [unlistenProgress, unlistenStatus];
 
-      // Start negotiation timeout -- auto-reset to idle if no completion arrives.
+      // Start timeout — auto-reset to error if no completion arrives.
+      // The generation guard prevents this from firing after a cancel/reset.
       clearTimeout_();
       timeoutRef.current = setTimeout(() => {
+        if (generationRef.current !== gen) return;
         cleanup();
         setError('Operation timed out. Please try again.');
         setPhase('error');
@@ -129,6 +146,7 @@ export function useTauriStream<TResult>(
 
       await invokeBackend();
     } catch (err) {
+      if (generationRef.current !== gen) return;
       setError(err instanceof Error ? err.message : startErrorMessage);
       setPhase('error');
       cleanup();
@@ -136,7 +154,8 @@ export function useTauriStream<TResult>(
   }, [cleanup, clearTimeout_, progressEvent, statusEvent, getLine, resolveStatus, completedPhase, runningPhase, startErrorMessage, timeoutMs]);
 
   const cancel = useCallback((invokeCancel?: () => Promise<void>) => {
-    invokeCancel?.().catch(() => {});
+    ++generationRef.current;
+    invokeCancel?.().catch(silentCatch("tauriStream:cancel"));
     cleanup();
     setPhase('idle');
     setLines([]);
@@ -144,6 +163,7 @@ export function useTauriStream<TResult>(
   }, [cleanup]);
 
   const reset = useCallback(() => {
+    ++generationRef.current;
     cleanup();
     setPhase('idle');
     setLines([]);

@@ -51,6 +51,7 @@ pub fn assemble_prompt(
     input_data: Option<&serde_json::Value>,
     credential_hints: Option<&[&str]>,
     workspace_instructions: Option<&str>,
+    #[cfg(feature = "desktop")] ambient_context: Option<&str>,
 ) -> String {
     let mut prompt = String::new();
 
@@ -247,6 +248,15 @@ pub fn assemble_prompt(
     // Canary instruction: structural prompt-injection defence
     prompt.push_str(RUNTIME_CANARY_INSTRUCTION);
     prompt.push_str("\n\n");
+
+    // Ambient Desktop Context -- injected from fused desktop signals
+    #[cfg(feature = "desktop")]
+    if let Some(ctx) = ambient_context {
+        if !ctx.is_empty() {
+            prompt.push_str(&wrap_runtime_xml_boundary("ambient_desktop_context", ctx));
+            prompt.push_str("\n\n");
+        }
+    }
 
     // Input Data -- wrapped in XML boundary tags with random nonce for structural isolation
     if let Some(data) = input_data {
@@ -896,7 +906,7 @@ mod tests {
     #[test]
     fn test_assemble_minimal_prompt() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("# Persona: Test Agent"));
         assert!(prompt.contains("You are a helpful test agent."));
@@ -910,7 +920,7 @@ mod tests {
     #[test]
     fn test_prompt_contains_persona_name() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("# Persona: Test Agent"));
         assert!(prompt.contains("You are Test Agent."));
@@ -919,7 +929,7 @@ mod tests {
     #[test]
     fn test_prompt_contains_system_prompt() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## Identity"));
         assert!(prompt.contains("You are a helpful test agent."));
@@ -942,7 +952,7 @@ mod tests {
             .to_string(),
         );
 
-        let prompt = assemble_prompt(&persona, &[], None, None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## Identity\n"));
         assert!(prompt.contains("I am a code reviewer."));
@@ -972,7 +982,7 @@ mod tests {
             .to_string(),
         );
 
-        let prompt = assemble_prompt(&persona, &[], None, None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## Web Search Research Prompt"));
         assert!(prompt.contains("Q1 2026 tech industry reports"));
@@ -991,7 +1001,7 @@ mod tests {
             .to_string(),
         );
 
-        let prompt = assemble_prompt(&persona, &[], None, None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(!prompt.contains("## Web Search Research Prompt"));
     }
@@ -1000,7 +1010,7 @@ mod tests {
     fn test_prompt_with_tools() {
         let persona = test_persona();
         let tool = test_tool();
-        let prompt = assemble_prompt(&persona, &[tool], None, None, None);
+        let prompt = assemble_prompt(&persona, &[tool], None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## Available Tools"));
         assert!(prompt.contains("### file_reader"));
@@ -1038,7 +1048,7 @@ mod tests {
     fn test_prompt_with_input_data() {
         let persona = test_persona();
         let input = serde_json::json!({"task": "review", "files": ["main.rs"]});
-        let prompt = assemble_prompt(&persona, &[], Some(&input), None, None);
+        let prompt = assemble_prompt(&persona, &[], Some(&input), None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## Input Data"));
         assert!(prompt.contains("```json"));
@@ -1049,7 +1059,7 @@ mod tests {
     #[test]
     fn test_prompt_contains_protocols() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## Communication Protocols"));
         assert!(prompt.contains("### User Message Protocol"));
@@ -1064,7 +1074,7 @@ mod tests {
     #[test]
     fn test_prompt_ends_with_execute_now() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None);
+        let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## EXECUTE NOW"));
         assert!(prompt.contains("Respond naturally and complete the task."));

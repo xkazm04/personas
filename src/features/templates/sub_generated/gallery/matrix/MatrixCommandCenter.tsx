@@ -5,7 +5,8 @@
  */
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { FileText, User, Wrench, BookOpen, Shield, Globe, Search, Loader2, Sparkles, Upload } from 'lucide-react';
+import { FileText, User, Wrench, BookOpen, Shield, Globe, Search, Sparkles, Upload } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { AgentIR, DesignQuestion } from '@/lib/types/designTypes';
 import type { BuildPhase, ToolTestResult } from '@/lib/types/buildTypes';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
@@ -140,7 +141,7 @@ export function MatrixCommandCenter({
           <div className="relative w-12 h-12 flex items-center justify-center">
             <span className="absolute inset-0 rounded-full border-2 border-primary/20 animate-pulse" />
             <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
-            <Loader2 className="w-5 h-5 text-primary animate-spin relative z-10" />
+            <LoadingSpinner size="lg" className="text-primary relative z-10" />
           </div>
           <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">Initializing...</span>
           <span className="text-[10px] text-muted-foreground/40">Creating draft agent and starting CLI</span>

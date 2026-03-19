@@ -11,8 +11,8 @@ import {
   ChevronDown,
   AlertTriangle,
   Info,
-  Loader2,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ScanResult, ScanFinding } from '@/lib/templates/personaSafetyScanner';
 import { SEVERITY_CONFIG, CATEGORY_LABELS } from '@/lib/templates/personaSafetyScanner';
 
@@ -205,7 +205,7 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
   if (scanning) {
     return (
       <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border border-blue-500/15 bg-blue-500/5 ${className}`}>
-        <Loader2 className="w-4 h-4 text-blue-400/60 animate-spin flex-shrink-0" />
+        <LoadingSpinner className="text-blue-400/60 flex-shrink-0" />
         <div>
           <p className="text-sm text-blue-300/80 font-medium">Scanning persona draft...</p>
           <p className="text-sm text-blue-300/50">Checking for malicious instructions and unsafe patterns</p>

@@ -17,13 +17,13 @@ export function RecentActivityList({ recentExecs, onViewAll }: RecentActivityLis
   return (
     <div className="lg:col-span-2 2xl:col-span-3 space-y-4">
       <div className="flex items-center justify-between px-1">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-2">
+        <h3 className="typo-label text-muted-foreground/80 flex items-center gap-2">
           <Clock className="w-4 h-4" />
           Recent Activity
         </h3>
         <button
           onClick={onViewAll}
-          className="text-sm font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
+          className="typo-heading text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
         >
           View All <ArrowRight className="w-3 h-3" />
         </button>
@@ -46,8 +46,8 @@ export function RecentActivityList({ recentExecs, onViewAll }: RecentActivityLis
                    exec.status === 'failed' ? <AlertCircle className="w-3.5 h-3.5" /> :
                    <Activity className="w-3.5 h-3.5 animate-pulse" />}
                 </div>
-                <span className="text-sm font-medium text-foreground/90 truncate min-w-0">{exec.persona_name || 'Agent'}</span>
-                <span className={`text-sm px-1.5 py-0.5 rounded-lg font-medium flex-shrink-0 ${
+                <span className="typo-heading text-foreground/90 truncate min-w-0">{exec.persona_name || 'Agent'}</span>
+                <span className={`typo-heading px-1.5 py-0.5 rounded-lg flex-shrink-0 ${
                   exec.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :
                   exec.status === 'failed' ? 'bg-rose-500/10 text-rose-400' :
                   'bg-blue-500/10 text-blue-400'
@@ -55,7 +55,7 @@ export function RecentActivityList({ recentExecs, onViewAll }: RecentActivityLis
                   {exec.status}
                 </span>
                 <span className="flex-1" />
-                <span className="text-sm text-muted-foreground/60 flex-shrink-0 hidden sm:inline">
+                <span className="typo-body text-muted-foreground/60 flex-shrink-0 hidden sm:inline">
                   {new Date(exec.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
@@ -66,8 +66,8 @@ export function RecentActivityList({ recentExecs, onViewAll }: RecentActivityLis
             <div className="w-14 h-14 rounded-xl bg-secondary/50 border border-primary/10 shadow-inner flex items-center justify-center mb-4 opacity-70">
               <Zap className="w-6 h-6 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium text-foreground/70">No recent activity found.</p>
-            <p className="text-sm text-muted-foreground mt-1">Run an agent to see activity here.</p>
+            <p className="typo-heading text-foreground/70">No recent activity found.</p>
+            <p className="typo-body text-muted-foreground mt-1">Run an agent to see activity here.</p>
           </div>
         )}
       </div>

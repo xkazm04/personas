@@ -4,6 +4,7 @@
  */
 
 // Re-export slice interfaces for domain store composition
+import { silentCatch } from "@/lib/silentCatch";
 import type { PersonaSlice } from "./slices/agents/personaSlice";
 import type { ToolSlice } from "./slices/agents/toolSlice";
 import type { TriggerSlice } from "./slices/pipeline/triggerSlice";
@@ -31,13 +32,16 @@ import type { HealthCheckSlice } from "./slices/agents/healthCheckSlice";
 import type { TourSlice } from "./slices/system/tourSlice";
 import type { BudgetEnforcementSlice } from "./slices/agents/budgetEnforcementSlice";
 import type { AlertSlice } from "./slices/overview/alertSlice";
+import type { PersonaHealthSlice } from "./slices/overview/personaHealthSlice";
 import type { ViewModeSlice } from "./slices/system/viewModeSlice";
 import type { DevToolsSlice } from "./slices/system/devToolsSlice";
 import type { NetworkSlice } from "./slices/network/networkSlice";
 import type { SetupSlice } from "./slices/system/setupSlice";
+import type { AmbientContextSlice } from "./slices/system/ambientContextSlice";
 import type { ChatSlice } from "./slices/agents/chatSlice";
 import type { MatrixBuildSlice } from "./slices/agents/matrixBuildSlice";
 import type { RotationSlice } from "./slices/vault/rotationSlice";
+import type { CompositionSlice } from "./slices/pipeline/compositionSlice";
 
 // -- Shared helpers ------------------------------------------------------
 export function errMsg(err: unknown, fallback: string): string {
@@ -78,7 +82,7 @@ export function reportError(
     // Lazy import to avoid circular dependency at module load time
     import("@/stores/toastStore").then(({ useToastStore }) => {
       useToastStore.getState().addToast(message, "error");
-    }).catch(() => {});
+    }).catch(silentCatch("storeTypes:importToastStore"));
   }
   return message;
 }
@@ -107,7 +111,7 @@ export type AgentStore = CoreState &
   ChatSlice &
   MatrixBuildSlice;
 
-/** Overview domain: dashboard, messages, events, healing, memories, cron, alerts */
+/** Overview domain: dashboard, messages, events, healing, memories, cron, alerts, persona health */
 export type OverviewStore = CoreState &
   OverviewSlice &
   MessageSlice &
@@ -115,14 +119,16 @@ export type OverviewStore = CoreState &
   HealingSlice &
   MemorySlice &
   CronAgentsSlice &
-  AlertSlice;
+  AlertSlice &
+  PersonaHealthSlice;
 
-/** Pipeline domain: triggers, teams, groups, recipes */
+/** Pipeline domain: triggers, teams, groups, recipes, composition */
 export type PipelineStore = CoreState &
   TriggerSlice &
   TeamSlice &
   GroupSlice &
-  RecipeSlice;
+  RecipeSlice &
+  CompositionSlice;
 
 /** Vault domain: credentials, databases, automations, rotation */
 export type VaultStore = CoreState &
@@ -141,5 +147,6 @@ export type SystemStore = CoreState &
   ViewModeSlice &
   DevToolsSlice &
   NetworkSlice &
-  SetupSlice;
+  SetupSlice &
+  AmbientContextSlice;
 

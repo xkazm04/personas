@@ -15,7 +15,7 @@ export function SectionHeader({ icon, label, badge, trailing, className, simplif
     <div className={`flex items-center justify-between gap-3 ${className ?? ''}`}>
       <div className="flex items-center gap-2 px-1 min-w-0">
         {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
-        <p className="text-sm font-bold uppercase tracking-widest text-foreground/70 truncate">
+        <p className="typo-label text-foreground/70 truncate">
           {label}
         </p>
         {!simplified && badge}

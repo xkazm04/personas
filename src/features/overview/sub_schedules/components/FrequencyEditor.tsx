@@ -74,7 +74,7 @@ export default function FrequencyEditor({
               <Clock className="w-4 h-4 text-blue-400" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-foreground/90">Change Frequency</h3>
+              <h3 className="typo-heading text-foreground/90">Change Frequency</h3>
               <p className="text-xs text-muted-foreground/70">{agent.persona_name}</p>
             </div>
           </div>
@@ -94,7 +94,7 @@ export default function FrequencyEditor({
 
           {/* Quick presets */}
           <div>
-            <p className="text-xs font-medium text-muted-foreground/80 mb-2">Quick presets</p>
+            <p className="typo-caption text-muted-foreground/80 mb-2">Quick presets</p>
             <div className="flex flex-wrap gap-1.5">
               {CRON_PRESETS.map((preset) => (
                 <button

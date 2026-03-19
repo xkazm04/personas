@@ -1,3 +1,4 @@
+pub mod assertions;
 pub mod executions;
 pub mod healing;
 pub mod knowledge;

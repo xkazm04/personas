@@ -120,9 +120,27 @@ pub async fn execute_query(
     match result {
         Ok(mut qr) => {
             qr.duration_ms = duration_ms;
+            tracing::info!(
+                service_type = %service,
+                credential_id = %credential_id,
+                duration_ms = duration_ms,
+                row_count = qr.row_count,
+                truncated = qr.truncated,
+                "db_query::execute_query completed"
+            );
             Ok(qr)
         }
-        Err(e) => Err(AppError::Internal(sanitize_error(&e.to_string(), &fields))),
+        Err(e) => {
+            let sanitized = sanitize_error(&e.to_string(), &fields);
+            tracing::warn!(
+                service_type = %service,
+                credential_id = %credential_id,
+                duration_ms = duration_ms,
+                error = %sanitized,
+                "db_query::execute_query failed"
+            );
+            Err(AppError::Internal(sanitized))
+        }
     }
 }
 
@@ -174,9 +192,31 @@ pub async fn introspect_tables(
     };
 
     let duration_ms = start.elapsed().as_millis() as u64;
+    let service = credential.service_type.as_str();
     match result {
-        Ok(mut qr) => { qr.duration_ms = duration_ms; Ok(qr) }
-        Err(e) => Err(AppError::Internal(sanitize_error(&e.to_string(), &fields))),
+        Ok(mut qr) => {
+            qr.duration_ms = duration_ms;
+            tracing::info!(
+                service_type = %service,
+                credential_id = %credential_id,
+                duration_ms = duration_ms,
+                row_count = qr.row_count,
+                truncated = qr.truncated,
+                "db_query::introspect_tables completed"
+            );
+            Ok(qr)
+        }
+        Err(e) => {
+            let sanitized = sanitize_error(&e.to_string(), &fields);
+            tracing::warn!(
+                service_type = %service,
+                credential_id = %credential_id,
+                duration_ms = duration_ms,
+                error = %sanitized,
+                "db_query::introspect_tables failed"
+            );
+            Err(AppError::Internal(sanitized))
+        }
     }
 }
 
@@ -237,9 +277,33 @@ pub async fn introspect_columns(
     };
 
     let duration_ms = start.elapsed().as_millis() as u64;
+    let service = credential.service_type.as_str();
     match result {
-        Ok(mut qr) => { qr.duration_ms = duration_ms; Ok(qr) }
-        Err(e) => Err(AppError::Internal(sanitize_error(&e.to_string(), &fields))),
+        Ok(mut qr) => {
+            qr.duration_ms = duration_ms;
+            tracing::info!(
+                service_type = %service,
+                credential_id = %credential_id,
+                duration_ms = duration_ms,
+                row_count = qr.row_count,
+                truncated = qr.truncated,
+                table_name = %safe_name,
+                "db_query::introspect_columns completed"
+            );
+            Ok(qr)
+        }
+        Err(e) => {
+            let sanitized = sanitize_error(&e.to_string(), &fields);
+            tracing::warn!(
+                service_type = %service,
+                credential_id = %credential_id,
+                duration_ms = duration_ms,
+                table_name = %safe_name,
+                error = %sanitized,
+                "db_query::introspect_columns failed"
+            );
+            Err(AppError::Internal(sanitized))
+        }
     }
 }
 

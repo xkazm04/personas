@@ -73,7 +73,7 @@ export default function TourLauncher() {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.4, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       onClick={canResume ? handleResume : handleStart}
-      className="flex-shrink-0 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl
+      className="flex-shrink-0 flex items-center gap-2 px-4 py-2 typo-heading rounded-xl
         bg-violet-500/10 text-violet-300 border border-violet-500/25
         hover:bg-violet-500/20 hover:border-violet-400/40 hover:shadow-[0_0_16px_rgba(139,92,246,0.15)]
         transition-all duration-300 cursor-pointer"

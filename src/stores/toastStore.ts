@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -99,6 +100,7 @@ export const useToastStore = create<ToastStore>((set) => ({
     set((s) => ({
       toasts: [...s.toasts, toast].slice(-MAX_TOASTS),
     }));
+    announceImperative(message, type === 'error' ? 'assertive' : 'polite');
   },
 
   addHealingToast: ({ issueId, personaId, title, severity, personaName, suggestedFix }) => {
@@ -125,6 +127,10 @@ export const useToastStore = create<ToastStore>((set) => ({
       const filtered = s.toasts.filter((t) => t.id !== toast.id);
       return { toasts: [...filtered, toast].slice(-MAX_TOASTS) };
     });
+    const urgency = normalizedSeverity === 'critical' || normalizedSeverity === 'high'
+      ? 'assertive' as const
+      : 'polite' as const;
+    announceImperative(`${personaName}: ${title}`, urgency);
   },
 
   dismiss: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),

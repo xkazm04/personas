@@ -1,4 +1,5 @@
-import { Upload, FileText, Globe, Loader2, X, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
+import { Upload, FileText, Globe, X, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { RequestBuilder } from '../RequestBuilder';
 import { ResponseViewer } from '../ResponseViewer';
@@ -172,7 +173,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
           <Button
             variant="accent"
             size="sm"
-            icon={isParsing ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
+            icon={isParsing ? <LoadingSpinner size="xs" /> : <FileText className="w-3 h-3" />}
             onClick={onSubmit}
             disabled={isParsing || !pasteContent.trim()}
             loading={isParsing}

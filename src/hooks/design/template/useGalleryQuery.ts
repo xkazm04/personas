@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
+import { silentCatch } from "@/lib/silentCatch";
 import {
   listDesignReviewsPaginated,
   listReviewConnectors,
@@ -182,21 +183,21 @@ export function useGalleryQuery(
   useEffect(() => {
     let cancelled = false;
 
-    backfillReviewCategories().catch(() => {});
+    backfillReviewCategories().catch(silentCatch("galleryQuery:backfillCategories"));
     listReviewConnectors()
       .then((data) => { if (!cancelled) setAvailableConnectors(data); })
-      .catch(() => {});
+      .catch(silentCatch("galleryQuery:listConnectors"));
     listReviewCategories()
       .then((data) => { if (!cancelled) setAvailableCategories(data); })
-      .catch(() => {});
+      .catch(silentCatch("galleryQuery:listCategories"));
     getTrendingTemplates(8)
       .then((data) => { if (!cancelled) setTrendingTemplates(data); })
-      .catch(() => {});
+      .catch(silentCatch("galleryQuery:getTrending"));
 
     // Fetch unfiltered total so "All" count stays stable across coverage filter changes
     listDesignReviewsPaginated({ page: 0, perPage: 1 })
       .then((r) => { if (!cancelled) setUnfilteredTotal(r.total); })
-      .catch(() => {});
+      .catch(silentCatch("galleryQuery:unfilteredTotal"));
 
     if (coverageServiceTypes && coverageServiceTypes.length > 0) {
       listDesignReviewsPaginated({
@@ -208,7 +209,7 @@ export function useGalleryQuery(
         coverageServiceTypes,
       })
         .then((r) => { if (!cancelled) setReadyTemplates(r.items); })
-        .catch(() => {});
+        .catch(silentCatch("galleryQuery:readyTemplates"));
 
       listDesignReviewsPaginated({
         sortBy: 'trending',
@@ -224,7 +225,7 @@ export function useGalleryQuery(
             setRecommendedTemplates(scored);
           }
         })
-        .catch(() => {});
+        .catch(silentCatch("galleryQuery:recommendedTemplates"));
     }
 
     return () => { cancelled = true; };
@@ -236,16 +237,16 @@ export function useGalleryQuery(
     fetchPage(0, false);
     listReviewConnectors()
       .then(setAvailableConnectors)
-      .catch(() => {});
+      .catch(silentCatch("galleryQuery:refreshConnectors"));
     listReviewCategories()
       .then(setAvailableCategories)
-      .catch(() => {});
+      .catch(silentCatch("galleryQuery:refreshCategories"));
     getTrendingTemplates(8)
       .then(setTrendingTemplates)
-      .catch(() => {});
+      .catch(silentCatch("galleryQuery:refreshTrending"));
     listDesignReviewsPaginated({ page: 0, perPage: 1 })
       .then((r) => setUnfilteredTotal(r.total))
-      .catch(() => {});
+      .catch(silentCatch("galleryQuery:refreshUnfilteredTotal"));
   }, [fetchPage, aiSearchActive]);
 
   return {

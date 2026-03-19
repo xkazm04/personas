@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Zap, Clock, CheckCircle2, TrendingUp, Loader2, Radio } from 'lucide-react';
+import { Play, Pause, Zap, Clock, CheckCircle2, TrendingUp, Radio } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { RealtimeStats } from '@/hooks/realtime/useRealtimeEvents';
 
 interface Props {
@@ -42,7 +43,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
             )}
             <span className={`relative inline-flex rounded-full h-2 w-2 ${isPaused ? 'bg-amber-400' : isConnected ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
           </div>
-          <span className="text-sm font-bold text-foreground/80 uppercase tracking-widest hidden sm:inline">
+          <span className="typo-heading text-foreground/80 uppercase tracking-widest hidden sm:inline">
             {isPaused ? 'Paused' : isConnected ? 'Live' : 'Offline'}
           </span>
           <span className="sr-only">Connection status: {isPaused ? 'Paused' : isConnected ? 'Live' : 'Disconnected'}</span>
@@ -108,10 +109,10 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           onClick={onTestFlow}
           disabled={testFlowLoading}
           aria-label={testFlowLoading ? 'Testing flow...' : 'Test event flow'}
-          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 text-sm font-bold rounded-xl bg-gradient-to-r from-purple-500/15 to-primary/15 border border-purple-500/25 text-purple-300 hover:from-purple-500/25 hover:to-primary/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 typo-heading rounded-xl bg-gradient-to-r from-purple-500/15 to-primary/15 border border-purple-500/25 text-purple-300 hover:from-purple-500/25 hover:to-primary/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
         >
           {testFlowLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <LoadingSpinner />
           ) : (
             <Radio className="w-4 h-4" />
           )}

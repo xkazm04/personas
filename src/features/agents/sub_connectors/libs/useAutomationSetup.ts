@@ -4,6 +4,7 @@ import { useAutomationDesign } from '@/hooks/design/core/useAutomationDesign';
 import type { AutomationPlatform, AutomationFallbackMode } from '@/lib/bindings/PersonaAutomation';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { githubListRepos, githubCheckPermissions, zapierListZaps } from '@/api/agents/automations';
+import { silentCatchNull } from "@/lib/silentCatch";
 import type { GitHubRepo, GitHubPermissions, DeployAutomationResult, ZapierZap } from '@/api/agents/automations';
 
 export type ModalPhase = 'idle' | 'analyzing' | 'preview' | 'deploying' | 'success' | 'error';
@@ -108,9 +109,9 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     }
     setLoadingRepos(true);
     Promise.all([
-      githubListRepos(platformCredentialId).catch(() => [] as GitHubRepo[]),
-      githubCheckPermissions(platformCredentialId).catch(() => null),
-    ]).then(([repos, perms]) => { setGithubRepos(repos); setGithubPerms(perms); setLoadingRepos(false); });
+      githubListRepos(platformCredentialId).catch(silentCatchNull("useAutomationSetup:githubListRepos")) as Promise<GitHubRepo[] | null>,
+      githubCheckPermissions(platformCredentialId).catch(silentCatchNull("useAutomationSetup:githubCheckPermissions")),
+    ]).then(([repos, perms]) => { setGithubRepos(repos ?? []); setGithubPerms(perms); setLoadingRepos(false); });
   }, [platform, platformCredentialId]);
 
   useEffect(() => {

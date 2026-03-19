@@ -4,9 +4,12 @@
 //! re-syncs every 30s for connected peers.
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
+use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
+use ts_rs::TS;
 
 use super::connection::ConnectionManager;
 use super::protocol::{self, ManifestEntry, Message};
@@ -19,6 +22,41 @@ use crate::error::AppError;
 /// Prevents a malicious or misconfigured peer from causing unbounded DB inserts.
 const MAX_MANIFEST_ENTRIES: usize = 1000;
 
+/// Atomic counters for manifest sync observability.
+struct ManifestSyncCounters {
+    sync_rounds: AtomicU64,
+    sync_successes: AtomicU64,
+    sync_failures: AtomicU64,
+    /// Cumulative sync duration in milliseconds (for averaging).
+    total_sync_duration_ms: AtomicU64,
+    /// Total manifest entries received across all syncs.
+    total_entries_received: AtomicU64,
+}
+
+impl ManifestSyncCounters {
+    fn new() -> Self {
+        Self {
+            sync_rounds: AtomicU64::new(0),
+            sync_successes: AtomicU64::new(0),
+            sync_failures: AtomicU64::new(0),
+            total_sync_duration_ms: AtomicU64::new(0),
+            total_entries_received: AtomicU64::new(0),
+        }
+    }
+}
+
+/// Serializable snapshot of manifest sync metrics for the frontend.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ManifestSyncMetrics {
+    pub sync_rounds: u64,
+    pub sync_successes: u64,
+    pub sync_failures: u64,
+    pub avg_sync_duration_ms: Option<f64>,
+    pub total_entries_received: u64,
+}
+
 /// Handles manifest exchange and storage.
 pub struct ManifestSync {
     pool: DbPool,
@@ -26,6 +64,8 @@ pub struct ManifestSync {
     app_handle: RwLock<Option<tauri::AppHandle>>,
     /// Cached content hashes per peer to skip redundant DB writes.
     manifest_hashes: RwLock<HashMap<String, String>>,
+    /// Sync performance counters.
+    counters: ManifestSyncCounters,
 }
 
 impl ManifestSync {
@@ -35,6 +75,7 @@ impl ManifestSync {
             connections,
             app_handle: RwLock::new(None),
             manifest_hashes: RwLock::new(HashMap::new()),
+            counters: ManifestSyncCounters::new(),
         }
     }
 
@@ -73,23 +114,38 @@ impl ManifestSync {
 
     /// Request and sync a manifest from a specific peer.
     pub async fn sync_manifest(&self, peer_id: &str) -> Result<(), AppError> {
-        let (mut send, mut recv) = self.connections.open_stream(peer_id).await?;
+        let sync_start = std::time::Instant::now();
 
-        // Send ManifestRequest
-        protocol::write_message(&mut send, &Message::ManifestRequest).await?;
-
-        // Wait for ManifestResponse
-        let response = tokio::time::timeout(
-            std::time::Duration::from_secs(10),
-            protocol::decode(&mut recv),
+        // Wrap all network I/O (open_stream + write + read) in a single timeout
+        // to prevent indefinite hangs on stalled peers that accept connections
+        // but never read/write data (e.g. malicious or network-partitioned peers).
+        let result = tokio::time::timeout(
+            std::time::Duration::from_secs(15),
+            async {
+                let (mut send, mut recv) = self.connections.open_stream(peer_id).await?;
+                protocol::write_message(&mut send, &Message::ManifestRequest).await?;
+                protocol::decode(&mut recv).await
+            },
         )
         .await
-        .map_err(|_| AppError::Internal("Manifest sync timeout".into()))??;
+        .map_err(|_| AppError::Internal(format!("Manifest sync timeout for peer {peer_id}")))?;
+
+        let response = match result {
+            Ok(r) => r,
+            Err(e) => {
+                self.counters.sync_failures.fetch_add(1, Ordering::Relaxed);
+                return Err(e);
+            }
+        };
 
         match response {
             Message::ManifestResponse { resources } => {
+                let entry_count = resources.len() as u64;
+                let duration_ms = sync_start.elapsed().as_millis() as u64;
+
                 // Reject oversized manifests to prevent DB insertion bombs
                 if resources.len() > MAX_MANIFEST_ENTRIES {
+                    self.counters.sync_failures.fetch_add(1, Ordering::Relaxed);
                     tracing::warn!(
                         peer_id = %peer_id,
                         count = resources.len(),
@@ -107,9 +163,13 @@ impl ManifestSync {
                 {
                     let hashes = self.manifest_hashes.read().await;
                     if hashes.get(peer_id).map(|h| h.as_str()) == Some(new_hash.as_str()) {
+                        self.counters.sync_successes.fetch_add(1, Ordering::Relaxed);
+                        self.counters.total_sync_duration_ms.fetch_add(duration_ms, Ordering::Relaxed);
+                        self.counters.total_entries_received.fetch_add(entry_count, Ordering::Relaxed);
                         tracing::debug!(
                             peer_id = %peer_id,
                             count = resources.len(),
+                            duration_ms = duration_ms,
                             "Manifest unchanged, skipping DB write"
                         );
                         return Ok(());
@@ -118,14 +178,23 @@ impl ManifestSync {
 
                 self.upsert_peer_manifest(peer_id, &resources)?;
                 self.manifest_hashes.write().await.insert(peer_id.to_string(), new_hash);
+
+                self.counters.sync_successes.fetch_add(1, Ordering::Relaxed);
+                self.counters.total_sync_duration_ms.fetch_add(duration_ms, Ordering::Relaxed);
+                self.counters.total_entries_received.fetch_add(entry_count, Ordering::Relaxed);
+
                 tracing::debug!(
                     peer_id = %peer_id,
                     count = resources.len(),
+                    duration_ms = duration_ms,
                     "Synced peer manifest"
                 );
                 Ok(())
             }
-            _ => Err(AppError::Internal("Expected ManifestResponse".into())),
+            _ => {
+                self.counters.sync_failures.fetch_add(1, Ordering::Relaxed);
+                Err(AppError::Internal("Expected ManifestResponse".into()))
+            }
         }
     }
 
@@ -229,8 +298,27 @@ impl ManifestSync {
         Ok(entries)
     }
 
+    /// Return a point-in-time snapshot of manifest sync metrics.
+    pub fn get_metrics(&self) -> ManifestSyncMetrics {
+        let successes = self.counters.sync_successes.load(Ordering::Relaxed);
+        let total_duration = self.counters.total_sync_duration_ms.load(Ordering::Relaxed);
+        let avg_sync_duration_ms = if successes > 0 {
+            Some(total_duration as f64 / successes as f64)
+        } else {
+            None
+        };
+        ManifestSyncMetrics {
+            sync_rounds: self.counters.sync_rounds.load(Ordering::Relaxed),
+            sync_successes: successes,
+            sync_failures: self.counters.sync_failures.load(Ordering::Relaxed),
+            avg_sync_duration_ms,
+            total_entries_received: self.counters.total_entries_received.load(Ordering::Relaxed),
+        }
+    }
+
     /// Run a single manifest sync pass: clean up expired exposures, then sync all connected peers.
     pub async fn run_periodic_sync(&self) -> Result<(), AppError> {
+        self.counters.sync_rounds.fetch_add(1, Ordering::Relaxed);
         // Clean up expired exposures each cycle
         match exposure_repo::cleanup_expired_exposures(&self.pool) {
             Ok(count) if count > 0 => {

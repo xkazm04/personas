@@ -34,7 +34,7 @@ export function SummaryCard({ icon: Icon, label, value, color, numericValue, for
       <Icon className={`w-4 h-4 ${textColor}`} />
       <div className="min-w-0">
         <p className="text-sm text-muted-foreground/70 truncate">{label}</p>
-        <p className={`text-sm font-semibold ${textColor}`}>
+        <p className={`typo-heading ${textColor}`}>
           {numericValue != null && formatFn
             ? <AnimatedCounter value={numericValue} formatFn={formatFn} />
             : value}
@@ -56,7 +56,7 @@ export function AnomalyBadge({ anomaly, onClickExecution }: AnomalyBadgeProps) {
     <div className="flex items-start gap-2 px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10">
       <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
       <div className="min-w-0">
-        <p className="text-sm font-medium text-amber-300">
+        <p className="typo-heading text-amber-300">
           {fmtDate(anomaly.date)} -- Cost spike {fmtCost(anomaly.cost)}
           <span className="text-amber-400/70 ml-1">
             ({anomaly.deviation_sigma.toFixed(1)} above avg {fmtCost(anomaly.moving_avg)})

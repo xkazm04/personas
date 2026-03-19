@@ -44,7 +44,7 @@ export function AccessibleToggle({
       onClick={onChange}
       onKeyDown={handleKeyDown}
       data-testid={dataTestId}
-      className={`${trackSize} rounded-full relative transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
+      className={`${trackSize} rounded-full relative transition-all focus-ring ${
         checked ? 'bg-emerald-500/80' : 'bg-muted-foreground/20'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className}`}
     >

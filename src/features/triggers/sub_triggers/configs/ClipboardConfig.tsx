@@ -42,7 +42,7 @@ export function ClipboardConfig({
           value={clipboardPattern}
           onChange={(e) => setClipboardPattern(e.target.value)}
           placeholder="e.g. https?://.* or error|exception"
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/40 transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all"
         />
         <p className="text-sm text-muted-foreground/80 mt-1">Only fires when clipboard text matches this pattern</p>
       </div>
@@ -55,7 +55,7 @@ export function ClipboardConfig({
           value={clipboardInterval}
           onChange={(e) => setClipboardInterval(e.target.value)}
           min="2"
-          className="w-24 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/40 transition-all"
+          className="w-24 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus-ring transition-all"
         />
       </div>
     </div>

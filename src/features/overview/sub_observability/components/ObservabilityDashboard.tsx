@@ -80,10 +80,10 @@ export default function ObservabilityDashboard() {
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-red-300">Metrics unavailable -- data shown may be stale</p>
+              <p className="typo-heading text-red-300">Metrics unavailable -- data shown may be stale</p>
               <p className="text-sm text-red-400/70 mt-0.5">{d.observabilityError}</p>
             </div>
-            <button onClick={d.refreshAll} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
+            <button onClick={d.refreshAll} className="flex items-center gap-1.5 px-2.5 py-1 typo-heading rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
               <RefreshCw className="w-3 h-3" /> Retry
             </button>
           </div>

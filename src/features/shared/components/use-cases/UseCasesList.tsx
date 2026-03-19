@@ -135,11 +135,11 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
     return (
       <div className="text-center py-8 space-y-2">
         <ListChecks className="w-5 h-5 text-muted-foreground/40 mx-auto" />
-        <p className="text-sm text-muted-foreground/60">
+        <p className="typo-body text-muted-foreground/60">
           {emptyMessage ?? (designContext ? 'No structured use cases found.' : 'No use cases generated yet.')}
         </p>
         {emptyHint && (
-          <p className="text-sm text-muted-foreground/60">{emptyHint}</p>
+          <p className="typo-body text-muted-foreground/60">{emptyHint}</p>
         )}
       </div>
     );
@@ -149,7 +149,7 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
     <div className="space-y-3">
       <div className="flex items-center gap-2 px-1">
         <ListChecks className="w-3.5 h-3.5 text-muted-foreground/80" />
-        <p className="text-sm text-muted-foreground/80">
+        <p className="typo-body text-muted-foreground/80">
           {useCases.length} use case{useCases.length !== 1 ? 's' : ''} identified
         </p>
       </div>
@@ -166,19 +166,19 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
               className="p-3.5 rounded-xl border border-primary/10 bg-secondary/20"
             >
               <div className="flex items-start gap-3">
-                <span className="text-sm font-semibold text-muted-foreground/50 mt-0.5 w-5 text-right flex-shrink-0">
+                <span className="typo-heading text-muted-foreground/50 mt-0.5 w-5 text-right flex-shrink-0">
                   {i + 1}.
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-foreground/95">{uc.title}</p>
+                    <p className="typo-heading text-foreground/95">{uc.title}</p>
                     {uc.category && catStyle && (
-                      <span className={`px-1.5 py-0.5 text-sm font-medium rounded border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
+                      <span className={`px-1.5 py-0.5 typo-label rounded border ${catStyle.bg} ${catStyle.text}`}>
                         {uc.category.replace('-', ' ')}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-foreground/60 mt-1 leading-relaxed">
+                  <p className="typo-body text-foreground/60 mt-1 leading-relaxed">
                     {uc.description}
                   </p>
                 </div>
@@ -190,7 +190,7 @@ export function UseCasesList({ designContext, emptyMessage, emptyHint }: UseCase
 
       {contextData.summary && (
         <div className="px-1 mt-2">
-          <p className="text-sm text-muted-foreground/60 leading-relaxed">
+          <p className="typo-body text-muted-foreground/60 leading-relaxed">
             {contextData.summary}
           </p>
         </div>

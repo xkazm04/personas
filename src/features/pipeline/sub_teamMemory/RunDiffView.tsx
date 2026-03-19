@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { GitCompareArrows, Plus, Minus, TrendingUp, TrendingDown, Loader2, ArrowRight } from 'lucide-react';
+import { GitCompareArrows, Plus, Minus, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion } from 'framer-motion';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
@@ -110,7 +111,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-4 gap-1.5">
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-400" />
+          <LoadingSpinner size="sm" className="text-violet-400" />
           <span className="text-xs text-muted-foreground/50">Comparing runs...</span>
         </div>
       )}

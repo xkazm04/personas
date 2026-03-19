@@ -11,7 +11,7 @@ interface TypeSelectorProps {
 export function TypeSelectorModal({ pendingFile, onConfirm, onCancel }: TypeSelectorProps) {
   return (
     <div className="bg-secondary/60 backdrop-blur-sm border border-primary/15 rounded-xl p-3 space-y-2">
-      <p className="text-sm text-muted-foreground/80">
+      <p className="typo-body text-muted-foreground/80">
         Classify <span className="font-medium text-foreground/90">{pendingFile.name}</span>:
       </p>
       <div className="flex flex-wrap gap-1.5">
@@ -21,7 +21,7 @@ export function TypeSelectorModal({ pendingFile, onConfirm, onCancel }: TypeSele
             <button
               key={type}
               onClick={() => onConfirm(type)}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground/90 hover:border-primary/30 hover:bg-primary/5 transition-all"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-background/50 border border-primary/15 rounded-xl typo-body text-foreground/90 hover:border-primary/30 hover:bg-primary/5 transition-all"
             >
               <Icon className="w-3 h-3" />
               {FILE_TYPE_LABELS[type]}
@@ -30,7 +30,7 @@ export function TypeSelectorModal({ pendingFile, onConfirm, onCancel }: TypeSele
         })}
         <button
           onClick={onCancel}
-          className="px-2.5 py-1 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors"
+          className="px-2.5 py-1 typo-body text-muted-foreground/80 hover:text-muted-foreground transition-colors"
         >
           Cancel
         </button>
@@ -54,7 +54,7 @@ export function AttachedFilesRow({ files, onRemove }: AttachedFilesRowProps) {
         return (
           <div
             key={`${file.name}-${index}`}
-            className="flex items-center gap-1.5 bg-secondary/50 border border-primary/10 rounded-full px-3 py-1 text-sm group"
+            className="flex items-center gap-1.5 bg-secondary/50 border border-primary/10 rounded-full px-3 py-1 typo-body group"
           >
             <Icon className="w-3 h-3 text-muted-foreground/90" />
             <span className="text-foreground/90 max-w-[120px] truncate">{file.name}</span>
@@ -82,14 +82,14 @@ interface ReferencesTextareaProps {
 export function ReferencesTextarea({ references, onChange, disabled }: ReferencesTextareaProps) {
   return (
     <div className="space-y-1">
-      <label className="text-sm text-muted-foreground/90 px-1">References</label>
+      <label className="typo-body text-muted-foreground/90 px-1">References</label>
       <textarea
         value={references.join('\n')}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         placeholder="Paste URLs, connection strings, API keys, or any reference info (one per line)"
         rows={3}
-        className="w-full bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-sm text-foreground font-mono resize-y focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
+        className="w-full bg-background/50 border border-primary/15 rounded-xl px-3 py-2 typo-code text-foreground resize-y focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
       />
     </div>
   );

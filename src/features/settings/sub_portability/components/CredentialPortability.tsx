@@ -4,9 +4,9 @@ import {
   Upload,
   Download,
   PackageCheck,
-  Loader2,
   Check,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialImportResult } from '@/api/system/dataPortability';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
@@ -94,7 +94,7 @@ export function CredentialPortability({
                   transition-colors disabled:opacity-50"
               >
                 {credExportStatus === 'loading' ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <LoadingSpinner />
                 ) : (
                   <Download className="w-4 h-4" />
                 )}
@@ -148,7 +148,7 @@ export function CredentialPortability({
                   transition-colors disabled:opacity-50"
               >
                 {credImportStatus === 'loading' ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <LoadingSpinner />
                 ) : (
                   <Upload className="w-4 h-4" />
                 )}

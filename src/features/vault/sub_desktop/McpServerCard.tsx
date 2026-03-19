@@ -1,4 +1,5 @@
-import { Monitor, CheckCircle2, Loader2 } from 'lucide-react';
+import { Monitor, CheckCircle2 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ImportedMcpServer } from '@/api/system/desktop';
 
 interface McpServerCardProps {
@@ -35,7 +36,7 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
           className="px-3 py-1.5 text-xs font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-lg hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
         >
           {importing ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <LoadingSpinner size="sm" />
           ) : (
             'Import'
           )}

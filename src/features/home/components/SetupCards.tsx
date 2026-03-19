@@ -71,7 +71,7 @@ function StepIndicator({ current, completed }: { current: number; completed: Rec
               <div className={`w-8 h-px transition-colors duration-300 ${i <= current || done ? 'bg-primary/30' : 'bg-primary/8'}`} />
             )}
             <div
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full typo-caption transition-all duration-300 ${
                 done
                   ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
                   : active
@@ -97,8 +97,8 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-foreground">Choose your role</h3>
-        <p className="text-sm text-muted-foreground/60 mt-1">We'll tailor the experience to match how you work.</p>
+        <h3 className="typo-heading-lg text-foreground">Choose your role</h3>
+        <p className="typo-body text-muted-foreground/60 mt-1">We'll tailor the experience to match how you work.</p>
       </div>
       <div className="grid grid-cols-3 gap-4">
         {ROLES.map((role) => {
@@ -129,8 +129,8 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
               </div>
 
               {/* Label */}
-              <span className="text-base font-bold text-foreground">{role.label}</span>
-              <span className="text-xs text-muted-foreground/60 mt-0.5">{role.subtitle}</span>
+              <span className="typo-body-lg font-bold text-foreground">{role.label}</span>
+              <span className="typo-caption text-muted-foreground/60 mt-0.5">{role.subtitle}</span>
 
               {/* Selection indicator */}
               {isSelected && (
@@ -169,8 +169,8 @@ function ToolStep({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-foreground">Pick your favorite tool</h3>
-        <p className="text-sm text-muted-foreground/60 mt-1">
+        <h3 className="typo-heading-lg text-foreground">Pick your favorite tool</h3>
+        <p className="typo-body text-muted-foreground/60 mt-1">
           This will be your first connector integration.
         </p>
       </div>
@@ -205,7 +205,7 @@ function ToolStep({
                 )}
               </div>
 
-              <span className="text-sm font-semibold text-foreground">{meta.label}</span>
+              <span className="typo-heading text-foreground">{meta.label}</span>
 
               {isSelected && (
                 <motion.div
@@ -232,8 +232,8 @@ function GoalStep({ value, onChange }: { value: string; onChange: (v: string) =>
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-foreground">What do you want to automate?</h3>
-        <p className="text-sm text-muted-foreground/60 mt-1">
+        <h3 className="typo-heading-lg text-foreground">What do you want to automate?</h3>
+        <p className="typo-body text-muted-foreground/60 mt-1">
           Describe your first automation goal — we'll help you set it up.
         </p>
       </div>
@@ -242,10 +242,10 @@ function GoalStep({ value, onChange }: { value: string; onChange: (v: string) =>
         onChange={(e) => onChange(e.target.value)}
         placeholder="e.g. Automatically sync new Jira tickets to a Slack channel..."
         rows={5}
-        className="w-full rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus-ring focus-visible:border-primary/30 resize-none transition-all"
+        className="w-full rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 typo-body text-foreground placeholder:text-muted-foreground/40 focus-ring focus-visible:border-primary/30 resize-none transition-all"
       />
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground/50">
+        <span className="typo-caption text-muted-foreground/50">
           {value.trim().length < 10 ? `Min 10 characters (${value.trim().length}/10)` : 'Ready to save'}
         </span>
       </div>
@@ -338,7 +338,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
           <button
             onClick={goBack}
             disabled={step === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/8 transition-all disabled:opacity-0 disabled:pointer-events-none"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl typo-heading text-muted-foreground hover:text-foreground hover:bg-primary/8 transition-all disabled:opacity-0 disabled:pointer-events-none"
           >
             <ChevronLeft className="w-4 h-4" />
             Back
@@ -346,7 +346,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
           <button
             onClick={goNext}
             disabled={!canNext}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-semibold bg-primary/15 border border-primary/20 text-foreground hover:bg-primary/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-5 py-2 rounded-xl typo-heading bg-primary/15 border border-primary/20 text-foreground hover:bg-primary/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
             {step === 2 ? 'Finish' : 'Next'}
             {step < 2 && <ChevronRight className="w-4 h-4" />}
@@ -442,7 +442,7 @@ function SetupCardItem({
       onClick={locked ? undefined : onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`group relative text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background h-[200px] flex flex-col ${
+      className={`group relative text-left focus-ring h-[200px] flex flex-col ${
         locked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
       }`}
     >
@@ -475,7 +475,7 @@ function SetupCardItem({
 
         {/* Title overlaid at bottom */}
         <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-6 bg-gradient-to-t from-black/40 to-transparent pointer-events-none z-10">
-          <h3 className="text-lg font-extrabold tracking-wide text-foreground/80 uppercase drop-shadow-sm">
+          <h3 className="typo-heading-lg tracking-wide text-foreground/80 uppercase drop-shadow-sm">
             {displayTitle}
           </h3>
         </div>
@@ -498,7 +498,7 @@ function SetupCardItem({
 
       {/* Description below */}
       <div className="mt-1.5 px-1 h-[48px] flex items-start">
-        <p className="text-xs leading-relaxed text-muted-foreground/80 line-clamp-3">
+        <p className="typo-caption leading-relaxed text-muted-foreground/80 line-clamp-3">
           {locked
             ? card.id === 'tool'
               ? 'Select a role first to unlock tool options.'
@@ -555,7 +555,7 @@ export default function SetupCards() {
         </div>
         <button
           onClick={dismissSetup}
-          className="text-xs text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+          className="typo-caption text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
         >
           Dismiss
         </button>

@@ -1,3 +1,4 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect, useCallback } from 'react';
 import {
   getExportStats,
@@ -63,7 +64,7 @@ export function useDataPortability() {
       if (result) {
         setImportResult(result);
         setImportStatus('success');
-        getExportStats().then(setStats).catch(() => {});
+        getExportStats().then(setStats).catch(silentCatch("useDataPortability:refreshExportStats"));
       } else {
         setImportStatus('idle');
       }

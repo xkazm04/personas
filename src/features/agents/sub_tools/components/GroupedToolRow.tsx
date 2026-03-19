@@ -35,7 +35,7 @@ export function GroupedToolRow({
     <div>
       <div
         onClick={() => !missingCredential && onToggle(tool.id, tool.name, isAssigned)}
-        className={`flex items-center gap-3 px-4 py-2.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40 ${
+        className={`flex items-center gap-3 px-4 py-2.5 transition-colors focus-ring ${
           missingCredential
             ? 'opacity-50 cursor-not-allowed'
             : isAssigned

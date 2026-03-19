@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CredentialDesignProvider } from '@/features/vault/sub_design/CredentialDesignContext';
 import { IdlePhase } from '@/features/vault/sub_design/phases/IdlePhase';
@@ -151,7 +151,7 @@ export function CredentialDesignModalBody({
               exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center py-12 gap-3"
             >
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <LoadingSpinner size="2xl" className="text-primary" />
               <p className="text-sm text-muted-foreground/90">Saving credential...</p>
             </motion.div>
           )}

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
   Play, Clock, Settings2, Pause, ToggleLeft, ToggleRight,
-  Bot, CheckCircle2, AlertTriangle, XCircle, Loader2,
+  Bot, CheckCircle2, AlertTriangle, XCircle,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ScheduleEntry } from '../libs/scheduleHelpers';
 import { formatRelative } from '../libs/scheduleHelpers';
 import FrequencyEditor from './FrequencyEditor';
@@ -67,7 +68,7 @@ export default function ScheduleRow({
         {/* Name + schedule */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground/90 truncate">
+            <span className="typo-heading text-foreground/90 truncate">
               {agent.persona_name}
             </span>
             {agent.headless && (
@@ -128,7 +129,7 @@ export default function ScheduleRow({
             title="Run now"
           >
             {isExecuting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <LoadingSpinner size="sm" />
             ) : (
               <Play className="w-3.5 h-3.5" />
             )}

@@ -33,10 +33,10 @@ export function ReplayCostPanel({
         ) : (
           <DollarSign className="w-3 h-3 text-emerald-400/60 flex-shrink-0" />
         )}
-        <span className="text-sm font-mono tabular-nums text-emerald-400 truncate">
+        <span className="typo-code tabular-nums text-emerald-400 truncate">
           {formatCost(accumulatedCost)}
         </span>
-        <span className="text-sm text-muted-foreground/60 truncate">
+        <span className="typo-body text-muted-foreground/60 truncate">
           / {formatCost(totalCost)}
         </span>
         <div className="w-16 sm:w-[120px] h-1.5 bg-secondary/50 rounded-full overflow-hidden flex-shrink-0">
@@ -50,10 +50,10 @@ export function ReplayCostPanel({
       {/* Time + percentage */}
       <div className="flex items-center gap-1.5 min-w-0">
         <Clock className="w-3 h-3 text-blue-400/60 flex-shrink-0" />
-        <span className="text-sm font-mono tabular-nums text-blue-400 truncate">
+        <span className="typo-code tabular-nums text-blue-400 truncate">
           {formatMs(currentMs)}
         </span>
-        <span className="text-sm text-muted-foreground/60">
+        <span className="typo-body text-muted-foreground/60">
           ({timePct.toFixed(0)}%)
         </span>
       </div>
@@ -61,7 +61,7 @@ export function ReplayCostPanel({
       {/* Steps */}
       <div className="flex items-center gap-1.5 min-w-0">
         <Hash className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-        <span className="text-sm font-mono tabular-nums text-muted-foreground/60">
+        <span className="typo-code tabular-nums text-muted-foreground/60">
           {completedSteps}/{totalSteps} steps
         </span>
       </div>

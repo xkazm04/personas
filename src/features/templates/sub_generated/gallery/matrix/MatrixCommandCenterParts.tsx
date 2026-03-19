@@ -4,9 +4,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Play, X, Loader2, HelpCircle, CheckCircle2, Send, RefreshCw,
+  Play, X, HelpCircle, CheckCircle2, Send, RefreshCw,
   XCircle, Eye, RotateCcw, FileText, AlertTriangle,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { DesignQuestion } from '@/lib/types/designTypes';
 import type { BuildPhase, ToolTestResult } from '@/lib/types/buildTypes';
@@ -123,7 +124,7 @@ export function LaunchOrb({ onClick, disabled, isRunning, label, icon, buildPhas
             : 'bg-gradient-to-br from-primary/20 via-primary/10 to-accent/15 group-hover:from-primary/30 group-hover:via-primary/15 group-hover:to-accent/25'
         }`} />
         {isRunning
-          ? <Loader2 className="w-6 h-6 text-primary animate-spin relative z-10" />
+          ? <LoadingSpinner size="xl" className="text-primary relative z-10" />
           : icon ?? <Play className={`w-6 h-6 relative z-10 transition-colors ${
               blocked ? 'text-orange-600/60 dark:text-amber-500/50' : 'text-primary/80 group-hover:text-primary'
             }`} />}
@@ -144,7 +145,7 @@ export function BuildStatusIndicator({ phaseLabel, hint }: { phaseLabel: string;
       <div className="relative w-12 h-12 flex items-center justify-center">
         <span className="absolute inset-0 rounded-full border-2 border-primary/20 animate-pulse" />
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
-        <Loader2 className="w-5 h-5 text-primary animate-spin relative z-10" />
+        <LoadingSpinner size="lg" className="text-primary relative z-10" />
       </div>
       <span className="text-sm text-foreground/60 font-medium">{phaseLabel}</span>
       {hint && <p className="text-xs text-muted-foreground/40 text-center leading-relaxed">{hint}</p>}
@@ -222,7 +223,7 @@ export function ActiveBuildProgress({
         </button>
       ) : (
         <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-          <Loader2 className="w-5 h-5 text-primary/50 animate-spin" />
+          <LoadingSpinner size="lg" className="text-primary/50" />
         </div>
       )}
 
@@ -392,7 +393,7 @@ export function CreationPostGeneration({
           data-testid="agent-test-btn"
           className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30"
         >
-          {isTesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+          {isTesting ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
           {isTesting ? 'Starting Test...' : 'Test Agent'}
         </button>
       )}

@@ -2,7 +2,7 @@
 //! into the local event bus so 3rd-party webhook POSTs to the cloud
 //! orchestrator are relayed to the desktop app in near-real-time.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use serde::Serialize;
@@ -93,6 +93,7 @@ pub async fn cloud_webhook_relay_tick(
 
     let mut total_new = 0u32;
     let mut trigger_count = 0u32;
+    let mut active_trigger_ids = HashSet::new();
 
     // 2. For each webhook-enabled deployment, get webhook triggers
     for deployment in &webhook_deployments {
@@ -114,6 +115,7 @@ pub async fn cloud_webhook_relay_tick(
             .collect();
 
         trigger_count += webhook_triggers.len() as u32;
+        active_trigger_ids.extend(webhook_triggers.iter().map(|t| t.id.clone()));
 
         // 3. For each webhook trigger, fetch recent firings
         for trigger in &webhook_triggers {
@@ -195,8 +197,9 @@ pub async fn cloud_webhook_relay_tick(
         }
     }
 
-    // Update state and emit status
+    // Prune last_seen entries for triggers that no longer exist, then update state
     let mut s = state.lock().await;
+    s.last_seen.retain(|id, _| active_trigger_ids.contains(id));
     s.last_poll_at = Some(now);
     s.last_error = None;
     s.active_webhook_triggers = trigger_count;

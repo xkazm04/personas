@@ -1,4 +1,5 @@
-import { RefreshCw, Loader2 } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion, useMotionValueEvent, useSpring, useTransform } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import { ExecutionProgressBar } from '../ExecutionProgressBar';
@@ -20,7 +21,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
   if (!status && isLoading) {
     return (
       <div role="status" aria-live="polite" className="flex items-center justify-center py-12 text-muted-foreground/90">
-        <Loader2 aria-hidden="true" className="w-5 h-5 animate-spin" />
+        <LoadingSpinner size="lg" />
         <span className="sr-only">Loading cloud status...</span>
       </div>
     );

@@ -129,7 +129,7 @@ export default function ManualReviewList() {
         title="Manual Reviews"
         subtitle={`${allReviews.length} review${allReviews.length !== 1 ? 's' : ''} · ${statusCounts.pending ?? 0} pending${cloudReviews.length > 0 ? ` · ${cloudReviews.length} cloud` : ''}`}
         actions={import.meta.env.DEV && (
-          <button onClick={handleSeedReview} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock review (dev only)">
+          <button onClick={handleSeedReview} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock review (dev only)">
             <Plus className="w-3.5 h-3.5" /> Mock Review
           </button>
         )}
@@ -162,7 +162,7 @@ export default function ManualReviewList() {
               <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
                 <ClipboardCheck className="w-6 h-6 text-muted-foreground/60" />
               </div>
-              <p className="text-sm font-medium text-foreground/70">No review items yet</p>
+              <p className="typo-heading text-foreground/70">No review items yet</p>
               <p className="text-sm text-muted-foreground/60 mt-1">Items requiring approval will appear here</p>
             </div>
           </div>

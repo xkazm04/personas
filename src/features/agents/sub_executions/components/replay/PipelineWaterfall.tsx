@@ -45,8 +45,8 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
         <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
           <Activity className="w-6 h-6 text-muted-foreground/60" />
         </div>
-        <p className="text-sm text-muted-foreground/80">No pipeline trace available</p>
-        <p className="text-sm text-muted-foreground/60 mt-1">Pipeline traces are captured for new executions</p>
+        <p className="typo-body text-muted-foreground/80">No pipeline trace available</p>
+        <p className="typo-body text-muted-foreground/60 mt-1">Pipeline traces are captured for new executions</p>
       </div>
     );
   }
@@ -62,7 +62,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
   return (
     <div className="space-y-4">
       {/* Legend */}
-      <div className="flex items-center gap-4 text-sm text-muted-foreground/60">
+      <div className="flex items-center gap-4 typo-body text-muted-foreground/60">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded bg-blue-500/50" /> Frontend
         </div>
@@ -91,14 +91,14 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
       <div className="rounded-xl border border-primary/20 bg-secondary/30 overflow-hidden">
         {/* Time axis header */}
         <div className="grid grid-cols-[180px_1fr_70px] gap-2 px-3 py-1.5 border-b border-primary/10 bg-secondary/40">
-          <div className="text-sm font-mono text-muted-foreground/60 uppercase tracking-wider">
+          <div className="typo-code text-muted-foreground/60 uppercase tracking-wider">
             Stage
           </div>
-          <div className="flex justify-between text-sm font-mono text-muted-foreground/60 uppercase tracking-wider">
+          <div className="flex justify-between typo-code text-muted-foreground/60 uppercase tracking-wider">
             <span>0ms</span>
             <span>{formatDuration(totalDurationMs)}</span>
           </div>
-          <div className="text-sm font-mono text-muted-foreground/60 uppercase tracking-wider text-right">
+          <div className="typo-code text-muted-foreground/60 uppercase tracking-wider text-right">
             Duration
           </div>
         </div>

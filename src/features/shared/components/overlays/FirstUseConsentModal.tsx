@@ -65,8 +65,8 @@ function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false }
       >
         <span className="shrink-0">{icon}</span>
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-foreground">{title}</span>
-          <p className="text-xs text-muted-foreground/70 mt-0.5">{tldr}</p>
+          <span className="typo-heading text-foreground">{title}</span>
+          <p className="typo-caption text-muted-foreground/70 mt-0.5">{tldr}</p>
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
       </button>
@@ -81,7 +81,7 @@ function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false }
           >
             <ul className="px-4 pb-3 space-y-1.5">
               {items.map((item, i) => (
-                <li key={i} className="text-sm text-muted-foreground/80 flex items-start gap-2">
+                <li key={i} className="typo-body text-muted-foreground/80 flex items-start gap-2">
                   <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
                   {item}
                 </li>
@@ -123,15 +123,15 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
               <Shield className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <h2 id="first-use-consent-title" className="text-lg font-semibold text-foreground">Welcome to Personas Desktop</h2>
-              <p className="text-sm text-muted-foreground/70">Please review how this application works before continuing</p>
+              <h2 id="first-use-consent-title" className="typo-heading-lg text-foreground">Welcome to Personas Desktop</h2>
+              <p className="typo-body text-muted-foreground/70">Please review how this application works before continuing</p>
             </div>
           </div>
         </div>
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-          <p className="text-sm text-muted-foreground/80 mb-4">
+          <p className="typo-body text-muted-foreground/80 mb-4">
             Personas Desktop is a local-first AI agent orchestration tool. Before you start, please understand what it does and what data it accesses.
           </p>
 
@@ -229,7 +229,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
           {/* Important warnings */}
           <div className="flex items-start gap-3 p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 mt-4">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-            <div className="text-sm text-muted-foreground/80 space-y-1.5">
+            <div className="typo-body text-muted-foreground/80 space-y-1.5">
               <p><span className="font-medium text-amber-400/90">Important:</span></p>
               <ul className="space-y-1 list-disc list-inside">
                 <li>You are responsible for the content of your persona prompts and the actions they take on connected services.</li>
@@ -248,7 +248,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
               onChange={e => setAcknowledged(e.target.checked)}
               className="mt-0.5 w-4 h-4 rounded border-primary/30 accent-blue-500"
             />
-            <span className="text-sm text-foreground/90">
+            <span className="typo-body text-foreground/90">
               I understand that this application sends data to AI providers, accesses system resources (clipboard, file system, network), and executes processes on my behalf. I accept responsibility for how I configure and use it.
             </span>
           </label>
@@ -260,7 +260,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
             href="https://github.com/anthropics/personas-desktop"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+            className="inline-flex items-center gap-1.5 typo-caption text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
           >
             <ExternalLink className="w-3 h-3" />
             View source & license
@@ -268,7 +268,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
           <button
             disabled={!acknowledged}
             onClick={handleAccept}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl typo-heading transition-all ${
               acknowledged
                 ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/20 cursor-pointer'
                 : 'bg-secondary/40 text-muted-foreground/40 cursor-not-allowed'

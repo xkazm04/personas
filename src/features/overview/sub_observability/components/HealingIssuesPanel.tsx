@@ -46,7 +46,7 @@ export function HealingIssuesPanel({
           <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
             <Stethoscope className="w-4 h-4 text-cyan-400" />
           </div>
-          <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">Health Issues</h3>
+          <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">Health Issues</h3>
           {healingIssues.length > 0 && (
             <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
               {healingIssues.length}
@@ -75,7 +75,7 @@ export function HealingIssuesPanel({
             onClick={handleRunAnalysis}
             disabled={healingRunning}
             aria-label={healingRunning ? 'Analysis in progress' : 'Run healing analysis'}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+            className="flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
           >
             {healingRunning ? (
               <>
@@ -137,14 +137,14 @@ export function HealingIssuesPanel({
               role="tab"
               aria-selected={issueFilter === chip.key}
               onClick={() => setIssueFilter(chip.key)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl typo-heading transition-all focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
                 issueFilter === chip.key
                   ? 'bg-background text-foreground shadow-sm border border-primary/20'
                   : 'text-muted-foreground/80 hover:text-muted-foreground'
               }`}
             >
               {chip.label}
-              <span className={`px-1.5 py-0.5 text-sm font-bold rounded-full ${
+              <span className={`px-1.5 py-0.5 typo-heading rounded-full ${
                 issueFilter === chip.key
                   ? 'bg-primary/15 text-foreground/90'
                   : 'bg-secondary/60 text-muted-foreground/80'
@@ -169,7 +169,7 @@ export function HealingIssuesPanel({
             <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
               <CheckCircle2 className="w-6 h-6 text-emerald-400" />
             </div>
-            <p className="text-sm font-medium text-foreground/80">No open issues</p>
+            <p className="typo-heading text-foreground/80">No open issues</p>
             <p className="text-sm text-muted-foreground mt-1">Run analysis to check for problems.</p>
           </div>
         </div>

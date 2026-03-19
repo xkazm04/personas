@@ -24,7 +24,7 @@ export default function KnowledgeHub() {
             <button
               key={tab.id}
               onClick={() => setSubtab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading transition-all ${
                 isActive
                   ? 'bg-primary/10 text-foreground border border-primary/20 shadow-sm'
                   : 'text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/40'

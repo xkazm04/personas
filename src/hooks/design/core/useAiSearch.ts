@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { smartSearchTemplates } from '@/api/overview/intelligence/smartSearch';
 import { getDesignReview } from '@/api/overview/reviews';
+import { silentCatchNull } from "@/lib/silentCatch";
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 
 export interface UseAiSearchReturn {
@@ -58,7 +59,7 @@ export function useAiSearch(
 
         const reviews = await Promise.all(
           result.rankedIds.map((id) =>
-            getDesignReview(id).catch(() => null),
+            getDesignReview(id).catch(silentCatchNull("aiSearch:getDesignReview")),
           ),
         );
 

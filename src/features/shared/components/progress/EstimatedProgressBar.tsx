@@ -77,7 +77,7 @@ export function EstimatedProgressBar({
           transition={MOTION_TIMING.FLOW}
         />
       </div>
-      <div className="flex justify-between text-sm text-muted-foreground/60">
+      <div className="flex justify-between typo-body text-muted-foreground/60">
         <span>{elapsedInt}s elapsed</span>
         {isRunning && elapsed < estimatedSeconds && (
           <span>~{remaining}s remaining</span>

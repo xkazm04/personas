@@ -106,7 +106,7 @@ export function ExecutionList() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+        <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
           <Clock className="w-3.5 h-3.5" />
           History
@@ -126,15 +126,15 @@ export function ExecutionList() {
           <div className="w-12 h-12 rounded-xl bg-primary/8 border border-primary/20 flex items-center justify-center mb-4">
             <Rocket className="w-5.5 h-5.5 text-primary/40" />
           </div>
-          <p className="text-sm font-medium text-foreground/80">Your agent is ready to go</p>
-          <p className="text-sm text-muted-foreground/80 mt-1 max-w-[260px]">Run it to see results here. Each execution will appear in this timeline.</p>
-          <button onClick={handleTryIt} className="mt-4 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
+          <p className="typo-heading text-foreground/80">Your agent is ready to go</p>
+          <p className="typo-body text-muted-foreground/80 mt-1 max-w-[260px]">Run it to see results here. Each execution will appear in this timeline.</p>
+          <button onClick={handleTryIt} className="mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
             <Play className="w-3.5 h-3.5" />Try it now
           </button>
         </motion.div>
       ) : (
         <div className="overflow-hidden border border-primary/20 rounded-xl backdrop-blur-sm bg-secondary/40">
-          <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2.5 bg-primary/8 border-b border-primary/10 text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">
+          <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2.5 bg-primary/8 border-b border-primary/10 typo-code text-muted-foreground/80 uppercase tracking-wider">
             {compareMode && <div className="col-span-1" />}
             <div className={compareMode ? 'col-span-2' : 'col-span-2'}>Status</div>
             <div className="col-span-2">Duration</div>

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { FlaskConical, GitBranch, Wand2, ArrowLeftRight, Grid3X3 } from 'lucide-react';
+import { FlaskConical, GitBranch, Wand2, ArrowLeftRight, Grid3X3, Dna, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { ArenaPanel } from '../arena/ArenaPanel';
@@ -7,6 +7,8 @@ import { AbPanel } from '../ab/AbPanel';
 import { MatrixPanel } from '../matrix/MatrixPanel';
 import { EvalPanel } from '../eval/EvalPanel';
 import { VersionsPanel } from './VersionsPanel';
+import { GenomeBreedingPanel } from '../genome/GenomeBreedingPanel';
+import { EvolutionPanel } from '../evolution/EvolutionPanel';
 import type { LabMode } from '@/stores/slices/agents/labSlice';
 
 const LAB_MODE_KEY = 'dac-lab-mode';
@@ -16,6 +18,8 @@ const modeTabs: Array<{ id: LabMode; label: string; desc: string; icon: typeof F
   { id: 'ab', label: 'A/B', desc: 'Split-test prompt variants', icon: ArrowLeftRight },
   { id: 'eval', label: 'Eval', desc: 'Score against rubrics', icon: Grid3X3 },
   { id: 'matrix', label: 'Matrix', desc: 'Cross-model x cross-scenario grid', icon: Wand2 },
+  { id: 'breed', label: 'Breed', desc: 'Cross-breed top performers', icon: Dna },
+  { id: 'evolve', label: 'Evolve', desc: 'Auto-evolving optimization loop', icon: Sparkles },
   { id: 'versions', label: 'Versions', desc: 'Track prompt evolution', icon: GitBranch },
 ];
 
@@ -80,6 +84,8 @@ export function LabTab() {
       {labMode === 'ab' && <AbPanel />}
       {labMode === 'eval' && <EvalPanel />}
       {labMode === 'matrix' && <MatrixPanel />}
+      {labMode === 'breed' && <GenomeBreedingPanel />}
+      {labMode === 'evolve' && <EvolutionPanel />}
       {labMode === 'versions' && <VersionsPanel />}
     </div>
   );

@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Key, Plug, Trash2, CheckCircle2, XCircle, HelpCircle, Loader2 } from 'lucide-react';
+import { Key, Plug, Trash2, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useVaultStore } from '@/stores/vaultStore';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
@@ -159,7 +160,7 @@ export function CredentialList({
       return (
         <div className={`flex items-center gap-2.5 min-w-0 ${isPending ? 'opacity-40 pointer-events-none' : ''}`}>
           {isPending ? (
-            <Loader2 className="w-4 h-4 animate-spin text-red-400/70 flex-shrink-0" />
+            <LoadingSpinner className="text-red-400/70 flex-shrink-0" />
           ) : (
             <div
               className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 border"
@@ -247,7 +248,7 @@ export function CredentialList({
         render: (row) => {
           const isPending = pendingDeleteIds.has(row.credential.id);
           return isPending ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400/50" />
+            <LoadingSpinner size="sm" className="text-red-400/50" />
           ) : (
             <button
               type="button"

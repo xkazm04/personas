@@ -3,11 +3,11 @@ import {
   ArrowLeft,
   Globe,
   Check,
-  Loader2,
   AlertCircle,
   CheckCircle2,
   RefreshCw,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { GOOGLE_WORKSPACE } from './workspaceProviders';
 import { useWorkspaceConnect } from './useWorkspaceConnect';
@@ -75,7 +75,7 @@ function ProvisionProgress({ states }: { states: ServiceProvisionState[] }) {
           className="flex items-center gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20"
         >
           <div className="flex-shrink-0">
-            {s.status === 'pending' && <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />}
+            {s.status === 'pending' && <LoadingSpinner className="text-blue-400" />}
             {s.status === 'created' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
             {s.status === 'failed' && <AlertCircle className="w-4 h-4 text-red-400" />}
           </div>
@@ -197,7 +197,7 @@ function ProviderSection({
       {/* Authorizing phase */}
       {ws.phase === 'authorizing' && (
         <div className="flex flex-col items-center gap-3 py-8">
-          <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+          <LoadingSpinner size="2xl" className="text-blue-400" />
           <p className="text-sm text-muted-foreground/70 text-center">
             Sign in with your Google account in the browser window.
             <br />

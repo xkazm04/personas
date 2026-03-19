@@ -50,7 +50,7 @@ export function SectionCard({
         <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>
           <SectionIcon className={`w-4 h-4 ${sectionStyle.icon}`} />
         </div>
-        <span className="text-sm font-bold text-foreground/90 uppercase tracking-widest">
+        <span className="typo-label text-foreground/90">
           {section.label}
         </span>
         <div className="ml-auto">
@@ -63,9 +63,9 @@ export function SectionCard({
           <div key={check.id} className="flex items-start gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors">
             {getStatusIcon(check.status)}
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-foreground/80">{check.label}</p>
+              <p className="typo-body text-foreground/80">{check.label}</p>
               {check.detail && (
-                <p className="text-sm text-muted-foreground/80 break-words line-clamp-2">{check.detail}</p>
+                <p className="typo-body text-muted-foreground/80 break-words line-clamp-2">{check.detail}</p>
               )}
 
               {check.id === 'node' && check.installable && !ipcError && (
@@ -126,7 +126,7 @@ export function SectionCard({
               {authLoading ? 'Signing in...' : 'Sign in with Google'}
             </Button>
             {authError && (
-              <p className="text-sm text-red-400/80">{authError}</p>
+              <p className="typo-body text-red-400/80">{authError}</p>
             )}
           </div>
         )}

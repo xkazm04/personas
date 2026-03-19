@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshCw, Loader2, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, XCircle, Ban } from 'lucide-react';
+import { RefreshCw, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, XCircle, Ban } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 import { cloudListExecutions, cloudExecutionStats } from '@/api/system/cloud';
 import type { CloudExecution, CloudExecutionStats } from '@/api/system/cloud';
@@ -14,7 +15,7 @@ function statusIcon(status: string) {
     case 'completed': return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
     case 'failed': return <XCircle className="w-3.5 h-3.5 text-red-400" />;
     case 'cancelled': return <Ban className="w-3.5 h-3.5 text-amber-400" />;
-    default: return <Loader2 className="w-3.5 h-3.5 text-blue-400 animate-spin" />;
+    default: return <LoadingSpinner size="sm" className="text-blue-400" />;
   }
 }
 

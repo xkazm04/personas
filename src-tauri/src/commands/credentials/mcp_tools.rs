@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use tauri::State;
 
-use crate::engine::mcp_tools::{McpTool, McpToolResult, PingResult};
+use crate::engine::mcp_tools::{McpTool, McpToolResult, PingResult, StdioPoolMetrics};
 use crate::error::AppError;
 use crate::ipc_auth::require_privileged;
 use crate::AppState;
@@ -44,4 +44,12 @@ pub async fn healthcheck_mcp_preview(
 ) -> Result<PingResult, AppError> {
     require_privileged(&state, "healthcheck_mcp_preview").await?;
     crate::engine::mcp_tools::ping(&fields).await
+}
+
+#[tauri::command]
+pub async fn get_mcp_pool_metrics(
+    state: State<'_, Arc<AppState>>,
+) -> Result<StdioPoolMetrics, AppError> {
+    require_privileged(&state, "get_mcp_pool_metrics").await?;
+    Ok(crate::engine::mcp_tools::snapshot_pool_metrics().await)
 }

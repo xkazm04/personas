@@ -21,7 +21,7 @@ const labLifecycle = createRunLifecycle('isLabRunning', 'labProgress');
 const RUN_HISTORY_LIMIT = 20;
 const MAX_CACHED_RUN_RESULTS = 10;
 
-export type LabMode = "arena" | "ab" | "matrix" | "eval" | "versions";
+export type LabMode = "arena" | "ab" | "matrix" | "eval" | "versions" | "breed" | "evolve";
 
 export interface LabRunProgress {
   runId?: string;

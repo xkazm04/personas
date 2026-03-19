@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Play, Loader2, Info, Bug } from 'lucide-react';
+import { Play, Info, Bug } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 interface NodeStatus {
   member_id: string;
@@ -81,7 +82,7 @@ export default function PipelineControls({
         >
           {isRunning ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <LoadingSpinner />
               Running...
             </>
           ) : (

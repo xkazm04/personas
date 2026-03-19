@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Upload, FileJson, ChevronRight, ClipboardPaste, Link2, Loader2,
+  Upload, FileJson, ChevronRight, ClipboardPaste, Link2,
 } from 'lucide-react';
 import { getAcceptedExtensions } from '@/lib/personas/parsers/workflowDetector';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 import type { ImportMode } from './n8nUploadTypes';
 import { formatFileSize, getFileIcon } from './n8nUploadTypes';
@@ -270,7 +271,7 @@ function UrlTab({
             }`}
           >
             {urlFetching ? (
-              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Fetching</>
+              <><LoadingSpinner size="sm" /> Fetching</>
             ) : (
               <><ChevronRight className="w-3.5 h-3.5" /> Fetch</>
             )}

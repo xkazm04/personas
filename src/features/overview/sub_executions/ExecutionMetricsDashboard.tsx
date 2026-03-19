@@ -2,8 +2,9 @@ import { useEffect, useMemo, useCallback } from 'react';
 import {
   DollarSign, Zap, CheckCircle, Clock,
   TrendingUp, AlertTriangle,
-  Loader2, X, Timer,
+  X, Timer,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
@@ -122,7 +123,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 text-primary/60 animate-spin" />
+        <LoadingSpinner size="xl" className="text-primary/60" />
       </div>
     );
   }
@@ -156,7 +157,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <TrendingUp className="w-4 h-4 text-blue-400" />
-          <h3 className="text-sm font-semibold text-foreground/90">Execution Metrics</h3>
+          <h3 className="typo-heading text-foreground/90">Execution Metrics</h3>
           <DayRangePicker value={days} onChange={setDayRange} customDateRange={customDateRange} onCustomDateRangeChange={setCustomDateRange} />
           <CompareToggle enabled={compareEnabled} onChange={setCompareEnabled} />
           <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/8 border border-blue-500/15 text-[11px] text-blue-400/70">
@@ -185,7 +186,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       {/* Cost Anomaly Alerts */}
       {data.cost_anomalies.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-amber-400/80 flex items-center gap-1.5">
+          <h4 className="typo-heading text-amber-400/80 flex items-center gap-1.5">
             <AlertTriangle className="w-3 h-3" /> Cost Anomalies Detected
           </h4>
           {data.cost_anomalies.map((a, i) => (

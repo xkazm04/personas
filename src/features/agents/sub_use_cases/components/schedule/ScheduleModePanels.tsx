@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SCHEDULE_PRESETS } from '../../libs/scheduleHelpers';
 import type { CronPreview } from '@/api/pipeline/triggers';
 import { DayTimeGrid } from './DayTimeGrid';
@@ -86,7 +86,7 @@ export function CronPanel({ cronExpression, onCronChange, cronPreview, cronLoadi
               : 'border-primary/20 focus-visible:ring-amber-500/30'
           }`}
         />
-        {cronLoading && <Loader2 className="w-4 h-4 text-amber-400/60 animate-spin flex-shrink-0" />}
+        {cronLoading && <LoadingSpinner className="text-amber-400/60 flex-shrink-0" />}
       </div>
       <div className="flex gap-3 text-sm text-muted-foreground/60 font-mono px-0.5">
         <span>min</span><span>hour</span><span>day</span><span>month</span><span>weekday</span>

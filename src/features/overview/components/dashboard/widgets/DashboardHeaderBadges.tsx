@@ -29,14 +29,14 @@ export function DashboardHeaderBadges({
       <div className="flex items-center gap-2 flex-shrink-0">
         <span
           title={`${successRate}% success rate`}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold border bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading border bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
         >
           <ShieldCheck className="w-3.5 h-3.5" />
           <AnimatedCounter value={successRate} formatFn={(v) => `${Math.round(v)}%`} /> Success
         </span>
         <span
           title={`${activeAgents} active agents`}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold border bg-violet-500/10 border-violet-500/20 text-violet-400"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading border bg-violet-500/10 border-violet-500/20 text-violet-400"
         >
           <Cpu className="w-3.5 h-3.5" />
           <AnimatedCounter value={activeAgents} /> Agents
@@ -51,7 +51,7 @@ export function DashboardHeaderBadges({
         whileHover={{ scale: 1.05 }}
         onClick={() => setOverviewTab('messages')}
         title={`${unreadMessageCount} unread messages`}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-semibold border transition-colors hover:bg-blue-500/15 bg-blue-500/10 border-blue-500/20 text-blue-400"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl typo-heading border transition-colors hover:bg-blue-500/15 bg-blue-500/10 border-blue-500/20 text-blue-400"
       >
         <Mail className="w-3 h-3" />
         <AnimatedCounter value={unreadMessageCount} />
@@ -61,7 +61,7 @@ export function DashboardHeaderBadges({
         whileHover={{ scale: 1.05 }}
         onClick={() => setOverviewTab('manual-review')}
         title={`${pendingReviewCount} pending reviews`}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-semibold border transition-colors hover:bg-amber-500/15 bg-amber-500/10 border-amber-500/20 text-amber-400"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl typo-heading border transition-colors hover:bg-amber-500/15 bg-amber-500/10 border-amber-500/20 text-amber-400"
       >
         <ClipboardCheck className="w-3 h-3" />
         <AnimatedCounter value={pendingReviewCount} />
@@ -72,7 +72,7 @@ export function DashboardHeaderBadges({
           whileHover={{ scale: 1.05 }}
           onClick={() => setOverviewTab('executions')}
           title={`${globalExecutionsTotal} total executions`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-semibold border transition-colors hover:bg-emerald-500/15 bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl typo-heading border transition-colors hover:bg-emerald-500/15 bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
         >
           <Activity className="w-3 h-3" />
           <AnimatedCounter value={globalExecutionsTotal} formatFn={(v) => Math.round(v).toLocaleString()} />
@@ -80,7 +80,7 @@ export function DashboardHeaderBadges({
         </motion.button>
         <span
           title={`${successRate}% success rate`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-semibold border bg-violet-500/10 border-violet-500/20 text-violet-400"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl typo-heading border bg-violet-500/10 border-violet-500/20 text-violet-400"
         >
           <ShieldCheck className="w-3 h-3" />
           <AnimatedCounter value={successRate} formatFn={(v) => `${Math.round(v)}%`} />
@@ -88,7 +88,7 @@ export function DashboardHeaderBadges({
         </span>
         <span
           title={`${activeAgents} active agents`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-semibold border bg-rose-500/10 border-rose-500/20 text-rose-400"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl typo-heading border bg-rose-500/10 border-rose-500/20 text-rose-400"
         >
           <Cpu className="w-3 h-3" />
           <AnimatedCounter value={activeAgents} />

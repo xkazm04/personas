@@ -1,4 +1,5 @@
-import { CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 export const JOB_TYPE_LABELS: Record<string, string> = {
   n8n_transform: 'N8n Transform',
@@ -27,7 +28,7 @@ export function statusBadgeClass(status: string): string {
 }
 
 export function StatusIcon({ status }: { status: string }) {
-  if (status === 'running') return <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />;
+  if (status === 'running') return <LoadingSpinner size="sm" className="text-blue-400" />;
   if (status === 'completed') return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
   if (status === 'failed') return <XCircle className="w-3.5 h-3.5 text-red-400" />;
   if (status === 'awaiting_answers') return <Clock className="w-3.5 h-3.5 text-amber-400" />;

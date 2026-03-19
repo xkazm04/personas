@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
-  Loader2,
   User,
   FileText,
   Wrench,
@@ -12,6 +11,7 @@ import {
   Link2,
   LayoutList,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { StreamingSection, SectionKind } from '@/api/templates/n8nTransform';
 
 // -- Section icon + color mapping --
@@ -219,7 +219,7 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
             animate={{ opacity: 1 }}
             className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground/50"
           >
-            <Loader2 className="w-3 h-3 animate-spin" />
+            <LoadingSpinner size="xs" />
             Awaiting next section...
           </motion.div>
         )}

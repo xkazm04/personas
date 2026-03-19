@@ -34,7 +34,7 @@ export function StepIndicator({
         return (
           <div key={step.key} className="flex items-center gap-2">
             <div
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg typo-heading transition-colors ${
                 isCurrent
                   ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
                   : isCompleted

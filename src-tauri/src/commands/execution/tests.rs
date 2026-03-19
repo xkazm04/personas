@@ -72,14 +72,16 @@ pub async fn start_test_run(
         .await;
     drop(log_dir); // just used to verify engine is alive
 
-    // Register cancellation flag in process registry
-    let cancelled = state.process_registry.register_run("test", &run_id);
+    // Register cancellation flag in process registry.
+    // The guard ensures unregister_run is called even if the task panics.
+    let (cancelled, run_guard) =
+        state.process_registry.register_run_guarded("test", &run_id);
 
     let cancelled_clone = cancelled.clone();
     let run_id_for_cancel = run_id.clone();
-    let registry = state.process_registry.clone();
 
     tokio::spawn(async move {
+        let _guard = run_guard;
         test_runner::run_test(
             app,
             pool,
@@ -93,8 +95,6 @@ pub async fn start_test_run(
             fixture_inputs,
         )
         .await;
-
-        registry.unregister_run("test", &run_id_for_cancel);
     });
 
     Ok(run)
@@ -303,7 +303,7 @@ pub async fn test_n8n_draft(
         Some(credential_hint_refs.as_slice())
     };
 
-    let prompt_text = prompt::assemble_prompt(persona, tools, None, cred_hints, None);
+    let prompt_text = prompt::assemble_prompt(persona, tools, None, cred_hints, None, #[cfg(feature = "desktop")] None);
 
     // Spawn CLI process via CliProcessDriver (with piped stderr)
     let mut driver = match CliProcessDriver::spawn_temp(&cli_args, "personas-test") {

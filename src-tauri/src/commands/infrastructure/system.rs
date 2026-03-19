@@ -219,6 +219,40 @@ pub async fn system_health_check(
         items: auth_items,
     });
 
+    // -- Section 5: Circuit Breaker --
+    sections.push(build_circuit_breaker_section(&state));
+
+    // -- Section 6: Subscription Health --
+    sections.push(build_subscriptions_section(&state));
+
+    // -- Section 7: Frontend Stability --
+    let crash_count_24h = crate::db::repos::core::frontend_crashes::count_since(&state.db, 24)
+        .unwrap_or(0);
+    let crash_count_7d = crate::db::repos::core::frontend_crashes::count_since(&state.db, 168)
+        .unwrap_or(0);
+
+    if crash_count_7d > 0 {
+        let (fe_status, fe_detail) = if crash_count_24h >= 5 {
+            ("warn", format!("{crash_count_24h} crash(es) in the last 24h ({crash_count_7d} in 7d)"))
+        } else if crash_count_24h > 0 {
+            ("info", format!("{crash_count_24h} crash(es) in the last 24h ({crash_count_7d} in 7d)"))
+        } else {
+            ("ok", format!("No recent crashes (past 24h), {crash_count_7d} in last 7d"))
+        };
+
+        sections.push(HealthCheckSection {
+            id: "frontend_stability".into(),
+            label: "Frontend Stability".into(),
+            items: vec![HealthCheckItem {
+                id: "frontend_crashes".into(),
+                label: "React Crashes".into(),
+                status: fe_status.into(),
+                detail: Some(fe_detail),
+                installable: false,
+            }],
+        });
+    }
+
     let all_ok = sections.iter().all(|s| {
         s.items
             .iter()
@@ -519,6 +553,154 @@ pub async fn health_check_account(
     })
 }
 
+fn build_circuit_breaker_section(state: &AppState) -> HealthCheckSection {
+    let cb_status = state.engine.circuit_breaker.get_status();
+    let mut items = Vec::new();
+
+    for p in &cb_status.providers {
+        let (status, detail) = if p.is_open {
+            (
+                "error",
+                format!(
+                    "Circuit OPEN — {} consecutive failures, cooldown {:.0}s remaining",
+                    p.consecutive_failures, p.cooldown_remaining_secs,
+                ),
+            )
+        } else if p.consecutive_failures > 0 {
+            (
+                "warn",
+                format!("{} consecutive failure{}", p.consecutive_failures, if p.consecutive_failures > 1 { "s" } else { "" }),
+            )
+        } else {
+            ("ok", "Healthy — no recent failures".into())
+        };
+
+        items.push(HealthCheckItem {
+            id: format!("cb_{}", p.provider),
+            label: format!("{} Circuit", p.provider),
+            status: status.into(),
+            detail: Some(detail),
+            installable: false,
+        });
+    }
+
+    // Global breaker item
+    let (global_status, global_detail) = if cb_status.global_paused {
+        (
+            "error",
+            format!(
+                "ALL PROVIDERS PAUSED — {} failures in rolling window, resumes in {:.0}s",
+                cb_status.global_failure_count, cb_status.global_cooldown_remaining_secs,
+            ),
+        )
+    } else if cb_status.global_failure_count > 0 {
+        (
+            "warn",
+            format!(
+                "{} failure{} in rolling window (threshold: 10)",
+                cb_status.global_failure_count,
+                if cb_status.global_failure_count > 1 { "s" } else { "" },
+            ),
+        )
+    } else {
+        ("ok", "No failures in rolling window".into())
+    };
+
+    items.push(HealthCheckItem {
+        id: "cb_global".into(),
+        label: "Global Breaker".into(),
+        status: global_status.into(),
+        detail: Some(global_detail),
+        installable: false,
+    });
+
+    HealthCheckSection {
+        id: "circuit_breaker".into(),
+        label: "Provider Circuit Breakers".into(),
+        items,
+    }
+}
+
+#[tauri::command]
+pub fn health_check_circuit_breaker(
+    state: State<'_, Arc<AppState>>,
+) -> Result<HealthCheckSection, AppError> {
+    Ok(build_circuit_breaker_section(&state))
+}
+
+fn build_subscriptions_section(state: &AppState) -> HealthCheckSection {
+    let health = state.scheduler.subscription_health();
+    let mut items = Vec::new();
+
+    if health.is_empty() {
+        items.push(HealthCheckItem {
+            id: "subscriptions_empty".into(),
+            label: "Subscriptions".into(),
+            status: "info".into(),
+            detail: Some("Scheduler not started yet -- no subscriptions registered".into()),
+            installable: false,
+        });
+    } else {
+        for sub in &health {
+            let (status, detail) = if !sub.alive {
+                (
+                    "error",
+                    format!(
+                        "Dead -- {} crash(es), last active {}",
+                        sub.error_count,
+                        sub.last_tick_at.as_deref().unwrap_or("never"),
+                    ),
+                )
+            } else if sub.consecutive_panics > 0 {
+                (
+                    "warn",
+                    format!(
+                        "Unstable -- {} consecutive panic(s), {} total crash(es)",
+                        sub.consecutive_panics, sub.error_count,
+                    ),
+                )
+            } else if sub.overrun {
+                (
+                    "warn",
+                    format!(
+                        "Overrun -- last tick {}ms (interval {}ms)",
+                        sub.last_tick_duration_ms, sub.interval_ms,
+                    ),
+                )
+            } else {
+                (
+                    "ok",
+                    format!(
+                        "Healthy -- {} ticks, avg {}ms",
+                        sub.tick_count, sub.avg_tick_duration_ms,
+                    ),
+                )
+            };
+
+            items.push(HealthCheckItem {
+                id: format!("sub_{}", sub.name),
+                label: sub.name.replace('_', " "),
+                status: status.into(),
+                detail: Some(detail),
+                installable: false,
+            });
+        }
+    }
+
+    HealthCheckSection {
+        id: "subscriptions".into(),
+        label: "Subscription Health".into(),
+        items,
+    }
+}
+
+#[tauri::command]
+pub fn health_check_subscriptions(
+    state: State<'_, Arc<AppState>>,
+) -> Result<HealthCheckSection, AppError> {
+    Ok(build_subscriptions_section(&state))
+}
+
 #[tauri::command]
 pub async fn open_external_url(url: String) -> Result<(), AppError> {
     let trimmed = url.trim();
@@ -557,6 +739,50 @@ pub fn clear_crash_logs(app: tauri::AppHandle) -> Result<(), AppError> {
 
     crate::logging::clear_crash_logs(&app_data_dir);
     Ok(())
+}
+
+// -- Frontend crash telemetry commands --------------------------------
+
+#[tauri::command]
+pub async fn report_frontend_crash(
+    state: State<'_, Arc<AppState>>,
+    component: String,
+    message: String,
+    stack: Option<String>,
+    component_stack: Option<String>,
+) -> Result<crate::db::models::FrontendCrashRow, AppError> {
+    let version = env!("CARGO_PKG_VERSION").to_string();
+    crate::db::repos::core::frontend_crashes::insert(
+        &state.db,
+        &component,
+        &message,
+        stack.as_deref(),
+        component_stack.as_deref(),
+        Some(&version),
+    )
+}
+
+#[tauri::command]
+pub async fn get_frontend_crashes(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<u32>,
+) -> Result<Vec<crate::db::models::FrontendCrashRow>, AppError> {
+    crate::db::repos::core::frontend_crashes::list_recent(&state.db, limit.unwrap_or(50))
+}
+
+#[tauri::command]
+pub async fn clear_frontend_crashes(
+    state: State<'_, Arc<AppState>>,
+) -> Result<(), AppError> {
+    crate::db::repos::core::frontend_crashes::clear_all(&state.db)
+}
+
+#[tauri::command]
+pub async fn get_frontend_crash_count(
+    state: State<'_, Arc<AppState>>,
+    hours: Option<u32>,
+) -> Result<u32, AppError> {
+    crate::db::repos::core::frontend_crashes::count_since(&state.db, hours.unwrap_or(24))
 }
 
 #[cfg(test)]

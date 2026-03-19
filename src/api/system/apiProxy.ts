@@ -1,10 +1,11 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { ApiProxyResponse } from "@/lib/bindings/ApiProxyResponse";
+import type { ApiProxyCredentialMetrics } from "@/lib/bindings/ApiProxyCredentialMetrics";
 import type { ApiEndpoint } from "@/lib/bindings/ApiEndpoint";
 import type { ApiParameter } from "@/lib/bindings/ApiParameter";
 import type { ApiRequestBody } from "@/lib/bindings/ApiRequestBody";
-export type { ApiProxyResponse, ApiEndpoint, ApiParameter, ApiRequestBody };
+export type { ApiProxyResponse, ApiProxyCredentialMetrics, ApiEndpoint, ApiParameter, ApiRequestBody };
 
 // -- API Proxy ----------------------------------------------------------
 
@@ -22,6 +23,11 @@ export const executeApiRequest = (
     headers,
     body: body || null,
   });
+
+// -- API Proxy Metrics --------------------------------------------------
+
+export const getApiProxyMetrics = () =>
+  invoke<ApiProxyCredentialMetrics[]>('get_api_proxy_metrics', {});
 
 // -- API Definition -----------------------------------------------------
 

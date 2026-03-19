@@ -11,22 +11,22 @@ interface MarkdownRendererProps {
 
 const components: Components = {
   h1: ({ children }) => (
-    <h1 className="text-lg font-bold text-primary mb-3 mt-6 pb-1.5 border-b border-primary/20">{children}</h1>
+    <h1 className="typo-heading-lg text-primary mb-3 mt-6 pb-1.5 border-b border-primary/20">{children}</h1>
   ),
   h2: ({ children }) => (
     <h2 className="text-[15px] font-semibold text-primary/90 mb-2.5 mt-4">{children}</h2>
   ),
   h3: ({ children }) => (
-    <h3 className="text-sm font-semibold text-accent mb-2 mt-3 tracking-wide">{children}</h3>
+    <h3 className="typo-heading text-accent mb-2 mt-3 tracking-wide">{children}</h3>
   ),
   p: ({ children }) => (
-    <p className="text-sm text-foreground/90 mb-3 leading-relaxed">{children}</p>
+    <p className="typo-body text-foreground/90 mb-3 leading-relaxed">{children}</p>
   ),
   ul: ({ children }) => (
-    <ul className="list-disc pl-5 space-y-1.5 mb-3 text-sm text-foreground/90">{children}</ul>
+    <ul className="list-disc pl-5 space-y-1.5 mb-3 typo-body text-foreground/90">{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol className="list-decimal pl-5 space-y-1.5 mb-3 text-sm text-foreground/90">{children}</ol>
+    <ol className="list-decimal pl-5 space-y-1.5 mb-3 typo-body text-foreground/90">{children}</ol>
   ),
   li: ({ children }) => (
     <li className="text-foreground/90">{children}</li>
@@ -36,7 +36,7 @@ const components: Components = {
     if (isBlock) {
       return (
         <code
-          className={`block p-4 bg-background/60 border border-primary/10 rounded-xl text-sm font-mono overflow-x-auto ${className || ''}`}
+          className={`block p-4 bg-background/60 border border-primary/10 rounded-xl typo-code overflow-x-auto ${className || ''}`}
           {...props}
         >
           {children}
@@ -45,7 +45,7 @@ const components: Components = {
     }
     return (
       <code
-        className="px-1.5 py-0.5 bg-primary/8 border border-primary/12 rounded text-sm font-mono text-primary/70"
+        className="px-1.5 py-0.5 bg-primary/8 border border-primary/12 rounded typo-code text-primary/70"
         {...props}
       >
         {children}
@@ -61,7 +61,7 @@ const components: Components = {
     </blockquote>
   ),
   table: ({ children }) => (
-    <table className="w-full text-sm mb-3">{children}</table>
+    <table className="w-full typo-body mb-3">{children}</table>
   ),
   th: ({ children }) => (
     <th className="text-left font-medium text-foreground/90 pb-2 border-b border-border/30">

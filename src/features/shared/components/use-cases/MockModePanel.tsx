@@ -13,10 +13,10 @@ export function MockModePanel({ useCase, modeBadge, onClose }: MockModePanelProp
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-amber-500/15">
         <div className="flex items-center gap-2">
-          <span className={`px-1.5 py-0.5 text-sm font-medium rounded border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
+          <span className={`px-1.5 py-0.5 typo-label rounded border ${modeBadge.bg} ${modeBadge.text}`}>
             {modeBadge.label}
           </span>
-          <span className="text-sm text-amber-400/70">Example output</span>
+          <span className="typo-body text-amber-400/70">Example output</span>
         </div>
         <button
           onClick={onClose}
@@ -28,7 +28,7 @@ export function MockModePanel({ useCase, modeBadge, onClose }: MockModePanelProp
 
       {/* Mock output */}
       <div className="p-3">
-        <pre className="text-sm font-mono text-foreground/70 bg-background/40 rounded-lg p-3 overflow-auto max-h-64 border border-amber-500/10">
+        <pre className="typo-code text-foreground/70 bg-background/40 rounded-lg p-3 overflow-auto max-h-64 border border-amber-500/10">
           {useCase.sample_input
             ? JSON.stringify(useCase.sample_input, null, 2)
             : '// No sample data provided'}

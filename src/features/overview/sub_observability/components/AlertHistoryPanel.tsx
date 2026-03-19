@@ -35,7 +35,7 @@ function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => vo
       <Icon className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: cfg.color }} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground truncate">{alert.ruleName}</span>
+          <span className="typo-heading text-foreground truncate">{alert.ruleName}</span>
           <span className="text-[10px] text-muted-foreground/50">{formatTime(alert.firedAt)}</span>
         </div>
         <p className="text-xs text-muted-foreground/70 mt-0.5">{alert.message}</p>
@@ -64,7 +64,7 @@ export function AlertHistoryPanel() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground">Alert History</h3>
+          <h3 className="typo-heading text-foreground">Alert History</h3>
           {activeCount > 0 && (
             <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-500/15 text-red-400 border border-red-500/20">
               {activeCount}

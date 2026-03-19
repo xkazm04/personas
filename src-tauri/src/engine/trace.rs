@@ -51,6 +51,10 @@ pub enum SpanType {
     OutcomeAssessment,
     /// Healing analysis after execution failure.
     HealingAnalysis,
+    /// Pipeline stage marker (Validate, SpawnEngine, StreamOutput, etc.).
+    /// These spans represent the macro-level execution pipeline stages and
+    /// wrap the finer-grained operational spans for post-mortem analysis.
+    PipelineStage,
 }
 
 /// A single span in the execution trace tree.

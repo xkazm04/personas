@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Package, Check, Loader2, AlertTriangle } from 'lucide-react';
+import { Package, Check, AlertTriangle, Lock, Shield } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { save } from '@tauri-apps/plugin-dialog';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { ExposedResource } from '@/api/network/exposure';
+import type { EnclavePolicy } from '@/api/network/enclave';
+import type { Persona } from '@/lib/bindings/Persona';
+
+type ExportMode = 'bundle' | 'enclave';
 
 interface BundleExportDialogProps {
   isOpen: boolean;
@@ -15,18 +21,35 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
   const exposedResources = useSystemStore((s) => s.exposedResources);
   const fetchExposedResources = useSystemStore((s) => s.fetchExposedResources);
   const exportBundle = useSystemStore((s) => s.exportBundle);
+  const sealEnclave = useSystemStore((s) => s.sealEnclave);
   const addToast = useToastStore((s) => s.addToast);
+  const personas = useAgentStore((s) => s.personas);
+  const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
 
+  const [mode, setMode] = useState<ExportMode>('bundle');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Enclave-specific state
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
+  const [maxCostUsd, setMaxCostUsd] = useState('1.00');
+  const [maxTurns, setMaxTurns] = useState('10');
+  const [allowPersistence, setAllowPersistence] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setSelected(new Set());
       setExporting(false);
       setLoading(true);
-      fetchExposedResources().finally(() => setLoading(false));
+      setSelectedPersonaId('');
+      setMaxCostUsd('1.00');
+      setMaxTurns('10');
+      setAllowPersistence(false);
+      Promise.all([
+        fetchExposedResources(),
+        fetchPersonas(),
+      ]).finally(() => setLoading(false));
     }
   }, [isOpen]);
 
@@ -47,7 +70,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
     }
   };
 
-  const handleExport = async () => {
+  const handleExportBundle = async () => {
     if (selected.size === 0) return;
 
     try {
@@ -55,7 +78,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
         defaultPath: 'personas-bundle.persona',
         filters: [{ name: 'Persona Bundle', extensions: ['persona'] }],
       });
-      if (!savePath) return; // cancelled
+      if (!savePath) return;
 
       setExporting(true);
       const result = await exportBundle(Array.from(selected), savePath);
@@ -70,54 +93,134 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
     }
   };
 
+  const handleSealEnclave = async () => {
+    if (!selectedPersonaId) return;
+
+    try {
+      const savePath = await save({
+        defaultPath: 'persona-enclave.enclave',
+        filters: [{ name: 'Persona Enclave', extensions: ['enclave'] }],
+      });
+      if (!savePath) return;
+
+      const policy: EnclavePolicy = {
+        maxCostUsd: parseFloat(maxCostUsd) || 1.0,
+        maxTurns: parseInt(maxTurns, 10) || 10,
+        allowedTools: [],
+        allowedDomains: [],
+        requiredCapabilities: [],
+        allowPersistence,
+      };
+
+      setExporting(true);
+      const result = await sealEnclave(selectedPersonaId, policy, savePath);
+      addToast(`Enclave sealed: "${result.personaName}" (${formatBytes(result.byteSize)})`, 'success');
+      onClose();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn('[BundleExportDialog] Failed to seal enclave', { personaId: selectedPersonaId, error: msg });
+      addToast(`Failed to seal enclave: ${msg}`, 'error');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} titleId="bundle-export-title" maxWidthClass="max-w-lg">
       <div className="p-5 space-y-4">
         <div>
           <h2 id="bundle-export-title" className="text-base font-semibold text-foreground flex items-center gap-2">
-            <Package className="w-4.5 h-4.5 text-cyan-400" />
-            Export Bundle
+            {mode === 'enclave' ? (
+              <Lock className="w-4.5 h-4.5 text-violet-400" />
+            ) : (
+              <Package className="w-4.5 h-4.5 text-cyan-400" />
+            )}
+            {mode === 'enclave' ? 'Seal Enclave' : 'Export Bundle'}
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Select exposed resources to include in the signed .persona bundle.
+            {mode === 'enclave'
+              ? 'Create a cryptographically sealed persona enclave with execution constraints.'
+              : 'Select exposed resources to include in the signed .persona bundle.'}
           </p>
+        </div>
+
+        {/* Mode toggle */}
+        <div className="flex rounded-lg border border-border p-0.5 bg-secondary/20">
+          <button
+            onClick={() => setMode('bundle')}
+            className={`flex-1 px-3 py-1.5 text-xs rounded-md transition-colors flex items-center justify-center gap-1.5 ${
+              mode === 'bundle'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Package className="w-3.5 h-3.5" />
+            Bundle
+          </button>
+          <button
+            onClick={() => setMode('enclave')}
+            className={`flex-1 px-3 py-1.5 text-xs rounded-md transition-colors flex items-center justify-center gap-1.5 ${
+              mode === 'enclave'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Lock className="w-3.5 h-3.5" />
+            Enclave
+          </button>
         </div>
 
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground py-6 justify-center">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Loading resources...
+            <LoadingSpinner />
+            Loading...
           </div>
-        ) : exposedResources.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            <AlertTriangle className="w-5 h-5 mx-auto mb-2 text-amber-400" />
-            No resources are exposed. Expose resources first in the Network settings.
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center justify-between">
-              <button
-                onClick={toggleAll}
-                className="text-xs text-primary hover:text-primary/80 transition-colors"
-              >
-                {selected.size === exposedResources.length ? 'Deselect all' : 'Select all'}
-              </button>
-              <span className="text-xs text-muted-foreground">
-                {selected.size} of {exposedResources.length} selected
-              </span>
+        ) : mode === 'bundle' ? (
+          /* Bundle mode */
+          exposedResources.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              <AlertTriangle className="w-5 h-5 mx-auto mb-2 text-amber-400" />
+              No resources are exposed. Expose resources first in the Network settings.
             </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={toggleAll}
+                  className="text-xs text-primary hover:text-primary/80 transition-colors"
+                >
+                  {selected.size === exposedResources.length ? 'Deselect all' : 'Select all'}
+                </button>
+                <span className="text-xs text-muted-foreground">
+                  {selected.size} of {exposedResources.length} selected
+                </span>
+              </div>
 
-            <div className="max-h-[40vh] overflow-y-auto space-y-1.5 pr-1">
-              {exposedResources.map((resource) => (
-                <ResourceCheckItem
-                  key={resource.id}
-                  resource={resource}
-                  checked={selected.has(resource.id)}
-                  onToggle={() => toggleResource(resource.id)}
-                />
-              ))}
-            </div>
-          </>
+              <div className="max-h-[40vh] overflow-y-auto space-y-1.5 pr-1">
+                {exposedResources.map((resource) => (
+                  <ResourceCheckItem
+                    key={resource.id}
+                    resource={resource}
+                    checked={selected.has(resource.id)}
+                    onToggle={() => toggleResource(resource.id)}
+                  />
+                ))}
+              </div>
+            </>
+          )
+        ) : (
+          /* Enclave mode */
+          <EnclaveConfigPanel
+            personas={personas}
+            selectedPersonaId={selectedPersonaId}
+            onSelectPersona={setSelectedPersonaId}
+            maxCostUsd={maxCostUsd}
+            onMaxCostChange={setMaxCostUsd}
+            maxTurns={maxTurns}
+            onMaxTurnsChange={setMaxTurns}
+            allowPersistence={allowPersistence}
+            onAllowPersistenceChange={setAllowPersistence}
+          />
         )}
 
         <div className="flex justify-end gap-2 pt-2 border-t border-border">
@@ -127,17 +230,116 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
           >
             Cancel
           </button>
-          <button
-            onClick={handleExport}
-            disabled={selected.size === 0 || exporting}
-            className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-          >
-            {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
-            {exporting ? 'Exporting...' : 'Export Bundle'}
-          </button>
+          {mode === 'bundle' ? (
+            <button
+              onClick={handleExportBundle}
+              disabled={selected.size === 0 || exporting}
+              className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+            >
+              {exporting ? <LoadingSpinner size="sm" /> : <Package className="w-3.5 h-3.5" />}
+              {exporting ? 'Exporting...' : 'Export Bundle'}
+            </button>
+          ) : (
+            <button
+              onClick={handleSealEnclave}
+              disabled={!selectedPersonaId || exporting}
+              className="px-3 py-1.5 text-xs rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+            >
+              {exporting ? <LoadingSpinner size="sm" /> : <Lock className="w-3.5 h-3.5" />}
+              {exporting ? 'Sealing...' : 'Seal Enclave'}
+            </button>
+          )}
         </div>
       </div>
     </BaseModal>
+  );
+}
+
+function EnclaveConfigPanel({
+  personas,
+  selectedPersonaId,
+  onSelectPersona,
+  maxCostUsd,
+  onMaxCostChange,
+  maxTurns,
+  onMaxTurnsChange,
+  allowPersistence,
+  onAllowPersistenceChange,
+}: {
+  personas: Persona[];
+  selectedPersonaId: string;
+  onSelectPersona: (id: string) => void;
+  maxCostUsd: string;
+  onMaxCostChange: (v: string) => void;
+  maxTurns: string;
+  onMaxTurnsChange: (v: string) => void;
+  allowPersistence: boolean;
+  onAllowPersistenceChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      {/* Info banner */}
+      <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 p-2.5 flex items-start gap-2">
+        <Shield className="w-3.5 h-3.5 text-violet-400 mt-0.5 flex-shrink-0" />
+        <span className="text-xs text-violet-300/90">
+          Enclaves are cryptographically sealed and signed with your identity.
+          The recipient can verify authenticity but cannot modify the persona or extract credentials.
+        </span>
+      </div>
+
+      {/* Persona selector */}
+      <div>
+        <label className="text-xs text-muted-foreground mb-1 block">Persona</label>
+        <select
+          value={selectedPersonaId}
+          onChange={(e) => onSelectPersona(e.target.value)}
+          className="w-full px-2.5 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+        >
+          <option value="">Select a persona...</option>
+          {personas.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Policy configuration */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Max cost (USD)</label>
+          <input
+            type="number"
+            min="0.01"
+            step="0.01"
+            value={maxCostUsd}
+            onChange={(e) => onMaxCostChange(e.target.value)}
+            className="w-full px-2.5 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+          />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Max turns</label>
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={maxTurns}
+            onChange={(e) => onMaxTurnsChange(e.target.value)}
+            className="w-full px-2.5 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+          />
+        </div>
+      </div>
+
+      <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+        <input
+          type="checkbox"
+          checked={allowPersistence}
+          onChange={(e) => onAllowPersistenceChange(e.target.checked)}
+          className="rounded border-border"
+        />
+        Allow enclave to persist data on host
+      </label>
+    </div>
   );
 }
 

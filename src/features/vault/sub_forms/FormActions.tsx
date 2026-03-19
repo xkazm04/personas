@@ -1,4 +1,5 @@
-import { Loader2, Lock, Save, Info } from 'lucide-react';
+import { Lock, Save, Info } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { VaultStatus } from "@/api/vault/credentials";
 
@@ -53,7 +54,7 @@ export function FormActions({
               className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-lg shadow-primary/20 disabled:opacity-45 disabled:cursor-not-allowed"
             >
               {isSaving ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <LoadingSpinner />
               ) : (
                 <Save className="w-4 h-4" />
               )}

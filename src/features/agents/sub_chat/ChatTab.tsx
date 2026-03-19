@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Plus, Trash2, Loader2, Bot, User } from 'lucide-react';
+import { Send, Plus, Trash2, Bot, User } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 import type { ChatMessage } from '@/lib/bindings/ChatMessage';
 import { classifyLine } from '@/lib/utils/terminalColors';
@@ -47,7 +48,7 @@ function StreamingBubble({ lines }: { lines: string[] }) {
           <Bot className="w-3.5 h-3.5" />
         </div>
         <div className="bg-muted/60 border border-primary/10 rounded-2xl rounded-bl-md px-3.5 py-2.5">
-          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          <LoadingSpinner className="text-muted-foreground" />
         </div>
       </div>
     );
@@ -256,7 +257,7 @@ export function ChatTab() {
               className="flex-shrink-0 w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {chatStreaming ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <LoadingSpinner />
               ) : (
                 <Send className="w-4 h-4" />
               )}

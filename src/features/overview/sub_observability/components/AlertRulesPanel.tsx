@@ -172,7 +172,7 @@ function RuleRow({
       </button>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground truncate">{rule.name}</span>
+          <span className="typo-heading text-foreground truncate">{rule.name}</span>
           <span
             className="px-1.5 py-0.5 rounded text-[10px] font-medium"
             style={{ backgroundColor: `${sevInfo?.color ?? '#888'}20`, color: sevInfo?.color ?? '#888' }}
@@ -268,7 +268,7 @@ export function AlertRulesPanel() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-foreground">Alert Rules</h3>
+          <h3 className="typo-heading text-foreground">Alert Rules</h3>
           <EvalHealthIndicator health={alertEvalHealth} />
         </div>
         <button

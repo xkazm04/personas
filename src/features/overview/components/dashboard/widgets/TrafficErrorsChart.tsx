@@ -22,7 +22,7 @@ export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: Tra
     <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm p-4 space-y-4 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full pointer-events-none" />
       <div className="flex items-center justify-between relative z-10">
-        <h3 className="text-sm font-bold uppercase tracking-widest text-foreground/80 flex items-center gap-2">
+        <h3 className="typo-label text-foreground/80 flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
             <TrendingUp className="w-3.5 h-3.5" />
           </div>
@@ -31,11 +31,11 @@ export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: Tra
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-cyan-400" />
-            <AnimatedCounter value={totalTraffic} className="text-sm text-muted-foreground/60" formatFn={(v) => Math.round(v).toLocaleString()} />
+            <AnimatedCounter value={totalTraffic} className="typo-body text-muted-foreground/60" formatFn={(v) => Math.round(v).toLocaleString()} />
           </div>
           <div className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-rose-400" />
-            <AnimatedCounter value={totalErrors} className="text-sm text-muted-foreground/60" formatFn={(v) => Math.round(v).toLocaleString()} />
+            <AnimatedCounter value={totalErrors} className="typo-body text-muted-foreground/60" formatFn={(v) => Math.round(v).toLocaleString()} />
           </div>
         </div>
       </div>
@@ -66,13 +66,13 @@ export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: Tra
           </ChartErrorBoundary>
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <p className="text-sm text-muted-foreground/50">No execution data yet</p>
+            <p className="typo-body text-muted-foreground/50">No execution data yet</p>
           </div>
         )}
       </div>
 
       <div className="pt-3 border-t border-primary/5 relative z-10">
-        <div className="flex justify-between text-sm font-semibold text-muted-foreground/60 uppercase tracking-widest">
+        <div className="flex justify-between typo-label text-muted-foreground/60">
           <span>14 Days Ago</span>
           <span>Today</span>
         </div>

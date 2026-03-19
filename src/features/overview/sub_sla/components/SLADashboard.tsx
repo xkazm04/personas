@@ -1,3 +1,4 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect } from 'react';
 import { Shield, AlertTriangle, Clock, Wrench } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -17,7 +18,7 @@ export default function SLADashboard() {
     setLoading(true);
     getSlaDashboard(days)
       .then((d) => { if (!cancelled) setData(d); })
-      .catch(() => {})
+      .catch(silentCatch("SLADashboard:fetchSlaDashboard"))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [days]);

@@ -130,7 +130,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
           {import.meta.env.DEV && <CrashLogsSection />}
 
           {hasIssues && !loading && (
-            <p className="text-sm text-amber-400/80">
+            <p className="typo-body text-amber-400/80">
               {ipcError
                 ? 'The application bridge is not responding. Try restarting the app. You can still continue to explore the interface.'
                 : 'Some checks reported issues. You can still continue, but some features may not work correctly.'}

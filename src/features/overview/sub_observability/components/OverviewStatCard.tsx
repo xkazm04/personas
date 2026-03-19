@@ -102,7 +102,7 @@ export function OverviewStatCard({
             <div className={`w-8 h-8 rounded-lg border shadow-inner flex items-center justify-center ${iconCls}`}>
               <Icon className="w-4 h-4" />
             </div>
-            <span className="text-sm font-medium text-foreground/75 truncate">{label}</span>
+            <span className="typo-heading text-foreground/75 truncate">{label}</span>
           </div>
           {sparklineData && sparklineData.length >= 2 && (
             <Sparkline data={sparklineData} color={SPARKLINE_HEX[color] || '#3b82f6'} />
@@ -110,10 +110,10 @@ export function OverviewStatCard({
         </div>
 
         <div className="mt-auto">
-          <div className="text-2xl font-bold tracking-tight text-foreground/90">{format(animated)}</div>
+          <div className="typo-data-lg tracking-tight text-foreground/90">{format(animated)}</div>
           <div className="flex items-center gap-2.5 mt-1.5 min-h-[18px]">
             {trendDisplay ? (
-              <div className={`flex items-center gap-1 text-sm font-semibold ${trendDisplay.trendColor}`}>
+              <div className={`flex items-center gap-1 typo-heading ${trendDisplay.trendColor}`}>
                 <trendDisplay.TIcon className="w-3 h-3" />
                 <span>{trendDisplay.value}</span>
               </div>

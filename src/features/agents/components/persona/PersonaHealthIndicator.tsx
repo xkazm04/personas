@@ -1,9 +1,8 @@
 import { Bot, Check, Minus, X } from 'lucide-react';
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { StatusShape, mapToShapeStatus } from '@/features/shared/components/display/StatusShape';
 import type { Persona } from '@/lib/types/types';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
-import { STATUS_PALETTE } from '@/lib/design/statusTokens';
-
 type HealthLevel = 'healthy' | 'degraded' | 'failing' | 'dormant';
 
 const HEALTH_RING_CLASS: Record<HealthLevel, string> = {
@@ -11,14 +10,6 @@ const HEALTH_RING_CLASS: Record<HealthLevel, string> = {
   degraded: `border-2 border-dashed border-amber-400/40`,
   failing: `ring-2 ring-red-400/50`,
   dormant: `border-2 border-dashed border-muted-foreground/15`,
-};
-
-const HEALTH_DOT_COLOR: Record<string, string> = {
-  completed: STATUS_PALETTE.success.icon,
-  failed: STATUS_PALETTE.error.icon,
-  error: STATUS_PALETTE.error.icon,
-  cancelled: STATUS_PALETTE.warning.icon,
-  running: STATUS_PALETTE.info.icon,
 };
 
 const HEALTH_LABEL: Record<HealthLevel, string> = {
@@ -73,9 +64,9 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
       {statuses && statuses.length > 0 && (
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/health:flex group-focus-within/health:flex items-center gap-1 px-2 py-1.5 rounded-lg bg-popover border border-primary/20 shadow-lg z-20 whitespace-nowrap">
           {statuses.map((s, si) => (
-            <div
+            <StatusShape
               key={si}
-              className={`w-2 h-2 rounded-full ${HEALTH_DOT_COLOR[s] ?? 'bg-muted-foreground/30'}`}
+              status={mapToShapeStatus(s)}
               title={s}
               tabIndex={0}
               aria-label={`Run ${si + 1}: ${s}`}

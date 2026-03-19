@@ -28,6 +28,7 @@ export const TAB_LABELS: Record<string, string> = {
   design: 'Design',
   health: 'Health',
   settings: 'Settings',
+  assertions: 'Assertions',
   model: 'Model',
 };
 

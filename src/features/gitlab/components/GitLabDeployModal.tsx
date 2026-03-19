@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Loader2, Rocket, Check, ExternalLink, ShieldCheck, KeyRound } from 'lucide-react';
+import { Rocket, Check, ExternalLink, ShieldCheck, KeyRound } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { GitLabProject, GitLabDeployResult } from '@/api/system/gitlab';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
@@ -115,7 +116,7 @@ export function GitLabDeployModal({
         />
         {isCreatingFromTemplate && (
           <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground/60">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <LoadingSpinner size="sm" />
             Creating persona from template...
           </div>
         )}
@@ -162,7 +163,7 @@ export function GitLabDeployModal({
       >
         {isDeploying ? (
           <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
-            <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
+            <LoadingSpinner />
             <span className="sr-only">Deploying persona to GitLab...</span>
           </span>
         ) : (

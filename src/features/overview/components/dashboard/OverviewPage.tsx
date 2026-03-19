@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { OverviewFilterProvider } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { useExecutionDashboardPipeline } from '@/hooks/overview/useExecutionDashboardPipeline';
+import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 
 // Lazy-load each subtab -- only the active one ships to the render tree.
 // On Desktop these become separate chunks; on Android inlineDynamicImports
@@ -15,6 +16,7 @@ const EventLogList = lazy(() => import('@/features/overview/sub_events/component
 const KnowledgeHub = lazy(() => import('@/features/overview/components/dashboard/cards/KnowledgeHub'));
 const SLADashboard = lazy(() => import('@/features/overview/sub_sla/components/SLADashboard'));
 const ScheduleTimeline = lazy(() => import('@/features/overview/sub_schedules/components/ScheduleTimeline'));
+const PersonaHealthDashboard = lazy(() => import('@/features/overview/sub_health/components/PersonaHealthDashboard'));
 
 function OverviewContent() {
   useExecutionDashboardPipeline();
@@ -28,7 +30,7 @@ function OverviewContent() {
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
     >
-      <Suspense fallback={null}>
+      <Suspense fallback={<PanelSkeleton variant="section" />}>
         {overviewTab === 'home' ? <DashboardWithSubtabs /> :
         overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
         overviewTab === 'manual-review' ? <ManualReviewList /> :
@@ -37,6 +39,7 @@ function OverviewContent() {
         overviewTab === 'knowledge' ? <KnowledgeHub /> :
         overviewTab === 'sla' ? <SLADashboard /> :
         overviewTab === 'schedules' ? <ScheduleTimeline /> :
+        overviewTab === 'health' ? <PersonaHealthDashboard /> :
         <DashboardWithSubtabs />}
       </Suspense>
     </motion.div>

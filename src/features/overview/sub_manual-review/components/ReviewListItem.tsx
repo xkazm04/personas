@@ -80,17 +80,17 @@ export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium text-foreground/90 truncate">{review.persona_name || 'Unknown'}</span>
+            <span className="typo-heading text-foreground/90 truncate">{review.persona_name || 'Unknown'}</span>
             <span className="text-xs text-muted-foreground/60 flex-shrink-0">{formatRelativeTime(review.created_at)}</span>
           </div>
           <p className="text-sm text-muted-foreground/70 truncate mt-0.5">{review.content.slice(0, 80)}</p>
           <div className="flex items-center gap-2 mt-1">
             <SeverityIndicator severity={review.severity} />
-            <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium border ${status.bgColor} ${status.color} ${status.borderColor}`}>
+            <span className={`inline-block px-1.5 py-0.5 rounded typo-caption border ${status.bgColor} ${status.color} ${status.borderColor}`}>
               {statusLabel}
             </span>
             {review.source === 'cloud' && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded typo-caption bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                 <Cloud className="w-2.5 h-2.5" /> Cloud
               </span>
             )}

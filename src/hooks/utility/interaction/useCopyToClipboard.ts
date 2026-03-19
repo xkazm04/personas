@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { silentCatch } from "@/lib/silentCatch";
 
 /**
  * Hook for clipboard copy with timed feedback.
@@ -14,7 +15,7 @@ export function useCopyToClipboard(timeout = 2000) {
         setCopied(true);
         clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => setCopied(false), timeout);
-      }).catch(() => {});
+      }).catch(silentCatch("copyToClipboard:writeText"));
     },
     [timeout],
   );

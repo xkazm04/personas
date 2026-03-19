@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plug, Sparkles, Bot, Loader2, Import } from 'lucide-react';
+import { Plug, Sparkles, Bot, Import } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useState } from 'react';
 import { QUICK_SERVICE_HINTS, HINT_COLORS } from '@/features/vault/sub_design/CredentialDesignHelpers';
 import type { ConnectorDefinition } from '@/lib/types/types';
@@ -135,7 +136,7 @@ export function IdlePhase({
                     >
                       {applyingTemplateId === conn.id ? (
                         <span className="inline-flex items-center gap-1">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <LoadingSpinner size="sm" />
                           Loading...
                         </span>
                       ) : (

@@ -1,3 +1,4 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useState, useCallback } from 'react';
 import {
   getByomPolicy,
@@ -39,8 +40,8 @@ export function useByomSettings() {
       if (p) setPolicy(p);
       setLoaded(true);
     }).catch(() => setLoaded(true));
-    listProviderAuditLog(50).then(setAuditLog).catch(() => {});
-    getProviderUsageStats().then(setUsageStats).catch(() => {});
+    listProviderAuditLog(50).then(setAuditLog).catch(silentCatch("useByomSettings:listAuditLog"));
+    getProviderUsageStats().then(setUsageStats).catch(silentCatch("useByomSettings:getUsageStats"));
   }, []);
 
   const handleSave = useCallback(async () => {

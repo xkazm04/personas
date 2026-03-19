@@ -1,4 +1,5 @@
-import { Wifi, Loader2 } from 'lucide-react';
+import { Wifi } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { FormField } from '@/features/shared/components/forms/FormField';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
@@ -84,7 +85,7 @@ export function CloudConnectionForm({
       >
         {isConnecting ? (
           <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
-            <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
+            <LoadingSpinner />
             <span>Connecting...</span>
             <span className="sr-only">Connecting to cloud orchestrator...</span>
           </span>

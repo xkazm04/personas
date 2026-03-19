@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::engine::background::{self, SchedulerStats};
+use crate::engine::background::{self, SchedulerStats, SubscriptionHealth};
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -32,6 +32,8 @@ pub async fn start_scheduler(
         state.rate_limiter.clone(),
         state.tier_config.clone(),
         state.cloud_client.clone(),
+        #[cfg(feature = "desktop")]
+        state.ambient_context.clone(),
     );
 
     Ok(state.scheduler.stats())
@@ -44,4 +46,13 @@ pub fn stop_scheduler(
     require_auth_sync(&state)?;
     background::stop_loops(&state.scheduler);
     Ok(state.scheduler.stats())
+}
+
+/// Diagnostic: return per-subscription health status for all registered subscriptions.
+#[tauri::command]
+pub fn get_subscription_health(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<SubscriptionHealth>, AppError> {
+    require_auth_sync(&state)?;
+    Ok(state.scheduler.subscription_health())
 }

@@ -18,9 +18,9 @@ export function SlaCard({ label, value, sub, color, icon }: {
     <div className={`rounded-xl border p-4 ${cls}`}>
       <div className="flex items-center gap-2 mb-2">
         {icon}
-        <span className="text-xs font-mono uppercase tracking-wider opacity-80">{label}</span>
+        <span className="typo-label font-mono opacity-80">{label}</span>
       </div>
-      <div className="text-2xl font-bold">{value}</div>
+      <div className="typo-data-lg">{value}</div>
       <div className="text-xs opacity-60 mt-1">{sub}</div>
     </div>
   );
@@ -36,10 +36,10 @@ export function PersonaRow({ stats, expanded, onToggle }: {
     <div>
       <button onClick={onToggle} className="w-full px-5 py-3 flex items-center gap-4 hover:bg-primary/5 transition-colors text-left">
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-foreground/90 truncate block">{stats.persona_name}</span>
+          <span className="typo-heading text-foreground/90 truncate block">{stats.persona_name}</span>
           <span className="text-xs text-muted-foreground/60">{stats.total_executions} executions</span>
         </div>
-        <span className={`text-sm font-bold px-2.5 py-0.5 rounded-full border ${rateColor} ${rateBg}`}>{formatPercent(stats.success_rate)}</span>
+        <span className={`typo-heading px-2.5 py-0.5 rounded-full border ${rateColor} ${rateBg}`}>{formatPercent(stats.success_rate)}</span>
         {stats.consecutive_failures > 0 && <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/25">{stats.consecutive_failures} failing</span>}
         {stats.auto_healed_count > 0 && <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25">{stats.auto_healed_count} healed</span>}
         {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground/50" /> : <ChevronDown className="w-4 h-4 text-muted-foreground/50" />}
@@ -68,7 +68,7 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string
         {icon}
         <span className="text-xs">{label}</span>
       </div>
-      <div className="text-sm font-semibold text-foreground/90">{value}</div>
+      <div className="typo-heading text-foreground/90">{value}</div>
     </div>
   );
 }

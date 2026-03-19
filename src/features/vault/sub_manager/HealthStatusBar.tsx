@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { HeartPulse, Loader2, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
+import { HeartPulse, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { useBulkHealthcheck } from '@/features/vault/hooks/health/useBulkHealthcheck';
@@ -72,7 +73,7 @@ export function HealthStatusBar({ credentials, bulk, isDailyRun }: HealthStatusB
         title={bulk.isRunning ? 'Cancel healthcheck' : 'Test all credentials'}
       >
         {bulk.isRunning ? (
-          <Loader2 className="w-3 h-3 animate-spin" />
+          <LoadingSpinner size="xs" />
         ) : bulk.summary ? (
           <CheckCircle2 className="w-3 h-3" />
         ) : (

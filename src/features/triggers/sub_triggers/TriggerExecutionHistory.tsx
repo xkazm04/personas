@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
-  History, ChevronDown, ChevronRight, Loader2, AlertTriangle,
+  History, ChevronDown, ChevronRight, AlertTriangle,
   RefreshCw, RotateCcw, CheckCircle2, XCircle, TrendingDown,
   Clock, Activity, BarChart3,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
@@ -156,7 +157,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
                   title="Re-fire with the same input payload"
                 >
                   {isReplaying
-                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    ? <LoadingSpinner size="xs" />
                     : <RotateCcw className="w-3 h-3" />}
                   {isReplaying ? 'Replaying...' : 'Replay'}
                 </button>
@@ -222,7 +223,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
             <div className="space-y-1.5 pt-1">
               {history.loading ? (
                 <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground/80">
-                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <LoadingSpinner size="xs" />
                   Loading...
                 </div>
               ) : history.error ? (

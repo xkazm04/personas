@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react';
-import { Cpu, Loader2, Plus } from 'lucide-react';
+import { Cpu, Plus } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { AgentSection } from './CronAgentCard';
@@ -30,7 +31,7 @@ export default function CronAgentsPage() {
         actions={
           <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
             {import.meta.env.DEV && (
-              <button onClick={handleSeedCron} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock schedule (dev only)">
+              <button onClick={handleSeedCron} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock schedule (dev only)">
                 <Plus className="w-3.5 h-3.5" /> Mock Schedule
               </button>
             )}
@@ -47,7 +48,7 @@ export default function CronAgentsPage() {
       <ContentBody centered>
         {loading && cronAgents.length === 0 ? (
           <div className="flex items-center justify-center py-20 text-muted-foreground/70">
-            <Loader2 className="w-5 h-5 animate-spin mr-2" />
+            <LoadingSpinner size="lg" className="mr-2" />
             Loading cron agents...
           </div>
         ) : cronAgents.length === 0 ? (

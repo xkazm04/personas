@@ -104,7 +104,7 @@ export default function IpcPerformancePanel() {
             <Gauge className="w-4 h-4 text-indigo-400" />
           </div>
           <div className="text-left">
-            <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">IPC Performance</h3>
+            <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">IPC Performance</h3>
             <div className="flex items-center gap-3 mt-0.5 text-sm text-muted-foreground/70">
               <span>{summary.totalCalls.toLocaleString()} calls</span>
               <span className="text-primary/15">|</span>
@@ -126,10 +126,10 @@ export default function IpcPerformancePanel() {
       {expanded && (
         <div className="border-t border-primary/10">
           <div className="flex items-center gap-1 px-4 py-2 border-b border-primary/5">
-            <button onClick={() => setTab('commands')} className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-medium transition-all ${tab === 'commands' ? 'bg-background text-foreground shadow-sm border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
+            <button onClick={() => setTab('commands')} className={`flex items-center gap-1.5 px-3 py-1 rounded-lg typo-heading transition-all ${tab === 'commands' ? 'bg-background text-foreground shadow-sm border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
               <Gauge className="w-3 h-3" /> By Command
             </button>
-            <button onClick={() => setTab('slowest')} className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-medium transition-all ${tab === 'slowest' ? 'bg-background text-foreground shadow-sm border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
+            <button onClick={() => setTab('slowest')} className={`flex items-center gap-1.5 px-3 py-1 rounded-lg typo-heading transition-all ${tab === 'slowest' ? 'bg-background text-foreground shadow-sm border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
               <Timer className="w-3 h-3" /> Slowest Calls
             </button>
           </div>

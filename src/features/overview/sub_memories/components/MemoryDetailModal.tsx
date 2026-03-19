@@ -56,7 +56,7 @@ export default function MemoryDetailModal({
               <Bot className="w-3.5 h-3.5" style={{ color: personaColor }} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-foreground/90 truncate">{personaName}</h3>
+              <h3 className="typo-heading text-foreground/90 truncate">{personaName}</h3>
               <span className="text-xs text-muted-foreground/60">{formatRelativeTime(memory.created_at)}</span>
             </div>
           </div>
@@ -73,7 +73,7 @@ export default function MemoryDetailModal({
           {/* Title */}
           <div>
             <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Title</div>
-            <p className="text-sm font-medium text-foreground/90">{stripHtml(memory.title)}</p>
+            <p className="typo-heading text-foreground/90">{stripHtml(memory.title)}</p>
           </div>
 
           {/* Content */}

@@ -4,6 +4,7 @@ import { CheckCircle2, AlertTriangle, ShieldAlert, X } from 'lucide-react';
 import { useToastStore, MAX_VISIBLE_TOASTS } from '@/stores/toastStore';
 import type { StandardToast, HealingToast } from '@/stores/toastStore';
 import { resolveError, friendlySeverity } from '@/lib/errors/errorRegistry';
+import { formatElapsed } from '@/lib/utils/formatters';
 
 // ---------------------------------------------------------------------------
 // Severity styles (healing toasts)
@@ -44,6 +45,7 @@ const EASE_CURVE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
 function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismiss: (id: string) => void }) {
   const [paused, setPaused] = useState(false);
+  const [elapsedLabel, setElapsedLabel] = useState('');
   const elapsedRef = useRef(0);
   const lastTickRef = useRef(Date.now());
 
@@ -66,6 +68,14 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
 
     return () => clearInterval(interval);
   }, [paused, toast.duration, toast.id, onDismiss]);
+
+  // Live-update elapsed label every second
+  useEffect(() => {
+    const update = () => setElapsedLabel(formatElapsed(Date.now() - toast.timestamp));
+    update();
+    const id = setInterval(update, 1_000);
+    return () => clearInterval(id);
+  }, [toast.timestamp]);
 
   const remaining = Math.max(0, toast.duration - elapsedRef.current);
   const progressFraction = remaining / toast.duration;
@@ -95,11 +105,12 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
         )}
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium block">{displayMessage}</span>
+          <span className="typo-heading block">{displayMessage}</span>
           {friendly?.suggestion && (
-            <span className="text-xs opacity-70 block mt-0.5">{friendly.suggestion}</span>
+            <span className="typo-caption opacity-70 block mt-0.5">{friendly.suggestion}</span>
           )}
         </div>
+        <span className="typo-caption opacity-50 tabular-nums flex-shrink-0">{elapsedLabel}</span>
         <button
           onClick={() => onDismiss(toast.id)}
           className="ml-1 opacity-60 hover:opacity-100 transition-opacity flex-shrink-0"
@@ -133,6 +144,14 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
 
 function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss: (id: string) => void }) {
   const styles = SEVERITY_STYLES[toast.severity] ?? SEVERITY_STYLES.medium!;
+  const [elapsedLabel, setElapsedLabel] = useState('');
+
+  useEffect(() => {
+    const update = () => setElapsedLabel(formatElapsed(Date.now() - toast.timestamp));
+    update();
+    const id = setInterval(update, 1_000);
+    return () => clearInterval(id);
+  }, [toast.timestamp]);
 
   const handleResolve = useCallback(async () => {
     const { useOverviewStore } = await import("@/stores/overviewStore");
@@ -155,17 +174,18 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
           <ShieldAlert className={`w-4 h-4 mt-0.5 flex-shrink-0 ${styles.icon}`} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-foreground/90 truncate">
+              <span className="typo-heading text-foreground/90 truncate">
                 {toast.message}
               </span>
-              <span className={`text-xs px-1.5 py-0.5 rounded border flex-shrink-0 ${styles.badge}`}>
+              <span className={`typo-caption px-1.5 py-0.5 rounded border flex-shrink-0 ${styles.badge}`}>
                 {friendlySeverity(toast.severity)}
               </span>
             </div>
-            <span className="text-sm text-muted-foreground/90 mt-0.5 block">
+            <span className="typo-body text-muted-foreground/90 mt-0.5 block">
               {toast.personaName}
             </span>
           </div>
+          <span className="typo-caption text-muted-foreground/50 tabular-nums flex-shrink-0">{elapsedLabel}</span>
           <button
             onClick={() => onDismiss(toast.id)}
             className="text-muted-foreground/80 hover:text-foreground/95 transition-colors flex-shrink-0"
@@ -176,7 +196,7 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
 
         {/* Suggested fix */}
         {toast.suggestedFix && (
-          <p className="text-sm text-muted-foreground/80 leading-relaxed line-clamp-2 pl-6.5">
+          <p className="typo-body text-muted-foreground/80 leading-relaxed line-clamp-2 pl-6.5">
             {toast.suggestedFix}
           </p>
         )}
@@ -185,7 +205,7 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
         <div className="flex items-center gap-2 pl-6.5">
           <button
             onClick={handleResolve}
-            className="flex items-center gap-1 px-2 py-1 text-sm font-medium rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 typo-heading rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors"
           >
             <CheckCircle2 className="w-3 h-3" />
             Resolve
@@ -257,7 +277,7 @@ export function ToastContainer() {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
           transition={{ duration: 0.15, ease: EASE_CURVE }}
-          className="pointer-events-auto self-end rounded-lg bg-secondary/80 backdrop-blur-sm border border-primary/10 px-2.5 py-1 text-xs text-muted-foreground/70 font-medium"
+          className="pointer-events-auto self-end rounded-lg bg-secondary/80 backdrop-blur-sm border border-primary/10 px-2.5 py-1 typo-caption text-muted-foreground/70"
         >
           +{overflowCount} more
         </motion.div>

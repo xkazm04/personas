@@ -63,15 +63,15 @@ export function TransformModeView({
                 ) : (
                   <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80" />
                 )}
-                <span className="text-sm text-muted-foreground/80 font-mono">
+                <span className="typo-code text-muted-foreground/80">
                   {showTerminal ? 'Hide' : 'Show'} CLI output
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 {runId && (
-                  <span className="text-sm text-muted-foreground/80 font-mono">{runId.slice(0, 8)}</span>
+                  <span className="typo-code text-muted-foreground/80">{runId.slice(0, 8)}</span>
                 )}
-                <span className="text-sm text-muted-foreground/80 font-mono">{lines.length} lines</span>
+                <span className="typo-code text-muted-foreground/80">{lines.length} lines</span>
               </div>
             </button>
 
@@ -87,7 +87,7 @@ export function TransformModeView({
                   <div
                     ref={terminalRef}
                     onScroll={handleTerminalScroll}
-                    className="max-h-[200px] overflow-y-auto font-mono text-sm bg-background"
+                    className="max-h-[200px] overflow-y-auto typo-code bg-background"
                   >
                     <TerminalBody lines={lines} />
                   </div>

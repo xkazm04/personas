@@ -20,6 +20,31 @@ export const SPACING = {
 /** Allowed spacing values on the 4px grid */
 export type SpacingToken = keyof typeof SPACING;
 
+// -- Semantic spacing tokens ------------------------------------------------
+// Use these instead of raw p-*, px-*, py-*, space-y-*, gap-* classes.
+// Each token encodes design intent so the "why" is clear at the call site.
+
+/** Card internal padding — compact variant for dense UIs, standard for normal cards. */
+export const CARD_PADDING = {
+  compact: 'p-3',
+  standard: 'p-4',
+} as const;
+
+/** Vertical gap between sections — within a panel vs between page-level sections. */
+export const SECTION_GAP = {
+  within: 'space-y-4',
+  between: 'space-y-6',
+} as const;
+
+/** Gap between list items — dense for tight lists, cards for spaced card grids. */
+export const LIST_ITEM_GAP = {
+  dense: 'gap-1.5',
+  cards: 'gap-2.5',
+} as const;
+
+/** Vertical spacing between form fields. */
+export const FORM_FIELD_GAP = 'space-y-4' as const;
+
 export interface StatusColorToken {
   color: string;
   bgColor: string;

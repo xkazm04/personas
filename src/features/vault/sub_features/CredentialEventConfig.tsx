@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Zap, Loader2 } from 'lucide-react';
+import { Zap } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useVaultStore } from "@/stores/vaultStore";
 import type { CredentialTemplateEvent, CredentialEvent } from '@/lib/types/types';
 import {
@@ -103,7 +104,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-3 text-muted-foreground/80 text-sm">
-        <Loader2 className="w-3 h-3 animate-spin" />
+        <LoadingSpinner size="xs" />
         Loading events...
       </div>
     );
@@ -136,7 +137,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   {isSaving ? (
-                    <Loader2 className="w-3.5 h-3.5 text-amber-400/70 animate-spin" />
+                    <LoadingSpinner size="sm" className="text-amber-400/70" />
                   ) : (
                     <Icon className="w-3.5 h-3.5 text-amber-400/60" />
                   )}

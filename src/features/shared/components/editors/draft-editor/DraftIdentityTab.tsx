@@ -31,7 +31,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
             <button
               key={tab.id}
               onClick={() => setSubtab(tab.id)}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-xl transition-colors text-left ${
+              className={`w-full flex items-center gap-2 px-2.5 py-2 typo-heading rounded-xl transition-colors text-left ${
                 active
                   ? 'bg-primary/10 text-foreground/80 border border-primary/20'
                   : 'text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
@@ -49,7 +49,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
         {subtab === 'overview' && (
           <div className="space-y-4 h-full overflow-y-auto pr-1">
             <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-1.5">Name</label>
+              <label className="block typo-heading text-foreground/80 mb-1.5">Name</label>
               <input
                 type="text"
                 value={draft.name ?? ''}
@@ -62,12 +62,12 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
                 }}
                 disabled={disabled}
                 placeholder="Give your persona a name..."
-                className="w-full px-3 py-2.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
+                className="w-full px-3 py-2.5 bg-background/50 border border-primary/15 rounded-xl typo-body text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-1.5">Description</label>
+              <label className="block typo-heading text-foreground/80 mb-1.5">Description</label>
               <textarea
                 value={draft.description ?? ''}
                 onChange={(e) =>
@@ -79,7 +79,7 @@ export function DraftIdentityTab({ draft, disabled, updateDraft }: DraftIdentity
                 disabled={disabled}
                 rows={6}
                 placeholder="A brief description of what this persona does..."
-                className="w-full px-3 py-2.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring transition-all resize-y"
+                className="w-full px-3 py-2.5 bg-background/50 border border-primary/15 rounded-xl typo-body text-foreground placeholder-muted-foreground/30 focus-ring transition-all resize-y"
               />
             </div>
           </div>

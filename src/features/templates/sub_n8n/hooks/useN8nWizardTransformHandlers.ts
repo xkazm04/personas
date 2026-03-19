@@ -1,3 +1,4 @@
+import { silentCatch } from "@/lib/silentCatch";
 import {
   cancelN8nTransform,
   clearN8nTransformSnapshot,
@@ -111,7 +112,7 @@ export function createTransformHandlers(deps: WizardDeps) {
           return;
         }
 
-        void clearN8nTransformSnapshot(transformId).catch(() => {});
+        void clearN8nTransformSnapshot(transformId).catch(silentCatch("TransformHandlers:clearSnapshot"));
       }
       session.clearPersistedContext();
       void transform.resetTransformStream();

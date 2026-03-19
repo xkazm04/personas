@@ -66,13 +66,13 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <Code className="w-3.5 h-3.5 text-muted-foreground/80" />
-          <p className="text-sm text-muted-foreground/80">
+          <p className="typo-body text-muted-foreground/80">
             Edit raw JSON. Changes override form fields.
           </p>
         </div>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-xl border border-primary/10 text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/40 transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-xl border border-primary/10 text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/40 transition-colors"
         >
           {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
           {copied ? 'Copied' : 'Copy'}
@@ -84,7 +84,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
         {/* Highlighted pre (visual layer) */}
         <pre
           ref={preRef}
-          className="absolute inset-0 p-3 text-sm font-mono leading-relaxed overflow-hidden pointer-events-none m-0 whitespace-pre-wrap break-words json-highlight"
+          className="absolute inset-0 p-3 typo-code leading-relaxed overflow-hidden pointer-events-none m-0 whitespace-pre-wrap break-words json-highlight"
           aria-hidden="true"
           dangerouslySetInnerHTML={{ __html: highlightedHtml + '\n' }}
         />
@@ -94,7 +94,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
           value={draftJson}
           onChange={(e) => handleChange(e.target.value)}
           onScroll={handleScroll}
-          className="relative w-full h-72 p-3 text-sm font-mono leading-relaxed resize-y bg-transparent text-transparent caret-foreground/80 focus-ring transition-all whitespace-pre-wrap break-words"
+          className="relative w-full h-72 p-3 typo-code leading-relaxed resize-y bg-transparent text-transparent caret-foreground/80 focus-ring transition-all whitespace-pre-wrap break-words"
           style={{ caretColor: 'var(--foreground)' }}
           disabled={disabled}
           spellCheck={false}
@@ -102,7 +102,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
       </div>
 
       {draftJsonError && (
-        <p className="text-sm text-red-400/80 px-1">{draftJsonError}</p>
+        <p className="typo-body text-red-400/80 px-1">{draftJsonError}</p>
       )}
     </div>
   );

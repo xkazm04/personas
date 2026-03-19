@@ -24,7 +24,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ArrowLeftRight className="w-4 h-4 text-primary/70" />
-          <h3 className="text-sm font-medium text-foreground/80">Execution Comparison</h3>
+          <h3 className="typo-heading text-foreground/80">Execution Comparison</h3>
         </div>
         <button
           onClick={onClose}
@@ -38,11 +38,11 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
       <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
         <div className="flex items-center gap-2 mb-2">
           <Zap className="w-3.5 h-3.5 text-primary/60" />
-          <span className="text-sm font-medium text-foreground/70 uppercase tracking-wider">What Changed</span>
+          <span className="typo-heading text-foreground/70 uppercase tracking-wider">What Changed</span>
         </div>
         <ul className="space-y-1">
           {whatChanged.map((change, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+            <li key={i} className="flex items-start gap-2 typo-body text-foreground/80">
               <span className="w-1 h-1 rounded-full bg-primary/40 mt-2 flex-shrink-0" />
               {change}
             </li>
@@ -54,25 +54,25 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-secondary/30 border border-primary/10 rounded-xl px-3 py-2">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-mono uppercase text-muted-foreground/50">Left</span>
-            <span className={`px-1.5 py-0.5 rounded text-sm font-medium ${badgeClass(leftStatus)}`}>{leftStatus.label}</span>
+            <span className="typo-code uppercase text-muted-foreground/50">Left</span>
+            <span className={`px-1.5 py-0.5 rounded typo-heading ${badgeClass(leftStatus)}`}>{leftStatus.label}</span>
             {left.retry_count > 0 && (
-              <span className="text-sm text-cyan-400 font-mono">retry #{left.retry_count}</span>
+              <span className="typo-code text-cyan-400">retry #{left.retry_count}</span>
             )}
           </div>
-          <div className="text-sm text-muted-foreground/60 font-mono">#{left.id.slice(0, 8)}</div>
-          <div className="text-sm text-muted-foreground/60 mt-0.5">{formatTimestamp(left.started_at)}</div>
+          <div className="typo-code text-muted-foreground/60">#{left.id.slice(0, 8)}</div>
+          <div className="typo-body text-muted-foreground/60 mt-0.5">{formatTimestamp(left.started_at)}</div>
         </div>
         <div className="bg-secondary/30 border border-primary/10 rounded-xl px-3 py-2">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-mono uppercase text-muted-foreground/50">Right</span>
-            <span className={`px-1.5 py-0.5 rounded text-sm font-medium ${badgeClass(rightStatus)}`}>{rightStatus.label}</span>
+            <span className="typo-code uppercase text-muted-foreground/50">Right</span>
+            <span className={`px-1.5 py-0.5 rounded typo-heading ${badgeClass(rightStatus)}`}>{rightStatus.label}</span>
             {right.retry_count > 0 && (
-              <span className="text-sm text-cyan-400 font-mono">retry #{right.retry_count}</span>
+              <span className="typo-code text-cyan-400">retry #{right.retry_count}</span>
             )}
           </div>
-          <div className="text-sm text-muted-foreground/60 font-mono">#{right.id.slice(0, 8)}</div>
-          <div className="text-sm text-muted-foreground/60 mt-0.5">{formatTimestamp(right.started_at)}</div>
+          <div className="typo-code text-muted-foreground/60">#{right.id.slice(0, 8)}</div>
+          <div className="typo-body text-muted-foreground/60 mt-0.5">{formatTimestamp(right.started_at)}</div>
         </div>
       </div>
 
@@ -109,7 +109,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Hash className="w-3.5 h-3.5 text-primary/50" />
-            <span className="text-sm font-medium text-foreground/70 uppercase tracking-wider">Tool Call Timeline</span>
+            <span className="typo-heading text-foreground/70 uppercase tracking-wider">Tool Call Timeline</span>
           </div>
           <ToolTimelineComparison stepsLeft={stepsLeft} stepsRight={stepsRight} />
         </div>

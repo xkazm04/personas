@@ -58,7 +58,7 @@ export default function ContentLoader({
         ].join(' ')}
       />
       {label && (
-        <p className="mt-3 text-xs text-muted-foreground/50 animate-pulse-slow">
+        <p className="mt-3 typo-caption text-muted-foreground/50 animate-pulse-slow">
           {label}
         </p>
       )}

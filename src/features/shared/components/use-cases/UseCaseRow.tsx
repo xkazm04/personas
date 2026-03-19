@@ -58,36 +58,36 @@ export function UseCaseRow({
       <div className="p-3.5">
         <div className="flex items-start gap-3">
           {/* Index number */}
-          <span className="text-sm font-semibold text-muted-foreground/50 mt-0.5 w-5 text-right flex-shrink-0">
+          <span className="typo-heading text-muted-foreground/50 mt-0.5 w-5 text-right flex-shrink-0">
             {index + 1}.
           </span>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm font-semibold text-foreground/95">{useCase.title}</p>
+              <p className="typo-heading text-foreground/95">{useCase.title}</p>
               {useCase.category && catStyle && (
-                <span className={`px-1.5 py-0.5 text-sm font-medium rounded border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
+                <span className={`px-1.5 py-0.5 typo-label rounded border ${catStyle.bg} ${catStyle.text}`}>
                   {useCase.category.replace('-', ' ')}
                 </span>
               )}
-              <span className={`px-1.5 py-0.5 text-sm font-medium rounded border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
+              <span className={`px-1.5 py-0.5 typo-label rounded border ${modeBadge.bg} ${modeBadge.text}`}>
                 {modeBadge.label}
               </span>
             </div>
-            <p className="text-sm text-foreground/60 mt-1 leading-relaxed">
+            <p className="typo-body text-foreground/60 mt-1 leading-relaxed">
               {useCase.description}
             </p>
             {/* Override indicators */}
             {hasAnyConfig && (
               <div className="flex items-center gap-2 mt-1.5">
                 {hasModelOverride && (
-                  <span className="flex items-center gap-1 text-sm text-primary/60">
+                  <span className="flex items-center gap-1 typo-caption text-primary/60">
                     <Cpu className="w-2.5 h-2.5" /> Custom model
                   </span>
                 )}
                 {hasNotifications && (
-                  <span className="flex items-center gap-1 text-sm text-amber-400/60">
+                  <span className="flex items-center gap-1 typo-caption text-amber-400/60">
                     <Bell className="w-2.5 h-2.5" /> Notifications
                   </span>
                 )}

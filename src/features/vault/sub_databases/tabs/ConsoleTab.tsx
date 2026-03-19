@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Play, Loader2 } from 'lucide-react';
+import { Play } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useVaultStore } from "@/stores/vaultStore";
 import { SqlEditor } from '../SqlEditor';
 import { QueryResultTable } from '../QueryResultTable';
@@ -88,7 +89,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {executing ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <LoadingSpinner size="sm" />
             ) : (
               <Play className="w-3.5 h-3.5" />
             )}
@@ -140,7 +141,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
 
         {executing && (
           <div className="flex items-center justify-center h-full gap-2">
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/60" />
+            <LoadingSpinner className="text-muted-foreground/60" />
             <span className="text-sm text-muted-foreground/60">Executing query...</span>
           </div>
         )}

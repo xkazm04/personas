@@ -1,4 +1,5 @@
-import { RotateCcw, Loader2 } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { VersionComparison } from '../../libs/usePromptPerformanceSummary';
 import { fmtPct } from '../../libs/performanceHelpers';
 
@@ -50,7 +51,7 @@ export function VersionComparisonCard({ comparison, rollingBack, onRollback }: V
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors disabled:opacity-50"
         >
           {rollingBack ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <LoadingSpinner size="sm" />
           ) : (
             <RotateCcw className="w-3.5 h-3.5" />
           )}

@@ -7,10 +7,18 @@ use tokio::sync::Mutex;
 
 use super::cli_process::{read_line_limited, CliProcessDriver};
 
+/// Tracks a per-credential mutex with an explicit active-user count.
+/// `active` is incremented/decremented exclusively while holding the outer map lock,
+/// so pruning decisions are race-free (unlike `Arc::strong_count` which is advisory).
+struct CredentialLockEntry {
+    mutex: Arc<Mutex<()>>,
+    active: usize,
+}
+
 /// Per-credential mutex to prevent concurrent OAuth token refreshes from racing.
 /// Keyed by credential ID. The outer std::sync::Mutex guards brief map access;
 /// the inner tokio::sync::Mutex is held across the async refresh + DB persist.
-static CREDENTIAL_REFRESH_LOCKS: OnceLock<std::sync::Mutex<HashMap<String, Arc<Mutex<()>>>>> =
+static CREDENTIAL_REFRESH_LOCKS: OnceLock<std::sync::Mutex<HashMap<String, CredentialLockEntry>>> =
     OnceLock::new();
 
 /// Pruning interval: clean up stale entries every N acquisitions to amortize cost.
@@ -19,25 +27,59 @@ const CREDENTIAL_LOCK_PRUNE_INTERVAL: usize = 32;
 static CREDENTIAL_LOCK_ACQUIRE_COUNT: std::sync::atomic::AtomicUsize =
     std::sync::atomic::AtomicUsize::new(0);
 
-fn credential_refresh_lock(credential_id: &str) -> Arc<Mutex<()>> {
+/// RAII handle returned by [`credential_refresh_lock`]. Decrements the entry's
+/// active-user count when dropped, making it eligible for future pruning.
+struct CredentialLockHandle {
+    credential_id: String,
+    mutex: Arc<Mutex<()>>,
+}
+
+impl Drop for CredentialLockHandle {
+    fn drop(&mut self) {
+        let map_mutex =
+            CREDENTIAL_REFRESH_LOCKS.get_or_init(|| std::sync::Mutex::new(HashMap::new()));
+        let mut map = map_mutex.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(entry) = map.get_mut(&self.credential_id) {
+            entry.active = entry.active.saturating_sub(1);
+        }
+    }
+}
+
+impl CredentialLockHandle {
+    async fn lock(&self) -> tokio::sync::MutexGuard<'_, ()> {
+        self.mutex.lock().await
+    }
+}
+
+fn credential_refresh_lock(credential_id: &str) -> CredentialLockHandle {
     let map_mutex = CREDENTIAL_REFRESH_LOCKS.get_or_init(|| std::sync::Mutex::new(HashMap::new()));
     let mut map = map_mutex.lock().unwrap_or_else(|e| e.into_inner());
 
-    // Periodically prune entries where this map holds the only Arc reference
-    // (strong_count == 1), meaning no caller is currently using that lock.
+    // Periodically prune entries with zero active users.
+    // Because `active` is only modified under this same map lock, the check is race-free.
     let count = CREDENTIAL_LOCK_ACQUIRE_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     if count % CREDENTIAL_LOCK_PRUNE_INTERVAL == 0 && map.len() > 8 {
         let before = map.len();
-        map.retain(|_, arc| Arc::strong_count(arc) > 1);
+        map.retain(|_, entry| entry.active > 0);
         let pruned = before - map.len();
         if pruned > 0 {
             tracing::debug!(pruned, remaining = map.len(), "Pruned stale credential refresh locks");
         }
     }
 
-    map.entry(credential_id.to_string())
-        .or_insert_with(|| Arc::new(Mutex::new(())))
-        .clone()
+    let entry = map
+        .entry(credential_id.to_string())
+        .or_insert_with(|| CredentialLockEntry {
+            mutex: Arc::new(Mutex::new(())),
+            active: 0,
+        });
+    entry.active += 1;
+    let mutex = entry.mutex.clone();
+
+    CredentialLockHandle {
+        credential_id: credential_id.to_string(),
+        mutex,
+    }
 }
 
 use crate::db::models::{Persona, PersonaToolDefinition};
@@ -136,6 +178,18 @@ pub async fn run_execution(
     // Initialize trace collector for structured execution tracing
     let trace = TraceCollector::new(&execution_id, &persona.id, chain_trace_id);
 
+    // -- Pipeline Stage: Validate -----------------------------------------
+    // Covers setup, workspace resolution, model parsing, and credential resolution.
+    let validate_stage = trace.start_span(
+        SpanType::PipelineStage,
+        "Pipeline: Validate",
+        None,
+        Some(serde_json::json!({
+            "pipeline_stage": "validate",
+            "boundary": "Command -> DB reads",
+        })),
+    );
+
     // Set up logger
     let mut logger = match ExecutionLogger::new(&log_dir, &execution_id) {
         Ok(l) => l,
@@ -216,18 +270,56 @@ pub async fn run_execution(
             "Credential decryption failed for: {}. Re-enter or rotate these credentials before retrying.",
             cred_failures.join(", ")
         );
+        trace.end_span_error(&validate_stage, &msg);
         logger.log(&format!("[ABORT] {}", msg));
+        logger.close();
+        let duration_ms = start_time.elapsed().as_millis() as u64;
+        let final_trace = trace.finalize(None, None, None, Some(msg.clone()));
+        let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
+
+        let _ = app.emit(
+            "execution-output",
+            ExecutionOutputEvent {
+                execution_id: execution_id.clone(),
+                line: format!("[ERROR] {msg}"),
+            },
+        );
+        let _ = app.emit(
+            "execution-status",
+            ExecutionStatusEvent {
+                execution_id: execution_id.clone(),
+                status: ExecutionState::Failed,
+                error: Some(msg.clone()),
+                duration_ms: Some(duration_ms),
+                cost_usd: None,
+            },
+        );
+
         return ExecutionResult {
             success: false,
             error: Some(msg),
             log_file_path: Some(log_file_path),
-            duration_ms: start_time.elapsed().as_millis() as u64,
-            trace_id: Some(trace.trace_id().to_string()),
+            duration_ms,
+            trace_id: Some(final_trace.trace_id.clone()),
             ..default_result()
         };
     }
 
     let cred_env_clone = cred_env.clone();
+
+    trace.end_span_ok(&validate_stage);
+
+    // -- Pipeline Stage: SpawnEngine --------------------------------------
+    // Covers prompt assembly, provider failover, and CLI process spawn.
+    let spawn_engine_stage = trace.start_span(
+        SpanType::PipelineStage,
+        "Pipeline: Spawn Engine",
+        None,
+        Some(serde_json::json!({
+            "pipeline_stage": "spawn_engine",
+            "boundary": "Engine -> Tokio task",
+        })),
+    );
 
     // Assemble prompt (with credential env var hints)
     let prompt_span = trace.start_span(
@@ -254,6 +346,8 @@ pub async fn run_execution(
                 Some(&hint_refs)
             },
             workspace_instructions.as_deref(),
+            #[cfg(feature = "desktop")]
+            None, // Ambient context is injected by the engine layer (see mod.rs)
         )
     };
 
@@ -430,8 +524,14 @@ pub async fn run_execution(
                         format!("Failed to spawn {}: {}", cli_provider.engine_name(), e)
                     };
 
-                    // Record failure in circuit breaker
-                    circuit_breaker.record_failure(candidate.engine_kind);
+                    // Record failure in circuit breaker and emit transition events
+                    let transitions = circuit_breaker.record_failure(candidate.engine_kind);
+                    for transition in &transitions {
+                        let _ = app.emit("circuit-breaker-transition", transition);
+                    }
+                    if transitions.iter().any(|t| t.provider == "global") {
+                        let _ = app.emit("circuit-breaker-global-tripped", circuit_breaker.get_status());
+                    }
                     logger.log(&format!("[FAILOVER] {} failed: {}", candidate.label, error_msg));
                     last_spawn_error = Some(error_msg);
                     // Continue to next candidate
@@ -443,6 +543,7 @@ pub async fn run_execution(
         let error_msg = last_spawn_error.unwrap_or_else(|| {
             "All providers failed or have open circuit breakers".to_string()
         });
+        trace.end_span_error(&spawn_engine_stage, &error_msg);
         let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
 
@@ -489,6 +590,19 @@ pub async fn run_execution(
     );
 
     trace.end_span_ok(&spawn_span);
+    trace.end_span_ok(&spawn_engine_stage);
+
+    // -- Pipeline Stage: StreamOutput -------------------------------------
+    // Covers PID registration, stdin delivery, and the main stream processing loop.
+    let stream_output_stage = trace.start_span(
+        SpanType::PipelineStage,
+        "Pipeline: Stream Output",
+        None,
+        Some(serde_json::json!({
+            "pipeline_stage": "stream_output",
+            "boundary": "Runner -> Tauri events",
+        })),
+    );
 
     // Register child PID so cancel_execution can kill it
     driver.register_pid(&child_pids, &execution_id).await;
@@ -498,6 +612,7 @@ pub async fn run_execution(
     // kill the process (PID wasn't registered yet). Catch it here to avoid
     // wasting API credits on an execution the user already cancelled.
     if CliProcessDriver::is_cancelled(&cancelled) {
+        trace.end_span_error(&stream_output_stage, "Cancelled during startup");
         logger.log("[CANCELLED] Execution cancelled during startup, killing process");
         driver.kill().await;
         driver.unregister_pid(&child_pids, &execution_id).await;
@@ -537,6 +652,7 @@ pub async fn run_execution(
     // Read stdout line by line (with per-line 64KB cap and 30s watchdog)
     let Some(mut stdout_reader) = driver.take_stdout_reader() else {
         let error_msg = "Failed to capture stdout pipe from child process".to_string();
+        trace.end_span_error(&stream_output_stage, &error_msg);
         logger.log(&format!("[ERROR] {error_msg}"));
         logger.close();
         driver.kill().await;
@@ -565,6 +681,7 @@ pub async fn run_execution(
     };
     let Some(stderr) = driver.take_stderr() else {
         let error_msg = "Failed to capture stderr pipe from child process".to_string();
+        trace.end_span_error(&stream_output_stage, &error_msg);
         logger.log(&format!("[ERROR] {error_msg}"));
         logger.close();
         driver.kill().await;
@@ -825,9 +942,24 @@ pub async fn run_execution(
     // End stream processing span
     if stream_result.is_err() {
         trace.end_span_error(&stream_span, "Stream timed out");
+        trace.end_span_error(&stream_output_stage, "Stream timed out");
     } else {
         trace.end_span_ok(&stream_span);
+        trace.end_span_ok(&stream_output_stage);
     }
+
+    // -- Pipeline Stage: FinalizeStatus -----------------------------------
+    // Covers stderr collection, exit code handling, outcome assessment,
+    // circuit breaker recording, audit logging, trace finalization, and status emit.
+    let finalize_stage = trace.start_span(
+        SpanType::PipelineStage,
+        "Pipeline: Finalize Status",
+        None,
+        Some(serde_json::json!({
+            "pipeline_stage": "finalize_status",
+            "boundary": "Runner -> DB + events",
+        })),
+    );
 
     // Get stderr
     let stderr_text = stderr_handle.await.unwrap_or_default();
@@ -957,7 +1089,13 @@ pub async fn run_execution(
     // Record circuit breaker outcome for the active provider
     if let Some(ref err) = error {
         if failover::classify_error(err).is_some() {
-            circuit_breaker.record_failure(active_engine_kind);
+            let transitions = circuit_breaker.record_failure(active_engine_kind);
+            for transition in &transitions {
+                let _ = app.emit("circuit-breaker-transition", transition);
+            }
+            if transitions.iter().any(|t| t.provider == "global") {
+                let _ = app.emit("circuit-breaker-global-tripped", circuit_breaker.get_status());
+            }
         }
     } else {
         circuit_breaker.record_success(active_engine_kind);
@@ -981,6 +1119,13 @@ pub async fn run_execution(
     };
     if let Err(e) = crate::db::repos::execution::provider_audit::insert(&pool, &audit_entry) {
         tracing::warn!(execution_id = %execution_id, "Failed to record provider audit log: {}", e);
+    }
+
+    // End finalize stage before trace finalization (finalize drains all spans)
+    if error.is_some() {
+        trace.end_span_error(&finalize_stage, error.as_deref().unwrap_or("unknown"));
+    } else {
+        trace.end_span_ok(&finalize_stage);
     }
 
     // Finalize and save execution trace
@@ -1360,7 +1505,9 @@ pub(crate) async fn inject_credential(
         if let Some(fresh_token) = try_refresh_oauth_token(&fields, connector_name, override_ref).await {
             fields.insert("access_token".to_string(), fresh_token.clone());
             // Persist the refreshed token back to field-level storage
-            let _ = cred_repo::save_fields(pool, &cred.id, &fields);
+            if let Err(e) = cred_repo::save_fields(pool, &cred.id, &fields) {
+                tracing::error!(credential_id = %cred.id, credential_name = %cred.name, "Failed to persist refreshed OAuth token: {e}");
+            }
         }
     }
 

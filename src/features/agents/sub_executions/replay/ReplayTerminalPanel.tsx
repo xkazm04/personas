@@ -22,14 +22,14 @@ export function ReplayTerminalPanel({
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
         <RunningIcon size={14} className="opacity-60" />
-        <span className="text-sm font-medium text-muted-foreground/70">Output</span>
-        <span className="ml-auto text-sm tabular-nums text-muted-foreground/60">
+        <span className="typo-heading text-muted-foreground/70">Output</span>
+        <span className="ml-auto typo-body tabular-nums text-muted-foreground/60">
           {visibleLines.length}/{totalLines} lines
         </span>
       </div>
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 font-mono text-sm leading-relaxed"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 typo-code leading-relaxed"
       >
         {visibleLines.map((line) => {
           const style = classifyLine(line.text);
@@ -75,7 +75,7 @@ export function ReplayTerminalPanel({
               <path d="M55 20l-8 5 8 5" stroke="#8b5cf6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.5" />
               <path d="M65 20l-8 5 8 5" stroke="#8b5cf6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.35" />
             </svg>
-            <span className="text-sm text-muted-foreground/50">Scrub forward to see output...</span>
+            <span className="typo-body text-muted-foreground/50">Scrub forward to see output...</span>
           </div>
         )}
       </div>

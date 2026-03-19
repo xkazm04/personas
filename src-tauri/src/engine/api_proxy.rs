@@ -4,6 +4,10 @@
 //! resolving base URLs and applying authentication automatically.
 //! Enforces per-credential token-bucket rate limiting to prevent runaway
 //! API consumption from compromised or misconfigured automations.
+//!
+//! Maintains per-credential aggregate metrics (latency percentiles, error
+//! rates) via an in-memory ring buffer, exposed through
+//! [`get_all_proxy_metrics`].
 
 use std::collections::HashMap;
 use std::sync::LazyLock;
@@ -29,22 +33,31 @@ use super::healthcheck::{validate_field_values, validate_healthcheck_url};
 const DEFAULT_RATE_LIMIT: u32 = 60;
 /// Window size in seconds for the token bucket refill.
 const RATE_LIMIT_WINDOW_SECS: f64 = 60.0;
+/// Evict buckets idle longer than this (seconds).
+const BUCKET_IDLE_EVICTION_SECS: f64 = 600.0;
+/// Minimum interval between eviction sweeps (seconds).
+const EVICTION_SWEEP_INTERVAL_SECS: f64 = 60.0;
+/// Hard cap on the number of tracked buckets.
+const MAX_BUCKET_ENTRIES: usize = 1024;
 
 /// A simple token-bucket that refills linearly over a 60-second window.
 struct TokenBucket {
     tokens: f64,
     max_tokens: f64,
     last_refill: Instant,
+    last_used: Instant,
     refill_rate: f64, // tokens per second
 }
 
 impl TokenBucket {
     fn new(max_tokens: u32) -> Self {
         let max = max_tokens as f64;
+        let now = Instant::now();
         Self {
             tokens: max,
             max_tokens: max,
-            last_refill: Instant::now(),
+            last_refill: now,
+            last_used: now,
             refill_rate: max / RATE_LIMIT_WINDOW_SECS,
         }
     }
@@ -56,6 +69,7 @@ impl TokenBucket {
         let elapsed = now.duration_since(self.last_refill).as_secs_f64();
         self.tokens = (self.tokens + elapsed * self.refill_rate).min(self.max_tokens);
         self.last_refill = now;
+        self.last_used = now;
 
         if self.tokens >= 1.0 {
             self.tokens -= 1.0;
@@ -69,8 +83,34 @@ impl TokenBucket {
 }
 
 /// Global registry of per-credential token buckets.
-static RATE_LIMITERS: LazyLock<Mutex<HashMap<String, TokenBucket>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
+struct RateLimiterRegistry {
+    buckets: HashMap<String, TokenBucket>,
+    last_sweep: Instant,
+}
+
+impl RateLimiterRegistry {
+    fn new() -> Self {
+        Self {
+            buckets: HashMap::new(),
+            last_sweep: Instant::now(),
+        }
+    }
+
+    /// Remove buckets that haven't been used within the idle threshold.
+    /// Runs at most once per `EVICTION_SWEEP_INTERVAL_SECS`.
+    fn sweep_stale(&mut self) {
+        let now = Instant::now();
+        if now.duration_since(self.last_sweep).as_secs_f64() < EVICTION_SWEEP_INTERVAL_SECS {
+            return;
+        }
+        self.last_sweep = now;
+        self.buckets
+            .retain(|_, b| now.duration_since(b.last_used).as_secs_f64() < BUCKET_IDLE_EVICTION_SECS);
+    }
+}
+
+static RATE_LIMITERS: LazyLock<Mutex<RateLimiterRegistry>> =
+    LazyLock::new(|| Mutex::new(RateLimiterRegistry::new()));
 
 /// Extract `rate_limit_rpm` from connector metadata JSON, if present.
 fn parse_rate_limit_from_metadata(metadata_json: Option<&str>) -> u32 {
@@ -88,8 +128,28 @@ async fn check_rate_limit(
     connector_metadata: Option<&str>,
 ) -> Result<(), AppError> {
     let limit = parse_rate_limit_from_metadata(connector_metadata);
-    let mut buckets = RATE_LIMITERS.lock().await;
-    let bucket = buckets
+    let mut registry = RATE_LIMITERS.lock().await;
+
+    // Periodically evict idle buckets to prevent unbounded growth.
+    registry.sweep_stale();
+
+    // Enforce hard capacity: if at the limit and this is a new credential,
+    // evict the least-recently-used entry to make room.
+    if registry.buckets.len() >= MAX_BUCKET_ENTRIES
+        && !registry.buckets.contains_key(credential_id)
+    {
+        if let Some(oldest_key) = registry
+            .buckets
+            .iter()
+            .min_by_key(|(_, b)| b.last_used)
+            .map(|(k, _)| k.clone())
+        {
+            registry.buckets.remove(&oldest_key);
+        }
+    }
+
+    let bucket = registry
+        .buckets
         .entry(credential_id.to_string())
         .or_insert_with(|| TokenBucket::new(limit));
 
@@ -109,6 +169,154 @@ async fn check_rate_limit(
             credential_id, limit, retry_after
         ))),
     }
+}
+
+// ---------------------------------------------------------------------------
+// Per-credential aggregate metrics ring buffer
+// ---------------------------------------------------------------------------
+
+/// Number of recent requests to keep per credential.
+const METRICS_RING_BUFFER_SIZE: usize = 50;
+/// Evict metric buffers idle longer than this (seconds).
+const METRICS_IDLE_EVICTION_SECS: f64 = 1800.0;
+
+/// A single recorded request outcome.
+struct MetricsEntry {
+    timestamp: chrono::DateTime<chrono::Utc>,
+    status_code: u16,
+    duration_ms: u64,
+}
+
+/// Per-credential ring buffer of recent request outcomes.
+struct CredentialMetricsBuffer {
+    entries: Vec<MetricsEntry>,
+    service_type: String,
+}
+
+impl CredentialMetricsBuffer {
+    fn new(service_type: String) -> Self {
+        Self {
+            entries: Vec::with_capacity(METRICS_RING_BUFFER_SIZE),
+            service_type,
+        }
+    }
+
+    fn push(&mut self, entry: MetricsEntry) {
+        if self.entries.len() >= METRICS_RING_BUFFER_SIZE {
+            self.entries.remove(0);
+        }
+        self.entries.push(entry);
+    }
+}
+
+/// Global registry of per-credential metrics buffers.
+struct MetricsRegistry {
+    buffers: HashMap<String, CredentialMetricsBuffer>,
+}
+
+impl MetricsRegistry {
+    fn new() -> Self {
+        Self {
+            buffers: HashMap::new(),
+        }
+    }
+
+    /// Evict buffers that haven't received a request in a long time.
+    fn sweep_stale(&mut self) {
+        let now = chrono::Utc::now();
+        self.buffers.retain(|_, buf| {
+            buf.entries
+                .last()
+                .map(|e| (now - e.timestamp).num_seconds() < METRICS_IDLE_EVICTION_SECS as i64)
+                .unwrap_or(false)
+        });
+    }
+}
+
+static METRICS_REGISTRY: LazyLock<Mutex<MetricsRegistry>> =
+    LazyLock::new(|| Mutex::new(MetricsRegistry::new()));
+
+/// Record a request outcome in the per-credential metrics buffer.
+async fn record_metric(credential_id: &str, service_type: &str, status_code: u16, duration_ms: u64) {
+    let mut registry = METRICS_REGISTRY.lock().await;
+    registry.sweep_stale();
+
+    let buf = registry
+        .buffers
+        .entry(credential_id.to_string())
+        .or_insert_with(|| CredentialMetricsBuffer::new(service_type.to_string()));
+
+    buf.push(MetricsEntry {
+        timestamp: chrono::Utc::now(),
+        status_code,
+        duration_ms,
+    });
+}
+
+/// Metrics summary for a single credential.
+#[derive(Debug, Clone, serde::Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiProxyCredentialMetrics {
+    pub credential_id: String,
+    pub service_type: String,
+    pub request_count: usize,
+    pub error_count_4xx: usize,
+    pub error_count_5xx: usize,
+    pub error_rate: f64,
+    pub latency_p50_ms: u64,
+    pub latency_p95_ms: u64,
+    pub latency_p99_ms: u64,
+    pub latency_avg_ms: u64,
+    pub last_request_at: Option<String>,
+}
+
+fn percentile(sorted: &[u64], p: f64) -> u64 {
+    if sorted.is_empty() {
+        return 0;
+    }
+    let idx = ((p / 100.0) * (sorted.len() as f64 - 1.0)).round() as usize;
+    sorted[idx.min(sorted.len() - 1)]
+}
+
+/// Return aggregate metrics for all credentials that have buffered data.
+pub async fn get_all_proxy_metrics() -> Vec<ApiProxyCredentialMetrics> {
+    let registry = METRICS_REGISTRY.lock().await;
+    let mut results = Vec::with_capacity(registry.buffers.len());
+
+    for (cred_id, buf) in &registry.buffers {
+        let count = buf.entries.len();
+        if count == 0 {
+            continue;
+        }
+
+        let errors_4xx = buf.entries.iter().filter(|e| (400..500).contains(&e.status_code)).count();
+        let errors_5xx = buf.entries.iter().filter(|e| e.status_code >= 500).count();
+        let total_errors = errors_4xx + errors_5xx;
+        let error_rate = total_errors as f64 / count as f64;
+
+        let mut latencies: Vec<u64> = buf.entries.iter().map(|e| e.duration_ms).collect();
+        latencies.sort_unstable();
+
+        let avg = latencies.iter().sum::<u64>() / count as u64;
+        let last_ts = buf.entries.last().map(|e| e.timestamp.to_rfc3339());
+
+        results.push(ApiProxyCredentialMetrics {
+            credential_id: cred_id.clone(),
+            service_type: buf.service_type.clone(),
+            request_count: count,
+            error_count_4xx: errors_4xx,
+            error_count_5xx: errors_5xx,
+            error_rate,
+            latency_p50_ms: percentile(&latencies, 50.0),
+            latency_p95_ms: percentile(&latencies, 95.0),
+            latency_p99_ms: percentile(&latencies, 99.0),
+            latency_avg_ms: avg,
+            last_request_at: last_ts,
+        });
+    }
+
+    results
 }
 
 /// Well-known API base URLs for connectors that have fixed endpoints.
@@ -393,6 +601,9 @@ pub async fn execute_api_request(
     } else {
         String::from_utf8_lossy(&body_bytes).to_string()
     };
+
+    // Record aggregate metrics for this credential
+    record_metric(credential_id, &credential.service_type, status, duration_ms).await;
 
     Ok(ApiProxyResponse {
         status,

@@ -84,7 +84,7 @@ function ProjectSelector() {
           onChange={(e) => {
             if (e.target.value) setActiveProject(e.target.value);
           }}
-          className="w-full appearance-none px-3 py-2 pl-9 pr-8 text-xs font-medium text-foreground/70 bg-primary/5 border border-primary/10 rounded-xl cursor-pointer hover:bg-primary/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 transition-colors"
+          className="w-full appearance-none px-3 py-2 pl-9 pr-8 text-xs font-medium text-foreground/70 bg-primary/5 border border-primary/10 rounded-xl cursor-pointer hover:bg-primary/8 focus-ring transition-colors"
         >
           <option value="" disabled>Select a project...</option>
           {projects.map((p) => (

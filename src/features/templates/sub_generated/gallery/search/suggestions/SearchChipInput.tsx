@@ -1,4 +1,5 @@
-import { Search, X, Loader2, Send } from 'lucide-react';
+import { Search, X, Send } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SearchAutocomplete } from './SearchAutocomplete';
 import { getCategoryMeta } from '../filters/searchConstants';
 import type { CategoryWithCount } from '@/api/overview/reviews';
@@ -32,7 +33,7 @@ export function SearchChipInput({
     }`}>
       <div className="pl-3 flex-shrink-0">
         {aiSearchMode && aiSearchLoading
-          ? <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
+          ? <LoadingSpinner className="text-indigo-400" />
           : <Search className="w-4 h-4 text-muted-foreground/50" />}
       </div>
 
@@ -84,7 +85,7 @@ export function SearchChipInput({
               disabled={!inputValue.trim() || aiSearchLoading}
               className="p-1.5 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               title="Search with AI">
-              {aiSearchLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              {aiSearchLoading ? <LoadingSpinner size="sm" /> : <Send className="w-3.5 h-3.5" />}
             </button>
           </>
         ) : (

@@ -2,13 +2,20 @@
 //!
 //! Scans all OAuth credentials for tokens approaching expiry and refreshes
 //! them preemptively. Runs as a ReactiveSubscription every 5 minutes.
+//!
+//! Records per-refresh metrics (predicted vs actual lifetime, fallback usage,
+//! failure rates) to the `oauth_token_metrics` table for observability.
 
 use crate::db::repos::resources::credentials as cred_repo;
+use crate::db::repos::resources::oauth_token_metrics as metrics_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
 /// Threshold: refresh tokens that expire within this many seconds.
 const REFRESH_THRESHOLD_SECS: i64 = 900; // 15 minutes
+
+/// Default token lifetime fallback when the provider omits `expires_in`.
+const DEFAULT_FALLBACK_LIFETIME_SECS: u64 = 3600;
 
 /// Scan all credentials, find OAuth ones with tokens expiring soon, and refresh them.
 pub async fn oauth_refresh_tick(pool: &DbPool) {
@@ -20,6 +27,11 @@ pub async fn oauth_refresh_tick(pool: &DbPool) {
 async fn refresh_expiring_tokens(pool: &DbPool) -> Result<(), AppError> {
     let all_creds = cred_repo::get_all(pool)?;
     let now = chrono::Utc::now();
+    let total_scanned = all_creds.len();
+    let mut oauth_eligible: usize = 0;
+    let mut approaching_expiry: usize = 0;
+    let mut refreshed: usize = 0;
+    let mut failed: usize = 0;
 
     for cred in &all_creds {
         // Check metadata for oauth_token_expires_at
@@ -38,11 +50,15 @@ async fn refresh_expiring_tokens(pool: &DbPool) -> Result<(), AppError> {
             continue;
         };
 
+        oauth_eligible += 1;
+
         let remaining = expires_at.signed_duration_since(now);
         if remaining.num_seconds() > REFRESH_THRESHOLD_SECS || remaining.num_seconds() < -86400 {
             // Not expiring soon, or expired more than 24h ago (stale, skip)
             continue;
         }
+
+        approaching_expiry += 1;
 
         tracing::info!(
             credential_id = %cred.id,
@@ -51,14 +67,27 @@ async fn refresh_expiring_tokens(pool: &DbPool) -> Result<(), AppError> {
             "Proactively refreshing OAuth token"
         );
 
-        if let Err(e) = refresh_single_credential(pool, cred).await {
-            tracing::warn!(
-                credential_id = %cred.id,
-                error = %e,
-                "Failed to proactively refresh OAuth token"
-            );
+        match refresh_single_credential(pool, cred).await {
+            Ok(_) => refreshed += 1,
+            Err(e) => {
+                failed += 1;
+                tracing::warn!(
+                    credential_id = %cred.id,
+                    error = %e,
+                    "Failed to proactively refresh OAuth token"
+                );
+            }
         }
     }
+
+    tracing::info!(
+        total_scanned,
+        oauth_eligible,
+        approaching_expiry,
+        refreshed,
+        failed,
+        "OAuth refresh: tick complete",
+    );
 
     Ok(())
 }
@@ -70,6 +99,7 @@ async fn refresh_expiring_tokens(pool: &DbPool) -> Result<(), AppError> {
 /// 3. Use resolve_auth_token to get a fresh access_token
 /// 4. Persist the new access_token to encrypted fields
 /// 5. Update metadata with refresh stats
+/// 6. Record token lifetime metrics
 pub async fn refresh_single_credential(
     pool: &DbPool,
     cred: &crate::db::models::PersonaCredential,
@@ -81,6 +111,23 @@ pub async fn refresh_single_credential(
     if !has_refresh {
         return Err(AppError::Validation("No refresh_token found".into()));
     }
+
+    // Extract the previous token's issued-at time from metadata (for actual lifetime calc)
+    let meta: Option<serde_json::Value> = cred
+        .metadata
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok());
+
+    let previous_refresh_at = meta
+        .as_ref()
+        .and_then(|m| m.get("oauth_last_refresh_at"))
+        .and_then(|v| v.as_str())
+        .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok());
+
+    let previous_predicted_secs = meta
+        .as_ref()
+        .and_then(|m| m.get("oauth_predicted_lifetime_secs"))
+        .and_then(|v| v.as_i64());
 
     // Get connector metadata for strategy resolution
     let connector_meta = get_connector_metadata(pool, &cred.service_type);
@@ -94,9 +141,31 @@ pub async fn refresh_single_credential(
     }
 
     // resolve_auth_token will use the refresh_token to get a fresh access_token
-    let resolved = strategy
+    let resolve_result = strategy
         .resolve_auth_token(connector_meta.as_deref(), &fields)
-        .await?;
+        .await;
+
+    // Record failure metric if the refresh attempt failed
+    if let Err(ref e) = resolve_result {
+        let _ = metrics_repo::insert(
+            pool,
+            &cred.id,
+            &cred.service_type,
+            None,
+            None,
+            None,
+            false,
+            false,
+            Some(&e.to_string()),
+        );
+        tracing::warn!(
+            credential_id = %cred.id,
+            service_type = %cred.service_type,
+            "OAuth refresh failed — metric recorded"
+        );
+    }
+
+    let resolved = resolve_result?;
 
     let resolved = resolved.ok_or_else(|| {
         AppError::Internal("Strategy returned no token after refresh".into())
@@ -104,6 +173,56 @@ pub async fn refresh_single_credential(
 
     // Persist the fresh access_token
     cred_repo::upsert_field(pool, &cred.id, "access_token", &resolved.token, true)?;
+
+    // Compute lifetime metrics
+    let used_fallback = resolved.expires_in_secs.is_none();
+    let expiry_secs = resolved.expires_in_secs.unwrap_or(DEFAULT_FALLBACK_LIFETIME_SECS) as i64;
+
+    // Actual lifetime: how long the previous token lived before we replaced it
+    let actual_lifetime_secs = previous_refresh_at.map(|prev| {
+        chrono::Utc::now()
+            .signed_duration_since(prev)
+            .num_seconds()
+    });
+
+    // Drift: actual − predicted (from the previous refresh's predicted value)
+    let drift_secs = match (actual_lifetime_secs, previous_predicted_secs) {
+        (Some(actual), Some(predicted)) => Some(actual - predicted),
+        _ => None,
+    };
+
+    // Record the metric
+    let _ = metrics_repo::insert(
+        pool,
+        &cred.id,
+        &cred.service_type,
+        Some(expiry_secs),
+        actual_lifetime_secs,
+        drift_secs,
+        used_fallback,
+        true,
+        None,
+    );
+
+    if used_fallback {
+        tracing::info!(
+            credential_id = %cred.id,
+            service_type = %cred.service_type,
+            "Provider omitted expires_in — used {}s fallback",
+            DEFAULT_FALLBACK_LIFETIME_SECS,
+        );
+    }
+
+    if let Some(drift) = drift_secs {
+        if drift < -300 {
+            tracing::warn!(
+                credential_id = %cred.id,
+                service_type = %cred.service_type,
+                drift_secs = drift,
+                "Token expired significantly earlier than predicted (possible throttling)"
+            );
+        }
+    }
 
     // Update metadata with refresh stats
     let now = chrono::Utc::now().to_rfc3339();
@@ -124,9 +243,13 @@ pub async fn refresh_single_credential(
         "oauth_last_refresh_at".to_string(),
         serde_json::json!(now),
     );
+    // Store the predicted lifetime so the next refresh can compute drift
+    patch.insert(
+        "oauth_predicted_lifetime_secs".to_string(),
+        serde_json::json!(expiry_secs),
+    );
 
-    // Use the provider-reported expiry if available, otherwise fall back to 1h
-    let expiry_secs = resolved.expires_in_secs.unwrap_or(3600) as i64;
+    // Use the provider-reported expiry if available, otherwise fall back
     let new_expiry = (chrono::Utc::now() + chrono::Duration::seconds(expiry_secs)).to_rfc3339();
     patch.insert(
         "oauth_token_expires_at".to_string(),
@@ -136,6 +259,23 @@ pub async fn refresh_single_credential(
     cred_repo::patch_metadata_atomic(pool, &cred.id, patch)?;
 
     // Audit log
+    let detail = if used_fallback {
+        format!(
+            "Proactive refresh (count: {}, fallback {}s, no provider expires_in)",
+            current_count + 1,
+            DEFAULT_FALLBACK_LIFETIME_SECS,
+        )
+    } else {
+        format!(
+            "Proactive refresh (count: {}, provider TTL: {}s{})",
+            current_count + 1,
+            expiry_secs,
+            drift_secs
+                .map(|d| format!(", drift: {}s", d))
+                .unwrap_or_default(),
+        )
+    };
+
     let _ = crate::db::repos::resources::audit_log::insert(
         pool,
         &cred.id,
@@ -143,10 +283,7 @@ pub async fn refresh_single_credential(
         "oauth_token_refreshed",
         None,
         None,
-        Some(&format!(
-            "Proactive refresh (count: {})",
-            current_count + 1
-        )),
+        Some(&detail),
     );
 
     Ok(format!(

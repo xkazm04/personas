@@ -2,9 +2,9 @@ import {
   Upload,
   Download,
   PackageCheck,
-  Loader2,
   Check,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PortabilityImportResult } from '@/api/system/dataPortability';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
@@ -44,7 +44,7 @@ export function ExportSection({
             transition-colors disabled:opacity-50"
         >
           {exportStatus === 'loading' ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <LoadingSpinner />
           ) : exportStatus === 'success' ? (
             <Check className="w-4 h-4" />
           ) : (
@@ -65,7 +65,7 @@ export function ExportSection({
             transition-colors disabled:opacity-50"
         >
           {importStatus === 'loading' ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <LoadingSpinner />
           ) : importStatus === 'success' ? (
             <Check className="w-4 h-4" />
           ) : (

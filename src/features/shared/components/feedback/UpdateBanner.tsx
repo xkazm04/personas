@@ -20,7 +20,7 @@ export default function UpdateBanner() {
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
           className="overflow-hidden"
         >
-          <div className="flex items-center gap-3 px-4 py-2 bg-accent/10 border-b border-accent/20 text-sm">
+          <div className="flex items-center gap-3 px-4 py-2 bg-accent/10 border-b border-accent/20 typo-body">
             <span className="text-accent font-medium shrink-0">
               Update available: v{updateInfo.version}
             </span>
@@ -36,7 +36,7 @@ export default function UpdateBanner() {
               <button
                 onClick={installUpdate}
                 disabled={isInstalling}
-                className="px-3 py-1 rounded-xl bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 disabled:opacity-50 transition-colors"
+                className="px-3 py-1 rounded-xl bg-accent text-accent-foreground typo-heading hover:bg-accent/90 disabled:opacity-50 transition-colors"
               >
                 {isInstalling ? "Installing..." : "Install & Restart"}
               </button>

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Shield, Loader2 } from 'lucide-react';
+import { Shield } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import {
   CAPABILITY_INFO,
   type DiscoveredApp,
@@ -92,7 +93,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
             className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
           >
             {approving ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" />
+              <LoadingSpinner size="sm" className="mx-auto" />
             ) : (
               'Approve & Connect'
             )}

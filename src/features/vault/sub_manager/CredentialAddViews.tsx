@@ -6,6 +6,7 @@ import { ForagingPanel } from '@/features/vault/sub_foraging/ForagingPanel';
 import { DesktopDiscoveryPanel } from '@/features/vault/sub_desktop/DesktopDiscoveryPanel';
 import { DatabaseListView } from '@/features/vault/sub_databases/DatabaseListView';
 import { ProvisioningWizard } from '@/features/vault/sub_wizard/ProvisioningWizard';
+import { silentCatch } from "@/lib/silentCatch";
 import { WorkspaceConnectPanel } from '@/features/vault/sub_workspace/WorkspaceConnectPanel';
 import type { useCredentialManagerState } from './useCredentialManagerState';
 
@@ -95,7 +96,7 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
             embedded
             onClose={() => dispatch({ type: 'GO_ADD_NEW' })}
             onComplete={() => {
-              void fetchCredentials().catch(() => {});
+              void fetchCredentials().catch(silentCatch("CredentialAddViews:fetchCredentialsOnDesignComplete"));
               fetchConnectorDefinitions();
               dispatch({ type: 'GO_LIST' });
             }}

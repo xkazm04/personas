@@ -37,11 +37,11 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
     <div className="flex flex-col h-full min-h-0">
       {/* Header with label and toggle */}
       <div className="flex items-center justify-between px-1 pb-2 flex-shrink-0">
-        <span className="text-sm font-medium text-foreground/80">Design Context</span>
+        <span className="typo-heading text-foreground/80">Design Context</span>
         <div className="flex gap-0.5 p-0.5 rounded-lg bg-secondary/30 border border-primary/10">
           <button
             onClick={() => setMode('structured')}
-            className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
+            className={`flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
               mode === 'structured'
                 ? 'bg-primary/15 text-foreground/80 font-medium'
                 : 'text-muted-foreground/90 hover:text-muted-foreground'
@@ -52,7 +52,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
           </button>
           <button
             onClick={() => setMode('raw')}
-            className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
+            className={`flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
               mode === 'raw'
                 ? 'bg-primary/15 text-foreground/80 font-medium'
                 : 'text-muted-foreground/90 hover:text-muted-foreground'
@@ -79,10 +79,10 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
             {/* Summary */}
             {contextData.summary && (
               <div>
-                <p className="text-sm font-semibold text-muted-foreground/55 uppercase tracking-wider mb-2">
+                <p className="typo-heading text-muted-foreground/55 uppercase tracking-wider mb-2">
                   Summary
                 </p>
-                <p className="text-sm text-foreground/80 leading-relaxed">
+                <p className="typo-body text-foreground/80 leading-relaxed">
                   {contextData.summary}
                 </p>
               </div>
@@ -100,7 +100,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
               <div>
                 <div className="flex items-center gap-2 mb-2 px-1">
                   <Link className="w-3.5 h-3.5 text-muted-foreground/80" />
-                  <p className="text-sm font-semibold text-muted-foreground/55 uppercase tracking-wider">
+                  <p className="typo-heading text-muted-foreground/55 uppercase tracking-wider">
                     Credential Links
                   </p>
                 </div>
@@ -112,8 +112,8 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
                         key={connName}
                         className="flex items-center justify-between px-3 py-2 rounded-xl border border-primary/10 bg-secondary/20"
                       >
-                        <span className="text-sm font-mono text-foreground/70">{connName}</span>
-                        <span className="text-sm text-muted-foreground/60">
+                        <span className="typo-code text-foreground/70">{connName}</span>
+                        <span className="typo-body text-muted-foreground/60">
                           {cred ? cred.name : credId.slice(0, 8) + '...'}
                         </span>
                       </div>

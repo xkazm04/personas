@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Play, RefreshCw, ExternalLink, FileText, Loader2 } from 'lucide-react';
+import { Play, RefreshCw, ExternalLink, FileText } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from "@/stores/systemStore";
 import { Button } from '@/features/shared/components/buttons';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
@@ -88,7 +89,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
           <Button
             variant="ghost"
             size="sm"
-            icon={triggering ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+            icon={triggering ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
             loading={triggering}
             onClick={handleTrigger}
             disabled={triggering}

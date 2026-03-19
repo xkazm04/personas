@@ -122,7 +122,7 @@ export function DataGrid<T>({
     return (
       <div className={`flex flex-col items-center justify-center py-12 ${className ?? ''}`}>
         <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-3" />
-        <span className="text-sm text-muted-foreground/70">{loadingLabel}</span>
+        <span className="typo-body text-muted-foreground/70">{loadingLabel}</span>
       </div>
     );
   }
@@ -186,7 +186,7 @@ export function DataGrid<T>({
                 key={col.key}
                 type="button"
                 onClick={() => onSort(col.key)}
-                className={`px-4 py-2.5 text-xs text-foreground/80 uppercase tracking-wider font-semibold flex items-center gap-1 hover:text-foreground transition-colors ${
+                className={`px-4 py-2.5 typo-label text-foreground/80 flex items-center gap-1 hover:text-foreground transition-colors ${
                   col.align === 'right' ? 'justify-end' : ''
                 }`}
               >
@@ -200,7 +200,7 @@ export function DataGrid<T>({
           return (
             <div
               key={col.key}
-              className={`px-4 py-2.5 text-xs text-foreground/80 uppercase tracking-wider font-semibold ${
+              className={`px-4 py-2.5 typo-label text-foreground/80 ${
                 col.align === 'right' ? 'text-right' : ''
               }`}
             >
@@ -216,9 +216,9 @@ export function DataGrid<T>({
           <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
             <Icon className="w-5 h-5 text-muted-foreground/40" />
           </div>
-          <p className="text-sm font-medium text-foreground/70">{emptyTitle}</p>
+          <p className="typo-heading text-foreground/70">{emptyTitle}</p>
           {emptyDescription && (
-            <p className="text-sm text-muted-foreground/50 mt-1 max-w-xs">{emptyDescription}</p>
+            <p className="typo-body text-muted-foreground/50 mt-1 max-w-xs">{emptyDescription}</p>
           )}
         </div>
       ) : (
@@ -261,7 +261,7 @@ export function DataGrid<T>({
       {/* Pagination */}
       {effectivePageSize > 0 && totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-2 border-t border-primary/10 bg-background/60 shrink-0">
-          <span className="text-xs text-foreground/60 font-mono">
+          <span className="typo-code text-foreground/60">
             Page {page} of {totalPages}
           </span>
           <div className="flex items-center gap-1">
@@ -282,7 +282,7 @@ export function DataGrid<T>({
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  className={`w-7 h-7 rounded-lg text-xs font-mono transition-colors ${
+                  className={`w-7 h-7 rounded-lg typo-code transition-colors ${
                     p === page
                       ? 'bg-primary/10 text-foreground font-semibold border border-primary/20'
                       : 'text-foreground/60 hover:text-foreground hover:bg-secondary/40'

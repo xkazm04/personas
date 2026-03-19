@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot, Copy, Check } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, Server, Bot, Copy, Check } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
 import { EVENT_STATUS_COLORS, EVENT_TYPE_COLORS, formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaEvent, Persona } from '@/lib/types/types';
@@ -137,7 +138,7 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
       }}
     >
       <td className="px-4 py-2.5">
-        <span className={`text-sm font-medium ${typeColor}`}>{event.event_type}</span>
+        <span className={`typo-heading ${typeColor}`}>{event.event_type}</span>
       </td>
       <td className="px-4 py-2.5">
         <span className="text-sm text-foreground truncate block">{event.source_type}</span>
@@ -166,7 +167,7 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
         <span className={`inline-flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
           {event.status === 'completed' || event.status === 'processed' ? <CheckCircle2 className="w-3 h-3" />
            : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
-           : event.status === 'processing' ? <Loader2 className="w-3 h-3 animate-spin" />
+           : event.status === 'processing' ? <LoadingSpinner size="xs" />
            : <Clock className="w-3 h-3" />}
           {event.status}
         </span>
@@ -207,7 +208,7 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
       className={`grid ${gridCols} gap-0 cursor-pointer transition-colors border-b border-primary/5 border-l-2 border-l-transparent hover:bg-white/[0.05] ${hoverAccent} ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
     >
       <div className="px-4 py-2.5 flex items-center min-w-0">
-        <span className={`text-sm font-medium truncate ${typeColor}`}>{event.event_type}</span>
+        <span className={`typo-heading truncate ${typeColor}`}>{event.event_type}</span>
       </div>
       <div className="px-4 py-2.5 flex items-center min-w-0">
         <span className="text-sm text-foreground truncate">{event.source_type}</span>
@@ -236,7 +237,7 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
         <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
           {event.status === 'completed' || event.status === 'processed' ? <CheckCircle2 className="w-3 h-3" />
             : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
-            : event.status === 'processing' ? <Loader2 className="w-3 h-3 animate-spin" />
+            : event.status === 'processing' ? <LoadingSpinner size="xs" />
             : <Clock className="w-3 h-3" />}
           {event.status}
         </span>

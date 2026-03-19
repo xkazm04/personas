@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   Zap,
-  Loader2,
   Users,
   GitBranch,
   CheckCircle2,
@@ -12,6 +11,7 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useAutoTeam } from './useAutoTeam';
@@ -112,7 +112,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 </Button>
               )}
               {at.phase === 'suggesting' && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 animate-spin" />
+                <LoadingSpinner className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-400" />
               )}
             </div>
 
@@ -144,7 +144,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 exit={{ opacity: 0 }}
                 className="flex items-center gap-3 py-6 justify-center"
               >
-                <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
+                <LoadingSpinner size="lg" className="text-indigo-400" />
                 <span className="text-sm text-muted-foreground/70">Assembling your team...</span>
               </motion.div>
             )}
@@ -193,7 +193,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
               >
                 <div className="flex items-center gap-3">
                   {at.phase === 'applying' ? (
-                    <Loader2 className="w-4 h-4 text-indigo-400 animate-spin flex-shrink-0" />
+                    <LoadingSpinner className="text-indigo-400 flex-shrink-0" />
                   ) : (
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                   )}
@@ -203,7 +203,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 </div>
                 {at.phase === 'seeding' && (
                   <div className="flex items-center gap-3">
-                    <Loader2 className="w-4 h-4 text-violet-400 animate-spin flex-shrink-0" />
+                    <LoadingSpinner className="text-violet-400 flex-shrink-0" />
                     <span className="text-sm text-foreground/80 flex items-center gap-1.5">
                       <Brain className="w-3.5 h-3.5 text-violet-400" />
                       Seeding memories from similar teams...

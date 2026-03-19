@@ -268,7 +268,7 @@ function ProjectModal({
                       value={name}
                       onChange={(e) => handleNameChange(e.target.value)}
                       placeholder="My Awesome App"
-                      className="w-full px-3 py-2 pr-8 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
+                      className="w-full px-3 py-2 pr-8 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-ring"
                     />
                     <Pencil className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/30" />
                   </div>
@@ -306,7 +306,7 @@ function ProjectModal({
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Brief description of the project..."
                     rows={2}
-                    className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30 resize-none"
+                    className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-ring resize-none"
                   />
                 </div>
               </div>
@@ -469,7 +469,7 @@ function GoalBoard({
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             placeholder="Add a goal..."
-            className="flex-1 px-3 py-2 text-sm bg-secondary/30 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
+            className="flex-1 px-3 py-2 text-sm bg-secondary/30 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus-ring"
           />
           <Button
             variant="accent"

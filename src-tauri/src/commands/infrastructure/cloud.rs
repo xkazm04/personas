@@ -236,6 +236,7 @@ pub async fn cloud_execute_persona(
         input_value.as_ref(),
         None,
         None,
+        #[cfg(feature = "desktop")] None,
     );
 
     let exec = executions::create(&state.db, &persona_id, None, input_data.clone(), None, None)?;
@@ -277,9 +278,6 @@ pub async fn cloud_execute_persona(
         )
         .await;
 
-        // Clean up the local->cloud execution ID mapping
-        exec_ids_map.lock().await.remove(&exec_id);
-
         if !cancelled_clone.load(Ordering::Acquire) {
             let status = if result.success { crate::engine::types::ExecutionState::Completed } else { crate::engine::types::ExecutionState::Failed };
             let update = UpdateExecutionStatus {
@@ -314,6 +312,10 @@ pub async fn cloud_execute_persona(
                 "Cloud execution finished"
             );
         }
+
+        // Clean up the local->cloud execution ID mapping AFTER DB persist,
+        // so cancellation remains possible during retry windows.
+        exec_ids_map.lock().await.remove(&exec_id);
     });
 
     state
@@ -442,7 +444,7 @@ pub async fn cloud_deploy_persona(
 
     // First, sync the persona to the cloud orchestrator so it exists there
     let tools = tools::get_tools_for_persona(&state.db, &persona_id)?;
-    let prompt = engine::prompt::assemble_prompt(&persona, &tools, None, None, None);
+    let prompt = engine::prompt::assemble_prompt(&persona, &tools, None, None, None, #[cfg(feature = "desktop")] None);
 
     // Upsert the persona on the cloud side
     let persona_body = serde_json::json!({

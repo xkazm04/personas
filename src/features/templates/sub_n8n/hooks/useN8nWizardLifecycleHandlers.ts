@@ -1,3 +1,4 @@
+import { silentCatch } from "@/lib/silentCatch";
 import {
   clearN8nTransformSnapshot,
   confirmN8nPersonaDraft,
@@ -57,7 +58,7 @@ export function createLifecycleHandlers(deps: WizardDeps) {
       session.remove();
 
       if (state.backgroundTransformId) {
-        void clearN8nTransformSnapshot(state.backgroundTransformId).catch(() => {});
+        void clearN8nTransformSnapshot(state.backgroundTransformId).catch(silentCatch("LifecycleHandlers:clearConfirmSnapshot"));
       }
       session.clearPersistedContext();
     } catch (err) {
@@ -86,7 +87,7 @@ export function createLifecycleHandlers(deps: WizardDeps) {
     try {
       const snapshotId = state.backgroundTransformId || transform.currentTransformId;
       if (snapshotId) {
-        void clearN8nTransformSnapshot(snapshotId).catch(() => {});
+        void clearN8nTransformSnapshot(snapshotId).catch(silentCatch("LifecycleHandlers:clearResetSnapshot"));
       }
       session.clearPersistedContext();
       void transform.resetTransformStream();

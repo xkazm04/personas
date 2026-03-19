@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Check, Circle, Clock } from 'lucide-react';
+import { Check, Circle, Clock } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useStepProgress } from '@/hooks/useStepProgress';
 import { MOTION_TIMING } from '@/features/templates/animationPresets';
 
@@ -112,7 +113,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
                     <Check className="w-3 h-3 text-emerald-400" />
                   </div>
                 ) : step.status === 'active' ? (
-                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                  <LoadingSpinner className="text-primary" />
                 ) : (
                   <Circle className="w-3.5 h-3.5 text-muted-foreground/20" />
                 )}

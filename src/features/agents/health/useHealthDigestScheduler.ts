@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import { getAppSetting, setAppSetting } from '@/api/system/settings';
+import { silentCatchNull } from "@/lib/silentCatch";
 import { useAgentStore } from "@/stores/agentStore";
 
 const LAST_DIGEST_KEY = 'health_digest_last_run';
@@ -23,17 +24,21 @@ export function useHealthDigestScheduler() {
     if (ran.current || running.current || !personasLoaded) return;
     running.current = true;
 
+    const abort = new AbortController();
+
     (async () => {
       try {
         // Check if digest is enabled (default: true)
-        const enabledRaw = await getAppSetting(DIGEST_ENABLED_KEY).catch(() => null);
+        const enabledRaw = await getAppSetting(DIGEST_ENABLED_KEY).catch(silentCatchNull("useHealthDigestScheduler:checkDigestEnabled"));
+        if (abort.signal.aborted) return;
         if (enabledRaw === 'false') {
           ran.current = true; // User disabled digests — no retry needed
           return;
         }
 
         // Check when we last ran
-        const lastRunRaw = await getAppSetting(LAST_DIGEST_KEY).catch(() => null);
+        const lastRunRaw = await getAppSetting(LAST_DIGEST_KEY).catch(silentCatchNull("useHealthDigestScheduler:checkLastRunTimestamp"));
+        if (abort.signal.aborted) return;
         const lastRunMs = lastRunRaw ? new Date(lastRunRaw).getTime() : 0;
         const now = Date.now();
 
@@ -44,7 +49,8 @@ export function useHealthDigestScheduler() {
 
         // Run the digest
         const digest = await useAgentStore.getState().runFullHealthDigest();
-        if (!digest) return; // Will retry on next effect cycle
+        if (abort.signal.aborted) return;
+        if (!digest) return; // Will retry — finally resets running
 
         // Record timestamp
         await setAppSetting(LAST_DIGEST_KEY, new Date().toISOString());
@@ -63,10 +69,20 @@ export function useHealthDigestScheduler() {
         await invoke<void>('send_app_notification', { title, body }).catch(() => {
           // Notification permission may not be granted -- silently ignore
         });
-      } catch {
-        // Transient failure — unlock so next render cycle retries
-        running.current = false;
+      } finally {
+        // Always unlock unless digest completed or was permanently skipped
+        if (!ran.current) {
+          running.current = false;
+        }
       }
     })();
+
+    return () => {
+      abort.abort();
+      // Strict-mode cleanup: allow the second mount's effect to run
+      if (!ran.current) {
+        running.current = false;
+      }
+    };
   }, [personasLoaded]);
 }

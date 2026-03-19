@@ -2,13 +2,13 @@ import { useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Radar,
-  Loader2,
   CheckCircle2,
   AlertTriangle,
   ArrowLeft,
   Download,
   Sparkles,
 } from "lucide-react";
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useCredentialForaging } from "@/hooks/design/credential/useCredentialForaging";
 import { ForagingResultCard } from "./ForagingResultCard";
 import { Button } from "@/features/shared/components/buttons";
@@ -106,7 +106,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
             exit={{ opacity: 0 }}
             className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-8 text-center space-y-3"
           >
-            <Loader2 className="w-8 h-8 text-violet-400 animate-spin mx-auto" />
+            <LoadingSpinner size="2xl" className="text-violet-400 mx-auto" />
             <p className="text-sm text-foreground/80">Scanning filesystem for credentials...</p>
             <p className="text-sm text-muted-foreground/50">
               Checking environment variables, config files, and dev tool credentials
@@ -212,7 +212,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
             className="space-y-3"
           >
             <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 text-center space-y-2">
-              <Loader2 className="w-6 h-6 text-violet-400 animate-spin mx-auto" />
+              <LoadingSpinner size="xl" className="text-violet-400 mx-auto" />
               <p className="text-sm text-foreground/80">
                 Importing credentials to vault...
               </p>
