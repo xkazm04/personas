@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
   X, RefreshCw,
-  Loader2, Package, Clock,
+  Package, Clock,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion } from 'framer-motion';
 import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnectedIcon } from './NetworkIcons';
 import { useSystemStore } from "@/stores/systemStore";
@@ -216,7 +217,7 @@ export function PeerDetailDrawer({
                   className="p-1 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                 >
                   {syncing ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <LoadingSpinner size="sm" />
                   ) : (
                     <RefreshCw className="w-3.5 h-3.5" />
                   )}

@@ -1,5 +1,7 @@
 import { CheckCircle2, AlertTriangle, XCircle, Info } from 'lucide-react';
 import { SIMPLE_MODE } from '@/lib/utils/designTokens';
+import { StatusShape } from '@/features/shared/components/display/StatusShape';
+import type { StatusKey } from '@/lib/design/statusTokens';
 import type { HealthCheckItem } from "@/api/system/system";
 
 export function getStatusIcon(status: string) {
@@ -14,14 +16,12 @@ export function SectionStatusDot({ items }: { items: HealthCheckItem[] }) {
   const hasWarn = items.some((i) => i.status === 'warn');
   const allInactive = items.every((i) => i.status === 'inactive' || i.status === 'info');
 
-  let dotColor = 'bg-status-success';
-  if (hasError) dotColor = 'bg-status-error';
-  else if (hasWarn) dotColor = 'bg-status-warning';
-  else if (allInactive) dotColor = 'bg-status-neutral';
+  let status: StatusKey = 'success';
+  if (hasError) status = 'error';
+  else if (hasWarn) status = 'warning';
+  else if (allInactive) status = 'neutral';
 
-  return (
-    <span className={`w-2 h-2 rounded-full ${dotColor}`} />
-  );
+  return <StatusShape status={status} />;
 }
 
 /** Simple mode: displays a labeled dot badge instead of detailed status icons. */
@@ -33,8 +33,8 @@ export function SimpleStatusBadge({ items }: { items: HealthCheckItem[] }) {
   const token = SIMPLE_MODE.STATUS[level];
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${token.bg} ${token.color}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${token.dot}`} />
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full typo-caption ${token.bg} ${token.color}`}>
+      <StatusShape status={hasError ? 'error' : hasWarn ? 'warning' : 'success'} size="xs" colorClass="" />
       {token.label}
     </span>
   );

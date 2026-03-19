@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { RefreshCw, Clock, Loader2 } from 'lucide-react';
+import { RefreshCw, Clock } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { formatTimestamp } from '@/lib/utils/formatters';
 import { refreshCredentialOAuthNow } from '@/api/vault/rotation';
 
@@ -72,7 +73,7 @@ export function OAuthActivityBadge({
           title="Refresh OAuth token now"
         >
           {isRefreshing ? (
-            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+            <LoadingSpinner size="xs" className="w-2.5 h-2.5" />
           ) : (
             <RefreshCw className="w-2.5 h-2.5" />
           )}

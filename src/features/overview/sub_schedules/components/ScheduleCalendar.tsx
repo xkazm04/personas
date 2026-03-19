@@ -112,7 +112,7 @@ export default function ScheduleCalendar({
           >
             Today
           </button>
-          <span className="text-sm font-medium text-foreground/80 ml-1">
+          <span className="typo-heading text-foreground/80 ml-1">
             {headerLabel}
           </span>
         </div>
@@ -236,7 +236,7 @@ function WeekView({
           return (
             <div
               key={day.toISOString()}
-              className={`px-2 py-2 text-center text-xs font-medium border-l border-primary/10 ${
+              className={`px-2 py-2 text-center typo-caption border-l border-primary/10 ${
                 isToday ? 'text-blue-400' : 'text-muted-foreground/70'
               }`}
             >

@@ -93,9 +93,9 @@ export function ContentHeader({
       <div className="flex items-center gap-3 pr-20">
         {iconElement}
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-semibold text-foreground/90">{title}</h1>
+          <h1 className="typo-heading-lg text-foreground/90">{title}</h1>
           {subtitle && (
-            <p className="text-sm text-muted-foreground/90">{subtitle}</p>
+            <p className="typo-body text-muted-foreground/90">{subtitle}</p>
           )}
 
         </div>

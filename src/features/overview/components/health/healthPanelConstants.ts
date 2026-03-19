@@ -1,4 +1,4 @@
-import { Monitor, Cpu, Cloud, User } from 'lucide-react';
+import { Monitor, Cpu, Cloud, User, Activity } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export const SECTION_ICONS: Record<string, LucideIcon> = {
@@ -6,6 +6,7 @@ export const SECTION_ICONS: Record<string, LucideIcon> = {
   agents: Cpu,
   cloud: Cloud,
   account: User,
+  subscriptions: Activity,
 };
 
 export const SECTION_STYLES: Record<string, { badge: string; icon: string }> = {
@@ -13,6 +14,7 @@ export const SECTION_STYLES: Record<string, { badge: string; icon: string }> = {
   agents: { badge: 'bg-emerald-500/10', icon: 'text-emerald-400' },
   cloud: { badge: 'bg-sky-500/10', icon: 'text-sky-400' },
   account: { badge: 'bg-amber-500/10', icon: 'text-amber-400' },
+  subscriptions: { badge: 'bg-rose-500/10', icon: 'text-rose-400' },
 };
 
 export const DEFAULT_SECTION_STYLE = { badge: 'bg-violet-500/10', icon: 'text-violet-400' };
@@ -23,4 +25,5 @@ export const SKELETON_SECTIONS = [
   { id: 'agents', label: 'Agents' },
   { id: 'cloud', label: 'Cloud Deployment' },
   { id: 'account', label: 'Account' },
+  { id: 'subscriptions', label: 'Subscription Health' },
 ];

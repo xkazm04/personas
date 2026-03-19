@@ -12,13 +12,15 @@
 //! Adding a new reactivity source (e.g., file-watch, WebSocket) only requires
 //! implementing the trait -- no new `tokio::spawn` block needed.
 
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
-use tauri::AppHandle;
+use futures_util::FutureExt;
+use tauri::{AppHandle, Emitter};
 
 use crate::db::DbPool;
-use crate::engine::background::SchedulerState;
+use crate::engine::background::{SchedulerState, SubscriptionCrashEvent};
 use crate::engine::ExecutionEngine;
 
 // ---------------------------------------------------------------------------
@@ -101,6 +103,7 @@ pub struct FileWatcherSubscription {
     pub state: Arc<tokio::sync::Mutex<super::file_watcher::FileWatcherState>>,
     pub tx: tokio::sync::mpsc::Sender<super::file_watcher::RawFsEvent>,
     pub rx: Arc<tokio::sync::Mutex<tokio::sync::mpsc::Receiver<super::file_watcher::RawFsEvent>>>,
+    pub ambient_ctx: super::ambient_context::AmbientContextHandle,
 }
 
 /// Clipboard monitor subscription: detect clipboard content changes.
@@ -108,6 +111,7 @@ pub struct FileWatcherSubscription {
 pub struct ClipboardSubscription {
     pub pool: DbPool,
     pub state: Arc<tokio::sync::Mutex<super::clipboard_monitor::ClipboardState>>,
+    pub ambient_ctx: super::ambient_context::AmbientContextHandle,
 }
 
 /// App focus subscription: detect foreground application changes.
@@ -115,6 +119,23 @@ pub struct ClipboardSubscription {
 pub struct AppFocusSubscription {
     pub pool: DbPool,
     pub state: Arc<tokio::sync::Mutex<super::app_focus::AppFocusState>>,
+    pub ambient_ctx: super::ambient_context::AmbientContextHandle,
+}
+
+/// Ambient context fusion subscription: aggregates desktop signals into a rolling context window.
+#[cfg(feature = "desktop")]
+pub struct AmbientContextSubscription {
+    pub ctx: super::ambient_context::AmbientContextHandle,
+}
+
+/// Context rule engine subscription: evaluates persona-defined rules against
+/// the real-time context stream and triggers actions on matches.
+#[cfg(feature = "desktop")]
+pub struct ContextRuleSubscription {
+    pub rule_engine: super::context_rules::ContextRuleEngineHandle,
+    pub stream_rx: Arc<tokio::sync::Mutex<super::ambient_context::ContextStreamReceiver>>,
+    pub pool: DbPool,
+    pub app: AppHandle,
 }
 
 /// Composite trigger subscription: evaluate composite conditions against event stream.
@@ -126,6 +147,7 @@ pub struct CompositeSubscription {
 /// enabled and reverts to the previous prompt version when error rate exceeds 2x.
 pub struct AutoRollbackSubscription {
     pub pool: DbPool,
+    pub app: AppHandle,
 }
 
 /// OAuth token refresh subscription: proactively refresh tokens before expiry.
@@ -271,6 +293,15 @@ impl ReactiveSubscription for FileWatcherSubscription {
     }
 
     async fn tick(&self) {
+        // Capture queued events count before tick so we can push new ones to ambient context
+        let events_before = {
+            let rx = self.rx.lock().await;
+            // We can't count without draining, so just run the tick and push
+            // file change signals from within file_watcher_tick via ambient ctx
+            drop(rx);
+            0usize
+        };
+        let _ = events_before;
         super::file_watcher::file_watcher_tick(&self.pool, &self.state, &self.tx, &self.rx).await;
     }
 }
@@ -291,7 +322,23 @@ impl ReactiveSubscription for ClipboardSubscription {
     }
 
     async fn tick(&self) {
+        // Capture clipboard state before tick to detect changes
+        let hash_before = {
+            let s = self.state.lock().await;
+            s.last_hash()
+        };
+
         super::clipboard_monitor::clipboard_tick(&self.pool, &self.state).await;
+
+        // If hash changed, push a signal to ambient context
+        let hash_after = {
+            let s = self.state.lock().await;
+            s.last_hash()
+        };
+        if hash_before != hash_after {
+            let mut ctx = self.ambient_ctx.lock().await;
+            ctx.push_clipboard("text", 0); // Length unknown here, but signal is still useful
+        }
     }
 }
 
@@ -311,7 +358,79 @@ impl ReactiveSubscription for AppFocusSubscription {
     }
 
     async fn tick(&self) {
+        // Capture app state before tick to detect changes
+        let (app_before, title_before) = {
+            let s = self.state.lock().await;
+            (s.last_app_name().map(|s| s.to_string()), s.last_window_title().map(|s| s.to_string()))
+        };
+
         super::app_focus::app_focus_tick(&self.pool, &self.state).await;
+
+        // If app changed, push a signal to ambient context
+        let (app_after, title_after) = {
+            let s = self.state.lock().await;
+            (s.last_app_name().map(|s| s.to_string()), s.last_window_title().map(|s| s.to_string()))
+        };
+        if app_before != app_after || title_before != title_after {
+            if let (Some(ref app), Some(ref title)) = (&app_after, &title_after) {
+                let mut ctx = self.ambient_ctx.lock().await;
+                ctx.push_app_focus(app, title);
+            }
+        }
+    }
+}
+
+#[cfg(feature = "desktop")]
+#[async_trait::async_trait]
+impl ReactiveSubscription for AmbientContextSubscription {
+    fn name(&self) -> &'static str {
+        "ambient_context"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(5)
+    }
+
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(30)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(10)
+    }
+
+    async fn tick(&self) {
+        super::ambient_context::ambient_context_tick(&self.ctx).await;
+    }
+}
+
+#[cfg(feature = "desktop")]
+#[async_trait::async_trait]
+impl ReactiveSubscription for ContextRuleSubscription {
+    fn name(&self) -> &'static str {
+        "context_rules"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(2)
+    }
+
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(10)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(12) // Start after ambient context subscription
+    }
+
+    async fn tick(&self) {
+        super::context_rules::context_rule_tick(
+            &self.rule_engine,
+            &self.stream_rx,
+            &self.pool,
+            &self.app,
+        )
+        .await;
     }
 }
 
@@ -355,7 +474,7 @@ impl ReactiveSubscription for AutoRollbackSubscription {
     }
 
     async fn tick(&self) {
-        super::auto_rollback::auto_rollback_tick(&self.pool);
+        super::auto_rollback::auto_rollback_tick(&self.pool, &self.app);
     }
 }
 
@@ -436,19 +555,40 @@ impl ReactiveSubscription for CloudWebhookRelaySubscription {
 // Unified scheduler loop
 // ---------------------------------------------------------------------------
 
+/// Maximum consecutive panics before applying backoff to the tick interval.
+const PANIC_BACKOFF_THRESHOLD: u32 = 3;
+/// Multiplier applied to the interval after consecutive panics exceed the threshold.
+const PANIC_BACKOFF_MULTIPLIER: u32 = 2;
+/// Cap on the backoff multiplier to prevent intervals from growing unbounded.
+const PANIC_BACKOFF_MAX: u32 = 16;
+/// Fraction of the interval that triggers a slow-tick warning (80%).
+const SLOW_TICK_THRESHOLD_NUM: u64 = 4;
+const SLOW_TICK_THRESHOLD_DEN: u64 = 5;
+
 /// Run a single reactive subscription in its own task, respecting initial delay,
 /// interval, and the scheduler's running flag.
 ///
 /// Adaptively switches between `interval()` and `idle_interval()` based on
 /// the scheduler's active flag, reducing CPU/IO when the system is idle.
+///
+/// Applies exponential backoff when a subscription repeatedly panics, similar
+/// to [`PeriodicTask`](super::p2p::periodic::PeriodicTask).
+///
+/// Registers itself as alive/dead in `SchedulerState` and emits a
+/// `subscription-crashed` Tauri event on every panic so the frontend can
+/// surface dead subscriptions immediately.
 async fn run_single(
     sub: Box<dyn ReactiveSubscription>,
     scheduler: Arc<SchedulerState>,
+    app: AppHandle,
 ) {
     let name = sub.name();
     let active_interval = sub.interval();
     let idle_interval = sub.idle_interval();
     let has_idle_mode = active_interval != idle_interval;
+
+    // Register this subscription as alive before any delay
+    scheduler.mark_subscription_alive(name, active_interval.as_millis() as u64);
 
     let delay = sub.initial_delay();
     if !delay.is_zero() {
@@ -457,6 +597,7 @@ async fn run_single(
     }
 
     let mut was_active = true;
+    let mut consecutive_panics: u32 = 0;
     let mut interval = tokio::time::interval(active_interval);
     loop {
         interval.tick().await;
@@ -481,8 +622,108 @@ async fn run_single(
             }
         }
 
-        sub.tick().await;
+        let tick_start = Instant::now();
+
+        // Execute the tick within a tracing span for structured observability.
+        let tick_result = {
+            let _span = tracing::debug_span!("subscription_tick", subscription = name).entered();
+            // Panic boundary: catch any panic inside tick() so the subscription
+            // loop survives and the crash is surfaced via logs + metrics.
+            AssertUnwindSafe(sub.tick()).catch_unwind().await
+        };
+        let elapsed = tick_start.elapsed();
+
+        if let Err(panic_payload) = tick_result {
+            let msg = if let Some(s) = panic_payload.downcast_ref::<&str>() {
+                (*s).to_string()
+            } else if let Some(s) = panic_payload.downcast_ref::<String>() {
+                s.clone()
+            } else {
+                "unknown panic".to_string()
+            };
+            consecutive_panics = consecutive_panics.saturating_add(1);
+            tracing::error!(
+                subscription = name,
+                panic_message = %msg,
+                consecutive_panics,
+                "Subscription tick panicked — loop will continue on next interval"
+            );
+            scheduler.record_subscription_crash(name);
+
+            // Emit a Tauri event so the frontend can surface the crash immediately
+            let _ = app.emit("subscription-crashed", SubscriptionCrashEvent {
+                name: name.to_string(),
+                panic_message: msg,
+                consecutive_panics,
+                timestamp: chrono::Utc::now().to_rfc3339(),
+            });
+
+            // Apply backoff when panics exceed the threshold, to avoid
+            // tight-looping on a persistently broken subscription.
+            if consecutive_panics >= PANIC_BACKOFF_THRESHOLD {
+                let multiplier = PANIC_BACKOFF_MULTIPLIER
+                    .saturating_pow(consecutive_panics - PANIC_BACKOFF_THRESHOLD + 1)
+                    .min(PANIC_BACKOFF_MAX);
+                let effective = if has_idle_mode && !was_active { idle_interval } else { active_interval };
+                let backoff = effective * multiplier;
+                tracing::warn!(
+                    subscription = name,
+                    consecutive_panics,
+                    backoff_secs = backoff.as_secs(),
+                    "Applying backoff after repeated panics"
+                );
+                tokio::time::sleep(backoff).await;
+            }
+            continue;
+        }
+
+        // Successful tick — reset the panic counter
+        if consecutive_panics > 0 {
+            tracing::info!(
+                subscription = name,
+                previous_panics = consecutive_panics,
+                "Subscription recovered after consecutive panics"
+            );
+            consecutive_panics = 0;
+        }
+
+        // Use the current effective interval for overrun / slow-tick detection
+        let effective_interval = if has_idle_mode && !was_active { idle_interval } else { active_interval };
+        scheduler.record_tick_latency(name, effective_interval, elapsed);
+
+        let elapsed_ms = elapsed.as_millis() as u64;
+        let interval_ms = effective_interval.as_millis() as u64;
+
+        // Debug-level trace for every tick — available when tracing is turned up.
+        tracing::debug!(
+            subscription = name,
+            elapsed_ms,
+            interval_ms,
+            "Tick completed"
+        );
+
+        if elapsed > effective_interval {
+            tracing::warn!(
+                subscription = name,
+                elapsed_ms,
+                interval_ms,
+                "Tick overrun: subscription tick took longer than its configured interval"
+            );
+        } else {
+            // Slow-tick early warning at 80% of interval
+            let slow_threshold = interval_ms * SLOW_TICK_THRESHOLD_NUM / SLOW_TICK_THRESHOLD_DEN;
+            if elapsed_ms > slow_threshold {
+                tracing::warn!(
+                    subscription = name,
+                    elapsed_ms,
+                    interval_ms,
+                    threshold_ms = slow_threshold,
+                    "Slow tick: approaching interval limit"
+                );
+            }
+        }
     }
+    scheduler.mark_subscription_dead(name);
     tracing::info!(subscription = name, "Subscription loop exited");
 }
 
@@ -491,14 +732,21 @@ async fn run_single(
 /// Each subscription gets its own task but the pattern is uniform: the caller
 /// only needs to push a new `Box<dyn ReactiveSubscription>` to add a new
 /// reactivity source -- no new `tokio::spawn` block required.
+///
+/// Returns the retained `JoinHandle`s so the caller can store them (preventing
+/// silent task drops) and optionally await graceful shutdown.
 pub fn spawn_subscriptions(
     subscriptions: Vec<Box<dyn ReactiveSubscription>>,
     scheduler: Arc<SchedulerState>,
-) {
+    app: AppHandle,
+) -> Vec<tokio::task::JoinHandle<()>> {
+    let mut handles = Vec::with_capacity(subscriptions.len());
     for sub in subscriptions {
         let sched = scheduler.clone();
-        tokio::spawn(run_single(sub, sched));
+        let app_handle = app.clone();
+        handles.push(tokio::spawn(run_single(sub, sched, app_handle)));
     }
+    handles
 }
 
 #[cfg(test)]
@@ -543,5 +791,40 @@ mod tests {
         sub.tick().await;
         sub.tick().await;
         assert_eq!(count.load(Ordering::Relaxed), 2);
+    }
+
+    /// A subscription whose tick always panics — used to verify the panic boundary.
+    struct PanickingSubscription;
+
+    #[async_trait::async_trait]
+    impl ReactiveSubscription for PanickingSubscription {
+        fn name(&self) -> &'static str {
+            "panicker"
+        }
+
+        fn interval(&self) -> Duration {
+            Duration::from_millis(50)
+        }
+
+        async fn tick(&self) {
+            panic!("intentional test panic");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_panic_boundary_catches_tick_panic() {
+        use futures_util::FutureExt;
+
+        let sub: Box<dyn ReactiveSubscription> = Box::new(PanickingSubscription);
+        let result = AssertUnwindSafe(sub.tick()).catch_unwind().await;
+        assert!(result.is_err(), "catch_unwind should capture the panic");
+    }
+
+    #[test]
+    fn test_scheduler_crash_counter_from_subscription() {
+        let state = SchedulerState::new();
+        assert_eq!(state.stats().subscriptions_crashed, 0);
+        state.record_subscription_crash("panicker");
+        assert_eq!(state.stats().subscriptions_crashed, 1);
     }
 }

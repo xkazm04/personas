@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Sparkles, Loader2, Check, RotateCcw } from 'lucide-react';
+import { Sparkles, Check, RotateCcw } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { RecipePageFlipLoader } from '../../shared/RecipePageFlipLoader';
 import { useToastStore } from '@/stores/toastStore';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
@@ -187,7 +188,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                 disabled={accepting}
                 className="flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
               >
-                {accepting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                {accepting ? <LoadingSpinner size="sm" /> : <Check className="w-3.5 h-3.5" />}
                 Accept & Apply
               </button>
               <button
@@ -218,7 +219,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
 
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading versions...
+            <LoadingSpinner size="sm" /> Loading versions...
           </div>
         ) : versions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-sm text-muted-foreground/60 gap-2">
@@ -287,7 +288,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                           className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
                         >
                           {isRevertTarget ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <LoadingSpinner size="xs" />
                           ) : (
                             <RotateCcw className="w-3 h-3" />
                           )}

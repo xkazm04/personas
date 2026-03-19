@@ -1,4 +1,5 @@
-import { CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 export function statusColor(status: string): string {
   switch (status) {
@@ -38,7 +39,7 @@ export function StatusIcon({ status }: { status: string }) {
     case 'failed':
       return <XCircle className="w-4 h-4 text-red-400" />;
     case 'running':
-      return <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />;
+      return <LoadingSpinner className="text-amber-400" />;
     case 'pending':
       return <Clock className="w-4 h-4 text-amber-400" />;
     default:

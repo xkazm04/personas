@@ -509,6 +509,18 @@ pub fn mark_triggered_with_hash(
     Ok(rows > 0)
 }
 
+/// Set the `enabled` flag on a trigger. Used as a safety valve to disable
+/// triggers that fail to mark as triggered, preventing cascade re-fire loops.
+pub fn set_enabled(pool: &DbPool, id: &str, enabled: bool) -> Result<(), AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_triggers SET enabled = ?1, updated_at = ?2 WHERE id = ?3",
+        params![enabled as i32, now, id],
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

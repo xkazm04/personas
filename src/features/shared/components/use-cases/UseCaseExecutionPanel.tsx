@@ -33,13 +33,13 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
-          <span className={`px-1.5 py-0.5 text-sm font-medium rounded border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
+          <span className={`px-1.5 py-0.5 typo-label rounded border ${modeBadge.bg} ${modeBadge.text}`}>
             {modeBadge.label}
           </span>
           {exec.isExecuting && exec.isThisUseCaseExecution && (
             <div className="flex items-center gap-1.5 text-muted-foreground/60">
               <Clock className="w-3 h-3" />
-              <span className="text-sm font-mono">{formatElapsed(exec.elapsedMs)}</span>
+              <span className="typo-code">{formatElapsed(exec.elapsedMs)}</span>
             </div>
           )}
         </div>
@@ -51,7 +51,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
       {/* Input editor */}
       <div className="p-3 border-b border-primary/10 space-y-2">
         {useCase.time_filter && (
-          <div className="flex items-center gap-1.5 text-sm text-cyan-400/70">
+          <div className="flex items-center gap-1.5 typo-body text-cyan-400/70">
             <Timer className="w-3 h-3" />
             <span>{useCase.time_filter.description} (window: {useCase.time_filter.default_window})</span>
           </div>
@@ -67,7 +67,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
           </div>
         ) : (
           <>
-            <p className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider">Input Data</p>
+            <p className="typo-label text-muted-foreground/60">Input Data</p>
             <JsonEditor
               value={exec.inputData}
               onChange={(v) => { exec.setInputData(v); if (exec.jsonError) exec.setJsonError(null); }}
@@ -75,7 +75,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
             />
           </>
         )}
-        {exec.jsonError && <p className="text-red-400/80 text-sm mt-1">{exec.jsonError}</p>}
+        {exec.jsonError && <p className="text-red-400/80 typo-body mt-1">{exec.jsonError}</p>}
       </div>
 
       {/* Execute/Stop button */}

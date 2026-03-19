@@ -1,4 +1,5 @@
-import { Link, CheckCircle2, XCircle, AlertCircle, Activity, Loader2, Plus, ChevronDown, Wrench } from 'lucide-react';
+import { Link, CheckCircle2, XCircle, AlertCircle, Activity, Plus, ChevronDown, Wrench } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaCredential } from '@/lib/types/types';
 import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
 import { rankCredentialsForConnector } from './connectorMatching';
@@ -58,7 +59,7 @@ export function ConnectorRow({
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-foreground/80 truncate">{status.name}</p>
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full border ${config.bg} ${config.color}`}>
-              {statusKey === 'testing' && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
+              {statusKey === 'testing' && <LoadingSpinner size="xs" className="!w-2.5 !h-2.5" />}
               {statusKey === 'ready' && <CheckCircle2 className="w-2.5 h-2.5" />}
               {statusKey === 'failed' && <XCircle className="w-2.5 h-2.5" />}
               {statusKey === 'missing' && <AlertCircle className="w-2.5 h-2.5" />}
@@ -80,7 +81,7 @@ export function ConnectorRow({
               disabled={status.testing}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
             >
-              {status.testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Activity className="w-3 h-3" />}
+              {status.testing ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />}
               Test
             </button>
           ) : (

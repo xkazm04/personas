@@ -6,6 +6,7 @@ import { ToastContainer } from "@/features/shared/components/feedback/ToastConta
 import { FirstUseConsentModal, hasUserConsented } from "@/features/shared/components/overlays/FirstUseConsentModal";
 import { useAuthStore } from "@/stores/authStore";
 import VibeThemeProvider from "@/features/shared/components/layout/VibeThemeProvider";
+import { AriaLiveProvider } from "@/features/shared/components/feedback/AriaLiveProvider";
 import { toggleMobilePreview } from "@/lib/utils/platform/platform";
 import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
 import TitleBar from "@/features/shared/components/layout/TitleBar";
@@ -55,7 +56,14 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <VibeThemeProvider>
+        <AriaLiveProvider>
         <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-1 focus:left-1 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-md focus:bg-primary focus:text-primary-foreground focus:text-sm focus:font-medium focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            Skip to content
+          </a>
           <TitleBar />
           {!consented && <FirstUseConsentModal onAccept={() => setConsented(true)} />}
           <UpdateBanner />
@@ -78,6 +86,7 @@ export default function App() {
             </div>
           )}
         </div>
+        </AriaLiveProvider>
       </VibeThemeProvider>
     </MotionConfig>
   );

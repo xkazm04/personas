@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { X, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import { getPromptPerformance } from '@/api/overview/observability';
 import { sendAppNotification } from '@/api/system/system';
+import { silentCatch } from "@/lib/silentCatch";
 import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { PromptPerformanceData } from '@/lib/bindings/PromptPerformanceData';
@@ -115,7 +116,7 @@ export function WeeklyPerformanceReport({ onNavigateToAgent }: WeeklyPerformance
     sendAppNotification(
       'Weekly Performance Report',
       parts.join(' | '),
-    ).catch(() => {});
+    ).catch(silentCatch("WeeklyPerformanceReport:sendNativeNotification"));
   }, [improving, degrading, loading]);
 
   const handleDismiss = () => {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, RefreshCw, Loader2, Save, Database, Plug, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, XCircle, RefreshCw, Save, Database, Plug, AlertTriangle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { ExtractedValues, ExtractionCompleteness } from '../helpers/types';
 import { buildConnectorContext } from '../helpers/types';
@@ -152,7 +153,7 @@ export function AutoCredReview({
           disabled={isHealthchecking}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/15 hover:bg-secondary/40 text-muted-foreground/70 hover:text-foreground transition-colors"
         >
-          {isHealthchecking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          {isHealthchecking ? <LoadingSpinner size="sm" /> : <RefreshCw className="w-3.5 h-3.5" />}
           {isHealthchecking ? 'Testing...' : 'Test Connection'}
         </button>
         {healthResult && (
@@ -201,7 +202,7 @@ export function AutoCredReview({
               title="Save browser procedure for this connector (dev)"
             >
               {savingProcedure ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <LoadingSpinner size="sm" />
               ) : procedureSaved ? (
                 <CheckCircle2 className="w-3.5 h-3.5" />
               ) : (
@@ -216,7 +217,7 @@ export function AutoCredReview({
             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-emerald-600/20"
           >
             {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <LoadingSpinner />
             ) : (
               <Save className="w-4 h-4" />
             )}

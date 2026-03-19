@@ -192,6 +192,37 @@ impl ActiveProcessRegistry {
         let mut map = self.run_pids.lock().unwrap_or_else(|e| e.into_inner());
         map.remove(&key);
     }
+
+    /// Register a run and return `(cancellation_flag, guard)`.
+    /// The guard calls `unregister_run` on drop — even if the task panics.
+    pub fn register_run_guarded(
+        self: &Arc<Self>,
+        domain: &str,
+        run_id: &str,
+    ) -> (Arc<AtomicBool>, RunGuard) {
+        let flag = self.register_run(domain, run_id);
+        let guard = RunGuard {
+            registry: Arc::clone(self),
+            domain: domain.to_string(),
+            run_id: run_id.to_string(),
+        };
+        (flag, guard)
+    }
+}
+
+/// RAII guard that calls `unregister_run` when dropped.
+/// Move this into a `tokio::spawn` block to guarantee cleanup on both
+/// normal completion and task panic.
+pub struct RunGuard {
+    registry: Arc<ActiveProcessRegistry>,
+    domain: String,
+    run_id: String,
+}
+
+impl Drop for RunGuard {
+    fn drop(&mut self) {
+        self.registry.unregister_run(&self.domain, &self.run_id);
+    }
 }
 
 /// Shared application state accessible from all Tauri commands.
@@ -230,6 +261,12 @@ pub struct AppState {
     /// Local agent runtime for cross-app desktop plan execution.
     #[cfg(feature = "desktop")]
     pub desktop_runtime: Arc<engine::desktop_runtime::DesktopRuntime>,
+    /// Ambient context fusion: rolling window of desktop signals for persona senses.
+    #[cfg(feature = "desktop")]
+    pub ambient_context: engine::ambient_context::AmbientContextHandle,
+    /// Context rule engine: pattern-based subscriptions for proactive persona actions.
+    #[cfg(feature = "desktop")]
+    pub context_rule_engine: engine::context_rules::ContextRuleEngineHandle,
     /// P2P network service (LAN discovery, QUIC transport, manifest sync).
     pub network: Option<Arc<engine::p2p::NetworkService>>,
     /// Cached auth detection results with expiry time.
@@ -406,8 +443,8 @@ pub fn run() {
                 _ => {}
             }
 
-            let engine = Arc::new(engine::ExecutionEngine::new(log_dir));
             let scheduler = Arc::new(engine::background::SchedulerState::new());
+            let engine = Arc::new(engine::ExecutionEngine::new(log_dir, scheduler.clone()));
             let auth = Arc::new(tokio::sync::Mutex::new(
                 commands::infrastructure::auth::AuthStateInner::default(),
             ));
@@ -476,6 +513,10 @@ pub fn run() {
                 desktop_approvals: Arc::new(engine::desktop_security::DesktopApprovalStore::new()),
                 #[cfg(feature = "desktop")]
                 desktop_runtime: Arc::new(engine::desktop_runtime::DesktopRuntime::new()),
+                #[cfg(feature = "desktop")]
+                ambient_context: engine::ambient_context::create_ambient_context(),
+                #[cfg(feature = "desktop")]
+                context_rule_engine: engine::context_rules::create_context_rule_engine(),
                 auth_detect_cache: Arc::new(tokio::sync::Mutex::new(None)),
                 network: network_service.clone(),
                 embedding_manager: Some(embedding_manager),
@@ -549,6 +590,10 @@ pub fn run() {
             let startup_cloud_client = state_arc.cloud_client.clone();
             let startup_rate_limiter = state_arc.rate_limiter.clone();
             let startup_tier_config = state_arc.tier_config.clone();
+            #[cfg(feature = "desktop")]
+            let startup_ambient_ctx = state_arc.ambient_context.clone();
+            #[cfg(feature = "desktop")]
+            let startup_rule_engine = state_arc.context_rule_engine.clone();
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 let _webhook_shutdown = engine::background::start_loops(
@@ -559,6 +604,10 @@ pub fn run() {
                     startup_rate_limiter,
                     startup_tier_config,
                     startup_cloud_client,
+                    #[cfg(feature = "desktop")]
+                    startup_ambient_ctx,
+                    #[cfg(feature = "desktop")]
+                    startup_rule_engine,
                 );
                 tracing::info!("Scheduler auto-started");
                 #[cfg(feature = "desktop")]
@@ -638,6 +687,7 @@ pub fn run() {
             // Core -- Saved Views
             commands::core::saved_views::create_saved_view,
             commands::core::saved_views::list_saved_views,
+            commands::core::saved_views::list_saved_views_by_type,
             commands::core::saved_views::delete_saved_view,
             // Core -- Chat
             commands::core::chat::list_chat_sessions,
@@ -655,10 +705,13 @@ pub fn run() {
             commands::execution::executions::get_execution_log,
             commands::execution::executions::get_execution_trace,
             commands::execution::executions::get_chain_trace,
+            commands::execution::executions::get_dream_replay,
+            commands::execution::executions::get_circuit_breaker_status,
             // Execution -- Scheduler
             commands::execution::scheduler::get_scheduler_status,
             commands::execution::scheduler::start_scheduler,
             commands::execution::scheduler::stop_scheduler,
+            commands::execution::scheduler::get_subscription_health,
             // Execution -- Tests
             commands::execution::tests::start_test_run,
             commands::execution::tests::list_test_runs,
@@ -673,6 +726,14 @@ pub fn run() {
             commands::execution::test_suites::create_test_suite,
             commands::execution::test_suites::update_test_suite,
             commands::execution::test_suites::delete_test_suite,
+            // Execution -- Output Assertions
+            commands::execution::assertions::list_output_assertions,
+            commands::execution::assertions::get_output_assertion,
+            commands::execution::assertions::create_output_assertion,
+            commands::execution::assertions::update_output_assertion,
+            commands::execution::assertions::delete_output_assertion,
+            commands::execution::assertions::get_assertion_results_for_execution,
+            commands::execution::assertions::get_assertion_result_history,
             // Execution -- Lab
             commands::execution::lab::lab_start_arena,
             commands::execution::lab::lab_list_arena_runs,
@@ -699,6 +760,22 @@ pub fn run() {
             commands::execution::lab::lab_tag_version,
             commands::execution::lab::lab_rollback_version,
             commands::execution::lab::lab_get_error_rate,
+            // Execution -- Genome Breeding
+            commands::execution::genome::genome_extract,
+            commands::execution::genome::genome_fitness,
+            commands::execution::genome::genome_start_breeding,
+            commands::execution::genome::genome_list_breeding_runs,
+            commands::execution::genome::genome_get_breeding_results,
+            commands::execution::genome::genome_delete_breeding_run,
+            commands::execution::genome::genome_adopt_offspring,
+            // Execution -- Evolution (auto-evolving personas)
+            commands::execution::evolution::evolution_get_policy,
+            commands::execution::evolution::evolution_upsert_policy,
+            commands::execution::evolution::evolution_toggle,
+            commands::execution::evolution::evolution_delete_policy,
+            commands::execution::evolution::evolution_list_cycles,
+            commands::execution::evolution::evolution_trigger_cycle,
+            commands::execution::evolution::evolution_check_eligibility,
             // Execution -- Healing
             commands::execution::healing::list_healing_issues,
             commands::execution::healing::get_healing_issue,
@@ -874,6 +951,8 @@ pub fn run() {
             commands::credentials::rotation::get_rotation_status,
             commands::credentials::rotation::rotate_credential_now,
             commands::credentials::rotation::refresh_credential_oauth_now,
+            commands::credentials::rotation::get_oauth_token_metrics,
+            commands::credentials::rotation::get_oauth_token_lifetime_summary,
             // Credentials -- Database Schema & Queries
             commands::credentials::db_schema::list_db_schema_tables,
             commands::credentials::db_schema::create_db_schema_table,
@@ -896,6 +975,7 @@ pub fn run() {
             commands::credentials::schema_proposal::validate_db_schema,
             // Credentials -- API Proxy
             commands::credentials::api_proxy::execute_api_request,
+            commands::credentials::api_proxy::get_api_proxy_metrics,
             commands::credentials::api_proxy::parse_api_definition,
             commands::credentials::api_proxy::save_api_definition,
             commands::credentials::api_proxy::load_api_definition,
@@ -903,6 +983,7 @@ pub fn run() {
             commands::credentials::mcp_tools::list_mcp_tools,
             commands::credentials::mcp_tools::execute_mcp_tool,
             commands::credentials::mcp_tools::healthcheck_mcp_preview,
+            commands::credentials::mcp_tools::get_mcp_pool_metrics,
             // Credentials -- Desktop Discovery & Security (desktop only)
             #[cfg(feature = "desktop")]
             commands::credentials::desktop::discover_desktop_apps,
@@ -929,6 +1010,30 @@ pub fn run() {
             commands::credentials::desktop_bridges::get_desktop_runtime_status,
             #[cfg(feature = "desktop")]
             commands::credentials::desktop_bridges::get_desktop_plan_result,
+            // Execution -- Ambient Context Fusion (desktop only)
+            #[cfg(feature = "desktop")]
+            commands::execution::ambient::get_ambient_context_snapshot,
+            #[cfg(feature = "desktop")]
+            commands::execution::ambient::set_ambient_context_enabled,
+            #[cfg(feature = "desktop")]
+            commands::execution::ambient::get_ambient_context_enabled,
+            #[cfg(feature = "desktop")]
+            commands::execution::ambient::set_ambient_sensory_policy,
+            #[cfg(feature = "desktop")]
+            commands::execution::ambient::get_ambient_sensory_policy,
+            #[cfg(feature = "desktop")]
+            commands::execution::ambient::remove_ambient_sensory_policy,
+            // Execution -- Context Rules (pattern-based ambient subscriptions)
+            #[cfg(feature = "desktop")]
+            commands::execution::ambient::add_context_rule,
+            #[cfg(feature = "desktop")]
+            commands::execution::ambient::remove_context_rule,
+            #[cfg(feature = "desktop")]
+            commands::execution::ambient::list_context_rules,
+            #[cfg(feature = "desktop")]
+            commands::execution::ambient::get_context_rule_matches,
+            #[cfg(feature = "desktop")]
+            commands::execution::ambient::get_context_stream_stats,
             // Credential Recipes -- shared discovery cache
             commands::credentials::credential_recipes::get_credential_recipe,
             commands::credentials::credential_recipes::list_credential_recipes,
@@ -1014,6 +1119,7 @@ pub fn run() {
             commands::teams::teams::get_pipeline_analytics,
             commands::teams::teams::suggest_topology,
             commands::teams::teams::suggest_topology_llm,
+            commands::teams::teams::compile_workflow,
             // Team Memories
             commands::teams::team_memories::list_team_memories,
             commands::teams::team_memories::create_team_memory,
@@ -1082,6 +1188,8 @@ pub fn run() {
             commands::tools::triggers::replay_webhook_request,
             commands::tools::triggers::webhook_request_to_curl,
             commands::tools::triggers::get_persona_config_warnings,
+            commands::tools::triggers::get_composite_partial_matches,
+            commands::tools::triggers::get_composite_partial_match,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,
@@ -1093,9 +1201,15 @@ pub fn run() {
             commands::infrastructure::system::health_check_agents,
             commands::infrastructure::system::health_check_cloud,
             commands::infrastructure::system::health_check_account,
+            commands::infrastructure::system::health_check_circuit_breaker,
+            commands::infrastructure::system::health_check_subscriptions,
             commands::infrastructure::system::open_external_url,
             commands::infrastructure::system::get_crash_logs,
             commands::infrastructure::system::clear_crash_logs,
+            commands::infrastructure::system::report_frontend_crash,
+            commands::infrastructure::system::get_frontend_crashes,
+            commands::infrastructure::system::clear_frontend_crashes,
+            commands::infrastructure::system::get_frontend_crash_count,
             // Infrastructure -- Setup / Auto-install
             commands::infrastructure::setup::start_setup_install,
             commands::infrastructure::setup::cancel_setup_install,
@@ -1255,6 +1369,9 @@ pub fn run() {
             commands::network::bundle::preview_bundle_import,
             commands::network::bundle::apply_bundle_import,
             commands::network::bundle::verify_bundle,
+            // Network -- Sovereign Enclaves
+            commands::network::enclave::seal_enclave,
+            commands::network::enclave::verify_enclave,
             // Network -- P2P Discovery (Invisible Apps Phase 2)
             commands::network::discovery::get_discovered_peers,
             commands::network::discovery::connect_to_peer,
@@ -1265,6 +1382,7 @@ pub fn run() {
             commands::network::discovery::get_network_status,
             commands::network::discovery::get_connection_health,
             commands::network::discovery::get_network_snapshot,
+            commands::network::discovery::get_messaging_metrics,
             commands::network::discovery::send_agent_message,
             commands::network::discovery::get_received_messages,
             commands::network::discovery::set_network_config,

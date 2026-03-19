@@ -8,7 +8,9 @@ import type { Remediation } from "@/lib/bindings/Remediation";
 import type { AnomalyScore } from "@/lib/bindings/AnomalyScore";
 import type { HealthcheckEntry } from "@/lib/bindings/HealthcheckEntry";
 import type { RotationStatus } from "@/lib/bindings/RotationStatus";
-export type { RotationPolicy, CreateRotationPolicyInput, UpdateRotationPolicyInput, RotationHistoryEntry, Remediation, AnomalyScore, HealthcheckEntry, RotationStatus };
+import type { OAuthTokenMetric } from "@/lib/bindings/OAuthTokenMetric";
+import type { OAuthTokenLifetimeSummary } from "@/lib/bindings/OAuthTokenLifetimeSummary";
+export type { RotationPolicy, CreateRotationPolicyInput, UpdateRotationPolicyInput, RotationHistoryEntry, Remediation, AnomalyScore, HealthcheckEntry, RotationStatus, OAuthTokenMetric, OAuthTokenLifetimeSummary };
 
 // ============================================================================
 // API Functions
@@ -37,3 +39,13 @@ export const rotateCredentialNow = (credentialId: string) =>
 
 export const refreshCredentialOAuthNow = (credentialId: string) =>
   invoke<string>("refresh_credential_oauth_now", { credentialId });
+
+// ============================================================================
+// OAuth Token Lifetime Metrics
+// ============================================================================
+
+export const getOAuthTokenMetrics = (credentialId: string, limit?: number) =>
+  invoke<OAuthTokenMetric[]>("get_oauth_token_metrics", { credentialId, limit });
+
+export const getOAuthTokenLifetimeSummary = (credentialId: string) =>
+  invoke<OAuthTokenLifetimeSummary>("get_oauth_token_lifetime_summary", { credentialId });

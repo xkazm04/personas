@@ -12,6 +12,10 @@ pub struct SavedView {
     pub custom_end_date: Option<String>,
     pub compare_enabled: bool,
     pub is_smart: bool,
+    /// "analytics" | "agent_list"
+    pub view_type: String,
+    /// JSON blob storing filter/sort/grouping config
+    pub view_config: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -26,4 +30,6 @@ pub struct CreateSavedViewInput {
     pub custom_end_date: Option<String>,
     pub compare_enabled: bool,
     pub is_smart: bool,
+    pub view_type: String,
+    pub view_config: Option<String>,
 }

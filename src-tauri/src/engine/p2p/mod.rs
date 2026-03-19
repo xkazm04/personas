@@ -249,7 +249,7 @@ impl NetworkService {
                             let manifest_sync = manifest_sync.clone();
                             let messages = messages.clone();
                             tokio::spawn(async move {
-                                if let Err(e) = connections.handle_incoming(conn, &manifest_sync, &messages).await {
+                                if let Err(e) = connections.handle_incoming(conn, manifest_sync, messages).await {
                                     tracing::warn!("Incoming connection failed: {}", e);
                                 }
                             });

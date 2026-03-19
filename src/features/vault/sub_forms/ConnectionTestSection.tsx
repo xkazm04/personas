@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Activity, Loader2, Info } from 'lucide-react';
+import { Activity, Info } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { HealthcheckResultDisplay } from './HealthcheckResultDisplay';
 
 interface ConnectionTestSectionProps {
@@ -35,7 +36,7 @@ export function ConnectionTestSection({
             }`}
           >
             {isTesting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <LoadingSpinner />
             ) : (
               <Activity className="w-4 h-4" />
             )}

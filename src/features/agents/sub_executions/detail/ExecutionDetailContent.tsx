@@ -30,13 +30,13 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
       {/* Status Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="space-y-1.5">
-          <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider">Status</div>
+          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider">Status</div>
           <div className="flex items-center gap-2">
-            <span className={`inline-block px-2 py-0.5 rounded-lg text-sm font-medium ${badgeClass(getStatusEntry(execution.status))}`}>
+            <span className={`inline-block px-2 py-0.5 rounded-lg typo-heading ${badgeClass(getStatusEntry(execution.status))}`}>
               {getStatusEntry(execution.status).label}
             </span>
             {execution.retry_count > 0 && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count} of original execution`}>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count} of original execution`}>
                 <RefreshCw className="w-2.5 h-2.5" />
                 Retry #{execution.retry_count}
               </span>
@@ -45,31 +45,31 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
         </div>
 
         <div className="space-y-1.5">
-          <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
+          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Clock className="w-3 h-3" />
             Duration
           </div>
-          <div className="text-sm text-foreground font-mono">
+          <div className="typo-code text-foreground">
             {formatDuration(execution.duration_ms)}
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
+          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             Started
           </div>
-          <div className="text-sm text-foreground">
+          <div className="typo-body text-foreground">
             {formatTimestamp(execution.started_at)}
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <div className="text-sm font-mono text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
+          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             Completed
           </div>
-          <div className="text-sm text-foreground">
+          <div className="typo-body text-foreground">
             {formatTimestamp(execution.completed_at)}
           </div>
         </div>

@@ -71,11 +71,11 @@ export default function SidebarSubNav({
             }`}>
               <Icon className={`${iconSize} ${isActive ? 'text-primary' : 'text-muted-foreground/90'}`} />
             </div>
-            <span className={`text-sm ${isActive ? 'font-semibold text-foreground' : isOverview ? 'font-medium text-foreground/80' : 'font-medium text-muted-foreground/90'}`}>
+            <span className={`typo-heading ${isActive ? 'text-foreground' : isOverview ? 'text-foreground/80' : 'text-muted-foreground/90'}`}>
               {item.label}
             </span>
             {badge && badge.count > 0 && (
-              <span className={`ml-auto px-1.5 py-0.5 text-sm font-bold leading-none rounded-full ${badge.className}`}>
+              <span className={`ml-auto px-1.5 py-0.5 typo-heading leading-none rounded-full ${badge.className}`}>
                 {badge.count}
               </span>
             )}

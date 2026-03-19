@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { CredentialCardHeader } from '@/features/vault/sub_card/CredentialCardHeader';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
@@ -62,7 +62,7 @@ export function CredentialCard({
         className="bg-secondary/25 backdrop-blur-sm border border-red-500/20 rounded-lg overflow-hidden pointer-events-none"
       >
         <div className="flex items-center gap-2 px-4 py-3 text-sm text-red-400/70">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <LoadingSpinner size="sm" />
           Deleting {credential.name}...
         </div>
       </motion.div>

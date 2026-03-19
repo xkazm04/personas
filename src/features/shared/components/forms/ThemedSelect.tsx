@@ -134,7 +134,7 @@ function FilterableSelect({
 
   const baseClasses = [
     'w-full appearance-none cursor-pointer',
-    'px-3 py-2 pr-8 text-sm rounded-xl',
+    'px-3 py-2 pr-8 typo-body rounded-xl',
     'bg-background/50 text-foreground border border-primary/15',
     'focus-ring focus-visible:border-primary/30',
     'transition-all text-left',
@@ -173,21 +173,21 @@ function FilterableSelect({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Filter..."
-              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none"
+              className="w-full bg-transparent typo-body text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none"
             />
           </div>
 
           {/* Options */}
           <div className="max-h-48 overflow-y-auto">
             {filtered.length === 0 && (
-              <div className="px-3 py-2.5 text-sm text-muted-foreground/50">No matches</div>
+              <div className="px-3 py-2.5 typo-body text-muted-foreground/50">No matches</div>
             )}
             {filtered.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
                 onClick={() => handleSelect(opt.value)}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors hover:bg-primary/5 ${
+                className={`w-full flex items-center gap-2 px-3 py-2 typo-body text-left transition-colors hover:bg-primary/5 ${
                   opt.value === value ? 'bg-primary/5 text-foreground' : 'text-foreground/80'
                 }`}
               >
@@ -235,7 +235,7 @@ export const ThemedSelect = forwardRef<HTMLSelectElement, ThemedSelectProps>(
           ref={ref}
           className={[
             'w-full appearance-none cursor-pointer',
-            'px-3 py-2 pr-8 text-sm rounded-xl',
+            'px-3 py-2 pr-8 typo-body rounded-xl',
             'bg-background/50 text-foreground border border-primary/15',
             'focus-ring focus-visible:border-primary/30',
             'transition-all',

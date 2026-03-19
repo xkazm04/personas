@@ -51,7 +51,7 @@ export default function GroupList({
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
             <div className="border border-primary/10 rounded-xl p-4 bg-primary/5 space-y-3">
               <div className="flex items-center gap-2">
-                <input value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreate()} placeholder="Group name..." className="flex-1 px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30" autoFocus />
+                <input value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreate()} placeholder="Group name..." className="flex-1 px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus-ring" autoFocus />
                 <Button variant="accent" accentColor="amber" size="sm" disabled={!newGroupName.trim()} disabledReason="Enter a group name to create" onClick={handleCreate}>Create</Button>
                 <Button variant="ghost" size="icon-sm" onClick={() => onShowNewGroup(false)}><X className="w-3.5 h-3.5" /></Button>
               </div>

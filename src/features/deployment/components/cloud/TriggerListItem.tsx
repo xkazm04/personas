@@ -1,13 +1,13 @@
 import {
   ChevronDown,
   ChevronRight,
-  Loader2,
   Play,
   Pause,
   Trash2,
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CloudTrigger, CloudTriggerFiring } from '@/api/system/cloud';
 import {
   triggerTypeLabel,
@@ -110,7 +110,7 @@ export function TriggerListItem({
             </h4>
             {isLoadingFirings ? (
               <div className="flex items-center gap-2 text-xs text-muted-foreground/50 py-2">
-                <Loader2 className="w-3 h-3 animate-spin" /> Loading...
+                <LoadingSpinner size="xs" /> Loading...
               </div>
             ) : firings.length === 0 ? (
               <p className="text-xs text-muted-foreground/50">No firings recorded yet.</p>
@@ -120,7 +120,7 @@ export function TriggerListItem({
                   <div key={f.id} className="flex items-center gap-2 text-xs px-2 py-1.5 rounded-lg bg-secondary/20 border border-primary/5">
                     {f.status === 'completed' ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> :
                      f.status === 'failed' ? <XCircle className="w-3 h-3 text-red-400" /> :
-                     <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />}
+                     <LoadingSpinner size="xs" className="text-blue-400" />}
                     <span className="text-muted-foreground/70">{f.status}</span>
                     <span className="text-muted-foreground/50 flex-1">{timeAgo(f.fired_at)}</span>
                     {f.duration_ms != null && <span className="text-muted-foreground/50">{f.duration_ms < 1000 ? `${f.duration_ms}ms` : `${(f.duration_ms / 1000).toFixed(1)}s`}</span>}

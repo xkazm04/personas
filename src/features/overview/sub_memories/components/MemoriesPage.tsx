@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Brain, Plus, ChevronDown, ChevronUp, Sparkles, Loader2 } from 'lucide-react';
+import { Brain, Plus, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { AnimatePresence } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
@@ -100,17 +101,17 @@ export default function MemoriesPage() {
         actions={
           <div className="flex items-center gap-2">
             {import.meta.env.DEV && (
-              <button onClick={handleSeedMemory} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock memory (dev only)">
+              <button onClick={handleSeedMemory} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock memory (dev only)">
                 <Plus className="w-3.5 h-3.5" /> Mock Memory
               </button>
             )}
-            <button onClick={handleReview} disabled={isReviewing || memoriesTotal === 0} title={isReviewing ? 'Review in progress...' : memoriesTotal === 0 ? 'No memories to review' : undefined} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
-              {isReviewing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            <button onClick={handleReview} disabled={isReviewing || memoriesTotal === 0} title={isReviewing ? 'Review in progress...' : memoriesTotal === 0 ? 'No memories to review' : undefined} className="flex items-center gap-1.5 px-3 py-2 typo-heading rounded-xl border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
+              {isReviewing ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
               {isReviewing ? 'Reviewing...' : 'Review with AI'}
             </button>
             <button
               onClick={() => setShowAddForm((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}
+              className={`flex items-center gap-1.5 px-3 py-2 typo-heading rounded-xl border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}
             >
               <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
               Add Memory
@@ -143,7 +144,7 @@ export default function MemoriesPage() {
               <Brain className="w-8 h-8 text-violet-400/40" />
             </div>
             <div className="text-center">
-              <p className="text-sm font-medium">No memories yet</p>
+              <p className="typo-heading">No memories yet</p>
               <p className="text-sm text-muted-foreground/80 mt-1 max-w-xs">
                 {hasFilters ? 'No memories match your filters. Try adjusting your search.' : 'When agents run, they can store valuable notes and learnings here.'}
               </p>

@@ -146,11 +146,16 @@ export function useDesignTabState() {
     const parsed = parseJsonOrDefault<DesignAnalysisResult | null>(selectedPersona?.last_design_result, null);
     if (!parsed) return null;
     const GOOGLE_CONNECTORS = new Set(['gmail', 'google_calendar', 'google_drive']);
-    parsed.suggested_connectors?.forEach((c) => {
-      if (!c.oauth_type && GOOGLE_CONNECTORS.has(c.name)) {
-        c.oauth_type = 'google';
-      }
-    });
+    if (parsed.suggested_connectors) {
+      return {
+        ...parsed,
+        suggested_connectors: parsed.suggested_connectors.map((c) =>
+          !c.oauth_type && GOOGLE_CONNECTORS.has(c.name)
+            ? { ...c, oauth_type: 'google' as const }
+            : c
+        ),
+      };
+    }
     return parsed;
   }, [selectedPersona?.last_design_result]);
 

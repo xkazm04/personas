@@ -5,6 +5,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use tokio::sync::{Mutex, RwLock};
@@ -13,9 +14,80 @@ use super::manifest_sync::ManifestSync;
 use super::messaging::MessageRouter;
 use super::protocol::{self, Message, PROTOCOL_VERSION};
 use super::transport::QuicTransport;
-use super::types::{ConnectionHealth, ConnectionState, PeerConnectionInfo};
+use super::types::{
+    ConnectionHealth, ConnectionMetricsSnapshot, ConnectionState, DisconnectReason,
+    PeerConnectionInfo,
+};
 use crate::db::DbPool;
 use crate::error::AppError;
+
+/// Atomic counters for connection lifecycle observability.
+pub struct ConnectionMetrics {
+    pub connections_established: AtomicU64,
+    pub connections_dropped_health: AtomicU64,
+    pub connections_dropped_user: AtomicU64,
+    pub connections_dropped_shutdown: AtomicU64,
+    pub connections_dropped_protocol: AtomicU64,
+    pub connections_rejected_capacity: AtomicU64,
+    /// Total outbound connection attempts (including failures).
+    pub connection_attempts: AtomicU64,
+    /// Cumulative connection establishment time in milliseconds (for averaging).
+    pub total_connect_duration_ms: AtomicU64,
+}
+
+impl ConnectionMetrics {
+    fn new() -> Self {
+        Self {
+            connections_established: AtomicU64::new(0),
+            connections_dropped_health: AtomicU64::new(0),
+            connections_dropped_user: AtomicU64::new(0),
+            connections_dropped_shutdown: AtomicU64::new(0),
+            connections_dropped_protocol: AtomicU64::new(0),
+            connections_rejected_capacity: AtomicU64::new(0),
+            connection_attempts: AtomicU64::new(0),
+            total_connect_duration_ms: AtomicU64::new(0),
+        }
+    }
+
+    fn record_disconnect(&self, reason: DisconnectReason) {
+        match reason {
+            DisconnectReason::HealthCheck => {
+                self.connections_dropped_health.fetch_add(1, Ordering::Relaxed);
+            }
+            DisconnectReason::User => {
+                self.connections_dropped_user.fetch_add(1, Ordering::Relaxed);
+            }
+            DisconnectReason::Shutdown => {
+                self.connections_dropped_shutdown.fetch_add(1, Ordering::Relaxed);
+            }
+            DisconnectReason::ProtocolError => {
+                self.connections_dropped_protocol.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+    }
+
+    pub fn snapshot(&self) -> ConnectionMetricsSnapshot {
+        let established = self.connections_established.load(Ordering::Relaxed);
+        let total_duration = self.total_connect_duration_ms.load(Ordering::Relaxed);
+        let avg_connect_duration_ms = if established > 0 {
+            Some(total_duration as f64 / established as f64)
+        } else {
+            None
+        };
+        ConnectionMetricsSnapshot {
+            connections_established: established,
+            connections_dropped_health: self.connections_dropped_health.load(Ordering::Relaxed),
+            connections_dropped_user: self.connections_dropped_user.load(Ordering::Relaxed),
+            connections_dropped_shutdown: self.connections_dropped_shutdown.load(Ordering::Relaxed),
+            connections_dropped_protocol: self.connections_dropped_protocol.load(Ordering::Relaxed),
+            connections_rejected_capacity: self
+                .connections_rejected_capacity
+                .load(Ordering::Relaxed),
+            connection_attempts: self.connection_attempts.load(Ordering::Relaxed),
+            avg_connect_duration_ms,
+        }
+    }
+}
 
 /// Active QUIC connection handle to a peer.
 pub struct PeerConnection {
@@ -35,6 +107,7 @@ pub struct ConnectionManager {
     max_peers: usize,
     #[allow(dead_code)]
     max_retries: u32,
+    metrics: ConnectionMetrics,
 }
 
 impl ConnectionManager {
@@ -54,6 +127,7 @@ impl ConnectionManager {
             connecting: Mutex::new(HashSet::new()),
             max_peers,
             max_retries: 3,
+            metrics: ConnectionMetrics::new(),
         }
     }
 
@@ -81,6 +155,9 @@ impl ConnectionManager {
 
         // Enforce max_peers limit
         if self.is_at_capacity().await {
+            self.metrics
+                .connections_rejected_capacity
+                .fetch_add(1, Ordering::Relaxed);
             return Err(AppError::Validation(format!(
                 "Connection limit reached ({} peers). Disconnect a peer first.",
                 self.max_peers
@@ -107,6 +184,9 @@ impl ConnectionManager {
 
     /// Inner connection logic, separated so `connect_to_peer` can manage the connecting guard.
     async fn connect_to_peer_inner(&self, peer_id: &str) -> Result<(), AppError> {
+        self.metrics.connection_attempts.fetch_add(1, Ordering::Relaxed);
+        let connect_start = std::time::Instant::now();
+
         // Look up the peer's address from the discovered_peers table
         let addr = self.resolve_peer_address(peer_id)?;
 
@@ -189,22 +269,35 @@ impl ConnectionManager {
             .await
             .insert(peer_id.to_string(), conn);
 
+        let connect_duration_ms = connect_start.elapsed().as_millis() as u64;
+        self.metrics
+            .connections_established
+            .fetch_add(1, Ordering::Relaxed);
+        self.metrics
+            .total_connect_duration_ms
+            .fetch_add(connect_duration_ms, Ordering::Relaxed);
+
         // Update discovered_peers DB
         self.update_connection_status(peer_id, true)?;
 
-        tracing::info!(peer_id = %peer_id, "Connected to peer");
+        tracing::info!(peer_id = %peer_id, connect_duration_ms = connect_duration_ms, "Connected to peer");
         Ok(())
     }
 
-    /// Handle an incoming QUIC connection (accept Hello, send HelloAck).
+    /// Handle an incoming QUIC connection (accept Hello, send HelloAck),
+    /// then spawn a stream dispatch loop to process subsequent streams
+    /// (Ping, ManifestRequest, AgentMessage) from the remote peer.
     pub async fn handle_incoming(
         &self,
         quinn_conn: quinn::Connection,
-        _manifest_sync: &ManifestSync,
-        _messages: &MessageRouter,
+        manifest_sync: Arc<ManifestSync>,
+        messages: Arc<MessageRouter>,
     ) -> Result<(), AppError> {
         // Enforce max_peers limit for incoming connections
         if self.is_at_capacity().await {
+            self.metrics
+                .connections_rejected_capacity
+                .fetch_add(1, Ordering::Relaxed);
             quinn_conn.close(quinn::VarInt::from_u32(1), b"capacity exceeded");
             return Err(AppError::Validation(format!(
                 "Rejecting incoming connection: at capacity ({} peers)",
@@ -263,6 +356,9 @@ impl ConnectionManager {
         )
         .await?;
 
+        // Clone the connection handle for the dispatch loop before moving into storage.
+        let dispatch_conn = quinn_conn.clone();
+
         // Store the connection
         let conn = PeerConnection {
             info: PeerConnectionInfo {
@@ -282,19 +378,146 @@ impl ConnectionManager {
             .await
             .insert(remote_peer_id.clone(), conn);
 
+        self.metrics
+            .connections_established
+            .fetch_add(1, Ordering::Relaxed);
+
         self.update_connection_status(&remote_peer_id, true)?;
 
         tracing::info!(peer_id = %remote_peer_id, "Accepted incoming connection");
+
+        // Spawn a dispatch loop to handle subsequent streams from the remote peer.
+        // Without this, Ping/ManifestRequest/AgentMessage streams opened by the
+        // connecting peer would be silently dropped.
+        Self::spawn_inbound_dispatch(dispatch_conn, remote_peer_id, manifest_sync, messages);
+
         Ok(())
     }
 
-    /// Disconnect from a peer.
+    /// Spawn a background task that accepts new bidirectional streams on an
+    /// inbound QUIC connection and dispatches each message to the appropriate
+    /// handler (Pong for Ping, ManifestResponse for ManifestRequest, store
+    /// for AgentMessage). Each stream is handled in its own task so slow
+    /// operations don't block stream acceptance.
+    fn spawn_inbound_dispatch(
+        quinn_conn: quinn::Connection,
+        peer_id: String,
+        manifest_sync: Arc<ManifestSync>,
+        messages: Arc<MessageRouter>,
+    ) {
+        tokio::spawn(async move {
+            loop {
+                let (send, recv) = match quinn_conn.accept_bi().await {
+                    Ok(pair) => pair,
+                    Err(quinn::ConnectionError::ApplicationClosed(_))
+                    | Err(quinn::ConnectionError::LocallyClosed) => {
+                        tracing::debug!(
+                            peer_id = %peer_id,
+                            "Inbound dispatch loop ending: connection closed"
+                        );
+                        break;
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            peer_id = %peer_id,
+                            "Inbound stream accept error, ending dispatch: {}", e
+                        );
+                        break;
+                    }
+                };
+
+                let peer_id = peer_id.clone();
+                let manifest_sync = manifest_sync.clone();
+                let messages = messages.clone();
+
+                tokio::spawn(async move {
+                    let mut send = tokio::io::BufWriter::new(send);
+                    let mut recv = tokio::io::BufReader::new(recv);
+
+                    let msg = match tokio::time::timeout(
+                        std::time::Duration::from_secs(10),
+                        protocol::decode(&mut recv),
+                    )
+                    .await
+                    {
+                        Ok(Ok(msg)) => msg,
+                        Ok(Err(e)) => {
+                            tracing::debug!(
+                                peer_id = %peer_id,
+                                "Inbound stream decode error: {}", e
+                            );
+                            return;
+                        }
+                        Err(_) => {
+                            tracing::debug!(
+                                peer_id = %peer_id,
+                                "Inbound stream read timeout"
+                            );
+                            return;
+                        }
+                    };
+
+                    if let Err(e) =
+                        Self::dispatch_inbound_message(msg, &mut send, &peer_id, &manifest_sync, &messages).await
+                    {
+                        tracing::debug!(
+                            peer_id = %peer_id,
+                            "Inbound dispatch error: {}", e
+                        );
+                    }
+                });
+            }
+        });
+    }
+
+    /// Handle a single message received on an inbound stream.
+    async fn dispatch_inbound_message(
+        msg: Message,
+        send: &mut tokio::io::BufWriter<quinn::SendStream>,
+        peer_id: &str,
+        manifest_sync: &ManifestSync,
+        messages: &MessageRouter,
+    ) -> Result<(), AppError> {
+        match msg {
+            Message::Ping => {
+                protocol::write_message(send, &Message::Pong).await?;
+            }
+            Message::ManifestRequest => {
+                let resources = manifest_sync.build_local_manifest()?;
+                protocol::write_message(send, &Message::ManifestResponse { resources }).await?;
+            }
+            Message::AgentMessage { envelope } => {
+                messages.store_received(peer_id, envelope).await?;
+            }
+            other => {
+                tracing::debug!(
+                    peer_id = %peer_id,
+                    msg = ?other,
+                    "Unexpected message on inbound stream, ignoring"
+                );
+            }
+        }
+        Ok(())
+    }
+
+    /// Disconnect from a peer, recording the reason for observability.
     pub async fn disconnect_peer(&self, peer_id: &str) -> Result<(), AppError> {
+        self.disconnect_peer_with_reason(peer_id, DisconnectReason::User)
+            .await
+    }
+
+    /// Disconnect with an explicit reason (used internally by health checks, shutdown, etc.).
+    async fn disconnect_peer_with_reason(
+        &self,
+        peer_id: &str,
+        reason: DisconnectReason,
+    ) -> Result<(), AppError> {
         if let Some(conn) = self.connections.write().await.remove(peer_id) {
             conn.quinn_conn
                 .close(quinn::VarInt::from_u32(0), b"disconnect");
+            self.metrics.record_disconnect(reason);
             self.update_connection_status(peer_id, false)?;
-            tracing::info!(peer_id = %peer_id, "Disconnected from peer");
+            tracing::info!(peer_id = %peer_id, reason = ?reason, "Disconnected from peer");
         }
         Ok(())
     }
@@ -305,7 +528,10 @@ impl ConnectionManager {
         for (peer_id, conn) in conns.drain() {
             conn.quinn_conn
                 .close(quinn::VarInt::from_u32(0), b"shutdown");
-            let _ = self.update_connection_status(&peer_id, false);
+            self.metrics.record_disconnect(DisconnectReason::Shutdown);
+            if let Err(e) = self.update_connection_status(&peer_id, false) {
+                tracing::warn!(peer_id = %peer_id, error = %e, "Failed to update connection status during disconnect_all");
+            }
         }
     }
 
@@ -391,7 +617,9 @@ impl ConnectionManager {
             .await;
 
         for peer_id in failed {
-            let _ = self.disconnect_peer(&peer_id).await;
+            let _ = self
+                .disconnect_peer_with_reason(&peer_id, DisconnectReason::HealthCheck)
+                .await;
         }
         Ok(())
     }
@@ -495,6 +723,11 @@ impl ConnectionManager {
         addr_str
             .parse()
             .map_err(|e| AppError::Internal(format!("Invalid address {}: {}", addr_str, e)))
+    }
+
+    /// Get a snapshot of connection lifecycle metrics.
+    pub fn get_connection_metrics(&self) -> ConnectionMetricsSnapshot {
+        self.metrics.snapshot()
     }
 
     /// Update is_connected flag in discovered_peers.

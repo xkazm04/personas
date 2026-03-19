@@ -28,7 +28,7 @@ export function MetricsCharts({
     <>
       {/* Cost per Day */}
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-muted-foreground/70">Cost per Day</h4>
+        <h4 className="typo-heading text-muted-foreground/70">Cost per Day</h4>
         <div className="h-48 2xl:h-56 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -52,7 +52,7 @@ export function MetricsCharts({
 
       {/* Execution Count by Status */}
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-muted-foreground/70">Executions by Status</h4>
+        <h4 className="typo-heading text-muted-foreground/70">Executions by Status</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -74,7 +74,7 @@ export function MetricsCharts({
 
       {/* Success Rate Trend */}
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-muted-foreground/70">Success Rate Trend</h4>
+        <h4 className="typo-heading text-muted-foreground/70">Success Rate Trend</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -94,7 +94,7 @@ export function MetricsCharts({
 
       {/* Latency Distribution */}
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-muted-foreground/70">Latency Distribution (p50 / p95 / p99)</h4>
+        <h4 className="typo-heading text-muted-foreground/70">Latency Distribution (p50 / p95 / p99)</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-xl border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
@@ -118,7 +118,7 @@ export function MetricsCharts({
       {/* Top Personas by Cost */}
       {data.top_personas.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-muted-foreground/70">Top Personas by Cost</h4>
+          <h4 className="typo-heading text-muted-foreground/70">Top Personas by Cost</h4>
           <div className="space-y-1.5">
             {data.top_personas.map((p: { persona_id: string; persona_name: string; total_cost: number; total_executions: number; avg_cost_per_exec: number }, i: number) => {
               const maxCost = data.top_personas[0]?.total_cost || 1;
@@ -128,7 +128,7 @@ export function MetricsCharts({
                   <span className="text-sm font-mono text-muted-foreground/60 w-4 text-right">#{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-foreground/80 truncate">{p.persona_name}</span>
+                      <span className="typo-heading text-foreground/80 truncate">{p.persona_name}</span>
                       <span className="text-sm font-mono text-violet-400">{fmtCost(p.total_cost)}</span>
                     </div>
                     <div className="h-1.5 bg-secondary/40 rounded-full overflow-hidden">

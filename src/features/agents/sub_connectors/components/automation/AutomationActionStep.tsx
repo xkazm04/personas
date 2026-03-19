@@ -1,4 +1,5 @@
-import { Clock, Check, Circle, Loader2 } from 'lucide-react';
+import { Clock, Check, Circle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion } from 'framer-motion';
 import { STAGE_DEFS } from '../../libs/useAutomationSetup';
 import type { RefObject } from 'react';
@@ -47,7 +48,7 @@ export function AutomationActionStep({
                     <Check className="w-3 h-3 text-brand-emerald" />
                   </div>
                 ) : status === 'active' ? (
-                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                  <LoadingSpinner className="text-primary" />
                 ) : (
                   <Circle className="w-3.5 h-3.5 text-muted-foreground/20" />
                 )}

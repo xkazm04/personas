@@ -1,3 +1,4 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useCallback } from 'react';
 import { parseWorkflowFile } from '@/lib/personas/parsers/workflowParser';
 import { isSupportedFile } from '@/lib/personas/parsers/workflowDetector';
@@ -43,7 +44,7 @@ export function useWorkflowImport({
 
         const { detection, result, workflowName: wfName, rawJson, needsConfirmation } = parseResult;
 
-        void Promise.resolve(removeSession()).catch(() => {});
+        void Promise.resolve(removeSession()).catch(silentCatch("useWorkflowImport:removeSession"));
         clearPersistedContext();
         void resetTransformStream();
         setIsRestoring(false);
@@ -58,7 +59,7 @@ export function useWorkflowImport({
           detectedConfidence: detection.confidence,
         });
 
-        void Promise.resolve(createSession(wfName, rawJson)).catch(() => {});
+        void Promise.resolve(createSession(wfName, rawJson)).catch(silentCatch("useWorkflowImport:createSession"));
       } catch (err) {
         dispatch({
           type: 'SET_ERROR',

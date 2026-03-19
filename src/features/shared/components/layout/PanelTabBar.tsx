@@ -37,7 +37,7 @@ export function PanelTabBar<T extends string>({
             disabled={tab.disabled}
             onClick={() => onTabChange(tab.id)}
             className={[
-              'px-4 py-2.5 text-sm font-medium transition-colors relative',
+              'px-4 py-2.5 typo-heading transition-colors relative focus-ring',
               active
                 ? 'text-foreground/90'
                 : 'text-muted-foreground/90 hover:text-foreground/95',

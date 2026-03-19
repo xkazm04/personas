@@ -52,14 +52,15 @@ pub async fn lab_start_arena(
     let run = arena_repo::create_run(&state.db, &persona_id, &models_json, use_case_filter.as_deref())?;
     let run_id = run.id.clone();
 
-    let cancelled = state.process_registry.register_run("test", &run_id);
+    let (cancelled, run_guard) =
+        state.process_registry.register_run_guarded("test", &run_id);
 
     let pool = state.db.clone();
-    let registry = state.process_registry.clone();
     let cancelled_clone = cancelled.clone();
     let run_id_clone = run_id.clone();
 
     tokio::spawn(async move {
+        let _guard = run_guard;
         test_runner::run_arena_test(
             app,
             pool,
@@ -71,8 +72,6 @@ pub async fn lab_start_arena(
             use_case_filter,
         )
         .await;
-
-        registry.unregister_run("test", &run_id_clone);
     });
 
     Ok(run)
@@ -174,7 +173,8 @@ pub async fn lab_start_ab(
     )?;
     let run_id = run.id.clone();
 
-    let cancelled = state.process_registry.register_run("test", &run_id);
+    let (cancelled, run_guard) =
+        state.process_registry.register_run_guarded("test", &run_id);
 
     // Build persona variants — apply both fields from version to avoid hybrid state
     let mut persona_a = persona.clone();
@@ -186,7 +186,6 @@ pub async fn lab_start_ab(
     persona_b.system_prompt = version_b.system_prompt.clone().unwrap_or_default();
 
     let pool = state.db.clone();
-    let registry = state.process_registry.clone();
     let cancelled_clone = cancelled.clone();
     let run_id_clone = run_id.clone();
     let va_id = version_a.id.clone();
@@ -195,6 +194,7 @@ pub async fn lab_start_ab(
     let vb_num = version_b.version_number;
 
     tokio::spawn(async move {
+        let _guard = run_guard;
         test_runner::run_ab_test(
             app,
             pool,
@@ -209,8 +209,6 @@ pub async fn lab_start_ab(
             use_case_filter,
         )
         .await;
-
-        registry.unregister_run("test", &run_id_clone);
     });
 
     Ok(run)
@@ -299,14 +297,15 @@ pub async fn lab_start_matrix(
     )?;
     let run_id = run.id.clone();
 
-    let cancelled = state.process_registry.register_run("test", &run_id);
+    let (cancelled, run_guard) =
+        state.process_registry.register_run_guarded("test", &run_id);
 
     let pool = state.db.clone();
-    let registry = state.process_registry.clone();
     let cancelled_clone = cancelled.clone();
     let run_id_clone = run_id.clone();
 
     tokio::spawn(async move {
+        let _guard = run_guard;
         test_runner::run_matrix_test(
             app,
             pool,
@@ -318,8 +317,6 @@ pub async fn lab_start_matrix(
             use_case_filter,
         )
         .await;
-
-        registry.unregister_run("test", &run_id_clone);
     });
 
     Ok(run)
@@ -461,7 +458,8 @@ pub async fn lab_start_eval(
     )?;
     let run_id = run.id.clone();
 
-    let cancelled = state.process_registry.register_run("test", &run_id);
+    let (cancelled, run_guard) =
+        state.process_registry.register_run_guarded("test", &run_id);
 
     // Build persona variants -- one per version, applying both fields to avoid hybrid state
     let mut variants: Vec<(String, i32, crate::db::models::Persona)> = Vec::new();
@@ -473,11 +471,11 @@ pub async fn lab_start_eval(
     }
 
     let pool = state.db.clone();
-    let registry = state.process_registry.clone();
     let cancelled_clone = cancelled.clone();
     let run_id_clone = run_id.clone();
 
     tokio::spawn(async move {
+        let _guard = run_guard;
         test_runner::run_eval_test(
             app,
             pool,
@@ -489,8 +487,6 @@ pub async fn lab_start_eval(
             use_case_filter,
         )
         .await;
-
-        registry.unregister_run("test", &run_id_clone);
     });
 
     Ok(run)

@@ -39,11 +39,11 @@ export function SpanRow({
           <span className="w-4 flex-shrink-0" />
         )}
 
-        <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded border ${config.bg} ${config.color} ${config.border} flex-shrink-0`}>
+        <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${config.bg} ${config.color} ${config.border} flex-shrink-0`}>
           {config.label}
         </span>
 
-        <span className="text-sm font-mono text-foreground/85 truncate" title={span.name}>
+        <span className="typo-code text-foreground/85 truncate" title={span.name}>
           {span.name}
         </span>
 
@@ -52,7 +52,7 @@ export function SpanRow({
         )}
 
         {span.cost_usd != null && span.cost_usd > 0 && (
-          <span className="text-sm font-mono text-amber-400/70 flex-shrink-0">
+          <span className="typo-code text-amber-400/70 flex-shrink-0">
             ${span.cost_usd.toFixed(4)}
           </span>
         )}

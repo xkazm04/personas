@@ -26,7 +26,7 @@ export function AnalysisModeView({ lines, isRunning, analysisPhase }: AnalysisMo
             transition={{ duration: 0.15 }}
             className="flex items-center gap-3 px-4 py-2 bg-blue-500/5 border-b border-blue-500/10"
           >
-            <span className="text-sm font-mono text-blue-400/60 shrink-0">
+            <span className="typo-code text-blue-400/60 shrink-0">
               Step {analysisPhase.step} of {analysisPhase.total}
             </span>
             <div className="flex-1 h-1 rounded-full bg-secondary/30 overflow-hidden">
@@ -37,7 +37,7 @@ export function AnalysisModeView({ lines, isRunning, analysisPhase }: AnalysisMo
                 transition={{ duration: 0.4, ease: 'easeOut' }}
               />
             </div>
-            <span className="text-sm text-blue-400/80 truncate">{analysisPhase.label}</span>
+            <span className="typo-body text-blue-400/80 truncate">{analysisPhase.label}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -52,7 +52,7 @@ export function AnalysisModeView({ lines, isRunning, analysisPhase }: AnalysisMo
           ) : (
             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/90" />
           )}
-          <span className="text-sm text-muted-foreground/90 font-mono">
+          <span className="typo-code text-muted-foreground/90">
             {isRunning ? (
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
@@ -63,14 +63,14 @@ export function AnalysisModeView({ lines, isRunning, analysisPhase }: AnalysisMo
             )}
           </span>
         </div>
-        <span className="text-sm text-muted-foreground/80 font-mono">{lines.length} lines</span>
+        <span className="typo-code text-muted-foreground/80">{lines.length} lines</span>
       </button>
 
       {showTerminal && (
         <div
           ref={terminalRef}
           onScroll={handleTerminalScroll}
-          className="max-h-[200px] overflow-y-auto font-mono text-sm bg-background"
+          className="max-h-[200px] overflow-y-auto typo-code bg-background"
         >
           <TerminalBody lines={lines} />
         </div>

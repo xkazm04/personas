@@ -4,13 +4,13 @@
 
 /* -- Focus Ring Utility --
    Standard focus-visible ring applied to all interactive elements.
+   Driven by --focus-ring-color / --focus-ring-width / --focus-ring-offset tokens
+   so every theme (including custom vibes) gets correct, visible focus rings.
    Usage: class="focus-ring" on any button, input, link, or card action. */
 @utility focus-ring {
   &:focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 1px var(--background),
-      0 0 0 3px color-mix(in srgb, var(--primary) 40%, transparent);
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
   }
 }
 
@@ -143,6 +143,11 @@
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 400ms;
+
+  /* Focus ring tokens — single source of truth for :focus-visible indicators */
+  --focus-ring-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
 }
 
 /* Bridge :root tokens into Tailwind's @theme namespace. */

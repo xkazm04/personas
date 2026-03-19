@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react';
-import { Loader2, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { DiscoveredPeer, ConnectionState } from '@/api/network/discovery';
 import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnectedIcon } from './NetworkIcons';
 
@@ -81,7 +82,7 @@ export const PeerCard = memo(function PeerCard({
       <div className="flex items-center gap-1 flex-shrink-0">
         {connecting ? (
           <span className="p-1.5">
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+            <LoadingSpinner size="sm" className="text-muted-foreground" />
           </span>
         ) : isConnected ? (
           <button

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
+import { silentCatch } from "@/lib/silentCatch";
 import type { DeployTarget, DeployStatus, SortKey, SortDir, UnifiedDeployment } from './deploymentTypes';
 import { compareValues } from './deploymentTypes';
 import { SummaryCard } from './DeploymentSubComponents';
@@ -36,9 +37,9 @@ export function UnifiedDeploymentDashboard() {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   useEffect(() => {
-    if (cloudConfig?.is_connected) cloudFetchDeployments().catch(() => {});
+    if (cloudConfig?.is_connected) cloudFetchDeployments().catch(silentCatch("DeploymentDashboard:fetchCloudDeployments"));
     if (gitlabConfig?.isConnected && gitlabSelectedProjectId) {
-      gitlabFetchAgents(gitlabSelectedProjectId).catch(() => {});
+      gitlabFetchAgents(gitlabSelectedProjectId).catch(silentCatch("DeploymentDashboard:fetchGitlabAgents"));
     }
   }, [cloudConfig?.is_connected, gitlabConfig?.isConnected, gitlabSelectedProjectId, cloudFetchDeployments, gitlabFetchAgents]);
 

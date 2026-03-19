@@ -1,4 +1,5 @@
-import { HardDriveDownload, Loader2, AlertTriangle } from 'lucide-react';
+import { HardDriveDownload, AlertTriangle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useDataPortability } from '../libs/useDataPortability';
 import { ExportSection } from './ExportSection';
@@ -35,7 +36,7 @@ export default function DataPortabilitySettings() {
 
             {dp.statsStatus === 'loading' && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <LoadingSpinner />
                 Loading workspace stats...
               </div>
             )}

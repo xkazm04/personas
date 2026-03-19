@@ -40,7 +40,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
       onClick={() => onCardClick(card.id)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="group relative text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background h-[200px] flex flex-col"
+      className="group relative text-left cursor-pointer focus-ring h-[200px] flex flex-col"
     >
       {/* Illustration area -- fixed height */}
       <div className={`relative w-full h-[140px] flex-shrink-0 rounded-xl border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-sm group-hover:shadow-xl transition-all duration-400`}>
@@ -63,7 +63,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
 
         {/* Module name overlaid at bottom of illustration */}
         <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-6 bg-gradient-to-t from-black/40 to-transparent pointer-events-none z-10">
-          <h3 className="text-lg font-extrabold tracking-wide text-foreground/80 uppercase drop-shadow-sm">{cardT.label}</h3>
+          <h3 className="typo-heading-lg tracking-wide text-foreground/80 uppercase drop-shadow-sm">{cardT.label}</h3>
         </div>
 
         {/* Arrow overlay */}
@@ -77,7 +77,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
 
       {/* Description below -- fixed height */}
       <div className="mt-1.5 px-1 h-[48px] flex items-start">
-        <p className="text-xs leading-relaxed text-muted-foreground/80 line-clamp-3">{cardT.description}</p>
+        <p className="typo-caption leading-relaxed text-muted-foreground/80 line-clamp-3">{cardT.description}</p>
       </div>
     </motion.button>
   );

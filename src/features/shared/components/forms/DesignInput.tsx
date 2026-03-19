@@ -156,7 +156,7 @@ export function DesignInput({
       >
         {isDragging && (
           <div className="absolute inset-0 z-10 flex items-center justify-center border-2 border-dashed border-primary/40 bg-primary/5 rounded-xl pointer-events-none">
-            <span className="text-sm font-medium text-primary/50">Drop file here</span>
+            <span className="typo-heading text-primary/50">Drop file here</span>
           </div>
         )}
 
@@ -167,7 +167,7 @@ export function DesignInput({
           onKeyDown={handleKeyDown}
           disabled={disabled}
           placeholder={`Describe what this persona should do...\n\nExamples:\n  - Monitor my Gmail for invoices and extract amounts into a spreadsheet\n  - Watch GitHub webhooks and post summaries to Slack\n  - Analyze our API logs daily and flag anomalies`}
-          className="w-full min-h-[200px] bg-background/50 border border-primary/15 rounded-xl p-4 pb-12 text-sm text-foreground font-sans resize-none focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
+          className="w-full min-h-[200px] bg-background/50 border border-primary/15 rounded-xl p-4 pb-12 typo-body text-foreground resize-none focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
           spellCheck
           style={{ overflow: 'hidden' }}
         />
@@ -209,13 +209,13 @@ export function DesignInput({
           </Button>
 
           {(designContext?.files?.length ?? 0) > 0 && (
-            <span className="ml-auto text-sm text-muted-foreground/80">
+            <span className="ml-auto typo-body text-muted-foreground/80">
               {designContext.files.length} file{designContext.files.length !== 1 ? 's' : ''} attached
             </span>
           )}
         </div>
       </div>
-      <p className="text-sm text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
+      <p className="typo-body text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
 
       {/* Type selector modal */}
       {showTypeSelector && pendingFile && (

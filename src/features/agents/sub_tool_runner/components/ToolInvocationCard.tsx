@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Play,
-  Loader2,
   CheckCircle2,
   XCircle,
   Clock,
@@ -11,6 +10,7 @@ import {
   Terminal,
   Globe,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import type { ToolInvocationResult } from '@/api/agents/tools';
@@ -95,7 +95,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
                 disabled={isRunning}
                 className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors disabled:opacity-40"
               >
-                {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+                {isRunning ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
                 {isRunning ? 'Running...' : 'Run'}
               </button>
 

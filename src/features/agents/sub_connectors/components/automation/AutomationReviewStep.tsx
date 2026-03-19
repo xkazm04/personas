@@ -1,4 +1,5 @@
-import { Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
+import { CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion } from 'framer-motion';
 import type { AutomationPlatform } from '@/lib/bindings/PersonaAutomation';
 import type { DeployAutomationResult } from '@/api/agents/automations';
@@ -23,7 +24,7 @@ export function AutomationReviewStep({
     return (
       <motion.div key="deploying" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-12 space-y-4">
         <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
-          <Loader2 className="w-5 h-5 text-accent animate-spin" />
+          <LoadingSpinner size="lg" className="text-accent" />
         </div>
         <div className="text-center">
           <p className="text-sm font-medium text-foreground/90">

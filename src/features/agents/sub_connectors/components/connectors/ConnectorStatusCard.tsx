@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, ChevronDown, Plus, ArrowLeftRight } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
 import { STATUS_CONFIG, getStatusKey } from '../../libs/connectorTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -70,7 +71,7 @@ export function ConnectorStatusCard({
             <Tooltip content={status.testing ? 'Test already in progress' : ''} placement="top" delay={200}>
               <button onClick={() => onTest(status.name, status.credentialId!)} disabled={status.testing}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                {status.testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Activity className="w-3 h-3" />} Test
+                {status.testing ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />} Test
               </button>
             </Tooltip>
           ) : (

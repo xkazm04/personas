@@ -4,6 +4,7 @@ import {
   Play, Plus, ListChecks, XCircle, ChevronDown, ChevronRight,
   Loader2, CheckCircle2, AlertCircle, Clock, Ban, X, Link2,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
@@ -336,7 +337,7 @@ export default function TaskRunnerPage() {
                 <div className="flex items-center gap-3 text-[10px] text-muted-foreground/50">
                   {runningCount > 0 && (
                     <span className="flex items-center gap-1 text-blue-400">
-                      <Loader2 className="w-3 h-3 animate-spin" /> {runningCount} running
+                      <LoadingSpinner size="xs" /> {runningCount} running
                     </span>
                   )}
                   {queuedCount > 0 && (

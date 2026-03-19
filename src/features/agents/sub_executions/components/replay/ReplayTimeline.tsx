@@ -29,10 +29,10 @@ export function ReplayCostPanel({
       {/* Cost */}
       <div className="flex items-center gap-1.5">
         <DollarSign className="w-3 h-3 text-emerald-400/60" />
-        <span className="text-sm font-mono tabular-nums text-emerald-400">
+        <span className="typo-code tabular-nums text-emerald-400">
           {formatCost(accumulatedCost)}
         </span>
-        <span className="text-sm text-muted-foreground/60">
+        <span className="typo-body text-muted-foreground/60">
           / {formatCost(totalCost)}
         </span>
       </div>
@@ -48,10 +48,10 @@ export function ReplayCostPanel({
       {/* Time */}
       <div className="flex items-center gap-1.5">
         <Clock className="w-3 h-3 text-blue-400/60" />
-        <span className="text-sm font-mono tabular-nums text-blue-400">
+        <span className="typo-code tabular-nums text-blue-400">
           {formatMs(currentMs)}
         </span>
-        <span className="text-sm text-muted-foreground/60">
+        <span className="typo-body text-muted-foreground/60">
           ({timePct.toFixed(0)}%)
         </span>
       </div>
@@ -59,7 +59,7 @@ export function ReplayCostPanel({
       {/* Steps */}
       <div className="flex items-center gap-1.5">
         <Hash className="w-3 h-3 text-muted-foreground/50" />
-        <span className="text-sm font-mono tabular-nums text-muted-foreground/60">
+        <span className="typo-code tabular-nums text-muted-foreground/60">
           {completedSteps}/{totalSteps} steps
         </span>
       </div>

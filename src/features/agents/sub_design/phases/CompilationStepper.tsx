@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Loader2 } from 'lucide-react';
+import { Check } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { COMPILATION_STAGES } from '@/lib/compiler/personaCompiler';
 
 // -- Stage inference from output lines ----------------------------
@@ -94,7 +95,7 @@ export function CompilationStepper({ outputLines, isRunning }: CompilationSteppe
                         animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0, 0.4] }}
                         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                       />
-                      <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
+                      <LoadingSpinner size="sm" className="text-primary" />
                     </>
                   ) : (
                     <div className="w-2 h-2 rounded-full bg-secondary/40" />

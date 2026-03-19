@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 interface PerModelProgress {
   modelId: string;
@@ -35,7 +35,7 @@ export function TestProgressPanel({ isRunning, progress, perModelProgress }: Tes
           <div className="p-4 rounded-xl bg-secondary/30 border border-primary/10 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                <LoadingSpinner className="text-primary" />
                 <span className="text-sm text-foreground/80 capitalize">
                   {progress.phase === 'generating'
                     ? 'Generating test scenarios...'

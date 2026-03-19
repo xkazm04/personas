@@ -135,7 +135,7 @@ export function PersonaRunner() {
 
   return (
     <div ref={runnerRef} className="space-y-4">
-      <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+      <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90 tracking-wide">
         <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
         <Play className="w-3.5 h-3.5" />
         Run Persona
@@ -188,7 +188,7 @@ export function PersonaRunner() {
             {queuePosition != null && isThisPersonasExecution && (
               <div className="flex items-center gap-2 px-3 py-2 border-b border-border/20 bg-amber-500/5">
                 <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                <span className="text-sm text-amber-300/90 font-medium">
+                <span className="typo-heading text-amber-300/90">
                   Queued -- position {queuePosition + 1}{queueDepth != null ? ` of ${queueDepth}` : ''}
                 </span>
               </div>

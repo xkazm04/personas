@@ -6,8 +6,14 @@
 //! the provider is "open" (skipped) for a cooldown period before probing again.
 
 use std::collections::HashMap;
+use std::collections::VecDeque;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
+
+use chrono::Utc;
+use serde::Serialize;
+use ts_rs::TS;
 
 use super::byom::PolicyDecision;
 use super::provider::EngineKind;
@@ -30,6 +36,12 @@ const GLOBAL_FAILURE_THRESHOLD: u32 = 10;
 /// Rolling time window for the global failure counter.
 const GLOBAL_FAILURE_WINDOW: Duration = Duration::from_secs(120);
 
+/// Maximum number of state transitions to retain in history.
+const TRANSITION_HISTORY_CAPACITY: usize = 50;
+
+/// Rolling window for trip count tracking (1 hour).
+const TRIP_COUNT_WINDOW: Duration = Duration::from_secs(3600);
+
 // =============================================================================
 // Error classification
 // =============================================================================
@@ -43,6 +55,17 @@ pub enum FailoverReason {
     RateLimited,
     /// Execution timed out.
     Timeout,
+}
+
+/// Counter for errors that did not match any known failover pattern.
+/// Gives operators a signal about how many errors are falling through
+/// classification without needing an external metrics crate.
+static FAILOVER_UNCLASSIFIED_ERRORS: AtomicU64 = AtomicU64::new(0);
+
+/// Returns the cumulative count of errors that `classify_error` could not
+/// classify. Useful for diagnostics and deciding when to add new patterns.
+pub fn unclassified_error_count() -> u64 {
+    FAILOVER_UNCLASSIFIED_ERRORS.load(Ordering::Relaxed)
 }
 
 /// Check if an error message indicates a retryable failure that should trigger failover.
@@ -70,6 +93,16 @@ pub fn classify_error(error: &str) -> Option<FailoverReason> {
         return Some(FailoverReason::Timeout);
     }
 
+    // No known pattern matched — log for observability so operators can
+    // identify new error categories that should be added.
+    let count = FAILOVER_UNCLASSIFIED_ERRORS.fetch_add(1, Ordering::Relaxed) + 1;
+    tracing::debug!(
+        event = "failover.unclassified_error",
+        error = %error,
+        cumulative_count = count,
+        "Unclassified error — failover will not be attempted",
+    );
+
     None
 }
 
@@ -95,6 +128,53 @@ struct GlobalState {
 }
 
 
+// =============================================================================
+// Diagnostic status types (exported to frontend via ts-rs)
+// =============================================================================
+
+/// Per-provider circuit state snapshot for diagnostics.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderCircuitState {
+    pub provider: String,
+    pub consecutive_failures: u32,
+    pub is_open: bool,
+    pub cooldown_remaining_secs: f64,
+    /// Number of times this provider's circuit has tripped within the last hour.
+    pub trip_count_1h: u32,
+}
+
+/// A single circuit breaker state transition event.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CircuitTransitionEvent {
+    /// Provider name (e.g. "claude_code") or "global" for the global breaker.
+    pub provider: String,
+    /// Previous state: "closed", "open", "half_open", "paused".
+    pub from_state: String,
+    /// New state.
+    pub to_state: String,
+    /// ISO-8601 timestamp of the transition.
+    pub timestamp: String,
+    /// Consecutive failures at the time of transition (0 for global).
+    pub failure_count: u32,
+}
+
+/// Full circuit breaker status snapshot.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CircuitBreakerStatus {
+    pub providers: Vec<ProviderCircuitState>,
+    pub global_paused: bool,
+    pub global_cooldown_remaining_secs: f64,
+    pub global_failure_count: u32,
+    /// Recent state transitions (newest first), capped at 50.
+    pub recent_transitions: Vec<CircuitTransitionEvent>,
+}
+
 /// Per-provider + global circuit breaker.
 ///
 /// Thread-safe: all state is behind a single Mutex so `try_acquire` can
@@ -106,14 +186,53 @@ struct GlobalState {
 /// attempts are paused until the cooldown expires -- preventing the failover
 /// chain from amplifying load on already-stressed services.
 pub struct ProviderCircuitBreaker {
-    states: Mutex<(HashMap<EngineKind, CircuitState>, GlobalState)>,
+    states: Mutex<(HashMap<EngineKind, CircuitState>, GlobalState, TransitionHistory)>,
+}
+
+/// Internal history buffer for transition events.
+#[derive(Debug, Default)]
+struct TransitionHistory {
+    /// Ring buffer of recent transitions (newest at front).
+    events: VecDeque<CircuitTransitionEvent>,
+    /// Per-provider trip timestamps within the rolling window (for trip_count_1h).
+    trip_times: HashMap<String, Vec<Instant>>,
 }
 
 impl ProviderCircuitBreaker {
     pub fn new() -> Self {
         Self {
-            states: Mutex::new((HashMap::new(), GlobalState::default())),
+            states: Mutex::new((HashMap::new(), GlobalState::default(), TransitionHistory::default())),
         }
+    }
+
+    /// Push a transition event into the history ring buffer and record trip timestamps.
+    fn push_transition(history: &mut TransitionHistory, event: CircuitTransitionEvent) {
+        // Track trip times for trip_count_1h (only when a circuit opens)
+        if event.to_state == "open" || event.to_state == "paused" {
+            history
+                .trip_times
+                .entry(event.provider.clone())
+                .or_default()
+                .push(Instant::now());
+        }
+        history.events.push_front(event);
+        if history.events.len() > TRANSITION_HISTORY_CAPACITY {
+            history.events.pop_back();
+        }
+    }
+
+    /// Count how many times a provider tripped within the last hour.
+    fn trip_count_1h(history: &mut TransitionHistory, provider: &str) -> u32 {
+        if let Some(times) = history.trip_times.get_mut(provider) {
+            times.retain(|t| t.elapsed() < TRIP_COUNT_WINDOW);
+            times.len() as u32
+        } else {
+            0
+        }
+    }
+
+    fn now_iso() -> String {
+        Utc::now().to_rfc3339()
     }
 
     /// Atomically check if a provider is available, and if a cooled-down circuit
@@ -130,7 +249,7 @@ impl ProviderCircuitBreaker {
     /// is open or the global breaker is paused.
     pub fn try_acquire_and_probe(&self, kind: EngineKind) -> bool {
         let mut guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
-        let (ref mut states, ref mut global) = *guard;
+        let (ref mut states, ref mut global, ref mut history) = *guard;
 
         // 1. Check global breaker first
         if let Some(paused_at) = global.paused_at {
@@ -138,7 +257,18 @@ impl ProviderCircuitBreaker {
                 return false;
             }
             // Global cooldown elapsed -- reset
-            tracing::info!("Global circuit breaker reset after cooldown");
+            tracing::info!(
+                event = "circuit_breaker.global.closed",
+                transition = "paused -> closed",
+                "Global circuit breaker reset after cooldown",
+            );
+            Self::push_transition(history, CircuitTransitionEvent {
+                provider: "global".into(),
+                from_state: "paused".into(),
+                to_state: "closed".into(),
+                timestamp: Self::now_iso(),
+                failure_count: 0,
+            });
             global.paused_at = None;
             global.failure_times.clear();
         }
@@ -151,9 +281,18 @@ impl ProviderCircuitBreaker {
                 if opened.elapsed() >= CIRCUIT_COOLDOWN {
                     // Cooldown elapsed -- half-open: allow one probe
                     tracing::info!(
+                        event = "circuit_breaker.provider.half_open",
                         provider = ?kind,
+                        transition = "open -> half_open",
                         "Circuit breaker half-open: allowing probe after cooldown",
                     );
+                    Self::push_transition(history, CircuitTransitionEvent {
+                        provider: kind.as_setting().to_string(),
+                        from_state: "open".into(),
+                        to_state: "half_open".into(),
+                        timestamp: Self::now_iso(),
+                        failure_count: state.consecutive_failures,
+                    });
                     state.opened_at = None;
                     state.consecutive_failures = 0;
                     true
@@ -172,7 +311,7 @@ impl ProviderCircuitBreaker {
     #[allow(dead_code)]
     pub fn is_available(&self, kind: EngineKind) -> bool {
         let guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
-        let (ref states, ref global) = *guard;
+        let (ref states, ref global, _) = *guard;
 
         // Global pause check
         if let Some(paused_at) = global.paused_at {
@@ -194,46 +333,157 @@ impl ProviderCircuitBreaker {
     /// Check if the global breaker is currently paused (all providers blocked).
     pub fn is_globally_paused(&self) -> bool {
         let guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
-        let (_, ref global) = *guard;
+        let (_, ref global, _) = *guard;
         match global.paused_at {
             Some(paused_at) => paused_at.elapsed() < CIRCUIT_COOLDOWN,
             None => false,
         }
     }
 
+    /// Return a snapshot of the current circuit breaker state for diagnostics.
+    pub fn get_status(&self) -> CircuitBreakerStatus {
+        let mut guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
+        let (ref states, ref global, ref mut history) = *guard;
+
+        let global_paused = match global.paused_at {
+            Some(paused_at) => paused_at.elapsed() < CIRCUIT_COOLDOWN,
+            None => false,
+        };
+        let global_cooldown_remaining_secs = match global.paused_at {
+            Some(paused_at) if paused_at.elapsed() < CIRCUIT_COOLDOWN => {
+                (CIRCUIT_COOLDOWN - paused_at.elapsed()).as_secs_f64()
+            }
+            _ => 0.0,
+        };
+
+        let all_kinds = [
+            EngineKind::ClaudeCode,
+            EngineKind::CodexCli,
+            EngineKind::GeminiCli,
+            EngineKind::CopilotCli,
+        ];
+
+        let providers = all_kinds
+            .iter()
+            .map(|&kind| {
+                let (consecutive_failures, is_open, cooldown_remaining_secs) =
+                    match states.get(&kind) {
+                        None => (0, false, 0.0),
+                        Some(state) => {
+                            let open = state.opened_at.is_some()
+                                && state
+                                    .opened_at
+                                    .map(|t| t.elapsed() < CIRCUIT_COOLDOWN)
+                                    .unwrap_or(false);
+                            let remaining = state
+                                .opened_at
+                                .filter(|t| t.elapsed() < CIRCUIT_COOLDOWN)
+                                .map(|t| (CIRCUIT_COOLDOWN - t.elapsed()).as_secs_f64())
+                                .unwrap_or(0.0);
+                            (state.consecutive_failures, open, remaining)
+                        }
+                    };
+
+                let trip_count_1h = Self::trip_count_1h(history, kind.as_setting());
+
+                ProviderCircuitState {
+                    provider: kind.as_setting().to_string(),
+                    consecutive_failures,
+                    is_open,
+                    cooldown_remaining_secs,
+                    trip_count_1h,
+                }
+            })
+            .collect();
+
+        let recent_transitions = history.events.iter().cloned().collect();
+
+        CircuitBreakerStatus {
+            providers,
+            global_paused,
+            global_cooldown_remaining_secs,
+            global_failure_count: global.failure_times.len() as u32,
+            recent_transitions,
+        }
+    }
+
     /// Record a successful execution -- resets the per-provider failure counter
-    /// and clears that provider's entries from the global failure window.
+    /// and removes one of that provider's entries from the global failure window.
+    ///
+    /// Only the most recent failure for this provider is removed (1:1 offset).
+    /// This prevents a single lucky success from purging the entire failure
+    /// history, which could mask systemic failures across other providers and
+    /// stop the global breaker from ever tripping.
     pub fn record_success(&self, kind: EngineKind) {
         let mut guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
-        let (ref mut states, ref mut global) = *guard;
+        let (ref mut states, ref mut global, ref mut history) = *guard;
         let state = states.entry(kind).or_default();
+        let was_open = state.opened_at.is_some();
         state.consecutive_failures = 0;
         state.opened_at = None;
 
-        // Remove this provider's failure timestamps from the global window
-        // so that transient bursts don't linger after recovery.
-        global.failure_times.retain(|(_, k)| *k != kind);
+        if was_open {
+            tracing::info!(
+                event = "circuit_breaker.provider.closed",
+                provider = ?kind,
+                transition = "half_open -> closed",
+                "Circuit breaker closed for {:?} after successful probe",
+                kind,
+            );
+            Self::push_transition(history, CircuitTransitionEvent {
+                provider: kind.as_setting().to_string(),
+                from_state: "half_open".into(),
+                to_state: "closed".into(),
+                timestamp: Self::now_iso(),
+                failure_count: 0,
+            });
+        }
+
+        // Remove at most one failure entry for this provider (the most recent).
+        // A single success offsets one failure rather than purging all, so that
+        // intermittent successes on one provider cannot mask cascading failures
+        // across the fleet.
+        if let Some(pos) = global.failure_times.iter().rposition(|(_, k)| *k == kind) {
+            global.failure_times.remove(pos);
+        }
     }
 
     /// Record a failure. Opens the per-provider circuit if its threshold is
     /// reached, and increments the global failure counter which may pause all
     /// providers.
-    pub fn record_failure(&self, kind: EngineKind) {
+    ///
+    /// Returns a list of transition events that occurred (0–2 events: possibly
+    /// a per-provider open + a global pause). Callers with access to an
+    /// `AppHandle` should emit these as Tauri events.
+    pub fn record_failure(&self, kind: EngineKind) -> Vec<CircuitTransitionEvent> {
         let mut guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
-        let (ref mut states, ref mut global) = *guard;
+        let (ref mut states, ref mut global, ref mut history) = *guard;
+        let mut transitions = Vec::new();
 
         // Per-provider tracking
         let state = states.entry(kind).or_default();
         state.consecutive_failures += 1;
         if state.consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD && state.opened_at.is_none() {
             tracing::warn!(
+                event = "circuit_breaker.provider.opened",
                 provider = ?kind,
                 failures = state.consecutive_failures,
+                transition = "closed -> open",
+                cooldown_secs = CIRCUIT_COOLDOWN.as_secs(),
                 "Circuit breaker opened for {:?} after {} consecutive failures",
                 kind,
                 state.consecutive_failures,
             );
             state.opened_at = Some(Instant::now());
+            let event = CircuitTransitionEvent {
+                provider: kind.as_setting().to_string(),
+                from_state: "closed".into(),
+                to_state: "open".into(),
+                timestamp: Self::now_iso(),
+                failure_count: state.consecutive_failures,
+            };
+            Self::push_transition(history, event.clone());
+            transitions.push(event);
         }
 
         // Global tracking: add timestamp and prune old entries outside the window
@@ -247,15 +497,29 @@ impl ProviderCircuitBreaker {
             && global.paused_at.is_none()
         {
             tracing::warn!(
+                event = "circuit_breaker.global.opened",
+                transition = "closed -> paused",
                 total_failures = global.failure_times.len(),
                 window_secs = GLOBAL_FAILURE_WINDOW.as_secs(),
+                cooldown_secs = CIRCUIT_COOLDOWN.as_secs(),
                 "Global circuit breaker tripped: {} failures across all providers in {}s -- \
                  pausing all failover attempts",
                 global.failure_times.len(),
                 GLOBAL_FAILURE_WINDOW.as_secs(),
             );
             global.paused_at = Some(now);
+            let event = CircuitTransitionEvent {
+                provider: "global".into(),
+                from_state: "closed".into(),
+                to_state: "paused".into(),
+                timestamp: Self::now_iso(),
+                failure_count: global.failure_times.len() as u32,
+            };
+            Self::push_transition(history, event.clone());
+            transitions.push(event);
         }
+
+        transitions
     }
 }
 
@@ -427,6 +691,15 @@ mod tests {
     }
 
     #[test]
+    fn test_unclassified_error_counter_increments() {
+        let before = unclassified_error_count();
+        classify_error("503 service unavailable");
+        classify_error("billing suspended");
+        let after = unclassified_error_count();
+        assert!(after >= before + 2, "unclassified counter should increment for unknown patterns");
+    }
+
+    #[test]
     fn test_circuit_breaker_starts_closed() {
         let cb = ProviderCircuitBreaker::new();
         assert!(cb.try_acquire_and_probe(EngineKind::ClaudeCode));
@@ -500,14 +773,14 @@ mod tests {
         for _ in 0..4 {
             cb.record_failure(EngineKind::GeminiCli);
         }
-        // Claude's 4 failures were cleared by the success, only 4 Gemini failures remain
+        // 1 success offsets 1 Claude failure: 3 Claude + 4 Gemini = 7 < 10
         assert!(!cb.is_globally_paused());
     }
 
     #[test]
-    fn test_success_clears_provider_failures_from_global_window() {
+    fn test_success_offsets_one_failure_from_global_window() {
         let cb = ProviderCircuitBreaker::new();
-        // 8 failures across providers, then Claude succeeds
+        // 8 failures across providers, then Claude succeeds once
         for _ in 0..4 {
             cb.record_failure(EngineKind::ClaudeCode);
         }
@@ -516,36 +789,57 @@ mod tests {
         }
         assert!(!cb.is_globally_paused()); // 8 < 10
 
-        // Claude recovers -- its 4 failures should be cleared
+        // Claude recovers -- only 1 failure removed (1:1 offset)
         cb.record_success(EngineKind::ClaudeCode);
+        // 3 Claude + 4 Gemini = 7 remaining
 
-        // Now add 6 more Gemini failures (total would be 10 without the clear,
-        // but with the clear only 4 + 6 = 10 Gemini failures)
-        for _ in 0..6 {
+        // 3 more Gemini failures push past threshold: 3 + 4 + 3 = 10
+        for _ in 0..3 {
             cb.record_failure(EngineKind::GeminiCli);
         }
-        // 4 (old Gemini) + 6 (new Gemini) = 10 → trips
         assert!(cb.is_globally_paused());
     }
 
     #[test]
-    fn test_success_prevents_false_positive_global_trip() {
+    fn test_multiple_successes_gradually_drain_failures() {
         let cb = ProviderCircuitBreaker::new();
-        // Scenario from the bug report: 8 failures, 100 successes, 2 more failures
+        // 4 failures each → 8 total
         for _ in 0..4 {
             cb.record_failure(EngineKind::ClaudeCode);
         }
         for _ in 0..4 {
             cb.record_failure(EngineKind::GeminiCli);
         }
-        // Both providers recover
-        cb.record_success(EngineKind::ClaudeCode);
-        cb.record_success(EngineKind::GeminiCli);
-        // Global failure window should now be empty
-        // 2 more failures should NOT trip the global breaker
+        // Each success removes 1 failure from that provider
+        cb.record_success(EngineKind::ClaudeCode); // 3 Claude + 4 Gemini = 7
+        cb.record_success(EngineKind::GeminiCli); // 3 Claude + 3 Gemini = 6
+        // 2 more failures: 6 + 2 = 8 < 10
         cb.record_failure(EngineKind::ClaudeCode);
         cb.record_failure(EngineKind::GeminiCli);
-        assert!(!cb.is_globally_paused()); // only 2 failures in the window
+        assert!(!cb.is_globally_paused());
+    }
+
+    #[test]
+    fn test_single_success_does_not_purge_all_provider_failures() {
+        let cb = ProviderCircuitBreaker::new();
+        // Provider A accumulates 6 failures, B has 3 → 9 total (just under threshold)
+        for _ in 0..6 {
+            cb.record_failure(EngineKind::ClaudeCode);
+        }
+        for _ in 0..3 {
+            cb.record_failure(EngineKind::GeminiCli);
+        }
+        assert!(!cb.is_globally_paused()); // 9 < 10
+
+        // One lucky success on provider A: should only remove 1 of 6, not all 6
+        cb.record_success(EngineKind::ClaudeCode);
+        // 5 Claude + 3 Gemini = 8
+
+        // 2 more failures on provider C tip the global breaker
+        cb.record_failure(EngineKind::CodexCli);
+        cb.record_failure(EngineKind::CodexCli);
+        // 5 + 3 + 2 = 10 → trips
+        assert!(cb.is_globally_paused());
     }
 
     #[test]
@@ -581,5 +875,62 @@ mod tests {
         // Should not have sonnet duplicated
         let sonnet_count = chain.iter().filter(|c| c.model.as_deref() == Some("claude-sonnet-4-20250514")).count();
         assert_eq!(sonnet_count, 1);
+    }
+
+    #[test]
+    fn test_record_failure_returns_transition_on_circuit_open() {
+        let cb = ProviderCircuitBreaker::new();
+        // First 4 failures: no transition (still under threshold)
+        for _ in 0..4 {
+            let transitions = cb.record_failure(EngineKind::ClaudeCode);
+            assert!(transitions.is_empty());
+        }
+        // 5th failure: circuit opens — should get a transition event
+        let transitions = cb.record_failure(EngineKind::ClaudeCode);
+        assert_eq!(transitions.len(), 1);
+        assert_eq!(transitions[0].provider, "claude_code");
+        assert_eq!(transitions[0].from_state, "closed");
+        assert_eq!(transitions[0].to_state, "open");
+        assert_eq!(transitions[0].failure_count, 5);
+    }
+
+    #[test]
+    fn test_global_trip_returns_two_transitions() {
+        let cb = ProviderCircuitBreaker::new();
+        // 4 failures on each of two providers (8 total, no per-provider trip)
+        for _ in 0..4 {
+            cb.record_failure(EngineKind::ClaudeCode);
+        }
+        for _ in 0..4 {
+            cb.record_failure(EngineKind::GeminiCli);
+        }
+        // 9th failure on a third provider — still no trip
+        cb.record_failure(EngineKind::CodexCli);
+        // 10th failure: hits global threshold. Codex also hits 2 failures (under 5).
+        let transitions = cb.record_failure(EngineKind::CodexCli);
+        // Should have exactly 1 transition: global pause (no per-provider open at 2 failures)
+        assert_eq!(transitions.len(), 1);
+        assert_eq!(transitions[0].provider, "global");
+        assert_eq!(transitions[0].to_state, "paused");
+    }
+
+    #[test]
+    fn test_status_includes_history_and_trip_count() {
+        let cb = ProviderCircuitBreaker::new();
+        // Trip Claude's circuit
+        for _ in 0..CIRCUIT_BREAKER_THRESHOLD {
+            cb.record_failure(EngineKind::ClaudeCode);
+        }
+        let status = cb.get_status();
+        // Should have at least one transition in recent_transitions
+        assert!(!status.recent_transitions.is_empty());
+        assert_eq!(status.recent_transitions[0].provider, "claude_code");
+        assert_eq!(status.recent_transitions[0].to_state, "open");
+        // trip_count_1h for Claude should be 1
+        let claude = status.providers.iter().find(|p| p.provider == "claude_code").unwrap();
+        assert_eq!(claude.trip_count_1h, 1);
+        // Other providers should have 0
+        let gemini = status.providers.iter().find(|p| p.provider == "gemini_cli").unwrap();
+        assert_eq!(gemini.trip_count_1h, 0);
     }
 }

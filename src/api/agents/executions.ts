@@ -4,6 +4,8 @@ import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 import type { GlobalExecutionRow } from "@/lib/bindings/GlobalExecutionRow";
 import type { Continuation } from "@/lib/bindings/Continuation";
 import type { ExecutionTrace } from "@/lib/bindings/ExecutionTrace";
+import type { DreamReplaySession } from "@/lib/bindings/DreamReplaySession";
+import type { CircuitBreakerStatus } from "@/lib/bindings/CircuitBreakerStatus";
 
 // ============================================================================
 // Executions
@@ -65,3 +67,17 @@ export const getExecutionTrace = (executionId: string, callerPersonaId: string) 
 
 export const getChainTrace = (chainTraceId: string, callerPersonaId: string) =>
   invoke<ExecutionTrace[]>("get_chain_trace", { chainTraceId, callerPersonaId });
+
+// ============================================================================
+// Dream Replay
+// ============================================================================
+
+export const getDreamReplay = (executionId: string, callerPersonaId: string) =>
+  invoke<DreamReplaySession | null>("get_dream_replay", { executionId, callerPersonaId });
+
+// ============================================================================
+// Circuit Breaker
+// ============================================================================
+
+export const getCircuitBreakerStatus = () =>
+  invoke<CircuitBreakerStatus>("get_circuit_breaker_status");

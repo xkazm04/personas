@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 export function SkeletonCard({
   stub,
@@ -27,11 +27,11 @@ export function SkeletonCard({
         <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>
           <SectionIcon className={`w-4 h-4 ${sectionStyle.icon}`} />
         </div>
-        <span className="text-sm font-bold text-foreground/90 uppercase tracking-widest">
+        <span className="typo-label text-foreground/90">
           {stub.label}
         </span>
         <div className="ml-auto">
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground/50" />
+          <LoadingSpinner size="sm" className="text-muted-foreground/50" />
         </div>
       </div>
       <div className="px-4 py-4 space-y-4 flex-1 relative overflow-hidden">

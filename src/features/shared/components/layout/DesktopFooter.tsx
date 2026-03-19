@@ -73,12 +73,12 @@ function AccountFooterIcon() {
             className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-2 z-50"
           >
             <div className="px-2 py-1.5 mb-1 border-b border-primary/10">
-              <p className="text-xs font-medium text-foreground/90 truncate">{user?.display_name ?? 'User'}</p>
+              <p className="typo-caption text-foreground/90 truncate">{user?.display_name ?? 'User'}</p>
               {user?.email && <p className="text-[10px] text-muted-foreground/70 truncate">{user.email}</p>}
             </div>
             <button
               onClick={() => { logout(); setOpen(false); }}
-              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-foreground/80 hover:bg-primary/5 transition-colors"
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg typo-caption text-foreground/80 hover:bg-primary/5 transition-colors"
             >
               <LogOut className="w-3 h-3" />
               Sign out
@@ -282,7 +282,7 @@ export default function DesktopFooter() {
   if (IS_MOBILE) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-8 border-t border-primary/10 bg-background">
+    <div role="contentinfo" className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-8 border-t border-primary/10 bg-background">
       {/* Left cluster: Collapse + Account + Theme + Network */}
       <div className="flex items-center gap-1.5">
         <CollapseFooterIcon />

@@ -4,8 +4,8 @@ import {
   Check,
   CheckCircle,
   Globe,
-  Loader2,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { openExternalUrl } from "@/api/system/system";
 
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
@@ -138,7 +138,7 @@ export function NegotiatorStepCard({
                   className="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20"
                   data-testid={`negotiator-step-${stepIndex}-wait-for`}
                 >
-                  <Loader2 className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0 animate-spin" />
+                  <LoadingSpinner size="sm" className="text-amber-400 mt-0.5 shrink-0" />
                   <span className="text-sm text-amber-200/80">{step.wait_for}</span>
                 </motion.div>
               )}

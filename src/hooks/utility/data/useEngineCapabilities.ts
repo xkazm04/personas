@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAppSetting, setAppSetting } from '@/api/system/settings';
 import { systemHealthCheck } from "@/api/system/system";
+import { silentCatch } from "@/lib/silentCatch";
 
 import {
   DEFAULT_CAPABILITIES,
@@ -79,7 +80,7 @@ export function useEngineCapabilities(): UseEngineCapabilitiesResult {
   const persist = useCallback((next: EngineCapabilityMap) => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
-      setAppSetting(CAPABILITY_SETTING_KEY, JSON.stringify(next)).catch(() => {});
+      setAppSetting(CAPABILITY_SETTING_KEY, JSON.stringify(next)).catch(silentCatch("engineCapabilities:persistSettings"));
     }, 500);
   }, []);
 

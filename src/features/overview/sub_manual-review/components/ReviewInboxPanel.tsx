@@ -169,7 +169,7 @@ export function ReviewInboxPanel({
               className="absolute right-0 top-0 bottom-0 w-[480px] 2xl:w-[560px] bg-background border-l border-primary/10 shadow-2xl shadow-black/20 flex flex-col z-20"
             >
               <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 flex-shrink-0 bg-secondary/20">
-                <span className="text-xs font-medium text-foreground/70">Review Detail</span>
+                <span className="typo-caption text-foreground/70">Review Detail</span>
                 <button
                   onClick={handleCloseSlideOver}
                   className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
@@ -199,7 +199,7 @@ export function ReviewInboxPanel({
               >
                 <X className="w-4 h-4" />
               </button>
-              <span className="text-sm font-medium text-foreground/80 truncate">Review Detail</span>
+              <span className="typo-heading text-foreground/80 truncate">Review Detail</span>
             </div>
             <div className="flex-1 overflow-y-auto">
               <ConversationThread

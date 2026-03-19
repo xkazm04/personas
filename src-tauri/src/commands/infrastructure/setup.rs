@@ -495,13 +495,14 @@ pub async fn start_setup_install(
 
     let install_id = uuid::Uuid::new_v4().to_string();
     // Use a fixed run key since only one setup install runs at a time.
-    let cancelled = state.process_registry.register_run("setup", "current");
+    // The guard ensures unregister_run is called even if the task panics.
+    let (cancelled, run_guard) =
+        state.process_registry.register_run_guarded("setup", "current");
 
     let id_clone = install_id.clone();
-    let registry = state.process_registry.clone();
     tokio::spawn(async move {
+        let _guard = run_guard;
         run_setup_install(SetupRunParams { app, install_id: id_clone, scope, cancelled }).await;
-        registry.unregister_run("setup", "current");
     });
 
     Ok(serde_json::json!({ "install_id": install_id }))

@@ -1,7 +1,8 @@
 import {
-  Zap, CheckCircle2, XCircle, AlertCircle, Loader2,
+  Zap, CheckCircle2, XCircle, AlertCircle,
   ExternalLink, Activity, Pause, ShieldCheck,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion } from 'framer-motion';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 import { AUTOMATION_STATUS_CONFIG, PLATFORM_CONFIG, formatRelativeTime } from '../../libs/automationTypes';
@@ -61,7 +62,7 @@ export function AutomationCard({
             <button onClick={() => onTest(automation.id)} disabled={isTesting}
               title={isTesting ? 'Test is already running' : undefined}
               className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} text-sm rounded-xl border border-border text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-40`}>
-              {isTesting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Activity className="w-3 h-3" />} Test
+              {isTesting ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />} Test
             </button>
           )}
           {automation.deploymentStatus === 'draft' && (

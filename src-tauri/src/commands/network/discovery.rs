@@ -168,12 +168,31 @@ pub async fn get_network_snapshot(
     };
 
     let health = net.connections.get_connection_health().await;
+    let messaging_metrics = net.messages.get_metrics();
+    let connection_metrics = net.connections.get_connection_metrics();
+    let manifest_sync_metrics = net.manifest_sync.get_metrics();
 
     Ok(NetworkSnapshot {
         status,
         health,
         discovered_peers: peers,
+        messaging_metrics,
+        connection_metrics,
+        manifest_sync_metrics,
     })
+}
+
+// -- Messaging Metrics ------------------------------------------------
+
+#[tauri::command]
+pub async fn get_messaging_metrics(
+    state: State<'_, std::sync::Arc<AppState>>,
+) -> Result<crate::engine::p2p::messaging::MessagingMetrics, AppError> {
+    require_auth(&state).await?;
+    let net = state.network.as_ref().ok_or_else(|| {
+        AppError::Internal("Network service not initialized".into())
+    })?;
+    Ok(net.messages.get_metrics())
 }
 
 // -- Agent Messaging --------------------------------------------------

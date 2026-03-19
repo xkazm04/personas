@@ -1,3 +1,4 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -5,6 +6,7 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import Sidebar from '@/features/shared/components/layout/sidebar/Sidebar';
+import { sections } from '@/features/shared/components/layout/sidebar/sidebarData';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
@@ -12,6 +14,7 @@ import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBounda
 import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
 import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 import DesktopFooter from '@/features/shared/components/layout/DesktopFooter';
+import BreadcrumbTrail from '@/features/shared/components/layout/BreadcrumbTrail';
 
 // Lazy-load all section content — only Sidebar stays eager (always visible)
 const HomePage = lazy(() => import('@/features/home/components/HomePage'));
@@ -28,9 +31,18 @@ const CloudDeployPanel = lazy(() => import('@/features/deployment/components/clo
 const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
 const DevToolsPage = lazy(() => import('@/features/dev-tools/DevToolsPage'));
+const CompositionEditor = lazy(() => import('@/features/composition/components/CompositionEditor'));
 
 // Shared Suspense fallback for all lazy-loaded sections
 const SectionFallback = <PanelSkeleton variant="section" />;
+
+// Direction-aware cross-fade variants for section switches.
+// `custom` receives the navigation direction (1 = down, -1 = up, 0 = no motion).
+const sectionFadeVariants = {
+  initial: (dir: number) => ({ opacity: 0, y: dir * 12 }),
+  animate: { opacity: 1, y: 0 },
+  exit: (dir: number) => ({ opacity: 0, y: -dir * 12 }),
+};
 
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
@@ -60,13 +72,14 @@ export default function PersonasPage() {
     // Run all startup fetches in parallel and collect failures.
     // Vault and pipeline stores are dynamically imported to keep them out of the main bundle.
     setError(null);
-    const STARTUP_LABELS = ['personas', 'tools', 'credentials', 'recipes', 'groups'] as const;
+    const STARTUP_LABELS = ['personas', 'tools', 'credentials', 'recipes', 'groups', 'workflows'] as const;
     Promise.allSettled([
       fetchPersonas(),
       fetchToolDefinitions(),
       import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
       import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes()),
       import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchGroups()),
+      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchWorkflows()),
     ]).then((results) => {
       setPersonasFetched(true);
       const failed = (results as PromiseSettledResult<void>[])
@@ -97,15 +110,15 @@ export default function PersonasPage() {
     if (!personasFetched) return;
     const id = requestIdleCallback(() => {
       // Tier 1: most frequently visited sections
-      import('@/features/overview/components/dashboard/OverviewPage').catch(() => {});
-      import('@/features/vault/sub_manager/CredentialManager').catch(() => {});
-      import('@/features/settings/components/SettingsPage').catch(() => {});
+      import('@/features/overview/components/dashboard/OverviewPage').catch(silentCatch("PersonasPage:prefetchOverview"));
+      import('@/features/vault/sub_manager/CredentialManager').catch(silentCatch("PersonasPage:prefetchCredentialManager"));
+      import('@/features/settings/components/SettingsPage').catch(silentCatch("PersonasPage:prefetchSettings"));
     });
     // Tier 2: prefetch after a short delay so tier 1 chunks land first
     const id2 = requestIdleCallback(() => {
-      import('@/features/deployment/components/cloud/CloudDeployPanel').catch(() => {});
-      import('@/features/templates/components/DesignReviewsPage').catch(() => {});
-      import('@/features/triggers/sub_eventbus/EventsPage').catch(() => {});
+      import('@/features/deployment/components/cloud/CloudDeployPanel').catch(silentCatch("PersonasPage:prefetchCloudDeploy"));
+      import('@/features/templates/components/DesignReviewsPage').catch(silentCatch("PersonasPage:prefetchDesignReviews"));
+      import('@/features/triggers/sub_eventbus/EventsPage').catch(silentCatch("PersonasPage:prefetchEvents"));
     });
     return () => {
       cancelIdleCallback(id);
@@ -119,6 +132,18 @@ export default function PersonasPage() {
   const buildPhase = useAgentStore((s) => s.buildPhase);
   const hasActiveBuild = !!buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted' && buildPhase !== 'failed' && buildPhase !== 'cancelled';
   const prevSectionRef = useRef(sidebarSection);
+
+  // Direction-aware cross-fade: track section index order for slide direction
+  const navSectionRef = useRef(sidebarSection);
+  const navDirectionRef = useRef(1);
+  if (sidebarSection !== navSectionRef.current) {
+    const prevIdx = sections.findIndex(s => s.id === navSectionRef.current);
+    const currIdx = sections.findIndex(s => s.id === sidebarSection);
+    navDirectionRef.current = currIdx >= prevIdx ? 1 : -1;
+    navSectionRef.current = sidebarSection;
+  }
+  const sectionDir = shouldAnimate ? navDirectionRef.current : 0;
+  const sectionTransition = { ...transition, duration: shouldAnimate ? 0.15 : 0.01 };
 
   useEffect(() => {
     const wasElsewhere = prevSectionRef.current !== 'personas';
@@ -141,6 +166,9 @@ export default function PersonasPage() {
     }
 
     if (sidebarSection === 'home') return <ErrorBoundary name="Home"><Suspense fallback={SectionFallback}><HomePage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'workflows') {
+      return <ErrorBoundary name="Workflows"><Suspense fallback={SectionFallback}><CompositionEditor /></Suspense></ErrorBoundary>;
+    }
     if (sidebarSection === 'team') {
       return <ErrorBoundary name="Teams"><Suspense fallback={SectionFallback}><TeamCanvas /></Suspense></ErrorBoundary>;
     }
@@ -201,7 +229,8 @@ export default function PersonasPage() {
         <Sidebar />
 
         {/* Content area */}
-        <div className={`flex-1 flex flex-col ${IS_MOBILE ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-hidden ${IS_MOBILE ? '' : 'pb-8'}`}>
+        <div id="main-content" role="main" className={`flex-1 flex flex-col ${IS_MOBILE ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-hidden ${IS_MOBILE ? '' : 'pb-8'}`}>
+          <BreadcrumbTrail />
           {error && (
             <ErrorBanner
               message={error}
@@ -210,15 +239,20 @@ export default function PersonasPage() {
               onDismiss={() => setError(null)}
             />
           )}
-          <motion.div
-            key={sidebarSection + (selectedPersonaId || '')}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="flex-1 flex flex-col w-full min-w-0 overflow-y-hidden"
-          >
-            {renderContent()}
-          </motion.div>
+          <AnimatePresence mode="wait" initial={false} custom={sectionDir}>
+            <motion.div
+              key={sidebarSection + (selectedPersonaId || '')}
+              custom={sectionDir}
+              variants={sectionFadeVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={sectionTransition}
+              className="flex-1 flex flex-col w-full min-w-0 overflow-y-hidden"
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
 

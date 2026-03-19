@@ -2,6 +2,7 @@ import { lazy, Suspense, useState, startTransition } from 'react';
 import { LayoutDashboard, BarChart3, Radio } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import DashboardHome from '@/features/overview/components/dashboard/DashboardHome';
+import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 
 // DashboardHome is the default view -- keep it eager for instant first paint.
 // Analytics (recharts-heavy) and Realtime (d3/svg-heavy) are lazy.
@@ -51,7 +52,7 @@ export default function DashboardWithSubtabs() {
       {subtab === 'overview' ? (
         <DashboardHome />
       ) : (
-        <Suspense fallback={null}>
+        <Suspense fallback={<PanelSkeleton variant="subtab" />}>
           {subtab === 'analytics' ? <AnalyticsDashboard /> : <RealtimeVisualizerPage />}
         </Suspense>
       )}

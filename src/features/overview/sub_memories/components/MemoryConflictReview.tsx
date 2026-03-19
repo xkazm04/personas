@@ -91,22 +91,22 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
         }`}
       >
         <Shield className="w-4 h-4 text-amber-400 flex-shrink-0" />
-        <span className="text-sm font-medium text-foreground/85 flex-1">
+        <span className="typo-heading text-foreground/85 flex-1">
           {unresolvedConflicts.length} conflict{unresolvedConflicts.length !== 1 ? 's' : ''} detected
         </span>
         <div className="flex items-center gap-1.5">
           {countByKind.contradiction > 0 && (
-            <span className="px-1.5 py-0.5 text-xs font-medium rounded-lg bg-red-500/15 text-red-400 border border-red-500/20">
+            <span className="px-1.5 py-0.5 typo-caption rounded-lg bg-red-500/15 text-red-400 border border-red-500/20">
               {countByKind.contradiction} contradiction{countByKind.contradiction !== 1 ? 's' : ''}
             </span>
           )}
           {countByKind.duplicate > 0 && (
-            <span className="px-1.5 py-0.5 text-xs font-medium rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/20">
+            <span className="px-1.5 py-0.5 typo-caption rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/20">
               {countByKind.duplicate} duplicate{countByKind.duplicate !== 1 ? 's' : ''}
             </span>
           )}
           {countByKind.superseded > 0 && (
-            <span className="px-1.5 py-0.5 text-xs font-medium rounded-lg bg-blue-500/15 text-blue-400 border border-blue-500/20">
+            <span className="px-1.5 py-0.5 typo-caption rounded-lg bg-blue-500/15 text-blue-400 border border-blue-500/20">
               {countByKind.superseded} superseded
             </span>
           )}

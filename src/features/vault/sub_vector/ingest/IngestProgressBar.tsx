@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { listen } from '@tauri-apps/api/event';
 import type { KbIngestProgress } from '@/api/vault/database/vectorKb';
 
@@ -48,7 +49,7 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
   if (!progress) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
-        <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
+        <LoadingSpinner className="text-violet-400" />
         <span>Preparing ingestion...</span>
       </div>
     );
@@ -68,7 +69,7 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
         ) : done ? (
           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
         ) : (
-          <Loader2 className="w-4 h-4 animate-spin text-violet-400 shrink-0" />
+          <LoadingSpinner className="text-violet-400 shrink-0" />
         )}
 
         <span className={`flex-1 truncate ${hasError ? 'text-red-400' : 'text-foreground/70'}`}>

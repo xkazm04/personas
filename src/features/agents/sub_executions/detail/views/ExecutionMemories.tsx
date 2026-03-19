@@ -34,7 +34,7 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
     <div>
       <button
         onClick={() => setShowMemories(!showMemories)}
-        className="flex items-center gap-2 text-sm text-foreground/90 hover:text-foreground transition-colors mb-2"
+        className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors mb-2"
       >
         {showMemories ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         <Brain className="w-4 h-4 text-violet-400" />
@@ -49,12 +49,12 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
               return (
                 <div key={mem.id} className="p-3 bg-violet-500/5 border border-violet-500/15 rounded-xl">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded border ${cat.bg} ${cat.text} ${cat.border}`}>
+                    <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${cat.bg} ${cat.text} ${cat.border}`}>
                       {cat.label}
                     </span>
-                    <span className="text-sm font-medium text-foreground/90">{stripHtml(mem.title)}</span>
+                    <span className="typo-heading text-foreground/90">{stripHtml(mem.title)}</span>
                   </div>
-                  <p className="text-sm text-foreground/70 line-clamp-2">{stripHtml(mem.content)}</p>
+                  <p className="typo-body text-foreground/70 line-clamp-2">{stripHtml(mem.content)}</p>
                 </div>
               );
             })}

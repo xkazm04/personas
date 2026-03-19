@@ -46,12 +46,27 @@ impl RateLimiter {
         timestamps.retain(|t| *t > cutoff);
 
         if timestamps.len() >= max_events {
+            // After retain the bucket may be empty (e.g. max_events == 0, or all
+            // entries expired between the len check and now). Guard against
+            // index-out-of-bounds on an empty vec.
+            if timestamps.is_empty() {
+                return Err(window.as_secs().max(1));
+            }
             // Calculate how long until the oldest entry expires
             let oldest = timestamps[0];
             let retry_after = window
                 .checked_sub(now.duration_since(oldest))
                 .unwrap_or(Duration::from_secs(1));
-            return Err(retry_after.as_secs().max(1));
+            let retry_after_secs = retry_after.as_secs().max(1);
+            tracing::warn!(
+                rate_key = %key,
+                retry_after_secs = retry_after_secs,
+                bucket_depth = timestamps.len(),
+                max_events = max_events,
+                window_secs = window.as_secs(),
+                "Rate limit rejected request"
+            );
+            return Err(retry_after_secs);
         }
 
         timestamps.push(now);
@@ -59,6 +74,30 @@ impl RateLimiter {
         // Periodically prune fully-expired buckets to prevent unbounded memory growth.
         // We do this while already holding the lock to avoid a second lock acquisition.
         if self.call_count.fetch_add(1, Ordering::Relaxed) % AUTO_PRUNE_INTERVAL == 0 {
+            // Log high-watermark summary before pruning
+            if !buckets.is_empty() {
+                let mut high_watermark_key = String::new();
+                let mut high_watermark_depth: usize = 0;
+                let active_buckets = buckets.iter().filter(|(_, ts)| {
+                    ts.iter().any(|t| *t > cutoff)
+                }).count();
+                for (k, ts) in buckets.iter() {
+                    let live = ts.iter().filter(|t| **t > cutoff).count();
+                    if live > high_watermark_depth {
+                        high_watermark_depth = live;
+                        high_watermark_key = k.clone();
+                    }
+                }
+                if high_watermark_depth > 0 {
+                    tracing::info!(
+                        active_buckets = active_buckets,
+                        high_watermark_key = %high_watermark_key,
+                        high_watermark_depth = high_watermark_depth,
+                        "Rate limiter periodic summary"
+                    );
+                }
+            }
+
             buckets.retain(|_, ts| {
                 ts.retain(|t| *t > cutoff);
                 !ts.is_empty()
@@ -169,6 +208,26 @@ mod tests {
         rl.prune(short_window);
         let buckets = rl.buckets.lock().unwrap();
         assert!(buckets.is_empty());
+    }
+
+    #[test]
+    fn test_zero_max_events_does_not_panic() {
+        let rl = RateLimiter::new();
+        // max_events = 0 means nothing is ever allowed; must not panic.
+        let result = rl.check("key", 0, Duration::from_secs(60));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_all_entries_expired_with_zero_max_does_not_panic() {
+        let rl = RateLimiter::new();
+        let short_window = Duration::from_millis(50);
+        // Fill bucket then let entries expire
+        rl.check("key", 5, short_window).unwrap();
+        thread::sleep(Duration::from_millis(60));
+        // Now call with max_events = 0: retain evicts everything, len (0) >= 0 is true
+        let result = rl.check("key", 0, short_window);
+        assert!(result.is_err());
     }
 
     #[test]

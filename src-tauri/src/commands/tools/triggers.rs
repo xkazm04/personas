@@ -1429,3 +1429,27 @@ pub fn get_persona_config_warnings(
 
     Ok(warnings)
 }
+
+// =============================================================================
+// Composite Partial-Match Observability
+// =============================================================================
+
+/// Returns the latest partial-match evaluation snapshots for all composite triggers.
+/// Each result shows how many conditions were met vs total, with per-condition detail.
+#[tauri::command]
+pub fn get_composite_partial_matches(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<crate::engine::composite::PartialMatchResult>, AppError> {
+    require_auth_sync(&state)?;
+    Ok(crate::engine::composite::get_partial_matches())
+}
+
+/// Returns the partial-match snapshot for a single composite trigger.
+#[tauri::command]
+pub fn get_composite_partial_match(
+    state: State<'_, Arc<AppState>>,
+    trigger_id: String,
+) -> Result<Option<crate::engine::composite::PartialMatchResult>, AppError> {
+    require_auth_sync(&state)?;
+    Ok(crate::engine::composite::get_partial_match_for(&trigger_id))
+}

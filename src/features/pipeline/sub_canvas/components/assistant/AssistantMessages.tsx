@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Loader2, Check, ArrowRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, Check, ArrowRight } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PersonaAvatar, ROLE_COLORS } from '../../libs/teamConstants';
 import type { TopologyBlueprint } from '@/lib/bindings/TopologyBlueprint';
 import type { BlueprintMember } from '@/lib/bindings/BlueprintMember';
@@ -49,7 +50,7 @@ export default function AssistantMessages({
       {/* Loading message */}
       {loading && (
         <div className="mx-3 mb-3 px-3 py-2 rounded-xl bg-indigo-500/8 border border-indigo-500/15 text-sm text-indigo-300/80 flex items-center gap-2">
-          <Loader2 className="w-3 h-3 animate-spin flex-shrink-0" />
+          <LoadingSpinner size="xs" className="flex-shrink-0" />
           Building your team...
         </div>
       )}
@@ -134,7 +135,7 @@ export default function AssistantMessages({
                 >
                   {isApplying ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <LoadingSpinner size="sm" />
                       Applying...
                     </>
                   ) : (

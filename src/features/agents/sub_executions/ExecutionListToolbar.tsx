@@ -28,7 +28,7 @@ export function ExecutionListToolbar({
   return (
     <>
       <div className="flex items-center gap-2">
-        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+        <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
           <Clock className="w-3.5 h-3.5" />
           History
@@ -38,7 +38,7 @@ export function ExecutionListToolbar({
             <button
               data-testid="exec-toggle-raw"
               onClick={onToggleRaw}
-              className={`ml-auto flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
+              className={`ml-auto flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
                 showRaw
                   ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                   : 'text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'
@@ -53,7 +53,7 @@ export function ExecutionListToolbar({
           <button
             data-testid="exec-toggle-compare"
             onClick={onToggleCompare}
-            className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
+            className={`flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
               compareMode
                 ? 'bg-primary/15 text-primary/80 border border-primary/20'
                 : 'text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'
@@ -67,7 +67,7 @@ export function ExecutionListToolbar({
 
       {/* Compare mode toolbar */}
       {compareMode && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl text-sm">
+        <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl typo-body">
           <ArrowLeftRight className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" />
           <span className="text-muted-foreground/70">
             {!compareLeft
@@ -78,11 +78,11 @@ export function ExecutionListToolbar({
           </span>
           {compareLeft && (
             <span className="ml-auto flex items-center gap-1.5">
-              <span className="text-sm font-mono text-indigo-400">#{compareLeft.slice(0, 8)}</span>
+              <span className="typo-code text-indigo-400">#{compareLeft.slice(0, 8)}</span>
               {compareRight && (
                 <>
                   <span className="text-muted-foreground/40">vs</span>
-                  <span className="text-sm font-mono text-pink-400">#{compareRight.slice(0, 8)}</span>
+                  <span className="typo-code text-pink-400">#{compareRight.slice(0, 8)}</span>
                 </>
               )}
             </span>
@@ -91,7 +91,7 @@ export function ExecutionListToolbar({
             <button
               data-testid="exec-show-comparison"
               onClick={onShowComparison}
-              className="ml-2 px-2.5 py-1 text-sm font-medium rounded-xl bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
+              className="ml-2 px-2.5 py-1 typo-heading rounded-xl bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
             >
               Compare
             </button>
@@ -117,16 +117,16 @@ export function ExecutionListEmptyState({ onTryIt }: ExecutionListEmptyStateProp
       <div className="w-12 h-12 rounded-xl bg-primary/8 border border-primary/20 flex items-center justify-center mb-4">
         <Rocket className="w-5.5 h-5.5 text-primary/40" />
       </div>
-      <p className="text-sm font-medium text-foreground/80">
+      <p className="typo-heading text-foreground/80">
         Your agent is ready to go
       </p>
-      <p className="text-sm text-muted-foreground/80 mt-1 max-w-[260px]">
+      <p className="typo-body text-muted-foreground/80 mt-1 max-w-[260px]">
         Run it to see results here. Each execution will appear in this timeline.
       </p>
       <button
         data-testid="exec-try-it"
         onClick={onTryIt}
-        className="mt-4 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors"
+        className="mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors"
       >
         <Play className="w-3.5 h-3.5" />
         Try it now

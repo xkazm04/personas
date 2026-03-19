@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronDown, ChevronRight, Globe, Settings, UserPlus, KeyRound,
-  ShieldCheck, Copy, HelpCircle, Loader2 } from 'lucide-react';
+  ShieldCheck, Copy, HelpCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { NegotiationStep } from '@/hooks/design/credential/useCredentialNegotiator';
 import { MOTION_TIMING } from '@/features/templates/animationPresets';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
@@ -166,7 +167,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
                 className={`px-3 py-1.5 rounded-xl text-sm transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bgColor} ${AI_STATUS.borderColor} ${AI_STATUS.color}`}
                 data-testid={`negotiator-step-${stepIndex}-help-ask-btn`}
               >
-                {isLoadingHelp ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Ask'}
+                {isLoadingHelp ? <LoadingSpinner size="xs" /> : 'Ask'}
               </button>
             </div>
             {stepHelp && stepHelp.stepIndex === stepIndex && (

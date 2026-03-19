@@ -7,6 +7,7 @@ use crate::db::repos::execution::executions as repo;
 use crate::db::repos::resources::automations as automation_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::engine::automation_runner::automation_to_virtual_tool;
+use crate::engine::failover::CircuitBreakerStatus;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged, require_privileged_sync};
 use crate::AppState;
@@ -255,6 +256,23 @@ pub fn get_execution_trace(
     crate::db::repos::execution::traces::get_by_execution_id(&state.db, &execution_id)
 }
 
+/// Build a deterministic dream replay session from stored trace spans.
+///
+/// Reconstructs frame-by-frame execution state without consuming LLM tokens.
+/// Each span boundary becomes a DreamFrame with full state reconstruction.
+#[tauri::command]
+pub fn get_dream_replay(
+    state: State<'_, Arc<AppState>>,
+    execution_id: String,
+    caller_persona_id: String,
+) -> Result<Option<crate::engine::dream_replay::DreamReplaySession>, AppError> {
+    require_auth_sync(&state)?;
+    let execution = repo::get_by_id(&state.db, &execution_id)?;
+    verify_execution_owner(&execution, &caller_persona_id)?;
+    let trace = crate::db::repos::execution::traces::get_by_execution_id(&state.db, &execution_id)?;
+    Ok(trace.map(|t| crate::engine::dream_replay::build_dream_replay(&t)))
+}
+
 /// Get all traces sharing a chain_trace_id (distributed trace across chain executions).
 ///
 /// Only returns traces belonging to the caller's persona. Chain executions may
@@ -279,4 +297,16 @@ pub fn get_chain_trace(
         ));
     }
     Ok(owned)
+}
+
+/// Get current circuit breaker state for all providers.
+///
+/// Returns per-provider status (consecutive failures, open/closed, cooldown)
+/// and global breaker state. Read-only snapshot — does not reset any state.
+#[tauri::command]
+pub fn get_circuit_breaker_status(
+    state: State<'_, Arc<AppState>>,
+) -> Result<CircuitBreakerStatus, AppError> {
+    require_auth_sync(&state)?;
+    Ok(state.engine.circuit_breaker.get_status())
 }

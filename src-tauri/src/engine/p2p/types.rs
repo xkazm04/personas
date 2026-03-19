@@ -112,6 +112,38 @@ pub struct ConnectionHealth {
     pub connected_count: u32,
 }
 
+/// Reason a peer connection was terminated.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum DisconnectReason {
+    /// User or application explicitly disconnected.
+    User,
+    /// Health-check (ping) failure.
+    HealthCheck,
+    /// Graceful shutdown via disconnect_all.
+    Shutdown,
+    /// Protocol error (version mismatch, unexpected message, etc.).
+    ProtocolError,
+}
+
+/// Serializable snapshot of connection lifecycle metrics.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ConnectionMetricsSnapshot {
+    pub connections_established: u64,
+    pub connections_dropped_health: u64,
+    pub connections_dropped_user: u64,
+    pub connections_dropped_shutdown: u64,
+    pub connections_dropped_protocol: u64,
+    pub connections_rejected_capacity: u64,
+    /// Total outbound connection attempts (including failures).
+    pub connection_attempts: u64,
+    /// Average time from connect start to Connected state (ms), if any connections established.
+    pub avg_connect_duration_ms: Option<f64>,
+}
+
 /// Combined snapshot of network status, health, and discovered peers.
 /// Used to batch 3 separate polls into a single IPC call.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -121,4 +153,7 @@ pub struct NetworkSnapshot {
     pub status: NetworkStatusInfo,
     pub health: ConnectionHealth,
     pub discovered_peers: Vec<DiscoveredPeer>,
+    pub messaging_metrics: super::messaging::MessagingMetrics,
+    pub connection_metrics: ConnectionMetricsSnapshot,
+    pub manifest_sync_metrics: super::manifest_sync::ManifestSyncMetrics,
 }

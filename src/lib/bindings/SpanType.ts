@@ -3,4 +3,4 @@
 /**
  * The type of work a span represents.
  */
-export type SpanType = "execution" | "prompt_assembly" | "credential_resolution" | "cli_spawn" | "tool_call" | "protocol_dispatch" | "chain_evaluation" | "stream_processing" | "outcome_assessment" | "healing_analysis";
+export type SpanType = "execution" | "prompt_assembly" | "credential_resolution" | "cli_spawn" | "tool_call" | "protocol_dispatch" | "chain_evaluation" | "stream_processing" | "outcome_assessment" | "healing_analysis" | "pipeline_stage";

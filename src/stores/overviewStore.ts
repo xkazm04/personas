@@ -17,6 +17,7 @@ import { createHealingSlice } from "./slices/overview/healingSlice";
 import { createMemorySlice } from "./slices/overview/memorySlice";
 import { createCronAgentsSlice } from "./slices/overview/cronAgentsSlice";
 import { createAlertSlice } from "./slices/overview/alertSlice";
+import { createPersonaHealthSlice } from "./slices/overview/personaHealthSlice";
 
 // Keys used by the old hand-rolled persistence — removed after migration.
 const LEGACY_KEYS = [
@@ -37,6 +38,7 @@ export const useOverviewStore = create<OverviewStore>()(
       ...createMemorySlice(...a),
       ...createCronAgentsSlice(...a),
       ...createAlertSlice(...a),
+      ...createPersonaHealthSlice(...a),
     }),
     {
       name: "persona-ui-overview",

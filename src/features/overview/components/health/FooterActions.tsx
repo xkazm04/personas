@@ -72,8 +72,8 @@ export function FooterActions({
               <Sparkles className="w-5 h-5 text-violet-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-foreground/90">Ready to create your first agent?</h3>
-              <p className="text-sm text-muted-foreground/70">All checks passed. Let us guide you through creating and running your first agent.</p>
+              <h3 className="typo-heading text-foreground/90">Ready to create your first agent?</h3>
+              <p className="typo-body text-muted-foreground/70">All checks passed. Let us guide you through creating and running your first agent.</p>
             </div>
             <Button
               variant="accent"

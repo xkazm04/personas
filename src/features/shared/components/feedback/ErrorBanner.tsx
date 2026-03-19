@@ -27,13 +27,13 @@ export function ErrorBanner({
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10">
           <AlertTriangle className="h-6 w-6 text-red-400" />
         </div>
-        <p className="text-sm text-red-400 max-w-md">{message}</p>
+        <p className="typo-body text-red-400 max-w-md">{message}</p>
         <div className="flex items-center gap-2">
           {onBack && (
             <button
               type="button"
               onClick={onBack}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground/80 hover:text-foreground/90 bg-secondary/50 hover:bg-secondary/70 rounded-lg transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-muted-foreground/80 hover:text-foreground/90 bg-secondary/50 hover:bg-secondary/70 rounded-lg transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               Go back
@@ -43,7 +43,7 @@ export function ErrorBanner({
             <button
               type="button"
               onClick={onRetry}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 typo-heading text-white bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Retry
@@ -61,7 +61,7 @@ export function ErrorBanner({
     <div
       role="alert"
       aria-live="assertive"
-      className={`flex items-start gap-2.5 ${sizeClass} ${SEVERITY_STYLES.error.border} ${SEVERITY_STYLES.error.bg} rounded-xl text-sm ${SEVERITY_STYLES.error.text}`}
+      className={`flex items-start gap-2.5 ${sizeClass} ${SEVERITY_STYLES.error.border} ${SEVERITY_STYLES.error.bg} rounded-xl typo-body ${SEVERITY_STYLES.error.text}`}
     >
       <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
       <span className="flex-1">{message}</span>
@@ -69,7 +69,7 @@ export function ErrorBanner({
         <button
           type="button"
           onClick={onRetry}
-          className="flex items-center gap-1 text-red-400/80 hover:text-red-300 text-sm font-medium shrink-0 transition-colors cursor-pointer"
+          className="flex items-center gap-1 text-red-400/80 hover:text-red-300 typo-heading shrink-0 transition-colors cursor-pointer"
         >
           <RefreshCw className="w-3 h-3" />
           Retry

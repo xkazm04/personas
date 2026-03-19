@@ -63,7 +63,7 @@ export function CostAccrualOverlay({
     <div className="px-3 py-2">
       <div className="flex items-center gap-2 mb-1">
         <DollarSign className="w-3 h-3 text-emerald-400" />
-        <span className="text-sm font-mono text-muted-foreground/60 uppercase tracking-wider">
+        <span className="typo-code text-muted-foreground/60 uppercase tracking-wider">
           Cost Accrual -- ${totalCostUsd.toFixed(4)}
         </span>
       </div>
@@ -92,30 +92,30 @@ export function PipelineSummary({ trace, execution }: { trace: UnifiedTrace; exe
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 3xl:gap-4 4xl:gap-5">
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" /> Total Duration
         </div>
-        <div className="text-sm font-mono text-foreground/90">{formatDuration(totalMs)}</div>
+        <div className="typo-code text-foreground/90">{formatDuration(totalMs)}</div>
       </div>
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <DollarSign className="w-2.5 h-2.5" /> Cost
         </div>
-        <div className="text-sm font-mono text-foreground/90">
+        <div className="typo-code text-foreground/90">
           {execution.cost_usd > 0 ? `$${execution.cost_usd.toFixed(4)}` : '-'}
         </div>
       </div>
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <Zap className="w-2.5 h-2.5" /> Stages
         </div>
-        <div className="text-sm font-mono text-foreground/90">{stagesHit} / {PIPELINE_STAGES.length}</div>
+        <div className="typo-code text-foreground/90">{stagesHit} / {PIPELINE_STAGES.length}</div>
       </div>
       <div className="rounded-lg border border-primary/20 bg-secondary/40 p-3 space-y-1">
-        <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+        <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
           <AlertCircle className="w-2.5 h-2.5" /> Errors
         </div>
-        <div className={`text-sm font-mono ${errors > 0 ? 'text-red-400' : 'text-foreground/90'}`}>{errors}</div>
+        <div className={`typo-code ${errors > 0 ? 'text-red-400' : 'text-foreground/90'}`}>{errors}</div>
       </div>
     </div>
   );
@@ -129,7 +129,7 @@ export function WaterfallErrors({ entries }: { entries: UnifiedSpan[] }) {
 
   return (
     <div className="space-y-2">
-      <div className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
+      <div className="typo-code text-muted-foreground/70 uppercase tracking-wider flex items-center gap-1">
         <AlertCircle className="w-2.5 h-2.5 text-red-400" /> Stage Errors
       </div>
       {errorEntries.map((entry) => {
@@ -138,11 +138,11 @@ export function WaterfallErrors({ entries }: { entries: UnifiedSpan[] }) {
         return (
           <div key={entry.span_id} className="p-3 bg-red-500/5 border border-red-500/15 rounded-lg">
             <div className="flex items-center gap-2 mb-1.5">
-              <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded border ${config.bg} ${config.text} ${config.border}`}>
+              <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${config.bg} ${config.text} ${config.border}`}>
                 {stage}
               </span>
             </div>
-            <pre className="text-sm text-red-300/80 font-mono whitespace-pre-wrap break-words">
+            <pre className="typo-code text-red-300/80 whitespace-pre-wrap break-words">
               {entry.error}
             </pre>
           </div>

@@ -25,10 +25,10 @@ export function EventListenerConfig({
           placeholder="e.g. file_changed, deploy, build_complete"
           aria-invalid={!!validationError}
           aria-describedby={validationError ? 'listen-event-error' : undefined}
-          className={`w-full px-3 py-2 bg-background/50 border rounded-xl text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 transition-all ${
+          className={`w-full px-3 py-2 bg-background/50 border rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring transition-all ${
             validationError
-              ? 'border-red-500/30 ring-1 ring-red-500/30 focus-visible:ring-red-500/40 focus-visible:border-red-500/40'
-              : 'border-primary/15 focus-visible:ring-primary/40 focus-visible:border-primary/40'
+              ? 'border-red-500/30 ring-1 ring-red-500/30'
+              : 'border-primary/15 focus-visible:border-primary/40'
           }`}
         />
         {validationError && (

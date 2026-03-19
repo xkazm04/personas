@@ -118,3 +118,15 @@ export const replayWebhookRequest = (logId: string) =>
 
 export const webhookRequestToCurl = (logId: string) =>
   invoke<string>("webhook_request_to_curl", { logId });
+
+// ============================================================================
+// Composite Partial-Match Observability
+// ============================================================================
+
+import type { PartialMatchResult } from "@/lib/bindings/PartialMatchResult";
+
+export const getCompositePartialMatches = () =>
+  invoke<PartialMatchResult[]>("get_composite_partial_matches");
+
+export const getCompositePartialMatch = (triggerId: string) =>
+  invoke<PartialMatchResult | null>("get_composite_partial_match", { triggerId });

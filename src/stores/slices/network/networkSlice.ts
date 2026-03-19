@@ -7,7 +7,10 @@ import type { ExposedResource, ResourceProvenance } from "@/api/network/exposure
 import type { BundleImportPreview } from "@/api/network/bundle";
 import type {
   ConnectionHealth,
+  ConnectionMetricsSnapshot,
   DiscoveredPeer,
+  ManifestSyncMetrics,
+  MessagingMetrics,
   PeerManifestEntry,
   ConnectionState,
   NetworkStatusInfo,
@@ -15,6 +18,7 @@ import type {
 import * as identityApi from "@/api/network/identity";
 import * as exposureApi from "@/api/network/exposure";
 import * as bundleApi from "@/api/network/bundle";
+import * as enclaveApi from "@/api/network/enclave";
 import * as discoveryApi from "@/api/network/discovery";
 
 /** Number of consecutive poll failures before surfacing a staleness warning. */
@@ -34,6 +38,9 @@ export interface NetworkSlice {
   connectionStates: Record<string, ConnectionState>;
   networkStatus: NetworkStatusInfo | null;
   connectionHealth: ConnectionHealth | null;
+  messagingMetrics: MessagingMetrics | null;
+  connectionMetrics: ConnectionMetricsSnapshot | null;
+  manifestSyncMetrics: ManifestSyncMetrics | null;
 
   // Network health tracking
   networkError: string | null;
@@ -64,6 +71,10 @@ export interface NetworkSlice {
   previewBundleImport: (filePath: string) => Promise<BundleImportPreview>;
   applyBundleImport: (filePath: string, options: bundleApi.BundleImportOptions) => Promise<bundleApi.BundleImportResult>;
 
+  // Enclave actions
+  sealEnclave: (personaId: string, policy: enclaveApi.EnclavePolicy, savePath: string) => Promise<enclaveApi.EnclaveSealResult>;
+  verifyEnclave: (filePath: string) => Promise<enclaveApi.EnclaveVerifyResult>;
+
   // Discovery actions (Phase 2)
   fetchDiscoveredPeers: () => Promise<void>;
   connectToPeer: (peerId: string) => Promise<void>;
@@ -88,6 +99,9 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   connectionStates: {},
   networkStatus: null,
   connectionHealth: null,
+  messagingMetrics: null,
+  connectionMetrics: null,
+  manifestSyncMetrics: null,
 
   // Network health tracking
   networkError: null,
@@ -259,6 +273,32 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
     }
   },
 
+  // -- Enclaves -------------------------------------------------------
+
+  sealEnclave: async (personaId, policy, savePath) => {
+    set({ networkLoading: true });
+    try {
+      const result = await enclaveApi.sealEnclave(personaId, policy, savePath);
+      set({ networkLoading: false });
+      return result;
+    } catch (err) {
+      reportError(err, "Failed to seal enclave", set, { stateUpdates: { networkLoading: false } });
+      throw err;
+    }
+  },
+
+  verifyEnclave: async (filePath) => {
+    set({ networkLoading: true });
+    try {
+      const result = await enclaveApi.verifyEnclave(filePath);
+      set({ networkLoading: false });
+      return result;
+    } catch (err) {
+      reportError(err, "Failed to verify enclave", set, { stateUpdates: { networkLoading: false } });
+      throw err;
+    }
+  },
+
   // -- Discovery (Phase 2) --------------------------------------------
 
   fetchDiscoveredPeers: async () => {
@@ -351,6 +391,9 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
         networkStatus: snapshot.status,
         connectionHealth: snapshot.health,
         discoveredPeers: snapshot.discoveredPeers,
+        messagingMetrics: snapshot.messagingMetrics,
+        connectionMetrics: snapshot.connectionMetrics,
+        manifestSyncMetrics: snapshot.manifestSyncMetrics,
         networkConsecutiveFailures: 0,
         networkError: null,
       });

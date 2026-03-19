@@ -50,7 +50,7 @@ export function BulkActionBar({
                 <button
                   onClick={() => onBulkAction(confirmAction)}
                   disabled={isBulkProcessing}
-                  className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-colors ${
+                  className={`px-3 py-1.5 rounded-xl typo-heading border transition-colors ${
                     confirmAction === 'approved'
                       ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
                       : 'bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25'
@@ -75,14 +75,14 @@ export function BulkActionBar({
                 </button>
                 <button
                   onClick={() => onConfirmAction('approved')}
-                  className="px-3 py-1.5 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-xl typo-heading bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors flex items-center gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5" />
                   Approve All
                 </button>
                 <button
                   onClick={() => onConfirmAction('rejected')}
-                  className="px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-xl typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors flex items-center gap-1.5"
                 >
                   <X className="w-3.5 h-3.5" />
                   Reject All

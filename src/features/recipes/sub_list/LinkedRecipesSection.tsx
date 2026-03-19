@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { BookOpen, Plus, Play, Unlink, Loader2 } from 'lucide-react';
+import { BookOpen, Plus, Play, Unlink } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { AnimatePresence } from 'framer-motion';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useToastStore } from '@/stores/toastStore';
@@ -65,7 +66,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground/60">
-        <Loader2 className="w-3 h-3 animate-spin" /> Loading linked recipes...
+        <LoadingSpinner size="xs" /> Loading linked recipes...
       </div>
     );
   }
@@ -124,7 +125,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
                 className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
               >
                 {unlinkingId === recipe.id ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <LoadingSpinner size="xs" />
                 ) : (
                   <Unlink className="w-3 h-3" />
                 )}

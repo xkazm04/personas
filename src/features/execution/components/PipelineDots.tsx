@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import {
   PIPELINE_STAGES,
   STAGE_META,
@@ -64,6 +65,6 @@ export function PipelineDots({ trace }: { trace: UnifiedTrace | null }) {
 
 export function StatusIndicator({ isExecuting, hasError }: { isExecuting: boolean; hasError: boolean }) {
   if (hasError) return <XCircle className="w-4 h-4 text-red-400" />;
-  if (isExecuting) return <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />;
+  if (isExecuting) return <LoadingSpinner className="text-blue-400" />;
   return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
 }

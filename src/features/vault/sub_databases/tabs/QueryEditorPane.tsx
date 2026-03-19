@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Play, Wand2, Loader2, Save, Check } from 'lucide-react';
+import { Play, Wand2, Save, Check } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useVaultStore } from "@/stores/vaultStore";
 import { SqlEditor } from '../SqlEditor';
@@ -109,7 +110,7 @@ export function QueryEditorPane({
                 : 'text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/40 border-transparent hover:border-primary/10'
           }`}
         >
-          {saveState === 'saved' ? <Check className="w-3 h-3" /> : saveState === 'saving' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+          {saveState === 'saved' ? <Check className="w-3 h-3" /> : saveState === 'saving' ? <LoadingSpinner size="xs" /> : <Save className="w-3 h-3" />}
           {saveState === 'saved' ? 'Saved' : saveState === 'saving' ? 'Saving...' : 'Save'}
         </button>
 
@@ -118,7 +119,7 @@ export function QueryEditorPane({
           disabled={executing || !editorValue.trim()}
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
         >
-          {executing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+          {executing ? <LoadingSpinner size="xs" /> : <Play className="w-3 h-3" />}
           {executing ? 'Running...' : 'Run'}
         </button>
 
@@ -127,7 +128,7 @@ export function QueryEditorPane({
           disabled={queryDebug.isRunning || !editorValue.trim()}
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium bg-gradient-to-r from-violet-500/15 to-fuchsia-500/10 text-violet-400 border border-violet-500/20 hover:from-violet-500/25 hover:to-fuchsia-500/20 hover:border-violet-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm shadow-violet-500/5"
         >
-          {queryDebug.isRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+          {queryDebug.isRunning ? <LoadingSpinner size="xs" /> : <Wand2 className="w-3 h-3" />}
           {queryDebug.isRunning ? 'Debugging...' : 'AI Run'}
         </button>
       </div>

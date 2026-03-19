@@ -47,10 +47,41 @@ export interface ConnectionHealth {
   connectedCount: number;
 }
 
+export interface MessagingMetrics {
+  messagesSent: number;
+  messagesReceived: number;
+  messagesDroppedBufferFull: number;
+  messagesRateLimited: number;
+  bytesSent: number;
+  bytesReceived: number;
+}
+
+export interface ConnectionMetricsSnapshot {
+  connectionsEstablished: number;
+  connectionsDroppedHealth: number;
+  connectionsDroppedUser: number;
+  connectionsDroppedShutdown: number;
+  connectionsDroppedProtocol: number;
+  connectionsRejectedCapacity: number;
+  connectionAttempts: number;
+  avgConnectDurationMs: number | null;
+}
+
+export interface ManifestSyncMetrics {
+  syncRounds: number;
+  syncSuccesses: number;
+  syncFailures: number;
+  avgSyncDurationMs: number | null;
+  totalEntriesReceived: number;
+}
+
 export interface NetworkSnapshot {
   status: NetworkStatusInfo;
   health: ConnectionHealth;
   discoveredPeers: DiscoveredPeer[];
+  messagingMetrics: MessagingMetrics;
+  connectionMetrics: ConnectionMetricsSnapshot;
+  manifestSyncMetrics: ManifestSyncMetrics;
 }
 
 export interface NetworkConfig {
@@ -112,6 +143,9 @@ export const getConnectionHealth = () =>
 
 export const getNetworkSnapshot = () =>
   invoke<NetworkSnapshot>("get_network_snapshot");
+
+export const getMessagingMetrics = () =>
+  invoke<MessagingMetrics>("get_messaging_metrics");
 
 // ============================================================================
 // Agent Messaging

@@ -63,7 +63,7 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
           value={value || ''}
           onChange={(e) => onChange(e.target.value.trim() || '#8b5cf6')}
           placeholder="#8b5cf6"
-          className="w-28 px-2.5 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-sm font-mono text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
+          className="w-28 px-2.5 py-1.5 bg-background/50 border border-primary/15 rounded-xl typo-code text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
         />
         {value && value !== '#8b5cf6' && (
           <button

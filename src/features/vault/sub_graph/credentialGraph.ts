@@ -1,5 +1,7 @@
 import type { CredentialMetadata, ConnectorDefinition, Persona, CredentialEvent } from '@/lib/types/types';
 import type { CredentialDependent } from '@/lib/bindings/CredentialDependent';
+import type { Workflow } from '@/lib/types/compositionTypes';
+import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 
 // ---------------------------------------------------------------------------
 // Graph node / edge types
@@ -88,6 +90,160 @@ export function analyzeBlastRadius(
     credentialName: credNode.label,
     affectedAgents,
     affectedEvents,
+    severity,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Revocation simulation (chaos-engineering inspired)
+// ---------------------------------------------------------------------------
+
+export interface AffectedWorkflow {
+  workflowId: string;
+  workflowName: string;
+  brokenNodeIds: string[];
+  brokenNodeLabels: string[];
+  totalNodes: number;
+}
+
+export interface FailoverSuggestion {
+  credentialId: string;
+  credentialName: string;
+  serviceType: string;
+  healthOk: boolean | null;
+}
+
+export interface SimulationResult {
+  credentialId: string;
+  credentialName: string;
+  serviceType: string;
+
+  // Affected personas with health context
+  affectedPersonas: {
+    id: string;
+    name: string;
+    via: string | null;
+    recentExecutions: number;
+    dailyBurnRate: number;
+    grade: string;
+  }[];
+
+  // Broken workflows
+  affectedWorkflows: AffectedWorkflow[];
+
+  // Impact metrics
+  totalAffectedPersonas: number;
+  totalAffectedWorkflows: number;
+  estimatedDailyExecutionsLost: number;
+  estimatedDailyRevenueLost: number; // $ based on burn rate of affected personas
+
+  // Failover suggestions
+  failoverSuggestions: FailoverSuggestion[];
+
+  // Severity (extends blast radius severity with workflow awareness)
+  severity: 'low' | 'medium' | 'high' | 'critical';
+}
+
+export function simulateRevocation(
+  credentialId: string,
+  graph: CredentialGraph,
+  workflows: Workflow[],
+  healthSignals: PersonaHealthSignal[],
+  allCredentials: CredentialMetadata[],
+): SimulationResult | null {
+  const credNode = graph.nodes.find((n) => n.id === credentialId && n.kind === 'credential');
+  if (!credNode) return null;
+
+  const serviceType = credNode.meta.serviceType ?? 'unknown';
+
+  // 1. Find affected agents (same as blast radius but enriched with health)
+  const healthMap = new Map(healthSignals.map((s) => [s.personaId, s]));
+
+  const outEdges = graph.edges.filter((e) => e.source === credentialId);
+  const inEdges = graph.edges.filter((e) => e.target === credentialId);
+  const allEdges = [...outEdges, ...inEdges];
+
+  const agentIds = new Set<string>();
+  const affectedPersonas: SimulationResult['affectedPersonas'] = [];
+  for (const edge of allEdges) {
+    const otherId = edge.source === credentialId ? edge.target : edge.source;
+    const otherNode = graph.nodes.find((n) => n.id === otherId);
+    if (otherNode?.kind === 'agent' && !agentIds.has(otherId)) {
+      agentIds.add(otherId);
+      // Strip "agent:" prefix to look up health
+      const personaId = otherId.startsWith('agent:') ? otherId.slice(6) : otherId;
+      const health = healthMap.get(personaId);
+      affectedPersonas.push({
+        id: personaId,
+        name: otherNode.label,
+        via: edge.label ?? null,
+        recentExecutions: health?.recentExecutions ?? 0,
+        dailyBurnRate: health?.dailyBurnRate ?? 0,
+        grade: health?.grade ?? 'unknown',
+      });
+    }
+  }
+
+  // 2. Find affected workflows — any workflow containing a persona node that would break
+  const affectedPersonaIds = new Set(affectedPersonas.map((p) => p.id));
+  const affectedWorkflows: AffectedWorkflow[] = [];
+  for (const wf of workflows) {
+    if (!wf.enabled) continue;
+    const brokenNodes = wf.nodes.filter(
+      (n) => n.kind === 'persona' && n.personaId && affectedPersonaIds.has(n.personaId),
+    );
+    if (brokenNodes.length > 0) {
+      affectedWorkflows.push({
+        workflowId: wf.id,
+        workflowName: wf.name,
+        brokenNodeIds: brokenNodes.map((n) => n.id),
+        brokenNodeLabels: brokenNodes.map((n) => n.label),
+        totalNodes: wf.nodes.filter((n) => n.kind === 'persona').length,
+      });
+    }
+  }
+
+  // 3. Impact metrics
+  const estimatedDailyExecutionsLost = affectedPersonas.reduce(
+    (sum, p) => sum + Math.round(p.recentExecutions / 7),
+    0,
+  );
+  const estimatedDailyRevenueLost = affectedPersonas.reduce(
+    (sum, p) => sum + p.dailyBurnRate,
+    0,
+  );
+
+  // 4. Failover suggestions — same service_type credentials that aren't this one
+  const failoverSuggestions: FailoverSuggestion[] = allCredentials
+    .filter((c) => c.id !== credentialId && c.service_type === serviceType)
+    .map((c) => ({
+      credentialId: c.id,
+      credentialName: c.name,
+      serviceType: c.service_type,
+      healthOk: c.healthcheck_last_success,
+    }));
+
+  // 5. Severity: critical if workflows break, high if 3+ personas, medium if 1-2, low if none
+  const severity: SimulationResult['severity'] =
+    affectedWorkflows.length > 0
+      ? 'critical'
+      : affectedPersonas.length >= 3
+        ? 'high'
+        : affectedPersonas.length >= 1
+          ? 'medium'
+          : 'low';
+
+  return {
+    credentialId,
+    credentialName: credNode.label,
+    serviceType,
+    affectedPersonas,
+    affectedWorkflows,
+    totalAffectedPersonas: affectedPersonas.length,
+    totalAffectedWorkflows: affectedWorkflows.length,
+    estimatedDailyExecutionsLost,
+    estimatedDailyRevenueLost: Math.round(estimatedDailyRevenueLost * 100) / 100,
+    failoverSuggestions,
     severity,
   };
 }

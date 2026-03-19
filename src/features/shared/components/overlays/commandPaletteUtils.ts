@@ -5,7 +5,7 @@ import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 
 // -- Types -------------------------------------------------------------
 
-export type ResultKind = 'agent' | 'credential' | 'template' | 'automation' | 'navigation' | 'action';
+export type ResultKind = 'agent' | 'credential' | 'template' | 'automation' | 'navigation' | 'action' | 'agent-action';
 
 export interface PaletteItem {
   id: string;
@@ -14,6 +14,8 @@ export interface PaletteItem {
   description?: string;
   icon: React.ReactNode;
   onSelect: () => void;
+  /** When true, the palette stays open after selection (e.g. quick-edit). */
+  staysOpen?: boolean;
 }
 
 // -- Fuzzy match -------------------------------------------------------
@@ -120,5 +122,86 @@ export function automationItem(
     icon,
     onSelect: () => setSidebarSection('events'),
   };
+}
+
+// -- Agent action builders (command mode) --------------------------------
+
+export interface AgentActionCallbacks {
+  onRun: (id: string) => void;
+  onToggle: (id: string, enabled: boolean) => void;
+  onDuplicate: (id: string) => void;
+  onHealthCheck: () => void;
+  onNavigate: (id: string) => void;
+  onQuickEdit: (id: string) => void;
+}
+
+export function agentActionItems(
+  personas: Persona[],
+  callbacks: AgentActionCallbacks,
+  icons: {
+    run: React.ReactNode;
+    toggle: React.ReactNode;
+    duplicate: React.ReactNode;
+    health: React.ReactNode;
+    edit: React.ReactNode;
+  },
+): PaletteItem[] {
+  const items: PaletteItem[] = [];
+
+  for (const p of personas) {
+    items.push({
+      id: `cmd:run:${p.id}`,
+      kind: 'agent-action',
+      label: `Run ${p.name}`,
+      description: 'Execute ad-hoc',
+      icon: icons.run,
+      onSelect: () => callbacks.onRun(p.id),
+    });
+    items.push({
+      id: `cmd:toggle:${p.id}`,
+      kind: 'agent-action',
+      label: `${p.enabled ? 'Disable' : 'Enable'} ${p.name}`,
+      description: p.enabled ? 'Currently on' : 'Currently off',
+      icon: icons.toggle,
+      onSelect: () => callbacks.onToggle(p.id, !p.enabled),
+    });
+    items.push({
+      id: `cmd:duplicate:${p.id}`,
+      kind: 'agent-action',
+      label: `Duplicate ${p.name}`,
+      description: 'Clone agent',
+      icon: icons.duplicate,
+      onSelect: () => callbacks.onDuplicate(p.id),
+    });
+    items.push({
+      id: `cmd:edit:${p.id}`,
+      kind: 'agent-action',
+      label: `Quick Edit ${p.name}`,
+      description: 'Description & model',
+      icon: icons.edit,
+      onSelect: () => callbacks.onQuickEdit(p.id),
+      staysOpen: true,
+    });
+    items.push({
+      id: `cmd:open:${p.id}`,
+      kind: 'agent-action',
+      label: `Open ${p.name}`,
+      description: 'Full editor',
+      icon: icons.edit,
+      onSelect: () => callbacks.onNavigate(p.id),
+    });
+  }
+
+  // Global health check
+  items.push({
+    id: 'cmd:health-check',
+    kind: 'agent-action',
+    label: 'Run Health Check',
+    description: 'System diagnostics',
+    icon: icons.health,
+    onSelect: () => callbacks.onHealthCheck(),
+  });
+
+  return items;
 }
 

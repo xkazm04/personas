@@ -52,8 +52,8 @@ export function MemoryRow({
       <AnimatePresence mode="wait">
         {confirmDelete ? (
           <motion.div key="confirm" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex items-center gap-1">
-            <button onClick={onDelete} className="px-2 py-1 text-sm font-medium rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors">Confirm</button>
-            <button onClick={() => setConfirmDelete(false)} className="px-2 py-1 text-sm font-medium rounded-lg bg-secondary/50 text-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors">Cancel</button>
+            <button onClick={onDelete} className="px-2 py-1 typo-heading rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors">Confirm</button>
+            <button onClick={() => setConfirmDelete(false)} className="px-2 py-1 typo-heading rounded-lg bg-secondary/50 text-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors">Cancel</button>
           </motion.div>
         ) : (
           <motion.button key="trash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirmDelete(true)} className="p-1 rounded hover:bg-red-500/10 text-muted-foreground/80 hover:text-red-400 transition-colors">

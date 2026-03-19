@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::engine::api_definition::ApiEndpoint;
-use crate::engine::api_proxy::ApiProxyResponse;
+use crate::engine::api_proxy::{ApiProxyCredentialMetrics, ApiProxyResponse};
 use crate::engine::crypto;
 use crate::error::AppError;
 use crate::ipc_auth::{require_privileged, require_privileged_sync};
@@ -50,6 +50,18 @@ pub async fn execute_api_request(
         body,
     )
     .await
+}
+
+// ============================================================================
+// API Proxy Metrics
+// ============================================================================
+
+#[tauri::command]
+pub async fn get_api_proxy_metrics(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<ApiProxyCredentialMetrics>, AppError> {
+    require_privileged(&state, "get_api_proxy_metrics").await?;
+    Ok(crate::engine::api_proxy::get_all_proxy_metrics().await)
 }
 
 // ============================================================================

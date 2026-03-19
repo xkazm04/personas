@@ -33,7 +33,7 @@ function AlertToast({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => 
       <div className="flex items-start gap-2.5">
         <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${style.iconColor}`} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">{alert.ruleName}</p>
+          <p className="typo-heading text-foreground truncate">{alert.ruleName}</p>
           <p className="text-xs text-muted-foreground/80 mt-0.5">{alert.message}</p>
         </div>
         <button onClick={onDismiss} className="p-0.5 text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0">

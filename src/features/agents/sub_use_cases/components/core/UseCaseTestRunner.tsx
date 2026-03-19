@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { FlaskConical, Play, Square, Loader2, ArrowRight } from 'lucide-react';
+import { FlaskConical, Play, Square, ArrowRight } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
@@ -152,7 +153,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
                   className="overflow-hidden"
                 >
                   <div className="flex items-center gap-2 text-sm text-foreground/70">
-                    <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
+                    <LoadingSpinner size="sm" className="text-primary" />
                     <span className="capitalize">
                       {testRunProgress.phase === 'generating'
                         ? 'Generating scenarios...'

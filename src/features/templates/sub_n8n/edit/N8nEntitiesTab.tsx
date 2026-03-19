@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { Link, CheckCircle2, AlertCircle, Loader2, RefreshCw, Wrench, Zap, ListChecks } from 'lucide-react';
+import { Link, CheckCircle2, AlertCircle, RefreshCw, Wrench, Zap, ListChecks } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useVaultStore } from "@/stores/vaultStore";
 import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
 import {
@@ -138,7 +139,7 @@ export function N8nEntitiesTab({
               disabled={cs.testingAll}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
             >
-              {cs.testingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              {cs.testingAll ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3 h-3" />}
               Test All
             </button>
           )}

@@ -7,7 +7,7 @@ import { formatInterval, formatRelative } from '../libs/cronHelpers';
 function AgentSection({ title, agents }: { title: string; agents: CronAgent[] }) {
   return (
     <div>
-      <h2 className="text-sm font-medium text-muted-foreground/80 mb-3">{title}</h2>
+      <h2 className="typo-heading text-muted-foreground/80 mb-3">{title}</h2>
       <div className="grid gap-2">
         {agents.map((agent) => (
           <AgentRow key={agent.trigger_id} agent={agent} />
@@ -62,7 +62,7 @@ function AgentRow({ agent }: { agent: CronAgent }) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground/90 truncate">{agent.persona_name}</span>
+          <span className="typo-heading text-foreground/90 truncate">{agent.persona_name}</span>
           {agent.headless && (
             <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
               headless

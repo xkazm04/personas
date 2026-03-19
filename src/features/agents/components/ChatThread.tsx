@@ -2,9 +2,9 @@ import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Bot,
-  Loader2,
   User,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 interface ChatMessage {
   id: string;
@@ -72,7 +72,7 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
               <Bot className="w-3.5 h-3.5 text-primary/60" />
             </div>
             <div className="flex items-center gap-2 pt-1.5">
-              <Loader2 className="w-3.5 h-3.5 text-primary/50 animate-spin" />
+              <LoadingSpinner size="sm" className="text-primary/50" />
               <span className="text-sm text-muted-foreground/60">{thinkingLabel}</span>
             </div>
           </motion.div>

@@ -2,7 +2,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bot,
   Check,
-  Loader2,
   Sparkles,
   Wrench,
   Zap,
@@ -12,6 +11,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PreviewSection } from './PreviewSection';
 
 import type { useDesignAnalysis } from '@/hooks/design/core/useDesignAnalysis';
@@ -164,7 +164,7 @@ export function PreviewPanel({
             }`}
           >
             {isActivating ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <LoadingSpinner size="sm" />
             ) : completeness >= 80 ? (
               <Check className="w-3.5 h-3.5" />
             ) : (

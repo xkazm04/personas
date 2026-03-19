@@ -1,0 +1,11 @@
+C:\Users\kazda\kiro\personas\src-tauri\src-tauri\target/syntax-check\debug\deps\ppv_lite86-e4ac86572057c6cf.d: C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\lib.rs C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\soft.rs C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\types.rs C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\x86_64\mod.rs C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\x86_64\sse2.rs
+
+C:\Users\kazda\kiro\personas\src-tauri\src-tauri\target/syntax-check\debug\deps\libppv_lite86-e4ac86572057c6cf.rlib: C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\lib.rs C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\soft.rs C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\types.rs C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\x86_64\mod.rs C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\x86_64\sse2.rs
+
+C:\Users\kazda\kiro\personas\src-tauri\src-tauri\target/syntax-check\debug\deps\libppv_lite86-e4ac86572057c6cf.rmeta: C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\lib.rs C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\soft.rs C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\types.rs C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\x86_64\mod.rs C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\x86_64\sse2.rs
+
+C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\lib.rs:
+C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\soft.rs:
+C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\types.rs:
+C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\x86_64\mod.rs:
+C:\Users\kazda\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ppv-lite86-0.2.21\src\x86_64\sse2.rs:

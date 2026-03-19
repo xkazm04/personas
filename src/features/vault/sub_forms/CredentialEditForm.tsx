@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { vaultStatus, type VaultStatus } from "@/api/vault/credentials";
+import { silentCatch } from "@/lib/silentCatch";
 
 import { FieldCaptureRow } from './FieldCaptureRow';
 import { OAuthSection } from './OAuthSection';
@@ -59,7 +60,7 @@ export function CredentialEditForm({
   const [vault, setVault] = useState<VaultStatus | null>(null);
 
   useEffect(() => {
-    vaultStatus().then(setVault).catch(() => {});
+    vaultStatus().then(setVault).catch(silentCatch("CredentialEditForm:fetchVaultStatus"));
   }, []);
 
   useEffect(() => {

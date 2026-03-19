@@ -44,7 +44,7 @@ export function SubscriptionRow({
           onConfirmDelete(sub.id);
         }}
         data-sub-delete={sub.id}
-        className="p-1 text-muted-foreground/80 hover:text-red-400 transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none focus-visible:rounded-xl"
+        className="p-1 text-muted-foreground/80 hover:text-red-400 transition-colors focus-ring"
       >
         <AnimatePresence mode="wait" initial={false}>
           {confirmingDeleteId === sub.id ? (

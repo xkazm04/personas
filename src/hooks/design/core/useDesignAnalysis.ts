@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { startDesignAnalysis, refineDesign, cancelDesignAnalysis, compileFromIntent } from '@/api/templates/design';
 import { useAgentStore } from "@/stores/agentStore";
+import { silentCatch } from "@/lib/silentCatch";
 import { useTauriStream } from './useTauriStream';
 import { applyDesignResult, retryFailedOperations, type ApplyDesignSelections, type FailedOperation } from '../credential/applyDesignResult';
 import type { DesignPhase, AgentIR, DesignQuestion } from '@/lib/types/designTypes';
@@ -15,35 +16,6 @@ type DesignStreamOutcome =
   | { kind: 'question'; data: DesignQuestion };
 
 const MAX_OUTPUT_LINES = 500;
-
-// -- Stable stream option callbacks ----------------------------------
-// Defined outside the hook so they don't recreate on every render.
-// They reference `designIdRef` which is a ref -- always current.
-
-let _designIdRef: React.RefObject<string | null>;
-
-function getLine(payload: Record<string, unknown>): string {
-  if (_designIdRef.current && payload.design_id !== _designIdRef.current) return '';
-  return payload.line as string;
-}
-
-function resolveStatus(payload: Record<string, unknown>):
-  | { result: DesignStreamOutcome }
-  | { error: string }
-  | null {
-  if (_designIdRef.current && payload.design_id !== _designIdRef.current) return null;
-  const status = payload.status as string;
-  if (status === 'completed' && payload.result) {
-    return { result: { kind: 'result', data: payload.result as AgentIR } };
-  }
-  if (status === 'awaiting-input' && payload.question) {
-    return { result: { kind: 'question', data: payload.question as DesignQuestion } };
-  }
-  if (status === 'failed') {
-    return { error: (payload.error as string) || 'Design analysis failed' };
-  }
-  return null;
-}
 
 // -- Hook ------------------------------------------------------------
 
@@ -60,8 +32,30 @@ export function useDesignAnalysis() {
   const conversationIdRef = useRef<string | null>(null);
   const applyingRef = useRef(false);
 
-  // Share the ref with the module-level callbacks
-  _designIdRef = designIdRef;
+  // Stream option callbacks as closures capturing the local designIdRef.
+  // The ref object is stable across renders so useCallback produces a stable identity.
+  const getLine = useCallback((payload: Record<string, unknown>): string => {
+    if (designIdRef.current && payload.design_id !== designIdRef.current) return '';
+    return payload.line as string;
+  }, []);
+
+  const resolveStatus = useCallback((payload: Record<string, unknown>):
+    | { result: DesignStreamOutcome }
+    | { error: string }
+    | null => {
+    if (designIdRef.current && payload.design_id !== designIdRef.current) return null;
+    const status = payload.status as string;
+    if (status === 'completed' && payload.result) {
+      return { result: { kind: 'result', data: payload.result as AgentIR } };
+    }
+    if (status === 'awaiting-input' && payload.question) {
+      return { result: { kind: 'question', data: payload.question as DesignQuestion } };
+    }
+    if (status === 'failed') {
+      return { error: (payload.error as string) || 'Design analysis failed' };
+    }
+    return null;
+  }, []);
 
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
   const refreshPersonas = useAgentStore((s) => s.fetchPersonas);
@@ -174,7 +168,7 @@ export function useDesignAnalysis() {
   }, [refineAnalysis]);
 
   const cancelAnalysis = useCallback(() => {
-    cancelDesignAnalysis().catch(() => {});
+    cancelDesignAnalysis().catch(silentCatch("designAnalysis:cancel"));
     stream.cancel();
     designIdRef.current = null;
     setDesignPhase('idle');

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { X, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { CredentialPicker, channelIcon } from '../connectors/CredentialPicker';
@@ -127,7 +128,7 @@ export function NotificationChannelCard({
           } disabled:opacity-40 disabled:cursor-not-allowed`}
         >
           {testStatus === 'sending' ? (
-            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending...</>
+            <><LoadingSpinner size="sm" /> Sending...</>
           ) : testStatus === 'success' ? (
             <><CheckCircle2 className="w-3.5 h-3.5" /> Delivered</>
           ) : testStatus === 'error' ? (

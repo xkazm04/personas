@@ -1,6 +1,7 @@
 import { useRef, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, MonitorX, Clock } from 'lucide-react';
+import { MonitorX, Clock } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { BrowserLogEntry, AutoCredMode } from '../helpers/types';
 import { openExternalUrl } from '@/api/system/system';
 import {
@@ -94,7 +95,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
               </span>
             )}
             {(sessionState === 'connecting' || sessionState === 'working') && (
-              <Loader2 className={`w-4 h-4 animate-spin ${config.color} opacity-60`} />
+              <LoadingSpinner className={`${config.color} opacity-60`} />
             )}
           </div>
         </motion.div>
@@ -130,7 +131,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
 
         {visibleLogs.length === 0 && (
           <div className="text-muted-foreground/60 text-center py-10 space-y-2">
-            <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground/50" />
+            <LoadingSpinner size="xl" className="mx-auto text-muted-foreground/50" />
             <p className="text-sm">
               {isGuided ? 'Preparing guided setup instructions...' : 'Starting browser session...'}
             </p>

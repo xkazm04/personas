@@ -66,7 +66,7 @@ export function CostAccrualOverlay({
     <div className="px-3 py-2">
       <div className="flex items-center gap-2 mb-1">
         <DollarSign className="w-3 h-3 text-emerald-400" />
-        <span className="text-sm font-mono text-muted-foreground/60 uppercase tracking-wider">
+        <span className="typo-code text-muted-foreground/60 uppercase tracking-wider">
           Cost Accrual -- ${totalCostUsd.toFixed(4)}
         </span>
       </div>

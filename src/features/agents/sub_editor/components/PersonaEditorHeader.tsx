@@ -65,7 +65,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
     )
   ) : (
     <div
-      className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold"
+      className="w-10 h-10 rounded-xl flex items-center justify-center typo-heading"
       style={{ backgroundColor: `${effective.color || '#6B7280'}20`, border: `1px solid ${effective.color || '#6B7280'}40`, color: effective.color || '#6B7280' }}
     >
       {effective.name.charAt(0).toUpperCase()}
@@ -79,7 +79,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       subtitle={effective.description || undefined}
       actions={
         <div className="relative flex items-center gap-2 flex-shrink-0">
-          <span className={`text-sm font-medium transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-muted-foreground/80'}`}>
+          <span className={`typo-heading transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-muted-foreground/80'}`}>
             {effective.enabled ? 'Active' : 'Off'}
           </span>
           <AccessibleToggle
@@ -93,10 +93,10 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
           <AnimatePresence>
             {showReadinessTooltip && readiness.reasons.length > 0 && (
               <motion.div initial={{ opacity: 0, y: 4, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4, scale: 0.95 }} className="absolute top-full right-0 mt-2 w-64 bg-background border border-amber-500/30 rounded-lg shadow-xl p-2.5 z-50">
-                <p className="text-sm font-medium text-amber-400 mb-1.5 flex items-center gap-1.5">
+                <p className="typo-heading text-amber-400 mb-1.5 flex items-center gap-1.5">
                   <AlertCircle className="w-3.5 h-3.5" /> Cannot enable persona
                 </p>
-                {readiness.reasons.map((r, i) => <p key={i} className="text-sm text-muted-foreground/80 pl-5">{r}</p>)}
+                {readiness.reasons.map((r, i) => <p key={i} className="typo-body text-muted-foreground/80 pl-5">{r}</p>)}
               </motion.div>
             )}
           </AnimatePresence>

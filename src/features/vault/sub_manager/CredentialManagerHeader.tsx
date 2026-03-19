@@ -1,5 +1,6 @@
 import { useMemo, type RefObject } from 'react';
-import { Search, Key, X, RotateCw, Loader2, CheckCircle2, HeartPulse, AlertCircle, HelpCircle } from 'lucide-react';
+import { Search, Key, X, RotateCw, CheckCircle2, HeartPulse, AlertCircle, HelpCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { VaultStatusBadge } from '@/features/vault/sub_card/badges/VaultStatusBadge';
@@ -195,7 +196,7 @@ function RotateAllButton({
       title={rotatableCount === 0 ? 'No credentials support automatic rotation' : `Refresh ${rotatableCount} OAuth credential${rotatableCount !== 1 ? 's' : ''}`}
     >
       {isRotatingAll ? (
-        <Loader2 className="w-3 h-3 animate-spin" />
+        <LoadingSpinner size="xs" />
       ) : rotateAllResult ? (
         <CheckCircle2 className="w-3 h-3" />
       ) : (
@@ -238,7 +239,7 @@ function TestAllButton({
       title={bulk.isRunning ? 'Cancel healthcheck' : 'Test all credentials'}
     >
       {bulk.isRunning ? (
-        <Loader2 className="w-3 h-3 animate-spin" />
+        <LoadingSpinner size="xs" />
       ) : bulk.summary ? (
         <CheckCircle2 className="w-3 h-3" />
       ) : (

@@ -6,6 +6,7 @@ import { CatalogAutoSetup } from '@/features/vault/sub_autoCred/steps/CatalogAut
 import { CredentialRelationshipGraph } from '@/features/vault/sub_graph/CredentialRelationshipGraph';
 import { isUniversalOAuthConnector, isDesktopBridge } from '@/lib/utils/platform/connectors';
 import { CredentialAddViews } from './CredentialAddViews';
+import { silentCatch } from "@/lib/silentCatch";
 import type { useCredentialManagerState } from './useCredentialManagerState';
 
 type ManagerState = ReturnType<typeof useCredentialManagerState>;
@@ -92,7 +93,7 @@ export function CredentialManagerViews({ state }: CredentialManagerViewsProps) {
               if (templateHealth.result) templateHealth.invalidate();
             }}
             onMcpComplete={() => {
-              void fetchCredentials().catch(() => {});
+              void fetchCredentials().catch(silentCatch("CredentialManagerViews:fetchCredentialsOnMcpComplete"));
               fetchConnectorDefinitions();
               dispatch({ type: 'GO_LIST' });
             }}

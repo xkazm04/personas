@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { Bot, Zap, Clock, Loader2, MoreHorizontal, Trash2, Settings, Star, Plug } from 'lucide-react';
+import { Bot, Zap, Clock, MoreHorizontal, Trash2, Settings, Star, Plug } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusShape, mapToShapeStatus } from '@/features/shared/components/display/StatusShape';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
@@ -9,6 +11,7 @@ import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/di
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { extractConnectorNames } from '@/lib/personas/utils';
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
+import { ViewPresetBar, DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './ViewPresetBar';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 
@@ -39,7 +42,7 @@ function StatusBadge({ enabled, health, isDraft }: { enabled: boolean; health?: 
   const style = (HEALTH_STYLES[healthStatus] ?? HEALTH_STYLES.healthy)!;
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${style.bg} ${style.text} border border-current/15`}>
-      <span className="w-1.5 h-1.5 rounded-full bg-current" />
+      <StatusShape status={mapToShapeStatus(healthStatus)} size="xs" colorClass="" />
       {style.label}
     </span>
   );
@@ -48,7 +51,7 @@ function StatusBadge({ enabled, health, isDraft }: { enabled: boolean; health?: 
 function BuildingBadge() {
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15">
-      <Loader2 className="w-3 h-3 animate-spin" />
+      <LoadingSpinner size="xs" />
       Building
     </span>
   );
@@ -162,10 +165,24 @@ export default function PersonaOverviewPage() {
   const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
   const { toggleFavorite, isFavorite } = useFavoriteAgents();
 
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sortKey, setSortKey] = useState<string | null>('name');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [viewConfig, setViewConfig] = useState<AgentListViewConfig>(DEFAULT_VIEW_CONFIG);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Convenience destructure
+  const { statusFilter, healthFilter, connectorFilter, favoriteOnly, sortKey, sortDirection: sortDir } = viewConfig;
+
+  const setStatusFilter = useCallback((value: string) => {
+    setViewConfig((prev) => ({ ...prev, statusFilter: value }));
+  }, []);
+
+  const handleSort = useCallback((key: string) => {
+    setViewConfig((prev) => {
+      if (prev.sortKey === key) {
+        return { ...prev, sortDirection: prev.sortDirection === 'asc' ? 'desc' : 'asc' };
+      }
+      return { ...prev, sortKey: key, sortDirection: 'asc' };
+    });
+  }, []);
 
   // Detect if a persona is an incomplete draft (system_prompt is default placeholder)
   const isDraft = useCallback((persona: Persona) => {
@@ -177,8 +194,18 @@ export default function PersonaOverviewPage() {
     return id === buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted';
   }, [buildPersonaId, buildPhase]);
 
+  // Extract unique connector names across all personas for filter pills
+  const allConnectorNames = useMemo(() => {
+    const names = new Set<string>();
+    for (const p of personas) {
+      for (const c of extractConnectorNames(p, 10)) {
+        names.add(c);
+      }
+    }
+    return [...names].sort();
+  }, [personas]);
+
   const handleRowClick = useCallback((persona: Persona) => {
-    // Building or draft personas → open PersonaMatrix
     if (isBuilding(persona.id) || isDraft(persona)) {
       useAgentStore.setState({ buildPersonaId: persona.id });
       setIsCreatingPersona(true);
@@ -220,15 +247,6 @@ export default function PersonaOverviewPage() {
     selectPersona(id);
   }, [selectPersona]);
 
-  const handleSort = useCallback((key: string) => {
-    if (sortKey === key) {
-      setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortKey(key);
-      setSortDir('asc');
-    }
-  }, [sortKey]);
-
   const handleToggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -240,10 +258,34 @@ export default function PersonaOverviewPage() {
 
   const filteredData = useMemo(() => {
     let data = [...personas];
+
+    // Status filter
     if (statusFilter === 'enabled') data = data.filter((p) => p.enabled && !isDraft(p));
     else if (statusFilter === 'disabled') data = data.filter((p) => !p.enabled);
     else if (statusFilter === 'building') data = data.filter((p) => isBuilding(p.id) || isDraft(p));
 
+    // Health filter
+    if (healthFilter !== 'all') {
+      data = data.filter((p) => {
+        const h = healthMap[p.id]?.status ?? 'healthy';
+        return h === healthFilter;
+      });
+    }
+
+    // Connector filter
+    if (connectorFilter !== 'all') {
+      data = data.filter((p) => {
+        const connectors = extractConnectorNames(p, 10);
+        return connectors.includes(connectorFilter);
+      });
+    }
+
+    // Favorites only
+    if (favoriteOnly) {
+      data = data.filter((p) => isFavorite(p.id));
+    }
+
+    // Sort
     if (sortKey) {
       data.sort((a, b) => {
         let cmp = 0;
@@ -262,7 +304,7 @@ export default function PersonaOverviewPage() {
       });
     }
     return data;
-  }, [personas, statusFilter, sortKey, sortDir, isBuilding, isDraft, triggerCounts, lastRunMap]);
+  }, [personas, statusFilter, healthFilter, connectorFilter, favoriteOnly, sortKey, sortDir, isBuilding, isDraft, isFavorite, triggerCounts, lastRunMap, healthMap]);
 
   // Clear selection when data changes (e.g. filter changes)
   useEffect(() => {
@@ -288,6 +330,13 @@ export default function PersonaOverviewPage() {
     { value: 'enabled', label: 'Active' },
     { value: 'disabled', label: 'Disabled' },
     { value: 'building', label: 'Drafts' },
+  ];
+
+  const healthOptions = [
+    { value: 'all', label: 'All Health' },
+    { value: 'healthy', label: 'Healthy' },
+    { value: 'degraded', label: 'Degraded' },
+    { value: 'failing', label: 'Failing' },
   ];
 
   const columns: DataGridColumn<Persona>[] = [
@@ -404,6 +453,27 @@ export default function PersonaOverviewPage() {
       },
     },
     {
+      key: 'health',
+      label: 'Health',
+      width: '110px',
+      filterOptions: healthOptions,
+      filterValue: healthFilter,
+      onFilterChange: (v) => setViewConfig((prev) => ({ ...prev, healthFilter: v })),
+      render: (persona) => {
+        if (!persona.enabled || isDraft(persona)) {
+          return <span className="text-[11px] text-muted-foreground/30">--</span>;
+        }
+        const h = healthMap[persona.id]?.status ?? 'healthy';
+        const style = (HEALTH_STYLES[h] ?? HEALTH_STYLES.healthy)!;
+        return (
+          <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${style.text}`}>
+            <StatusShape status={mapToShapeStatus(h)} size="xs" colorClass="" />
+            {style.label}
+          </span>
+        );
+      },
+    },
+    {
       key: 'triggers',
       label: 'Triggers',
       width: '80px',
@@ -452,13 +522,20 @@ export default function PersonaOverviewPage() {
         icon={<Bot className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
         title="All Agents"
-        subtitle={`${personas.length} agent${personas.length !== 1 ? 's' : ''}`}
+        subtitle={`${filteredData.length}${filteredData.length !== personas.length ? ` of ${personas.length}` : ''} agent${personas.length !== 1 ? 's' : ''}`}
       >
-        <BatchActionBar
-          count={selectedIds.size}
-          onDelete={handleBatchDelete}
-          onClear={() => setSelectedIds(new Set())}
-        />
+        <div className="flex items-center gap-3">
+          <BatchActionBar
+            count={selectedIds.size}
+            onDelete={handleBatchDelete}
+            onClear={() => setSelectedIds(new Set())}
+          />
+          <ViewPresetBar
+            currentConfig={viewConfig}
+            onApplyConfig={setViewConfig}
+            connectorOptions={allConnectorNames}
+          />
+        </div>
       </ContentHeader>
       <ContentBody>
         <DataGrid

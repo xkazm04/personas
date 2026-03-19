@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Clock, Zap, ChevronDown, Loader2, Sparkles, Code2, CalendarClock } from 'lucide-react';
+import { Clock, Zap, ChevronDown, Sparkles, Code2, CalendarClock } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion } from 'framer-motion';
 import { previewCronSchedule, type CronPreview } from '@/api/pipeline/triggers';
 import {
@@ -120,7 +121,7 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
 
       <button onClick={handleActivate} disabled={isActivating || !isValid}
         className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all border disabled:opacity-40 disabled:cursor-not-allowed bg-amber-500/12 text-amber-300 border-amber-500/25 hover:bg-amber-500/20">
-        {isActivating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+        {isActivating ? <LoadingSpinner size="sm" /> : <Zap className="w-3.5 h-3.5" />}
         {isActivating ? 'Activating...' : 'Activate Schedule Trigger'}
       </button>
 

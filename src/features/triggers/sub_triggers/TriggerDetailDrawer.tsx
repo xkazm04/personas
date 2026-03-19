@@ -1,4 +1,5 @@
-import { Trash2, X, Check, Play, Loader2, Terminal, FlaskConical } from 'lucide-react';
+import { Trash2, X, Check, Play, Terminal, FlaskConical } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion } from 'framer-motion';
 import type { PersonaTrigger } from '@/lib/types/types';
 import type { TriggerRateLimitConfig } from '@/lib/utils/platform/triggerConstants';
@@ -10,6 +11,7 @@ import { TRANSITION_NORMAL } from '@/features/templates/animationPresets';
 import { ConfigSection } from './TriggerConfigSection';
 import { DryRunResultView } from './DryRunResultView';
 import { WebhookRequestInspector } from './WebhookRequestInspector';
+import { CompositePartialMatchIndicator } from './CompositePartialMatchIndicator';
 
 interface TriggerDetailDrawerProps {
   trigger: PersonaTrigger;
@@ -34,6 +36,10 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, detail, onD
         <div className="border-t border-primary/8" />
 
         <ConfigSection trigger={trigger} credentialEventsList={credentialEventsList} detail={detail} />
+
+        {trigger.trigger_type === 'composite' && (
+          <CompositePartialMatchIndicator triggerId={trigger.id} />
+        )}
 
         <RateLimitControls rateLimit={rateLimit} runtimeState={rateLimitState} onChange={onRateLimitChange} />
 
@@ -75,7 +81,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, detail, onD
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-primary/70 hover:text-primary hover:bg-primary/10 rounded-xl transition-colors disabled:opacity-50"
             title="Validate trigger config, then fire"
           >
-            {detail.testing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+            {detail.testing ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
             {detail.testing ? 'Validating...' : 'Test fire'}
           </button>
 
@@ -85,7 +91,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, detail, onD
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/10 rounded-xl transition-colors disabled:opacity-50"
             title="Simulate trigger without executing"
           >
-            {detail.dryRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FlaskConical className="w-3.5 h-3.5" />}
+            {detail.dryRunning ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-3.5 h-3.5" />}
             {detail.dryRunning ? 'Simulating...' : 'Dry run'}
           </button>
 

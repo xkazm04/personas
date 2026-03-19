@@ -1,3 +1,4 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useCallback, useRef, useEffect } from 'react';
 import {
   createN8nSession,
@@ -212,7 +213,7 @@ export function useN8nSession(
             userAnswers: currentSlice.userAnswers,
             transformId: currentSlice.transformId,
             error: currentSlice.error,
-          }).catch(() => {});
+          }).catch(silentCatch("useN8nSession:flushDbSync"));
         }
       }
 
@@ -258,7 +259,7 @@ export function useN8nSession(
   const remove = useCallback(() => {
     const id = sessionIdRef.current;
     if (!id) return;
-    void deleteN8nSession(id).catch(() => {});
+    void deleteN8nSession(id).catch(silentCatch("useN8nSession:deleteSession"));
   }, []);
 
   return { sessionIdRef, clearPersistedContext, create, remove };

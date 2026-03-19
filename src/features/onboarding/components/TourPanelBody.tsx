@@ -53,7 +53,7 @@ export function TourPanelBody({
               <StepIcon className={`w-4.5 h-4.5 ${colors.text}`} />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
+              <h4 className="typo-heading text-foreground/90 flex items-center gap-2">
                 {currentStep.title}
                 {isStepCompleted && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-medium text-emerald-400">
@@ -64,11 +64,11 @@ export function TourPanelBody({
               </h4>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground/70 leading-relaxed">{currentStep.description}</p>
+          <p className="typo-body text-muted-foreground/70 leading-relaxed">{currentStep.description}</p>
           <div className={`rounded-xl ${colors.bg} border ${colors.border} p-3`}>
             <div className="flex items-start gap-2">
               <ArrowRight className={`w-3.5 h-3.5 ${colors.text} mt-0.5 flex-shrink-0`} />
-              <p className={`text-sm ${colors.text} leading-relaxed font-medium`}>{currentStep.hint}</p>
+              <p className={`typo-heading ${colors.text} leading-relaxed`}>{currentStep.hint}</p>
             </div>
           </div>
         </motion.div>
@@ -79,7 +79,7 @@ export function TourPanelBody({
         <button
           onClick={onPrev}
           disabled={currentIndex === 0}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-primary/10 text-muted-foreground/50 hover:bg-secondary/50 hover:text-foreground/70 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-lg border border-primary/10 text-muted-foreground/50 hover:bg-secondary/50 hover:text-foreground/70 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
           Back
@@ -88,7 +88,7 @@ export function TourPanelBody({
           {allCompleted ? (
             <button
               onClick={() => useSystemStore.getState().finishTour()}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors"
             >
               <Check className="w-3.5 h-3.5" />
               Complete Tour
@@ -96,7 +96,7 @@ export function TourPanelBody({
           ) : (
             <button
               onClick={onNext}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl ${colors.bg} ${colors.text} border ${colors.border} hover:brightness-125 transition-all`}
+              className={`flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl ${colors.bg} ${colors.text} border ${colors.border} hover:brightness-125 transition-all`}
             >
               {isStepCompleted ? 'Next' : 'Skip'}
               <ChevronRight className="w-3.5 h-3.5" />

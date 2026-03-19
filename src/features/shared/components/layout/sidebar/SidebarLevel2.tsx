@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Key, Users, Sparkles, Plus, List, Loader2, Star, Bot, ChevronDown } from 'lucide-react';
+import { Key, Users, Sparkles, Plus, List, Star, Bot, ChevronDown } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -164,7 +165,7 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
               <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
                 <Key className="w-5 h-5 text-emerald-400/60" />
               </div>
-              <p className="text-sm text-muted-foreground/80">No credentials yet</p>
+              <p className="typo-body text-muted-foreground/80">No credentials yet</p>
               <Button
                 variant="accent"
                 accentColor="violet"
@@ -200,8 +201,8 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
           <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
             <Users className="w-6 h-6 text-indigo-400/60" />
           </div>
-          <p className="text-sm text-muted-foreground/80">Multi-Agent Teams</p>
-          <p className="text-sm text-muted-foreground/80 mt-1">Select a team to begin</p>
+          <p className="typo-body text-muted-foreground/80">Multi-Agent Teams</p>
+          <p className="typo-body text-muted-foreground/80 mt-1">Select a team to begin</p>
         </div>
       );
 
@@ -227,7 +228,7 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
           {activeProject && (
             <div className="mx-3 mt-3 px-3 py-2 rounded-lg bg-amber-500/5 border border-amber-500/15">
               <p className="text-[10px] uppercase tracking-wider text-amber-400/50 font-medium mb-0.5">Active Project</p>
-              <p className="text-xs text-foreground/70 font-medium truncate">{activeProject.name}</p>
+              <p className="typo-caption text-foreground/70 truncate">{activeProject.name}</p>
               {activeProject.root_path && (
                 <p className="text-[10px] text-muted-foreground/40 truncate mt-0.5">{activeProject.root_path}</p>
               )}
@@ -279,7 +280,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
       {/* Header */}
       <div className="px-3 py-3 border-b border-primary/10">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/50">Agents</span>
+          <span className="typo-label text-muted-foreground/50">Agents</span>
           <button
             onClick={onCreatePersona}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
@@ -295,9 +296,9 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
         {/* All Agents */}
         <button
           onClick={() => { selectPersona(null); setAgentTab('all'); useSystemStore.getState().setIsCreatingPersona(false); }}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             agentTab === 'all' && !isCreatingPersona
-              ? 'bg-primary/10 text-foreground/90 font-medium'
+              ? 'bg-primary/10 text-foreground/90'
               : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
           }`}
         >
@@ -313,13 +314,13 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
               useAgentStore.setState({ buildPersonaId: buildingPersona.id });
               useSystemStore.getState().setIsCreatingPersona(true);
             }}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
               isCreatingPersona
-                ? 'bg-violet-500/10 text-violet-300 font-medium border border-violet-500/15'
+                ? 'bg-violet-500/10 text-violet-300 border border-violet-500/15'
                 : 'text-muted-foreground/70 hover:bg-violet-500/5 hover:text-violet-300'
             }`}
           >
-            <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin text-violet-400" />
+            <LoadingSpinner className="flex-shrink-0 text-violet-400" />
             <span className="truncate">{buildingPersona.name}</span>
             <span className="ml-auto text-[10px] text-violet-400/60 capitalize">{buildPhase}</span>
           </button>
@@ -330,7 +331,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
           <div className="mt-3 pt-3 border-t border-primary/10">
             <button
               onClick={() => setFavoritesCollapsed(!favoritesCollapsed)}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-amber-400/60 hover:text-amber-400/80 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-amber-400/60 hover:text-amber-400/80 transition-colors"
             >
               <Star className="w-3 h-3 fill-amber-400/60" />
               Favorites
@@ -343,7 +344,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
                   <button
                     key={p.id}
                     onClick={() => selectPersona(p.id)}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors hover:bg-secondary/40 group"
+                    className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors hover:bg-secondary/40 group"
                   >
                     <Bot
                       className="w-4 h-4 flex-shrink-0"

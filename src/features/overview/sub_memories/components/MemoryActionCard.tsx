@@ -42,12 +42,12 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
         </div>
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">
-            <span className={`text-sm font-semibold px-1.5 py-0.5 rounded-md ${meta.bgClass} ${meta.textClass}`}>
+            <span className={`typo-heading px-1.5 py-0.5 rounded-md ${meta.bgClass} ${meta.textClass}`}>
               {meta.label}
             </span>
             <span className="text-sm text-muted-foreground/50 font-mono">{action.score}/10</span>
           </div>
-          <p className="text-sm font-medium text-foreground/85 line-clamp-2">{action.memoryTitle}</p>
+          <p className="typo-heading text-foreground/85 line-clamp-2">{action.memoryTitle}</p>
           <p className="text-sm text-muted-foreground/70 line-clamp-2">{action.rule}</p>
         </div>
       </div>
@@ -70,7 +70,7 @@ export function MemoryActionsPanel({ actions, onDismiss }: MemoryActionsPanelPro
         <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
           <Lightbulb className="w-3.5 h-3.5" />
         </div>
-        <h3 className="text-sm font-bold uppercase tracking-widest text-foreground/80">
+        <h3 className="typo-label text-foreground/80">
           Memory Insights
         </h3>
         <span className="text-sm text-muted-foreground/50 ml-auto">{visible.length} suggestion{visible.length !== 1 ? 's' : ''}</span>

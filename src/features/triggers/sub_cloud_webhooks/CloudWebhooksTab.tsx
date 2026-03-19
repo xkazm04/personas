@@ -1,5 +1,7 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect, useCallback } from 'react';
-import { Cloud, CloudOff, Copy, Check, Plus, Trash2, Webhook, Loader2, RefreshCw } from 'lucide-react';
+import { Cloud, CloudOff, Copy, Check, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from '@/stores/agentStore';
 import { useCloudWebhookRelay } from '@/hooks/realtime/useCloudWebhookRelay';
 import {
@@ -96,7 +98,7 @@ export function CloudWebhooksTab() {
     navigator.clipboard.writeText(text).then(() => {
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2000);
-    }).catch(() => {});
+    }).catch(silentCatch("CloudWebhooksTab:copyToClipboard"));
   };
 
   const handleCreate = async () => {
@@ -223,7 +225,7 @@ export function CloudWebhooksTab() {
                 disabled={!createPersonaId || isCreating}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-blue-500/15 text-blue-400 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-50 transition-colors"
               >
-                {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Webhook className="w-3.5 h-3.5" />}
+                {isCreating ? <LoadingSpinner size="sm" /> : <Webhook className="w-3.5 h-3.5" />}
                 Create Webhook
               </button>
               <button
@@ -239,7 +241,7 @@ export function CloudWebhooksTab() {
         {/* Loading state */}
         {isLoading && (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/60" />
+            <LoadingSpinner size="lg" className="text-muted-foreground/60" />
           </div>
         )}
 
@@ -335,7 +337,7 @@ export function CloudWebhooksTab() {
             </h4>
             {firingsLoading ? (
               <div className="flex items-center justify-center py-6">
-                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/60" />
+                <LoadingSpinner className="text-muted-foreground/60" />
               </div>
             ) : firings.length === 0 ? (
               <p className="text-sm text-muted-foreground/50 py-4">No firings recorded yet</p>

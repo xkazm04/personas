@@ -110,7 +110,7 @@ export default function DashboardHome() {
               <motion.h2
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className={`${IS_MOBILE ? 'text-xl' : 'text-3xl'} font-bold bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent`}
+                className={`${IS_MOBILE ? 'typo-heading-lg' : 'text-3xl font-bold'} bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent`}
               >
                 {greeting}, {displayName}
               </motion.h2>

@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import {
   AlertTriangle, Play, SkipForward, Bot, Clock,
-  Loader2, CheckCircle2, ChevronDown,
+  CheckCircle2, ChevronDown,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import type { SkippedExecution, RecoveryPolicy } from '../libs/scheduleHelpers';
 import { formatRelative, formatInterval } from '../libs/scheduleHelpers';
@@ -62,7 +63,7 @@ export default function SkippedRecoveryPanel({
           <AlertTriangle className="w-4 h-4 text-amber-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-amber-400/90">
+          <p className="typo-heading text-amber-400/90">
             {visibleSkipped.length} agent{visibleSkipped.length !== 1 ? 's' : ''} missed executions
           </p>
           <p className="text-xs text-muted-foreground/60">
@@ -128,7 +129,7 @@ export default function SkippedRecoveryPanel({
                       title="Mark for recovery"
                     >
                       {isRecovering ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <LoadingSpinner size="xs" />
                       ) : policy === 'recover' ? (
                         <CheckCircle2 className="w-3 h-3" />
                       ) : (
@@ -178,7 +179,7 @@ export default function SkippedRecoveryPanel({
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
                 >
                   {recoveringId ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <LoadingSpinner size="xs" />
                   ) : (
                     <Play className="w-3 h-3" />
                   )}

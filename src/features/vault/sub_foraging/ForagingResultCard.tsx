@@ -5,11 +5,11 @@ import {
   FileKey,
   Globe,
   HardDrive,
-  Loader2,
   Server,
   Shield,
   Terminal,
 } from "lucide-react";
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ForagedCredential, ForageSource } from "@/api/vault/foraging";
 
 interface ForagingResultCardProps {
@@ -70,7 +70,7 @@ export function ForagingResultCard({
         {/* Checkbox area */}
         <div className="mt-0.5 flex-shrink-0">
           {isImporting ? (
-            <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
+            <LoadingSpinner className="text-violet-400" />
           ) : isImported ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           ) : credential.already_imported ? (

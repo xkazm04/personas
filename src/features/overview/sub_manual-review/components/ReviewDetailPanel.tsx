@@ -1,3 +1,4 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Check, X, Send, Bot, User, Zap, Cloud, ExternalLink } from 'lucide-react';
@@ -37,7 +38,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
     let cancelled = false;
     listReviewMessages(review.id).then((msgs) => {
       if (!cancelled) setMessages(msgs);
-    }).catch(() => {});
+    }).catch(silentCatch("ReviewDetailPanel:listReviewMessages"));
     return () => { cancelled = true; };
   }, [review.id, isCloud]);
 
@@ -78,13 +79,13 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               {review.persona_icon || '?'}
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-foreground/90 truncate">{review.persona_name || 'Unknown Persona'}</h3>
+              <h3 className="typo-heading text-foreground/90 truncate">{review.persona_name || 'Unknown Persona'}</h3>
               <div className="flex items-center gap-2 mt-0.5">
                 <SeverityIndicator severity={review.severity} />
                 <span className="text-xs text-muted-foreground/60">{SEVERITY_LABELS[review.severity] ?? 'Info'} severity</span>
                 <span className="text-xs text-muted-foreground/50">·</span>
                 <span className="text-xs text-muted-foreground/60">{formatRelativeTime(review.created_at)}</span>
-                {isCloud && (<><span className="text-xs text-muted-foreground/40">·</span><span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"><Cloud className="w-2.5 h-2.5" />Cloud</span></>)}
+                {isCloud && (<><span className="text-xs text-muted-foreground/40">·</span><span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded typo-caption bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"><Cloud className="w-2.5 h-2.5" />Cloud</span></>)}
               </div>
             </div>
           </div>
@@ -106,7 +107,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-medium text-violet-400">{review.persona_name || 'Agent'}</span>
+              <span className="typo-caption text-violet-400">{review.persona_name || 'Agent'}</span>
               <span className="text-xs text-muted-foreground/60">{formatRelativeTime(review.created_at)}</span>
             </div>
             <div className="rounded-xl bg-violet-500/[0.06] border border-violet-500/15 px-3.5 py-2.5">
@@ -121,7 +122,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             {suggestedActions.length > 0 && isPending && (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {suggestedActions.map((action, i) => (
-                  <button key={i} onClick={() => setInput(action)} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15 transition-colors">
+                  <button key={i} onClick={() => setInput(action)} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg typo-caption bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15 transition-colors">
                     <Zap className="w-3 h-3" />{action}
                   </button>
                 ))}
@@ -139,7 +140,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               </div>
               <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
                 <div className={`flex items-center gap-2 mb-1 ${isUser ? 'flex-row-reverse' : ''}`}>
-                  <span className={`text-xs font-medium ${isUser ? 'text-blue-400' : 'text-violet-400'}`}>{isUser ? 'You' : (review.persona_name || 'Agent')}</span>
+                  <span className={`typo-caption ${isUser ? 'text-blue-400' : 'text-violet-400'}`}>{isUser ? 'You' : (review.persona_name || 'Agent')}</span>
                   <span className="text-xs text-muted-foreground/60">{formatRelativeTime(msg.created_at)}</span>
                 </div>
                 <div className={`rounded-xl px-3.5 py-2.5 max-w-[85%] ${isUser ? 'bg-blue-500/[0.08] border border-blue-500/15' : 'bg-violet-500/[0.06] border border-violet-500/15'}`}>
@@ -183,10 +184,10 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground/50">{isCloud ? 'Approve or reject this cloud review' : 'Enter to send · Shift+Enter for new line'}</span>
             <div className="flex items-center gap-2">
-              <button onClick={() => handleAction('approved', input.trim() || undefined)} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <button onClick={() => handleAction('approved', input.trim() || undefined)} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 <Check className="w-3.5 h-3.5" />{isProcessing ? 'Processing...' : 'Approve'}
               </button>
-              <button onClick={() => handleAction('rejected', input.trim() || undefined)} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <button onClick={() => handleAction('rejected', input.trim() || undefined)} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 <X className="w-3.5 h-3.5" />{isProcessing ? 'Processing...' : 'Reject'}
               </button>
             </div>

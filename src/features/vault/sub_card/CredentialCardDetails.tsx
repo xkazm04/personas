@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Key, Wrench, Zap, Pencil, BarChart3, RotateCw, Tag, X, Plus, Copy, Check } from 'lucide-react';
+import { Key, Wrench, Zap, Pencil, BarChart3, RotateCw, Tag, X, Plus, Copy, Check, Timer } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { CredentialEventConfig } from '@/features/vault/sub_features/CredentialEventConfig';
 import { CredentialIntelligence } from '@/features/vault/sub_features/CredentialIntelligence';
 import { CredentialRotationSection } from '@/features/vault/sub_features/CredentialRotationSection';
+import { OAuthTokenMetricsPanel } from '@/features/vault/sub_features/OAuthTokenMetricsPanel';
 import { getTagStyle } from '@/features/vault/utils/credentialTags';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { RotationStatus } from '@/api/vault/rotation';
@@ -11,7 +12,7 @@ import type { HealthResult } from '@/features/vault/hooks/health/useCredentialHe
 import { useCredentialTags } from '@/features/vault/hooks/useCredentialTags';
 import { Button } from '@/features/shared/components/buttons';
 
-type ExpandedSection = 'services' | 'events' | 'intelligence' | 'rotation' | null;
+type ExpandedSection = 'services' | 'events' | 'intelligence' | 'rotation' | 'token_lifetime' | null;
 
 export interface CredentialCardDetailsProps {
   credential: CredentialMetadata;
@@ -173,6 +174,7 @@ export function CredentialCardDetails({
         {([
           { key: 'intelligence' as const, icon: BarChart3, label: 'Intelligence', show: true },
           { key: 'rotation' as const, icon: RotateCw, label: 'Rotation', show: true, badge: rotationStatus?.anomaly_score && rotationStatus.anomaly_score.remediation !== 'healthy' },
+          { key: 'token_lifetime' as const, icon: Timer, label: 'Token Lifetime', show: (credential.oauth_token_expires_at != null) || (credential.oauth_refresh_count > 0) },
           { key: 'services' as const, icon: Wrench, label: `Services (${connector.services.length})`, show: connector.services.length > 0 },
           { key: 'events' as const, icon: Zap, label: `Events (${connector.events.length})`, show: connector.events.length > 0 },
         ] as const).filter((t) => t.show).map((tab) => (
@@ -270,6 +272,9 @@ export function CredentialCardDetails({
               onRefresh={fetchRotationStatus}
               onHealthcheck={() => health.checkStored()}
             />
+          )}
+          {expandedSection === 'token_lifetime' && (
+            <OAuthTokenMetricsPanel credentialId={credential.id} />
           )}
         </div>
       )}

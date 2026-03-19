@@ -57,7 +57,7 @@ export function UseCaseSubscriptionsSection() {
               <button
                 onClick={() => setExpandedId(isExpanded ? null : uc.id)}
                 aria-expanded={isExpanded}
-                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-secondary/30 transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none focus-visible:rounded-xl"
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-secondary/30 transition-colors focus-ring"
               >
                 <ChevronDown className={`w-3 h-3 text-muted-foreground/50 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
                 <span className="text-sm font-medium text-foreground/80 flex-1 truncate">{uc.title}</span>

@@ -112,7 +112,7 @@ export default function GuidedTour() {
                 <Sparkles className={`w-4 h-4 ${colors.text}`} />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-foreground/90 leading-tight">Guided Tour</h3>
+                <h3 className="typo-heading text-foreground/90 leading-tight">Guided Tour</h3>
                 <p className="text-[11px] text-muted-foreground/80">Step {currentIndex + 1} of {visibleSteps.length}</p>
               </div>
             </div>

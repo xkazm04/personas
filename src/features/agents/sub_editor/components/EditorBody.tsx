@@ -16,7 +16,7 @@ import { PersonaEditorHeader } from './PersonaEditorHeader';
 import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 import {
   PersonaPromptEditor, PersonaSettingsTab, PersonaUseCasesTab,
-  PersonaConnectorsTab, DesignTab, LabTab, HealthTab, ChatTab,
+  PersonaConnectorsTab, DesignTab, LabTab, HealthTab, ChatTab, AssertionsTab,
 } from './EditorLazyTabs';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
@@ -199,6 +199,7 @@ export function EditorBody() {
               {editorTab === 'chat' && <ChatTab />}
               {editorTab === 'design' && <DesignTab />}
               {editorTab === 'health' && <HealthTab />}
+              {editorTab === 'assertions' && <AssertionsTab personaId={selectedPersona.id} />}
               {editorTab === 'settings' && (
                 <PersonaSettingsTab
                   draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}

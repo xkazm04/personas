@@ -1,7 +1,9 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useMemo, useState, useCallback, lazy, Suspense } from 'react';
 import {
-  CalendarClock, Loader2, RefreshCw, Pause, Plus, Calendar,
+  CalendarClock, RefreshCw, Pause, Plus, Calendar,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useOverviewStore } from "@/stores/overviewStore";
 import {
@@ -46,7 +48,7 @@ export default function ScheduleTimeline() {
     fetchCronAgents();
     getSchedulerStatus()
       .then((d) => { if (!cancelled) setSchedulerStats(d); })
-      .catch(() => {});
+      .catch(silentCatch("ScheduleTimeline:getSchedulerStatus"));
     return () => { cancelled = true; };
   }, [fetchCronAgents]);
 
@@ -57,7 +59,7 @@ export default function ScheduleTimeline() {
       fetchCronAgents();
       getSchedulerStatus()
         .then((d) => { if (!cancelled) setSchedulerStats(d); })
-        .catch(() => {});
+        .catch(silentCatch("ScheduleTimeline:refreshSchedulerStatus"));
     }, 30_000);
     return () => { cancelled = true; clearInterval(interval); };
   }, [fetchCronAgents]);
@@ -139,7 +141,7 @@ export default function ScheduleTimeline() {
 
             {/* Mock seed (dev only) */}
             {import.meta.env.DEV && (
-              <button onClick={handleSeedSchedule} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock schedule (dev only)">
+              <button onClick={handleSeedSchedule} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock schedule (dev only)">
                 <Plus className="w-3.5 h-3.5" /> Mock Schedule
               </button>
             )}
@@ -205,14 +207,59 @@ export default function ScheduleTimeline() {
       >
         {/* Scheduler stats bar */}
         {schedulerStats && (
-          <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground/60">
-            <span>Triggers fired: <span className="font-mono text-foreground/70">{schedulerStats.triggers_fired}</span></span>
-            <span>Events processed: <span className="font-mono text-foreground/70">{schedulerStats.events_processed}</span></span>
-            <span>Delivered: <span className="font-mono text-foreground/70">{schedulerStats.events_delivered}</span></span>
-            {schedulerStats.events_failed > 0 && (
-              <span className="text-red-400">
-                Failed: <span className="font-mono">{schedulerStats.events_failed}</span>
-              </span>
+          <div className="flex flex-col gap-2 mt-3">
+            <div className="flex items-center gap-4 text-xs text-muted-foreground/60">
+              <span>Triggers fired: <span className="font-mono text-foreground/70">{schedulerStats.triggersFired}</span></span>
+              <span>Events processed: <span className="font-mono text-foreground/70">{schedulerStats.eventsProcessed}</span></span>
+              <span>Delivered: <span className="font-mono text-foreground/70">{schedulerStats.eventsDelivered}</span></span>
+              {schedulerStats.eventsFailed > 0 && (
+                <span className="text-red-400">
+                  Failed: <span className="font-mono">{schedulerStats.eventsFailed}</span>
+                </span>
+              )}
+              {schedulerStats.chainCascadesTotal > 0 && (
+                <span title={`Total wall time: ${schedulerStats.chainCascadeDurationMs}ms`}>
+                  Chain cascades: <span className="font-mono text-foreground/70">{schedulerStats.chainCascadesTotal}</span>
+                  <span className="ml-1 text-muted-foreground/40">({schedulerStats.chainCascadeDurationMs}ms)</span>
+                </span>
+              )}
+              {schedulerStats.queueRejections > 0 && (
+                <span className="text-amber-400" title="Executions rejected due to queue backpressure (queue full)">
+                  Queue rejected: <span className="font-mono">{schedulerStats.queueRejections}</span>
+                </span>
+              )}
+              {schedulerStats.subscriptionsCrashed > 0 && (
+                <span className="text-red-400" title="Subscription ticks that panicked — the loop recovered but a crash occurred">
+                  Subs crashed: <span className="font-mono">{schedulerStats.subscriptionsCrashed}</span>
+                </span>
+              )}
+              {schedulerStats.traceContinuityBreaks > 0 && (
+                <span className="text-orange-400" title="Chain trace IDs lost due to payload parse failures — downstream executions created orphaned trace roots">
+                  Trace breaks: <span className="font-mono">{schedulerStats.traceContinuityBreaks}</span>
+                </span>
+              )}
+            </div>
+            {/* Per-subscription health indicators */}
+            {schedulerStats.subscriptionHealth.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 text-[10px]">
+                {schedulerStats.subscriptionHealth.map((sub) => (
+                  <span
+                    key={sub.name}
+                    className={`px-1.5 py-0.5 rounded font-mono border ${
+                      sub.consecutivePanics > 0
+                        ? 'bg-red-500/10 border-red-500/20 text-red-400'
+                        : sub.overrun
+                          ? 'bg-orange-500/10 border-orange-500/20 text-orange-400'
+                          : 'bg-primary/5 border-primary/10 text-muted-foreground/60'
+                    }`}
+                    title={`${sub.name}: last ${sub.lastTickDurationMs}ms / avg ${sub.avgTickDurationMs}ms / max ${sub.maxTickDurationMs}ms (interval ${sub.intervalMs}ms) | ticks: ${sub.tickCount}, errors: ${sub.errorCount}${sub.consecutivePanics > 0 ? `, consecutive panics: ${sub.consecutivePanics}` : ''}${sub.overrun ? ' — OVERRUN' : ''}`}
+                  >
+                    {sub.name} {sub.lastTickDurationMs}ms
+                    {sub.consecutivePanics > 0 && ' PANIC'}
+                    {sub.consecutivePanics === 0 && sub.overrun && ' !!'}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
         )}
@@ -221,7 +268,7 @@ export default function ScheduleTimeline() {
       <ContentBody centered>
         {loading && cronAgents.length === 0 ? (
           <div className="flex items-center justify-center py-20 text-muted-foreground/70">
-            <Loader2 className="w-5 h-5 animate-spin mr-2" />
+            <LoadingSpinner size="lg" className="mr-2" />
             Loading schedules...
           </div>
         ) : cronAgents.length === 0 ? (
@@ -244,7 +291,7 @@ export default function ScheduleTimeline() {
 
             {/* Main schedule view */}
             {viewMode === 'calendar' ? (
-              <Suspense fallback={<div className="flex items-center justify-center py-12 text-muted-foreground/60"><Loader2 className="w-4 h-4 animate-spin mr-2" />Loading calendar...</div>}>
+              <Suspense fallback={<div className="flex items-center justify-center py-12 text-muted-foreground/60"><LoadingSpinner className="mr-2" />Loading calendar...</div>}>
                 <ScheduleCalendar entries={entries} />
               </Suspense>
             ) : viewMode === 'grouped' ? (
@@ -285,7 +332,7 @@ function GroupedView({
       {groups.map((group) => (
         <div key={group.label}>
           <div className={`flex items-center gap-2 mb-2 pb-1.5 border-b ${GROUP_COLORS[group.label] || 'text-muted-foreground/60 border-primary/10'}`}>
-            <span className="text-xs font-semibold uppercase tracking-wider">
+            <span className="typo-caption uppercase tracking-wider">
               {group.label}
             </span>
             <span className="text-[10px] font-mono opacity-60">

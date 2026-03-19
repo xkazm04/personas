@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { ChevronDown, ChevronRight, ExternalLink, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from "@/stores/systemStore";
 import type { GitLabJob } from '@/api/system/gitlab';
 import { StatusIcon, statusBg, formatDuration } from './pipelineHelpers';
@@ -21,7 +22,7 @@ function JobLogViewer({ log }: { log: string | null }) {
   if (log == null) {
     return (
       <div className="flex items-center justify-center py-6 text-muted-foreground/50 text-sm">
-        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+        <LoadingSpinner className="mr-2" />
         Loading log...
       </div>
     );

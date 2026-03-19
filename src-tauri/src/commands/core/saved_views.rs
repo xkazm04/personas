@@ -30,6 +30,17 @@ pub async fn list_saved_views(
 }
 
 #[tauri::command]
+pub async fn list_saved_views_by_type(
+    state: State<'_, Arc<AppState>>,
+    view_type: String,
+) -> Result<Vec<SavedView>, AppError> {
+    require_auth(&state).await?;
+    let conn = state.db.get()?;
+    let views = repos::core::saved_views::list_by_type(&conn, &view_type)?;
+    Ok(views)
+}
+
+#[tauri::command]
 pub async fn delete_saved_view(
     state: State<'_, Arc<AppState>>,
     id: String,

@@ -1,6 +1,7 @@
 /**
  * Async transform action handlers: startTransform, cancelTransform, continueTransform.
  */
+import { silentCatch } from "@/lib/silentCatch";
 import { useCallback, type MutableRefObject } from 'react';
 import {
   startTemplateAdoptBackground,
@@ -170,7 +171,7 @@ export function useTransformActions({
       const adoptId = state.backgroundAdoptId || currentAdoptId;
       if (adoptId) {
         try { await cancelTemplateAdopt(adoptId); } catch { /* intentional: non-critical - best-effort cancellation; clean up snapshot */
-          void clearTemplateAdoptSnapshot(adoptId).catch(() => {}); }
+          void clearTemplateAdoptSnapshot(adoptId).catch(silentCatch("useTransformActions:clearCancelSnapshot")); }
       }
       clearPersistedContext();
       void resetAdoptStream();

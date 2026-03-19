@@ -86,17 +86,17 @@ export default function AuthButton() {
           >
             {/* User info */}
             <div className="px-3 py-2.5 border-b border-primary/10">
-              <div className="text-sm font-medium text-foreground/90 truncate">
+              <div className="typo-heading text-foreground/90 truncate">
                 {user?.display_name ?? user?.email}
               </div>
               {user?.display_name && (
-                <div className="text-sm text-muted-foreground/90 truncate mt-0.5">
+                <div className="typo-body text-muted-foreground/90 truncate mt-0.5">
                   {user.email}
                 </div>
               )}
               {isOffline && (
-                <span className="inline-block mt-1.5 px-1.5 py-0.5 text-sm font-bold rounded-full
-                  bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
+                <span className="inline-block mt-1.5 px-1.5 py-0.5 typo-label rounded-full
+                  bg-amber-500/20 text-amber-400 border border-amber-500/30">
                   Offline
                 </span>
               )}

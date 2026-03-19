@@ -174,12 +174,12 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
         <div className="flex items-center gap-1.5">
           {!isEmpty && (
             isValid ? (
-              <span className="flex items-center gap-1 text-sm text-emerald-400/80">
+              <span className="flex items-center gap-1 typo-body text-emerald-400/80">
                 <Check className="w-3 h-3" />
                 Valid JSON
               </span>
             ) : isError ? (
-              <span className="flex items-center gap-1 text-sm text-red-400/80 truncate max-w-[280px]">
+              <span className="flex items-center gap-1 typo-body text-red-400/80 truncate max-w-[280px]">
                 <X className="w-3 h-3 flex-shrink-0" />
                 {validationState.error}
               </span>
@@ -191,7 +191,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
             type="button"
             onClick={handleFormat}
             disabled={!isValid}
-            className="flex items-center gap-1 px-2 py-0.5 text-sm text-muted-foreground/70 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1 px-2 py-0.5 typo-body text-muted-foreground/70 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <AlignLeft className="w-3 h-3" />
             Format
@@ -213,7 +213,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
         <pre
           ref={preRef}
           aria-hidden
-          className="absolute inset-0 px-4 py-3 font-mono text-sm leading-[1.625] whitespace-pre-wrap break-all overflow-hidden pointer-events-none m-0"
+          className="absolute inset-0 px-4 py-3 typo-code leading-[1.625] whitespace-pre-wrap break-all overflow-hidden pointer-events-none m-0"
         >
           {highlighted || (
             <span className="text-muted-foreground/30">{placeholder}</span>
@@ -229,7 +229,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder=""
-          className="relative w-full px-4 py-3 font-mono text-sm leading-[1.625] bg-transparent text-transparent caret-foreground resize-none focus-visible:outline-none"
+          className="relative w-full px-4 py-3 typo-code leading-[1.625] bg-transparent text-transparent caret-foreground resize-none focus-visible:outline-none"
           style={{ minHeight: 128 }}
           spellCheck={false}
           autoComplete="off"

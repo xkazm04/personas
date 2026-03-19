@@ -75,7 +75,7 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="absolute inset-0 z-10 flex items-center justify-center bg-secondary/80 backdrop-blur-sm rounded-xl">
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              <span className="text-sm font-medium text-emerald-300">Memory created successfully</span>
+              <span className="typo-heading text-emerald-300">Memory created successfully</span>
             </div>
           </motion.div>
         )}
@@ -129,7 +129,7 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
 
         <div className="flex justify-end gap-2 pt-1">
           <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm text-muted-foreground/80 hover:text-foreground/95 transition-colors">Cancel</button>
-          <button type="submit" disabled={!canSave || saving} title={saving ? 'Saving memory...' : !canSave ? 'Fill in all required fields to save' : undefined} className="px-4 py-1.5 text-sm font-medium rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all">{saving ? 'Saving...' : 'Save Memory'}</button>
+          <button type="submit" disabled={!canSave || saving} title={saving ? 'Saving memory...' : !canSave ? 'Fill in all required fields to save' : undefined} className="px-4 py-1.5 typo-heading rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all">{saving ? 'Saving...' : 'Save Memory'}</button>
         </div>
       </form>
     </motion.div>

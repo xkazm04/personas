@@ -1,4 +1,5 @@
-import { RefreshCw, Search, Loader2, Table2, Pin, Key, ChevronRight } from 'lucide-react';
+import { RefreshCw, Search, Table2, Pin, Key, ChevronRight } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { IntrospectedTable, RedisKeyInfo } from '@/hooks/database/useTableIntrospection';
 
 interface TableListSidebarProps {
@@ -72,7 +73,7 @@ export function TableListSidebar({
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {loading && tables.length === 0 && redisKeys.length === 0 && (
           <div className="flex items-center justify-center py-12 gap-2">
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/60" />
+            <LoadingSpinner className="text-muted-foreground/60" />
             <span className="text-sm text-muted-foreground/60">Loading...</span>
           </div>
         )}

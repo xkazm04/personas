@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Check, Activity, MessageCircle } from 'lucide-react';
+import { ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Check, Activity, MessageCircle, Shield } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import type { EditorTab } from '@/lib/types/types';
 import { isTabDirty } from '../libs/editorTabConstants';
@@ -13,6 +13,7 @@ const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = 
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'design', label: 'Design', icon: Wand2 },
   { id: 'health', label: 'Health', icon: Activity },
+  { id: 'assertions', label: 'Assertions', icon: Shield },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -26,7 +27,7 @@ type TabBadgeVariant = 'dirty' | 'attention' | 'error' | 'success';
 function TabBadge({ variant, count }: { variant: TabBadgeVariant; count?: number }) {
   if (variant === 'error') {
     return (
-      <span className="ml-auto min-w-4 h-4 px-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-400 text-sm leading-4 text-center">
+      <span className="ml-auto min-w-4 h-4 px-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-400 typo-caption leading-4 text-center">
         {count ?? '!'}
       </span>
     );
@@ -67,7 +68,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps
               onClick={() => setEditorTab(tab.id)}
               data-testid={`editor-tab-${tab.id}`}
               title={tab.label}
-              className={`relative flex items-center gap-1.5 ${IS_MOBILE ? 'px-2.5 py-3' : 'px-3 py-2.5'} text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`relative flex items-center gap-1.5 ${IS_MOBILE ? 'px-2.5 py-3' : 'px-3 py-2.5'} typo-heading transition-colors whitespace-nowrap ${
                 isActive ? 'text-primary' : 'text-muted-foreground/90 hover:text-foreground/95'
               }`}
             >

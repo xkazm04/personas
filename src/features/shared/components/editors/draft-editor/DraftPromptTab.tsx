@@ -54,7 +54,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
             <button
               key={tab.id}
               onClick={() => setSubtab(tab.id)}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-xl transition-colors text-left ${
+              className={`w-full flex items-center gap-2 px-2.5 py-2 typo-heading rounded-xl transition-colors text-left ${
                 active
                   ? 'bg-primary/10 text-foreground/80 border border-primary/20'
                   : 'text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
@@ -88,7 +88,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
           <div className="flex flex-col h-full min-h-0 gap-2">
             {/* Custom section toolbar */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-sm font-medium text-foreground/80">Custom Sections</span>
+              <span className="typo-heading text-foreground/80">Custom Sections</span>
               <button
                 onClick={() => {
                   const next = {
@@ -102,7 +102,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                   setSelectedCustomIndex(next.customSections.length - 1);
                 }}
                 disabled={disabled}
-                className="px-2 py-1 text-sm rounded-lg border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 disabled:opacity-50 flex items-center gap-1 ml-auto"
+                className="px-2 py-1 typo-body rounded-lg border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 disabled:opacity-50 flex items-center gap-1 ml-auto"
               >
                 <Plus className="w-3 h-3" />
                 Add
@@ -111,7 +111,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
 
             {editable.customSections.length === 0 ? (
               <div className="flex-1 flex items-center justify-center">
-                <p className="text-sm text-muted-foreground/80">No custom sections yet</p>
+                <p className="typo-body text-muted-foreground/80">No custom sections yet</p>
               </div>
             ) : (
               <div className="flex flex-1 min-h-0 gap-2">
@@ -120,7 +120,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                   {editable.customSections.map((section, index) => (
                     <div
                       key={`${index}-${section.key}`}
-                      className={`flex items-center gap-1 px-2 py-1.5 text-sm rounded-lg cursor-pointer transition-colors ${
+                      className={`flex items-center gap-1 px-2 py-1.5 typo-body rounded-lg cursor-pointer transition-colors ${
                         selectedCustomIndex === index
                           ? 'bg-violet-500/10 text-foreground/80 border border-violet-500/20'
                           : 'text-muted-foreground/90 hover:bg-secondary/30 border border-transparent'
@@ -166,7 +166,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                           updatePrompt({ ...editable, customSections: nextSections });
                         }}
                         disabled={disabled}
-                        className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring"
+                        className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl typo-body text-foreground placeholder-muted-foreground/30 focus-ring"
                       />
                       <input
                         type="text"
@@ -179,7 +179,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                           updatePrompt({ ...editable, customSections: nextSections });
                         }}
                         disabled={disabled}
-                        className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring"
+                        className="flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl typo-body text-foreground placeholder-muted-foreground/30 focus-ring"
                       />
                     </div>
                     <div className="flex-1 min-h-0">

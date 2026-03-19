@@ -1,10 +1,10 @@
 import {
   Monitor,
   Check,
-  Loader2,
   ShieldCheck,
   AlertTriangle,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { DiscoveredApp } from '@/api/system/desktop';
 
 const APP_ICONS: Record<string, string> = {
@@ -50,8 +50,8 @@ export function DesktopDiscoveryStep({
   if (isScanning) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <Loader2 className="w-6 h-6 animate-spin text-violet-400" />
-        <span className="text-sm text-muted-foreground/80">Scanning your desktop...</span>
+        <LoadingSpinner size="xl" className="text-violet-400" />
+        <span className="typo-body text-muted-foreground/80">Scanning your desktop...</span>
       </div>
     );
   }
@@ -62,8 +62,8 @@ export function DesktopDiscoveryStep({
     return (
       <div className="text-center py-16">
         <Monitor className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
-        <p className="text-sm text-muted-foreground/70">No supported desktop apps detected.</p>
-        <p className="text-sm text-muted-foreground/50 mt-1">
+        <p className="typo-body text-muted-foreground/70">No supported desktop apps detected.</p>
+        <p className="typo-body text-muted-foreground/50 mt-1">
           You can set up desktop bridges later from the Connectors tab.
         </p>
       </div>
@@ -73,10 +73,10 @@ export function DesktopDiscoveryStep({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-base font-semibold text-foreground/90 mb-1">
+        <h3 className="typo-heading-lg text-foreground/90 mb-1">
           Your desktop environment
         </h3>
-        <p className="text-sm text-muted-foreground/70">
+        <p className="typo-body text-muted-foreground/70">
           We found these apps on your machine. Approve them now so agents can use desktop bridges right away.
         </p>
       </div>
@@ -101,7 +101,7 @@ export function DesktopDiscoveryStep({
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-foreground/90">
+                  <span className="typo-heading text-foreground/90">
                     {app.label || APP_ICONS[app.connector_name] || app.connector_name}
                   </span>
                   {app.running && (
@@ -119,7 +119,7 @@ export function DesktopDiscoveryStep({
               <button
                 onClick={() => onApprove(app.connector_name)}
                 disabled={isApproved || isApproving}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors flex-shrink-0 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-lg transition-colors flex-shrink-0 ${
                   isApproved
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default'
                     : isApproving
@@ -133,7 +133,7 @@ export function DesktopDiscoveryStep({
                     Approved
                   </>
                 ) : isApproving ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <LoadingSpinner size="sm" />
                 ) : (
                   'Approve'
                 )}

@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { Send } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 const EXAMPLE_QUERIES = [
   'Code review pipeline with testing',
@@ -52,7 +53,7 @@ export default function AssistantInput({
           className="p-2 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
           {loading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <LoadingSpinner size="sm" />
           ) : (
             <Send className="w-3.5 h-3.5" />
           )}

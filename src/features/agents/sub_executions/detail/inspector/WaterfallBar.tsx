@@ -28,7 +28,7 @@ export function WaterfallBar({ span, totalMs }: { span: TraceSpan; totalMs: numb
       {/* Duration label */}
       {span.duration_ms != null && (
         <span
-          className="absolute top-0 text-sm font-mono text-muted-foreground/60 leading-5 whitespace-nowrap"
+          className="absolute top-0 typo-code text-muted-foreground/60 leading-5 whitespace-nowrap"
           style={{ left: `${Math.min(leftPct + widthPct + 0.5, 85)}%` }}
         >
           {formatDuration(span.duration_ms)}

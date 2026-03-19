@@ -98,7 +98,7 @@ export function TimelineScrubber({
       </div>
 
       {/* Time labels */}
-      <div className="flex justify-between text-sm font-mono text-muted-foreground/50 tabular-nums">
+      <div className="flex justify-between typo-code text-muted-foreground/50 tabular-nums">
         <span>{formatMs(currentMs)}</span>
         <span>{formatMs(totalMs)}</span>
       </div>

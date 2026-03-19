@@ -1,8 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FlaskConical, ChevronDown, ChevronRight,
-  Trash2, Clock, Trophy, Loader2, AlertCircle,
+  Trash2, Clock, Trophy, AlertCircle,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { statusBadge } from '../libs/testUtils';
 import { TestComparisonTable } from './TestComparisonTable';
 import type { PersonaTestRun } from '@/lib/bindings/PersonaTestRun';
@@ -121,7 +122,7 @@ export function TestHistoryList({
                           <TestComparisonTable results={activeTestResults} />
                         ) : (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <LoadingSpinner />
                             Loading results...
                           </div>
                         )}

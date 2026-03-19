@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RotateCcw, ChevronDown, ChevronRight,
-  Shield, Archive, Beaker, Clock, Loader2, AlertTriangle, XCircle,
+  Shield, Archive, Beaker, Clock, AlertTriangle, XCircle,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import { TAG_STYLES, formatRelative } from './labPrimitives';
 
@@ -58,7 +59,7 @@ export function VersionItem({
         data-testid={testId}
         className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors disabled:opacity-70 ${colorClasses} ${isThis ? 'cursor-default' : 'cursor-pointer'}`}
       >
-        {isThis ? <Loader2 className="w-3 h-3 animate-spin" /> : icon}
+        {isThis ? <LoadingSpinner size="xs" /> : icon}
         {label}
       </button>
     );

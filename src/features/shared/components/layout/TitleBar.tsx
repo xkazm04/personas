@@ -26,6 +26,7 @@ export default function TitleBar() {
     <div
       data-tauri-drag-region
       className="titlebar"
+      role="banner"
     >
       {/* App identity */}
       <div data-tauri-drag-region className="titlebar-title">

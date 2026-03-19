@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Share2, Plus, Loader2, Package, Eye, GitFork, Trash2 } from 'lucide-react';
+import { Share2, Plus, Package, Eye, GitFork, Trash2 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
@@ -287,7 +288,7 @@ export default function ExposureManager() {
 
             {loading ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground py-4 justify-center">
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <LoadingSpinner />
                 Loading exposed resources...
               </div>
             ) : exposedResources.length === 0 ? (

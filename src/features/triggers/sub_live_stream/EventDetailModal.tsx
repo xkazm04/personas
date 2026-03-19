@@ -69,7 +69,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground transition-colors"
+            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground transition-colors focus-ring"
             aria-label="Close"
           >
             <X className="w-4 h-4" />

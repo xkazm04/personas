@@ -2,7 +2,7 @@ import {
   BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare,
   FlaskConical, Users, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload,
   List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu,
-  Network, Database, Home, Compass, Shield, CalendarClock, HardDriveDownload,
+  Network, Database, Home, Compass, Shield, CalendarClock, HardDriveDownload, Heart,
   Wrench, FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
   Radio, Gauge, Unplug, Webhook,
   type LucideIcon,
@@ -31,6 +31,7 @@ export const sections: SectionDef[] = [
   { id: 'home', icon: Home, label: 'Home' },
   { id: 'overview', icon: BarChart3, label: 'Overview' },
   { id: 'personas', icon: Bot, label: 'Agents' },
+  { id: 'workflows', icon: GitBranch, label: 'Workflows' },
   { id: 'events', icon: Radio, label: 'Event Bus', minTier: TIERS.TEAM },
   { id: 'credentials', icon: Key, label: 'Keys' },
   { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
@@ -65,6 +66,7 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   { id: 'knowledge', icon: Brain, label: 'Knowledge', minTier: TIERS.TEAM },
   { id: 'sla', icon: Shield, label: 'SLA', minTier: TIERS.TEAM },
   { id: 'schedules', icon: CalendarClock, label: 'Schedules', minTier: TIERS.TEAM },
+  { id: 'health', icon: Heart, label: 'Health' },
 ];
 
 export const credentialItems: SubNavItem[] = [

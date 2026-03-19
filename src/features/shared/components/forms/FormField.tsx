@@ -66,12 +66,12 @@ export function FormField({
 
   return (
     <div className={`space-y-1.5 ${className ?? ''}`}>
-      <label htmlFor={fieldId} className="text-sm font-medium text-foreground/80">
+      <label htmlFor={fieldId} className="typo-heading text-foreground/80">
         {label}
         {required && <span className="text-red-400 ml-1">*</span>}
       </label>
 
-      {hint && <p className="text-sm text-muted-foreground/80">{hint}</p>}
+      {hint && <p className="typo-body text-muted-foreground/80">{hint}</p>}
 
       {typeof children === 'function' ? children(inputProps) : children}
 
@@ -80,7 +80,7 @@ export function FormField({
           <motion.p
             key="error"
             id={errorId}
-            className="text-sm text-red-400"
+            className="typo-body text-red-400"
             role="alert"
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
@@ -90,7 +90,7 @@ export function FormField({
             {error}
           </motion.p>
         ) : helpText ? (
-          <p id={helpId} className="text-sm text-muted-foreground/60">
+          <p id={helpId} className="typo-body text-muted-foreground/60">
             {helpText}
           </p>
         ) : null}

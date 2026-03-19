@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion } from 'framer-motion';
 
 export function DesignPhaseApplying() {
@@ -11,7 +11,7 @@ export function DesignPhaseApplying() {
       transition={{ duration: 0.15 }}
       className="flex flex-col items-center justify-center py-12 gap-3"
     >
-      <Loader2 className="w-6 h-6 text-primary animate-spin" />
+      <LoadingSpinner size="xl" className="text-primary" />
       <span className="text-sm text-muted-foreground/80">Applying changes...</span>
     </motion.div>
   );

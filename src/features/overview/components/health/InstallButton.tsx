@@ -1,4 +1,5 @@
-import { Loader2, CheckCircle2, XCircle, RefreshCw, Download, ExternalLink } from 'lucide-react';
+import { CheckCircle2, XCircle, RefreshCw, Download, ExternalLink } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
 import { Button } from '@/features/shared/components/buttons';
 
@@ -23,8 +24,8 @@ export function InstallButton({
     return (
       <div className="mt-2 space-y-1.5">
         <div className="flex items-center gap-2">
-          <Loader2 className="w-3 h-3 animate-spin text-violet-400" />
-          <span className="text-sm text-violet-300">
+          <LoadingSpinner size="xs" className="text-violet-400" />
+          <span className="typo-body text-violet-300">
             {installState.phase === 'downloading' ? 'Downloading...' : 'Installing...'}
           </span>
         </div>
@@ -35,7 +36,7 @@ export function InstallButton({
           />
         </div>
         {installState.outputLines.length > 0 && (
-          <p className="text-sm text-muted-foreground/80 truncate">
+          <p className="typo-body text-muted-foreground/80 truncate">
             {installState.outputLines[installState.outputLines.length - 1]}
           </p>
         )}
@@ -45,7 +46,7 @@ export function InstallButton({
 
   if (installState.phase === 'completed') {
     return (
-      <div className="mt-2 flex items-center gap-1.5 text-sm text-emerald-400">
+      <div className="mt-2 flex items-center gap-1.5 typo-body text-emerald-400">
         <CheckCircle2 className="w-3 h-3" />
         Installed successfully
       </div>
@@ -55,14 +56,14 @@ export function InstallButton({
   if (installState.phase === 'failed') {
     return (
       <div className="mt-2 space-y-1.5">
-        <div className="flex items-center gap-1.5 text-sm text-red-400">
+        <div className="flex items-center gap-1.5 typo-body text-red-400">
           <XCircle className="w-3 h-3" />
           {installState.error || 'Installation failed'}
         </div>
         {installState.manualCommand && (
           <div className="bg-primary/5 rounded-lg px-2 py-1.5">
-            <p className="text-sm text-muted-foreground/80 mb-1">Try running manually:</p>
-            <code className="text-sm text-foreground/80 font-mono select-all">
+            <p className="typo-body text-muted-foreground/80 mb-1">Try running manually:</p>
+            <code className="typo-code text-foreground/80 select-all">
               {installState.manualCommand}
             </code>
           </div>
@@ -81,7 +82,7 @@ export function InstallButton({
               href={CLAUDE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-2 py-1 text-sm font-medium rounded-lg border border-violet-500/20 text-violet-300 hover:bg-violet-500/10 transition-colors"
+              className="inline-flex items-center gap-1.5 px-2 py-1 typo-heading rounded-lg border border-violet-500/20 text-violet-300 hover:bg-violet-500/10 transition-colors"
             >
               Official page
               <ExternalLink className="w-3 h-3" />

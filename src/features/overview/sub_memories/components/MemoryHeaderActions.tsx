@@ -1,4 +1,5 @@
-import { Plus, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 interface MemoryHeaderActionsProps {
   isReviewing: boolean;
@@ -20,14 +21,14 @@ export function MemoryHeaderActions({
       <button
         onClick={onReview}
         disabled={isReviewing || memoriesTotal === 0}
-        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40"
+        className="flex items-center gap-1.5 px-3 py-2 typo-heading rounded-xl border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40"
       >
-        {isReviewing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+        {isReviewing ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
         {isReviewing ? 'Reviewing...' : 'Review with AI'}
       </button>
       <button
         onClick={onToggleAddForm}
-        className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl border transition-all ${
+        className={`flex items-center gap-1.5 px-3 py-2 typo-heading rounded-xl border transition-all ${
           showAddForm
             ? 'bg-violet-500/30 text-violet-200 border-violet-500/40'
             : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'

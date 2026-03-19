@@ -1,3 +1,4 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { useCallback, useEffect, MutableRefObject } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
@@ -98,7 +99,7 @@ export function useCreateTemplateSnapshot(
     );
 
     return () => {
-      unlistenPromise.then((unlisten) => unlisten()).catch(() => {});
+      unlistenPromise.then((unlisten) => unlisten()).catch(silentCatch("useCreateTemplateSnapshot:unlisten"));
     };
   }, [backgroundGenId, reducer.appendGenerateLine]);
 }

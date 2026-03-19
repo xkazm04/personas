@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::time::Instant;
 
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
@@ -9,6 +10,27 @@ use crate::error::AppError;
 /// Maximum chain depth before we refuse to fire further chain triggers.
 /// Prevents infinite cascades from A->B->A or longer cycles.
 const MAX_CHAIN_DEPTH: u32 = 8;
+
+/// Metrics collected during a single cascade evaluation at one hop.
+#[derive(Debug, Clone, Default)]
+pub struct CascadeMetrics {
+    /// Number of chain triggers evaluated (loaded from DB).
+    pub triggers_evaluated: u32,
+    /// Number of predicates that matched (condition passed).
+    pub predicates_matched: u32,
+    /// Number of events successfully published.
+    pub events_published: u32,
+    /// Number of events that failed to publish.
+    pub events_failed: u32,
+    /// Number of triggers skipped due to cycle detection.
+    pub cycles_detected: u32,
+    /// Number of triggers that failed to mark as triggered (and were disabled).
+    pub mark_failures: u32,
+    /// Wall-clock duration of this hop in milliseconds.
+    pub duration_ms: u64,
+    /// The chain depth at which this evaluation ran.
+    pub chain_depth: u32,
+}
 
 /// Evaluate chain triggers after an execution completes.
 ///
@@ -39,7 +61,13 @@ pub fn evaluate_chain_triggers(
     chain_depth: u32,
     visited_personas: &HashSet<String>,
     chain_trace_id: Option<&str>,
-) {
+) -> CascadeMetrics {
+    let hop_start = Instant::now();
+    let mut metrics = CascadeMetrics {
+        chain_depth,
+        ..Default::default()
+    };
+
     if chain_depth >= MAX_CHAIN_DEPTH {
         tracing::warn!(
             source_persona_id = %source_persona_id,
@@ -47,20 +75,25 @@ pub fn evaluate_chain_triggers(
             "Chain trigger depth limit reached ({}), refusing to fire further triggers",
             MAX_CHAIN_DEPTH,
         );
-        return;
+        metrics.duration_ms = hop_start.elapsed().as_millis() as u64;
+        return metrics;
     }
     // Get only enabled chain triggers matching this source persona (filtered at SQL level)
     let chain_triggers = match trigger_repo::get_chain_triggers_for_source(pool, source_persona_id) {
         Ok(t) => t,
         Err(e) => {
             tracing::error!("Chain trigger evaluation failed: {}", e);
-            return;
+            metrics.duration_ms = hop_start.elapsed().as_millis() as u64;
+            return metrics;
         }
     };
 
     if chain_triggers.is_empty() {
-        return;
+        metrics.duration_ms = hop_start.elapsed().as_millis() as u64;
+        return metrics;
     }
+
+    metrics.triggers_evaluated = chain_triggers.len() as u32;
 
     for trigger in chain_triggers {
         let config: serde_json::Value = match trigger.config.as_deref() {
@@ -97,6 +130,7 @@ pub fn evaluate_chain_triggers(
                 "Chain trigger cycle detected: {} already visited, skipping",
                 trigger.persona_id,
             );
+            metrics.cycles_detected += 1;
             continue;
         }
 
@@ -109,6 +143,8 @@ pub fn evaluate_chain_triggers(
             );
             continue;
         }
+
+        metrics.predicates_matched += 1;
 
         // Build visited set for downstream, adding the target persona
         let next_depth = chain_depth + 1;
@@ -179,18 +215,87 @@ pub fn evaluate_chain_triggers(
                     source_persona_id,
                     trigger.persona_id,
                 );
+                metrics.events_published += 1;
 
-                // Mark trigger as fired
-                let _ = trigger_repo::mark_triggered(pool, &trigger.id, None, trigger.next_trigger_at.as_deref());
+                // Mark trigger as fired — critical to prevent re-fire loops in cascades.
+                // Retry once on failure; if both attempts fail, disable the trigger to
+                // prevent exponential duplicate executions.
+                let mark_result = trigger_repo::mark_triggered(
+                    pool,
+                    &trigger.id,
+                    None,
+                    trigger.next_trigger_at.as_deref(),
+                );
+                match mark_result {
+                    Ok(_) => {}
+                    Err(first_err) => {
+                        tracing::warn!(
+                            trigger_id = %trigger.id,
+                            error = %first_err,
+                            "Chain trigger mark_triggered failed, retrying once"
+                        );
+                        // Retry once
+                        if let Err(retry_err) = trigger_repo::mark_triggered(
+                            pool,
+                            &trigger.id,
+                            None,
+                            trigger.next_trigger_at.as_deref(),
+                        ) {
+                            metrics.mark_failures += 1;
+                            tracing::error!(
+                                trigger_id = %trigger.id,
+                                source_persona_id = %source_persona_id,
+                                target_persona_id = %trigger.persona_id,
+                                chain_depth,
+                                first_error = %first_err,
+                                retry_error = %retry_err,
+                                "Chain trigger mark_triggered failed after retry — \
+                                 disabling trigger to prevent cascade re-fire loop"
+                            );
+                            // Disable the trigger to prevent infinite re-fire
+                            if let Err(disable_err) = trigger_repo::set_enabled(
+                                pool,
+                                &trigger.id,
+                                false,
+                            ) {
+                                tracing::error!(
+                                    trigger_id = %trigger.id,
+                                    error = %disable_err,
+                                    "Failed to disable trigger after mark_triggered failure — \
+                                     manual intervention required to prevent cascade loops"
+                                );
+                            }
+                        }
+                    }
+                }
             }
             Err(e) => {
                 tracing::error!(
                     trigger_id = %trigger.id,
                     "Chain trigger: failed to publish event: {}", e
                 );
+                metrics.events_failed += 1;
             }
         }
     }
+
+    metrics.duration_ms = hop_start.elapsed().as_millis() as u64;
+
+    tracing::info!(
+        source_persona_id = %source_persona_id,
+        chain_depth,
+        chain_trace_id = chain_trace_id.unwrap_or("none"),
+        triggers_evaluated = metrics.triggers_evaluated,
+        predicates_matched = metrics.predicates_matched,
+        events_published = metrics.events_published,
+        events_failed = metrics.events_failed,
+        cycles_detected = metrics.cycles_detected,
+        mark_failures = metrics.mark_failures,
+        duration_ms = metrics.duration_ms,
+        "Chain cascade hop completed"
+    );
+
+    metrics
 }
 
 /// Extract chain depth and visited set from a chain trigger payload.
@@ -203,6 +308,12 @@ pub fn extract_chain_metadata(payload: Option<&str>) -> (u32, HashSet<String>, O
         return (0, HashSet::new(), None);
     };
     let Ok(val) = serde_json::from_str::<serde_json::Value>(payload) else {
+        tracing::warn!(
+            payload_len = payload.len(),
+            payload_prefix = %&payload[..payload.len().min(200)],
+            "Chain metadata extraction failed: payload is not valid JSON — \
+             chain_trace_id will be lost and downstream executions will create orphaned trace roots"
+        );
         return (0, HashSet::new(), None);
     };
     let depth = val
@@ -681,5 +792,155 @@ mod tests {
         // Updating the same trigger (A -> B) should not detect a false cycle
         let result = detect_chain_cycle(&pool, &a, &b, Some(&trigger_id));
         assert!(result.is_ok());
+    }
+
+    // =========================================================================
+    // Cascade metrics tests
+    // =========================================================================
+
+    #[test]
+    fn test_cascade_metrics_no_triggers() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-1", 0, &visited, None,
+        );
+
+        assert_eq!(metrics.chain_depth, 0);
+        assert_eq!(metrics.triggers_evaluated, 0);
+        assert_eq!(metrics.predicates_matched, 0);
+        assert_eq!(metrics.events_published, 0);
+        assert_eq!(metrics.events_failed, 0);
+        assert_eq!(metrics.cycles_detected, 0);
+    }
+
+    #[test]
+    fn test_cascade_metrics_with_trigger() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+
+        // Create chain trigger: when A completes, fire B
+        let config = json!({
+            "source_persona_id": a,
+            "event_type": "chain_triggered",
+            "condition": { "type": "success" },
+        })
+        .to_string();
+        trigger_repo::create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: b.clone(),
+                trigger_type: "chain".into(),
+                config: Some(config),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-1"),
+        );
+
+        assert_eq!(metrics.chain_depth, 0);
+        assert_eq!(metrics.triggers_evaluated, 1);
+        assert_eq!(metrics.predicates_matched, 1);
+        assert_eq!(metrics.events_published, 1);
+        assert_eq!(metrics.events_failed, 0);
+        assert_eq!(metrics.cycles_detected, 0);
+        // duration_ms should be set (at least 0)
+        assert!(metrics.duration_ms < 5000, "duration should be reasonable");
+    }
+
+    #[test]
+    fn test_cascade_metrics_predicate_not_met() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+
+        // Trigger requires success
+        let config = json!({
+            "source_persona_id": a,
+            "condition": { "type": "success" },
+        })
+        .to_string();
+        trigger_repo::create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: b.clone(),
+                trigger_type: "chain".into(),
+                config: Some(config),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        let visited = HashSet::new();
+        // Execution failed, so predicate should not match
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "failed", None, "exec-1", 0, &visited, None,
+        );
+
+        assert_eq!(metrics.triggers_evaluated, 1);
+        assert_eq!(metrics.predicates_matched, 0);
+        assert_eq!(metrics.events_published, 0);
+    }
+
+    #[test]
+    fn test_cascade_metrics_cycle_detected() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+
+        // Trigger: A -> B
+        let config = json!({
+            "source_persona_id": a,
+            "condition": { "type": "any" },
+        })
+        .to_string();
+        trigger_repo::create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: b.clone(),
+                trigger_type: "chain".into(),
+                config: Some(config),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        // B is already visited — should detect cycle
+        let mut visited = HashSet::new();
+        visited.insert(b.clone());
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-1", 1, &visited, None,
+        );
+
+        assert_eq!(metrics.chain_depth, 1);
+        assert_eq!(metrics.triggers_evaluated, 1);
+        assert_eq!(metrics.predicates_matched, 0);
+        assert_eq!(metrics.events_published, 0);
+        assert_eq!(metrics.cycles_detected, 1);
+    }
+
+    #[test]
+    fn test_cascade_metrics_depth_limit() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-1", MAX_CHAIN_DEPTH, &visited, None,
+        );
+
+        assert_eq!(metrics.chain_depth, MAX_CHAIN_DEPTH);
+        assert_eq!(metrics.triggers_evaluated, 0);
+        assert_eq!(metrics.events_published, 0);
     }
 }

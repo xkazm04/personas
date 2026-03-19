@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { rebuildDesignReview, getRebuildSnapshot, cancelRebuild } from '@/api/overview/reviews';
 import { sendAppNotification } from '@/api/system/system';
+import { silentCatch } from "@/lib/silentCatch";
 import { useBackgroundSnapshot } from '@/hooks/utility/data/useBackgroundSnapshot';
 import type { SnapshotLike } from '@/hooks/utility/data/useBackgroundSnapshot';
 import { useSystemStore } from "@/stores/systemStore";
@@ -55,7 +56,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
     if (p === 'completed') {
       setPhase('completed');
       setRebuildActive(false);
-      sendAppNotification('Rebuild Complete', 'Template rebuild finished successfully.').catch(() => {});
+      sendAppNotification('Rebuild Complete', 'Template rebuild finished successfully.').catch(silentCatch("backgroundRebuild:notifyComplete"));
       onCompleted?.();
     } else if (p === 'failed') {
       setPhase('failed');
@@ -67,13 +68,13 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
     setError(err);
     setPhase('failed');
     setRebuildActive(false);
-    sendAppNotification('Rebuild Failed', 'Template rebuild encountered an error.').catch(() => {});
+    sendAppNotification('Rebuild Failed', 'Template rebuild encountered an error.').catch(silentCatch("backgroundRebuild:notifyFailed"));
   }, [setRebuildActive]);
 
   const handleCompletedNoDraft = useCallback(() => {
     setPhase('completed');
     setRebuildActive(false);
-    sendAppNotification('Rebuild Complete', 'Template rebuild finished successfully.').catch(() => {});
+    sendAppNotification('Rebuild Complete', 'Template rebuild finished successfully.').catch(silentCatch("backgroundRebuild:notifyCompletedNoDraft"));
     onCompleted?.();
   }, [setRebuildActive, onCompleted]);
 
@@ -86,7 +87,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
   const handleDraft = useCallback(() => {
     setPhase('completed');
     setRebuildActive(false);
-    sendAppNotification('Rebuild Complete', 'Template rebuild finished successfully.').catch(() => {});
+    sendAppNotification('Rebuild Complete', 'Template rebuild finished successfully.').catch(silentCatch("backgroundRebuild:notifyDraftComplete"));
     onCompleted?.();
   }, [setRebuildActive, onCompleted]);
 

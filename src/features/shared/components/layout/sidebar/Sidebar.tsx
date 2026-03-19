@@ -1,3 +1,4 @@
+import { silentCatch } from "@/lib/silentCatch";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
@@ -105,7 +106,7 @@ export default function Sidebar() {
 
   // App version — one-time fetch on mount
   useEffect(() => {
-    getVersion().then(setAppVersion).catch(() => {});
+    getVersion().then(setAppVersion).catch(silentCatch("Sidebar:getVersion"));
   }, []);
 
   // Centralized 30s polling for budget data.
@@ -146,7 +147,7 @@ export default function Sidebar() {
   }, [sidebarSection, setSidebarSection]);
 
   return (
-    <div className="flex h-full">
+    <nav className="flex h-full" role="navigation" aria-label="Primary">
       <SidebarLevel1
         collapsed={collapsed}
         disabledSections={disabledSections}
@@ -176,7 +177,7 @@ export default function Sidebar() {
               : 'w-[240px] bg-secondary/30 border-r border-primary/15 flex flex-col overflow-hidden'
           }>
             <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
-              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
+              <h2 className="typo-label text-muted-foreground/90">
                 {sections.find((s) => s.id === sidebarSection)?.label || 'Overview'}
               </h2>
             </div>
@@ -207,6 +208,6 @@ export default function Sidebar() {
           </div>
         </>
       )}
-    </div>
+    </nav>
   );
 }

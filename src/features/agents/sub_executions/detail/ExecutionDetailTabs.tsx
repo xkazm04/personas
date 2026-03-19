@@ -12,7 +12,7 @@ interface ExecutionDetailTabsProps {
 
 export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, executionStatus }: ExecutionDetailTabsProps) {
   const tabClass = (tab: DetailTab, special?: boolean) =>
-    `flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+    `flex items-center gap-2 px-3 py-1.5 rounded-xl typo-heading transition-all ${
       activeTab === tab
         ? special
           ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'

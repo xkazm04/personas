@@ -5,6 +5,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { CatalogAutoSetup } from '@/features/vault/sub_autoCred/steps/CatalogAutoSetup';
 import { cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
+import { silentCatch } from "@/lib/silentCatch";
 import type { ConnectorDefinition } from '@/lib/types/types';
 
 type ItemStatus = 'pending' | 'running' | 'done' | 'failed' | 'skipped';
@@ -37,7 +38,7 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
   useEffect(() => {
     return () => {
       if (hasRunningRef.current) {
-        cancelAutoCredBrowser().catch(() => {});
+        cancelAutoCredBrowser().catch(silentCatch("WizardBatchPhase:cancelBrowserOnUnmount"));
       }
     };
   }, []);

@@ -22,14 +22,14 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
       {/* Header */}
       <div className="flex items-start justify-between p-4 border-b border-primary/10 flex-shrink-0">
         <div className="flex-1 min-w-0 pr-4">
-          <h3 id="detail-modal-title" className="text-sm font-semibold text-foreground/90">{title}</h3>
+          <h3 id="detail-modal-title" className="typo-heading text-foreground/90">{title}</h3>
           {subtitle && (
-            <p className="text-sm text-muted-foreground/80 mt-1">{subtitle}</p>
+            <p className="typo-body text-muted-foreground/80 mt-1">{subtitle}</p>
           )}
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors focus-ring"
           aria-label="Close"
         >
           <X className="w-4 h-4" />

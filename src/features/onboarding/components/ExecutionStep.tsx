@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Play,
-  Loader2,
   Terminal,
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
@@ -74,8 +74,8 @@ export function ExecutionStep({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-base font-semibold text-foreground/90 mb-1">Run your first agent</h3>
-        <p className="text-sm text-muted-foreground/70">
+        <h3 className="typo-heading-lg text-foreground/90 mb-1">Run your first agent</h3>
+        <p className="typo-body text-muted-foreground/70">
           Execute <span className="font-medium text-foreground/80">{personaName}</span> and see real-time output.
         </p>
       </div>
@@ -85,12 +85,12 @@ export function ExecutionStep({
           <div className="w-16 h-16 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
             <Play className="w-8 h-8 text-emerald-400" />
           </div>
-          <p className="text-sm text-muted-foreground/70 text-center max-w-sm">
+          <p className="typo-body text-muted-foreground/70 text-center max-w-sm">
             Your agent is ready. Click below to start the first execution and see it in action.
           </p>
           <button
             onClick={handleRun}
-            className="px-6 py-2.5 text-sm font-medium rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors flex items-center gap-2"
+            className="px-6 py-2.5 typo-heading rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors flex items-center gap-2"
           >
             <Play className="w-4 h-4" />
             Run Agent
@@ -104,18 +104,18 @@ export function ExecutionStep({
               executionError ? (
                 <>
                   <XCircle className="w-4 h-4 text-red-400" />
-                  <span className="text-sm text-red-400">{executionError}</span>
+                  <span className="typo-body text-red-400">{executionError}</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span className="text-sm text-emerald-400">Execution completed successfully</span>
+                  <span className="typo-body text-emerald-400">Execution completed successfully</span>
                 </>
               )
             ) : (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
-                <span className="text-sm text-violet-300">Executing...</span>
+                <LoadingSpinner className="text-violet-400" />
+                <span className="typo-body text-violet-300">Executing...</span>
               </>
             )}
           </div>
@@ -123,14 +123,14 @@ export function ExecutionStep({
           {/* Terminal output */}
           <div
             ref={terminalRef}
-            className="bg-black/40 rounded-xl border border-primary/10 p-4 font-mono text-sm h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent"
+            className="bg-black/40 rounded-xl border border-primary/10 p-4 typo-code h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent"
           >
             <div className="flex items-center gap-2 mb-2 text-muted-foreground/50 border-b border-primary/10 pb-2">
               <Terminal className="w-3.5 h-3.5" />
-              <span className="text-sm">Agent Output</span>
+              <span className="typo-body">Agent Output</span>
             </div>
             {executionOutput.length === 0 && !finished && (
-              <p className="text-muted-foreground/60 text-sm">Waiting for output...</p>
+              <p className="text-muted-foreground/60 typo-body">Waiting for output...</p>
             )}
             {executionOutput.map((line, i) => (
               <div key={i} className="text-foreground/70 whitespace-pre-wrap break-all leading-relaxed">

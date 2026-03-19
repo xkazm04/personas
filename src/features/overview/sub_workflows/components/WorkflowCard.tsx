@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { CheckCircle2, XCircle, Loader2, ChevronDown, ChevronUp, Square, Clock } from 'lucide-react';
+import { CheckCircle2, XCircle, ChevronDown, ChevronUp, Square, Clock } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { getWorkflowJobOutput } from '@/api/pipeline/workflows';
 import type { WorkflowJob } from '@/api/pipeline/workflows';
 import { JOB_TYPE_LABELS, formatElapsed, statusBadgeClass } from '../libs/workflowHelpers';
 
 function StatusIcon({ status }: { status: string }) {
-  if (status === 'running') return <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />;
+  if (status === 'running') return <LoadingSpinner size="sm" className="text-blue-400" />;
   if (status === 'completed') return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
   if (status === 'failed') return <XCircle className="w-3.5 h-3.5 text-red-400" />;
   if (status === 'awaiting_answers') return <Clock className="w-3.5 h-3.5 text-amber-400" />;
@@ -25,7 +26,7 @@ function SummaryCards({ data }: { data: { total_count: number; running_count: nu
       {cards.map((c) => (
         <div key={c.label} className={`${c.bg} rounded-xl border border-primary/10 px-4 py-3`}>
           <div className="text-[11px] text-muted-foreground/80 uppercase tracking-wide mb-1">{c.label}</div>
-          <div className={`text-2xl font-semibold tabular-nums ${c.color}`}>{c.value}</div>
+          <div className={`typo-data-lg ${c.color}`}>{c.value}</div>
         </div>
       ))}
     </div>
@@ -71,7 +72,7 @@ function JobRow({ job, expanded, onToggle, onCancel }: JobRowProps) {
         <StatusIcon status={job.status} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground truncate">{JOB_TYPE_LABELS[job.job_type] || job.job_type}</span>
+            <span className="typo-heading text-foreground truncate">{JOB_TYPE_LABELS[job.job_type] || job.job_type}</span>
             <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${statusBadgeClass(job.status)}`}>
               {job.status.replace(/_/g, ' ')}
             </span>
@@ -108,7 +109,7 @@ function JobRow({ job, expanded, onToggle, onCancel }: JobRowProps) {
           <div ref={outputRef} className="max-h-64 overflow-y-auto px-4 py-2 font-mono text-[11px] leading-relaxed text-muted-foreground/80">
             {loadingOutput ? (
               <div className="flex items-center gap-2 py-4 justify-center text-muted-foreground/50">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading output...
+                <LoadingSpinner size="sm" /> Loading output...
               </div>
             ) : lines.length > 0 ? (
               lines.map((line, i) => (

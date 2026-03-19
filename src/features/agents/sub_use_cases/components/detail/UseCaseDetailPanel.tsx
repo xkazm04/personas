@@ -1,4 +1,5 @@
-import { Play, Square, Loader2, ArrowRight } from 'lucide-react';
+import { Play, Square, ArrowRight } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { UseCaseModelDropdown } from './UseCaseModelDropdown';
 import { UseCaseChannelDropdown } from './UseCaseChannelDropdown';
@@ -132,7 +133,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
         <div className="flex items-center gap-2.5">
           {isTestRunning && testRunProgress && (
             <span className="flex items-center gap-1.5 text-muted-foreground/60">
-              <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
+              <LoadingSpinner size="sm" className="text-primary" />
               <span className="capitalize text-sm">
                 {testRunProgress.phase === 'generating'
                   ? 'Generating...'

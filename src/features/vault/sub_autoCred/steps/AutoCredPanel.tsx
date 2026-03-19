@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { AutoCredMode } from '../helpers/types';
 import { useAutoCredSession } from '../helpers/useAutoCredSession';
@@ -130,7 +131,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             exit={{ opacity: 0 }}
             className="flex flex-col items-center justify-center py-12 gap-3"
           >
-            <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+            <LoadingSpinner size="2xl" className="text-emerald-400" />
             <p className="text-sm text-muted-foreground/90">Saving credential...</p>
           </motion.div>
         )}

@@ -3,12 +3,23 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 
 type SectionCardSize = 'sm' | 'md' | 'lg';
+export type SectionCardStatus = 'success' | 'warning' | 'error' | 'info' | 'neutral';
+
+const STATUS_BORDER: Record<SectionCardStatus, string> = {
+  success: 'border-l-[3px] border-l-emerald-500',
+  warning: 'border-l-[3px] border-l-amber-500',
+  error:   'border-l-[3px] border-l-red-500',
+  info:    'border-l-[3px] border-l-blue-500',
+  neutral: 'border-l-[3px] border-l-slate-400',
+};
 
 interface SectionCardBaseProps {
   children: ReactNode;
   size?: SectionCardSize;
   blur?: boolean;
   className?: string;
+  /** Optional status accent — adds a colored left border. */
+  status?: SectionCardStatus;
 }
 
 interface SectionCardCollapsibleProps extends SectionCardBaseProps {
@@ -67,9 +78,10 @@ function writeStorage(key: string | undefined, collapsed: boolean) {
 }
 
 export function SectionCard(props: SectionCardProps) {
-  const { children, size = 'md', blur = false, className = '', collapsible, title, subtitle } = props;
+  const { children, size = 'md', blur = false, className = '', collapsible, title, subtitle, status } = props;
   const blurClass = blur ? 'backdrop-blur-sm' : '';
-  const base = `bg-secondary/30 border border-primary/12 shadow-elevation-1`;
+  const statusClass = status ? STATUS_BORDER[status] : '';
+  const base = `bg-secondary/30 border border-primary/12 shadow-elevation-1 ${statusClass}`;
 
   // --- Static (non-collapsible) mode ---
   if (!collapsible) {
@@ -77,8 +89,8 @@ export function SectionCard(props: SectionCardProps) {
       <div className={`${base} ${SIZE_CLASSES[size]} ${blurClass} ${className}`.trim()}>
         {title && (
           <div className="mb-2">
-            <h3 className="text-sm font-semibold text-foreground/90">{title}</h3>
-            {subtitle && <p className="text-sm text-muted-foreground/70">{subtitle}</p>}
+            <h3 className="typo-heading text-foreground/90">{title}</h3>
+            {subtitle && <p className="typo-body text-muted-foreground/70">{subtitle}</p>}
           </div>
         )}
         {children}
@@ -155,9 +167,9 @@ function CollapsibleBody({
           <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/65" />
         </motion.span>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-foreground/90 truncate">{title}</h3>
+          <h3 className="typo-heading text-foreground/90 truncate">{title}</h3>
           {subtitle && (
-            <p className="text-sm text-muted-foreground/70 truncate">{subtitle}</p>
+            <p className="typo-body text-muted-foreground/70 truncate">{subtitle}</p>
           )}
         </div>
       </button>

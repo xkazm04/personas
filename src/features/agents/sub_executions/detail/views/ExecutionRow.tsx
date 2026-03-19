@@ -57,14 +57,14 @@ export function ExecutionRow({
 
   const statusEntry = getStatusEntry(execution.status);
   const statusBadge = (
-    <span className={`px-2 py-0.5 rounded-lg text-sm font-medium ${badgeClass(statusEntry)}`}>
+    <span className={`px-2 py-0.5 rounded-lg typo-heading ${badgeClass(statusEntry)}`}>
       {statusEntry.label}
     </span>
   );
 
   const retryBadge = execution.retry_count > 0 ? (
     <Tooltip content={`Healing retry #${execution.retry_count}`}>
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
         <RefreshCw className="w-2.5 h-2.5" />
         #{execution.retry_count}
       </span>
@@ -72,13 +72,13 @@ export function ExecutionRow({
   ) : null;
 
   const duration = (
-    <span className="text-sm text-foreground/90 font-mono">
+    <span className="typo-code text-foreground/90">
       {formatDuration(execution.duration_ms)}
     </span>
   );
 
   const compareLabelBadge: ReactNode = compareLabel ? (
-    <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-sm font-bold ${
+    <span className={`w-5 h-5 rounded-lg flex items-center justify-center typo-heading ${
       compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
     }`}>
       {compareLabel}
@@ -111,16 +111,16 @@ export function ExecutionRow({
         <div className="col-span-2 flex items-center">
           {duration}
         </div>
-        <div className={`${compareMode ? 'col-span-2' : 'col-span-3'} text-sm text-foreground/90 flex items-center`}>
+        <div className={`${compareMode ? 'col-span-2' : 'col-span-3'} typo-body text-foreground/90 flex items-center`}>
           {formatTimestamp(execution.started_at)}
         </div>
-        <div className="col-span-2 text-sm text-foreground/90 font-mono flex items-center">
+        <div className="col-span-2 typo-code text-foreground/90 flex items-center">
           <Tooltip content="Input tokens"><span>{formatTokens(execution.input_tokens)}</span></Tooltip>
           {' / '}
           <Tooltip content="Output tokens"><span>{formatTokens(execution.output_tokens)}</span></Tooltip>
         </div>
         <div className={`${compareMode ? 'col-span-2' : 'col-span-3'} flex items-center gap-2`}>
-          <span className="text-sm text-foreground/90 font-mono">
+          <span className="typo-code text-foreground/90">
             ${execution.cost_usd.toFixed(4)}
           </span>
           {!compareMode && (
@@ -143,7 +143,7 @@ export function ExecutionRow({
       >
         <div className="flex items-center gap-2">
           {compareMode && compareLabel && (
-            <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-sm font-bold ${
+            <span className={`w-5 h-5 rounded-lg flex items-center justify-center typo-heading ${
               compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
             }`}>
               {compareLabel}
@@ -153,12 +153,12 @@ export function ExecutionRow({
           {statusBadge}
           {retryBadge}
           {duration}
-          <span className="text-sm text-muted-foreground/80 ml-auto">
+          <span className="typo-body text-muted-foreground/80 ml-auto">
             {formatRelativeTime(execution.started_at)}
           </span>
         </div>
         {execution.error_message && (
-          <p className="text-sm text-red-400/70 truncate pl-5.5">
+          <p className="typo-body text-red-400/70 truncate pl-5.5">
             {showRaw ? execution.error_message : sanitizeErrorMessage(execution.error_message)}
           </p>
         )}

@@ -89,6 +89,8 @@ export function SavedViewsDropdown({
         custom_end_date: currentCustomDateRange ? currentCustomDateRange[1] : null,
         compare_enabled: currentCompareEnabled,
         is_smart: false,
+        view_type: 'analytics',
+        view_config: null,
       });
       setNewViewName('');
       setIsSaving(false);

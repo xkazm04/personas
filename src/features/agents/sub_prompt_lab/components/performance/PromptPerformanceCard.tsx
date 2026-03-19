@@ -4,13 +4,14 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Loader2,
   AlertTriangle,
   ArrowRight,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { usePromptPerformanceSummary, type TrendDirection } from '../../libs/usePromptPerformanceSummary';
 import { rollbackPromptVersion } from '@/api/overview/observability';
 import { getAppSetting, setAppSetting } from '@/api/system/settings';
+import { silentCatch } from "@/lib/silentCatch";
 import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import { fmtPct } from '../../libs/performanceHelpers';
@@ -42,7 +43,7 @@ export function PromptPerformanceCard({ personaId, onOpenLab }: PromptPerformanc
   useEffect(() => {
     getAppSetting(`${AUTO_ROLLBACK_KEY_PREFIX}${personaId}`)
       .then((val) => setAutoRollbackEnabled(val === 'true'))
-      .catch(() => {})
+      .catch(silentCatch("PromptPerformanceCard:loadAutoRollbackSetting"))
       .finally(() => setAutoRollbackLoading(false));
   }, [personaId]);
 
@@ -80,7 +81,7 @@ export function PromptPerformanceCard({ personaId, onOpenLab }: PromptPerformanc
     return (
       <div className="rounded-xl border border-primary/10 bg-secondary/20 p-4">
         <div className="flex items-center gap-2">
-          <Loader2 className="w-4 h-4 text-muted-foreground/40 animate-spin" />
+          <LoadingSpinner className="text-muted-foreground/40" />
           <span className="text-sm text-muted-foreground/60">Loading performance...</span>
         </div>
       </div>

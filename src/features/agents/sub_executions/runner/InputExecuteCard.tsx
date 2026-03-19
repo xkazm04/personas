@@ -34,7 +34,7 @@ export function InputExecuteCard({
       <div className="space-y-2">
         <button
           onClick={onToggleInputEditor}
-          className="flex items-center gap-2 text-sm text-foreground/90 hover:text-foreground transition-colors"
+          className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors"
         >
           {showInputEditor ? (
             <ChevronDown className="w-4 h-4" />
@@ -60,7 +60,7 @@ export function InputExecuteCard({
                 placeholder='e.g. {"name": "Jane", "email": "jane@example.com"}'
               />
               {jsonError && (
-                <p className="text-red-400/80 text-sm mt-1">{jsonError}</p>
+                <p className="text-red-400/80 typo-body mt-1">{jsonError}</p>
               )}
             </motion.div>
           )}
@@ -71,7 +71,7 @@ export function InputExecuteCard({
       <button
         data-testid="execute-persona-btn"
         onClick={isExecuting ? onStop : onExecute}
-        className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-medium text-sm transition-all ${
+        className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl typo-heading transition-all ${
           isExecuting
             ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20'
             : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'

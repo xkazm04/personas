@@ -105,7 +105,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground/60">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
-        <span className="text-sm">Loading execution data...</span>
+        <span className="typo-body">Loading execution data...</span>
       </div>
     );
   }

@@ -100,7 +100,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
             type="button"
             onClick={switchToSimple}
             disabled={!canSwitchToSimple}
-            className="flex items-center gap-1.5 px-2 py-0.5 text-xs text-muted-foreground/70 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-2 py-0.5 typo-caption text-muted-foreground/70 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <List className="w-3 h-3" />
             Simple mode
@@ -109,7 +109,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
           <button
             type="button"
             onClick={switchToAdvanced}
-            className="flex items-center gap-1.5 px-2 py-0.5 text-xs text-muted-foreground/70 hover:text-foreground/80 transition-colors"
+            className="flex items-center gap-1.5 px-2 py-0.5 typo-caption text-muted-foreground/70 hover:text-foreground/80 transition-colors"
           >
             <Code className="w-3 h-3" />
             Advanced (JSON)
@@ -128,14 +128,14 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
                 value={row.key}
                 onChange={(e) => updateRow(i, 'key', e.target.value)}
                 placeholder="Label"
-                className="flex-1 px-3 py-2 text-sm rounded-lg border border-primary/15 bg-background/50 text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/30 transition-all"
+                className="flex-1 px-3 py-2 typo-body rounded-lg border border-primary/15 bg-background/50 text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/30 transition-all"
               />
               <input
                 type="text"
                 value={row.value}
                 onChange={(e) => updateRow(i, 'value', e.target.value)}
                 placeholder="Value"
-                className="flex-1 px-3 py-2 text-sm rounded-lg border border-primary/15 bg-background/50 text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/30 transition-all"
+                className="flex-1 px-3 py-2 typo-body rounded-lg border border-primary/15 bg-background/50 text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/30 transition-all"
               />
               <button
                 type="button"
@@ -149,7 +149,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
           <button
             type="button"
             onClick={addRow}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground/70 hover:text-foreground/80 border border-dashed border-primary/15 hover:border-primary/30 rounded-lg transition-colors w-full justify-center"
+            className="flex items-center gap-1.5 px-3 py-1.5 typo-caption text-muted-foreground/70 hover:text-foreground/80 border border-dashed border-primary/15 hover:border-primary/30 rounded-lg transition-colors w-full justify-center"
           >
             <Plus className="w-3 h-3" />
             Add field

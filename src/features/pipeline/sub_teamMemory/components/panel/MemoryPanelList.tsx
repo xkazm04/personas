@@ -1,4 +1,5 @@
-import { Brain, Loader2, Search, GitCommitVertical, X } from 'lucide-react';
+import { Brain, Search, GitCommitVertical, X } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import TeamMemoryRow from './TeamMemoryRow';
 
@@ -113,7 +114,7 @@ export default function MemoryPanelList({
                 disabled={loadingMore}
                 className="w-full py-1.5 text-sm text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
-                {loadingMore ? (<><Loader2 className="w-3 h-3 animate-spin" />Loading...</>) : <>Load more</>}
+                {loadingMore ? (<><LoadingSpinner size="xs" />Loading...</>) : <>Load more</>}
               </button>
             )}
             {!activeRunFilter && total > memories.length && (

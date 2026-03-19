@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot, Plus } from 'lucide-react';
+import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Server, Bot, Plus } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AnimatePresence } from 'framer-motion';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
@@ -61,7 +62,7 @@ export default function EventLogList() {
       onFilterChange: setTypeFilter,
       render: (event) => {
         const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
-        return <span className={`text-sm font-medium truncate ${typeColor}`}>{event.event_type}</span>;
+        return <span className={`typo-heading truncate ${typeColor}`}>{event.event_type}</span>;
       },
     },
     {
@@ -116,7 +117,7 @@ export default function EventLogList() {
         const statusIcon = event.status === 'completed' || event.status === 'processed'
           ? <CheckCircle2 className="w-3 h-3" />
           : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
-          : event.status === 'processing' ? <Loader2 className="w-3 h-3 animate-spin" />
+          : event.status === 'processing' ? <LoadingSpinner size="xs" />
           : <Clock className="w-3 h-3" />;
         return (
           <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
@@ -148,7 +149,7 @@ export default function EventLogList() {
         actions={
           <div className="flex items-center gap-2">
             {import.meta.env.DEV && (
-              <button onClick={handleSeedEvent} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock event (dev only)">
+              <button onClick={handleSeedEvent} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock event (dev only)">
                 <Plus className="w-3.5 h-3.5" /> Mock Event
               </button>
             )}

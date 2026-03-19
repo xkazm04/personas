@@ -1,4 +1,5 @@
-import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Server, Bot, ExternalLink } from 'lucide-react';
+import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Server, Bot, ExternalLink } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
@@ -52,7 +53,7 @@ export default function EventLogList() {
       onFilterChange: setTypeFilter,
       render: (event) => {
         const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
-        return <span className={`text-sm font-medium truncate ${typeColor}`}>{event.event_type}</span>;
+        return <span className={`typo-heading truncate ${typeColor}`}>{event.event_type}</span>;
       },
     },
     {
@@ -107,7 +108,7 @@ export default function EventLogList() {
         const statusIcon = event.status === 'completed' || event.status === 'processed'
           ? <CheckCircle2 className="w-3 h-3" />
           : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
-          : event.status === 'processing' ? <Loader2 className="w-3 h-3 animate-spin" />
+          : event.status === 'processing' ? <LoadingSpinner size="xs" />
           : <Clock className="w-3 h-3" />;
         return (
           <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
@@ -140,7 +141,7 @@ export default function EventLogList() {
           <div className="flex items-center gap-1">
             <button
               onClick={() => setSidebarSection('events')}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-muted-foreground/80 hover:text-foreground hover:bg-secondary/50 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-lg text-muted-foreground/80 hover:text-foreground hover:bg-secondary/50 transition-colors"
               title="Go to Event Bus"
             >
               <ExternalLink className="w-3 h-3" />

@@ -107,14 +107,14 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-foreground/90">
+            <span className="typo-heading text-foreground/90">
               {rec.title}
             </span>
             <span className={`text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-md ${config.badge} border`}>
               {SEVERITY_LABEL[rec.severity] ?? rec.severity}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground/80 mt-0.5 truncate">
+          <p className="typo-body text-muted-foreground/80 mt-0.5 truncate">
             {rec.description}
           </p>
         </div>
@@ -138,7 +138,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mt-0.5 w-16 flex-shrink-0">
                   Impact
                 </span>
-                <span className="text-sm text-foreground/80">{rec.impact}</span>
+                <span className="typo-body text-foreground/80">{rec.impact}</span>
               </div>
 
               {/* Action */}
@@ -146,7 +146,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mt-0.5 w-16 flex-shrink-0">
                   Action
                 </span>
-                <span className="text-sm text-foreground/80">{rec.suggestedAction}</span>
+                <span className="typo-body text-foreground/80">{rec.suggestedAction}</span>
               </div>
 
               {/* Affected agents */}
@@ -155,7 +155,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
                   <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mt-0.5 w-16 flex-shrink-0">
                     Agent
                   </span>
-                  <span className="text-sm text-foreground/80">
+                  <span className="typo-body text-foreground/80">
                     {rec.personaNames.join(', ')}
                   </span>
                 </div>

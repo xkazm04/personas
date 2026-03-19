@@ -29,7 +29,7 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
           <div className="w-3 h-3 rounded-full bg-amber-500/80" />
           <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
         </div>
-        <span className="text-sm text-muted-foreground/90 ml-1 font-mono">
+        <span className="typo-code text-muted-foreground/90 ml-1">
           {isRunning ? (
             <span className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -60,7 +60,7 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
         {!isRunning && lineCount > 0 && (
           <button
             onClick={onCopy}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-sm text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 typo-body text-muted-foreground/90 hover:text-foreground/95 transition-colors"
           >
             {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             {copied ? 'Copied' : 'Copy Log'}
@@ -70,7 +70,7 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
         {isRunning && onStop && (
           <button
             onClick={onStop}
-            className="flex items-center gap-1.5 px-3 py-1 bg-red-500/15 hover:bg-red-500/25 border border-red-500/20 text-red-400 rounded-xl text-sm font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1 bg-red-500/15 hover:bg-red-500/25 border border-red-500/20 text-red-400 rounded-xl typo-heading transition-colors"
           >
             <Square className="w-3 h-3" />
             Stop

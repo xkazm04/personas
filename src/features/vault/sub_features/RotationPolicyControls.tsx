@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Trash2, Pencil, RotateCw, ShieldCheck, Clock, Plus, Loader2 } from 'lucide-react';
+import { Trash2, Pencil, RotateCw, ShieldCheck, Clock, Plus } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { listRotationPolicies } from "@/api/vault/rotation";
 
 import type { RotationStatus } from '@/api/vault/rotation';
@@ -78,7 +79,7 @@ export function RotationPolicyControls({
             <Button
               variant="ghost"
               size="icon-sm"
-              icon={isRemovingPolicy ? <Loader2 className="w-3 h-3 animate-spin text-red-400/70" /> : <Trash2 className="w-3 h-3 text-red-400/50" />}
+              icon={isRemovingPolicy ? <LoadingSpinner size="xs" className="text-red-400/70" /> : <Trash2 className="w-3 h-3 text-red-400/50" />}
               onClick={async () => {
                 setIsRemovingPolicy(true);
                 onError(null);
@@ -203,7 +204,7 @@ export function RotationPolicyControls({
       <Button
         variant="accent"
         size="sm"
-        icon={isEnablingPolicy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+        icon={isEnablingPolicy ? <LoadingSpinner size="xs" /> : <Plus className="w-3 h-3" />}
         onClick={async () => {
           setIsEnablingPolicy(true);
           onError(null);

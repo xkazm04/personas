@@ -291,14 +291,15 @@ pub async fn execute_team(
         }),
     );
 
-    // Set up cancellation flag
-    let cancelled = state.process_registry.register_run("pipeline", &run_id);
+    // Set up cancellation flag.
+    // The guard ensures unregister_run is called even if the task panics.
+    let (cancelled, run_guard) =
+        state.process_registry.register_run_guarded("pipeline", &run_id);
 
     // Clone what we need for the async task
     let db = state.db.clone();
     let engine = state.engine.clone();
     let run_id_clone = run_id.clone();
-    let registry = state.process_registry.clone();
 
     // Build predecessor map from non-feedback edges so each node receives
     // output from its actual predecessor(s) rather than a global last_output.
@@ -315,6 +316,7 @@ pub async fn execute_team(
     };
 
     tokio::spawn(async move {
+        let _guard = run_guard;
         let mut node_outputs: std::collections::HashMap<String, Option<String>> = std::collections::HashMap::new();
         let mut final_statuses = node_statuses.clone();
         let mut has_failure = false;
@@ -596,8 +598,7 @@ pub async fn execute_team(
             }),
         );
 
-        // Clean up cancellation flag
-        registry.unregister_run("pipeline", &run_id_clone);
+        // Guard handles unregister_run on drop.
     });
 
     Ok(run_id)
@@ -723,4 +724,83 @@ pub async fn suggest_topology_llm(
     }
 
     Ok(blueprint)
+}
+
+// ============================================================================
+// Workflow Compiler — natural language → team pipeline
+// ============================================================================
+
+/// Compile a natural-language workflow description into a persisted team with
+/// members, connections, and topology.  Uses the LLM topology builder to select
+/// personas and infer connections, then persists the result.
+///
+/// Falls back to keyword-based topology if the LLM returns empty members.
+#[tauri::command]
+pub async fn compile_workflow(
+    state: State<'_, Arc<AppState>>,
+    description: String,
+) -> Result<crate::engine::workflow_compiler::CompiledWorkflow, AppError> {
+    require_auth(&state).await?;
+    use crate::commands::credentials::ai_artifact_flow::run_claude_prompt;
+    use crate::db::repos::communication::reviews as review_repo;
+    use crate::db::repos::core::personas as persona_repo;
+    use crate::engine::llm_topology;
+    use crate::engine::prompt;
+    use crate::engine::workflow_compiler;
+
+    let description = description.trim().to_string();
+    if description.is_empty() {
+        return Err(AppError::Validation(
+            "Workflow description cannot be empty".into(),
+        ));
+    }
+
+    let personas = persona_repo::get_all(&state.db)?;
+    if personas.iter().filter(|p| p.enabled).count() < 2 {
+        return Err(AppError::Validation(
+            "At least 2 enabled personas are required to compose a workflow".into(),
+        ));
+    }
+
+    let templates = review_repo::get_reviews(&state.db, None, Some(50))?;
+
+    // Build prompt and call LLM
+    let prompt_text = llm_topology::build_llm_topology_prompt(
+        &description,
+        &personas,
+        &templates,
+        &[], // no existing members to exclude
+    );
+
+    let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push(TEAM_BUILDER_MODEL.to_string());
+    cli_args.args.push("--max-turns".to_string());
+    cli_args.args.push("1".to_string());
+
+    let output_text = run_claude_prompt(
+        prompt_text,
+        &cli_args,
+        TEAM_BUILDER_TIMEOUT_SECS,
+        "Claude produced no output for workflow compilation",
+    )
+    .await
+    .map_err(AppError::Internal)?;
+
+    // Parse LLM response, falling back to keyword-based topology
+    let blueprint = match llm_topology::parse_llm_topology_response(&output_text, &personas) {
+        Some(bp) if !bp.members.is_empty() => bp,
+        _ => {
+            let bp = topology::suggest_topology(&description, &personas, &[]);
+            if bp.members.is_empty() {
+                return Err(AppError::Internal(
+                    "Could not find matching personas for this workflow description".into(),
+                ));
+            }
+            bp
+        }
+    };
+
+    // Persist as a new team
+    workflow_compiler::persist_blueprint(&state.db, &blueprint, &description)
 }

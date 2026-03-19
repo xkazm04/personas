@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useToastStore } from '@/stores/toastStore';
@@ -127,7 +128,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
           disabled={!isValid || saving}
           className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+          {saving ? <LoadingSpinner size="sm" /> : <Save className="w-3.5 h-3.5" />}
           {recipe ? 'Save Changes' : 'Create Recipe'}
         </button>
       </div>

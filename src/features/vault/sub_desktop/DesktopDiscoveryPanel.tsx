@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Monitor, Download, RefreshCw, Loader2 } from 'lucide-react';
+import { ArrowLeft, Monitor, Download, RefreshCw } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import {
   discoverDesktopApps,
   importClaudeMcpServers,
@@ -171,7 +172,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           >
             {scanning ? (
               <div className="flex items-center justify-center py-8 text-muted-foreground/60">
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <LoadingSpinner className="mr-2" />
                 Scanning for desktop apps...
               </div>
             ) : (
@@ -241,7 +242,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           >
             {importingMcp ? (
               <div className="flex items-center justify-center py-8 text-muted-foreground/60">
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <LoadingSpinner className="mr-2" />
                 Reading Claude Desktop config...
               </div>
             ) : mcpServers.length > 0 ? (

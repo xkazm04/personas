@@ -1,11 +1,13 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  ArrowLeftRight, Play, Square, Loader2, ChevronDown, AlertCircle,
+  ArrowLeftRight, Play, Square, ChevronDown, AlertCircle,
 } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import type { ModelTestConfig } from '@/api/agents/tests';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
+import { silentCatch } from "@/lib/silentCatch";
 import { ALL_COMPARE_MODELS, toTestConfig, aggregateResults } from './compareModels';
 import { ModelDropdown } from './ComparisonResults';
 import { ComparisonResults } from './ComparisonResults';
@@ -31,7 +33,7 @@ export function ModelABCompare() {
       fetchArenaResults(activeRunId).then(() => {
         const results = arenaResultsMap[activeRunId];
         if (results) setLastResults(results);
-      }).catch(() => {});
+      }).catch(silentCatch("ModelABCompare:fetchArenaResults"));
     }
   }, [activeRunId, isLabRunning, labProgress, fetchArenaResults, arenaResultsMap]);
 
@@ -161,7 +163,7 @@ export function ModelABCompare() {
               {progress && (
                 <div className="px-3 py-2.5 rounded-xl bg-secondary/40 border border-primary/20 space-y-1.5">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                    <LoadingSpinner size="sm" className="text-indigo-400" />
                     <span>
                       {progress.phase === 'generating' ? 'Generating scenarios...' :
                        progress.modelId ? `Testing ${progress.modelId}` :

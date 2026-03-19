@@ -1,6 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
+import { silentCatch } from "@/lib/silentCatch";
 import type {
   PersonaToolDefinition,
   ToolUsageSummary,
@@ -67,7 +68,7 @@ export const createToolSlice: StateCreator<AgentStore, [], [], ToolSlice> = (set
     try {
       await assignTool(personaId, toolId);
       get().invalidateToolDefCache();
-      get().fetchDetail(personaId).catch(() => {});
+      get().fetchDetail(personaId).catch(silentCatch("toolSlice:assignTool"));
     } catch (err) {
       reportError(err, "Failed to assign tool", set);
     }
@@ -77,7 +78,7 @@ export const createToolSlice: StateCreator<AgentStore, [], [], ToolSlice> = (set
     try {
       await unassignTool(personaId, toolId);
       get().invalidateToolDefCache();
-      get().fetchDetail(personaId).catch(() => {});
+      get().fetchDetail(personaId).catch(silentCatch("toolSlice:removeTool"));
     } catch (err) {
       reportError(err, "Failed to remove tool", set);
     }
@@ -90,7 +91,7 @@ export const createToolSlice: StateCreator<AgentStore, [], [], ToolSlice> = (set
       reportError(err, "Failed to assign tools", set);
     } finally {
       get().invalidateToolDefCache();
-      get().fetchDetail(personaId).catch(() => {});
+      get().fetchDetail(personaId).catch(silentCatch("toolSlice:bulkAssignTools"));
     }
   },
 
@@ -101,7 +102,7 @@ export const createToolSlice: StateCreator<AgentStore, [], [], ToolSlice> = (set
       reportError(err, "Failed to remove tools", set);
     } finally {
       get().invalidateToolDefCache();
-      get().fetchDetail(personaId).catch(() => {});
+      get().fetchDetail(personaId).catch(silentCatch("toolSlice:bulkRemoveTools"));
     }
   },
 

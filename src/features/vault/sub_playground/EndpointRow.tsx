@@ -1,4 +1,5 @@
-import { ChevronDown, ChevronRight, Play, CheckCircle2, XCircle, Loader2, MinusCircle, Clock } from 'lucide-react';
+import { ChevronDown, ChevronRight, Play, CheckCircle2, XCircle, MinusCircle, Clock } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ApiEndpoint } from '@/api/system/apiProxy';
 import type { EndpointTestResult } from './useApiTestRunner';
 
@@ -154,7 +155,7 @@ function TestBadge({ result }: { result: EndpointTestResult }) {
     case 'running':
       return (
         <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-sm text-blue-400/80 shrink-0">
-          <Loader2 className="w-3 h-3 animate-spin" />
+          <LoadingSpinner size="xs" />
         </span>
       );
     case 'passed':

@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Search, Radar, Loader2, Sparkles } from 'lucide-react';
+import { Search, Radar, Sparkles } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { useVaultStore } from "@/stores/vaultStore";
 import { detectAuthenticatedServices, type AuthDetection } from '@/api/auth/authDetect';
@@ -125,7 +126,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
           accentColor="cyan"
           size="md"
           block
-          icon={isDetecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radar className="w-4 h-4" />}
+          icon={isDetecting ? <LoadingSpinner /> : <Radar className="w-4 h-4" />}
           loading={isDetecting}
           disabled={isDetecting}
           onClick={handleDetect}

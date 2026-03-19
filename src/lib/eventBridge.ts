@@ -15,6 +15,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
+import { useToastStore } from "@/stores/toastStore";
 import type { AuthStateResponse } from "@/api/auth/auth";
 
 // ---------------------------------------------------------------------------
@@ -171,6 +172,31 @@ const registry: EventRegistration[] = [
           }
         },
       );
+      return [unlisten];
+    },
+  },
+
+  // -- Auto-rollback notification -------------------------------------------
+  {
+    event: "auto-rollback-triggered",
+    setup: async () => {
+      const unlisten = await listen<{
+        personaId: string;
+        personaName: string;
+        fromVersion: number;
+        toVersion: number;
+        currentErrorRate: number;
+        previousErrorRate: number;
+      }>("auto-rollback-triggered", (event) => {
+        const { personaName, fromVersion, toVersion } = event.payload;
+        useToastStore
+          .getState()
+          .addToast(
+            `Auto-rollback: "${personaName}" reverted from v${fromVersion} to v${toVersion} due to elevated error rate`,
+            "error",
+            8000,
+          );
+      });
       return [unlisten];
     },
   },

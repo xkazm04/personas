@@ -25,6 +25,16 @@ impl AppFocusState {
             last_window_title: None,
         }
     }
+
+    /// Read the last known app name (for ambient context change detection).
+    pub fn last_app_name(&self) -> Option<&str> {
+        self.last_app_name.as_deref()
+    }
+
+    /// Read the last known window title (for ambient context change detection).
+    pub fn last_window_title(&self) -> Option<&str> {
+        self.last_window_title.as_deref()
+    }
 }
 
 /// Foreground window info returned by platform-specific code.

@@ -1,4 +1,5 @@
-import { Zap, RefreshCw, Loader2 } from 'lucide-react';
+import { Zap, RefreshCw } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 
@@ -27,7 +28,7 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
               </span>
             ) : isAutoFixPending ? (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border bg-amber-500/15 text-amber-400 border-amber-500/20">
-                <Loader2 className="w-3 h-3 animate-spin" /> retrying
+                <LoadingSpinner size="xs" /> retrying
               </span>
             ) : isAutoFixed ? (
               <span className="inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border bg-emerald-500/15 text-emerald-400 border-emerald-500/20">
@@ -60,7 +61,7 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
             {!isAutoFixed && !isAutoFixPending && (
               <button
                 onClick={() => onResolve(issue.id)}
-                className="px-2 py-1 text-sm font-medium text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                className="px-2 py-1 typo-heading text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
               >
                 Resolve
               </button>

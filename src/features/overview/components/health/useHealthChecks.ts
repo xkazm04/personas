@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { HealthCheckItem, HealthCheckSection } from "@/api/system/system";
-import { healthCheckAccount, healthCheckAgents, healthCheckCloud, healthCheckLocal } from "@/api/system/system";
+import { healthCheckAccount, healthCheckAgents, healthCheckCloud, healthCheckLocal, healthCheckSubscriptions } from "@/api/system/system";
 
-const SECTION_ORDER = ['local', 'agents', 'cloud', 'account'];
+const SECTION_ORDER = ['local', 'agents', 'cloud', 'account', 'subscriptions'];
 
 function makeFallback(id: string, label: string, items: HealthCheckItem[]): HealthCheckSection {
   return { id, label, items };
@@ -22,6 +22,9 @@ const IPC_FALLBACKS: Record<string, HealthCheckSection> = {
   account: makeFallback('account', 'Account', [
     { id: 'google_auth', label: 'Google Account', status: 'inactive', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
   ]),
+  subscriptions: makeFallback('subscriptions', 'Subscription Health', [
+    { id: 'subscriptions_empty', label: 'Subscriptions', status: 'info', detail: 'Cannot check \u2014 IPC unavailable', installable: false },
+  ]),
 };
 
 const CHECKS: Array<{ id: string; fn: () => Promise<HealthCheckSection> }> = [
@@ -29,6 +32,7 @@ const CHECKS: Array<{ id: string; fn: () => Promise<HealthCheckSection> }> = [
   { id: 'agents', fn: healthCheckAgents },
   { id: 'cloud', fn: healthCheckCloud },
   { id: 'account', fn: healthCheckAccount },
+  { id: 'subscriptions', fn: healthCheckSubscriptions },
 ];
 
 function sortSections(arr: HealthCheckSection[]) {
